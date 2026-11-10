@@ -65,7 +65,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
                 new { question, recommended = "Redis streams", alternatives = new[] { alternative, "RabbitMQ" } },
             }),
         });
-        recorded.ValueKind.ShouldBe(JsonValueKind.Object);
+        recorded.GetProperty("created").EnumerateArray().Select(n => n.GetInt32()).ShouldBe([1, 2]);
 
         await new WorkItemScreen(Page).OpenAsync(Project, task.Key);
         var panel = new DecisionsPanel(Page, task.Id);
@@ -78,6 +78,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
         // Option 0 is the current answer; option 1 is the first alternative.
         var changed = await panel.ChangeAsync(2, 1, "Redis is not on the host yet.");
         changed.Ok.ShouldBeTrue($"{changed.Status} {changed.Url}");
+        changed.Url.ShouldEndWith("/decisions/2/change");
         await Expect(panel.Toasts.Filter(new() { HasText = "D2 changed · comment posted for the next agent" })).ToBeVisibleAsync();
         await Expect(panel.DecisionRow(2)).ToHaveAttributeAsync("data-state", "changed");
         await Expect(panel.CommentAskTag("changed")).ToHaveTextAsync("D2 changed");
@@ -103,7 +104,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
         await Expect(panel.Empty).ToBeVisibleAsync();
         await new LiveStatus(Page).WaitUntilLiveAsync();
 
-        await CallAsync(mcp, "record_decisions", new()
+        var recorded = await CallAsync(mcp, "record_decisions", new()
         {
             ["item"] = item.Key,
             ["decisions"] = JsonSerializer.SerializeToElement(new[]
@@ -111,6 +112,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
                 new { question = "Which region hosts the queue?", recommended = "eu-west", alternatives = new[] { "us-east" } },
             }),
         });
+        recorded.GetProperty("created").EnumerateArray().Select(n => n.GetInt32()).ShouldBe([1]);
 
         await Expect(panel.DecisionRow(1)).ToBeVisibleAsync();
         await Expect(panel.DecisionRow(1)).ToHaveAttributeAsync("data-state", "open");
