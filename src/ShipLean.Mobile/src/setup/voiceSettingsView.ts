@@ -152,6 +152,9 @@ export function storageView(
     const model = modelOf(files, f.id);
     if (model !== null) byModel.set(model, (byModel.get(model) ?? 0) + f.bytes);
   }
+  // A change downloads into targetFiles(), so the model in use is missing from files: it is checked by definition.
+  const inUse = status.phase === 'ready' ? status.resolved : null;
+  if (inUse !== null && !byModel.has(inUse)) byModel.set(inUse, sumBytes(files, inUse));
   const rows = [...byModel]
     .filter(([, bytes]) => bytes > 0)
     .map(([model, bytes]): StorageRow => ({ model, name: nameOf(files, model), bytes }))
