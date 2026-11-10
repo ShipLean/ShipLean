@@ -57,11 +57,11 @@ import {
 } from './machine';
 import { resolveCommand } from './resolve';
 import { AnswerSheet } from './sheets/AnswerSheet';
-import { requestTypeInstead } from './typed/composerRequest';
 import { ApplyFailedSheet } from './sheets/ApplyFailedSheet';
 import { ListeningSheet } from './sheets/ListeningSheet';
 import { PreviewSheet } from './sheets/PreviewSheet';
 import { VoiceFailureSheet } from './sheets/VoiceFailureSheet';
+import { requestTypeInstead } from './typed/composerRequest';
 
 export type {
   DisabledReason,
