@@ -647,4 +647,112 @@ describe('ActionRunner', () => {
     expect(runner.pending()).toEqual([]);
     expect(rec.calls).toEqual(['send 1']);
   });
+
+  describe('discardUnsent', () => {
+    // A voice batch of two whose first send got no answer: 1 is uncertain and 2 waits behind it.
+    async function uncertainBatch(rec: ReturnType<typeof recorder>, built = build(rec)) {
+      rec.sendFails.set('1', new TypeError('Network request failed'));
+      const batchId = built.runner.dispatch([act('setState', '1'), act('assign', '2')], {
+        undo: UNDO.voice,
+        origin: 'voice',
+        allOrNothing: true,
+      });
+      await flush();
+      rec.sendFails.clear();
+      expect(byItem(built.runner, '1')?.state).toBe('uncertain');
+      expect(byItem(built.runner, '2')?.state).toBe('queued');
+      return { ...built, batchId };
+    }
+
+    it('drops the queued parts behind a part with no answer at once and tells subscribers', async () => {
+      const rec = recorder();
+      const { runner, batchId } = await uncertainBatch(rec);
+      const heard = vi.fn();
+      runner.subscribe(heard);
+
+      runner.discardUnsent(batchId);
+
+      expect(heard).toHaveBeenCalled();
+      expect(runner.pending().map((p) => [p.action.itemId, p.state])).toEqual([['1', 'uncertain']]);
+    });
+
+    it('drops a held batch, so its window ending sends nothing', async () => {
+      const rec = recorder();
+      const runner = runnerWith(rec);
+      const batchId = runner.dispatch([act('setState', '1')], {
+        undo: UNDO.tap,
+        origin: 'tap',
+        allOrNothing: true,
+      });
+
+      runner.discardUnsent(batchId);
+      await vi.advanceTimersByTimeAsync(UNDO.tap.ms * 2);
+
+      expect(runner.pending()).toEqual([]);
+      expect(rec.calls).toEqual([]);
+    });
+
+    it('removes a part with no answer that reconcile says was not sent, instead of sending it again', async () => {
+      const rec = recorder();
+      rec.executor.reconcile = async (items) => items.map(() => 'notSent' as const);
+      const { runner, goOnline, batchId } = await uncertainBatch(rec);
+
+      runner.discardUnsent(batchId);
+      goOnline();
+      await flush();
+
+      expect(runner.pending()).toEqual([]);
+      expect(rec.calls).toEqual(['send 1']);
+    });
+
+    it('keeps a part with no answer that reconcile says went through as sent', async () => {
+      const rec = recorder();
+      rec.executor.reconcile = async (items) => items.map(() => 'sent' as const);
+      const { runner, goOnline, batchId } = await uncertainBatch(rec);
+
+      runner.discardUnsent(batchId);
+      goOnline();
+      await flush();
+
+      expect(runner.pending().map((p) => [p.action.itemId, p.state])).toEqual([['1', 'sent']]);
+      expect(rec.calls).toEqual(['send 1']);
+    });
+
+    it('leaves sent and failed parts as they are, and retry no longer sends a failed one', async () => {
+      const rec = recorder();
+      const runner = runnerWith(rec);
+      rec.sendFails.set('2', refusal(500, 'internal_error'));
+      const batchId = runner.dispatch(
+        [act('setState', '1'), act('assign', '2'), act('assign', '3')],
+        { undo: UNDO.typed, origin: 'typed', allOrNothing: true },
+      );
+      await flush();
+      rec.sendFails.clear();
+      const before = runner.pending();
+      expect(before.map((p) => p.state)).toEqual(['sent', 'failed', 'failed']);
+
+      runner.discardUnsent(batchId);
+      runner.retry(byItem(runner, '2')?.id as string);
+      await flush();
+
+      expect(runner.pending()).toEqual(before);
+      expect(rec.calls).toEqual(['send 1', 'send 2']);
+    });
+
+    it('keeps the discarded mark over a restart: a part reconcile then finds unsent is removed, not sent', async () => {
+      const store = memoryStore();
+      const rec = recorder();
+      const first = await uncertainBatch(rec, build(rec, { store }));
+      first.runner.discardUnsent(first.batchId);
+      first.runner.stop();
+
+      const rec2 = recorder();
+      rec2.executor.reconcile = async (items) => items.map(() => 'notSent' as const);
+      const second = build(rec2, { store });
+      await flush();
+
+      expect(second.runner.pending()).toEqual([]);
+      expect(rec2.calls).toEqual([]);
+    });
+  });
 });

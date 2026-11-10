@@ -22,6 +22,7 @@ export class InMemoryActionRunner implements ActionRunner {
   private readonly listeners = new Set<() => void>();
   private readonly conflictListeners = new Set<(batchId: string, lines: PreviewLine[]) => void>();
   private items: Pending[] = [];
+  private readonly discarded = new Set<string>();
   private nextBatch = 1;
   private nextItem = 1;
 
@@ -74,8 +75,20 @@ export class InMemoryActionRunner implements ActionRunner {
   retry(id: string): void {
     const item = this.items.find((p) => p.id === id);
     if (item === undefined || (item.state !== 'failed' && item.state !== 'uncertain')) return;
+    if (this.discarded.has(item.batchId)) return;
     this.items = this.items.map((p) =>
       p.id === id ? { ...p, state: 'queued', error: null, failure: null } : p,
+    );
+    this.notify();
+  }
+
+  // As the real runner: the batch's queued and held actions go, and nothing of it is queued again. This runner never
+  // sends, so there is nothing uncertain to settle.
+  discardUnsent(batchId: string): void {
+    if (!this.items.some((p) => p.batchId === batchId)) return;
+    this.discarded.add(batchId);
+    this.items = this.items.filter(
+      (p) => p.batchId !== batchId || (p.state !== 'queued' && p.state !== 'undo'),
     );
     this.notify();
   }

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import type { Pending } from '../../actions/types';
 import { aPending } from '../../test-support/actions';
 import { renderWithRunner } from '../../test-support/renderWithRunner';
@@ -9,6 +9,7 @@ import type { VoiceUiStateOf } from '../internals';
 import { ApplyFailedSheet } from './ApplyFailedSheet';
 import {
   applyFailedDiscardId,
+  applyFailedDiscardNoteId,
   applyFailedGroupId,
   applyFailedHeadingId,
   applyFailedLineId,
@@ -116,15 +117,13 @@ describe('applyFailed', () => {
     expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Nothing was changed');
     expect(screen.getByTestId(applyFailedReasonId)).toHaveTextContent('No answer from ShipLean.');
     const notSent = within(screen.getByTestId(applyFailedGroupId('notSent')));
-    expect(notSent.getByTestId(applyFailedLineId('state'))).toHaveTextContent(
-      /^State: New → Active/,
-    );
-    expect(notSent.getByTestId(applyFailedLineId('approve-D10'))).toBeOnTheScreen();
-    expect(notSent.getByTestId(applyFailedLineId('note'))).toBeOnTheScreen();
-    expect(screen.getByTestId(applyFailedMayHaveLandedId('state'))).toHaveTextContent(
+    expect(notSent.getByTestId(applyFailedLineId('p1'))).toHaveTextContent(/^State: New → Active/);
+    expect(notSent.getByTestId(applyFailedLineId('p2'))).toBeOnTheScreen();
+    expect(notSent.getByTestId(applyFailedLineId('p3'))).toBeOnTheScreen();
+    expect(screen.getByTestId(applyFailedMayHaveLandedId('p1'))).toHaveTextContent(
       'No answer: it may have landed',
     );
-    expect(screen.queryByTestId(applyFailedMayHaveLandedId('note'))).toBeNull();
+    expect(screen.queryByTestId(applyFailedMayHaveLandedId('p3'))).toBeNull();
     expect(screen.queryByTestId(applyFailedGroupId('stillApplied'))).toBeNull();
     expect(screen.queryByTestId(applyFailedGroupId('reversed'))).toBeNull();
   });
@@ -136,14 +135,14 @@ describe('ApplyFailedSheet', () => {
     await failed(h, partlyApplied(h));
 
     const group = (g: string) => within(screen.getByTestId(applyFailedGroupId(g)));
-    expect(group('stillApplied').getByTestId(applyFailedLineId('approve-D10'))).toHaveTextContent(
+    expect(group('stillApplied').getByTestId(applyFailedLineId('p2'))).toHaveTextContent(
       'Approve D10',
     );
-    expect(group('stillApplied').queryByTestId(applyFailedLineId('state'))).toBeNull();
-    expect(group('reversed').getByTestId(applyFailedLineId('state'))).toHaveTextContent(
+    expect(group('stillApplied').queryByTestId(applyFailedLineId('p1'))).toBeNull();
+    expect(group('reversed').getByTestId(applyFailedLineId('p1'))).toHaveTextContent(
       'State: New → Active',
     );
-    expect(group('notSent').getByTestId(applyFailedLineId('note'))).toHaveTextContent(
+    expect(group('notSent').getByTestId(applyFailedLineId('p3'))).toHaveTextContent(
       'Note on SHIP-906it runs warm',
     );
     expect(screen.getByTestId(applyFailedHeadingId)).not.toHaveTextContent('Nothing was changed');
@@ -190,5 +189,117 @@ describe('ApplyFailedSheet', () => {
     expect(screen.queryByTestId(applyFailedRetryId)).toBeNull();
     expect(screen.queryByTestId(applyFailedQueueId)).toBeNull();
     expect(screen.getByTestId(applyFailedDiscardId)).toBeOnTheScreen();
+  });
+
+  it('does not count a sent voice part as stayed while the runner is still reversing it', async () => {
+    const h = await sentBatch();
+    const reversing = aPending({
+      id: 'p1',
+      batchId: h.batchId,
+      action: h.setState,
+      origin: 'voice',
+      state: 'sent',
+    });
+    const refused = aPending({
+      id: 'p2',
+      batchId: h.batchId,
+      action: h.approve,
+      origin: 'voice',
+      state: 'failed',
+      failure: 'server',
+      error: 'Didn’t send (500).',
+      retryable: true,
+    });
+    await failed(h, [reversing, refused]);
+
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Reversing what was sent');
+    expect(screen.queryByTestId(applyFailedGroupId('stillApplied'))).toBeNull();
+    expect(
+      within(screen.getByTestId(applyFailedGroupId('reversing'))).getByTestId(
+        applyFailedLineId('p1'),
+      ),
+    ).toBeOnTheScreen();
+
+    await act(async () => h.runner.setPending([{ ...reversing, undoOutcome: 'undone' }, refused]));
+
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Nothing was changed');
+    expect(
+      within(screen.getByTestId(applyFailedGroupId('reversed'))).getByTestId(
+        applyFailedLineId('p1'),
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it('keeps each line with its own part when an earlier part leaves pending()', async () => {
+    const h = await sentBatch();
+    const all = [
+      aPending({
+        id: 'p1',
+        batchId: h.batchId,
+        action: h.setState,
+        origin: 'voice',
+        state: 'failed',
+        failure: 'server',
+      }),
+      aPending({
+        id: 'p2',
+        batchId: h.batchId,
+        action: h.approve,
+        origin: 'voice',
+        state: 'sent',
+        undoOutcome: 'undone',
+      }),
+      aPending({
+        id: 'p3',
+        batchId: h.batchId,
+        action: h.note,
+        origin: 'voice',
+        state: 'sent',
+        undoOutcome: 'irreversible',
+      }),
+    ];
+    const [, reversed, stayed] = all;
+    await failed(h, all);
+
+    // The refused part leaves pending() (its area unregistered): the others stay in their groups.
+    await act(async () => h.runner.setPending([reversed, stayed]));
+
+    const group = (g: string) => within(screen.getByTestId(applyFailedGroupId(g)));
+    expect(group('reversed').getByTestId(applyFailedLineId('p2'))).toHaveTextContent('Approve D10');
+    expect(group('stillApplied').getByTestId(applyFailedLineId('p3'))).toHaveTextContent(
+      /^Note on SHIP-906/,
+    );
+  });
+
+  it('Discard on a batch with no answer drops what waits behind it and says what may have landed', async () => {
+    const h = await sentBatch();
+    await failed(h, [
+      aPending({
+        id: 'p1',
+        batchId: h.batchId,
+        action: h.setState,
+        origin: 'voice',
+        state: 'uncertain',
+        error: 'No answer from ShipLean.',
+        retryable: true,
+      }),
+      aPending({
+        id: 'p2',
+        batchId: h.batchId,
+        action: h.approve,
+        origin: 'voice',
+        state: 'queued',
+      }),
+    ]);
+
+    expect(screen.getByTestId(applyFailedDiscardNoteId)).toHaveTextContent(
+      'Discard: nothing more will be sent. A change with no answer stays if it landed.',
+    );
+    await fireEvent.press(screen.getByTestId(applyFailedDiscardId));
+
+    expect(h.runner.discarded).toEqual([h.batchId]);
+    expect(h.runner.pending().map((p) => p.id)).toEqual(['p1']);
+    expect(h.runner.dispatched).toHaveLength(1);
+    await waitFor(() => expect(h.v.state().kind).toBe('idle'));
   });
 });

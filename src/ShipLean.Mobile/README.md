@@ -119,7 +119,7 @@ Voice runs on the phone, so the app needs a development build (`npx expo prebuil
 - `expo-audio`: the microphone purpose string; background playback and background recording off (voice is input only and listens only while held).
 - `llama.rn`'s plugin with `enableEntitlements: false`: it adds C++20 to the Podfile and Android's optional `libOpenCL.so`. The iOS entitlement `com.apple.developer.kernel.increased-memory-limit` is set in `ios.entitlements` for every build, development builds included, rather than by the plugin for production profiles only.
 - Android: `RECORD_AUDIO`, `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`, and `allowBackup: false`, so Android's auto backup never copies the model directory (or anything else; the secret already stays out of it). iCloud exclusion on iOS is per file, at run time.
-- No `expo-background-task`. It schedules short periodic work at the system's choosing (15 minutes at the soonest) and can't keep a multi-GB download running. The download carries on in the background through `expo-file-system`'s background session on iOS, and through a data-sync foreground service on Android.
+- No `expo-background-task`. It schedules short periodic work at the system's choosing (15 minutes at the soonest) and can't keep a multi-GB download running. The download carries on in the background through `expo-file-system`'s background session on iOS, though a force-quit ends it and a file with no saved pause starts again from zero. Android has no foreground service yet: the download runs while the app's process lives, and the next run carries on from the part file with a Range request. `FOREGROUND_SERVICE_DATA_SYNC` is declared in `app.json` for that later service.
 
 `npx expo prebuild` rewrites the `android` and `ios` scripts in `package.json`; don't commit that change.
 
@@ -138,7 +138,7 @@ Voice is input only: the app never reads anything aloud, plays a sound for it or
 **How it is tested here.**
 
 - **Vitest and Jest with fakes.** Every native module is mocked in `src/test-support/jest.setup.ts`, and the voice screens run against fake engines. This proves the app's behaviour, not the models.
-- **The host eval.** `tools/voice-eval` runs the test set in `src/voice/testset/*.jsonl` against the real models on a computer; see its README for the export and fetch commands. The numbers it produces are posted on SHIP-916 by the eval run; they are not in this README.
+- **The host eval.** `tools/voice-eval` runs the test set in `src/voice/testset/*.jsonl` against the real models on a computer; see [tools/voice-eval/README.md](tools/voice-eval/README.md) for the export and fetch commands. The numbers it produces are posted on SHIP-916 by the eval run; they are not in this README.
 - **The Android CI build.** The `mobile-android-build` job runs `expo prebuild` and Gradle `assembleDebug`, which proves the native modules compile and link on Android.
 
 **What isn't tested here.** iOS isn't built in CI, and no CI job runs a model on a phone. Whether the models load, how fast they answer, what the memory check should allow, the background download, and the microphone permission paths are checked by hand on a Galaxy S22, a Galaxy S24 and an iPhone with `docs/device-check.md`.
