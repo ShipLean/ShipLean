@@ -1,3 +1,4 @@
+import type { InboxDto } from '@shiplean/core/api/inbox';
 import { useRouter } from 'expo-router';
 import { NavigationContext } from 'expo-router/react-navigation';
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
@@ -15,7 +16,9 @@ import {
 import { OfflineBanner } from '../inbox/OfflineBanner';
 import { useAnsweredQuery, useInboxQuery } from '../inbox/queries';
 import { inboxIds } from '../inbox/testIds';
+import { inboxVoiceSpec } from '../inbox/voiceSpec';
 import { links } from '../links';
+import { FromSetupTip } from '../setup/FromSetupTip';
 import { useProject } from '../shell/useProject';
 import { useTheme } from '../theme';
 import { EmptyState } from '../ui/EmptyState';
@@ -24,6 +27,8 @@ import { Screen } from '../ui/Screen';
 import { Segmented } from '../ui/Segmented';
 import { Skeleton } from '../ui/Skeleton';
 import { TabRootBar } from '../ui/TabRootBar';
+import { VoiceSendFailedBanner } from '../voice/after/VoiceSendFailedBanner';
+import { useScreenVoice } from '../voice/VoiceProvider';
 import { screenIds } from './testIds';
 
 export interface InboxScreenProps {
@@ -225,6 +230,7 @@ function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: s
         subtitle={subtitle}
         onTilePress={() => router.push(links.projects())}
       />
+      <VoiceSendFailedBanner />
       <View
         style={{
           flexDirection: 'row',
@@ -248,7 +254,9 @@ function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: s
           ]}
         />
       </View>
+      {data === undefined ? null : <InboxVoice inbox={data} />}
       {data === undefined ? null : <OfflineBanner loadedAtLabel={data.loadedAtLabel} />}
+      <FromSetupTip projectKey={projectKey} />
       <ScrollView
         testID={inboxIds.list}
         refreshControl={
@@ -265,4 +273,10 @@ function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: s
       </ScrollView>
     </Screen>
   );
+}
+
+// The Inbox's voice spec, registered once the Inbox has loaded: the spec is built from its rows.
+function InboxVoice({ inbox }: { inbox: InboxDto }) {
+  useScreenVoice(inboxVoiceSpec(inbox));
+  return null;
 }

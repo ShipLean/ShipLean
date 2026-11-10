@@ -14,6 +14,7 @@ import { ErrorState } from '../../ui/ErrorState';
 import { Skeleton } from '../../ui/Skeleton';
 import { StatePill } from '../../ui/StatePill';
 import { TabRootBar } from '../../ui/TabRootBar';
+import { VoiceSendFailedBanner } from '../../voice/after/VoiceSendFailedBanner';
 import { useScreenVoice } from '../../voice/VoiceProvider';
 import { useFeatureStatesQuery, useFeaturesOverviewQuery } from '../queries';
 import { featureGroupCountId, featureGroupId, featuresIds } from '../testIds';
@@ -262,6 +263,7 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
         subtitle={project?.name}
         onTilePress={() => router.dismissTo(links.projects())}
       />
+      <VoiceSendFailedBanner />
       <View
         style={{
           flexDirection: 'row',

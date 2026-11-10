@@ -9,6 +9,7 @@ import { newStatusAsk, statusAsk, toInboxItem } from '../../inbox/toInboxItem';
 import { links } from '../../links';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
+import { VoiceChangeRow } from '../../voice/after/VoiceChangeRow';
 import {
   useCommentsQuery,
   useHistoryQuery,
@@ -134,6 +135,7 @@ export function FeatureDetails({ row, projectId, projectKey }: FeatureDetailsPro
           </Text>
         </View>
       )}
+      <VoiceChangeRow itemId={row.id} itemKey={row.key} />
       {decision === undefined ? null : (
         <View testID={featureDecisionId(row.key)} style={{ gap: theme.space[2] }}>
           <Text style={label}>Needs you</Text>

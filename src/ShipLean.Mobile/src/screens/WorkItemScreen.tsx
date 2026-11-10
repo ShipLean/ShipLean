@@ -14,6 +14,9 @@ import { ErrorState } from '../ui/ErrorState';
 import { Screen } from '../ui/Screen';
 import { Skeleton } from '../ui/Skeleton';
 import { TopBar } from '../ui/TopBar';
+import { VoiceChangeRow } from '../voice/after/VoiceChangeRow';
+import { VoiceSendFailedBanner } from '../voice/after/VoiceSendFailedBanner';
+import { DownloadBanner } from '../voice/DownloadBanner';
 import { useScreenVoice } from '../voice/VoiceProvider';
 import { AcceptanceCriteria } from '../workItem/details/AcceptanceCriteria';
 import { GoalDetails } from '../workItem/details/GoalDetails';
@@ -142,6 +145,8 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
   return (
     <View style={{ flex: 1 }}>
       <RefusedChanges itemId={item.id} />
+      <VoiceSendFailedBanner itemId={item.id} itemKey={item.key} />
+      <DownloadBanner placement="detail" />
       <ScrollView
         testID={workItemScrollId}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
@@ -178,6 +183,7 @@ function Loaded({ item, projectId, projectKey }: LoadedProps) {
         {feature ? <GoalDetails item={item} /> : null}
         {story ? <StoryTasks item={item} projectId={projectId} /> : null}
         {story ? <AcceptanceCriteria item={item} /> : null}
+        <VoiceChangeRow itemId={item.id} itemKey={item.key} />
         <Timeline item={item} />
       </ScrollView>
       <Dock itemId={item.id} itemKey={item.key} projectId={projectId} placeholder="Type a note" />

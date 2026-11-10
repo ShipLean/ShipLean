@@ -29,6 +29,7 @@ import type {
   ViewIntent,
 } from './contracts';
 import { engines } from './engines';
+import { resetSilentHolds } from './failures/silentHolds';
 import { discardApply, onApplyFailed, queueApply, retryApply } from './flows/applyFailed';
 import { onConflict } from './flows/conflict';
 import { fixHeard, startFix } from './flows/fix';
@@ -300,6 +301,12 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
         const result = resolveCommand(spec, calls, t);
         store.remember({ calls, transcript: t, result }, source);
         const shown = turnOf(spec, result, t.text, source);
+        // A hold that was understood starts the silent-hold count again.
+        if (
+          source === 'voice' &&
+          (shown.kind === 'preview' || (shown.kind === 'view' && shown.view.kind === 'answer'))
+        )
+          resetSilentHolds();
         switch (shown.kind) {
           case 'preview':
             store.setMachine(shown.state);
