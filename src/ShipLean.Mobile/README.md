@@ -55,7 +55,7 @@ Only `*.test.ts` and `*.spec.tsx` may import it.
 ## Expo Go or a development build
 
 - **Expo Go** (from the app store) runs the app with no native build: `pnpm start` and scan the QR code. It only works while this SDK's Expo Go is the one in the store.
-- **A development build** has the app's own native code: `npx expo prebuild`, then `npx expo run:android` or `npx expo run:ios`. That needs the Android SDK or Xcode on your machine. `android/` and `ios/` are generated and gitignored. Store builds and signing (EAS) aren't set up yet.
+- **A development build** has the app's own native code: `npx expo prebuild`, then `npx expo run:android` or `npx expo run:ios`. That needs the Android SDK or Xcode on your machine. `android/` and `ios/` are generated and gitignored. To run it on a real phone over USB, use `npx expo run:android --device` or `npx expo run:ios --device`; `docs/device-check.md` is the script for that. Store builds and signing (EAS) aren't set up yet.
 
 ## Running against a dev server
 
@@ -71,7 +71,7 @@ Plain `http` works in development: iOS allows local networking (`NSAllowsLocalNe
 
 ## Manual run against a local server
 
-1. Start the server (needs Docker, see `docs/local-environment.md`): `dotnet run --project src/ShipLean.LocalHost -- --port 5113`. It binds loopback only. `LocalHost` has no switch for `0.0.0.0` yet (`AppHostOptions.ListenOnAllInterfaces` exists but isn't a flag), so a phone on the LAN can't reach it as it is; use an emulator or simulator.
+1. Start the server (needs Docker, see `docs/local-environment.md`): `dotnet run --project src/ShipLean.LocalHost -- --port 5113`. It binds loopback only. `LocalHost` has no switch for `0.0.0.0` yet (`AppHostOptions.ListenOnAllInterfaces` exists but isn't a flag), so a phone on the LAN can't reach it as it is; use an emulator or simulator, or for a real phone point the app at a server on your LAN or at the hosted one (see `docs/device-check.md`).
 2. Open the app in a **development build**, not Expo Go: Expo Go doesn't register the `shiplean://` scheme, so on Android the sign-in redirect never reaches the app. Android emulator: `npx expo run:android` (needs the Android SDK; server `http://10.0.2.2:5113`). iOS simulator: `npx expo run:ios` (server `http://localhost:5113`).
 3. Type the server address; Sign in enables once the server check passes.
 4. The browser opens the confirm page. Sign in as `joel@shiplean.local` (password in `docs/local-environment.md`), check the device name, tap Sign in, then Open the app.
@@ -122,3 +122,25 @@ Voice runs on the phone, so the app needs a development build (`npx expo prebuil
 - No `expo-background-task`. It schedules short periodic work at the system's choosing (15 minutes at the soonest) and can't keep a multi-GB download running. The download carries on in the background through `expo-file-system`'s background session on iOS, and through a data-sync foreground service on Android.
 
 `npx expo prebuild` rewrites the `android` and `ios` scripts in `package.json`; don't commit that change.
+
+## Voice
+
+Voice is input only: the app never reads anything aloud, plays a sound for it or keeps a recording. "Native voice modules" above says which packages are used and what `app.json` sets; this section says how the pieces fit and how they are checked.
+
+**What runs where.** Both models run on the phone and nothing is uploaded.
+
+- **Speech to text:** Parakeet TDT 0.6B through sherpa-onnx (`react-native-sherpa-onnx`), fed 16 kHz PCM held in memory while the mic is held. Hotwords (the screen's keys and names) are passed to the recognizer.
+- **Commands:** Qwen3 (1.7B, or 4B on phones that report 11 GB or more) through llama.rn, constrained by a GBNF grammar to the screen's actions. The words become the same `AppAction`s a tap makes, so Undo, the offline queue and conflicts work the same way.
+- **The model manifest** is `src/voice/manifest.ts` (`MODEL_FILES`): each file's name, size and SHA-256, and which model and licence it belongs to. Setup downloads from it and checks every file; Settings › Voice › Model licences is built from it. The licences are CC-BY-4.0 (Parakeet) and Apache 2.0 (Qwen3).
+
+**Why a development build.** The two native modules aren't in Expo Go, and the iPhone needs the increased-memory-limit entitlement, which `app.json` sets for every build. Build with `npx expo prebuild`, then `npx expo run:android --device` or `npx expo run:ios --device`.
+
+**How it is tested here.**
+
+- **Vitest and Jest with fakes.** Every native module is mocked in `src/test-support/jest.setup.ts`, and the voice screens run against fake engines. This proves the app's behaviour, not the models.
+- **The host eval.** `tools/voice-eval` runs the test set in `src/voice/testset/*.jsonl` against the real models on a computer; see its README for the export and fetch commands. The numbers it produces are posted on SHIP-916 by the eval run; they are not in this README.
+- **The Android CI build.** The `mobile-android-build` job runs `expo prebuild` and Gradle `assembleDebug`, which proves the native modules compile and link on Android.
+
+**What isn't tested here.** iOS isn't built in CI, and no CI job runs a model on a phone. Whether the models load, how fast they answer, what the memory check should allow, the background download, and the microphone permission paths are checked by hand on a Galaxy S22, a Galaxy S24 and an iPhone with `docs/device-check.md`.
+
+**Known gaps** (the script marks them **Not built**): Android has no download foreground service or notification, so a download runs only while the process lives (`FOREGROUND_SERVICE_DATA_SYNC` is declared in `app.json` for a later service); on iPhone a killed app restarts a file that had no saved pause from zero; the iOS available-memory check isn't built, so `APP_SHARE` in `src/voice/model/memoryCheck.ts` (0.5 of the reported memory) is a first guess to calibrate against the device runs.
