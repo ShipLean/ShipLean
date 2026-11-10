@@ -13,7 +13,7 @@ internal static class InMemoryChanges
         item.Id, item.ProjectId, item.Type, item.Title, item.Description, item.AcceptanceCriteria, item.ReproSteps, item.Severity,
         item.StateId, item.AssigneeId, item.SprintId, item.Priority, item.Points, item.ParentId, item.Tags,
         item.ColumnId, item.ColumnDone, item.LaneId, item.ColumnOrder, item.BacklogOrder,
-        item.Goal, item.StatusLine, item.StatusVerifiedAt);
+        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt);
 
     public static ProposedChange Apply(ProposedChange change, WorkItemChanges? changes, DateTimeOffset at)
     {
@@ -39,6 +39,8 @@ internal static class InMemoryChanges
             Goal = changes.Goal is { } goal ? goal.Value ?? "" : change.Goal,
             StatusLine = changes.StatusLine is { } statusLine ? statusLine.Value ?? "" : change.StatusLine,
             StatusVerifiedAt = changes.StatusLine is not null || changes.ConfirmStatus ? at : change.StatusVerifiedAt,
+            Health = changes.Health is { } health ? health.Value : change.Health,
+            HealthSetAt = changes.Health is { } setHealth ? (setHealth.Value is null ? null : at) : change.HealthSetAt,
         };
     }
 
@@ -48,7 +50,7 @@ internal static class InMemoryChanges
         IReadOnlyDictionary<Guid, UserRef> users,
         IReadOnlyDictionary<Guid, SprintRef> sprints)
     {
-        FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt);
+        FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt, change.Health);
         if (string.IsNullOrWhiteSpace(change.Title))
         {
             throw ApiException.Validation("A work item needs a title.");

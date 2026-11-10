@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Contracts.WorkItems;
 
@@ -7,7 +8,7 @@ namespace ShipLean.Contracts.WorkItems;
 // the backlog order, so a rule can amend any of them. ColumnOrder and BacklogOrder are already the values the store
 // computed for this write (the new column order on a move, the top of the backlog on create); the store writes whatever
 // the rules return. If the rules change ColumnId but leave ColumnOrder as proposed, the store puts the item last in the new
-// column. Bulk marks a write that moves many items at once on a person's behalf (a settings save, a rollover); rules that mean "a person started this" skip it, and the store never writes it. Reorder doesn't call the rules (it changes no field). WorkItemId is the id the item has (or will have, on create).
+// column. Bulk marks a write that moves many items at once on a person's behalf (a settings save, a rollover); rules that mean "a person started this" skip it, and the store never writes it. Reorder doesn't call the rules (it changes no field). WorkItemId is the id the item has (or will have, on create). HealthSetAt is when this write stamps the health: a write of it (even unchanged) moves it to now, a clear makes it null.
 public sealed record ProposedChange(
     Guid WorkItemId,
     Guid ProjectId,
@@ -32,4 +33,6 @@ public sealed record ProposedChange(
     string Goal = "",
     string StatusLine = "",
     DateTimeOffset? StatusVerifiedAt = null,
-    bool Bulk = false);
+    bool Bulk = false,
+    FeatureHealth? Health = null,
+    DateTimeOffset? HealthSetAt = null);

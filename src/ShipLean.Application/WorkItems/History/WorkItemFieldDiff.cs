@@ -27,12 +27,19 @@ public static class WorkItemFieldDiff
         Add(changes, "goal", before.Goal, after.Goal);
         Add(changes, "statusLine", before.StatusLine, after.StatusLine);
         Add(changes, "statusVerifiedAt", before.StatusVerifiedAt, after.StatusVerifiedAt, instant: labels.Instant);
+        Add(changes, "health", before.Health, after.Health, named: WorkItemFieldView.HealthLabel);
         Add(changes, "links", before.Links, after.Links);
         return changes;
     }
 
     private static void Add<T>(
-        List<FieldChange> changes, string field, T from, T to, Func<Guid, string?>? label = null, Func<DateTimeOffset, string>? instant = null)
+        List<FieldChange> changes,
+        string field,
+        T from,
+        T to,
+        Func<Guid, string?>? label = null,
+        Func<DateTimeOffset, string>? instant = null,
+        Func<string, string?>? named = null)
     {
         var fromNode = JsonSerializer.SerializeToNode(from, PersistedJson.Options);
         var toNode = JsonSerializer.SerializeToNode(to, PersistedJson.Options);
@@ -45,15 +52,17 @@ public static class WorkItemFieldDiff
             field,
             JsonSerializer.SerializeToElement(from, PersistedJson.Options),
             JsonSerializer.SerializeToElement(to, PersistedJson.Options),
-            LabelOf(from, label, instant),
-            LabelOf(to, label, instant)));
+            LabelOf(from, label, instant, named),
+            LabelOf(to, label, instant, named)));
     }
 
-    // An instant is held as an ISO 8601 UTC string (WorkItemFieldView.Instant); a null one has no label.
-    private static string? LabelOf<T>(T value, Func<Guid, string?>? label, Func<DateTimeOffset, string>? instant) => value switch
+    // An instant is held as an ISO 8601 UTC string (WorkItemFieldView.Instant); a named value (health) is labelled by its
+    // words; a null one has no label.
+    private static string? LabelOf<T>(T value, Func<Guid, string?>? label, Func<DateTimeOffset, string>? instant, Func<string, string?>? named) => value switch
     {
         Guid id when label is not null => label(id),
         string text when instant is not null => instant(DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)),
+        string text when named is not null => named(text),
         _ => null,
     };
 }

@@ -1,6 +1,7 @@
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -93,9 +94,9 @@ internal sealed class InMemoryDtoBuilder(
             item.Slug,
             item.StartedOn,
             item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
-            // TODO: carry health from the in-memory item, roll up the children's counts and count open asks for NeedsYou.
-            null,
-            null,
+            item.Health,
+            item.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), UserOrNull(item.HealthSetBy), item.HealthSetAgent) : null,
+            // TODO: roll up the children's counts and count open asks for NeedsYou.
             [],
             null);
     }

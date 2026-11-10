@@ -10,6 +10,7 @@ using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -106,7 +107,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             .Select(a => a.ToDto(time)).Where(a => a.Kind == AttachmentKind.Image).ToList();
         var users = await UsersAsync(
             connection, transaction,
-            [.. rows.SelectMany(r => new[] { r.AssigneeId, r.CreatedBy, r.ChangedBy, r.StatusVerifiedBy }).Concat(children.Select(c => c.AssigneeId)).OfType<Guid>().Distinct()],
+            [.. rows.SelectMany(r => new[] { r.AssigneeId, r.CreatedBy, r.ChangedBy, r.StatusVerifiedBy, r.HealthSetBy }).Concat(children.Select(c => c.AssigneeId)).OfType<Guid>().Distinct()],
             cancellationToken);
         var states = (await connection.QueryAsync<StateRow>(new CommandDefinition(
             "SELECT id, name, category FROM state WHERE id = ANY(@ids)",
@@ -181,9 +182,9 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             row.Slug,
             row.StartedOn,
             row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
-            // TODO: read health from work_item.health, roll up the children's counts and count open asks for NeedsYou.
-            null,
-            null,
+            row.HealthValue,
+            row.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), Lookup(users, row.HealthSetBy), row.HealthSetAgent) : null,
+            // TODO: roll up the children's counts and count open asks for NeedsYou.
             [],
             null);
     }

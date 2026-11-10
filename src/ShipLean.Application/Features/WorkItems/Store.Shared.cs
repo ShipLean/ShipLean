@@ -72,8 +72,8 @@ public sealed partial class WorkItemStore(
     }
 
     // Runs the rules (unless runRules is false: Remove), checks the result, writes the item (inserting it when before is null),
-    // its links and, when a history field changed, a revision. An item whose only difference is its position is updated
-    // without a revision. When the rules moved the card to another ordering scope (column, Done half, Taskboard cell) and
+    // its links and, when a history field changed, a revision. An item whose only difference is its position, or a health
+    // written again unchanged (a new set stamp), is updated without a revision. When the rules moved the card to another ordering scope (column, Done half, Taskboard cell) and
     // left the order alone, the order is recomputed in the final scope: before beforeItemId when that card is in it, else last.
     private async Task<WriteResult> PersistAsync(
         WriteScope scope, WorkItemSnapshot? before, NewItem? created, ProposedChange proposed, WorkItemChanges? linkChanges, bool runRules, Guid? beforeItemId, CancellationToken cancellationToken)
@@ -104,7 +104,7 @@ public sealed partial class WorkItemStore(
             revision++;
         }
 
-        if (before is not null && (changes.Count > 0 || PositionDiffers(before, amended)))
+        if (before is not null && (changes.Count > 0 || PositionDiffers(before, amended) || amended.HealthSetAt != before.HealthSetAt))
         {
             await UpdateAsync(scope, before, amended, parentType, revision, changes.Count > 0, cancellationToken);
         }
@@ -203,6 +203,8 @@ public sealed partial class WorkItemStore(
         goal = WorkItemFieldView.NullIfEmpty(c.Goal),
         statusLine = WorkItemFieldView.NullIfEmpty(c.StatusLine),
         statusVerifiedAt = c.StatusVerifiedAt,
+        health = WorkItemFieldView.HealthValue(c.Health),
+        healthSetAt = c.HealthSetAt,
     };
 
     private async Task InsertAsync(WriteScope scope, NewItem created, ProposedChange c, WorkItemTypeId? parentType, CancellationToken cancellationToken)
@@ -218,6 +220,9 @@ public sealed partial class WorkItemStore(
         parameters.Add("verifiedBy", stamp?.By);
         parameters.Add("verifiedAgent", stamp?.Agent);
         parameters.Add("verifiedVia", stamp?.Via);
+        var healthStamp = HealthStamp(scope, c);
+        parameters.Add("healthSetBy", healthStamp?.By);
+        parameters.Add("healthSetAgent", healthStamp?.Agent);
         parameters.Add("slug", created.Slug);
         parameters.Add("startedOn", created.StartedOn);
         await scope.Connection.ExecuteAsync(new CommandDefinition(
@@ -225,11 +230,13 @@ public sealed partial class WorkItemStore(
             INSERT INTO work_item (id, project_id, number, key, type, title, description, acceptance_criteria, repro_steps, severity, state_id,
                                    assigned_to, sprint_id, priority, story_points, backlog_order, parent_id, parent_type, tags, board_column_id,
                                    board_column_done, swimlane_id, column_order, revision, created_by, created_at, changed_by, changed_at, state_changed_at,
-                                   goal, status_line, status_verified_at, status_verified_by, status_verified_agent, status_verified_via, slug, started_on)
+                                   goal, status_line, status_verified_at, status_verified_by, status_verified_agent, status_verified_via, slug, started_on,
+                                   health, health_set_at, health_set_by, health_set_agent)
             VALUES (@id, @projectId, @number, @key, @type, @title, @description, @criteria::jsonb, @repro, @severity, @stateId,
                     @assignee, @sprint, @priority, @points, @backlogOrder, @parentId, @parentType, @tags, @columnId,
                     @columnDone, @laneId, @columnOrder, 1, @actor, @at, @actor, @at, @at,
-                    @goal, @statusLine, @statusVerifiedAt, @verifiedBy, @verifiedAgent, @verifiedVia, @slug, @startedOn)
+                    @goal, @statusLine, @statusVerifiedAt, @verifiedBy, @verifiedAgent, @verifiedVia, @slug, @startedOn,
+                    @health, @healthSetAt, @healthSetBy, @healthSetAgent)
             """,
             parameters, scope.Transaction, cancellationToken: cancellationToken));
     }
@@ -248,6 +255,11 @@ public sealed partial class WorkItemStore(
         parameters.Add("verifiedBy", stamp?.By);
         parameters.Add("verifiedAgent", stamp?.Agent);
         parameters.Add("verifiedVia", stamp?.Via);
+        var healthStamp = c.HealthSetAt == before.HealthSetAt
+            ? new HealthStampValues(before.HealthSetBy, before.HealthSetAgent)
+            : HealthStamp(scope, c);
+        parameters.Add("healthSetBy", healthStamp?.By);
+        parameters.Add("healthSetAgent", healthStamp?.Agent);
         await scope.Connection.ExecuteAsync(new CommandDefinition(
             """
             UPDATE work_item SET title = @title, description = @description, acceptance_criteria = @criteria::jsonb, repro_steps = @repro,
@@ -256,7 +268,8 @@ public sealed partial class WorkItemStore(
                    board_column_id = @columnId, board_column_done = @columnDone, swimlane_id = @laneId, column_order = @columnOrder,
                    revision = @revision, changed_by = @changedBy, changed_at = @changedAt, state_changed_at = @stateChangedAt,
                    goal = @goal, status_line = @statusLine, status_verified_at = @statusVerifiedAt, status_verified_by = @verifiedBy,
-                   status_verified_agent = @verifiedAgent, status_verified_via = @verifiedVia
+                   status_verified_agent = @verifiedAgent, status_verified_via = @verifiedVia,
+                   health = @health, health_set_at = @healthSetAt, health_set_by = @healthSetBy, health_set_agent = @healthSetAgent
             WHERE id = @id
             """,
             parameters, scope.Transaction, cancellationToken: cancellationToken));
@@ -291,6 +304,13 @@ public sealed partial class WorkItemStore(
         => c.StatusVerifiedAt is null ? null : new StatusStampValues(ActorOf(scope), AgentStamp.Of(currentAgent), scope.Via);
 
     private sealed record StatusStampValues(Guid? By, string? Agent, string? Via);
+
+    // Who set the health, stamped when the write sets it (even unchanged): the acting user and the agent acting for them.
+    // A cleared health has no stamp.
+    private HealthStampValues? HealthStamp(WriteScope scope, ProposedChange c)
+        => c.HealthSetAt is null ? null : new HealthStampValues(ActorOf(scope), AgentStamp.Of(currentAgent));
+
+    private sealed record HealthStampValues(Guid? By, string? Agent);
 
     // The key and number a create reserved from the project's sequence, and the Feature's slug and start day it was asked for.
     private sealed record NewItem(string Key, int Number, string? Slug = null, DateOnly? StartedOn = null);

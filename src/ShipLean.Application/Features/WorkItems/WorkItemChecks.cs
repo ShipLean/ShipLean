@@ -23,7 +23,7 @@ internal static class WorkItemChecks
             throw ApiException.Validation("Priority and severity run from 1 to 4, and points from 0 to 9999.99.");
         }
 
-        FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt);
+        FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt, change.Health);
         await CheckStateAsync(scope, change, cancellationToken);
         if (change.AssigneeId is { } assignee && !await ExistsAsync(scope, "SELECT EXISTS (SELECT 1 FROM app_user WHERE id = @id)", assignee, change.ProjectId, cancellationToken))
         {

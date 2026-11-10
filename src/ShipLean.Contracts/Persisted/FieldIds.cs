@@ -26,6 +26,7 @@ public static class FieldIds
     public const string Goal = "goal";
     public const string StatusLine = "statusLine";
     public const string StatusVerifiedAt = "statusVerifiedAt";
+    public const string Health = "health";
     public const string Links = "links";
     public const string CreatedAt = "createdAt";
     public const string CreatedBy = "createdBy";
@@ -57,6 +58,7 @@ public static class FieldIds
         new(Goal, "Goal", FieldKind.Text, [WorkItemTypeId.Feature], true, [FieldUse.History], [], null),
         new(StatusLine, "Status", FieldKind.Text, [WorkItemTypeId.Feature], true, [FieldUse.History], [], null),
         new(StatusVerifiedAt, "Status verified", FieldKind.Date, [WorkItemTypeId.Feature], true, [FieldUse.History], [], null),
+        new(Health, "Health", FieldKind.Text, [WorkItemTypeId.Feature], true, [FieldUse.History], [], [new(Str("onTrack"), "On track"), new(Str("atRisk"), "At risk"), new(Str("blocked"), "Blocked")]),
         new(Links, "Links", FieldKind.Links, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], false, [FieldUse.History], [], null),
         new(CreatedAt, "Created", FieldKind.Date, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], false, [FieldUse.Criteria, FieldUse.CardField], [CriteriaOp.GreaterThan, CriteriaOp.LessThan], null),
         new(CreatedBy, "Created by", FieldKind.User, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], true, [FieldUse.Criteria, FieldUse.CardField], [CriteriaOp.Equal, CriteriaOp.NotEqual, CriteriaOp.In, CriteriaOp.IsEmpty, CriteriaOp.IsNotEmpty], null),
