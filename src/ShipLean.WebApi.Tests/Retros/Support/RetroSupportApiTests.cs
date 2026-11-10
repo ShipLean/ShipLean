@@ -142,11 +142,11 @@ public sealed class RetroSupportApiTests : ApiFixture
 
     private static string Url(Guid point) => $"api/retros/points/{point}/support";
 
-    private async Task<Guid> PointAsync(bool archived = false, string agentName = "Sweep agent")
+    private async Task<Guid> PointAsync(bool archived = false, string agentName = "Test agent")
     {
         await using var connection = await OpenDatabaseAsync();
         var seed = new RetroSeed(connection, SeedIds.Projects.Ship);
-        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: SeedIds.WorkItems.Ship90, AgentName: agentName));
+        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: SeedIds.WorkItems.Ship90, AgentName: $"{agentName} {Guid.NewGuid():N}"));
         return await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Agree with me.", Archived: archived));
     }
 
