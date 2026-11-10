@@ -113,5 +113,8 @@ export function resolveCommand<A extends AppAction>(
     joined = true;
     return [{ ok: true, result: together }];
   });
+  // A refusal of the batch stands even when each call works alone: the spec said no to the combination.
+  if (together !== null && !together.ok && outcomes.every((o) => o.ok))
+    return classify([{ ok: false, call: passing[0], failure: together.failure }], transcript);
   return classify(outcomes, transcript);
 }

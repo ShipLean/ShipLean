@@ -4,6 +4,8 @@ export const accountIds = {
   email: 'account-email',
   host: 'account-host',
   version: 'account-version',
+  voice: 'account-voice',
+  voiceValue: 'account-voice-value',
   profile: 'account-profile',
   signOut: 'account-sign-out',
   confirm: 'account-sign-out-confirm',

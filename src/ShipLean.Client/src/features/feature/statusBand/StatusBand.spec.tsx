@@ -166,6 +166,7 @@ test('StatusBand_WhenHealthChosenAndSaved_ShouldSendHealthInPatch', async ({ mou
   await screen.getByTestId(ids.statusHealthSelect).selectOption('blocked');
   await expect(screen.getByTestId(ids.statusHealth)).toHaveText('Blocked');
   expect(api.patches).toHaveLength(0);
+  await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText('Unsaved: Health');
   await screen.getByTestId(workItemTestIds.save).click();
 
   await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText(
@@ -213,6 +214,6 @@ test('StatusBand_WhenSetByAgent_ShouldNameTheAgent', async ({ mount, page }) => 
   await stubAll(page, atRisk('Claude Code (claude.ai)'));
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
   await expect(screen.getByTestId(ids.statusHealthSetBy)).toHaveText(
-    'Set by Claude Code (claude.ai) 19 Oct',
+    'Set by Claude Code (claude.ai) (agent) 19 Oct',
   );
 });
