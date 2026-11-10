@@ -88,7 +88,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
         await Expect(panel.CommentAskTag("changed")).ToHaveTextAsync("D2 changed");
 
         var brief = await CallAsync(mcp, "get_brief", new() { ["item"] = task.Key });
-        var markdown = brief.GetProperty("markdown").GetString();
+        var markdown = brief.GetProperty("markdown").GetString()!;
         markdown.ShouldContain("### " + task.Key);
         markdown.ShouldContain($"- D2 (changed, alternative 1): {question} → {alternative}");
     }
