@@ -12,6 +12,9 @@ export const retroIds = {
   addSubmit: 'retro-add-submit',
   // RT3a
   toDecide: 'retro-to-decide',
+  toDecideEmpty: 'retro-to-decide-empty',
+  toDecideInsightsError: 'retro-to-decide-insights-error',
+  toDecideInsightsRetry: 'retro-to-decide-insights-retry',
   // RT3b
   decideSheet: 'sheet-retro-decide',
   // RT4
@@ -41,3 +44,13 @@ export const retroNotNeededReasonId = (pointId: string) => `retro-point-${pointI
 
 // RT2: a category chip of the Add a point sheet.
 export const retroAddCategoryId = (category: string) => `retro-add-category-${category}`;
+
+// RT3a: the To decide view. A card is the retro card's id; a proposal is the merge proposal's id. The point rows reuse
+// retroPointId, retroPointTextId, retroAddActionId and retroNotNeededId.
+export const retroDecideCardId = (cardId: string) => `retro-decide-card-${cardId}`;
+export const retroDecideLogToggleId = (cardId: string) => `retro-decide-card-${cardId}-log-toggle`;
+export const retroDecideLogId = (cardId: string) => `retro-decide-card-${cardId}-log`;
+export const retroDecideCauseId = (pointId: string) => `retro-point-${pointId}-cause`;
+export const retroProposalId = (proposalId: string) => `retro-proposal-${proposalId}`;
+export const retroProposalMergeId = (proposalId: string) => `retro-proposal-${proposalId}-merge`;
+export const retroProposalKeepId = (proposalId: string) => `retro-proposal-${proposalId}-keep`;
