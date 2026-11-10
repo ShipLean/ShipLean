@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
+import { layout } from '../../ui/layout';
 import type { AnswerSheetContent } from '../contracts';
 import { answerDoneId, answerLeadId, answerRowId, answerSheetId } from './AnswerSheet.testIds';
 
@@ -10,7 +11,8 @@ export interface AnswerSheetProps {
 }
 
 // A question's answer, shown on screen (never read aloud): the lead line, the rows (key, title, counts), and Done.
-// Nothing to apply. On screen only: no read-aloud, TTS or sound; copy never promises anyone is notified.
+// Nothing to apply. On screen only: no read-aloud, TTS or sound; copy never promises anyone is notified. It sits
+// above the tab bar and the dock mic, as the preview does, so the next hold needs no Done first.
 export function AnswerSheet({ content, onClose }: AnswerSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
@@ -19,13 +21,12 @@ export function AnswerSheet({ content, onClose }: AnswerSheetProps) {
       testID={answerSheetId}
       style={{
         position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
+        left: theme.space[4],
+        right: theme.space[4],
+        bottom: layout.tabBar + layout.dockMic + theme.space[5],
         padding: theme.space[4],
         gap: theme.space[3],
-        borderTopLeftRadius: theme.radius.lg,
-        borderTopRightRadius: theme.radius.lg,
+        borderRadius: layout.sheetRadius,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,

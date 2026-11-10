@@ -9,6 +9,7 @@ import { ProgressBar } from '../../ui/ProgressBar';
 import { FeatureDetails } from '../details/FeatureDetails';
 import {
   featureMovedId,
+  featureRowExpandId,
   featureRollupId,
   featureRowId,
   featureStaleId,
@@ -52,6 +53,7 @@ export function FeatureRow({
       }}
     >
       <Pressable
+        testID={featureRowExpandId(row.key)}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         onPress={onToggle}

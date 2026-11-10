@@ -38,7 +38,7 @@ export function describeAddNote(a: BacklogAddNote): PreviewLine {
     id: `addNote:${a.itemId}`,
     icon: 'note',
     text: `Note on ${a.key}: "${a.body}"`,
-    detail: `Posted on ${a.key}. The next agent to pick it up reads it.`,
+    detail: 'Word for word',
     removable: true,
   };
 }

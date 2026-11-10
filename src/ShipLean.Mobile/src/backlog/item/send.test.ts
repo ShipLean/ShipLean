@@ -63,6 +63,7 @@ describe('backlog item executor', () => {
     expect(describeAddNote(note).text).toBe(
       'Note on SHIP-906: "  Ask Tom about the 4 GB phones.  "',
     );
+    expect(describeAddNote(note).detail).toBe('Word for word');
   });
 
   it('undoes a note by archiving it', async () => {

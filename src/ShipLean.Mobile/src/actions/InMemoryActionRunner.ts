@@ -35,6 +35,7 @@ export class InMemoryActionRunner implements ActionRunner {
     if (existing !== undefined)
       throw new Error(`Another executor is already registered for ${e.area}.`);
     this.executors.set(e.area, e as unknown as Executor<AppAction>);
+    this.notify();
   }
 
   dispatch(batch: AppAction[], opts: DispatchOptions): string {
@@ -81,11 +82,14 @@ export class InMemoryActionRunner implements ActionRunner {
 
   pending(): Pending[] {
     const now = this.now().getTime();
-    return this.items.map((p) =>
-      p.state === 'undo' && p.undoUntil !== null && Date.parse(p.undoUntil) <= now
-        ? { ...p, state: 'queued' }
-        : p,
-    );
+    // As the real runner: only the actions of areas whose executor has registered.
+    return this.items
+      .filter((p) => this.executors.has(p.action.area))
+      .map((p) =>
+        p.state === 'undo' && p.undoUntil !== null && Date.parse(p.undoUntil) <= now
+          ? { ...p, state: 'queued' }
+          : p,
+      );
   }
 
   subscribe(cb: () => void): () => void {

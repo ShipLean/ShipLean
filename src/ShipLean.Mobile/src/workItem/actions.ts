@@ -1,7 +1,12 @@
 import type { FeatureHealth } from '@shiplean/core/api/screens';
 
 // The Work item screen's actions (N8). Every kind carries what its send, its Undo and its preview need.
-export type WorkItemAction = { area: 'workItem'; itemId: string; key: string } & (
+export type WorkItemAction = {
+  area: 'workItem';
+  projectId: string;
+  itemId: string;
+  key: string;
+} & (
   | {
       kind: 'setState';
       revision: number;

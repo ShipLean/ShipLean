@@ -43,7 +43,8 @@ export type HoldOutcome =
   { kind: 'heard'; transcript: Transcript } | { kind: 'failure'; failure: VoiceFailure };
 
 export interface Hold {
-  // Stops listening: a release under MIN_HOLD_MS cancels the session (tooShort); no words is nothingHeard.
+  // Stops listening: a release under MIN_HOLD_MS cancels the session (tooShort); no words is nothingHeard. Rejects
+  // when the recognizer fails to start or stop.
   release(): Promise<HoldOutcome>;
   // Drops the session and its words.
   cancel(): void;
@@ -62,6 +63,8 @@ export function startHold(
     s.onPartial(onPartial);
     return s;
   });
+  // A session that failed to start rejects release(); until then it is not an unhandled rejection.
+  session.catch(() => {});
   return {
     release: async (): Promise<HoldOutcome> => {
       const heldMs = now() - startedAt;
@@ -76,21 +79,35 @@ export function startHold(
       return { kind: 'heard', transcript };
     },
     cancel: () => {
-      void session.then((s) => s.cancel());
+      void session.then(
+        (s) => s.cancel(),
+        () => {},
+      );
     },
   };
 }
 
-// The prepared prompt prefix for the focused screen's spec: prepared once per spec and kept until the spec changes,
-// so each command only parses.
+// What a prepared prefix depends on: the screen and its actions. Screens build their spec on every render, so the
+// spec object can't be the key; prepare bakes in only the prompt prefix and grammar, and parse reads context().
+function prefixKey(spec: ScreenVoiceSpec): string {
+  return `${spec.screen}\u0000${spec.actions.map((a) => a.name).join(',')}`;
+}
+
+// The prepared prompt prefix for the focused screen: prepared once per screen and its actions, and kept until they
+// change, so each command only parses. A rejected prepare is dropped, so the next command prepares again.
 export class PreparedCache {
-  private spec: ScreenVoiceSpec | null = null;
+  private key: string | null = null;
   private prepared: Promise<PreparedScreen> | null = null;
 
   get(model: CommandModel, spec: ScreenVoiceSpec): Promise<PreparedScreen> {
-    if (this.prepared === null || this.spec !== spec) {
-      this.spec = spec;
-      this.prepared = model.prepare(spec);
+    const key = prefixKey(spec);
+    if (this.prepared === null || this.key !== key) {
+      const prepared = model.prepare(spec);
+      this.key = key;
+      this.prepared = prepared;
+      prepared.catch(() => {
+        if (this.prepared === prepared) this.prepared = null;
+      });
     }
     return this.prepared;
   }
