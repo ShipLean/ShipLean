@@ -1,0 +1,48 @@
+{"screen": "backlog", "utterance": "Move SHIP-906 above SHIP-907", "calls": [{"action": "move_relative", "args": {"item": "SHIP-906", "relation": "above", "other": "SHIP-907"}}], "note": null}
+{"screen": "backlog", "utterance": "Put SHIP-892 below SHIP-246", "calls": [{"action": "move_relative", "args": {"item": "SHIP-892", "relation": "below", "other": "SHIP-246"}}], "note": null}
+{"screen": "backlog", "utterance": "Move SHIP-256 above SHIP-707", "calls": [{"action": "move_relative", "args": {"item": "SHIP-256", "relation": "above", "other": "SHIP-707"}}], "note": null}
+{"screen": "backlog", "utterance": "Put SHIP-912 below SHIP-925", "calls": [{"action": "move_relative", "args": {"item": "SHIP-912", "relation": "below", "other": "SHIP-925"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Put SHIP-246 at the top", "calls": [{"action": "move_to", "args": {"item": "SHIP-246", "position": "top"}}], "note": null}
+{"screen": "backlog", "utterance": "Send SHIP-707 to the bottom", "calls": [{"action": "move_to", "args": {"item": "SHIP-707", "position": "bottom"}}], "note": null}
+{"screen": "backlog", "utterance": "Move SHIP-256 to rank 2", "calls": [{"action": "move_to", "args": {"item": "SHIP-256", "position": "rank", "rank": 2}}], "note": null}
+{"screen": "backlog", "utterance": "Put the voice commands feature at the top", "calls": [{"action": "move_to", "args": {"item": "voice commands", "position": "top"}}], "note": null}
+{"screen": "backlog", "utterance": "Put the download story at the bottom", "calls": [{"action": "move_to", "args": {"item": "download", "position": "bottom"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Move SHIP-892 down two", "calls": [{"action": "move_by", "args": {"item": "SHIP-892", "direction": "down", "count": 2}}], "note": null}
+{"screen": "backlog", "utterance": "Move SHIP-246 up one", "calls": [{"action": "move_by", "args": {"item": "SHIP-246", "direction": "up", "count": 1}}], "note": null}
+{"screen": "backlog", "utterance": "Bump SHIP-256 up three", "calls": [{"action": "move_by", "args": {"item": "SHIP-256", "direction": "up", "count": 3}}], "note": null}
+{"screen": "backlog", "utterance": "Move SHIP-924 down", "calls": [{"action": "move_by", "args": {"item": "SHIP-924", "direction": "down"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Add a story to SHIP-906: show a banner while the models download", "calls": [{"action": "add_item", "args": {"type": "story", "parent": "SHIP-906"}}], "note": "show a banner while the models download", "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Add a bug under SHIP-907: the sign in button does nothing", "calls": [{"action": "add_item", "args": {"type": "bug", "parent": "SHIP-907"}}], "note": "the sign in button does nothing", "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Add a story to SHIP-906 at the bottom: dark mode for the listening sheet", "calls": [{"action": "add_item", "args": {"type": "story", "parent": "SHIP-906", "position": "bottom"}}], "note": "dark mode for the listening sheet", "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Add a feature under SHIP-100: offline mode for the Backlog", "calls": [{"action": "add_item", "args": {"type": "feature", "parent": "SHIP-100"}}], "note": "offline mode for the Backlog"}
+{"screen": "backlog", "utterance": "Add a story to SHIP-707 called fix SHIP-912 redirect and 2 retries", "calls": [{"action": "add_item", "args": {"type": "story", "parent": "SHIP-707"}}], "note": "fix SHIP-912 redirect and 2 retries", "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Show what needs me", "calls": [{"action": "filter", "args": {"filter": "needsMe"}}], "note": null}
+{"screen": "backlog", "utterance": "Only open items", "calls": [{"action": "filter", "args": {"filter": "open"}}], "note": null}
+{"screen": "backlog", "utterance": "Show epic SHIP-100", "calls": [{"action": "filter", "args": {"filter": "SHIP-100"}}], "note": null}
+{"screen": "backlog", "utterance": "Only stories under SHIP-906", "calls": [{"action": "filter", "args": {"filter": "SHIP-906"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Show stories", "calls": [{"action": "switch_level", "args": {"level": "stories"}}], "note": null}
+{"screen": "backlog", "utterance": "Switch to epics", "calls": [{"action": "switch_level", "args": {"level": "epics"}}], "note": null}
+{"screen": "backlog", "utterance": "Show features", "calls": [{"action": "switch_level", "args": {"level": "features"}}], "note": null}
+{"screen": "backlog", "utterance": "Approve D1 on SHIP-907", "calls": [{"action": "approve_decision", "args": {"item": "SHIP-907", "decisions": [1]}}], "note": null}
+{"screen": "backlog", "utterance": "Approve decisions 1 and 2 on SHIP-246", "calls": [{"action": "approve_decision", "args": {"item": "SHIP-246", "decisions": [1, 2]}}], "note": null}
+{"screen": "backlog", "utterance": "Approve D2 on SHIP-907", "calls": [{"action": "approve_decision", "args": {"item": "SHIP-907", "decisions": [2]}}], "note": null}
+{"screen": "backlog", "utterance": "Note on SHIP-892: skip the mobile screens for now", "calls": [{"action": "add_note", "args": {"item": "SHIP-892"}}], "note": "skip the mobile screens for now"}
+{"screen": "backlog", "utterance": "Note on SHIP-906 that SHIP-907 has to land first", "calls": [{"action": "add_note", "args": {"item": "SHIP-906"}}], "note": "SHIP-907 has to land first"}
+{"screen": "backlog", "utterance": "Add a note to SHIP-256 that we need 2 weeks of data", "calls": [{"action": "add_note", "args": {"item": "SHIP-256"}}], "note": "we need 2 weeks of data"}
+{"screen": "backlog", "utterance": "Note on SHIP-923: the sheet covers 40% of the screen on small phones", "calls": [{"action": "add_note", "args": {"item": "SHIP-923"}}], "note": "the sheet covers 40% of the screen on small phones", "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Open SHIP-906", "calls": [{"action": "open", "args": {"item": "SHIP-906"}}], "note": null}
+{"screen": "backlog", "utterance": "Open the demo artifacts feature", "calls": [{"action": "open", "args": {"item": "demo artifacts"}}], "note": null}
+{"screen": "backlog", "utterance": "Open SHIP-736", "calls": [{"action": "open", "args": {"item": "SHIP-736"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "What's blocked?", "calls": [{"action": "ask", "args": {"topic": "whatsBlocked"}}], "note": null}
+{"screen": "backlog", "utterance": "What needs me?", "calls": [{"action": "ask", "args": {"topic": "whatNeedsMe"}}], "note": null}
+{"screen": "backlog", "utterance": "What's next?", "calls": [{"action": "ask", "args": {"topic": "whatsNext"}}], "note": null}
+{"screen": "backlog", "utterance": "Let's do sprint planning", "calls": [{"action": "plan_sprint", "args": {}}], "note": null}
+{"screen": "backlog", "utterance": "Bulk edit these", "calls": [{"action": "bulk_edit", "args": {}}], "note": null}
+{"screen": "backlog", "utterance": "Put the sign-in story at the top", "calls": [{"action": "move_to", "args": {"item": "sign-in story", "position": "top"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Open the sign in one", "calls": [{"action": "open", "args": {"item": "sign in one"}}], "note": null, "context": {"level": "stories"}}
+{"screen": "backlog", "utterance": "Add a note to the sprint feature: check the capacity first", "calls": [{"action": "add_note", "args": {"item": "sprint"}}], "note": "check the capacity first"}
+{"screen": "backlog", "utterance": "Move the mobile one to the bottom", "calls": [{"action": "move_to", "args": {"item": "mobile", "position": "bottom"}}], "note": null}
+{"screen": "backlog", "utterance": "Move SHIP-906 to the top", "calls": [{"action": "move_to", "args": {"item": "SHIP-906", "position": "top"}}], "note": null, "context": {"level": "features", "filters": {"epicKey": "SHIP-100"}}}
+{"screen": "backlog", "utterance": "What's the weather like today", "calls": [], "note": null}
+{"screen": "backlog", "utterance": "Delete SHIP-906", "calls": [], "note": null}
+{"screen": "backlog", "utterance": "Hmm", "calls": [], "note": null}
