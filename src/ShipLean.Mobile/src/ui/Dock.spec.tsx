@@ -10,6 +10,7 @@ describe.each(['light', 'dark'] as const)('Dock (%s)', (scheme) => {
 
     const field = screen.getByTestId(primitiveIds.dockField);
     expect(field).toHaveProp('placeholder', 'Type a note');
+    expect(field).toHaveProp('editable', false);
     expect(field).toHaveStyle({
       fontSize: 15,
       height: 44,

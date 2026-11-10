@@ -37,6 +37,8 @@ export function Dock({ placeholder }: DockProps) {
     >
       <TextInput
         testID={primitiveIds.dockField}
+        // Read-only until typing is built, so nothing typed is dropped.
+        editable={false}
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
         accessibilityLabel={placeholder}
