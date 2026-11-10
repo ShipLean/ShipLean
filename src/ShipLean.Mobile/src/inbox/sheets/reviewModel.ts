@@ -92,3 +92,50 @@ export function reviewAction(
     changes,
   };
 }
+
+// Each open decision's id as the server labels it ("D4"), by decision number.
+export function decisionLabels(item: InboxItemDto): ReadonlyMap<number, string> {
+  return new Map(
+    item.asks.flatMap((a) =>
+      a.kind === 'decision' && a.decision !== null ? ([[a.decision.number, a.label]] as const) : [],
+    ),
+  );
+}
+
+const labelFor = (labels: ReadonlyMap<number, string>, n: number) => labels.get(n) ?? `D${n}`;
+
+// "Confirm D1–D8 on KEY" for a contiguous run, otherwise "Confirm N decisions on KEY" so the title never claims a
+// decision that is not in the sheet.
+export function reviewTitle(item: InboxItemDto, labels: ReadonlyMap<number, string>): string {
+  const numbers = openDecisions(item).map((d) => d.number);
+  const first = numbers[0];
+  const last = numbers[numbers.length - 1];
+  const contiguous =
+    first !== undefined && last !== undefined && numbers.every((n, i) => n === first + i);
+  if (!contiguous) return `Confirm ${numbers.length} decisions on ${item.key}`;
+  return first === last
+    ? `Confirm ${labelFor(labels, first)} on ${item.key}`
+    : `Confirm ${labelFor(labels, first)}–${labelFor(labels, last)} on ${item.key}`;
+}
+
+// "<title> · from <who>, <atLabel>." from the first decision ask.
+export function reviewLead(item: InboxItemDto): string {
+  const ask = item.asks.find((a) => a.kind === 'decision' && a.decision !== null);
+  const who = ask?.agentName ?? ask?.from?.name ?? null;
+  if (ask === undefined || who === null) return `${item.title}.`;
+  return `${item.title} · from ${who}, ${ask.atLabel}.`;
+}
+
+// The note under the list: what was posted, naming the changed decisions; no clause when none changed.
+export function reviewNote(
+  item: InboxItemDto,
+  labels: ReadonlyMap<number, string>,
+  state: ReviewState,
+): string {
+  const changedIds = [...state.entries()]
+    .filter(([, s]) => isChanged(s))
+    .map(([n]) => labelFor(labels, n));
+  const recommended = state.size - changedIds.length;
+  const clause = changedIds.length === 0 ? '' : `, ${changedIds.join(', ')} changed`;
+  return `Posted on ${item.key} as your answers: ${recommended} recommended${clause}. The next agent to pick up ${item.key} reads them.`;
+}
