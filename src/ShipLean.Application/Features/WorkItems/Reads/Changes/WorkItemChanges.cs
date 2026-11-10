@@ -20,7 +20,8 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
             SELECT w.id AS workItemId, w.key, w.title, 0 AS kind,
                    w.id::text || ':' || lpad(r.rev::text, 10, '0') AS tie,
                    r.changed_by AS actorId, u.name AS actorName, r.changed_at AS at,
-                   r.changes::text AS changes, NULL::text AS body, r.rev AS revision
+                   r.changes::text AS changes, NULL::text AS body, r.rev AS revision,
+                   r.agent_name AS agentName, w.type AS type
             FROM revision r
             JOIN work_item w ON w.id = r.work_item_id
             LEFT JOIN app_user u ON u.id = r.changed_by
@@ -28,7 +29,8 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
               AND (@mine::uuid IS NULL OR w.assigned_to = @mine::uuid OR w.created_by = @mine::uuid)
             UNION ALL
             SELECT w.id, w.key, w.title, 1, c.id::text,
-                   c.author_id, u.name, c.created_at, NULL::text, c.body, NULL::int
+                   c.author_id, u.name, c.created_at, NULL::text, c.body, NULL::int,
+                   c.agent_name, w.type
             FROM comment c
             JOIN work_item w ON w.id = c.work_item_id
             LEFT JOIN app_user u ON u.id = c.author_id
@@ -98,5 +100,7 @@ public sealed class WorkItemChanges(NpgsqlDataSource dataSource) : IWorkItemChan
         new DateTimeOffset(DateTime.SpecifyKind(row.At, DateTimeKind.Utc)),
         row.Changes is null ? null : JsonSerializer.Deserialize<FieldChange[]>(row.Changes, PersistedJson.Options),
         row.Body,
-        row.Revision);
+        row.Revision,
+        row.AgentName,
+        row.Type);
 }

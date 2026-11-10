@@ -3,7 +3,8 @@ using ShipLean.Contracts.Persisted;
 namespace ShipLean.Contracts.WorkItems.Reads.Changes;
 
 // One change to an item: a revision (Revision and Fields set, Comment null) or a comment (Comment set, Revision and Fields null). ActorId and
-// ActorName are null when the import wrote the revision or the author is gone. Comment is the markdown body as written.
+// ActorName are null when the import wrote the revision or the author is gone. Comment is the markdown body as written. AgentName is the
+// agent stamp when an agent wrote the revision or comment, and Type the item's work item type id ("feature", "story").
 public sealed record ChangeEntryDto(
     Guid WorkItemId,
     string Key,
@@ -14,4 +15,6 @@ public sealed record ChangeEntryDto(
     DateTimeOffset At,
     IReadOnlyList<FieldChange>? Fields,
     string? Comment,
-    int? Revision = null);
+    int? Revision = null,
+    string? AgentName = null,
+    string? Type = null);

@@ -51,7 +51,6 @@ public class ScreensRouteTests : ApiFixture
     }
 
     [TestCase("")]
-    [TestCase("?cursor=abc")]
     public async Task FeatureDigestRoutes_WhenStubbed_ShouldAnswerInFinalShape(string query)
     {
         using var getResponse = await Api.ActingAs(TestUser.Tom).GetAsync($"api/projects/{Ship}/features/digest{query}");

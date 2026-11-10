@@ -12,4 +12,6 @@ internal sealed record ChangeRow(
     DateTime At,
     string? Changes,
     string? Body,
-    int? Revision);
+    int? Revision,
+    string? AgentName,
+    string Type);
