@@ -41,6 +41,16 @@ export function complete(
   }
 }
 
+// Two lines with the same id (two notes on one item) get #2, #3… so removing one line removes one action.
+function uniqueIds<L extends { id: string }>(lines: L[]): L[] {
+  const seen = new Map<string, number>();
+  return lines.map((l) => {
+    const n = (seen.get(l.id) ?? 0) + 1;
+    seen.set(l.id, n);
+    return n === 1 ? l : { ...l, id: `${l.id}#${n}` };
+  });
+}
+
 export function classify<A extends AppAction>(
   outcomes: Outcome<A>[],
   transcript: Transcript,
@@ -57,7 +67,7 @@ export function classify<A extends AppAction>(
     ok: true,
     // lines[i] describes actions[i]: each result keeps its own pairs, in the order the calls were said.
     actions: done.flatMap((r) => r.actions),
-    lines: done.flatMap((r) => r.lines),
+    lines: uniqueIds(done.flatMap((r) => r.lines)),
     rejected: [...failed, ...done.flatMap((r) => r.rejected.map(completed))],
     view: done.find((r) => r.view !== null)?.view ?? null,
   };
