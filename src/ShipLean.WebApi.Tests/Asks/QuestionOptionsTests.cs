@@ -72,13 +72,22 @@ public class QuestionOptionsTests : ApiFixture
     }
 
     [Test]
-    public Task AskAsync_WhenSevenOptions_ShouldReturnValidationOnOptions() => ShouldRefuseAsync(["1", "2", "3", "4", "5", "6", "7"]);
+    public async Task AskAsync_WhenSevenOptions_ShouldReturnValidationOnOptions()
+    {
+        await ShouldRefuseAsync(["1", "2", "3", "4", "5", "6", "7"]);
+    }
 
     [Test]
-    public Task AskAsync_WhenOptionBlank_ShouldReturnValidationOnOptions() => ShouldRefuseAsync(["Yes", "   "]);
+    public async Task AskAsync_WhenOptionBlank_ShouldReturnValidationOnOptions()
+    {
+        await ShouldRefuseAsync(["Yes", "   "]);
+    }
 
     [Test]
-    public Task AskAsync_WhenOptionsDuplicateIgnoringCase_ShouldReturnValidationOnOptions() => ShouldRefuseAsync(["Yes", " yes "]);
+    public async Task AskAsync_WhenOptionsDuplicateIgnoringCase_ShouldReturnValidationOnOptions()
+    {
+        await ShouldRefuseAsync(["Yes", " yes "]);
+    }
 
     [Test]
     public async Task AskAsync_WhenNoOptions_ShouldReadEmptyList()
