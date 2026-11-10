@@ -61,12 +61,23 @@ action's rows, right action %, right args %, exact note % (of the rows that expe
 latency (speech recognition plus the model). An action under 90 % on any of the three is flagged. The header names
 the host CPU and thread count. These are CPU times on this host, not phone times.
 
-## Known problem on this host
+## Hosts with glibc older than 2.34
 
-The prebuilt llama.cpp b10256 (`ubuntu-x64`) needs glibc 2.34 and GLIBCXX 3.4.30, and this host is Ubuntu 20.04
-(glibc 2.31, no libssl 3, no libgomp) with no compiler: `llama-server` exits with 127 here ("libssl.so.3: cannot
-open shared object file"). The text tier needs a `llama-server` b10256 that
-runs on this host, passed with `--llama-server`. The audio tier's speech steps (TTS and Parakeet) run.
+The prebuilt llama.cpp b10256 (`ubuntu-x64`) needs glibc 2.34, GLIBCXX 3.4.30, libssl 3 and libgomp. On an older
+host (`ldd --version`; Ubuntu 20.04 has glibc 2.31) it exits with 127 ("libssl.so.3: cannot open shared object
+file"). There, use conda-forge's llama.cpp, which carries its own libraries and needs only glibc 2.17:
+
+```bash
+timeout 590 bash tools/voice-eval/llama-server-conda.sh    # once: makes $C/llama-conda (about 1 GB), prints the path
+timeout 300 $C/eval-venv/bin/python -I tools/voice-eval/run.py text --model qwen3-1.7b --screen features \
+  --cache $C --packs $C/eval-out --max-seconds 240 --threads 4 \
+  --llama-server "$(bash tools/voice-eval/llama-server-conda.sh)"
+```
+
+The script reuses the env when it is there and checks that `ldd` finds every library. It needs micromamba at
+`~/.local/micromamba/bin/micromamba` (or `MICROMAMBA=<path>`). conda-forge has no build 10256: the script pins 10333,
+the nearest build that has b10256's Qwen3 chat parser (llama.cpp #26252). Its `llama-server --version` prints
+`b1-<commit>`, the feedstock's build, not the upstream tag.
 
 ## Tests
 
