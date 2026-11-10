@@ -50,13 +50,19 @@ if [ "$platform" = ios ]; then
     require_staged
     version=$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["expo"]["version"])' \
       src/ShipLean.Mobile/app.json)
-    bundle exec fastlane deliver \
+    repo=$PWD
+    # deliver 2.241.2 asks "No deliver configuration found ... setup deliver?" unless the current
+    # directory has a Deliverfile or a metadata/ folder (--metadata_path doesn't count), and a
+    # non-interactive run crashes on the question. The staged ios/ folder has metadata/, so run
+    # from there with every other path absolute.
+    cd "$STAGED/ios"
+    BUNDLE_GEMFILE="$repo/store/Gemfile" bundle exec fastlane deliver \
       --api_key_path "$ASC_KEY_PATH" \
       --app_identifier "$app_id" \
       --app_version "$version" \
       --metadata_path "$STAGED/ios/metadata" \
       --screenshots_path "$STAGED/ios/screenshots" \
-      --app_rating_config_path store/ios/age_rating.json \
+      --app_rating_config_path "$repo/store/ios/age_rating.json" \
       --skip_binary_upload true \
       --overwrite_screenshots true \
       --submit_for_review false \
