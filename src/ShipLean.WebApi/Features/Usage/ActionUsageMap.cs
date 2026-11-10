@@ -124,6 +124,11 @@ public static class ActionUsageMap
         // Asks: history and waiting (SV-W)
         Add(ActionUsage.Untracked(ScreenCounts), "Waiting.Get");
 
+        // Inbox (SHIP-926)
+        Add(ActionUsage.Untracked(ScreenCounts), "Inbox.Get", "Inbox.Answered");
+        Add(ActionUsage.Track(UsageEventNames.MentionSeen), "Mentions.Seen");
+        Add(ActionUsage.Track(UsageEventNames.MentionReplied), "Mentions.Reply");
+
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
