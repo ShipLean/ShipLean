@@ -3,6 +3,8 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { UNDO } from '../actions/undo';
 import {
   backlogMoveButtonId,
+  backlogMovedId,
+  backlogRankId,
   backlogRowId,
   moveApplyId,
   moveOptionId,
@@ -111,6 +113,9 @@ describe('Screens journeys', () => {
     expect(api.callsTo(bulk)).toHaveLength(0);
     await advance(1);
     await waitFor(() => expect(api.callsTo(bulk)).toHaveLength(1));
+    // The sent move reads the Backlog again (SHIP-1331): the row shows where it came from.
+    expect(await screen.findByTestId(backlogMovedId('SHIP-906'))).toHaveTextContent('↑ from 4');
+    expect(screen.getByTestId(backlogRankId('SHIP-906'))).toHaveTextContent('2');
     const [item] = (api.callsTo(bulk)[0]!.body as { items: Record<string, unknown>[] }).items;
     expect(item).toMatchObject({
       id: order.find((r) => r.key === 'SHIP-906')!.id,
