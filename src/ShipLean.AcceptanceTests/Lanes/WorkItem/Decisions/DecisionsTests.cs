@@ -26,7 +26,7 @@ public class DecisionsTests : SeededAcceptanceTest
 
         var response = await panel.ConfirmAllAsync();
 
-        Assert.That(response.Ok, Is.True);
+        response.Ok.ShouldBeTrue();
         await Expect(panel.Toasts.Filter(new() { HasText = "2 decisions confirmed as recommended" })).ToBeVisibleAsync();
         await Expect(panel.FoldToggle).ToHaveAttributeAsync("aria-expanded", "false");
         await Page.ReloadAsync();
@@ -51,7 +51,7 @@ public class DecisionsTests : SeededAcceptanceTest
 
         var response = await panel.WithdrawAsync(1);
 
-        Assert.That(response.Ok, Is.True);
+        response.Ok.ShouldBeTrue();
         await Expect(panel.Toasts.Filter(new() { HasText = "D1 withdrawn. It stays listed." })).ToBeVisibleAsync();
         await Page.ReloadAsync();
         await Expect(panel.DecisionRow(1)).ToHaveAttributeAsync("data-state", "withdrawn");
@@ -82,7 +82,7 @@ public class DecisionsTests : SeededAcceptanceTest
 
         var response = await panel.ReplyAsync(1, "Tenant A");
 
-        Assert.That(response.Ok, Is.True);
+        response.Ok.ShouldBeTrue();
         await Expect(panel.RailAskLine("Q1", "answered")).ToBeVisibleAsync();
         await Page.ReloadAsync();
         await Expect(panel.RailAskLine("Q1", "answered")).ToBeVisibleAsync();

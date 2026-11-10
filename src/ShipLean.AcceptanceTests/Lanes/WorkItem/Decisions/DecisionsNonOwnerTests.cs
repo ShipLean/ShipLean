@@ -23,7 +23,7 @@ public class DecisionsNonOwnerTests : SeededAcceptanceTest
 
         var response = await panel.ConfirmAsync(1);
 
-        Assert.That(response.Ok, Is.True);
+        response.Ok.ShouldBeTrue();
         await Expect(panel.Toasts.Filter(new() { HasText = "D1 confirmed: “Postgres”" })).ToBeVisibleAsync();
         await Expect(panel.Summary).ToContainTextAsync("you can answer too");
         await Page.ReloadAsync();
