@@ -13,13 +13,14 @@ import { storageRowId, voiceSettingsIds } from './VoiceSettings.testIds';
 jest.mock('../voice/manifest', () => {
   const actual = jest.requireActual<typeof import('../voice/manifest')>('../voice/manifest');
   const sizes = { parakeet: 600_000_000, 'qwen3-1.7b': 1_100_000_000, 'qwen3-4b': 2_500_000_000 };
+  const parakeetFiles = actual.MODEL_FILES.filter((f) => f.model === 'parakeet').length;
   return {
     ...actual,
     MODEL_FILES: actual.MODEL_FILES.flatMap((f) =>
       f.model === 'parakeet'
         ? [
-            { ...f, id: `${f.id}-a`, bytes: sizes.parakeet / 3 },
-            { ...f, id: `${f.id}-b`, bytes: (sizes.parakeet * 2) / 3 },
+            { ...f, id: `${f.id}-a`, bytes: sizes.parakeet / 3 / parakeetFiles },
+            { ...f, id: `${f.id}-b`, bytes: (sizes.parakeet * 2) / 3 / parakeetFiles },
           ]
         : [{ ...f, bytes: sizes[f.model] }],
     ),
