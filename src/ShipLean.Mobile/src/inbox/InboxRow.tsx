@@ -1,7 +1,33 @@
-import type { InboxItemDto } from '@shiplean/core/api/inbox';
-import { View } from 'react-native';
+import type { InboxAskDto, InboxItemDto } from '@shiplean/core/api/inbox';
+import { Pressable, Text, View } from 'react-native';
+import { Button } from '../ui/Button';
+import { layout } from '../ui/layout';
+import { useTheme } from '../theme';
 import type { PendingAnswer } from './actions';
-import { inboxRowId } from './testIds';
+import { useInboxActions } from './InboxActions';
+import { useInboxSheets } from './InboxSheets';
+import {
+  buttonsFor,
+  fromLine,
+  kindLabel,
+  moreLine,
+  pendingFor,
+  pendingLine,
+  splitAsks,
+  waitsLine,
+  type AskButton,
+} from './rowModel';
+import {
+  inboxAgeId,
+  inboxAskId,
+  inboxBtnId,
+  inboxFromId,
+  inboxKindId,
+  inboxMoreId,
+  inboxOpenId,
+  inboxPendingId,
+  inboxRowId,
+} from './testIds';
 
 export interface InboxRowProps {
   projectId: string;
@@ -17,7 +43,232 @@ export interface InboxRowProps {
   onOpenItem: () => void;
 }
 
-// TODO: the Inbox row (kind, ask, who asked, what waits on it, answer buttons, more asks in place) replaces this stub.
-export function InboxRow({ item, indented }: InboxRowProps) {
-  return <View testID={inboxRowId(item.key)} data-indented={indented} />;
+// What an ask shows as its text: the question, the quoted mention or status line, and for a batch the first decision
+// and how many more.
+function askText(asks: InboxAskDto[]): { text: string; extra: string | null } {
+  const ask = asks[0]!;
+  if (ask.decision !== null)
+    return {
+      text: ask.decision.question,
+      extra: asks.length > 1 ? `and ${asks.length - 1} more` : null,
+    };
+  if (ask.question !== null) return { text: ask.question.text, extra: null };
+  if (ask.mention !== null) return { text: `“${ask.mention.excerpt}”`, extra: null };
+  return { text: `“${ask.status!.statusLine}”`, extra: null };
+}
+
+export function InboxRow({
+  projectId,
+  item,
+  pending,
+  indented,
+  expanded,
+  onToggleExpanded,
+  onOpenItem,
+}: InboxRowProps) {
+  const theme = useTheme();
+  const { colors } = theme;
+  const { dispatch } = useInboxActions();
+  const sheets = useInboxSheets();
+  const { first, rest } = splitAsks(item);
+  const more = moreLine(rest);
+  const waits = waitsLine(item);
+  const text = { fontSize: theme.font.size.body15, color: colors.text, lineHeight: 20 };
+  const small = { fontSize: theme.font.size.sm, color: colors.muted };
+
+  const target = { area: 'inbox', projectId, itemId: item.id, key: item.key } as const;
+  const press = (asks: InboxAskDto[], button: AskButton) => {
+    const ask = asks[0]!;
+    const intent = button.intent;
+    switch (intent.kind) {
+      case 'approve':
+        dispatch({ ...target, kind: 'approve', numbers: [intent.number] });
+        return;
+      case 'review':
+        sheets.openReview(item, { scrollToConfirm: intent.scrollToConfirm, projectId });
+        return;
+      case 'option':
+        dispatch({
+          ...target,
+          kind: 'chooseOption',
+          number: intent.number,
+          optionIndex: intent.optionIndex,
+          option: intent.option,
+        });
+        return;
+      case 'seen':
+        dispatch({ ...target, kind: 'seen', mentionId: intent.mentionId, label: ask.label });
+        return;
+      case 'stillTrue':
+        dispatch({ ...target, kind: 'stillTrue', revision: item.revision });
+        return;
+      case 'sheet':
+        sheets.openAnswer({ mode: intent.mode, item, ask, projectId });
+        return;
+    }
+  };
+
+  const block = (asks: InboxAskDto[], opts: { withWaits: boolean; sub: boolean }) => {
+    const head = asks[0]!;
+    const { text: body, extra } = askText(asks);
+    const answer = pendingFor(
+      asks.map((a) => a.label),
+      pending,
+    );
+    const inFlight = answer !== null && answer.state !== 'failed';
+    const who = fromLine(head);
+    return (
+      <View
+        key={head.label}
+        testID={inboxAskId(item.key, head.label)}
+        style={
+          opts.sub
+            ? {
+                marginTop: theme.space[3],
+                paddingTop: 2,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                borderStyle: 'dashed',
+              }
+            : undefined
+        }
+      >
+        <Text
+          testID={inboxKindId(item.key, head.label)}
+          style={{
+            marginTop: theme.space[2] + 2,
+            color: colors.warn,
+            fontSize: theme.font.size.xs,
+            fontWeight: theme.font.weight.bold,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
+          }}
+        >
+          {kindLabel(asks)}
+        </Text>
+        <Text style={[text, { marginTop: 4 }]}>{body}</Text>
+        {extra === null ? null : <Text style={[small, { marginTop: 2 }]}>{extra}</Text>}
+        {head.decision !== null && asks.length === 1 ? (
+          <Text style={[small, { marginTop: 4 }]}>
+            {'Recommended: '}
+            <Text style={{ color: colors.text, fontWeight: theme.font.weight.medium }}>
+              {head.decision.recommended}
+            </Text>
+          </Text>
+        ) : null}
+        <Text testID={inboxFromId(item.key, head.label)} style={[small, { marginTop: 6 }]}>
+          {[who, opts.withWaits ? waits : null].filter((s) => s !== null && s !== '').join(' · ')}
+        </Text>
+        {answer !== null ? (
+          <Text
+            testID={inboxPendingId(item.key, head.label)}
+            style={[small, { marginTop: theme.space[2] + 2 }]}
+          >
+            {pendingLine(answer)}
+          </Text>
+        ) : null}
+        {inFlight ? null : (
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: theme.space[2],
+              marginTop: theme.space[2] + 2,
+            }}
+          >
+            {buttonsFor(asks).map((button) => (
+              <Button
+                key={button.id}
+                testID={inboxBtnId(item.key, head.label, button.id)}
+                label={button.label}
+                variant={button.primary ? 'primary' : 'ghost'}
+                onPress={() => press(asks, button)}
+              />
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  return (
+    <Pressable
+      testID={inboxRowId(item.key)}
+      // The header below is the row's way in for a screen reader; the buttons inside must stay reachable.
+      accessible={false}
+      onPress={onOpenItem}
+      data-indented={indented}
+      style={{
+        paddingTop: theme.space[3],
+        paddingBottom: theme.space[3] + 2,
+        paddingLeft: indented ? 32 : theme.space[4],
+        paddingRight: theme.space[4],
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        backgroundColor: colors.surface,
+      }}
+    >
+      <Pressable
+        testID={inboxOpenId(item.key)}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${item.key}, ${item.title}`}
+        onPress={onOpenItem}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 }}
+      >
+        <Text style={[small, { textTransform: 'capitalize' }]}>{item.type}</Text>
+        <Text style={{ ...small, fontFamily: theme.font.mono }}>{item.key}</Text>
+        <Text
+          numberOfLines={1}
+          style={{
+            flex: 1,
+            color: colors.text,
+            fontSize: theme.font.size.sm,
+            fontWeight: theme.font.weight.semibold,
+          }}
+        >
+          {item.title}
+        </Text>
+        <Text
+          testID={inboxAgeId(item.key)}
+          style={{
+            color: item.longWait ? colors.warn : colors.muted,
+            fontSize: theme.font.size.xs,
+            fontWeight: item.longWait ? theme.font.weight.semibold : theme.font.weight.regular,
+          }}
+        >
+          {item.ageLabel}
+        </Text>
+      </Pressable>
+      {block(first, { withWaits: true, sub: false })}
+      {expanded ? rest.map((ask) => block([ask], { withWaits: false, sub: true })) : null}
+      {more === null ? null : (
+        <Pressable
+          testID={inboxMoreId(item.key)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          onPress={expanded ? onOpenItem : onToggleExpanded}
+          style={{
+            minHeight: layout.compact + layout.compactSlop * 2,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: theme.space[2] + 2,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            borderStyle: 'dashed',
+          }}
+        >
+          <Text
+            style={{
+              flex: 1,
+              color: colors.accent,
+              fontSize: theme.font.size.sm,
+              fontWeight: theme.font.weight.medium,
+            }}
+          >
+            {expanded ? `Open ${item.key}` : more}
+          </Text>
+        </Pressable>
+      )}
+    </Pressable>
+  );
 }

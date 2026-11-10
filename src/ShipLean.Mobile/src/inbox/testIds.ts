@@ -21,6 +21,13 @@ export const inboxAskId = (key: string, label: string) => `inbox-ask-${key}-${la
 export const inboxMoreId = (key: string) => `inbox-more-${key}`;
 export const inboxBtnId = (key: string, label: string, action: string) =>
   `inbox-btn-${key}-${label}-${action}`;
+// The first ask's label names a batch of decisions ("D1" for D1–D8). Each ask's pending line, kind line and
+// who-asked line; the row's age and the item's header (a tap opens the item).
+export const inboxPendingId = (key: string, label: string) => `inbox-pending-${key}-${label}`;
+export const inboxKindId = (key: string, label: string) => `inbox-kind-${key}-${label}`;
+export const inboxFromId = (key: string, label: string) => `inbox-from-${key}-${label}`;
+export const inboxAgeId = (key: string) => `inbox-age-${key}`;
+export const inboxOpenId = (key: string) => `inbox-open-${key}`;
 
 // A4
 export const answeredRowId = (key: string) => `answered-row-${key}`;
