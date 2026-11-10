@@ -36,6 +36,20 @@ def png(width, height, alpha=False):
             + chunk(b"IDAT", zlib.compress(row * height, 1)) + chunk(b"IEND", b""))
 
 
+def png_chunks(width, height, color_type=2, extra=(), end=True):
+    """A PNG built chunk by chunk: extra is (type, data) chunks placed after IHDR."""
+    def chunk(kind, data):
+        body = kind + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
+    header = struct.pack(">IIBBBBB", width, height, 8, color_type, 0, 0, 0)
+    out = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
+    for kind, data in extra:
+        out += chunk(kind, data)
+    channels = 4 if color_type == 6 else 3
+    out += chunk(b"IDAT", zlib.compress((b"\x00" + b"\x80" * (width * channels)) * height, 1))
+    return out + (chunk(b"IEND", b"") if end else b"")
+
+
 def load_check():
     spec = importlib.util.spec_from_file_location("check_listing", CHECK)
     module = importlib.util.module_from_spec(spec)
@@ -174,6 +188,14 @@ class CheckListingTests(TempCase):
                 self.write(store, "ios/metadata/en-US/privacy_url.txt", url)
                 self.assert_bad(["--store", store], "privacy_url.txt")
 
+    def test_flags_a_malformed_https_url(self):
+        for label, url in (("no host", "https:///path"), ("query only", "https://?query"),
+                           ("no dot", "https://localhost/x"), ("two lines", "https://a.app/\nb")):
+            with self.subTest(label):
+                store = self.store_copy()
+                self.write(store, "ios/metadata/en-US/privacy_url.txt", url)
+                self.assert_bad(["--store", store], "privacy_url.txt")
+
     def test_flags_a_missing_url_file(self):
         store = self.store_copy()
         os.remove(os.path.join(store, "ios/metadata/en-US/support_url.txt"))
@@ -216,6 +238,19 @@ class CheckListingTests(TempCase):
         self.assert_bad(args, "featureGraphic.png")
         args = self.staged_with(PLAY_IMAGES + "/featureGraphic.png", png(1024, 500, alpha=True))
         self.assert_bad(args, "featureGraphic.png")
+
+    def test_flags_a_feature_graphic_with_trns(self):
+        trns = png_chunks(1024, 500, extra=[(b"tRNS", b"\x00\x00\x00\x00\x00\x00")])
+        args = self.staged_with(PLAY_IMAGES + "/featureGraphic.png", trns)
+        self.assert_bad(args, "featureGraphic.png")
+
+    def test_flags_a_truncated_png(self):
+        whole = png(1024, 500)
+        for label, data in (("before IEND", whole[:-12]), ("inside IDAT", whole[:60]),
+                            ("after IHDR", whole[:33]), ("bad signature", b"x" + whole[1:])):
+            with self.subTest(label):
+                args = self.staged_with(PLAY_IMAGES + "/featureGraphic.png", data)
+                self.assert_bad(args, "featureGraphic.png")
 
     def test_accepts_a_play_icon_without_alpha(self):
         args = self.staged_with(PLAY_IMAGES + "/icon.png", png(512, 512))
@@ -283,6 +318,8 @@ class DryRunSkipsWithoutSecrets(unittest.TestCase):
                 block = job_block(text, job)
                 self.assertIn("needs: check", block)
                 self.assertIn("secrets.%s" % secret, block)
+                self.assertNotRegex(block.split("    steps:\n", 1)[0], r"(?m)^    env:",
+                                    "no job-level env: secrets go only to the gate and setup")
                 self.assertIn("echo \"run=", block)
                 self.assertIn("::notice::", block)
                 self.assertIn("push_listing.sh %s verify" % platform, block)
@@ -293,6 +330,34 @@ class DryRunSkipsWithoutSecrets(unittest.TestCase):
                 gate_id = re.search(r"id: (\w+)", steps[0]).group(1)
                 for step in steps[1:]:
                     self.assertIn("if: steps.%s.outputs.run == 'true'" % gate_id, step)
+
+    def test_secrets_reach_only_the_gate_and_the_setup_action(self):
+        text = read_workflow("store-listing.yml")
+        for job in self.JOBS:
+            with self.subTest(job):
+                block = job_block(text, job)
+                steps = re.split(r"^      - ", block.split("    steps:\n", 1)[1], flags=re.M)[1:]
+                for step in steps:
+                    holds = "secrets." in step
+                    if step.startswith("id: gate"):
+                        self.assertRegex(step, r"(?m)^        env:\n(          \w+: \$\{\{ secrets\.)")
+                    elif "uses: ./.github/actions/store-listing-setup" in step:
+                        self.assertRegex(step, r"(?m)^        with:\n")
+                    else:
+                        self.assertFalse(holds, "a step other than the gate and setup sees a secret")
+                    self.assertNotRegex(step, r"run: [|>]?-?\n?(?:.*\n)*?.*\$\{\{ secrets\.")
+
+    def test_ios_gate_skips_only_when_all_three_secrets_are_empty(self):
+        block = job_block(read_workflow("store-listing.yml"), "verify-ios")
+        gate = block.split("      - if:", 1)[0]
+        condition = re.search(r"^\s+if (\[ .*? \]); then$", gate, re.M).group(1)
+        self.assertEqual(condition.count("-z"), 3, condition)
+        self.assertEqual(condition.count("&&"), 2, condition)
+        self.assertNotIn("-n", condition)
+        self.assertNotIn("||", condition)
+        then_branch = gate.split("; then\n", 1)[1].split("else", 1)[0]
+        self.assertIn("run=false", then_branch)
+        self.assertIn("::notice::", then_branch)
 
     def test_ios_dry_run_uses_the_ios_runner_variable(self):
         block = job_block(read_workflow("store-listing.yml"), "verify-ios")

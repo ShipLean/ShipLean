@@ -13,6 +13,7 @@ import argparse
 import os
 import struct
 import sys
+import urllib.parse
 
 DEFAULT_CHANGELOG = "android/metadata/en-US/changelogs/default.txt"
 
@@ -117,10 +118,16 @@ def check_url(report, store, rel):
         report.fail(rel, "missing")
         return
     url = read_text(path)
-    if not url.startswith("https://") or len(url) == len("https://"):
-        report.fail(rel, "not an https:// URL: %r" % url)
-    elif any(ch.isspace() for ch in url):
-        report.fail(rel, "URL holds whitespace")
+    if any(ch.isspace() for ch in url):
+        report.fail(rel, "URL holds whitespace or more than one line: %r" % url)
+        return
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname or ""
+    except ValueError:
+        parts, host = None, ""
+    if parts is None or parts.scheme != "https" or "." not in host:
+        report.fail(rel, "not an https:// URL with a host name: %r" % url)
     else:
         report.ok(rel, url)
 
@@ -148,13 +155,38 @@ def check_text(report, store):
 
 
 def png_info(path):
-    """(width, height, has_alpha) from the IHDR chunk, or None when not a PNG."""
+    """(width, height, has_alpha) from walking the PNG chunks up to IEND.
+
+    has_alpha is true for colour type 4 or 6 and for a tRNS chunk. Raises ValueError
+    with the reason when the signature is wrong or the file is cut short. IDAT is not
+    decompressed and no CRC is checked.
+    """
     with open(path, "rb") as handle:
-        head = handle.read(33)
-    if len(head) < 33 or head[:8] != b"\x89PNG\r\n\x1a\n" or head[12:16] != b"IHDR":
-        return None
-    width, height, _depth, color_type = struct.unpack(">IIBB", head[16:26])
-    return width, height, color_type in (4, 6)
+        data = handle.read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("not a PNG (bad signature)")
+    pos = 8
+    size = None
+    color_type = None
+    trns = False
+    while True:
+        if pos + 8 > len(data):
+            raise ValueError("truncated PNG (no IEND chunk)")
+        length, kind = struct.unpack(">I4s", data[pos:pos + 8])
+        end = pos + 8 + length + 4
+        if end > len(data):
+            raise ValueError("truncated PNG (a %s chunk runs past the end)"
+                             % kind.decode("latin-1"))
+        if size is None:
+            if kind != b"IHDR" or length < 13:
+                raise ValueError("not a PNG (no IHDR first)")
+            width, height, _depth, color_type = struct.unpack(">IIBB", data[pos + 8:pos + 18])
+            size = (width, height)
+        elif kind == b"tRNS":
+            trns = True
+        elif kind == b"IEND":
+            return size[0], size[1], color_type in (4, 6) or trns
+        pos = end
 
 
 def pngs_in(folder):
@@ -163,9 +195,10 @@ def pngs_in(folder):
 
 def check_image(report, staged, rel, sizes, alpha_allowed, side_rule=False):
     """sizes: accepted (w, h) pairs, or None when side_rule decides."""
-    info = png_info(os.path.join(staged, rel))
-    if info is None:
-        report.fail(rel, "not a PNG")
+    try:
+        info = png_info(os.path.join(staged, rel))
+    except ValueError as problem:
+        report.fail(rel, str(problem))
         return
     width, height, has_alpha = info
     label = "%dx%d%s" % (width, height, " alpha" if has_alpha else "")
