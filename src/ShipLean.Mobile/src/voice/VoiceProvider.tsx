@@ -108,6 +108,8 @@ interface ScreenEntry {
 type Register = (entry: ScreenEntry) => () => void;
 
 const RegisterContext = createContext<Register | null>(null);
+// Whether the voice provider sent a batch; outside one, it sent none.
+const DispatchedContext = createContext<(batchId: string) => boolean>(() => false);
 const EnginesContext = createContext<VoiceEngines | null>(null);
 
 export { restingState } from './machine';
@@ -173,6 +175,9 @@ class VoiceStore {
   own(batchId: string): void {
     this.ours.set(batchId, false);
   }
+
+  // Whether this provider sent the batch, while any of its parts is in pending().
+  readonly owns = (batchId: string): boolean => this.ours.has(batchId);
 
   // The parts still in pending() of each batch this provider sent. A batch whose parts have all left pending() is
   // forgotten, so the sets don't grow for the whole session.
@@ -505,7 +510,9 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     <EnginesContext.Provider value={e}>
       <VoiceInternalsContext.Provider value={internals}>
         <RegisterContext.Provider value={store.register}>
-          <VoiceContext.Provider value={api}>{children}</VoiceContext.Provider>
+          <DispatchedContext.Provider value={store.owns}>
+            <VoiceContext.Provider value={api}>{children}</VoiceContext.Provider>
+          </DispatchedContext.Provider>
         </RegisterContext.Provider>
       </VoiceInternalsContext.Provider>
     </EnginesContext.Provider>
@@ -514,6 +521,11 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
 
 export function useVoice(): VoiceApi {
   return useContext(VoiceContext);
+}
+
+// Whether the voice provider sent a batch, typed commands included (VoiceSendFailedBanner lists their refusals).
+export function useVoiceDispatched(): (batchId: string) => boolean {
+  return useContext(DispatchedContext);
 }
 
 // Registers the screen's spec and its view handler while the screen is focused; the newest registration wins.

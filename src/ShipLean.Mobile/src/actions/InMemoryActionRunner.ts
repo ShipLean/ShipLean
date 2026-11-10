@@ -75,14 +75,15 @@ export class InMemoryActionRunner implements ActionRunner {
   retry(id: string): void {
     const item = this.items.find((p) => p.id === id);
     if (item === undefined || (item.state !== 'failed' && item.state !== 'uncertain')) return;
-    if (this.discarded.has(item.batchId)) return;
+    // As the real runner: a discarded batch's part with no answer is never queued again; a failed one's Retry is.
+    if (item.state === 'uncertain' && this.discarded.has(item.batchId)) return;
     this.items = this.items.map((p) =>
       p.id === id ? { ...p, state: 'queued', error: null, failure: null } : p,
     );
     this.notify();
   }
 
-  // As the real runner: the batch's queued and held actions go, and nothing of it is queued again. This runner never
+  // As the real runner: the batch's queued and held actions go, and only an explicit retry of a failed one queues it. This runner never
   // sends, so there is nothing uncertain to settle.
   discardUnsent(batchId: string): void {
     if (!this.items.some((p) => p.batchId === batchId)) return;

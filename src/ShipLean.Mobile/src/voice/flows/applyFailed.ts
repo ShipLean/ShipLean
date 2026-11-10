@@ -4,20 +4,15 @@ import type { ResolveResult } from '../contracts';
 import type { VoiceInternals, VoiceUiStateOf } from '../internals';
 import { rest, sameAction } from './common';
 
-// The runner has already handled the batch (N8, A.2): it stopped at the first refusal and reversed, newest first, the
-// sent actions that have a reverse. Each part is in one group. A sent voice part of a refused batch is 'reversing'
-// until the runner sets its undo outcome: it isn't known yet whether it stays.
-export type ApplyGroup = 'stillApplied' | 'reversing' | 'reversed' | 'notSent';
+// The runner has already handled the batch (N8, A.2): it stopped at the first refusal and, for a live voice batch,
+// reversed newest first the sent actions that have a reverse before it reported the refusal, so every sent part's undo
+// outcome is final by now. Each part is in one group. A sent part of a batch the runner didn't reverse (dispatched
+// offline, typed, or not all-or-nothing) stayed applied.
+export type ApplyGroup = 'stillApplied' | 'reversed' | 'notSent';
 
-// Whether the runner refused a part of the batch (not merely got no answer), so it reverses the voice parts it sent.
-export function batchRefused(parts: Pending[]): boolean {
-  return parts.some((p) => p.state === 'failed' && p.failure !== null);
-}
-
-export function applyGroup(p: Pending, refused = false): ApplyGroup {
+export function applyGroup(p: Pending): ApplyGroup {
   if (p.undoOutcome === 'undone') return 'reversed';
-  if (p.state === 'sent')
-    return refused && p.origin === 'voice' && p.undoOutcome === null ? 'reversing' : 'stillApplied';
+  if (p.state === 'sent') return 'stillApplied';
   return 'notSent';
 }
 
@@ -43,13 +38,20 @@ export function onApplyFailed(v: VoiceInternals, batchId: string, pendings: Pend
 }
 
 // Try again: a part that got no answer may have landed, so the runner asks the area about it (and sends it, and the
-// parts held behind it, only if it didn't). The reversed and refused parts go again as a new batch, from the same
-// preview.
+// parts held behind it, only if it didn't). When the runner reversed parts of the batch, the reversed and refused parts
+// go again as a new batch from the same preview, which keeps their order. Otherwise (always for a typed batch) the
+// runner sends the same failed parts again, so a part never lives on in the outbox beside its resend.
 export function retryApply(v: VoiceInternals): void {
   const s = v.state();
   if (s.kind !== 'applyFailed') return;
-  for (const p of partsOf(v, s)) if (p.state === 'uncertain') v.runner.retry(p.id);
-  const ids = resendIds(v, s);
+  const parts = partsOf(v, s);
+  for (const p of parts) if (p.state === 'uncertain') v.runner.retry(p.id);
+  if (!parts.some(reversed)) {
+    retryFailed(v, parts);
+    void rest(v, s);
+    return;
+  }
+  const ids = resendIds(v, parts);
   if (ids.length === 0) {
     void rest(v, s);
     return;
@@ -57,14 +59,17 @@ export function retryApply(v: VoiceInternals): void {
   v.set({ kind: 'applying', batchId: v.dispatch(ids) });
 }
 
-// Send when online: the reversed and refused parts go to the runner, which keeps them in the outbox while offline, and
-// the sheet closes. A part with no answer and the parts behind it are already in the outbox: the runner settles them
-// when the connection comes back.
+// Send when online: as Try again, but the sheet closes at once and the runner keeps what it sends in the outbox while
+// offline. A part with no answer and the parts behind it are already in the outbox: the runner settles them when the
+// connection comes back.
 export function queueApply(v: VoiceInternals): void {
   const s = v.state();
   if (s.kind !== 'applyFailed') return;
-  const ids = resendIds(v, s);
-  if (ids.length > 0) v.dispatch(ids);
+  const parts = partsOf(v, s);
+  if (parts.some(reversed)) {
+    const ids = resendIds(v, parts);
+    if (ids.length > 0) v.dispatch(ids);
+  } else retryFailed(v, parts);
   void rest(v, s);
 }
 
@@ -88,16 +93,23 @@ function partsOf(v: VoiceInternals, s: VoiceUiStateOf<'applyFailed'>): Pending[]
   return v.runner.pending().filter((p) => p.batchId === s.batchId);
 }
 
+const reversed = (p: Pending) => p.state === 'sent' && p.undoOutcome === 'undone';
+
+// The runner queues each failed part again, in the batch's order.
+function retryFailed(v: VoiceInternals, parts: Pending[]): void {
+  for (const p of parts) if (p.state === 'failed') v.runner.retry(p.id);
+}
+
 // Sent again in a new batch: a part the runner reversed, or one it refused or never sent because of the refusal. Never
 // a part with no answer or one queued behind it (the runner still holds those), so nothing can land twice.
 function resendable(p: Pending): boolean {
-  return (p.state === 'sent' && p.undoOutcome === 'undone') || p.state === 'failed';
+  return reversed(p) || p.state === 'failed';
 }
 
 // The preview's line ids of the batch's parts to send again. They come from the last preview, which is the one the
 // failed batch was sent from.
-function resendIds(v: VoiceInternals, s: VoiceUiStateOf<'applyFailed'>): string[] {
-  const parts = partsOf(v, s).filter(resendable);
+function resendIds(v: VoiceInternals, batch: Pending[]): string[] {
+  const parts = batch.filter(resendable);
   if (parts.length === 0) return [];
   const last = v.last();
   if (last === null || !last.result.ok)

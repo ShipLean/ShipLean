@@ -184,6 +184,63 @@ describe('applyFailed', () => {
     await expect.poll(() => v.state().kind).toBe('idle');
   });
 
+  it('Try again on a typed batch asks the runner to send the same refused parts again, with no new batch', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'typed' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    const parts = [
+      aPending({
+        id: 'p1',
+        batchId,
+        action: setState,
+        origin: 'typed',
+        state: 'failed',
+        failure: 'server',
+        error: 'Didn’t send (500).',
+        retryable: true,
+      }),
+      aPending({ id: 'p2', batchId, action: approve, origin: 'typed', state: 'failed' }),
+    ];
+    runner.setPending(parts);
+    onApplyFailed(v, batchId, parts);
+
+    retryApply(v);
+
+    expect(runner.retried).toEqual(['p1', 'p2']);
+    expect(runner.dispatched).toHaveLength(1);
+    expect(v.state().kind).not.toBe('applying');
+    await expect.poll(() => v.state().kind).toBe('idle');
+  });
+
+  it('Send when online on a batch the runner reversed nothing of retries its failed parts and closes', async () => {
+    const { v, runner } = failedBatch();
+    await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+    const batchId = v.dispatch(['state', 'approve-D10']);
+    const [setState, approve] = runner.dispatched[0].batch;
+    // Dispatched offline, so not reversed: the state change stayed applied.
+    const parts = [
+      aPending({ id: 'p1', batchId, action: setState, origin: 'voice', state: 'sent' }),
+      aPending({
+        id: 'p2',
+        batchId,
+        action: approve,
+        origin: 'voice',
+        state: 'failed',
+        failure: 'server',
+        retryable: true,
+      }),
+    ];
+    runner.setPending(parts);
+    onApplyFailed(v, batchId, parts);
+
+    queueApply(v);
+
+    expect(runner.retried).toEqual(['p2']);
+    expect(runner.dispatched).toHaveLength(1);
+    await expect.poll(() => v.state().kind).toBe('idle');
+  });
+
   it('gives each line its part id, so a part that left pending() moves no other line', async () => {
     const { v, runner } = failedBatch();
     await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });

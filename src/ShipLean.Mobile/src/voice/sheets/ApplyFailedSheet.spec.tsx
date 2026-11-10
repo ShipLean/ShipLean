@@ -191,43 +191,56 @@ describe('ApplyFailedSheet', () => {
     expect(screen.getByTestId(applyFailedDiscardId)).toBeOnTheScreen();
   });
 
-  it('does not count a sent voice part as stayed while the runner is still reversing it', async () => {
+  it('lists a sent part the runner did not reverse under Still applied, with no group for parts being reversed', async () => {
     const h = await sentBatch();
-    const reversing = aPending({
-      id: 'p1',
-      batchId: h.batchId,
-      action: h.setState,
-      origin: 'voice',
-      state: 'sent',
-    });
-    const refused = aPending({
-      id: 'p2',
-      batchId: h.batchId,
-      action: h.approve,
-      origin: 'voice',
-      state: 'failed',
-      failure: 'server',
-      error: 'Didn’t send (500).',
-      retryable: true,
-    });
-    await failed(h, [reversing, refused]);
+    // A batch dispatched offline: the runner never reverses it, so the state change keeps undoOutcome null.
+    await failed(h, [
+      aPending({
+        id: 'p1',
+        batchId: h.batchId,
+        action: h.setState,
+        origin: 'voice',
+        state: 'sent',
+      }),
+      aPending({
+        id: 'p2',
+        batchId: h.batchId,
+        action: h.approve,
+        origin: 'voice',
+        state: 'failed',
+        failure: 'server',
+        error: 'Didn’t send (500).',
+        retryable: true,
+      }),
+    ]);
 
-    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Reversing what was sent');
-    expect(screen.queryByTestId(applyFailedGroupId('stillApplied'))).toBeNull();
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent(
+      'Some changes stayed applied',
+    );
     expect(
-      within(screen.getByTestId(applyFailedGroupId('reversing'))).getByTestId(
+      within(screen.getByTestId(applyFailedGroupId('stillApplied'))).getByTestId(
         applyFailedLineId('p1'),
       ),
     ).toBeOnTheScreen();
+    expect(screen.queryByTestId(applyFailedGroupId('reversing'))).toBeNull();
+  });
 
-    await act(async () => h.runner.setPending([{ ...reversing, undoOutcome: 'undone' }, refused]));
+  it('keeps a line in the group it opened in when its part leaves pending()', async () => {
+    const h = await sentBatch();
+    const [reversed, stayed, refused] = partlyApplied(h);
+    await failed(h, [reversed, stayed, refused]);
 
-    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Nothing was changed');
-    expect(
-      within(screen.getByTestId(applyFailedGroupId('reversed'))).getByTestId(
-        applyFailedLineId('p1'),
-      ),
-    ).toBeOnTheScreen();
+    // The sent parts are pruned while the sheet is open: only the refused part is left.
+    await act(async () => h.runner.setPending([refused]));
+
+    const group = (g: string) => within(screen.getByTestId(applyFailedGroupId(g)));
+    expect(group('reversed').getByTestId(applyFailedLineId('p1'))).toBeOnTheScreen();
+    expect(group('stillApplied').getByTestId(applyFailedLineId('p2'))).toBeOnTheScreen();
+    expect(group('notSent').queryByTestId(applyFailedLineId('p1'))).toBeNull();
+    expect(group('notSent').queryByTestId(applyFailedLineId('p2'))).toBeNull();
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent(
+      'Some changes stayed applied',
+    );
   });
 
   it('keeps each line with its own part when an earlier part leaves pending()', async () => {

@@ -169,21 +169,46 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       else set(update(box, p.id, { state: 'uncertain', ...mapped, failure: null }));
       return;
     }
-    set(update(box, p.id, { state: 'failed', ...mapped }));
-    if (mapped.failure === 'conflict') {
-      const lines = ofBatch(p.batchId).map((q) => describe(q.action));
-      for (const cb of [...conflictListeners]) cb(p.batchId, lines);
-    }
     const batch = box.batches[p.batchId];
-    if (batch === undefined || !batch.live || !batch.allOrNothing) return;
+    const stopsBatch = batch !== undefined && batch.live && batch.allOrNothing;
+    if (stopsBatch && p.origin === 'voice') {
+      // A live voice batch is reversed before anyone hears of the refusal: the refused part stays 'sending' (which
+      // also holds the parts queued behind it) until every sent part has its undo outcome. Then the refused part and
+      // its followers fail in one set(), so a subscriber sees the whole batch settled, and only then are conflicts told.
+      const stayed = await reverseVoiceBatch(p);
+      let next = update(box, p.id, {
+        state: 'failed',
+        ...mapped,
+        error: `${stayed ? 'Partly applied.' : 'Nothing changed.'} ${mapped.error}`,
+      });
+      for (const q of ofBatch(p.batchId))
+        if (q.state === 'queued')
+          next = update(next, q.id, {
+            state: 'failed',
+            error: null,
+            failure: null,
+            retryable: false,
+          });
+      set(next);
+      tellConflict(p, mapped.failure);
+      return;
+    }
+    set(update(box, p.id, { state: 'failed', ...mapped }));
+    tellConflict(p, mapped.failure);
+    if (!stopsBatch) return;
     for (const q of ofBatch(p.batchId))
       if (q.state === 'queued')
         set(update(box, q.id, { state: 'failed', error: null, failure: null, retryable: false }));
-    if (p.origin === 'voice') await reverseVoiceBatch(p, mapped.error);
   }
 
-  // A failed online voice batch: reverse what was sent and has a reverse, newest first, and say whether anything stayed.
-  async function reverseVoiceBatch(failed: Pending, reason: string): Promise<void> {
+  function tellConflict(p: Pending, failure: Pending['failure']) {
+    if (failure !== 'conflict') return;
+    const lines = ofBatch(p.batchId).map((q) => describe(q.action));
+    for (const cb of [...conflictListeners]) cb(p.batchId, lines);
+  }
+
+  // A refused live voice batch: reverse what was sent and has a reverse, newest first. Says whether anything stayed.
+  async function reverseVoiceBatch(failed: Pending): Promise<boolean> {
     const sent = ofBatch(failed.batchId)
       .filter((q) => q.state === 'sent')
       .reverse();
@@ -193,11 +218,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       if (outcome !== 'undone') stayed = true;
       set(update(box, q.id, { undoOutcome: outcome }));
     }
-    set(
-      update(box, failed.id, {
-        error: `${stayed ? 'Partly applied.' : 'Nothing changed.'} ${reason}`,
-      }),
-    );
+    return stayed;
   }
 
   async function undoSent(p: Pending): Promise<UndoResult> {
@@ -349,8 +370,8 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         return;
       }
       if (p.state !== 'uncertain' && p.state !== 'failed') return;
-      // Discarded: nothing of the batch is sent again.
-      if (isDiscarded(box, p.batchId)) return;
+      // Discarded: a part with no answer is never queued again. A failed part is: its Retry is a new, explicit choice.
+      if (p.state === 'uncertain' && isDiscarded(box, p.batchId)) return;
       set(requeue(box, id));
       void pump();
     },

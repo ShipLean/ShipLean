@@ -4,6 +4,7 @@ import { useActionRunner, usePending } from '../../actions/ActionRunnerProvider'
 import type { Pending } from '../../actions/types';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
+import { useVoiceDispatched } from '../VoiceProvider';
 import { ChangeLine } from './ChangeLine';
 import { UNDO_COPY } from './undoCopy';
 import {
@@ -20,15 +21,25 @@ export interface VoiceSendFailedBannerProps {
 }
 
 const isRefused = (p: Pending) =>
-  p.origin === 'voice' && p.state === 'failed' && p.failure !== null && p.undoOutcome === null;
+  p.state === 'failed' && p.failure !== null && p.undoOutcome === null;
 
 // Queued voice changes ShipLean refused when they were sent (voice D18): which one and the runner's reason, and what
-// of the same batch went through. There is no push: this banner is the only place it shows.
+// of the same batch went through. There is no push: this banner is the only place it shows. A command typed into the
+// voice preview counts too (it is sent by the voice provider, with origin 'typed'). On a work item (itemId given) its
+// work item changes are left to RefusedChanges, which lists every refused tapped or typed workItem change of the item,
+// so the two never show the same change.
 export function VoiceSendFailedBanner({ itemId, itemKey }: VoiceSendFailedBannerProps) {
   const theme = useTheme();
   const { colors } = theme;
   const runner = useActionRunner();
-  const pending = usePending((p) => p.origin === 'voice');
+  const dispatched = useVoiceDispatched();
+  const pending = usePending(
+    (p) =>
+      p.origin === 'voice' ||
+      (p.origin === 'typed' &&
+        dispatched(p.batchId) &&
+        !(itemId !== undefined && p.action.area === 'workItem')),
+  );
   // Dismissing hides the banner here; undoing the batch is the row's Undo, not this.
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
   const refused = pending.filter(

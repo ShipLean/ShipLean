@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { usePending } from '../../actions/ActionRunnerProvider';
 import type { Pending, PreviewLine } from '../../actions/types';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
 import { layout } from '../../ui/layout';
-import { applyGroup, batchRefused, type ApplyGroup } from '../flows/applyFailed';
+import { applyGroup, type ApplyGroup } from '../flows/applyFailed';
 import type { VoiceUiStateOf } from '../internals';
 import { HeardQuote } from './HeardQuote';
 import { heardQuoteId } from './HeardQuote.testIds';
@@ -30,32 +31,29 @@ export interface ApplyFailedSheetProps {
 
 const GROUPS: { group: ApplyGroup; title: string }[] = [
   { group: 'stillApplied', title: 'Still applied' },
-  { group: 'reversing', title: 'Being reversed' },
   { group: 'reversed', title: 'Reversed' },
   { group: 'notSent', title: 'Not sent' },
 ];
 
 // An applied voice batch that failed: what stayed applied, what was reversed and what wasn't sent, read live from the
-// runner (it may still be reversing). "Nothing was changed" only when nothing stayed applied, and not while the runner
-// is still reversing. Then the reason, and Try again and Send when online when sending again can help; Discard sends
-// nothing more.
+// runner, which has finished reversing before the sheet opens. "Nothing was changed" only when nothing stayed applied.
+// Then the reason, and Try again and Send when online when sending again can help; Discard sends nothing more.
 export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFailedSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
   const parts = usePending((p) => p.batchId === state.batchId);
   // Each line carries its part's id (onApplyFailed): pending() may drop or prune parts, so never pair by index.
   const rows = state.lines.map((line) => ({ line, part: parts.find((p) => p.id === line.id) }));
-  const refused = batchRefused(parts);
-  const groupOf = (part: Pending | undefined): ApplyGroup =>
-    part === undefined ? 'notSent' : applyGroup(part, refused);
-  const reversing = rows.some((r) => groupOf(r.part) === 'reversing');
-  const stayed = rows.some((r) => groupOf(r.part) === 'stillApplied');
+  // The group each line had when the sheet opened for its batch, which is the one onApplyFailed reported it in: a part
+  // that leaves pending() later (a sent part pruned while the sheet is open) keeps it instead of turning into "Not sent".
+  const [opened, setOpened] = useState(() => ({ batchId: state.batchId, groups: groupsOf(rows) }));
+  if (opened.batchId !== state.batchId)
+    setOpened({ batchId: state.batchId, groups: groupsOf(rows) });
+  const groupOf = (lineId: string, part: Pending | undefined): ApplyGroup =>
+    part === undefined ? (opened.groups.get(lineId) ?? 'notSent') : applyGroup(part);
+  const stayed = rows.some((r) => groupOf(r.line.id, r.part) === 'stillApplied');
   const uncertain = rows.some((r) => r.part?.state === 'uncertain');
-  const heading = reversing
-    ? 'Reversing what was sent'
-    : stayed
-      ? 'Some changes stayed applied'
-      : 'Nothing was changed';
+  const heading = stayed ? 'Some changes stayed applied' : 'Nothing was changed';
 
   return (
     <View
@@ -103,7 +101,7 @@ export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFa
       </View>
       <HeardQuote text={state.heard} source={state.source} misses={[]} testID={heardQuoteId} />
       {GROUPS.map(({ group, title }) => {
-        const inGroup = rows.filter((r) => groupOf(r.part) === group);
+        const inGroup = rows.filter((r) => groupOf(r.line.id, r.part) === group);
         if (inGroup.length === 0) return null;
         return (
           <View key={group} testID={applyFailedGroupId(group)} style={{ gap: theme.space[2] }}>
@@ -146,6 +144,14 @@ export function ApplyFailedSheet({ state, onRetry, onQueue, onDiscard }: ApplyFa
           : 'Discard: nothing more will be sent.'}
       </Text>
     </View>
+  );
+}
+
+function groupsOf(
+  rows: { line: PreviewLine; part: Pending | undefined }[],
+): Map<string, ApplyGroup> {
+  return new Map(
+    rows.map(({ line, part }) => [line.id, part === undefined ? 'notSent' : applyGroup(part)]),
   );
 }
 

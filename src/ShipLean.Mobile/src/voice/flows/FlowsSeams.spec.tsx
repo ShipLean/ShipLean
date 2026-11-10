@@ -2,7 +2,7 @@
 // the runner's order of events decide which flow runs.
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { memoryStore } from '@shiplean/core/platform';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { useEffect } from 'react';
 import { systemNow } from '../../actions/clock';
 import { createActionRunner, type SessionRunner } from '../../actions/runner';
@@ -13,7 +13,12 @@ import { flowSpec, type FlowAction, type FlowContext } from '../../test-support/
 import { renderWithVoice } from '../../test-support/voiceUi';
 import type { ParsedCall, ScreenVoiceSpec } from '../contracts';
 import { heardFailureNoteId } from '../failures/HeardFailure.testIds';
-import { applyFailedSheetId } from '../sheets/ApplyFailedSheet.testIds';
+import {
+  applyFailedGroupId,
+  applyFailedHeadingId,
+  applyFailedLineId,
+  applyFailedSheetId,
+} from '../sheets/ApplyFailedSheet.testIds';
 import { previewApplyId, previewMarkId, previewSheetId } from '../sheets/PreviewSheet.testIds';
 import { useScreenVoice, useVoice, VoiceSheetsHost, type VoiceApi } from '../VoiceProvider';
 import { CHANGED_HERE } from './conflict';
@@ -74,6 +79,76 @@ function staleRunner() {
   runner.start();
   return { runner, sent };
 }
+
+// The real runner, started, over a connection the test switches: its work item executor refuses approve with
+// `refusal`, and logs every send, undo and read of the screen's context (a resolve) in order.
+function switchedRunner(refusal: ApiRequestError, offline: boolean) {
+  const log: string[] = [];
+  const connection = { offline, online: new Set<() => void>() };
+  const executor: Executor<FlowAction> = {
+    area: 'workItem',
+    send: async (a) => {
+      log.push(`send ${a.kind}`);
+      if (a.kind === 'approve') throw refusal;
+    },
+    describe: (a) => ({ id: a.kind, icon: 'dot', text: a.kind, removable: true }),
+    reversible: (kind) => kind !== 'approve',
+    undo: async (a) => {
+      log.push(`undo ${a.kind}`);
+    },
+  };
+  const runner = createActionRunner({
+    store: memoryStore(),
+    scope: 'https://ship.test\ntom@ship.test',
+    isOffline: () => connection.offline,
+    onOnline: (cb) => {
+      connection.online.add(cb);
+      return () => connection.online.delete(cb);
+    },
+    now: systemNow,
+  });
+  runner.register(executor);
+  runner.start();
+  const goOnline = async () => {
+    connection.offline = false;
+    await act(async () => {
+      for (const cb of [...connection.online]) cb();
+      await jest.advanceTimersByTimeAsync(0);
+    });
+  };
+  return { runner, log, goOnline };
+}
+
+// Speaks HEARD on a work item screen over `runner`, and applies the preview. `log` hears each read of the context.
+async function speakAndApply(runner: SessionRunner, log: string[] = []) {
+  const context: FlowContext = { key: 'SHIP-906', state: 'New', revision: 4, decisions: ['D10'] };
+  const spec = screenSpec(context);
+  const logged: ScreenVoiceSpec<FlowAction> = {
+    ...spec,
+    toActions: (calls, t) => {
+      log.push('resolve');
+      return spec.toActions(calls, t);
+    },
+  };
+  const recognizer = new FakeRecognizer();
+  const model = new FakeCommandModel();
+  model.respond(CALLS);
+  await renderWithVoice(<Screen spec={logged} />, { engines: { recognizer, model }, runner });
+  recognizer.script([], HEARD);
+  await act(async () => voice().holdStart());
+  await act(async () => {
+    jest.advanceTimersByTime(900);
+  });
+  await act(async () => voice().holdEnd());
+  log.length = 0;
+  await fireEvent.press(screen.getByTestId(previewApplyId));
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(0);
+  });
+}
+
+const partOf = (runner: SessionRunner, kind: string) =>
+  runner.pending().find((p) => p.action.kind === kind)!;
 
 let started: SessionRunner | null = null;
 beforeEach(() => jest.useFakeTimers({ now: NOW }));
@@ -153,5 +228,65 @@ describe('voice flows through the provider', () => {
         batchId: 'batch-1',
       },
     ]);
+  });
+
+  it('a voice batch applied offline and refused once online shows its sent part as still applied', async () => {
+    const { runner, log, goOnline } = switchedRunner(
+      new ApiRequestError('Refused.', 500, 'internal_error'),
+      true,
+    );
+    started = runner;
+    await speakAndApply(runner);
+    expect(log).toEqual([]);
+
+    await goOnline();
+
+    // The batch went out after the connection came back, so the runner reversed nothing: the state change stayed.
+    expect(log).toEqual(['send setState', 'send approve']);
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent(
+      'Some changes stayed applied',
+    );
+    expect(
+      within(screen.getByTestId(applyFailedGroupId('stillApplied'))).getByTestId(
+        applyFailedLineId(partOf(runner, 'setState').id),
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByTestId(applyFailedGroupId('reversing'))).toBeNull();
+  });
+
+  it('a refused live voice batch reaches the apply-failed sheet only once the runner has reversed it', async () => {
+    const { runner, log } = switchedRunner(
+      new ApiRequestError('Refused.', 500, 'internal_error'),
+      false,
+    );
+    started = runner;
+    await speakAndApply(runner);
+
+    expect(log).toEqual(['send setState', 'send approve', 'undo setState']);
+    // onApplyFailed copied the refused part's reason when it first saw the batch: the reversal's outcome is in it.
+    expect(voice().state).toMatchObject({
+      kind: 'applyFailed',
+      reason: "Nothing changed. Didn't send (500).",
+    });
+    expect(screen.getByTestId(applyFailedHeadingId)).toHaveTextContent('Nothing was changed');
+    expect(
+      within(screen.getByTestId(applyFailedGroupId('reversed'))).getByTestId(
+        applyFailedLineId(partOf(runner, 'setState').id),
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  it('a 409 on a live voice batch rebuilds the preview only after the runner reversed what was sent', async () => {
+    const { runner, log } = switchedRunner(
+      new ApiRequestError('Stale revision.', 409, 'conflict'),
+      false,
+    );
+    started = runner;
+    await speakAndApply(runner, log);
+
+    // onConflict resolves the calls again: after the reversal, not before it.
+    expect(log).toEqual(['send setState', 'send approve', 'undo setState', 'resolve']);
+    expect(voice().state).toMatchObject({ kind: 'preview', source: 'voice' });
+    expect(screen.queryByTestId(applyFailedSheetId)).toBeNull();
   });
 });

@@ -195,6 +195,67 @@ describe('ActionRunner', () => {
     expect(byItem(runner, '2')?.error).toBe('Partly applied. Title is too long.');
   });
 
+  it('reverses a refused live voice batch before any subscriber sees a failed part, and fails its parts in one go', async () => {
+    const rec = recorder();
+    const runner = runnerWith(rec);
+    rec.sendFails.set('3', refusal(400, 'validation'));
+    // Each notification: the states, and the undo outcome of each sent part.
+    const seen: string[][] = [];
+    runner.subscribe(() =>
+      seen.push(runner.pending().map((p) => `${p.state}:${p.undoOutcome ?? '-'}`)),
+    );
+    runner.dispatch(
+      [act('approve', '1'), act('setState', '2'), act('setState', '3'), act('assign', '4')],
+      {
+        undo: UNDO.voice,
+        origin: 'voice',
+        allOrNothing: true,
+      },
+    );
+    await flush();
+
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'send 3', 'undo 2']);
+    const firstFailed = seen.findIndex((s) => s.some((x) => x.startsWith('failed')));
+    expect(seen[firstFailed]).toEqual(['sent:irreversible', 'sent:undone', 'failed:-', 'failed:-']);
+    // While it reverses, the refused part is still sending.
+    expect(seen[firstFailed - 1]).toEqual([
+      'sent:irreversible',
+      'sent:undone',
+      'sending:-',
+      'queued:-',
+    ]);
+    expect(byItem(runner, '3')?.error).toBe('Partly applied. Title is too long.');
+    expect(byItem(runner, '4')).toMatchObject({ state: 'failed', failure: null, error: null });
+  });
+
+  it('tells conflict listeners about a 409 on a live voice batch only after the reversal', async () => {
+    const rec = recorder();
+    const runner = runnerWith(rec);
+    rec.sendFails.set('2', refusal(409, 'conflict'));
+    const atConflict: { calls: string[]; parts: string[] }[] = [];
+    runner.subscribeConflicts(() =>
+      atConflict.push({
+        calls: [...rec.calls],
+        parts: runner
+          .pending()
+          .map((p) => `${p.state}:${p.undoOutcome ?? '-'}:${p.failure ?? '-'}`),
+      }),
+    );
+    runner.dispatch([act('setState', '1'), act('setState', '2'), act('assign', '3')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+    await flush();
+
+    expect(atConflict).toEqual([
+      {
+        calls: ['send 1', 'send 2', 'undo 1'],
+        parts: ['sent:undone:-', 'failed:-:conflict', 'failed:-:-'],
+      },
+    ]);
+  });
+
   it('maps 404, 400, 500 and no response to the error copy, failure and retryable flag', async () => {
     const rec = recorder();
     const runner = runnerWith(rec);
@@ -718,7 +779,7 @@ describe('ActionRunner', () => {
       expect(rec.calls).toEqual(['send 1']);
     });
 
-    it('leaves sent and failed parts as they are, and retry no longer sends a failed one', async () => {
+    it('leaves sent and failed parts as they are', async () => {
       const rec = recorder();
       const runner = runnerWith(rec);
       rec.sendFails.set('2', refusal(500, 'internal_error'));
@@ -732,11 +793,48 @@ describe('ActionRunner', () => {
       expect(before.map((p) => p.state)).toEqual(['sent', 'failed', 'failed']);
 
       runner.discardUnsent(batchId);
-      runner.retry(byItem(runner, '2')?.id as string);
       await flush();
 
       expect(runner.pending()).toEqual(before);
       expect(rec.calls).toEqual(['send 1', 'send 2']);
+    });
+
+    it('sends a failed part again on an explicit retry, but never queues a part with no answer again', async () => {
+      // A failed part: Retry after Discard is a new choice, so it is sent.
+      const rec = recorder();
+      const runner = runnerWith(rec);
+      rec.sendFails.set('1', refusal(500, 'internal_error'));
+      const failedBatch = runner.dispatch([act('setState', '1')], {
+        undo: UNDO.typed,
+        origin: 'typed',
+        allOrNothing: true,
+      });
+      await flush();
+      rec.sendFails.clear();
+      runner.discardUnsent(failedBatch);
+      runner.retry(byItem(runner, '1')?.id as string);
+      await flush();
+      expect(byItem(runner, '1')?.state).toBe('sent');
+      expect(rec.calls).toEqual(['send 1', 'send 1']);
+
+      // A part with no answer: retry asks the area, and reconcile still honours the mark, so it is removed, not sent.
+      const rec2 = recorder();
+      rec2.executor.reconcile = async (items) => items.map(() => 'notSent' as const);
+      const { runner: second, batchId } = await uncertainBatch(rec2);
+      second.discardUnsent(batchId);
+      second.retry(byItem(second, '1')?.id as string);
+      await flush();
+      expect(second.pending()).toEqual([]);
+      expect(rec2.calls).toEqual(['send 1']);
+
+      // With no reconcile, retry of a part with no answer in a discarded batch queues nothing.
+      const rec3 = recorder();
+      const { runner: third, batchId: thirdBatch } = await uncertainBatch(rec3);
+      third.discardUnsent(thirdBatch);
+      third.retry(byItem(third, '1')?.id as string);
+      await flush();
+      expect(third.pending().map((p) => [p.action.itemId, p.state])).toEqual([['1', 'uncertain']]);
+      expect(rec3.calls).toEqual(['send 1']);
     });
 
     it('keeps the discarded mark over a restart: a part reconcile then finds unsent is removed, not sent', async () => {
