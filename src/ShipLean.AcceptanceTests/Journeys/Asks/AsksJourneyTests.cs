@@ -29,7 +29,7 @@ public class AsksJourneyTests : SeededAcceptanceTest
         await new WorkItemScreen(Page).OpenAsync(Project, item.Key);
         var panel = new DecisionsPanel(Page, item.Id);
         var reply = await panel.ReplyAsync(1, answer);
-        reply.Ok.ShouldBeTrue(await reply.TextAsync());
+        reply.Ok.ShouldBeTrue($"{reply.Status} {reply.Url}");
 
         // Nothing is left open, so the section folds and its rows leave the DOM.
         await ExpectFoldedThenExpandAsync(panel);
@@ -70,14 +70,14 @@ public class AsksJourneyTests : SeededAcceptanceTest
         await new WorkItemScreen(Page).OpenAsync(Project, task.Key);
         var panel = new DecisionsPanel(Page, task.Id);
         var confirmed = await panel.ConfirmAllAsync();
-        confirmed.Ok.ShouldBeTrue(await confirmed.TextAsync());
+        confirmed.Ok.ShouldBeTrue($"{confirmed.Status} {confirmed.Url}");
         await Expect(panel.Toasts.Filter(new() { HasText = "2 decisions confirmed as recommended" })).ToBeVisibleAsync();
         await ExpectFoldedThenExpandAsync(panel);
         await Expect(panel.DecisionRow(2)).ToHaveAttributeAsync("data-state", "confirmed");
 
         // Option 0 is the current answer; option 1 is the first alternative.
         var changed = await panel.ChangeAsync(2, 1, "Redis is not on the host yet.");
-        changed.Ok.ShouldBeTrue(await changed.TextAsync());
+        changed.Ok.ShouldBeTrue($"{changed.Status} {changed.Url}");
         await Expect(panel.Toasts.Filter(new() { HasText = "D2 changed · comment posted for the next agent" })).ToBeVisibleAsync();
         await Expect(panel.DecisionRow(2)).ToHaveAttributeAsync("data-state", "changed");
         await Expect(panel.CommentAskTag("changed")).ToHaveTextAsync("D2 changed");
@@ -116,8 +116,9 @@ public class AsksJourneyTests : SeededAcceptanceTest
         await Expect(panel.DecisionRow(1)).ToHaveAttributeAsync("data-state", "open");
         await Expect(panel.Empty).ToBeHiddenAsync();
 
+        // A client registered without verification is stamped "Name (unverified)" (CommentStoreContract's rule).
         var read = await CallAsync(mcp, "get_work_item", new() { ["key"] = item.Key });
-        read.GetProperty("decisions")[0].GetProperty("agent_name").GetString().ShouldBe(AgentName);
+        read.GetProperty("decisions")[0].GetProperty("agent_name").GetString().ShouldBe($"{AgentName} (unverified)");
     }
 
     private async Task<McpClient> ConnectAgentAsync()
