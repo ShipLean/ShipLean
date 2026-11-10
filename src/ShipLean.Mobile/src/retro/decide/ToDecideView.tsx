@@ -312,6 +312,7 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
         <DecideSheet
           point={deciding}
           projectId={projectId}
+          sprintId={sprintId}
           open
           onClose={() => setDeciding(null)}
         />
