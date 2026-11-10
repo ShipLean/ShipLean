@@ -18,7 +18,6 @@ const ROUTE = { lead: 'Preview first', rest: ' · nothing changes until you appl
 const NEEDS_MODELS = 'Command needs the voice models';
 
 export function commandMode(state: VoiceUiState): CommandMode {
-  const greyed =
-    state.kind === 'disabled' && state.reason !== 'micOff' ? NEEDS_MODELS : null;
+  const greyed = state.kind === 'disabled' && state.reason !== 'micOff' ? NEEDS_MODELS : null;
   return { send: 'Preview', route: ROUTE, greyed };
 }

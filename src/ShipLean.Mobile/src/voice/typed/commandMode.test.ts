@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { VoiceUiState } from '../internals';
 import { commandMode } from './commandMode';
 
-const disabled = (
-  reason: Extract<VoiceUiState, { kind: 'disabled' }>['reason'],
-): VoiceUiState => ({ kind: 'disabled', reason, permission: 'granted' });
+const disabled = (reason: Extract<VoiceUiState, { kind: 'disabled' }>['reason']): VoiceUiState => ({
+  kind: 'disabled',
+  reason,
+  permission: 'granted',
+});
 
 describe('commandMode', () => {
   it('derives Preview and the preview-first line', () => {
