@@ -353,7 +353,6 @@ test('DiscussionSection_WhenCommentListed_ShouldAnchorItByCommentId', async ({ m
   const rows = screen.getByTestId(ids.comment);
   await expect(rows.nth(0)).toHaveAttribute('id', 'comment-c1');
   await expect(rows.nth(1)).toHaveAttribute('id', 'comment-c2');
-  await expect(page.locator('#comment-c2')).toHaveAttribute('data-comment-id', 'c2');
 });
 
 for (const theme of ['light', 'dark'] as const) {

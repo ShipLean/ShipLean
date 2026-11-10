@@ -6,7 +6,11 @@ import { asksTestIds as ids } from './testIds';
 // The design cuts a long answer to 58 characters plus an ellipsis once it passes 60.
 const cut = (text: string) => (text.length > 60 ? `${text.slice(0, 58)}…` : text);
 
-function wording(line: AskHistoryLineDto): { verb: string; detail: string | null } {
+function wording(line: AskHistoryLineDto): {
+  verb: string;
+  before?: string;
+  detail: string | null;
+} {
   const to = line.to ? cut(line.to) : null;
   switch (line.kind) {
     case 'raised':
@@ -20,7 +24,8 @@ function wording(line: AskHistoryLineDto): { verb: string; detail: string | null
     case 'changed':
       return {
         verb: `changed ${line.badge}`,
-        detail: line.from && to ? `${line.from} → ${to}` : to,
+        before: line.from && to ? `${cut(line.from)} → ` : undefined,
+        detail: to,
       };
     case 'edited':
       return { verb: `edited ${line.badge}`, detail: null };
@@ -32,22 +37,22 @@ function wording(line: AskHistoryLineDto): { verb: string; detail: string | null
 const badgeTone: Partial<Record<AskHistoryLineDto['kind'], string>> = {
   confirmed: 'border-ok/60',
   answered: 'border-ok/60',
-  withdrawn: 'border-dashed text-ink-muted',
+  withdrawn: 'border-dashed border-accent/45 text-ink-muted',
 };
 
 // One ask event in the History rail: its D or Q badge, who (an agent first, when one acted), when, and the wording.
 export function AskHistoryLine({ line }: AskHistoryLineProps) {
-  const { verb, detail } = wording(line);
+  const { verb, before, detail } = wording(line);
   return (
     <li
       data-testid={ids.historyLine}
       data-kind={line.kind}
       data-badge={line.badge}
-      className="grid grid-cols-[34px_minmax(0,1fr)] gap-2 pb-3 last:pb-0"
+      className="grid grid-cols-[22px_minmax(0,1fr)] gap-2 pb-3 last:pb-0"
     >
       <span
         title={line.badge}
-        className={`grid h-5.5 place-items-center rounded-control border border-edge bg-surface font-mono text-[length:var(--text-2xs)] font-semibold ${badgeTone[line.kind] ?? ''}`}
+        className={`-ml-0.5 grid h-5.5 w-6.5 place-items-center rounded-control border bg-surface font-mono text-[length:var(--text-2xs)] font-semibold ${badgeTone[line.kind] ?? 'border-accent/45'}`}
       >
         {line.badge}
       </span>
@@ -67,7 +72,8 @@ export function AskHistoryLine({ line }: AskHistoryLineProps) {
           {verb}
           {detail ? (
             <>
-              : <b className="font-semibold">{detail}</b>
+              : {before}
+              <b className="font-semibold">{detail}</b>
             </>
           ) : null}
         </p>
