@@ -1,4 +1,4 @@
-import type { FeatureDigestDto } from '@shiplean/core/api/featuresOverview';
+import { featuresKeys, type FeatureDigestDto } from '@shiplean/core/api/featuresOverview';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { UNDO } from '../../actions/undo';
 import { links } from '../../links';
@@ -200,6 +200,55 @@ describe.each(['light', 'dark'] as const)('Features digest (%s)', (scheme) => {
     expect(api.callsTo(DIGEST)).toHaveLength(2);
   });
 
+  it('keeps an item that spans two pages as one item with all its lines', async () => {
+    const first = aDigest({ cursor: 'page-2', more: true });
+    const spanning = first.changed[0];
+    const second = aDigest({
+      needsYou: [],
+      changed: [{ ...spanning, lines: [aDigestLine('comment', { text: 'Joel: a later note' })] }],
+      cursor: null,
+      more: false,
+    });
+    await renderDigest({
+      digest: first,
+      table: { [DIGEST]: (request) => (request.url.includes('cursor=page-2') ? second : first) },
+      scheme,
+    });
+    await screen.findByTestId(featureDigestItemId('SHIP-906'));
+
+    await scrollToEnd();
+
+    expect(await screen.findByTestId(featureDigestLineTextId('SHIP-907', 2))).toHaveTextContent(
+      'Joel: a later note',
+    );
+    expect(order()).toEqual(['SHIP-906', 'SHIP-907', 'SHIP-910']);
+  });
+
+  it('reads the first page again on pull down', async () => {
+    const first = aDigest({ cursor: 'page-2', more: true });
+    const second = aDigest({
+      needsYou: [],
+      changed: [aDigestItem({ key: 'SHIP-930', title: 'Second page item' })],
+      cursor: null,
+      more: false,
+    });
+    const { api } = await renderDigest({
+      digest: first,
+      table: { [DIGEST]: (request) => (request.url.includes('cursor=page-2') ? second : first) },
+      scheme,
+    });
+    await screen.findByTestId(featureDigestItemId('SHIP-906'));
+    await scrollToEnd();
+    await screen.findByTestId(featureDigestItemId('SHIP-930'));
+
+    const scroll = screen.getByTestId(featureDigestIds.scroll);
+    await act(async () => scroll.props.refreshControl.props.onRefresh());
+
+    await waitFor(() => expect(api.callsTo(DIGEST)).toHaveLength(3));
+    expect(api.callsTo(DIGEST)[2].url).not.toContain('cursor');
+    await waitFor(() => expect(screen.queryByTestId(featureDigestItemId('SHIP-930'))).toBeNull());
+  });
+
   it('shows Loading more while the next page is read', async () => {
     const first = aDigest({ cursor: 'page-2', more: true });
     const { api } = await renderDigest({
@@ -239,19 +288,27 @@ describe.each(['light', 'dark'] as const)('Features digest (%s)', (scheme) => {
   });
 
   it('reads the digest and overview again once the seen has been sent', async () => {
-    const { api, runner } = await renderDigest({ scheme });
+    const { api, runner, queryClient, unmount } = await renderDigest({ scheme });
     await screen.findByTestId(featureDigestItemId('SHIP-906'));
     expect(api.callsTo(DIGEST)).toHaveLength(1);
+    // The Features tab's overview is cached; the seen must reach it although this screen is gone.
+    queryClient.setQueryData(featuresKeys.overview(PROJECT.id), {});
 
     await fireEvent.press(text(featureDigestIds.seenTop));
-    expect(api.callsTo(DIGEST)).toHaveLength(1);
+    await unmount();
+    expect(queryClient.getQueryState(featuresKeys.overview(PROJECT.id))?.isInvalidated).toBe(false);
     await act(async () =>
       runner.setPending([
         aPending({ batchId: 'batch-1', state: 'sent', action: SEEN_ACTION as never }),
       ]),
     );
 
-    await waitFor(() => expect(api.callsTo(DIGEST)).toHaveLength(2));
+    await waitFor(() =>
+      expect(queryClient.getQueryState(featuresKeys.overview(PROJECT.id))?.isInvalidated).toBe(
+        true,
+      ),
+    );
+    expect(api.callsTo(DIGEST)).toHaveLength(1);
   });
 
   it('shows Nothing changed with Mark as seen', async () => {
