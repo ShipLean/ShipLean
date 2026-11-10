@@ -78,6 +78,8 @@ describe('the Inbox across restarts and sign-out', () => {
     await act(async () => {
       await signOutNow();
     });
+    // At once: the persister's own throttled save has not run yet.
+    expect(kvValues.has(KEY)).toBe(false);
     await settle(900);
 
     expect(kvValues.has(KEY)).toBe(false);
@@ -91,6 +93,8 @@ describe('the Inbox across restarts and sign-out', () => {
     await waitFor(() => expect(kvValues.has(KEY)).toBe(true));
 
     await act(async () => lostSession());
+    // At once: the persister's own throttled save has not run yet.
+    expect(kvValues.has(KEY)).toBe(false);
     await settle(900);
 
     expect(kvValues.has(KEY)).toBe(false);
@@ -101,6 +105,7 @@ describe('the Inbox across restarts and sign-out', () => {
     await renderApp({ url: '/p/SHIP/inbox', api: inboxApi({}, { inbox: kept }) });
     await screen.findByTestId(inboxRowId('SHIP-901'));
     await act(async () => lostSession());
+    expect(kvValues.has(KEY)).toBe(false);
     await settle(900);
     expect(kvValues.has(KEY)).toBe(false);
     await screen.unmount();
