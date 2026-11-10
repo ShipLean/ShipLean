@@ -53,6 +53,13 @@ export interface Pending {
   createdAt: string;
   // Set when the batch is undone, or when a failed voice batch is reversed.
   undoOutcome: UndoResult | null;
+  // What send returned (the id the server gave a created comment or item); null until sent, or when send returns nothing.
+  receipt: SendReceipt | null;
+}
+
+// Returned by send when Undo needs something only the server knows, such as the id of the comment or item it created.
+export interface SendReceipt {
+  createdId: string;
 }
 
 export interface UndoOutcome {
@@ -62,11 +69,13 @@ export interface UndoOutcome {
 
 export interface Executor<A extends AppAction> {
   area: Area;
-  send(a: A, api: Api): Promise<void>;
+  // Resolves with a receipt when Undo needs the id of what the send created (addNote, addItem, addPoint).
+  send(a: A, api: Api): Promise<SendReceipt | void>;
   describe(a: A): PreviewLine;
   // Required: says which kinds Undo can reverse. A reversible kind needs undo.
   reversible(kind: A['kind']): boolean;
-  undo?(a: A, api: Api): Promise<void>;
+  // receipt: what send returned for this action (Pending.receipt), or null when it returned nothing.
+  undo?(a: A, api: Api, receipt?: SendReceipt | null): Promise<void>;
   // Reloads the area's data and says, per Pending, whether an uncertain send went through.
   reconcile?(items: Pending[], api: Api): Promise<('sent' | 'notSent')[]>;
 }

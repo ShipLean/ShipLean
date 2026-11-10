@@ -22,6 +22,7 @@ export function aPending(overrides: Partial<Pending> = {}): Pending {
     retryable: false,
     createdAt: '2030-01-01T09:00:00.000Z',
     undoOutcome: null,
+    receipt: null,
     ...overrides,
   };
 }

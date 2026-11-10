@@ -54,6 +54,7 @@ export class InMemoryActionRunner implements ActionRunner {
         retryable: false,
         createdAt: at.toISOString(),
         undoOutcome: null,
+        receipt: null,
       });
     }
     this.notify();
