@@ -23,19 +23,19 @@ function senderOf(kind: RetroKind): Sender {
   }
 }
 
-// Undo marks a new point not needed ("undone"), reverses a +1, and takes back a Not needed.
+// Undo archives a new point (archiveRetroPoint, 204), reverses a +1 or a -1, and takes back a Not needed (undoPointNotNeeded).
 const REVERSIBLE: readonly RetroKind[] = ['addPoint', 'support', 'unsupport', 'notNeeded'];
 
 export const retroExecutor: Executor<RetroAction> = {
   area: 'retro',
-  send(a) {
+  send(a, api) {
     switch (senderOf(a.kind)) {
       case 'point':
-        return sendPoint(a as PointAction);
+        return sendPoint(a as PointAction, api);
       case 'decision':
-        return sendDecision(a as DecisionAction);
+        return sendDecision(a as DecisionAction, api);
       case 'merge':
-        return sendMerge(a as MergeAction);
+        return sendMerge(a as MergeAction, api);
     }
   },
   describe(a): PreviewLine {
@@ -49,12 +49,12 @@ export const retroExecutor: Executor<RetroAction> = {
     }
   },
   reversible: (kind) => REVERSIBLE.includes(kind),
-  undo(a) {
+  undo(a, api) {
     switch (senderOf(a.kind)) {
       case 'point':
-        return undoPoint(a as PointAction);
+        return undoPoint(a as PointAction, api);
       case 'decision':
-        return undoDecision(a as DecisionAction);
+        return undoDecision(a as DecisionAction, api);
       case 'merge':
         throw new Error(`${a.kind} has no undo.`);
     }

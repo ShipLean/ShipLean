@@ -9,6 +9,7 @@ import {
   type RetroRange,
 } from '@shiplean/core/api/retrosApi';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 export const useSprintsQuery = (projectId: string) =>
   useQuery({ queryKey: projectMetaKeys.sprints(projectId), queryFn: () => getSprints(projectId) });
@@ -37,11 +38,14 @@ export const useRetroActionDialogQuery = (projectId: string, query: RetroActionD
 // Refreshes every Retro read of the project: the sprint retros, insights, features and action dialogs.
 export function useInvalidateRetro(): (projectId: string) => Promise<void> {
   const queryClient = useQueryClient();
-  return async (projectId) => {
-    // The factories' own prefixes: ['retro', 'sprint'] and ['projects', p, 'retros'].
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: retroKeys.sprint('').slice(0, 2) }),
-      queryClient.invalidateQueries({ queryKey: retroKeys.features(projectId).slice(0, 3) }),
-    ]);
-  };
+  return useCallback(
+    async (projectId) => {
+      // The factories' own prefixes: ['retro', 'sprint'] and ['projects', p, 'retros'].
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: retroKeys.sprint('').slice(0, 2) }),
+        queryClient.invalidateQueries({ queryKey: retroKeys.features(projectId).slice(0, 3) }),
+      ]);
+    },
+    [queryClient],
+  );
 }

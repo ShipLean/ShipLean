@@ -1,6 +1,5 @@
 import { fireEvent } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
-import { aSprintRetro } from '../test-support/retro';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import { fakeRunner } from '../test-support/actions';
 import { useState } from 'react';
@@ -9,6 +8,7 @@ import { AddPointSheet } from './add/AddPointSheet';
 import { DecideSheet } from './decide/DecideSheet';
 import { ToDecideView } from './decide/ToDecideView';
 import { RetroFeaturesView } from './features/RetroFeaturesView';
+import { RetroProvider } from '../shell/providers/retro';
 import { RetroActionsProvider, useRetroActions } from './RetroActions';
 import { aRetroPoint } from '../test-support/retro';
 import { retroIds } from './testIds';
@@ -31,10 +31,10 @@ function Tap() {
 function Rerenders() {
   const [count, setCount] = useState(0);
   return (
-    <RetroActionsProvider>
+    <RetroProvider projectKey="SHIP">
       <Text testID="count">{count}</Text>
       <Pressable testID="again" onPress={() => setCount((c) => c + 1)} />
-    </RetroActionsProvider>
+    </RetroProvider>
   );
 }
 
@@ -66,7 +66,6 @@ describe('the Retro seams', () => {
     );
     expect(add.queryByTestId(retroIds.addSheet)).toBeNull();
     expect(add.queryByTestId(retroIds.decideSheet)).toBeNull();
-    expect(aSprintRetro().sprint.id).toBeTruthy();
   });
 
   it('dispatches one tap action through the runner with the tap window', async () => {

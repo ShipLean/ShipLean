@@ -2,8 +2,9 @@
 import type { Api, Pending, PreviewLine } from '../../actions/types';
 import type { MergeAction } from '../actions';
 
-export async function sendMerge(a: MergeAction): Promise<void> {
+export async function sendMerge(a: MergeAction, api: Api): Promise<void> {
   // TODO: mergeThemeProposal or keepThemeProposalApart through the core.
+  void api;
   throw new Error(`Sending ${a.kind} is not built yet.`);
 }
 
