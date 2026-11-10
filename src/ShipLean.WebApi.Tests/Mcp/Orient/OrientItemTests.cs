@@ -103,13 +103,15 @@ public class OrientItemTests : McpFixture
         var decisions = item.GetProperty("decisions").EnumerateArray().ToList();
         decisions.Select(d => d.GetProperty("number").GetInt32()).ShouldBe([1, 2, 3, 4]);
         decisions.ShouldAllBe(d => d.GetProperty("state").GetString() == "open" && d.GetProperty("answer_kind").GetString() == "recommended");
+        decisions.Select(d => d.GetProperty("label").GetString()).ShouldBe(["D1", "D2", "D3", "D4"]);
         decisions[0].GetProperty("question").GetString().ShouldBe("Where does the Apple Pay button sit on the payment step?");
-        decisions[0].GetProperty("answer").GetString().ShouldBe("Above the card form");
+        decisions[0].GetProperty("current_answer").GetString().ShouldBe("Above the card form");
         decisions[0].GetProperty("alternatives").EnumerateArray().Select(a => a.GetString()).ShouldBe(["Below the card form", "In the order summary"]);
         decisions[0].GetProperty("agent_name").GetString().ShouldBe("Claude Code");
         decisions[0].GetProperty("history_count").GetInt32().ShouldBe(1);
         var questions = item.GetProperty("questions").EnumerateArray().ToList();
         questions.Count.ShouldBe(2);
+        questions.Select(q => q.GetProperty("label").GetString()).ShouldBe(["Q1", "Q2"]);
         questions[0].GetProperty("asked_by").GetString().ShouldBe("Tom Okafor");
         questions[0].GetProperty("agent_name").GetString().ShouldBe("Claude Code");
         questions[0].GetProperty("state").GetString().ShouldBe("open");
@@ -143,6 +145,43 @@ public class OrientItemTests : McpFixture
         result.GetProperty("decisions")[0].GetProperty("state").GetString().ShouldBe("confirmed");
         result.GetProperty("decisions")[0].GetProperty("answered_agent_name").GetString().ShouldBe("Claude Code (test)");
         reply.Texts()[0].ShouldEndWith("recent comments.");
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenNone_ShouldReturnEmptyListsAndNoSummarySuffix()
+    {
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithTitle("Bare story").InsertAsync(connection);
+            key = await KeyAsync(connection, item);
+        }
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
+
+        var result = reply.Structured();
+        result.GetProperty("decisions").GetArrayLength().ShouldBe(0);
+        result.GetProperty("questions").GetArrayLength().ShouldBe(0);
+        result.GetProperty("open_decisions").GetInt32().ShouldBe(0);
+        result.GetProperty("open_questions").GetInt32().ShouldBe(0);
+        reply.Texts()[0].ShouldEndWith("recent comments.");
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenOneOpenOfEach_ShouldUseSingularSuffix()
+    {
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithTitle("One of each").InsertAsync(connection);
+            key = await KeyAsync(connection, item);
+            await new QuestionBuilder(item).Number(1).BuildAsync(connection);
+            await new DecisionBuilder(item).Number(1).BuildAsync(connection);
+        }
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
+
+        reply.Texts()[0].ShouldEndWith(" · 1 open question · 1 decision going with recommended.");
     }
 
     [Test]

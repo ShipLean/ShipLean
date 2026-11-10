@@ -90,10 +90,10 @@ internal sealed class GetWorkItemTool(
                 r.ChangedAt.ToString("O"),
                 [.. r.Changes.Select(c => new WorkItemResult.Change(c.Field, Shown(c.FromLabel, c.From), Shown(c.ToLabel, c.To)))]))],
             [.. itemAsks.Decisions.Select(d => new WorkItemResult.DecisionView(
-                d.Number, d.Question, d.Recommended, d.Alternatives, d.CurrentAnswer, d.AnswerKind.ToString().ToLowerInvariant(), d.State.ToString().ToLowerInvariant(),
+                d.Number, d.Label, d.Question, d.Recommended, d.Alternatives, d.CurrentAnswer, d.AnswerKind.ToString().ToLowerInvariant(), d.State.ToString().ToLowerInvariant(),
                 d.RaisedBy.Name, d.RaisedAgentName, d.RaisedAt.ToString("O"), d.AnsweredBy?.Name, d.AnsweredAgentName, d.AnsweredAt?.ToString("O"), d.History.Count))],
             [.. itemAsks.Questions.Select(q => new WorkItemResult.QuestionView(
-                q.Number, q.Text, q.State.ToString().ToLowerInvariant(), q.AskedBy.Name, q.AgentName, q.AskedAt.ToString("O"),
+                q.Number, q.Label, q.Text, q.State.ToString().ToLowerInvariant(), q.AskedBy.Name, q.AgentName, q.AskedAt.ToString("O"),
                 q.Answer is { } a ? new WorkItemResult.QuestionAnswer(a.Body, a.By?.Name, a.AgentName, a.At.ToString("O")) : null,
                 q.WithdrawnAt?.ToString("O")))],
             itemAsks.OpenQuestions,
@@ -109,7 +109,7 @@ internal sealed class GetWorkItemTool(
     // " · 2 open questions · 4 decisions going with recommended": only the parts that are not zero.
     private static string AsksSuffix(ItemAsksDto asks)
     {
-        var going = asks.Decisions.Count(d => d.State == DecisionState.Open);
+        var going = asks.OpenDecisions;
         var text = string.Empty;
         if (asks.OpenQuestions > 0)
         {

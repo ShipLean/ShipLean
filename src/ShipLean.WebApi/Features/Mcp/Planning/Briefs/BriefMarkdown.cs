@@ -98,10 +98,19 @@ public static class BriefMarkdown
         return $"- {d.Label} ({d.State.ToString().ToLowerInvariant()}, {how}): {Line(d.Question)} → {Line(d.CurrentAnswer)}";
     }
 
+    // A one-line answer sits on the bullet; a longer one goes under it, every line indented four spaces so a list item holds it.
     private static string QuestionLine(QuestionDto q)
-        => q.Answer is { } a
-            ? $"- {q.Label} (answered): {Line(q.Text)} → {Line(a.Body)}"
-            : $"- {q.Label} (open): {Line(q.Text)}";
+    {
+        if (q.Answer is not { } a)
+        {
+            return $"- {q.Label} (open): {Line(q.Text)}";
+        }
+        var head = $"- {q.Label} (answered): {Line(q.Text)}";
+        var body = a.Body.ReplaceLineEndings("\n").Trim();
+        return body.Contains('\n', StringComparison.Ordinal)
+            ? head + " →\n" + string.Join("\n", body.Split('\n').Select(l => l.Length == 0 ? l : "    " + l))
+            : $"{head} → {body}";
+    }
 
     // A title as one line, for a heading: a line break in it would start a section of its own.
     private static string Line(string text) => text.ReplaceLineEndings(" ");

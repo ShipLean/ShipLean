@@ -91,13 +91,14 @@ public sealed record WorkItemResult(
         [property: JsonPropertyName("from")] string? From,
         [property: JsonPropertyName("to")] string? To);
 
-    // number is the D-number; state, answer_kind and kind are lower-case. answer_alternative is 1-based like the wire of answer_decision.
+    // number is the D-number and label is "D1"; state and answer_kind are lower-case. current_answer is the answer standing now.
     public sealed record DecisionView(
         [property: JsonPropertyName("number")] int Number,
+        [property: JsonPropertyName("label")] string Label,
         [property: JsonPropertyName("question")] string Question,
         [property: JsonPropertyName("recommended")] string Recommended,
         [property: JsonPropertyName("alternatives")] IReadOnlyList<string> Alternatives,
-        [property: JsonPropertyName("answer")] string Answer,
+        [property: JsonPropertyName("current_answer")] string Answer,
         [property: JsonPropertyName("answer_kind")] string AnswerKind,
         [property: JsonPropertyName("state")] string State,
         [property: JsonPropertyName("raised_by")] string? RaisedBy,
@@ -110,6 +111,7 @@ public sealed record WorkItemResult(
 
     public sealed record QuestionView(
         [property: JsonPropertyName("number")] int Number,
+        [property: JsonPropertyName("label")] string Label,
         [property: JsonPropertyName("text")] string Text,
         [property: JsonPropertyName("state")] string State,
         [property: JsonPropertyName("asked_by")] string? AskedBy,

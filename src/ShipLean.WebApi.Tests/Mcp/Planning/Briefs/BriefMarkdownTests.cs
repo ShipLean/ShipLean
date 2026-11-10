@@ -124,10 +124,28 @@ public class BriefMarkdownTests
             "- D1 (open, recommended): Question 1? → Rec",
             "- D2 (changed, alternative 2): Question 2? → Alt two",
             "- Q1 (open): Ask 1?",
-            "- Q2 (answered): Ask 2? → Use merchant.prod",
+            "- Q2 (answered): Ask 2? →",
+            "    Use",
+            "    merchant.prod",
             "",
             "### SHIP-1",
             "",
             "- D1 (confirmed, recommended): Question 1? → Rec"));
+    }
+
+    [Test]
+    public void Asks_WhenAnswerIsOneLine_ShouldPutItOnTheBullet()
+    {
+        var markdown = BriefMarkdown.Asks([("SHIP-3", AsksOf([], [Question(1, QuestionState.Answered, "Use merchant.prod")]))])!;
+
+        markdown.ShouldEndWith("- Q1 (answered): Ask 1? → Use merchant.prod");
+    }
+
+    [Test]
+    public void Asks_WhenAnswerHasACodeFence_ShouldIndentEveryLineAndKeepTheFenceWhole()
+    {
+        var markdown = BriefMarkdown.Asks([("SHIP-3", AsksOf([], [Question(1, QuestionState.Answered, "Run:\n```sh\nmake it\n```")]))])!;
+
+        markdown.ShouldEndWith("- Q1 (answered): Ask 1? →\n    Run:\n    ```sh\n    make it\n    ```");
     }
 }
