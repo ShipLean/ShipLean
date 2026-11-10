@@ -1,6 +1,6 @@
+import { BacklogActionsProvider } from '../../backlog/BacklogActions';
 import type { ProjectSlotProps } from './types';
 
-// TODO: the Backlog provider replaces this pass-through.
 export function BacklogProvider({ children }: ProjectSlotProps) {
-  return children;
+  return <BacklogActionsProvider>{children}</BacklogActionsProvider>;
 }
