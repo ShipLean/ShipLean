@@ -142,7 +142,12 @@ export function DockComposer({
   const hotwords = internals.spec()?.hotwords() ?? [];
   const nudge = view.mode === 'note' ? nudgeFor(text, hotwords) : null;
 
-  const canPost = text.trim() !== '' && itemId !== undefined && itemKey !== undefined;
+  const canPost =
+    text.trim() !== '' &&
+    itemId !== undefined &&
+    itemKey !== undefined &&
+    projectId !== undefined &&
+    projectId !== '';
 
   const change = (next: string) => {
     setText(next);
@@ -162,6 +167,7 @@ export function DockComposer({
     if (!canPost) return;
     const note: WorkItemAction = {
       area: 'workItem',
+      projectId,
       itemId,
       key: itemKey,
       kind: 'addNote',

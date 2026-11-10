@@ -29,6 +29,7 @@ export const AssignSheet: FC<AssignSheetProps> = ({ item, open, onClose }) => {
     if (userId === currentId) return;
     dispatch({
       area: 'workItem',
+      projectId: item.projectId,
       kind: 'assign',
       itemId: item.id,
       key: item.key,
@@ -87,10 +88,10 @@ export const AssignSheet: FC<AssignSheetProps> = ({ item, open, onClose }) => {
         <Skeleton rows={4} />
       ) : (
         <ScrollView style={{ maxHeight: 360 }}>
+          {option(noOwnerOptionId, 'No owner', null, null)}
           {members.map((m) =>
             option(ownerOptionId(m.user.id), m.user.name, m.user.id, m.user.name),
           )}
-          {option(noOwnerOptionId, 'No owner', null, null)}
         </ScrollView>
       )}
     </BottomSheet>

@@ -150,7 +150,14 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
 
     expect(runner.dispatched).toHaveLength(1);
     expect(runner.dispatched[0]!.batch).toEqual([
-      { area: 'workItem', itemId: ITEM.itemId, key: ITEM.itemKey, kind: 'addNote', body: words },
+      {
+        area: 'workItem',
+        projectId,
+        itemId: ITEM.itemId,
+        key: ITEM.itemKey,
+        kind: 'addNote',
+        body: words,
+      },
     ]);
     expect(runner.dispatched[0]!.opts).toEqual({
       undo: UNDO.typed,
@@ -179,6 +186,7 @@ describe.each(['light', 'dark'] as const)('Dock composer (%s)', (scheme) => {
       [
         {
           area: 'workItem',
+          projectId,
           itemId: ITEM.itemId,
           key: ITEM.itemKey,
           kind: 'addNote',
