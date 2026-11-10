@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { links } from '../links';
 import { inboxApi } from '../test-support/inbox';
 import { designInbox } from '../test-support/inboxDesign';
@@ -62,8 +62,11 @@ describe('FirstResultSheet', () => {
     // The answer sheet is closed, and the sheet lists the Inbox's items in its order.
     expect(voice.calls).toContain('cancel');
     expect(await screen.findByTestId(firstResultSheetIds.root)).toBeOnTheScreen();
-    expect(await screen.findByTestId(firstResultSheetIds.lead)).toHaveTextContent(
-      '6 items wait on you: 10 decisions, 3 questions, a mention and a status line to check.',
+    // The lead reads "Checking your Inbox…" until the Inbox read lands, so wait for the text, not the element.
+    await waitFor(() =>
+      expect(screen.getByTestId(firstResultSheetIds.lead)).toHaveTextContent(
+        '6 items wait on you: 10 decisions, 3 questions, a mention and a status line to check.',
+      ),
     );
     expect(api.callsTo(`GET /api/projects/${inbox.projectId}/inbox`)).toHaveLength(1);
     // In the Inbox's order, each with its own counts.
