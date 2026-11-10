@@ -193,7 +193,6 @@ describe('VoiceSettings', () => {
         bytesDone: sizeOf('qwen3-1.7b') * 0.4,
         files: [
           ...checked('parakeet'),
-          ...checked('qwen3-4b'),
           { id: idsOf('qwen3-1.7b')[0], state: 'downloading', bytes: sizeOf('qwen3-1.7b') * 0.4 },
         ],
       }),
@@ -208,6 +207,45 @@ describe('VoiceSettings', () => {
     expect(within(change).getByTestId(voiceSettingsIds.changeBar).props.accessibilityValue).toEqual(
       expect.objectContaining({ now: 40 }),
     );
+    // The store lists only Parakeet and the target, so the model in use is added from the manifest.
+    expect(screen.getByTestId(storageRowId('qwen3-4b'))).toHaveTextContent(/2\.5 GB/);
+    expect(screen.getByTestId(voiceSettingsIds.storageTotal)).toHaveTextContent(/3\.5 GB/);
+  });
+
+  it('a change that failed its check says so and Try again calls download', async () => {
+    const { models } = await render(
+      ready({
+        choice: 'qwen3-1.7b',
+        reason: 'checksum',
+        bytesTotal: sizeOf('qwen3-1.7b'),
+        bytesDone: sizeOf('qwen3-1.7b'),
+        files: [
+          ...checked('parakeet'),
+          { id: idsOf('qwen3-1.7b')[0], state: 'failed', bytes: sizeOf('qwen3-1.7b') },
+        ],
+      }),
+    );
+
+    expect(screen.getByTestId(voiceSettingsIds.change)).toHaveTextContent('· failed its check', {
+      exact: false,
+    });
+    await fireEvent.press(screen.getByTestId(voiceSettingsIds.changeRetry));
+
+    expect((models as FakeModelStore).calls).toContainEqual({ method: 'download' });
+  });
+
+  it('a delete that rejects shows an error line', async () => {
+    class FailingStore extends FakeModelStore {
+      override deleteAll(): Promise<void> {
+        return Promise.reject(new Error('disk'));
+      }
+    }
+    await render(ready(), new FailingStore());
+
+    await fireEvent.press(screen.getByTestId(voiceSettingsIds.deleteModels));
+    await fireEvent.press(screen.getByTestId(voiceSettingsIds.deleteConfirm));
+
+    expect(await screen.findByTestId(voiceSettingsIds.deleteError)).toBeOnTheScreen();
   });
 
   it('Command model opens the change sheet', async () => {
