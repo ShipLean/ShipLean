@@ -1,6 +1,7 @@
 import { TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { MicSlot } from '../voice/MicSlot';
 import { layout } from './layout';
 import { primitiveIds } from './testIds';
 
@@ -13,8 +14,7 @@ export interface DockProps {
 }
 
 // The dock at the foot of a detail screen (app.css .dock): the "Type a note" field and the mic.
-// TODO: typing and sending a note, and the Note | Command switch, replace this stub field; the real mic replaces
-// the greyed placeholder.
+// TODO: typing and sending a note, and the Note | Command switch, replace this stub field.
 export function Dock({ placeholder }: DockProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -51,17 +51,9 @@ export function Dock({ placeholder }: DockProps) {
           fontSize: theme.font.size.body15,
         }}
       />
-      <View
-        testID={primitiveIds.dockMic}
-        accessibilityLabel="Microphone"
-        accessibilityState={{ disabled: true }}
-        style={{
-          width: layout.dockMic,
-          height: layout.dockMic,
-          borderRadius: layout.dockMic / 2,
-          backgroundColor: colors.surface2,
-        }}
-      />
+      <View testID={primitiveIds.dockMic}>
+        <MicSlot placement="dock" />
+      </View>
     </View>
   );
 }
