@@ -1,5 +1,7 @@
+import { useRouter } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { useInboxBadge } from '../inbox/useInboxBadge';
+import { links } from '../links';
 import { TabBar, type TabBarTab, type TabId } from '../ui/TabBar';
 import { MicSlot } from '../voice/MicSlot';
 
@@ -17,6 +19,7 @@ export interface ShellTabBarProps extends BottomTabBarProps {
 
 // The project's tab bar: the four tabs, the mic in the middle and the Inbox badge.
 export function ShellTabBar({ state, emitter, navigateToTab, projectKey }: ShellTabBarProps) {
+  const router = useRouter();
   const badge = useInboxBadge(projectKey);
   const focused = state.routes[state.index]?.name;
   const active = TABS.find((t) => t.id === focused)?.id ?? 'inbox';
@@ -28,10 +31,16 @@ export function ShellTabBar({ state, emitter, navigateToTab, projectKey }: Shell
     const route = state.routes.find((r) => r.name === id);
     if (route === undefined) return;
     const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-    if (id !== focused && !event.defaultPrevented) navigateToTab(route.key);
+    if (id === focused || event.defaultPrevented) return;
+    // A tab not opened yet has no params: expo-router's Tabs.Screen takes no initialParams, and navigateToTab sends
+    // the tab's own params, so its screen would get no project key. Open it by its link; an opened tab keeps its own.
+    if (hasProjectKey(route.params)) navigateToTab(route.key);
+    else router.navigate(links[id](projectKey));
   };
 
   return (
     <TabBar tabs={tabs} active={active} onPress={onPress} center={<MicSlot placement="tabBar" />} />
   );
 }
+
+const hasProjectKey = (params: object | null | undefined) => params != null && 'key' in params;
