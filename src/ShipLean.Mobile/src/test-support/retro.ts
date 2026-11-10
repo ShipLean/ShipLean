@@ -21,7 +21,7 @@ import retroPoint from '../../../ShipLean.TestSupport/DtoFixtures/retros/retro-p
 import sprintRetro from '../../../ShipLean.TestSupport/DtoFixtures/retros/sprint-retro.json';
 import { aProject, aSprint, aStory, aWriteResult } from './builders';
 import { controlledApi, type ControlledApi } from './controlledApi';
-import type { ApiTable } from './fakeApi';
+import { apiError, type ApiTable } from './fakeApi';
 
 const uuid = (): string => globalThis.crypto.randomUUID();
 
@@ -166,6 +166,8 @@ export interface RetroApiOptions {
   dialog?: RetroActionDialogDto;
   // The work item a new action creates; its key answers by-key and its id answers PATCH.
   newAction?: { workItemId: string; key: string };
+  // The id the point created by POST .../retros/points gets; its archive route answers 204.
+  createdPointId?: string;
 }
 
 const points = (retro: SprintRetroDto): RetroPointDto[] =>
@@ -196,6 +198,7 @@ export function retroApi(table: ApiTable = {}, opts: RetroApiOptions = {}): Cont
     action: openAction,
     points: all.slice(0, 1),
   };
+  const createdPointId = opts.createdPointId ?? uuid();
   const project = `/api/projects/${projectId}`;
   const routes: ApiTable = {
     [`GET ${project}/sprints`]: [aSprint({ id: retro.sprint.id, name: retro.sprint.name })],
@@ -207,13 +210,19 @@ export function retroApi(table: ApiTable = {}, opts: RetroApiOptions = {}): Cont
       id: openAction.workItemId,
       key: openAction.key,
     }),
-    [`POST ${project}/retros/points`]: (request) => ({
-      status: 201,
-      body: aRetroPoint({
-        text: (request.body as { text?: string } | undefined)?.text ?? '',
-        canArchive: true,
-      }),
-    }),
+    [`POST ${project}/retros/points`]: (request) => {
+      const body = request.body as { text?: string; category?: RetroCategory } | undefined;
+      return {
+        status: 201,
+        body: aRetroPoint({
+          id: createdPointId,
+          text: body?.text ?? '',
+          ...(body?.category === undefined ? {} : { category: body.category }),
+          canArchive: true,
+        }),
+      };
+    },
+    [`POST /api/retros/points/${createdPointId}/archive`]: { status: 204 },
     [`POST ${project}/retros/actions`]: { status: 201, body: detail },
     [`POST /api/retros/actions/${openAction.workItemId}/points`]: detail,
     [`PATCH /api/work-items/${openAction.workItemId}`]: aWriteResult({
@@ -226,7 +235,15 @@ export function retroApi(table: ApiTable = {}, opts: RetroApiOptions = {}): Cont
     routes[`POST ${path}/support`] = { status: 204 };
     routes[`DELETE ${path}/support`] = { status: 204 };
     routes[`POST ${path}/archive`] = { status: 204 };
-    routes[`POST ${path}/not-needed`] = { ...p, decision: 'notNeeded' };
+    // As main does: a reason is required, and wentWell or already decided points are refused.
+    routes[`POST ${path}/not-needed`] = (request) => {
+      const reason = (request.body as { reason?: string } | undefined)?.reason;
+      if (reason?.trim() === undefined || reason.trim() === '')
+        return apiError(400, 'validation', 'A reason is required.');
+      if (p.category === 'wentWell' || p.decision !== 'undecided')
+        return apiError(400, 'validation', 'This point cannot be marked not needed.');
+      return { ...p, decision: 'notNeeded' };
+    };
     routes[`POST ${path}/undo-not-needed`] = { ...p, decision: 'undecided', notNeeded: null };
   }
   for (const proposal of proposals) {

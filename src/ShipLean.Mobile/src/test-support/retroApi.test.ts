@@ -53,11 +53,16 @@ describe('retroApi', () => {
       themeName: null,
     });
     expect(created.text).toBe('Profile first.');
+    expect(created.category).toBe('improve');
+    await archiveRetroPoint(created.id);
     expect(fake.callsTo(`POST /api/projects/${project}/retros/points`)).toHaveLength(1);
 
     await supportPoint(point.id);
     await unsupportPoint(point.id);
     await archiveRetroPoint(point.id);
+    await expect(markPointNotNeeded(point.id, { reason: '' })).rejects.toBeInstanceOf(
+      ApiRequestError,
+    );
     expect((await markPointNotNeeded(point.id, { reason: 'Not needed' })).decision).toBe(
       'notNeeded',
     );
