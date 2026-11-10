@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Fake `bundle` for store/tests/test_push_listing.py: records how it was called, then exits
+# with $FAKE_BUNDLE_EXIT (default 0). The record, in $FAKE_BUNDLE_LOG, is:
+#   PWD=<working directory>
+#   BUNDLE_GEMFILE=<value>
+#   one line per argument
+set -euo pipefail
+
+{
+  printf 'PWD=%s\n' "$PWD"
+  printf 'BUNDLE_GEMFILE=%s\n' "${BUNDLE_GEMFILE:-}"
+  printf '%s\n' "$@"
+} >"$FAKE_BUNDLE_LOG"
+exit "${FAKE_BUNDLE_EXIT:-0}"

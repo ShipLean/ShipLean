@@ -1,0 +1,48 @@
+# Checks the store listing (store/ and the exported images) on pull requests that touch it.
+# Not a required check in the ruleset: the workflow is path-filtered, and a required check
+# from a path-filtered workflow would sit pending on every pull request that doesn't touch it.
+name: Store listing
+
+on:
+  pull_request:
+    paths:
+      - store/**
+      - design/appstore/exports/**
+      - .github/workflows/store-listing.yml
+      - .github/actions/store-listing-setup/**
+  workflow_dispatch:
+
+concurrency:
+  group: store-listing-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: python3 -I -m unittest discover -s store/tests -v
+      # No secrets: proves Ruby, the bundle and the image staging work, and that no key is written.
+      - id: setup
+        uses: ./.github/actions/store-listing-setup
+      - name: Check the setup outputs
+        env:
+          STAGED: ${{ steps.setup.outputs.staged }}
+          ASC_KEY_PATH: ${{ steps.setup.outputs.asc_key_path }}
+          PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
+        run: |
+          set -euo pipefail
+          for dir in "$STAGED/ios/screenshots/en-US" "$STAGED/android/metadata"; do
+            if [ ! -d "$dir" ]; then
+              echo "::error::The setup action did not stage $dir"
+              exit 1
+            fi
+          done
+          if [ -n "$ASC_KEY_PATH" ] || [ -n "$PLAY_KEY_PATH" ]; then
+            echo "::error::The setup action wrote a key file with no key inputs"
+            exit 1
+          fi

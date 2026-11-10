@@ -1,0 +1,8 @@
+# fastlane for the store listing (deliver for the App Store, supply for Google Play).
+# Only store/push_listing.sh runs it, and only in CI.
+#
+# No Gemfile.lock: the dev host has no Ruby, so fastlane is pinned exactly here and its
+# transitive gems resolve when CI installs the bundle (ruby/setup-ruby with bundler-cache).
+source "https://rubygems.org"
+
+gem "fastlane", "2.241.2"
