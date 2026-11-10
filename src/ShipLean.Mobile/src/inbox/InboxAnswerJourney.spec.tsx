@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { apiError } from '../test-support/fakeApi';
 import { aProject } from '../test-support/builders';
 import { inboxApi } from '../test-support/inbox';
@@ -27,7 +27,7 @@ const idOf = (key: string) => itemOf(key).id;
 const confirmRoute = (key: string) => `POST /api/work-items/${idOf(key)}/decisions/confirm`;
 
 beforeEach(() => {
-  // The phone's outbox lives in the kv store, which the jest setup doesn't reset between specs.
+  // The phone's outbox lives in the kv store, which nothing resets between the tests in this file.
   kvValues.clear();
   jest.useFakeTimers();
 });
@@ -43,7 +43,6 @@ const badge = () => screen.getByTestId(tabIds.inboxBadge);
 async function openInboxFromProjects(api: ReturnType<typeof inboxApi>) {
   await renderApp({ url: '/', api });
   await fireEvent.press(await screen.findByTestId(projectRowId('SHIP')));
-  if (screen.queryByTestId(inboxRowId('SHIP-743')) === null) await tap(tabIds.inbox);
   await screen.findByTestId(inboxRowId('SHIP-743'));
 }
 
@@ -68,7 +67,9 @@ describe('answering from the Inbox', () => {
     await tap(inboxBtnId('SHIP-906', 'D11', 'approve'));
     expect(badge()).toHaveTextContent('13');
     await passSeconds(2);
-    await tap(primitiveIds.toastAction);
+    await fireEvent.press(
+      within(screen.getByTestId('toast-undo')).getByTestId(primitiveIds.toastAction),
+    );
     await passSeconds(10);
     expect(api.callsTo(confirmRoute('SHIP-906'))).toHaveLength(1);
     expect(badge()).toHaveTextContent('14');
@@ -77,10 +78,11 @@ describe('answering from the Inbox', () => {
     await tap(inboxBtnId('SHIP-924', 'Q1', 'reply'));
     await tap(answerQuickId(0));
     await tap(inboxIds.answerApply);
+    const answerRoute = `POST /api/work-items/${idOf('SHIP-924')}/questions/1/answer`;
+    expect(api.callsTo(answerRoute)).toHaveLength(0);
     await passSeconds(5);
-    const answer = api.callsTo(`POST /api/work-items/${idOf('SHIP-924')}/questions/1/answer`);
-    expect(answer).toHaveLength(1);
-    expect(JSON.stringify(answer[0]!.body)).toContain('Personal team');
+    const firstOption = itemOf('SHIP-924').asks[0]!.question!.options[0];
+    expect(api.callsTo(answerRoute).map((c) => c.body)).toEqual([{ body: firstOption }]);
 
     // 5. Review all on SHIP-907, change D4 to the alternative, confirm the rest.
     await tap(inboxBtnId('SHIP-907', 'D1', 'review'));
@@ -116,12 +118,14 @@ describe('answering from the Inbox', () => {
     api.failNext(confirmRoute('SHIP-906'), apiError(500, 'server_error'));
     await tap(inboxMoreId('SHIP-906'));
     await tap(inboxBtnId('SHIP-906', 'D10', 'approve'));
+    expect(screen.queryByTestId(inboxBtnId('SHIP-906', 'D10', 'approve'))).toBeNull();
     expect(badge()).toHaveTextContent('14');
     await passSeconds(5);
+    expect(api.callsTo(confirmRoute('SHIP-906'))).toHaveLength(1);
     expect(screen.getByTestId(inboxPendingId('SHIP-906', 'D10'))).toHaveTextContent(
       "Didn't send · see Answered",
     );
-    expect(screen.getByTestId(inboxBtnId('SHIP-906', 'D10', 'approve'))).toBeTruthy();
+    expect(screen.getByTestId(inboxBtnId('SHIP-906', 'D10', 'approve'))).toBeOnTheScreen();
     expect(badge()).toHaveTextContent('15');
   });
 });
