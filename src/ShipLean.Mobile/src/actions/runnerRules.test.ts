@@ -68,6 +68,7 @@ function world({ store = memoryStore(), scope = SCOPE, offline = false, at = T0 
     },
     now: () => new Date(state.at),
   });
+  runner.start();
   return {
     runner,
     store,
@@ -291,6 +292,10 @@ describe('createActionRunner', () => {
     const saysSent = vi.fn(async (items: Pending[]) => items.map(() => 'sent' as const));
     w.runner.register(workItemExecutor({ reconcile: saysSent }));
     w.runner.dispatch([a], { undo: UNDO.none, origin: 'tap', allOrNothing: true });
+    await until(w.runner, (p) => p[0]?.state === 'uncertain');
+    await settle();
+    expect(saysSent).not.toHaveBeenCalled();
+    w.goOnline();
     await until(w.runner, (p) => p[0]?.state === 'sent');
     expect(saysSent).toHaveBeenCalledWith(
       [expect.objectContaining({ state: 'uncertain', action: a })],
@@ -309,6 +314,10 @@ describe('createActionRunner', () => {
     });
     w.runner.register(workItemExecutor({ reconcile: saysNotSent }));
     w.runner.dispatch([a], { undo: UNDO.none, origin: 'tap', allOrNothing: true });
+    await until(w.runner, (p) => p[0]?.state === 'uncertain');
+    await settle();
+    expect(saysNotSent).not.toHaveBeenCalled();
+    w.goOnline();
     await until(w.runner, (p) => p[0]?.state === 'sent');
     expect(api.callsTo(sendRoute(a))).toHaveLength(1);
     restoreFetch();

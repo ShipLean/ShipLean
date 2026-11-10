@@ -66,7 +66,8 @@ describe('outbox', () => {
     let o = emptyOutbox;
     for (const [id, state] of states) {
       o = addBatch(o, id, one(id), state === 'undo' ? tap : none, at(0), false);
-      if (state !== 'undo') o = update(o, id, { state });
+      if (state === 'sent') o = markSent(o, id, { createdId: 'c-9' }, at(1000));
+      else if (state !== 'undo') o = update(o, id, { state });
     }
 
     const restartAt = 60_000;
@@ -78,6 +79,7 @@ describe('outbox', () => {
       ['sending', 'uncertain'],
       ['uncertain', 'uncertain'],
       ['failed', 'failed'],
+      ['sent', 'sent'],
     ]);
     expect(back.items[0].undoUntil).toBe(at(restartAt + UNDO.tap.ms).toISOString());
     expect(Object.values(back.batches).every((b) => !b.live)).toBe(true);
@@ -108,6 +110,27 @@ describe('outbox', () => {
     expect(visible(o, at(5000 + VOICE_ROW_MS + 1))).toEqual([]);
     expect(prune(o, at(5000 + VOICE_ROW_MS)).items).toHaveLength(1);
     expect(prune(o, at(5000 + VOICE_ROW_MS + 1)).items).toEqual([]);
-    expect(serialise(o)).toBeNull();
+  });
+
+  it('round-trips a sent entry with its receipt and drops it after 10 minutes', () => {
+    let o = addBatch(emptyOutbox, 'b1', one('1'), none, at(0), false);
+    o = markSent(o, '1', { createdId: 'c-1' }, at(5000));
+    const raw = serialise(o);
+
+    const back = load(raw, at(5000 + VOICE_ROW_MS));
+    expect(back.items).toEqual(o.items);
+    expect(back.items[0]).toMatchObject({ state: 'sent', receipt: { createdId: 'c-1' } });
+    expect(back.sentAt).toEqual({ '1': at(5000).toISOString() });
+    expect(Object.keys(back.batches)).toEqual(['b1']);
+
+    const late = load(raw, at(5000 + VOICE_ROW_MS + 1));
+    expect(late.items).toEqual([]);
+    expect(late.sentAt).toEqual({});
+  });
+
+  it('refuses a value that is not an outbox', () => {
+    expect(() => load('{not json', at(0))).toThrow();
+    expect(() => load('{"items":5,"batches":{}}', at(0))).toThrow();
+    expect(() => load('[]', at(0))).toThrow();
   });
 });

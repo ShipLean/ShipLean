@@ -1,8 +1,9 @@
 import { ApiRequestError, api } from '@shiplean/core/api/client';
 import type { KeyValueStore } from '@shiplean/core/platform';
-import { sendError } from './errors';
+import { isNoAnswer, sendError } from './errors';
 import {
   addBatch,
+  emptyOutbox,
   load,
   markSent,
   notLive,
@@ -36,9 +37,10 @@ export interface ActionRunnerDeps {
   now(): Date;
 }
 
-// The runner of one session, running from creation. stop() is for its owner (runner.tsx) when the session ends or
-// the slot unmounts: no timer, connection or late answer touches the outbox after it. start() resumes a stopped
-// runner (an effect that runs again over the same runner).
+// The runner of one session. It is inert until start(): it has only read its outbox, so a runner built in a render
+// React throws away does nothing. stop() is for its owner (runner.tsx) when the session ends or the slot unmounts: no
+// timer, connection or late answer touches the outbox after it. start() runs it again (an effect that runs again over
+// the same runner).
 export interface SessionRunner extends ActionRunner {
   start(): void;
   stop(): void;
@@ -48,12 +50,21 @@ export interface SessionRunner extends ActionRunner {
 export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
   const { store, now } = deps;
   const key = outboxKey(deps.scope);
-  let box: Outbox = load(store.getItem(key), now());
+  let box: Outbox = emptyOutbox;
+  try {
+    box = load(store.getItem(key), now());
+  } catch {
+    // A corrupt value would throw on every launch: it goes, and the runner starts empty.
+    store.removeItem(key);
+  }
   const executors = new Map<Area, Executor<AppAction>>();
   const listeners = new Set<() => void>();
   const conflictListeners = new Set<(batchId: string, lines: PreviewLine[]) => void>();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
-  let stopped = false;
+  // Inert before start() and after stop(): nothing is sent, no timer or connection listener runs.
+  let stopped = true;
+  // Set by stop() only: nothing writes the outbox after that. Before start(), dispatch still keeps what it is given.
+  let halted = false;
   let pumping = false;
   // Ids stay distinct from the ones a restart loaded.
   const prefix = `${now().getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -65,7 +76,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
   }
 
   function set(next: Outbox) {
-    if (stopped) return;
+    if (halted) return;
     box = prune(next, now());
     const raw = serialise(box);
     if (raw === null) store.removeItem(key);
@@ -105,7 +116,10 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
           .some(
             (q) =>
               q.batchId === p.batchId &&
-              (q.state === 'sending' || q.state === 'uncertain' || q.state === 'undo'),
+              (q.state === 'sending' ||
+                q.state === 'uncertain' ||
+                q.state === 'undo' ||
+                q.state === 'queued'),
           ),
     );
   }
@@ -140,13 +154,15 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
 
   async function refused(p: Pending, e: unknown): Promise<void> {
     const mapped = sendError(e, p.action);
-    if (!(e instanceof ApiRequestError)) {
-      // Offline: it never got out, so it waits for the connection. Online: it may have gone through.
+    if (!(e instanceof ApiRequestError) && isNoAnswer(e)) {
+      // Offline: it never got out, so it waits for the connection. Online: it may have gone through, so it is
+      // uncertain with no failure yet; onOnline, its area registering or retry(id) settles it.
       if (deps.isOffline()) set(update(box, p.id, { state: 'queued', ...mapped }));
-      else {
-        set(update(box, p.id, { state: 'uncertain', ...mapped }));
-        void reconcile(p.action.area, [p.id]);
-      }
+      else set(update(box, p.id, { state: 'uncertain', ...mapped, failure: null }));
+      return;
+    }
+    if (!(e instanceof ApiRequestError)) {
+      set(update(box, p.id, { state: 'failed', ...mapped }));
       return;
     }
     set(update(box, p.id, { state: 'failed', ...mapped }));
@@ -194,7 +210,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
   // Asks the area whether its uncertain sends went through: sent settles, notSent goes back in the queue once.
   async function reconcile(area: Area, ids: string[]): Promise<void> {
     const executor = executors.get(area);
-    if (executor?.reconcile === undefined || deps.isOffline()) return;
+    if (stopped || executor?.reconcile === undefined || deps.isOffline()) return;
     const items = ids.map(find).filter((p): p is Pending => p?.state === 'uncertain');
     if (items.length === 0) return;
     let verdicts: ('sent' | 'notSent')[];
@@ -206,7 +222,11 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
     }
     items.forEach((p, i) => {
       if (find(p.id)?.state !== 'uncertain') return;
-      set(verdicts[i] === 'sent' ? markSent(box, p.id, null, now()) : requeue(box, p.id));
+      // Only an explicit verdict settles it; a missing one keeps it uncertain.
+      if (verdicts[i] === 'sent') set(markSent(box, p.id, null, now()));
+      // The user undid it while it was uncertain: it is dropped, not resent.
+      else if (verdicts[i] === 'notSent')
+        set(p.undoOutcome === null ? requeue(box, p.id) : remove(box, [p.id]));
     });
     void pump();
   }
@@ -225,8 +245,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
 
   let stopOnline = () => {};
 
-  // Listens for the connection, watches the open undo windows and sends what is ready. Runs once at creation, and
-  // again on start() after a stop().
+  // Listens for the connection, watches the open undo windows and sends what is ready. Runs from start() only.
   function resume() {
     stopOnline = deps.onOnline(() => {
       if (stopped) return;
@@ -243,7 +262,6 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
     reconcileAll();
     void pump();
   }
-  resume();
 
   function describe(a: AppAction): PreviewLine {
     const executor = executors.get(a.area);
@@ -297,6 +315,10 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         } else if (current.state === 'sent') {
           outcome = await undoSent(current);
           set(update(box, p.id, { undoOutcome: outcome, undoUntil: null }));
+        } else if (current.state === 'uncertain') {
+          // It may have gone through: it can't be reversed, and reconcile must not resend it.
+          outcome = 'failed';
+          set(update(box, p.id, { undoOutcome: outcome }));
         } else outcome = 'failed';
         outcomes.push({ id: p.id, outcome });
       }
@@ -336,14 +358,17 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
     start(): void {
       if (!stopped) return;
       stopped = false;
+      halted = false;
       resume();
     },
 
     stop(): void {
       stopped = true;
+      halted = true;
       for (const t of timers.values()) clearTimeout(t);
       timers.clear();
       stopOnline();
+      stopOnline = () => {};
     },
   };
 }

@@ -15,7 +15,8 @@ export interface BatchInfo {
 export interface Outbox {
   items: Pending[];
   batches: Record<string, BatchInfo>;
-  // ISO 8601 UTC, per sent Pending id: sent entries stay in pending() for VOICE_ROW_MS. Never persisted.
+  // ISO 8601 UTC, per sent Pending id: sent entries stay in pending() for VOICE_ROW_MS, and in the kv store with their
+  // receipt for as long, so Undo still has what it needs after a restart.
   sentAt: Record<string, string>;
 }
 
@@ -136,28 +137,67 @@ function batchesOf(items: Pending[], batches: Record<string, BatchInfo>) {
 interface Stored {
   items: Pending[];
   batches: Record<string, BatchInfo>;
+  sentAt: Record<string, string>;
 }
 
-// Everything but sent; null when nothing is left to keep.
+const STATES: readonly string[] = ['undo', 'queued', 'sending', 'uncertain', 'failed', 'sent'];
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+function isStored(v: unknown): v is Stored {
+  return (
+    isRecord(v) &&
+    Array.isArray(v.items) &&
+    v.items.every(
+      (p) =>
+        isRecord(p) &&
+        typeof p.id === 'string' &&
+        typeof p.batchId === 'string' &&
+        typeof p.state === 'string' &&
+        STATES.includes(p.state) &&
+        isRecord(p.action),
+    ) &&
+    isRecord(v.batches) &&
+    (v.sentAt === undefined || isRecord(v.sentAt))
+  );
+}
+
+// Everything still worth keeping: what waits to send, and sent entries inside their 10 minutes (with receipt and
+// sentAt). The runner prunes the expired ones before it writes. Null when nothing is left to keep.
 export function serialise(o: Outbox): string | null {
-  const items = o.items.filter((p) => p.state !== 'sent');
-  if (items.length === 0) return null;
-  const stored: Stored = { items, batches: batchesOf(items, o.batches) };
+  if (o.items.length === 0) return null;
+  const ids = new Set(o.items.map((p) => p.id));
+  const sentAt = Object.fromEntries(Object.entries(o.sentAt).filter(([id]) => ids.has(id)));
+  const stored: Stored = { items: o.items, batches: batchesOf(o.items, o.batches), sentAt };
   return JSON.stringify(stored);
 }
 
 // After a restart: a hold gets a fresh window from now, as long as the one it had; queued and failed stay; a send
-// that was under way may or may not have reached the server, so it is uncertain. Every batch has waited.
+// that was under way may or may not have reached the server, so it is uncertain; a sent entry stays sent, with its
+// receipt and sentAt, until its 10 minutes are over. Every batch has waited. Throws when raw isn't an outbox.
 export function load(raw: string | null, now: Date): Outbox {
   if (raw === null) return emptyOutbox;
-  const stored = JSON.parse(raw) as Stored;
-  const items = stored.items.map((p): Pending => {
-    if (p.state === 'undo' && p.undoUntil !== null) {
-      const length = Date.parse(p.undoUntil) - Date.parse(p.createdAt);
-      return { ...p, undoUntil: new Date(now.getTime() + length).toISOString() };
-    }
-    if (p.state === 'sending') return { ...p, state: 'uncertain' };
-    return p;
+  const stored: unknown = JSON.parse(raw);
+  if (!isStored(stored)) throw new Error('The stored outbox has the wrong shape.');
+  const sentAt = stored.sentAt ?? {};
+  const items = stored.items
+    // A sent entry with no time can't be aged, so it goes.
+    .filter((p) => p.state !== 'sent' || typeof sentAt[p.id] === 'string')
+    .map((p): Pending => {
+      if (p.state === 'undo' && p.undoUntil !== null) {
+        const length = Date.parse(p.undoUntil) - Date.parse(p.createdAt);
+        return { ...p, undoUntil: new Date(now.getTime() + length).toISOString() };
+      }
+      if (p.state === 'sending') return { ...p, state: 'uncertain' };
+      return p;
+    });
+  const kept = new Set(items.map((p) => p.id));
+  const loaded = notLive({
+    items,
+    batches: batchesOf(items, stored.batches),
+    sentAt: Object.fromEntries(Object.entries(sentAt).filter(([id]) => kept.has(id))),
   });
-  return notLive({ items, batches: stored.batches, sentAt: {} });
+  return prune(loaded, now);
 }

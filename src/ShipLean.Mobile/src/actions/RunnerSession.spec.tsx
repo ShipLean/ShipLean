@@ -8,8 +8,6 @@ import { setConnected } from '../test-support/netInfo';
 import { renderApp } from '../test-support/renderApp';
 import { signedInApi } from '../test-support/signedInApi';
 import { kvValues } from '../test-support/storage';
-import { outboxKey } from './outbox';
-import { scopeOf } from './scope';
 import type { ActionRunner, AppAction, Executor } from './types';
 import { UNDO } from './undo';
 
@@ -44,7 +42,8 @@ const point = (itemId: string): AppAction => ({
   key: `SHIP-${itemId}`,
 });
 const route = (itemId: string) => `POST /api/test/addPoint/${itemId}`;
-const tomsKey = outboxKey(scopeOf({ origin: TEST_ORIGIN, email: aMe().email }) as string);
+// The literal key, so a scope that dropped the email or the origin would fail here too.
+const tomsKey = `shiplean.outbox\n${TEST_ORIGIN}\n${aMe().email}`;
 const outboxKeys = () => [...kvValues.keys()].filter((k) => k.startsWith('shiplean.outbox'));
 
 function apiWith(extra: ApiTable = {}) {
@@ -98,7 +97,11 @@ describe('the runner across a session', () => {
     await waitFor(() => expect(second.runner.pending()[0]?.state).toBe('sent'));
     expect(second.runner.pending().map((p) => p.action)).toEqual([point('1')]);
     expect(api.callsTo(route('1'))).toHaveLength(1);
-    expect(outboxKeys()).toEqual([]);
+    // Sent stays in the kv store, with its receipt, for the undo window.
+    expect(outboxKeys()).toEqual([tomsKey]);
+    expect(JSON.parse(kvValues.get(tomsKey) as string).items).toEqual([
+      expect.objectContaining({ action: point('1'), state: 'sent' }),
+    ]);
   });
 
   it('keys the outbox by origin and email, offline too', async () => {
@@ -153,8 +156,9 @@ describe('the runner across a session', () => {
 
     await goOnline();
     await waitFor(() => expect(api.callsTo(route('1'))).toHaveLength(1));
+    await waitFor(() => expect(outboxKeys()).toEqual([]));
+    await act(async () => {});
 
-    expect(outboxKeys()).toEqual([]);
     expect(api.callsTo(route('2'))).toHaveLength(0);
   });
 });
