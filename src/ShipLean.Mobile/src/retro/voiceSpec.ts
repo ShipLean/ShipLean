@@ -356,6 +356,7 @@ export function retroVoiceSpec(ctx: RetroVoiceContext): ScreenVoiceSpec<RetroAct
               kind: answer === 'merge' ? 'mergeThemes' : 'keepApart',
               itemId: null,
               key: null,
+              projectId: ctx.projectId,
               proposalId: chosen.id,
               fromName: chosen.from.name,
               intoName: chosen.into.name,

@@ -350,6 +350,7 @@ describe('retro voice spec', () => {
     const merge = only(run(context(), 'Merge them', [['answer_merge', { answer: 'merge' }]]));
     expect(merge.action).toMatchObject({
       kind: 'mergeThemes',
+      projectId: context().projectId,
       proposalId: PROPOSAL.id,
       fromName: PROPOSAL.from.name,
       intoName: PROPOSAL.into.name,
