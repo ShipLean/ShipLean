@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AppAction, PreviewLine } from '../actions/types';
 import { FakeCommandModel, FakeModelStore, FakeRecognizer } from '../test-support/voice';
-import type { ModelStatus, ResolveResult, ScreenVoiceSpec } from './contracts';
+import type { ModelStatus, ResolveResult, ScreenVoiceSpec, ViewIntent } from './contracts';
 import {
   isRejectedLine,
   isYes,
@@ -176,7 +176,7 @@ describe('machine', () => {
   });
 
   it('a command with nothing to change shows its view, or fails with the first rejected reason', () => {
-    const answer = { kind: 'answer', content: { lead: 'Two', rows: [] } } as const;
+    const answer: ViewIntent = { kind: 'answer', content: { lead: 'Two', rows: [] } };
     expect(
       turnOf(spec(), okResult({ actions: [], lines: [], view: answer }), 'what', 'voice'),
     ).toEqual({
