@@ -216,7 +216,8 @@ describe('Retro tab', () => {
       await act(async () => runner.setPending([aPending({ action: support(point.id) })]));
       expect(screen.getByTestId(retroFaceId(point.id, ME.id))).toBeTruthy();
       expect(screen.getByTestId(retroPlusId(point.id))).toBeSelected();
-      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('+1');
+      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('1');
+      expect(screen.getByTestId(retroPlusId(point.id))).not.toHaveTextContent('+1');
     });
 
     it('takes a +1 back with a second tap', async () => {
@@ -266,226 +267,250 @@ describe('Retro tab', () => {
       expect(screen.getByTestId(retroPointId(other))).toBeSelected();
       expect(screen.getByTestId(retroPointId(first))).not.toBeSelected();
     });
-  });
 
-  it('shows no decision buttons on Went well and the action key once actioned', async () => {
-    const base = designRetro();
-    const well = pointText(base, 'Reviews came back within the hour.');
-    const actioned = aRetroPoint({
-      category: 'improve',
-      text: 'Cap test-running agents at three.',
-      decision: 'actioned',
-      action: actionRef('SHIP-958'),
-      theme: null,
-    });
-    const declined = aRetroPoint({
-      category: 'improve',
-      text: 'Name the files each lane owns.',
-      decision: 'notNeeded',
-      notNeeded: {
-        reason: 'SHIP-958 covers it.',
-        by: well.author,
-        decidedAtLabel: 'Today',
-      },
-      theme: null,
-    });
-    const open = pointText(base, 'Profile the small model first.');
-    const retro: SprintRetroDto = {
-      ...base,
-      categories: base.categories.map((c) => {
-        if (c.category === 'improve')
-          return {
-            ...c,
-            groups: [{ theme: null, recurring: false, points: [open, actioned, declined] }],
-          };
-        return c;
-      }),
-    };
-    makeApi(retro);
-    await renderRetro();
-    await screen.findByTestId(retroIds.tiles);
-
-    await fireEvent.press(screen.getByTestId(retroTileId('wentWell')));
-    expect(screen.getByTestId(retroPointId(well.id))).toBeTruthy();
-    expect(screen.queryByTestId(retroAddActionId(well.id))).toBeNull();
-    expect(screen.queryByTestId(retroNotNeededId(well.id))).toBeNull();
-    expect(screen.queryByTestId(retroActionKeyId(well.id))).toBeNull();
-
-    await fireEvent.press(screen.getByTestId(retroTileId('improve')));
-    // Undecided: both buttons.
-    expect(screen.getByTestId(retroAddActionId(open.id))).toHaveTextContent('+ Action item');
-    expect(screen.getByTestId(retroNotNeededId(open.id))).toHaveTextContent('Not needed');
-    // Actioned: the action's key and state, and no buttons.
-    expect(screen.getByTestId(retroActionKeyId(actioned.id))).toHaveTextContent(/^SHIP-958/);
-    expect(screen.getByText('Active')).toBeTruthy();
-    expect(screen.queryByTestId(retroAddActionId(actioned.id))).toBeNull();
-    // Not needed: the reason.
-    expect(screen.getByTestId(retroNotNeededReasonId(declined.id))).toHaveTextContent(
-      'Not neededSHIP-958 covers it.',
-    );
-    expect(screen.queryByTestId(retroNotNeededId(declined.id))).toBeNull();
-
-    await fireEvent.press(screen.getByTestId(retroActionKeyId(actioned.id)));
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/p/[key]/items/[itemKey]',
-      params: { key: 'SHIP', itemKey: 'SHIP-958' },
-    });
-  });
-
-  it('opens the Decide sheet from + Action item and from Not needed', async () => {
-    const retro = designRetro();
-    makeApi(retro);
-    await renderRetro();
-    await screen.findByTestId(retroIds.tiles);
-    const point = pointText(retro, 'The signing key expired mid-sprint.');
-
-    expect(screen.queryByTestId(retroIds.decideSheet)).toBeNull();
-    await fireEvent.press(screen.getByTestId(retroAddActionId(point.id)));
-    expect(screen.getByTestId(retroIds.decideSheet)).toBeTruthy();
-  });
-
-  it('reads the retro again when a +1 has been sent', async () => {
-    const retro = designRetro();
-    const api = makeApi(retro);
-    const { runner } = await renderRetro();
-    await screen.findByTestId(retroIds.tiles);
-    const reads = () => api.callsTo(retroRoute(retro)).length;
-    const before = reads();
-    const point = pointText(retro, 'The signing key expired mid-sprint.');
-
-    await act(async () =>
-      runner.setPending([aPending({ action: support(point.id), state: 'sending' })]),
-    );
-    expect(reads()).toBe(before);
-    await act(async () =>
-      runner.setPending([aPending({ action: support(point.id), state: 'sent' })]),
-    );
-    await screen.findByTestId(retroIds.tiles);
-    expect(reads()).toBe(before + 1);
-  });
-
-  it('shows the ended sprint until the next one has a point', async () => {
-    const base = designRetro();
-    const ended = { ...base.sprint, id: 'sprint-25', name: 'Sprint 25', status: 'past' as const };
-    const next = { ...base.sprint, id: 'sprint-26', name: 'Sprint 26', status: 'current' as const };
-    const sprints = [
-      aSprint({ id: next.id, name: next.name, status: 'current' }),
-      aSprint({ id: ended.id, name: ended.name, status: 'past', endDate: '2000-01-01' }),
-    ];
-    const endedRetro = { ...base, sprint: ended };
-    const nextRetro = emptyRetro(base, next);
-    const table = {
-      [`GET /api/projects/${PROJECT.id}/sprints`]: sprints,
-      [retroRoute(endedRetro)]: endedRetro,
-      [retroRoute(nextRetro)]: nextRetro,
-    };
-    makeApi(base, table);
-    const first = await renderRetro();
-
-    // Sprint 26 has no point yet: Sprint 25's retro is shown.
-    expect(await screen.findByText('Sprint 25 retro')).toBeTruthy();
-    expect(screen.queryByText('Sprint 26 retro')).toBeNull();
-    await first.unmount();
-
-    // Its first point arrives: the current sprint's retro is shown.
-    const withPoint = {
-      ...nextRetro,
-      categories: nextRetro.categories.map((c) =>
-        c.category === 'wentWell'
-          ? {
+    it('shows no decision buttons on Went well and the action key once actioned', async () => {
+      const base = designRetro();
+      const well = pointText(base, 'Reviews came back within the hour.');
+      const actioned = aRetroPoint({
+        category: 'improve',
+        text: 'Cap test-running agents at three.',
+        decision: 'actioned',
+        action: actionRef('SHIP-958'),
+        theme: null,
+      });
+      const declined = aRetroPoint({
+        category: 'improve',
+        text: 'Name the files each lane owns.',
+        decision: 'notNeeded',
+        notNeeded: {
+          reason: 'SHIP-958 covers it.',
+          by: well.author,
+          decidedAtLabel: 'Today',
+        },
+        theme: null,
+      });
+      const open = pointText(base, 'Profile the small model first.');
+      const retro: SprintRetroDto = {
+        ...base,
+        categories: base.categories.map((c) => {
+          if (c.category === 'improve')
+            return {
               ...c,
-              groups: [
-                {
-                  theme: null,
-                  recurring: false,
-                  points: [aRetroPoint({ category: 'wentWell', decision: null })],
-                },
-              ],
-            }
-          : c,
-      ),
-    };
-    makeApi(base, { ...table, [retroRoute(nextRetro)]: withPoint });
-    await renderRetro();
-    expect(await screen.findByText('Sprint 26 retro')).toBeTruthy();
-    expect(screen.queryByText('Sprint 25 retro')).toBeNull();
-  });
+              groups: [{ theme: null, recurring: false, points: [open, actioned, declined] }],
+            };
+          return c;
+        }),
+      };
+      makeApi(retro);
+      await renderRetro(scheme);
+      await screen.findByTestId(retroIds.tiles);
 
-  it('applies a screen view from voice: show To decide picks the segment', async () => {
-    const retro = designRetro();
-    makeApi(retro);
-    await renderRetro();
-    await screen.findByTestId(retroIds.tiles);
-    expect(screen.getByTestId(optionId(retroIds.segment, 'notes'))).toBeSelected();
+      await fireEvent.press(screen.getByTestId(retroTileId('wentWell')));
+      expect(screen.getByTestId(retroPointId(well.id))).toBeTruthy();
+      expect(screen.queryByTestId(retroAddActionId(well.id))).toBeNull();
+      expect(screen.queryByTestId(retroNotNeededId(well.id))).toBeNull();
+      expect(screen.queryByTestId(retroActionKeyId(well.id))).toBeNull();
 
-    await act(async () => {
-      lastOnView()({ kind: 'screen', command: 'show', args: { view: 'toDecide' } });
+      await fireEvent.press(screen.getByTestId(retroTileId('improve')));
+      // Undecided: both buttons.
+      expect(screen.getByTestId(retroAddActionId(open.id))).toHaveTextContent('+ Action item');
+      expect(screen.getByTestId(retroNotNeededId(open.id))).toHaveTextContent('Not needed');
+      // Actioned: the action's key and state, and no buttons.
+      expect(screen.getByTestId(retroActionKeyId(actioned.id))).toHaveTextContent(/^SHIP-958/);
+      expect(screen.getByText('Active')).toBeTruthy();
+      expect(screen.queryByTestId(retroAddActionId(actioned.id))).toBeNull();
+      // Not needed: the reason.
+      expect(screen.getByTestId(retroNotNeededReasonId(declined.id))).toHaveTextContent(
+        'Not neededSHIP-958 covers it.',
+      );
+      expect(screen.queryByTestId(retroNotNeededId(declined.id))).toBeNull();
+
+      await fireEvent.press(screen.getByTestId(retroActionKeyId(actioned.id)));
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/p/[key]/items/[itemKey]',
+        params: { key: 'SHIP', itemKey: 'SHIP-958' },
+      });
     });
-    expect(screen.getByTestId(optionId(retroIds.segment, 'toDecide'))).toBeSelected();
-    expect(screen.getByTestId(retroIds.toDecide)).toBeTruthy();
 
-    await act(async () => {
-      lastOnView()({ kind: 'screen', command: 'show', args: { view: 'features' } });
+    it('opens the Decide sheet from + Action item and from Not needed', async () => {
+      const retro = designRetro();
+      makeApi(retro);
+      await renderRetro(scheme);
+      await screen.findByTestId(retroIds.tiles);
+      const point = pointText(retro, 'The signing key expired mid-sprint.');
+
+      expect(screen.queryByTestId(retroIds.decideSheet)).toBeNull();
+      await fireEvent.press(screen.getByTestId(retroAddActionId(point.id)));
+      expect(screen.getByTestId(retroIds.decideSheet)).toBeTruthy();
     });
-    expect(screen.getByTestId(retroIds.features)).toBeTruthy();
 
-    // A category goes back to Notes and picks its tile.
-    await act(async () => {
-      lastOnView()({ kind: 'screen', command: 'show', args: { view: 'wentBadly' } });
+    it('reads the retro again when a +1 has been sent', async () => {
+      const retro = designRetro();
+      const api = makeApi(retro);
+      const { runner } = await renderRetro(scheme);
+      await screen.findByTestId(retroIds.tiles);
+      const reads = () => api.callsTo(retroRoute(retro)).length;
+      const before = reads();
+      const point = pointText(retro, 'The signing key expired mid-sprint.');
+
+      await act(async () =>
+        runner.setPending([aPending({ action: support(point.id), state: 'sending' })]),
+      );
+      expect(reads()).toBe(before);
+      await act(async () =>
+        runner.setPending([aPending({ action: support(point.id), state: 'sent' })]),
+      );
+      await screen.findByTestId(retroIds.tiles);
+      expect(reads()).toBe(before + 1);
     });
-    expect(screen.getByTestId(optionId(retroIds.segment, 'notes'))).toBeSelected();
-    expect(screen.getByTestId(retroTileId('wentBadly'))).toBeSelected();
 
-    // Anything else is ignored.
-    await act(async () => {
-      lastOnView()({ kind: 'screen', command: 'show', args: { view: 'nowhere' } });
+    it('shows the ended sprint until the next one has a point', async () => {
+      const base = designRetro();
+      const ended = { ...base.sprint, id: 'sprint-25', name: 'Sprint 25', status: 'past' as const };
+      const next = {
+        ...base.sprint,
+        id: 'sprint-26',
+        name: 'Sprint 26',
+        status: 'current' as const,
+      };
+      const sprints = [
+        aSprint({ id: next.id, name: next.name, status: 'current' }),
+        aSprint({ id: ended.id, name: ended.name, status: 'past', endDate: '2000-01-01' }),
+      ];
+      const endedRetro = { ...base, sprint: ended };
+      const nextRetro = emptyRetro(base, next);
+      const table = {
+        [`GET /api/projects/${PROJECT.id}/sprints`]: sprints,
+        [retroRoute(endedRetro)]: endedRetro,
+        [retroRoute(nextRetro)]: nextRetro,
+      };
+      makeApi(base, table);
+      const first = await renderRetro(scheme);
+
+      // Sprint 26 has no point yet: Sprint 25's retro is shown.
+      expect(await screen.findByText('Sprint 25 retro')).toBeTruthy();
+      expect(screen.queryByText('Sprint 26 retro')).toBeNull();
+      await first.unmount();
+
+      // Its first point arrives: the current sprint's retro is shown.
+      const withPoint = {
+        ...nextRetro,
+        categories: nextRetro.categories.map((c) =>
+          c.category === 'wentWell'
+            ? {
+                ...c,
+                groups: [
+                  {
+                    theme: null,
+                    recurring: false,
+                    points: [aRetroPoint({ category: 'wentWell', decision: null })],
+                  },
+                ],
+              }
+            : c,
+        ),
+      };
+      makeApi(base, { ...table, [retroRoute(nextRetro)]: withPoint });
+      await renderRetro(scheme);
+      expect(await screen.findByText('Sprint 26 retro')).toBeTruthy();
+      expect(screen.queryByText('Sprint 25 retro')).toBeNull();
     });
-    expect(screen.getByTestId(retroTileId('wentBadly'))).toBeSelected();
-  });
 
-  it('shows the empty state', async () => {
-    const base = designRetro();
-    const retro = emptyRetro(base, base.sprint);
-    makeApi(retro);
-    await renderRetro();
+    it('applies a screen view from voice: show To decide picks the segment', async () => {
+      const retro = designRetro();
+      makeApi(retro);
+      await renderRetro(scheme);
+      await screen.findByTestId(retroIds.tiles);
+      expect(screen.getByTestId(optionId(retroIds.segment, 'notes'))).toBeSelected();
 
-    expect(await screen.findByText('No points in Went well yet.')).toBeTruthy();
-    expect(screen.getByTestId(retroTileCountId('wentWell'))).toHaveTextContent('0');
-    await fireEvent.press(screen.getByTestId(retroTileId('improve')));
-    expect(screen.getByText('No points in Can be improved yet.')).toBeTruthy();
-  });
+      await act(async () => {
+        lastOnView()({ kind: 'screen', command: 'show', args: { view: 'toDecide' } });
+      });
+      expect(screen.getByTestId(optionId(retroIds.segment, 'toDecide'))).toBeSelected();
+      expect(screen.getByTestId(retroIds.toDecide)).toBeTruthy();
 
-  it('shows the error state and retries', async () => {
-    const retro = designRetro();
-    const api = makeApi(retro);
-    api.failNext(retroRoute(retro), apiError(500, 'server_error'));
-    await renderRetro();
+      await act(async () => {
+        lastOnView()({ kind: 'screen', command: 'show', args: { view: 'features' } });
+      });
+      expect(screen.getByTestId(retroIds.features)).toBeTruthy();
 
-    expect(await screen.findByText("Couldn't load the retro.")).toBeTruthy();
-    expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
-    await fireEvent.press(screen.getByTestId(uiIds.errorStateAction));
-    expect(await screen.findByTestId(retroIds.tiles)).toBeTruthy();
-    expect(screen.queryByTestId(uiIds.errorState)).toBeNull();
-  });
+      // A category goes back to Notes and picks its tile.
+      await act(async () => {
+        lastOnView()({ kind: 'screen', command: 'show', args: { view: 'wentBadly' } });
+      });
+      expect(screen.getByTestId(optionId(retroIds.segment, 'notes'))).toBeSelected();
+      expect(screen.getByTestId(retroTileId('wentBadly'))).toBeSelected();
 
-  it('shows the no-sprint state', async () => {
-    makeApi(designRetro(), { [`GET /api/projects/${PROJECT.id}/sprints`]: [] });
-    await renderRetro();
+      // Anything else is ignored.
+      await act(async () => {
+        lastOnView()({ kind: 'screen', command: 'show', args: { view: 'nowhere' } });
+      });
+      expect(screen.getByTestId(retroTileId('wentBadly'))).toBeSelected();
+    });
 
-    expect(await screen.findByText('No sprint yet.')).toBeTruthy();
-    expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
-    expect(screen.queryByTestId(retroIds.addPoint)).toBeNull();
-  });
+    it('shows the empty state', async () => {
+      const base = designRetro();
+      const retro = emptyRetro(base, base.sprint);
+      makeApi(retro);
+      await renderRetro(scheme);
 
-  it('keeps the screen root while loading', async () => {
-    const retro = designRetro();
-    const api = makeApi(retro);
-    api.hang(retroRoute(retro));
-    await renderRetro();
+      expect(await screen.findByText('No points in Went well yet.')).toBeTruthy();
+      expect(screen.getByTestId(retroTileCountId('wentWell'))).toHaveTextContent('0');
+      await fireEvent.press(screen.getByTestId(retroTileId('improve')));
+      expect(screen.getByText('No points in Can be improved yet.')).toBeTruthy();
+    });
 
-    expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
-    expect(await screen.findByTestId(primitiveIds.skeleton)).toBeTruthy();
-    api.release(retroRoute(retro));
-    expect(await screen.findByTestId(retroIds.tiles)).toBeTruthy();
+    it('shows the error state and retries', async () => {
+      const retro = designRetro();
+      const api = makeApi(retro);
+      api.failNext(retroRoute(retro), apiError(500, 'server_error'));
+      await renderRetro(scheme);
+
+      expect(await screen.findByText("Couldn't load the retro.")).toBeTruthy();
+      expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
+      await fireEvent.press(screen.getByTestId(uiIds.errorStateAction));
+      expect(await screen.findByTestId(retroIds.tiles)).toBeTruthy();
+      expect(screen.queryByTestId(uiIds.errorState)).toBeNull();
+    });
+
+    it('shows the no-sprint state', async () => {
+      makeApi(designRetro(), { [`GET /api/projects/${PROJECT.id}/sprints`]: [] });
+      await renderRetro(scheme);
+
+      expect(await screen.findByText('No sprint yet.')).toBeTruthy();
+      expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
+      expect(screen.queryByTestId(retroIds.addPoint)).toBeNull();
+    });
+
+    it('sends no read with an empty project id on a cold open', async () => {
+      const retro = designRetro();
+      const api = makeApi(retro);
+      api.hang('GET /api/projects');
+      await renderRetro(scheme);
+
+      expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
+      expect(await screen.findByTestId(primitiveIds.skeleton)).toBeTruthy();
+      expect(
+        api.calls
+          .map((c) => c.path)
+          .filter((path) => path.includes('/projects//') || path.endsWith('/sprints//retro')),
+      ).toEqual([]);
+      expect(screen.queryByTestId(retroIds.tiles)).toBeNull();
+
+      api.release('GET /api/projects');
+      expect(await screen.findByTestId(retroIds.tiles)).toBeTruthy();
+    });
+
+    it('keeps the screen root while loading', async () => {
+      const retro = designRetro();
+      const api = makeApi(retro);
+      api.hang(retroRoute(retro));
+      await renderRetro(scheme);
+
+      expect(screen.getByTestId(screenIds.retro)).toBeTruthy();
+      expect(await screen.findByTestId(primitiveIds.skeleton)).toBeTruthy();
+      api.release(retroRoute(retro));
+      expect(await screen.findByTestId(retroIds.tiles)).toBeTruthy();
+    });
   });
 });
