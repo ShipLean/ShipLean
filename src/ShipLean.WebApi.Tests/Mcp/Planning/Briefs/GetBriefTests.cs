@@ -81,7 +81,7 @@ public class GetBriefTests : McpFixture
     {
         var plan = PlanFixture.FeatureEditor;
         var story = plan.Stories.Last(candidate => candidate.Tasks.Count > 0);
-        var task = story.Tasks.Last();
+        var task = story.Tasks[^1];
         var storyKey = _keys.Stories[story.Title];
         var taskKey = _keys.Tasks[task.Title];
         await using (var connection = await OpenDatabaseAsync())
@@ -109,7 +109,7 @@ public class GetBriefTests : McpFixture
     [Test]
     public async Task GetBrief_WhenNoAsks_ShouldOmitTheBlock()
     {
-        var task = PlanFixture.FeatureEditor.Stories.First(candidate => candidate.Tasks.Count > 0).Tasks.First();
+        var task = PlanFixture.FeatureEditor.Stories.First(candidate => candidate.Tasks.Count > 0).Tasks[0];
 
         var markdown = (await BriefAsync(_keys.Tasks[task.Title])).GetProperty("markdown").GetString()!;
 
