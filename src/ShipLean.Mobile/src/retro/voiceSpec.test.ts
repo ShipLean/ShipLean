@@ -113,18 +113,18 @@ describe('retro voice spec', () => {
   });
 
   it('resolves the dictate-preview state with the guessed category marked', () => {
+    const note =
+      'we should profile the small model on the S22 before SHIP-906 gets more voice actions';
     const { action, line } = only(
       run(
         context(),
-        'Add a point about SHIP-906: the model download stalled',
-        [['add_point', { note: 'x', category: 'wentBadly' }]],
-        'about SHIP-906: the model download stalled',
+        `Retro note: ${note}`,
+        [['add_point', { note: 'x', category: 'improve' }]],
+        note,
       ),
     );
-    expect(action).toMatchObject({ categoryGuessed: true, category: 'wentBadly' });
-    expect(line.text).toBe(
-      'Went badly: "about SHIP-906: the model download stalled" · about SHIP-906',
-    );
+    expect(action).toMatchObject({ categoryGuessed: true, category: 'improve', key: 'SHIP-906' });
+    expect(line.text).toBe(`Can be improved: "${note}" · about SHIP-906`);
     expect(line.detail).toBe('Category picked for you');
     expect(line.removable).toBe(true);
   });
@@ -139,6 +139,27 @@ describe('retro voice spec', () => {
       ),
     );
     expect(f.kind).toBe('unclear');
+    const filler = failed(
+      run(
+        context(),
+        'Um, the model download stalled',
+        [['add_point', { note: 'x', category: 'wentBadly' }]],
+        'the model download stalled',
+      ),
+    );
+    expect(filler).toEqual({
+      kind: 'unclear',
+      detail: { heard: 'Um, the model download stalled' },
+    });
+    const spoken = only(
+      run(
+        context(),
+        'Retro note colon the model download stalled',
+        [['add_point', { note: 'x', category: 'wentBadly' }]],
+        'the model download stalled',
+      ),
+    );
+    expect(spoken.action).toMatchObject({ text: 'the model download stalled' });
   });
 
   it('add_point_in takes the said category and marks nothing as guessed', () => {
@@ -315,6 +336,16 @@ describe('retro voice spec', () => {
     }
   });
 
+  it('answer_merge with no pending proposal is not allowed', () => {
+    const f = failed(
+      run(context({ proposals: [] }), 'Merge them', [['answer_merge', { answer: 'merge' }]]),
+    );
+    expect(f).toEqual({
+      kind: 'noValidAction',
+      detail: { action: 'answer_merge', reason: 'notAllowed' },
+    });
+  });
+
   it('answer_merge needs no proposal when one is pending and asks when several are', () => {
     const merge = only(run(context(), 'Merge them', [['answer_merge', { answer: 'merge' }]]));
     expect(merge.action).toMatchObject({
@@ -448,6 +479,32 @@ describe('retro voice spec', () => {
       ).toBeGreaterThanOrEqual(6);
       expect(rows.filter((r) => /SHIP-\d+/.test(r.note ?? '')).length).toBeGreaterThanOrEqual(4);
       expect(rows.filter((r) => r.calls.length === 0)).toHaveLength(4);
+    });
+
+    it('refuses the likely wrong calls for the failure utterances', () => {
+      const wrong: [string, string, [string, Record<string, unknown>][], string | undefined][] = [
+        ['Um', 'Um', [['add_point', { note: 'x', category: 'wentBadly' }]], 'Um'],
+        [
+          'Never mind',
+          'Never mind',
+          [['add_point', { note: 'x', category: 'wentBadly' }]],
+          'Never mind',
+        ],
+        [
+          'Hmm, what was it',
+          'Hmm, what was it',
+          [['add_point', { note: 'x', category: 'wentBadly' }]],
+          'what was it',
+        ],
+        [
+          'Retro note',
+          'Retro note',
+          [['add_point', { note: 'x', category: 'wentBadly' }]],
+          undefined,
+        ],
+      ];
+      for (const [label, utterance, calls, note] of wrong)
+        expect(failed(run(context(), utterance, calls, note)).kind, label).toBe('unclear');
     });
 
     it('replays every test-set row through toActions to its expected calls and note text', () => {
