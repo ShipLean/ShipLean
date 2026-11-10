@@ -1,0 +1,48 @@
+{"screen": "inbox", "utterance": "Approve D10 on SHIP-906", "calls": [{"action": "approve", "args": {"key": "SHIP-906", "decisions": [10]}}], "note": null}
+{"screen": "inbox", "utterance": "Confirm D1 to D8 on SHIP-907", "calls": [{"action": "approve", "args": {"key": "SHIP-907", "decisions": [1, 2, 3, 4, 5, 6, 7, 8]}}], "note": null}
+{"screen": "inbox", "utterance": "Approve all the decisions on SHIP-907", "calls": [{"action": "approve", "args": {"key": "SHIP-907", "all": true}}], "note": null}
+{"screen": "inbox", "utterance": "Approve D11 on SHIP-906", "calls": [{"action": "approve", "args": {"key": "SHIP-906", "decisions": [11]}}], "note": null}
+{"screen": "inbox", "utterance": "Approve D3 and D4 on SHIP-907", "calls": [{"action": "approve", "args": {"key": "SHIP-907", "decisions": [3, 4]}}], "note": null}
+{"screen": "inbox", "utterance": "Change D4 on SHIP-907 to the app’s key-value store", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-907", "label": "D4", "option": "The app’s key-value store"}}], "note": null}
+{"screen": "inbox", "utterance": "Choose the alternative for D1 on SHIP-907", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-907", "label": "D1", "option": "alternative"}}], "note": null}
+{"screen": "inbox", "utterance": "Take any connection for D10 on SHIP-906", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-906", "label": "D10", "option": "Any connection"}}], "note": null}
+{"screen": "inbox", "utterance": "Pick personal team for Q1 on SHIP-924", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-924", "label": "Q1", "option": "Personal team"}}], "note": null}
+{"screen": "inbox", "utterance": "Answer Q7 on SHIP-892 with 50 MB", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-892", "label": "Q7", "option": "50 MB"}}], "note": null}
+{"screen": "inbox", "utterance": "Go with wait for org on SHIP-924, Q1", "calls": [{"action": "chooseDecision", "args": {"key": "SHIP-924", "label": "Q1", "option": "Wait for org"}}], "note": null}
+{"screen": "inbox", "utterance": "Answer Priya Shah: 50 MB, and trim anything longer than two minutes.", "calls": [{"action": "answer", "args": {"person": "Priya Shah", "note": "x"}}], "note": "50 MB, and trim anything longer than two minutes."}
+{"screen": "inbox", "utterance": "Answer SHIP-892 question 7: Fifty megabytes is plenty.", "calls": [{"action": "answer", "args": {"key": "SHIP-892", "question": 7, "note": "x"}}], "note": "Fifty megabytes is plenty."}
+{"screen": "inbox", "utterance": "Tell Priya Shah: go with 20 MB for now", "calls": [{"action": "answer", "args": {"person": "Priya Shah", "note": "x"}}], "note": "go with 20 MB for now"}
+{"screen": "inbox", "utterance": "Answer SHIP-906 question 1: Ship the 1.7B as it is.", "calls": [{"action": "answer", "args": {"key": "SHIP-906", "question": 1, "note": "x"}}], "note": "Ship the 1.7B as it is."}
+{"screen": "inbox", "utterance": "Discuss D11 on SHIP-906: the dock covers the list on small phones.", "calls": [{"action": "discuss", "args": {"key": "SHIP-906", "decision": 11, "note": "x"}}], "note": "the dock covers the list on small phones."}
+{"screen": "inbox", "utterance": "Discuss D3 on SHIP-907: can we revoke one phone at a time?", "calls": [{"action": "discuss", "args": {"key": "SHIP-907", "decision": 3, "note": "x"}}], "note": "can we revoke one phone at a time?"}
+{"screen": "inbox", "utterance": "Let's discuss D10 on SHIP-906: what does ask before using data mean?", "calls": [{"action": "discuss", "args": {"key": "SHIP-906", "decision": 10, "note": "x"}}], "note": "what does ask before using data mean?"}
+{"screen": "inbox", "utterance": "Reply to the mention on SHIP-742: I'll install the app on Wednesday.", "calls": [{"action": "reply", "args": {"key": "SHIP-742", "note": "x"}}], "note": "I'll install the app on Wednesday."}
+{"screen": "inbox", "utterance": "Reply to Priya Shah: the GitHub app goes in before Thursday.", "calls": [{"action": "reply", "args": {"person": "Priya Shah", "note": "x"}}], "note": "the GitHub app goes in before Thursday."}
+{"screen": "inbox", "utterance": "Reply on SHIP-742: done, it is installed.", "calls": [{"action": "reply", "args": {"key": "SHIP-742", "note": "x"}}], "note": "done, it is installed."}
+{"screen": "inbox", "utterance": "Mark the SHIP-742 mention seen", "calls": [{"action": "seen", "args": {"key": "SHIP-742"}}], "note": null}
+{"screen": "inbox", "utterance": "Mark Priya Shah's mention as seen", "calls": [{"action": "seen", "args": {"person": "Priya Shah"}}], "note": null}
+{"screen": "inbox", "utterance": "Seen on SHIP-742", "calls": [{"action": "seen", "args": {"key": "SHIP-742"}}], "note": null}
+{"screen": "inbox", "utterance": "Still true on SHIP-743", "calls": [{"action": "stillTrue", "args": {"key": "SHIP-743"}}], "note": null}
+{"screen": "inbox", "utterance": "SHIP-743 status is still true", "calls": [{"action": "stillTrue", "args": {"key": "SHIP-743"}}], "note": null}
+{"screen": "inbox", "utterance": "Confirm the status of SHIP-743", "calls": [{"action": "stillTrue", "args": {"key": "SHIP-743"}}], "note": null}
+{"screen": "inbox", "utterance": "New status on SHIP-743: Unblocked, the host now has pg_dump 18.", "calls": [{"action": "status", "args": {"key": "SHIP-743", "note": "x"}}], "note": "Unblocked, the host now has pg_dump 18."}
+{"screen": "inbox", "utterance": "Set the status of SHIP-743 to: waiting on the Docker install", "calls": [{"action": "status", "args": {"key": "SHIP-743", "note": "x"}}], "note": "waiting on the Docker install"}
+{"screen": "inbox", "utterance": "Status for SHIP-743: backups run nightly on the new host", "calls": [{"action": "status", "args": {"key": "SHIP-743", "note": "x"}}], "note": "backups run nightly on the new host"}
+{"screen": "inbox", "utterance": "What needs me?", "calls": [{"action": "whatNeedsMe", "args": {}}], "note": null}
+{"screen": "inbox", "utterance": "What's waiting for me", "calls": [{"action": "whatNeedsMe", "args": {}}], "note": null}
+{"screen": "inbox", "utterance": "What's waited longest?", "calls": [{"action": "whatNeedsMe", "args": {}}], "note": null}
+{"screen": "inbox", "utterance": "Approve D1 to D8 on SHIP-907, and tell Priya Shah: 50 MB, and trim anything longer than two minutes.", "calls": [{"action": "approve", "args": {"key": "SHIP-907", "decisions": [1, 2, 3, 4, 5, 6, 7, 8]}}, {"action": "answer", "args": {"person": "Priya Shah", "note": "x"}}], "note": "50 MB, and trim anything longer than two minutes."}
+{"screen": "inbox", "utterance": "Still true on SHIP-743, and mark the SHIP-742 mention seen", "calls": [{"action": "stillTrue", "args": {"key": "SHIP-743"}}, {"action": "seen", "args": {"key": "SHIP-742"}}], "note": null}
+{"screen": "inbox", "utterance": "Approve D10 on SHIP-906 and discuss D11 on SHIP-906: wait for the dock design", "calls": [{"action": "approve", "args": {"key": "SHIP-906", "decisions": [10]}}, {"action": "discuss", "args": {"key": "SHIP-906", "decision": 11, "note": "x"}}], "note": "wait for the dock design"}
+{"screen": "inbox", "utterance": "Pick personal team for Q1", "calls": [{"action": "chooseDecision", "args": {"label": "Q1", "option": "Personal team"}}], "note": null}
+{"screen": "inbox", "utterance": "Answer question 1: ship it as it is", "calls": [{"action": "answer", "args": {"question": 1, "note": "x"}}], "note": "ship it as it is"}
+{"screen": "inbox", "utterance": "Answer: yes, 50 MB is fine", "calls": [{"action": "answer", "args": {"note": "x"}}], "note": "yes, 50 MB is fine"}
+{"screen": "inbox", "utterance": "Choose any connection for Q1", "calls": [{"action": "chooseDecision", "args": {"label": "Q1", "option": "Any connection"}}], "note": null}
+{"screen": "inbox", "utterance": "Approve D12 on SHIP-907", "calls": [{"action": "approve", "args": {"key": "SHIP-907", "decisions": [12]}}], "note": null}
+{"screen": "inbox", "utterance": "Still true on SHIP-906", "calls": [{"action": "stillTrue", "args": {"key": "SHIP-906"}}], "note": null}
+{"screen": "inbox", "utterance": "Discuss D2 on SHIP-906: the wrong number", "calls": [{"action": "discuss", "args": {"key": "SHIP-906", "decision": 2, "note": "x"}}], "note": "the wrong number"}
+{"screen": "inbox", "utterance": "Approve D1 on SHIP-743", "calls": [{"action": "approve", "args": {"key": "SHIP-743", "decisions": [1]}}], "note": null}
+{"screen": "inbox", "utterance": "um", "calls": [], "note": null}
+{"screen": "inbox", "utterance": "the weather is nice today", "calls": [], "note": null}
+{"screen": "inbox", "utterance": "hello hello", "calls": [], "note": null}
+{"screen": "inbox", "utterance": "uh, never mind", "calls": [], "note": null}
