@@ -162,12 +162,12 @@ describe('work item executor', () => {
   it('sends approve, discuss and reply through the asks writes', async () => {
     const fake = world();
     await send({ ...base, kind: 'approve', numbers: [1, 2] });
-    await send({ ...base, kind: 'discuss', number: 1, body: 'Put it in the dock' });
+    await send({ ...base, kind: 'discuss', number: 2, body: 'Put it in the dock' });
     await send({ ...base, kind: 'reply', number: 1, body: 'Try FunctionGemma' });
     expect(fake.callsTo(`POST /api/work-items/${ITEM}/decisions/confirm`)[0].body).toEqual({
       numbers: [1, 2],
     });
-    expect(fake.callsTo(`POST /api/work-items/${ITEM}/decisions/1/discuss`)[0].body).toEqual({
+    expect(fake.callsTo(`POST /api/work-items/${ITEM}/decisions/2/discuss`)[0].body).toEqual({
       body: 'Put it in the dock',
     });
     expect(fake.callsTo(`POST /api/work-items/${ITEM}/questions/1/answer`)[0].body).toEqual({
