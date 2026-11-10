@@ -69,6 +69,7 @@ class PushListingTests(unittest.TestCase):
         self.assertEqual(argv[3:], expected_args)
 
     # Mutation caught: drop --overwrite_screenshots.
+    # Mutation caught: --metadata_path store/ios/metadata (the text without the en-AU mirror).
     def test_ios_push_passes_the_listing_options(self):
         result = self.run_script("ios", "push", **self.keys())
 
@@ -76,7 +77,7 @@ class PushListingTests(unittest.TestCase):
             "--api_key_path", self.asc_key,
             "--app_identifier", "app.shiplean.mobile",
             "--app_version", app_version(),
-            "--metadata_path", "store/ios/metadata",
+            "--metadata_path", self.staged + "/ios/metadata",
             "--screenshots_path", self.staged + "/ios/screenshots",
             "--app_rating_config_path", "store/ios/age_rating.json",
             "--skip_binary_upload", "true",
