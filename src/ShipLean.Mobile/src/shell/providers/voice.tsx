@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSession } from '../../session/useSession';
 import { clearComposerRequest } from '../../voice/typed/composerRequest';
+import { TypedCommandSheet } from '../../voice/typed/TypedCommandSheet';
 import { VoiceProvider as VoiceStateProvider, VoiceSheetsHost } from '../../voice/VoiceProvider';
 import type { ProjectSlotProps } from './types';
 
@@ -14,6 +15,7 @@ export function VoiceProvider({ projectKey, children }: ProjectSlotProps) {
     <VoiceStateProvider>
       {children}
       <VoiceSheetsHost />
+      <TypedCommandSheet />
     </VoiceStateProvider>
   );
 }

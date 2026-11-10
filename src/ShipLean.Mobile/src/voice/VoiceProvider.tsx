@@ -57,6 +57,7 @@ import {
 } from './machine';
 import { resolveCommand } from './resolve';
 import { AnswerSheet } from './sheets/AnswerSheet';
+import { requestTypeInstead } from './typed/composerRequest';
 import { ApplyFailedSheet } from './sheets/ApplyFailedSheet';
 import { ListeningSheet } from './sheets/ListeningSheet';
 import { PreviewSheet } from './sheets/PreviewSheet';
@@ -490,8 +491,13 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       },
       apply,
       fix: () => startFix(internals),
-      // TODO: open the dock's Command composer with the heard text.
-      typeInstead: noop,
+      // Closes any failure sheet and asks for the Command composer: the focused screen's dock takes it, and with no
+      // dock the sheet host shows it (voice/typed/composerRequest).
+      typeInstead: () => {
+        store.nextTurn();
+        rest();
+        requestTypeInstead();
+      },
       submitTyped: (text) => void submitTyped(internals, text),
       retryWith: (change) => void retryWith(internals, change),
       dismiss: () => {

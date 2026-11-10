@@ -42,6 +42,28 @@ function consume(): void {
   notify();
 }
 
+// A dock is the composer's home on a screen. It registers while its screen is focused; with none registered, the
+// request has no screen to open on and the sheet host (voice/typed/TypedCommandSheet) shows the composer instead.
+let docks = 0;
+
+export function registerDock(): () => void {
+  docks += 1;
+  notify();
+  return () => {
+    docks -= 1;
+    notify();
+  };
+}
+
+export function useDockFocused(): boolean {
+  return useSyncExternalStore(subscribe, () => docks > 0);
+}
+
+// What "Type instead" asks for: Command, empty, with the mic-off reason line.
+export function requestTypeInstead(): void {
+  requestComposer({ mode: 'command', text: '', reason: 'micOff', questionNumber: null });
+}
+
 export function useComposerRequest(): { request: ComposerRequest | null; consume(): void } {
   const request = useSyncExternalStore(subscribe, () => current);
   return { request, consume };
