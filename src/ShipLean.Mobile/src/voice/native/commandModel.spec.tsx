@@ -3,6 +3,7 @@ import { initLlama } from 'llama.rn';
 import { buildGrammar, buildSystemPrompt } from '../commandPrompt';
 import type { ScreenVoiceSpec } from '../contracts';
 import { FakeModelFiles } from '../../test-support/modelFiles';
+import { native } from '../../test-support/nativeMocks';
 import { aTranscript, FakeModelStore } from '../../test-support/voice';
 import { LlamaCommandModel } from './commandModel';
 
@@ -23,7 +24,8 @@ interface MockContext {
   release: jest.Mock<Promise<void>, []>;
 }
 
-// T0v's llama.rn mock has no saveSession or loadSession, so this spec mocks the calls it asserts on.
+// llama.rn's own jest mock (and T0v's) don't give each context its own calls to assert on, so this spec mocks the
+// context: it records completion, saveSession, loadSession and release per context, and saveSession writes a file.
 const mockLlama = { output: '[]', contexts: [] as MockContext[] };
 
 jest.mock('llama.rn', () => ({
@@ -33,7 +35,14 @@ jest.mock('llama.rn', () => ({
       completion: jest.fn<Promise<{ text: string }>, [MockCompletionParams]>(async () => ({
         text: mockLlama.output,
       })),
-      saveSession: jest.fn<Promise<number>, [string]>(async () => 1),
+      saveSession: jest.fn<Promise<number>, [string]>(async (path) => {
+        // The mock factory can't see the imports, so it takes the shared file map itself.
+        const { native: shared } = jest.requireActual<
+          typeof import('../../test-support/nativeMocks')
+        >('../../test-support/nativeMocks');
+        shared.files.set(`file://${path}`, 'kv');
+        return 1;
+      }),
       loadSession: jest.fn<Promise<{ tokens_loaded: number; prompt: string }>, [string]>(
         async () => ({ tokens_loaded: 1, prompt: '' }),
       ),
@@ -187,8 +196,9 @@ describe('commandModelAdapter', () => {
   });
 
   it('a model that fails the memory check is not loaded and reports memory', async () => {
-    // An 8 GB phone (7.6 GB reported) that chose 4B: ~3.3 GB for the app, and 4B needs ~3.6.
+    // A 6 GB phone (5.5 GB reported) that chose 4B: ~2.75 GB for the app, and 4B needs ~3.4.
     const models = new FakeModelStore();
+    models.setMemory({ reportedGb: 5.5, soldGb: 6 });
     models.set({ resolved: 'qwen3-4b' });
     const files = new FakeModelFiles();
     files.place(QWEN_4);
@@ -228,9 +238,83 @@ describe('commandModelAdapter', () => {
     models.set({ files: [{ id: QWEN_17, state: 'checked', bytes: 1_100_000_000 }] });
     await waitFor(() => expect(model.ready()).toBe(true));
 
+    const prepared = await model.prepare(aSpec('workItem'));
+    await model.prepare(aSpec('backlog'));
+    const sessions = mockLlama.contexts[0].saveSession.mock.calls.map(([path]) => `file://${path}`);
+    expect(sessions).toHaveLength(2);
+    for (const uri of sessions) expect(native.files.has(uri)).toBe(true);
+    expect(prepared).toBeDefined();
+
     models.set({ phase: 'none', resolved: null });
     await waitFor(() => expect(model.ready()).toBe(false));
     expect(mockLlama.contexts[0].release).toHaveBeenCalledTimes(1);
+    for (const uri of sessions) expect(native.files.has(uri)).toBe(false);
+  });
+
+  it('deletes the sessions an earlier run left in the cache, and nothing else', async () => {
+    native.files.set('file:///cache/command-prefix-qwen3-4b-workItem.session', 'old');
+    native.files.set('file:///cache/command-prefix-qwen3-1.7b-inbox.session', 'old');
+    native.files.set('file:///cache/other.txt', 'keep');
+    native.files.set('file:///cache/command-prefix-notes.txt', 'keep');
+
+    const files = new FakeModelFiles();
+    files.place(QWEN_17);
+    const model = new LlamaCommandModel({ files, models: new FakeModelStore() });
+    await waitFor(() => expect(model.ready()).toBe(true));
+
+    expect([...native.files.keys()].sort()).toEqual([
+      'file:///cache/command-prefix-notes.txt',
+      'file:///cache/other.txt',
+    ]);
+  });
+
+  it('reports memory again when the same model that did not fit is deleted and downloaded again', async () => {
+    const models = new FakeModelStore();
+    models.setMemory({ reportedGb: 5.5, soldGb: 6 });
+    models.set({ resolved: 'qwen3-4b' });
+    const files = new FakeModelFiles();
+    files.place(QWEN_4);
+    const model = new LlamaCommandModel({ files, models });
+    await waitFor(() => expect(models.calls).toHaveLength(1));
+
+    models.set({ phase: 'none', resolved: null });
+    await waitFor(() => expect(model.ready()).toBe(false));
+    models.set({ phase: 'ready', resolved: 'qwen3-4b' });
+
+    await waitFor(() => expect(models.calls).toHaveLength(2));
+    expect(models.calls[1]).toEqual({ method: 'reportLoadFailure', reason: 'memory' });
+  });
+
+  it('does not load a model whose file is not on disk', async () => {
+    const models = new FakeModelStore();
+    const files = new FakeModelFiles();
+
+    const model = new LlamaCommandModel({ files, models });
+    await model.prepare(aSpec('workItem')).catch(() => undefined);
+
+    expect(initLlama).not.toHaveBeenCalled();
+    expect(model.ready()).toBe(false);
+    expect(models.calls).toEqual([]);
+
+    files.place(QWEN_17);
+    models.set({ phase: 'ready' });
+    await waitFor(() => expect(model.ready()).toBe(true));
+  });
+
+  it('refuses a parse with a spec whose actions differ from the prepared prefix', async () => {
+    const { model, context } = await loadedModel();
+    const prepared = await model.prepare(aSpec('workItem'));
+    const other = { ...aSpec('workItem'), actions: aSpec('workItem').actions.slice(0, 1) };
+
+    await expect(model.parse(prepared, aTranscript({ text: 'open it' }), other)).rejects.toThrow(
+      'Prepare this spec first.',
+    );
+    await expect(
+      model.parse(prepared, aTranscript({ text: 'open it' }), aSpec('workItem')),
+    ).resolves.toEqual([]);
+    expect(context.completion.mock.calls.filter(([params]) => params.n_predict !== 0)).toHaveLength(
+      1,
+    );
   });
 
   it('without its store and files it loads nothing and is not ready', async () => {

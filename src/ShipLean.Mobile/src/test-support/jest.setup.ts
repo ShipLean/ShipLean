@@ -213,11 +213,14 @@ jest.mock('expo-file-system', () => {
     parts
       .map((p) => (typeof p === 'string' ? p : (p as { uri: string }).uri))
       .join('/')
-      .replace(/([^:])\/+/g, '$1/');
+      .replace(/([^:/])\/+/g, '$1/');
   class File {
     readonly uri: string;
     constructor(...parts: unknown[]) {
       this.uri = join(parts);
+    }
+    get name() {
+      return this.uri.slice(this.uri.lastIndexOf('/') + 1);
     }
     get exists() {
       return native.files.has(this.uri);
@@ -244,6 +247,14 @@ jest.mock('expo-file-system', () => {
       return true;
     }
     create() {}
+    // The files directly under this directory.
+    list() {
+      return [...native.files.keys()]
+        .filter(
+          (uri) => uri.startsWith(`${this.uri}/`) && !uri.slice(this.uri.length + 1).includes('/'),
+        )
+        .map((uri) => new File(uri));
+    }
   }
   return {
     __esModule: true,

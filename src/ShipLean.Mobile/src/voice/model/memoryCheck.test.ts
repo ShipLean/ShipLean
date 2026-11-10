@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { chooseModel } from '../manifest';
 import { availableBytes, bytesNeeded, HEADROOM_BYTES, memoryCheck, N_CTX } from './memoryCheck';
 
 const GB = 1024 ** 3;
@@ -26,11 +27,25 @@ describe('memoryCheck', () => {
     expect(bytesNeeded('qwen3-4b', 1000, 100)).toBe(1000 + 147_456 * 100 + HEADROOM_BYTES);
   });
 
-  it('gives 4B to a 12 GB phone and only 1.7B to the 8 GB class, by the memory each reports', () => {
-    // A 12 GB phone reports about 11.2 GB; an 8 GB one about 7.4 (D2 notes).
+  it('gives 4B to a 12 GB phone and to the 8 GB class, and only 1.7B to a 6 GB one, by the memory each reports', () => {
+    // A 12 GB phone reports about 11.2 GB; an 8 GB one about 7.4; a 6 GB one about 5.5 (D2 notes).
     expect(memoryCheck('qwen3-4b', FOUR_B, availableBytes(11.2)).fits).toBe(true);
-    expect(memoryCheck('qwen3-4b', FOUR_B, availableBytes(7.4)).fits).toBe(false);
-    expect(memoryCheck('qwen3-1.7b', ONE_POINT_SEVEN_B, availableBytes(7.4)).fits).toBe(true);
+    expect(memoryCheck('qwen3-4b', FOUR_B, availableBytes(7.4)).fits).toBe(true);
+    expect(memoryCheck('qwen3-4b', FOUR_B, availableBytes(5.5)).fits).toBe(false);
+    expect(memoryCheck('qwen3-1.7b', ONE_POINT_SEVEN_B, availableBytes(5.5)).fits).toBe(true);
     expect(memoryCheck('qwen3-1.7b', ONE_POINT_SEVEN_B, availableBytes(0)).fits).toBe(false);
   });
+
+  it.each([3.6, 5.5, 7.4, 11.2])(
+    'agrees with chooseModel on a phone reporting %s GB',
+    (reportedGb) => {
+      const advice = chooseModel(reportedGb);
+      const available = availableBytes(reportedGb);
+
+      expect(memoryCheck('qwen3-4b', FOUR_B, available).fits).toBe(advice.fourB !== 'blocked');
+      expect(memoryCheck('qwen3-1.7b', ONE_POINT_SEVEN_B, available).fits).toBe(
+        advice.auto !== null,
+      );
+    },
+  );
 });
