@@ -79,3 +79,25 @@ Plain `http` works in development: iOS allows local networking (`NSAllowsLocalNe
 6. On the web, open Your profile > Signed-in devices: the phone is listed. Sign it out there and confirm.
 7. In the app, pull down on Projects: the next request answers `session_ended` and the app returns to Sign in.
 8. Sign in again, then sign out from the app's Account (it asks first) and check the web list no longer shows the phone.
+
+## Native voice modules
+
+Voice runs on the phone, so the app needs a development build (`npx expo prebuild`); Expo Go can't load these. The adapters live in `src/voice/native/` behind N9's interfaces (`src/voice/contracts.ts`) and the ports in `src/voice/native/ports.ts`; jest mocks every one of these modules in `src/test-support/jest.setup.ts`, with settable state in `src/test-support/nativeMocks.ts`.
+
+| Package                    | Version | For                                                                                                                      |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `llama.rn`                 | 0.12.9  | The command model (Qwen3 Q4_K_M GGUF, GBNF grammars). Its postinstall downloads the release's prebuilt native libraries. |
+| `react-native-sherpa-onnx` | 0.4.4   | Speech to text: Parakeet TDT through sherpa-onnx 1.12.35, offline `nemo_transducer` decoding with a hotwords file.       |
+| `expo-audio`               | 58.0.11 | The microphone permission and a 16 kHz mono PCM stream (`AudioModule.AudioStream`) while the button is held. No file.    |
+| `expo-file-system`         | 58.0.13 | Model files and the resumable download (`createDownloadResumable`, background session on iOS).                           |
+
+**Why `react-native-sherpa-onnx` and not a local module (checked 10 Nov 2026).** sherpa-onnx has no official React Native binding. `react-native-sherpa-onnx` 0.4.4 (XDcobra, released 8 Sep 2026, releases since Jan 2026) is a TurboModule for Android and iOS. It bundles sherpa-onnx 1.12.35 (TDT hotwords need 1.12.24 or later), decodes `nemo_transducer` models offline, and takes `hotwordsFile` and `hotwordsScore` on the recognizer and a hotwords string per stream. Android gets its native libraries from a Maven AAR at Gradle time and iOS from a release xcframework when the pod installs; there is no npm postinstall. Its download and extraction helpers need two optional peers (`@dr.pogodin/react-native-fs`, `@kesha-antonov/react-native-background-downloader`) that the app doesn't install; import only `react-native-sherpa-onnx/stt`. `@siteed/sherpa-onnx.rn` 2.0.1 was the other candidate: it decodes `nemo_transducer` too, but doesn't pass a hotwords file to transducer models yet. The CI job `mobile-android-build` is the proof that the prebuild compiles.
+
+**App config (`app.json`).**
+
+- `expo-audio`: the microphone purpose string; background playback and background recording off (voice is input only and listens only while held).
+- `llama.rn`'s plugin with `enableEntitlements: false`: it adds C++20 to the Podfile and Android's optional `libOpenCL.so`. The iOS entitlement `com.apple.developer.kernel.increased-memory-limit` is set in `ios.entitlements` for every build, development builds included, rather than by the plugin for production profiles only.
+- Android: `RECORD_AUDIO`, `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`, and `allowBackup: false`, so Android's auto backup never copies the model directory (or anything else; the secret already stays out of it). iCloud exclusion on iOS is per file, at run time.
+- No `expo-background-task`. It schedules short periodic work at the system's choosing (15 minutes at the soonest) and can't keep a multi-GB download running. The download carries on in the background through `expo-file-system`'s background session on iOS, and through a data-sync foreground service on Android.
+
+`npx expo prebuild` rewrites the `android` and `ios` scripts in `package.json`; don't commit that change.
