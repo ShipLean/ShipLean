@@ -34,9 +34,9 @@ public sealed class DecisionsPanel(IPage page, Guid itemId)
     public ILocator BulkConfirm => page.GetByTestId(AsksTestIds.BulkConfirm);
 
     // Rows
-    public ILocator DecisionRows => page.GetByTestId(AsksTestIds.DecisionRow);
+    public ILocator DecisionRows => Section.GetByTestId(AsksTestIds.DecisionRow);
 
-    public ILocator QuestionRows => page.GetByTestId(AsksTestIds.QuestionRow);
+    public ILocator QuestionRows => Section.GetByTestId(AsksTestIds.QuestionRow);
 
     public ILocator DecisionRow(int n) =>
         DecisionRows.Filter(new() { Has = page.GetByTestId(AsksTestIds.DecisionLabel).Filter(new() { HasTextRegex = new Regex($"^D{n}$") }) });
@@ -125,10 +125,36 @@ public sealed class DecisionsPanel(IPage page, Guid itemId)
 
     public ILocator CommentAskTags => page.GetByTestId(AsksTestIds.CommentAskTag);
 
-    // Reads the row's data-state: open, confirmed, changed or withdrawn.
+    // The chips on Discussion comments of one kind: answer ("Answer to Q1"), changed ("D1 changed") or about ("On D1").
+    // Picked by the chip's wording, as AG0046 bans attribute selectors.
+    public ILocator CommentAskTag(string kind) => CommentAskTags.Filter(new()
+    {
+        HasTextRegex = kind switch
+        {
+            "answer" => new Regex("^Answer to "),
+            "changed" => new Regex(" changed$"),
+            "about" => new Regex("^On "),
+            _ => throw new ArgumentException($"Unknown comment ask tag kind {kind}.", nameof(kind)),
+        },
+    });
+
+    // History rail lines for one badge (D1, Q2) and kind (raised, edited, confirmed, changed, withdrawn, asked, answered).
+    // Picked by the line's wording ("confirmed D1", "withdrew D1"), as AG0046 bans attribute selectors.
+    public ILocator RailAskLine(string badge, string kind) =>
+        RailAskLines.Filter(new() { HasTextRegex = new Regex($"{(kind == "withdrawn" ? "withdrew" : kind)} {Regex.Escape(badge)}(?![0-9])") });
+
+    // The Feature roll-up row of one child, by its key.
+    public ILocator RollUpRow(string key) => RollUpRows.Filter(new() { HasTextRegex = new Regex($"{Regex.Escape(key)}(?![0-9])") });
+
+    // Toasts on the page (the section toasts on a failed or undone write); filter by text.
+    public ILocator Toasts => page.GetByTestId(ComponentTestIds.ToastHost).GetByTestId(ComponentTestIds.Toast);
+
+    // One-shot read of the row's data-state (open, confirmed, changed or withdrawn). It does not retry: never use it right after a
+    // write. Assert with Expect(DecisionRow(n)).ToHaveAttributeAsync("data-state", ...) instead.
     public Task<string?> RowState(int n) => DecisionRow(n).GetAttributeAsync("data-state");
 
-    // Reads the chip text: "Needs an answer", "✓ Answered" or "Withdrawn".
+    // One-shot read of the chip text ("Needs an answer", "✓ Answered" or "Withdrawn"). It does not retry: never use it right after a
+    // write. Assert with Expect(QuestionStateChip(q)).ToHaveTextAsync(...) instead.
     public Task<string> QuestionState(int q) => QuestionStateChip(q).InnerTextAsync();
 
     // Opens the section when it is folded.
@@ -146,7 +172,9 @@ public sealed class DecisionsPanel(IPage page, Guid itemId)
         page.RunAndWaitForApiAsync($"{DecisionsPath}/confirm", "POST", () => BulkConfirm.ClickAsync());
 
     // Opens the change form, picks the option at index (recommended, alternatives..., [current], own last), optionally
-    // writes a note, saves. Returns the POST response (.../confirm or .../{n}/change).
+    // writes a note, saves. Returns the POST response (.../confirm or .../{n}/change). It waits for a POST, so it hangs when none
+    // is sent: the client posts nothing when the picked answer equals the current one on a settled decision, or when own is blank.
+    // Use SaveUnchangedAsync for those cases.
     public async Task<IResponse> ChangeAsync(int n, int option, string? note = null)
     {
         await ChangeButton(n).ClickAsync();
@@ -161,6 +189,14 @@ public sealed class DecisionsPanel(IPage page, Guid itemId)
         await ChangeOptions(n).Last.CheckAsync();
         await ChangeOwnInput(n).FillAsync(ownText);
         return await SaveChangeAsync(n, note);
+    }
+
+    // Opens the change form, keeps the pre-selected answer and clicks Save without waiting for a response. For the no-POST cases
+    // (unchanged answer, blank own); assert the outcome on ChangeError or the row afterwards.
+    public async Task SaveUnchangedAsync(int n)
+    {
+        await ChangeButton(n).ClickAsync();
+        await ChangeSave(n).ClickAsync();
     }
 
     // Opens the discuss form and posts; returns the POST .../{n}/discuss response.
