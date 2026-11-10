@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { projectRowId } from '../screens/projects/testIds';
 import { screenIds, tabIds } from '../screens/testIds';
 import { renderApp } from '../test-support/renderApp';
-import { renderScreen } from '../test-support/renderScreen';
+import { renderWithVoice } from '../test-support/voiceUi';
 import { Dock } from '../ui/Dock';
 import { primitiveIds } from '../ui/testIds';
 import { micSlotId } from '../voice/MicSlot.testIds';
@@ -35,7 +35,7 @@ describe('voice mounts', () => {
   });
 
   it('shows mic-dock in the Dock', async () => {
-    await renderScreen(<Dock placeholder="Type a note" />);
+    await renderWithVoice(<Dock placeholder="Type a note" />);
     expect(
       within(screen.getByTestId(primitiveIds.dockMic)).getByTestId(micSlotId('dock')),
     ).toBeOnTheScreen();

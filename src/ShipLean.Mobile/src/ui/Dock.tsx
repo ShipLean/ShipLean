@@ -1,5 +1,6 @@
-import { TextInput, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DockComposer } from '../dock/DockComposer';
 import { useTheme } from '../theme';
 import { MicSlot } from '../voice/MicSlot';
 import { layout } from './layout';
@@ -17,9 +18,9 @@ export interface DockProps {
   onSubmitted?: () => void;
 }
 
-// The dock at the foot of a detail screen (app.css .dock): the "Type a note" field and the mic.
-// TODO: typing and sending a note, and the Note | Command switch, replace this stub field.
-export function Dock({ placeholder }: DockProps) {
+// The dock at the foot of a detail screen (app.css .dock): the "Type a note" field and the mic. Pressing the field
+// opens the composer (src/dock): a note posts at once through the runner; Command goes through the voice preview.
+export function Dock({ itemId, itemKey, projectId, placeholder, onSubmitted }: DockProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { colors } = theme;
@@ -27,9 +28,6 @@ export function Dock({ placeholder }: DockProps) {
     <View
       testID={primitiveIds.dock}
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: layout.dockGap,
         paddingTop: layout.dockPaddingTop,
         paddingHorizontal: theme.space[4],
         paddingBottom: insets.bottom + layout.dockPaddingBottom,
@@ -38,26 +36,18 @@ export function Dock({ placeholder }: DockProps) {
         borderTopColor: colors.border,
       }}
     >
-      <TextInput
-        testID={primitiveIds.dockField}
-        // Read-only until typing is built, so nothing typed is dropped.
-        editable={false}
+      <DockComposer
+        itemId={itemId}
+        itemKey={itemKey}
+        projectId={projectId}
         placeholder={placeholder}
-        placeholderTextColor={colors.muted}
-        accessibilityLabel={placeholder}
-        style={{
-          flex: 1,
-          height: theme.touch.control,
-          borderRadius: layout.dockFieldRadius,
-          paddingHorizontal: theme.space[4],
-          backgroundColor: colors.surface2,
-          color: colors.text,
-          fontSize: theme.font.size.body15,
-        }}
+        onSubmitted={onSubmitted}
+        mic={
+          <View testID={primitiveIds.dockMic}>
+            <MicSlot placement="dock" />
+          </View>
+        }
       />
-      <View testID={primitiveIds.dockMic}>
-        <MicSlot placement="dock" />
-      </View>
     </View>
   );
 }
