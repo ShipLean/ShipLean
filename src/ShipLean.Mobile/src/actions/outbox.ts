@@ -37,8 +37,7 @@ export function addBatch(
   offline: boolean,
 ): Outbox {
   const held = opts.undo.mode === 'hold' && opts.undo.ms > 0;
-  const undoUntil =
-    opts.undo.ms > 0 ? new Date(now.getTime() + opts.undo.ms).toISOString() : null;
+  const undoUntil = opts.undo.ms > 0 ? new Date(now.getTime() + opts.undo.ms).toISOString() : null;
   const added: Pending[] = actions.map(({ id, action }) => ({
     id,
     batchId,

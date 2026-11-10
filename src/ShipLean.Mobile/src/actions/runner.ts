@@ -94,7 +94,8 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
   for (const p of box.items) {
     if (p.undoUntil === null || timers.has(p.batchId)) continue;
     if (p.state === 'undo') watchWindow(p.batchId, p.undoUntil, 'hold');
-    else if (Date.parse(p.undoUntil) > now().getTime()) watchWindow(p.batchId, p.undoUntil, 'after');
+    else if (Date.parse(p.undoUntil) > now().getTime())
+      watchWindow(p.batchId, p.undoUntil, 'after');
   }
 
   // The first queued action, in dispatch order, whose area can send it and that no earlier action of its batch is
@@ -267,7 +268,12 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       timers.delete(batchId);
       // Still held: nothing went out, so dropping it undoes it.
       if (items.some((p) => p.state === 'undo')) {
-        set(remove(box, items.map((p) => p.id)));
+        set(
+          remove(
+            box,
+            items.map((p) => p.id),
+          ),
+        );
         return items.map((p) => ({ id: p.id, outcome: 'undone' }));
       }
       const outcomes: UndoOutcome[] = [];

@@ -12,7 +12,8 @@ export const NO_ANSWER = 'No answer from ShipLean.';
 
 // The one wording for a send that didn't go through, whatever the area.
 export function sendError(e: unknown, a: AppAction): SendError {
-  if (!(e instanceof ApiRequestError)) return { error: NO_ANSWER, failure: 'network', retryable: true };
+  if (!(e instanceof ApiRequestError))
+    return { error: NO_ANSWER, failure: 'network', retryable: true };
   const item = a.key ?? 'the item';
   if (e.status === 409)
     return {
