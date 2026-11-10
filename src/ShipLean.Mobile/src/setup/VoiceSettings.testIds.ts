@@ -6,6 +6,8 @@ export const voiceSettingsIds = {
   // The progress of a model change, under the command model row.
   change: 'settings-voice-change',
   changeBar: 'settings-voice-change-bar',
+  changeRetry: 'settings-voice-change-retry',
+  deleteError: 'settings-voice-delete-error',
   speech: 'settings-voice-speech',
   tryOther: 'settings-voice-try-other',
   wifiOnly: 'settings-voice-wifi-only',

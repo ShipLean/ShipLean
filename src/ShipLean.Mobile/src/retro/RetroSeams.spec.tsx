@@ -45,7 +45,7 @@ describe('the Retro seams', () => {
     const add = await renderWithRunner(
       <RetroActionsProvider>
         <AddPointSheet projectId="p" sprintId="s" open onClose={noop} category={null} />
-        <DecideSheet point={point} projectId="p" open onClose={noop} />
+        <DecideSheet point={point} projectId="p" sprintId="s" open onClose={noop} />
         <ToDecideView projectId="p" sprintId="s" />
         <RetroFeaturesView projectId="p" />
       </RetroActionsProvider>,
@@ -61,7 +61,7 @@ describe('the Retro seams', () => {
     await add.rerender(
       <>
         <AddPointSheet projectId="p" sprintId="s" open={false} onClose={noop} category={null} />
-        <DecideSheet point={point} projectId="p" open={false} onClose={noop} />
+        <DecideSheet point={point} projectId="p" sprintId="s" open={false} onClose={noop} />
       </>,
     );
     expect(add.queryByTestId(retroIds.addSheet)).toBeNull();

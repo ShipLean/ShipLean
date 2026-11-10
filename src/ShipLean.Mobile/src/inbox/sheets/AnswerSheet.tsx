@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Button } from '../../ui/Button';
@@ -35,7 +35,7 @@ function frameOf({ mode, item, ask }: AnswerSheetRequest): Frame {
       const q = ask.question;
       if (q === null) throw new Error('A question sheet needs the question ask.');
       return {
-        title: `Answer ${ask.label}`,
+        title: 'Answer',
         quote: q.text,
         options: q.options,
         placeholder: 'Type an answer',
@@ -46,10 +46,10 @@ function frameOf({ mode, item, ask }: AnswerSheetRequest): Frame {
       const m = ask.mention;
       if (m === null) throw new Error('A mention sheet needs the mention ask.');
       return {
-        title: ask.from === null ? 'Reply' : `Reply to ${ask.from.name}`,
+        title: 'Reply',
         quote: m.excerpt,
         options: [],
-        placeholder: 'Type a reply',
+        placeholder: 'Type an answer',
         where: `${posted} It starts with their name. ${reads}`,
       };
     }
@@ -57,10 +57,10 @@ function frameOf({ mode, item, ask }: AnswerSheetRequest): Frame {
       const d = ask.decision;
       if (d === null) throw new Error('A discuss sheet needs the decision ask.');
       return {
-        title: `Discuss ${ask.label}`,
+        title: `Discuss D${d.number}`,
         quote: `${d.question}\nRecommended: ${d.recommended}`,
         options: [],
-        placeholder: 'Type your reply',
+        placeholder: 'Type an answer',
         where: `${posted} The decision stays open. ${reads}`,
       };
     }
@@ -69,9 +69,9 @@ function frameOf({ mode, item, ask }: AnswerSheetRequest): Frame {
       if (s === null) throw new Error('A status sheet needs the status ask.');
       return {
         title: 'New status',
-        quote: s.statusLine === '' ? 'No status yet.' : s.statusLine,
+        quote: s.statusLine,
         options: [],
-        placeholder: 'One line, at most 500 characters',
+        placeholder: 'Type an answer',
         where: `${posted} It replaces the status line. ${reads}`,
       };
     }
@@ -79,9 +79,9 @@ function frameOf({ mode, item, ask }: AnswerSheetRequest): Frame {
 }
 
 // The status line is one line of at most 500 characters.
-function statusProblem(text: string): string | null {
+function statusProblem(text: string, body: string): string | null {
   if (/[\r\n]/.test(text)) return 'The status is one line: remove the line breaks.';
-  if (text.length > STATUS_MAX) return `The status is at most ${STATUS_MAX} characters.`;
+  if (body.length > STATUS_MAX) return `The status is at most ${STATUS_MAX} characters.`;
   return null;
 }
 
@@ -127,7 +127,7 @@ export function AnswerSheet({ request, onClose }: AnswerSheetProps) {
   // The quick answer last tapped; it counts as sent unchanged while the box still holds exactly its text.
   const [quick, setQuick] = useState<number | null>(null);
   const body = text.trim();
-  const problem = request.mode === 'status' ? statusProblem(text) : null;
+  const problem = request.mode === 'status' ? statusProblem(text, body) : null;
   const off = body === '' || problem !== null;
 
   const apply = () => {
@@ -144,22 +144,28 @@ export function AnswerSheet({ request, onClose }: AnswerSheetProps) {
 
   return (
     <BottomSheet title={frame.title} open onClose={onClose} testID={inboxIds.answerSheet}>
-      <View style={{ gap: theme.space[3] }}>
+      <KeyboardAvoidingView
+        testID={`${inboxIds.answerSheet}-keyboard`}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ gap: theme.space[3] }}
+      >
         <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
           {request.item.key} {request.item.title}
         </Text>
-        <View
-          testID={inboxIds.answerQuote}
-          style={{
-            padding: theme.space[3],
-            borderRadius: theme.radius.md,
-            backgroundColor: colors.surface2,
-          }}
-        >
-          <Text style={{ color: colors.text, fontSize: theme.font.size.body15 }}>
-            {frame.quote}
-          </Text>
-        </View>
+        {frame.quote === '' ? null : (
+          <View
+            testID={inboxIds.answerQuote}
+            style={{
+              padding: theme.space[3],
+              borderRadius: theme.radius.md,
+              backgroundColor: colors.surface2,
+            }}
+          >
+            <Text style={{ color: colors.text, fontSize: theme.font.size.body15 }}>
+              {frame.quote}
+            </Text>
+          </View>
+        )}
         {frame.options.length > 0 ? (
           <View style={{ gap: theme.space[2] }}>
             <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
@@ -168,7 +174,7 @@ export function AnswerSheet({ request, onClose }: AnswerSheetProps) {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
               {frame.options.map((option, index) => (
                 <Pressable
-                  key={option}
+                  key={index}
                   testID={answerQuickId(index)}
                   accessibilityRole="button"
                   onPress={() => {
@@ -228,13 +234,13 @@ export function AnswerSheet({ request, onClose }: AnswerSheetProps) {
           <Text
             testID={inboxIds.answerError}
             accessibilityRole="alert"
-            style={{ color: colors.danger, fontSize: theme.font.size.sm }}
+            style={{ color: colors.danger, fontSize: theme.font.size.body15 }}
           >
             {problem}
           </Text>
         ) : null}
         <Button label="Apply" onPress={apply} disabled={off} testID={inboxIds.answerApply} />
-      </View>
+      </KeyboardAvoidingView>
     </BottomSheet>
   );
 }
