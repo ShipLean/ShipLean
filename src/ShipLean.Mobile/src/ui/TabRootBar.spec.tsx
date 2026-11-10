@@ -30,4 +30,12 @@ describe.each(['light', 'dark'] as const)('TabRootBar (%s)', (scheme) => {
       backgroundColor: themes[scheme].colors.surface,
     });
   });
+
+  it('sets the key in the theme monospace font', async () => {
+    await renderScreen(<TabRootBar projectKey="SHIP" title="Inbox" onTilePress={() => {}} />, {
+      scheme,
+    });
+
+    expect(screen.getByText('SHIP')).toHaveStyle({ fontFamily: themes[scheme].font.mono });
+  });
 });

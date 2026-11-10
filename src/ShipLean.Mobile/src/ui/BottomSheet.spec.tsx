@@ -35,6 +35,19 @@ describe.each(['light', 'dark'] as const)('BottomSheet (%s)', (scheme) => {
     });
   });
 
+  it('dims the screen behind it with the scrim colour', async () => {
+    await renderScreen(
+      <BottomSheet title="Reply" open onClose={() => {}} testID="reply-sheet">
+        <Text testID="body">body</Text>
+      </BottomSheet>,
+      { scheme },
+    );
+
+    expect(screen.getByTestId(primitiveIds.sheetBackdrop)).toHaveStyle({
+      backgroundColor: themes[scheme].colors.scrim,
+    });
+  });
+
   it('renders nothing when closed', async () => {
     await renderScreen(
       <BottomSheet title="Reply" open={false} onClose={() => {}} testID="reply-sheet">

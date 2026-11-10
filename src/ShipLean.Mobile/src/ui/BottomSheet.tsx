@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
-import { tint } from './layout';
 import { primitiveIds, sheetTitleId } from './testIds';
 
 export interface BottomSheetProps {
@@ -19,8 +18,6 @@ export function BottomSheet({ title, open, onClose, children, testID }: BottomSh
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { colors } = theme;
-  // The design's --scrim: the text colour in light, near-black (the background) in dark.
-  const scrim = theme.scheme === 'dark' ? tint(colors.bg, 0.75) : tint(colors.text, 0.28);
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
@@ -35,7 +32,7 @@ export function BottomSheet({ title, open, onClose, children, testID }: BottomSh
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: scrim,
+            backgroundColor: colors.scrim,
           }}
         />
         <View

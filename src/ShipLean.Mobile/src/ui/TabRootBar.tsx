@@ -63,7 +63,7 @@ export function TabRootBar({ projectKey, title, subtitle, onTilePress }: TabRoot
               color: colors.accentFg,
               fontSize: theme.font.size.xxs,
               fontWeight: theme.font.weight.bold,
-              fontFamily: 'monospace',
+              fontFamily: theme.font.mono,
             }}
           >
             {projectKey}
