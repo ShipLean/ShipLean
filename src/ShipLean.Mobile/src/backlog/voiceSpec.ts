@@ -4,6 +4,7 @@ import type { ScreenVoiceSpec } from '../voice/contracts';
 import type { BacklogAction, BacklogLevel } from './actions';
 
 export interface BacklogVoiceContext {
+  projectId: string;
   level: BacklogLevel;
   // The visible rows.
   rows: BacklogRowDto[];

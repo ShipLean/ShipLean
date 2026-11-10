@@ -4,6 +4,7 @@ import type { PendingAnswer } from './actions';
 import { inboxRowId } from './testIds';
 
 export interface InboxRowProps {
+  projectId: string;
   item: InboxItemDto;
   // This item's answers still in the runner (held, queued, sending, uncertain or failed).
   pending: PendingAnswer[];

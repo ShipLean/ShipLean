@@ -1,7 +1,7 @@
-import type { Api, Pending, PreviewLine } from '../../actions/types';
+import type { Api, Pending, PreviewLine, SendReceipt } from '../../actions/types';
 import type { BacklogAddItem } from '../actions';
 
-export async function sendAddItem(a: BacklogAddItem, api: Api): Promise<void> {
+export async function sendAddItem(a: BacklogAddItem, api: Api): Promise<SendReceipt | void> {
   void a;
   void api;
   throw new Error('TODO: post the new item with its placement');
@@ -17,8 +17,13 @@ export function describeAddItem(a: BacklogAddItem): PreviewLine {
   };
 }
 
-export async function undoAddItem(a: BacklogAddItem, api: Api): Promise<void> {
+export async function undoAddItem(
+  a: BacklogAddItem,
+  api: Api,
+  receipt?: SendReceipt | null,
+): Promise<void> {
   void a;
+  void receipt;
   void api;
   throw new Error('TODO: move the added item to Removed');
 }

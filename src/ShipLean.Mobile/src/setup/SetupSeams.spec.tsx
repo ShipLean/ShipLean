@@ -53,7 +53,7 @@ describe('setup seams', () => {
       'FirstResultSheet',
       'sheet-first-result',
       firstResultSheetIds.root,
-      <FirstResultSheet open onOpenInbox={noop} onClose={noop} />,
+      <FirstResultSheet open projectId="p1" projectKey="SHIP" onOpenInbox={noop} onClose={noop} />,
     ],
     ['FromSetupTip', 'inbox-from-setup', fromSetupTipIds.root, <FromSetupTip projectKey="SHIP" />],
   ])('each setup stub renders its root id from its props: %s', async (_name, id, exported, ui) => {

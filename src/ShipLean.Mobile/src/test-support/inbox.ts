@@ -227,7 +227,7 @@ export function fakeInboxActions(pending: PendingAnswer[] = []): FakeInboxAction
 
 export type SheetCall =
   | { kind: 'answer'; request: AnswerSheetRequest }
-  | { kind: 'review'; item: InboxItemDto; scrollToConfirm: boolean }
+  | { kind: 'review'; item: InboxItemDto; scrollToConfirm: boolean; projectId: string }
   | { kind: 'close' };
 
 export interface FakeInboxSheets extends InboxSheets {
@@ -242,8 +242,8 @@ export function fakeInboxSheets(): FakeInboxSheets {
     openAnswer: (request) => {
       calls.push({ kind: 'answer', request });
     },
-    openReview: (item, { scrollToConfirm }) => {
-      calls.push({ kind: 'review', item, scrollToConfirm });
+    openReview: (item, { scrollToConfirm, projectId }) => {
+      calls.push({ kind: 'review', item, scrollToConfirm, projectId });
     },
     close: () => {
       calls.push({ kind: 'close' });

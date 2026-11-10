@@ -6,3 +6,6 @@ expo-env.d.ts
 # Native projects come from `npx expo prebuild` and are never committed (D6: no device builds here).
 /ios
 /android
+# Voice eval: the Python venv and its outputs.
+/tools/voice-eval/.venv/
+/tools/voice-eval/out/

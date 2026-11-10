@@ -4,6 +4,8 @@ import { firstResultSheetIds } from './FirstResultSheet.testIds';
 
 export interface FirstResultSheetProps {
   open: boolean;
+  projectId: string;
+  projectKey: string;
   onOpenInbox: () => void;
   onClose: () => void;
 }

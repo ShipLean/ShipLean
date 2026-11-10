@@ -10,7 +10,18 @@ const testSupport = {
 
 module.exports = tseslint.config(
   // Expo's caches, generated route types and the bundle check output.
-  { ignores: ['node_modules', '.expo', 'dist', 'expo-env.d.ts', 'ios', 'android'] },
+  {
+    ignores: [
+      'node_modules',
+      '.expo',
+      'dist',
+      'expo-env.d.ts',
+      'ios',
+      'android',
+      'tools/voice-eval/.venv/',
+      'tools/voice-eval/out/',
+    ],
+  },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   reactHooks.configs.flat['recommended-latest'],

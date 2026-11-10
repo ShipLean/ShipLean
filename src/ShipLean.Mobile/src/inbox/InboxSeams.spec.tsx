@@ -51,11 +51,13 @@ function Opener() {
     <>
       <Pressable
         testID="answer"
-        onPress={() => sheets.openAnswer({ mode: 'question', item, ask: item.asks[0] })}
+        onPress={() =>
+          sheets.openAnswer({ mode: 'question', item, ask: item.asks[0], projectId: 'p1' })
+        }
       />
       <Pressable
         testID="review"
-        onPress={() => sheets.openReview(item, { scrollToConfirm: true })}
+        onPress={() => sheets.openReview(item, { scrollToConfirm: true, projectId: 'p1' })}
       />
       <Pressable testID="close" onPress={() => sheets.close()} />
     </>
@@ -128,6 +130,7 @@ describe('the Inbox seams', () => {
     const screen = await renderWithRunner(
       <>
         <InboxRow
+          projectId="p1"
           item={story}
           pending={[]}
           indented
@@ -136,10 +139,10 @@ describe('the Inbox seams', () => {
           onOpenItem={noop}
         />
         <AnswerSheet
-          request={{ mode: 'question', item: story, ask: story.asks[0] }}
+          request={{ mode: 'question', item: story, ask: story.asks[0], projectId: 'p1' }}
           onClose={noop}
         />
-        <ReviewSheet item={story} scrollToConfirm={false} onClose={noop} />
+        <ReviewSheet item={story} scrollToConfirm={false} projectId="p1" onClose={noop} />
         <OfflineBanner loadedAtLabel="09:12" />
         <AnsweredList projectId="project-1" />
       </>,

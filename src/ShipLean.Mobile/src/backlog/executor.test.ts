@@ -12,11 +12,13 @@ vi.mock('./add/send');
 vi.mock('./item/send');
 
 const api = {} as Api;
+const receipt = { createdId: 'c1' };
 const placement = { slot: 'first', beforeItemId: null } as const;
 const actions: Record<BacklogAction['kind'], BacklogAction> = {
   move: {
     area: 'backlog',
     kind: 'move',
+    projectId: 'p1',
     itemId: 'i1',
     key: 'SHIP-1',
     revision: 1,
@@ -71,11 +73,11 @@ describe('backlogExecutor', () => {
     expect(item.describeAddNote).toHaveBeenCalledExactlyOnceWith(actions.addNote);
 
     await backlogExecutor.undo?.(actions.move, api);
-    await backlogExecutor.undo?.(actions.addItem, api);
-    await backlogExecutor.undo?.(actions.addNote, api);
+    await backlogExecutor.undo?.(actions.addItem, api, receipt);
+    await backlogExecutor.undo?.(actions.addNote, api, receipt);
     expect(move.undoMove).toHaveBeenCalledExactlyOnceWith(actions.move, api);
-    expect(add.undoAddItem).toHaveBeenCalledExactlyOnceWith(actions.addItem, api);
-    expect(item.undoAddNote).toHaveBeenCalledExactlyOnceWith(actions.addNote, api);
+    expect(add.undoAddItem).toHaveBeenCalledExactlyOnceWith(actions.addItem, api, receipt);
+    expect(item.undoAddNote).toHaveBeenCalledExactlyOnceWith(actions.addNote, api, receipt);
   });
 
   it('groups reconcile by kind and returns the answers in the order given', async () => {

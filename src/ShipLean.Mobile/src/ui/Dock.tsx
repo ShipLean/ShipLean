@@ -8,6 +8,10 @@ import { primitiveIds } from './testIds';
 export interface DockProps {
   // The work item a note goes on; none on screens that aren't one item.
   itemId?: string;
+  // The key of that item; the note action needs it.
+  itemKey?: string;
+  // The item's project; the members for mentions load by project.
+  projectId?: string;
   placeholder: string;
   // Called after a note is sent.
   onSubmitted?: () => void;

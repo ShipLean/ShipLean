@@ -1,4 +1,4 @@
-import type { Api, Pending, PreviewLine } from '../../actions/types';
+import type { Api, Pending, PreviewLine, SendReceipt } from '../../actions/types';
 import type { BacklogAddNote, BacklogApprove } from '../actions';
 
 export async function sendApprove(a: BacklogApprove, api: Api): Promise<void> {
@@ -17,7 +17,7 @@ export function describeApprove(a: BacklogApprove): PreviewLine {
   };
 }
 
-export async function sendAddNote(a: BacklogAddNote, api: Api): Promise<void> {
+export async function sendAddNote(a: BacklogAddNote, api: Api): Promise<SendReceipt | void> {
   void a;
   void api;
   throw new Error('TODO: post the comment');
@@ -34,8 +34,13 @@ export function describeAddNote(a: BacklogAddNote): PreviewLine {
   };
 }
 
-export async function undoAddNote(a: BacklogAddNote, api: Api): Promise<void> {
+export async function undoAddNote(
+  a: BacklogAddNote,
+  api: Api,
+  receipt?: SendReceipt | null,
+): Promise<void> {
   void a;
+  void receipt;
   void api;
   throw new Error('TODO: archive the comment');
 }

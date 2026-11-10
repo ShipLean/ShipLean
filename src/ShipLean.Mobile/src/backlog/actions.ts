@@ -9,6 +9,7 @@ export type BacklogAction =
   | {
       area: 'backlog';
       kind: 'move';
+      projectId: string;
       itemId: string;
       key: string;
       revision: number;

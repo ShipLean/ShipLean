@@ -6,6 +6,7 @@ export interface ReviewSheetProps {
   item: InboxItemDto;
   // Approve all opens the same sheet scrolled to its Confirm button.
   scrollToConfirm: boolean;
+  projectId: string;
   onClose: () => void;
 }
 

@@ -5,6 +5,9 @@ import type { ScreenVoiceSpec } from '../voice/contracts';
 import type { FeaturesAction } from './actions';
 
 export interface FeaturesVoiceContext {
+  projectId: string;
+  // True on one Feature's board, where move_rank and filter_open are not offered.
+  board: boolean;
   focus: FeatureRowDto | null;
   rows: FeatureRowDto[];
   // In rank order.

@@ -52,14 +52,14 @@ export const backlogExecutor: Executor<BacklogAction> = {
   },
   // An approval has no reverse (decisions A.2).
   reversible: (kind: Kind) => kind !== 'approve',
-  undo(a, api) {
+  undo(a, api, receipt) {
     switch (a.kind) {
       case 'move':
         return undoMove(a, api);
       case 'addItem':
-        return undoAddItem(a, api);
+        return undoAddItem(a, api, receipt);
       case 'addNote':
-        return undoAddNote(a, api);
+        return undoAddNote(a, api, receipt);
       case 'approve':
         return Promise.reject(new Error('An approval has no undo.'));
     }

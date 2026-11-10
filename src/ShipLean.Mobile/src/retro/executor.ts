@@ -49,10 +49,10 @@ export const retroExecutor: Executor<RetroAction> = {
     }
   },
   reversible: (kind) => REVERSIBLE.includes(kind),
-  undo(a, api) {
+  undo(a, api, receipt) {
     switch (senderOf(a.kind)) {
       case 'point':
-        return undoPoint(a as PointAction, api);
+        return undoPoint(a as PointAction, api, receipt);
       case 'decision':
         return undoDecision(a as DecisionAction, api);
       case 'merge':
