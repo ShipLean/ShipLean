@@ -55,10 +55,10 @@ jobs:
   verify-android:
     needs: check
     runs-on: ubuntu-latest
-    env:
-      PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - id: gate
+        env:
+          PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
           if [ -n "$PLAY_JSON" ]; then
@@ -84,19 +84,21 @@ jobs:
   verify-ios:
     needs: check
     runs-on: ${{ vars.STORE_IOS_RUNNER || 'ubuntu-latest' }}
-    env:
-      ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
-      ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
     steps:
+      # Skips only when none of the three secrets is set. A partial set runs the setup action,
+      # which fails naming the missing value (store/write_keys.py).
       - id: gate
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
         run: |
           set -euo pipefail
-          if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$ASC_KEY_ID" ] && [ -z "$ASC_ISSUER_ID" ] && [ -z "$ASC_KEY_P8" ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
             echo "::notice::The App Store dry run was skipped: the ASC_API_KEY_* secrets are not available (fork pull requests get no secrets)."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
           fi
       - if: steps.gate.outputs.run == 'true'
         uses: actions/checkout@v4
