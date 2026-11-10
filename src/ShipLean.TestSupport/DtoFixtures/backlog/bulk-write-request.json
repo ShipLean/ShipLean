@@ -23,6 +23,7 @@
         "goal": null,
         "statusLine": null,
         "confirmStatus": false,
+        "health": null,
         "addLinks": [],
         "removeLinkIds": []
       },
@@ -63,6 +64,7 @@
         "goal": null,
         "statusLine": null,
         "confirmStatus": false,
+        "health": null,
         "addLinks": [],
         "removeLinkIds": []
       },
