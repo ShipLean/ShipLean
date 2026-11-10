@@ -304,7 +304,12 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       for (const p of items) {
         const current = find(p.id) ?? p;
         let outcome: UndoResult;
-        if (current.undoOutcome !== null) outcome = current.undoOutcome;
+        // Undone and irreversible are final; a sent action whose undo failed (offline, a 5xx) is tried again.
+        if (
+          current.undoOutcome !== null &&
+          !(current.undoOutcome === 'failed' && current.state === 'sent')
+        )
+          outcome = current.undoOutcome;
         else if (current.state === 'queued' || current.state === 'failed') {
           set(remove(box, [p.id]));
           outcome = 'undone';

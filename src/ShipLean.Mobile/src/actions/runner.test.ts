@@ -223,6 +223,25 @@ describe('ActionRunner', () => {
     ]);
   });
 
+  it('tries a failed undo of a sent action again and leaves an undone one alone', async () => {
+    const rec = recorder();
+    const runner = runnerWith(rec);
+    const batchId = runner.dispatch([act('setState', '1'), act('setState', '2')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: false,
+    });
+    await flush();
+    rec.undoFails.add('1');
+
+    expect((await runner.undo(batchId)).map((o) => o.outcome)).toEqual(['undone', 'failed']);
+    rec.undoFails.delete('1');
+    expect((await runner.undo(batchId)).map((o) => o.outcome)).toEqual(['undone', 'undone']);
+
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'undo 2', 'undo 1', 'undo 1']);
+    expect(byItem(runner, '1')?.undoOutcome).toBe('undone');
+  });
+
   it('keeps what send returned and gives it to undo', async () => {
     const rec = recorder();
     const runner = runnerWith(rec);
