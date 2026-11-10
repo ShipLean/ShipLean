@@ -51,6 +51,7 @@ export type RetroAction =
       kind: 'mergeThemes' | 'keepApart';
       itemId: null;
       key: null;
+      projectId: string;
       proposalId: string;
       fromName: string;
       intoName: string;

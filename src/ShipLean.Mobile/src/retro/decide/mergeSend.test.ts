@@ -5,7 +5,6 @@ import { aPending } from '../../test-support/actions';
 import { aProject } from '../../test-support/builders';
 import { apiError, restoreFetch } from '../../test-support/fakeApi';
 import { designInsights, retroApi } from '../../test-support/retro';
-import { signedInApi } from '../../test-support/signedInApi';
 import type { MergeAction } from '../actions';
 import { retroExecutor } from '../executor';
 import { describeMerge, reconcileMerge, sendMerge } from './mergeSend';
@@ -21,6 +20,7 @@ const action = (kind: MergeAction['kind'], proposalId: string): MergeAction => (
   kind,
   itemId: null,
   key: null,
+  projectId,
   proposalId,
   fromName: 'CI screenshots',
   intoName: 'Screenshot baselines need CI',
@@ -71,25 +71,15 @@ describe('retro merge executor', () => {
   it('reconciles an uncertain merge as sent once the proposal is no longer pending, else notSent', async () => {
     const insights = designInsights();
     const still = insights.mergeProposals[0].id;
-    // The action names no project, so a second project's pending proposal counts as pending too.
-    const elsewhere = {
-      ...insights,
-      mergeProposals: [{ ...insights.mergeProposals[0], id: 'ops-1' }],
-    };
-    const fake = retroApi(
-      {
-        ...signedInApi(),
-        'GET /api/projects/0199f000-0000-7000-8000-0000000000a2/retros/insights': elsewhere,
-      },
-      { projectId, insights },
-    );
+    const fake = retroApi({}, { projectId, insights });
     const items = [
       aPending({ id: 'a', action: action('mergeThemes', still) }),
       aPending({ id: 'b', action: action('keepApart', 'settled') }),
-      aPending({ id: 'c', action: action('mergeThemes', 'ops-1') }),
+      aPending({ id: 'c', action: action('keepApart', still) }),
     ];
     await expect(reconcileMerge(items, api)).resolves.toEqual(['notSent', 'sent', 'notSent']);
-    // One read per project, never one per pending.
+    // One read of the action's own project, never one per pending and no project list.
     expect(fake.callsTo(`GET /api/projects/${projectId}/retros/insights`)).toHaveLength(1);
+    expect(fake.callsTo('GET /api/projects')).toHaveLength(0);
   });
 });

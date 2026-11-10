@@ -65,6 +65,7 @@ const merge = (kind: 'mergeThemes' | 'keepApart', proposalId: string): RetroActi
   kind,
   itemId: null,
   key: null,
+  projectId: project.id,
   proposalId,
   fromName: 'Contracts first worked',
   intoName: 'Screenshot baselines need CI',
@@ -234,10 +235,12 @@ describe.each<Scheme>(['light', 'dark'])('Retro to decide (%s)', (scheme) => {
     await failing.unmount();
 
     const retro = retroWithFeaturePoint();
-    await renderView(scheme, {
+    const down = await renderView(scheme, {
       [`GET /api/sprints/${retro.sprint.id}/retro`]: apiError(500, 'internal', 'Down.'),
     });
     await screen.findByTestId(uiIds.errorState);
+    // The retro read failing leaves the merge proposals showing.
+    expect(screen.getByTestId(retroProposalId(down.proposal.id))).toBeTruthy();
     expect(screen.getByTestId(retroIds.toDecide)).toBeTruthy();
     expect(screen.getByTestId(uiIds.errorStateAction)).toBeTruthy();
   });

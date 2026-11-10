@@ -86,6 +86,7 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
       kind,
       itemId: null,
       key: null,
+      projectId,
       proposalId: p.id,
       fromName: p.from.name,
       intoName: p.into.name,
@@ -95,24 +96,6 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
     void retro.refetch();
     void insights.refetch();
   };
-
-  if (retro.error !== null) {
-    return (
-      <View testID={retroIds.toDecide}>
-        <ErrorState
-          title="Couldn't load what is left to decide."
-          action={{ label: 'Retry', busy: retro.isFetching, onPress: () => void retro.refetch() }}
-        />
-      </View>
-    );
-  }
-  if (retro.data === undefined) {
-    return (
-      <View testID={retroIds.toDecide}>
-        <Skeleton rows={6} />
-      </View>
-    );
-  }
 
   const heading = (text: string, count?: string) => (
     <View
@@ -290,6 +273,14 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
             {proposals.map(proposalCard)}
           </>
         )}
+        {retro.error !== null ? (
+          <ErrorState
+            title="Couldn't load what is left to decide."
+            action={{ label: 'Retry', busy: retro.isFetching, onPress: () => void retro.refetch() }}
+          />
+        ) : retro.data === undefined ? (
+          <Skeleton rows={6} />
+        ) : null}
         {cards.length === 0 ? null : (
           <>
             {heading('Feature retros and items', `${pointsToDecide(cards)} to decide`)}
@@ -298,7 +289,10 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
             ))}
           </>
         )}
-        {cards.length === 0 && proposals.length === 0 && insights.error === null ? (
+        {retro.data !== undefined &&
+        cards.length === 0 &&
+        proposals.length === 0 &&
+        insights.error === null ? (
           insights.isPending ? (
             <Skeleton rows={2} />
           ) : (
