@@ -10,7 +10,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Screens;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
-using ShipLean.TestSupport.Contracts.Users;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Screens;
 using ShipLean.WebApi.Tests.Backlog.Stories;
@@ -84,10 +84,10 @@ public class FeaturesOverviewApiTests : ApiFixture
 
         var overview = await OverviewAsync();
 
-        overview.Groups.Select(g => g.Label).ShouldBe(["Active", "Resolved", "New", "Closed"].Where(l => overview.Groups.Any(g => g.Label == l)));
+        overview.Groups.Select(g => g.Label).ShouldBe(new[] { "Active", "Resolved", "New", "Closed" }.Where(l => overview.Groups.Any(g => g.Label == l)));
         Find(overview, SeedIds.Screens.AtRiskFeature).Health.ShouldBe(FeatureHealth.AtRisk);
         Find(overview, SeedIds.Screens.BlockedFeature).Health.ShouldBe(FeatureHealth.Blocked);
-        Find(overview, SeedIds.Screens.AtRiskFeature).StatusLine.ShouldNotBeNullOrEmpty();
+        Find(overview, SeedIds.Screens.BlockedFeature).StatusLine.ShouldBe("Widget data access is blocked on the sign-in decision.");
         var closed = overview.Groups.Single(g => g.Label == "Closed");
         closed.Folded.ShouldBeTrue();
         closed.Count.ShouldBeGreaterThanOrEqualTo(2);
@@ -108,7 +108,7 @@ public class FeaturesOverviewApiTests : ApiFixture
         row.StatusStale.ShouldBeTrue();
         row.StatusLine.ShouldBe("Four days old.");
         row.StatusVerified.ShouldNotBeNull().Stale.ShouldBeFalse();
-        row.StatusVerified!.By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Priya);
+        row.StatusVerified.By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Priya);
         row.StatusVerified.Agent.ShouldBe("Claude Code");
         Find(overview, unverified).StatusStale.ShouldBeTrue();
         Find(overview, empty).StatusStale.ShouldBeFalse();
@@ -132,7 +132,6 @@ public class FeaturesOverviewApiTests : ApiFixture
         var story = await InsertAsync(b => b.WithParent(feature));
         await InsertAsync(b => b.WithParent(feature));
         await InsertAsync(b => b.WithType("task").WithParent(story));
-        await InsertAsync(b => b.WithType("task").WithParent(feature));
 
         var row = Find(await OverviewAsync(), feature);
 
@@ -211,7 +210,7 @@ public class FeaturesOverviewApiTests : ApiFixture
         var seenAt = Ago(TimeSpan.FromDays(2));
         await using (var connection = await OpenDatabaseAsync())
         {
-            await new DigestSeenBuilder(user.Id, Ship).WithSeenAt(seenAt).InsertAsync(connection);
+            await new DigestSeenBuilder(user.Id!.Value, Ship).WithSeenAt(seenAt).InsertAsync(connection);
         }
 
         var before = await OverviewAsync(user);
