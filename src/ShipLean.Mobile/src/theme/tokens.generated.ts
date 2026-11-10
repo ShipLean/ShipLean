@@ -11,6 +11,8 @@ export const generatedTokens = {
       info: '#7aa7f5',
       muted: '#a0aec6',
       ok: '#9fdc8a',
+      progressCurrentSprint: '#4a8fef',
+      progressOtherSprint: '#2e5f96',
       purple: '#b79cf5',
       surface: '#1f2839',
       surface2: '#29344a',
@@ -27,6 +29,8 @@ export const generatedTokens = {
       info: '#1d7fb8',
       muted: '#52627c',
       ok: '#3f8a3a',
+      progressCurrentSprint: '#1d4ea6',
+      progressOtherSprint: '#8fb5ee',
       purple: '#6f45bf',
       surface: '#f7f9fd',
       surface2: '#dfe7f3',
@@ -37,6 +41,7 @@ export const generatedTokens = {
   font: {
     size: {
       base: 13,
+      body15: 15,
       input: 16,
       lg: 18,
       md: 14,

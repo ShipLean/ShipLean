@@ -19,6 +19,9 @@ export interface Colors {
   info: string;
   danger: string;
   purple: string;
+  // Progress bar: open work in the current sprint, and in another sprint.
+  progressCurrentSprint: string;
+  progressOtherSprint: string;
 }
 
 export type StateCategory = 'proposed' | 'inProgress' | 'resolved' | 'completed' | 'removed';
@@ -34,6 +37,7 @@ export interface Theme {
       sm: number;
       base: number;
       md: number;
+      body15: number;
       lg: number;
       input: number;
     };
