@@ -6,7 +6,7 @@ import { WorkItemScreen } from '../screens/WorkItemScreen';
 import { InboxActionsContext } from '../inbox/InboxActions';
 import { InboxSheetsContext } from '../inbox/InboxSheets';
 import { links } from '../links';
-import { aPending, type FakeRunner } from '../test-support/actions';
+import { aPending, fakeRunner, type FakeRunner } from '../test-support/actions';
 import { aProject } from '../test-support/builders';
 import { apiError } from '../test-support/fakeApi';
 import { fakeInboxActions, fakeInboxSheets } from '../test-support/inbox';
@@ -38,6 +38,7 @@ async function open(
   api: ReturnType<typeof workItemApi>,
   scheme: 'light' | 'dark',
   voice = fakeVoice(),
+  runner: FakeRunner = fakeRunner(),
 ): Promise<Rendered> {
   api.install();
   const actions = fakeInboxActions();
@@ -51,7 +52,8 @@ async function open(
       </InboxSheetsContext.Provider>
     </InboxActionsContext.Provider>
   );
-  const { queryClient, runner } = await renderWithVoice(ui, { scheme, voice });
+  const rendered = await renderWithVoice(ui, { scheme, voice, runner });
+  const { queryClient } = rendered;
   // The asks, states and members reads start with the item: wait for every read to land before the test goes on.
   await waitFor(() => expect(queryClient.isFetching()).toBe(0));
   return { actions, sheets, queryClient, runner };
@@ -369,16 +371,56 @@ describe.each(['light', 'dark'] as const)('Work item screen (%s)', (scheme) => {
         state,
         action: stateChange(item),
       });
-    const { runner } = await open('SHIP-906', api, scheme);
+    // A change already sent before the screen mounts (kept from before a restart): it reads nothing again.
+    const seeded = fakeRunner();
+    seeded.setPending([setState('seed', 'sent')]);
+    const { runner } = await open('SHIP-906', api, scheme, fakeVoice(), seeded);
     await screen.findByTestId(ids.workItemHeaderId);
     expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(1);
 
-    await act(async () => runner.setPending([setState('a', 'undo')]));
-    await act(async () => runner.setPending([setState('a', 'sent')]));
+    await act(async () => runner.setPending([setState('seed', 'sent'), setState('a', 'undo')]));
+    await act(async () => runner.setPending([setState('seed', 'sent'), setState('a', 'sent')]));
     await waitFor(() => expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2));
 
-    await act(async () => runner.setPending([setState('a', 'sent'), setState('b', 'failed')]));
+    await act(async () =>
+      runner.setPending([setState('seed', 'sent'), setState('a', 'sent'), setState('b', 'failed')]),
+    );
     await waitFor(() => expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(3));
+  });
+
+  // SHIP-1335. Red when each change in a batch invalidates on its own, so one item is read once per change.
+  it('reads the item once when a batch of changes to it settles together', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const sent = (id: string) =>
+      aPending({ id, batchId: 'batch-1', state: 'sent', action: stateChange(item) });
+    const { runner, queryClient } = await open('SHIP-906', api, scheme);
+    await screen.findByTestId(ids.workItemHeaderId);
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(1);
+
+    await act(async () => runner.setPending([sent('a'), sent('b'), sent('c')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2);
+  });
+
+  // SHIP-1335. Red when a refusal is remembered after a Retry, so the same change refused again reads nothing.
+  it('reads the item again when a change is refused, retried and refused again', async () => {
+    const item = aFeatureItem({ projectId });
+    const api = workItemApi({}, { projectId, items: [item] });
+    const change = (state: 'queued' | 'failed') =>
+      aPending({ id: 'a', state, retryable: true, action: stateChange(item) });
+    const { runner, queryClient } = await open('SHIP-906', api, scheme);
+    await screen.findByTestId(ids.workItemHeaderId);
+
+    await act(async () => runner.setPending([change('failed')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(2);
+
+    await act(async () => runner.setPending([change('queued')]));
+    await act(async () => runner.setPending([change('failed')]));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(api.callsTo(BY_KEY('SHIP-906'))).toHaveLength(3);
   });
 
   // SHIP-1325 (voice D18: a banner on the item). Red when a refused change shows nowhere, without the runner's reason,

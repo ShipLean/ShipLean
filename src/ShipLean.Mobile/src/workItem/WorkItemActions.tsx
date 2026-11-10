@@ -73,19 +73,29 @@ function useRefreshOnSettled() {
       return;
     }
     const known = seen.current;
+    // What this settle touched, each once: a batch of changes to one item is one read, not one per change.
+    const comments = new Set<string>();
+    const items = new Map<string, { projectId: string; key: string; itemId: string }>();
+    const asks = new Map<string, { projectId: string; key: string }>();
     for (const { at, id, action } of settled) {
       if (known.has(at)) continue;
       known.set(at, id);
       if (action.kind === 'addNote') {
-        void client.invalidateQueries({ queryKey: commentKeys.list(action.itemId) });
+        comments.add(action.itemId);
         continue;
       }
-      void invalidateItem(action.projectId, action.key, action.itemId);
-      if (ASK_KINDS.has(action.kind))
-        void client.invalidateQueries({ queryKey: asksKeys.item(action.projectId, action.key) });
+      const { projectId, key, itemId } = action;
+      items.set(`${projectId}|${key}|${itemId}`, { projectId, key, itemId });
+      if (ASK_KINDS.has(action.kind)) asks.set(`${projectId}|${key}`, { projectId, key });
     }
-    // Forget changes the runner no longer holds.
-    const live = new Set(pending.map((p) => p.id));
-    for (const [at, id] of known) if (!live.has(id)) known.delete(at);
+    for (const itemId of comments)
+      void client.invalidateQueries({ queryKey: commentKeys.list(itemId) });
+    for (const { projectId, key, itemId } of items.values())
+      void invalidateItem(projectId, key, itemId);
+    for (const { projectId, key } of asks.values())
+      void client.invalidateQueries({ queryKey: asksKeys.item(projectId, key) });
+    // Forget what is no longer settled, so a change refused, retried and refused again is a fresh settlement.
+    const now = new Set(settled.map((s) => s.at));
+    for (const at of [...known.keys()]) if (!now.has(at)) known.delete(at);
   }, [pending, client, invalidateItem]);
 }

@@ -1,9 +1,9 @@
 import { useState, type FC } from 'react';
 import { View } from 'react-native';
-import { useActionRunner, usePending } from '../../actions/ActionRunnerProvider';
+import { usePending } from '../../actions/ActionRunnerProvider';
 import type { Pending } from '../../actions/types';
-import { Banner } from '../../ui/Banner';
-import { refusedChangeId, refusedChangesId } from '../testIds';
+import { refusedChangesId } from '../testIds';
+import { RefusedChange } from './RefusedChange';
 
 export interface RefusedChangesProps {
   itemId: string;
@@ -14,7 +14,6 @@ export interface RefusedChangesProps {
 // again by then (WorkItemActionsProvider), so what it shows is the server's. Retry when the runner can send it again,
 // otherwise Dismiss. Voice changes have their own banner (VoiceSendFailedBanner).
 export const RefusedChanges: FC<RefusedChangesProps> = ({ itemId }) => {
-  const runner = useActionRunner();
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
   const refused = usePending(
     (p: Pending) =>
@@ -29,21 +28,10 @@ export const RefusedChanges: FC<RefusedChangesProps> = ({ itemId }) => {
   return (
     <View testID={refusedChangesId}>
       {refused.map((p) => (
-        <Banner
+        <RefusedChange
           key={p.id}
-          tone="danger"
-          testID={refusedChangeId(p.id)}
-          text={[`Didn't send “${runner.describe(p.action).text}”.`, p.error]
-            .filter((part) => part !== null)
-            .join(' ')}
-          action={
-            p.retryable
-              ? { label: 'Retry', onPress: () => runner.retry(p.id) }
-              : {
-                  label: 'Dismiss',
-                  onPress: () => setDismissed(new Set([...dismissed, p.id])),
-                }
-          }
+          pending={p}
+          onDismiss={() => setDismissed(new Set([...dismissed, p.id]))}
         />
       ))}
     </View>
