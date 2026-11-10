@@ -1,5 +1,6 @@
 // The runner's state as a pure value: every Pending, how each batch was dispatched, and when each sent entry went.
 // The clock is passed in; nothing here reads it. serialise/load are what the kv store keeps for one scope.
+import type { KeyValueStore } from '@shiplean/core/platform';
 import type { AppAction, DispatchOptions, Pending, SendReceipt } from './types';
 import { VOICE_ROW_MS } from './undo';
 
@@ -23,6 +24,11 @@ export const emptyOutbox: Outbox = { items: [], batches: {}, sentAt: {} };
 // One kv key per scope (scope.ts).
 export function outboxKey(scope: string): string {
   return `shiplean.outbox\n${scope}`;
+}
+
+// Sign-out or a lost session: that scope's outbox goes, and nothing in it is sent.
+export function clearOutbox(store: KeyValueStore, scope: string): void {
+  store.removeItem(outboxKey(scope));
 }
 
 const cleared = { error: null, failure: null, retryable: false } as const;
