@@ -1,5 +1,7 @@
 import type { ChildSummaryDto, WorkItemDto } from '@shiplean/core/api/workItems';
+import type { MemberDto } from '@shiplean/core/api/projects';
 import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import members from '../../../../ShipLean.TestSupport/DtoFixtures/projects/members.json';
 import { links } from '../../links';
 import { aProject } from '../../test-support/builders';
 import { FEATURE_STATES } from '../../test-support/features';
@@ -133,6 +135,17 @@ describe.each<Scheme>(['light', 'dark'])('Work item sheets (%s)', (scheme) => {
       fromUserId: item.assignee?.id ?? null,
     });
     expect(second).toMatchObject({ kind: 'assign', userId: null, name: null });
+  });
+
+  it('leaves disabled members out of the assign list', async () => {
+    const [joel, priya] = members as MemberDto[];
+    await open(feature(), scheme, {
+      [MEMBERS_ROUTE]: [joel, { ...priya, status: 'disabled' }],
+    });
+    await fireEvent.press(screen.getByTestId(ids.assignButtonId));
+    await screen.findByTestId(ids.noOwnerOptionId);
+    expect(screen.getByTestId(ids.ownerOptionId(joel.user.id))).toBeTruthy();
+    expect(screen.queryByTestId(ids.ownerOptionId(priya.user.id))).toBeNull();
   });
 
   it('opens the Backlog at Stories filtered to the Feature from 6 stories', async () => {
