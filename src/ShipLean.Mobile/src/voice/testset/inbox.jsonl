@@ -46,3 +46,4 @@
 {"screen": "inbox", "utterance": "the weather is nice today", "calls": [], "note": null}
 {"screen": "inbox", "utterance": "hello hello", "calls": [], "note": null}
 {"screen": "inbox", "utterance": "uh, never mind", "calls": [], "note": null}
+{"screen": "inbox", "utterance": "Approve D1 on SHIP-12", "calls": [{"action": "approve", "args": {"key": "SHIP-12", "decisions": [1]}}], "note": null}

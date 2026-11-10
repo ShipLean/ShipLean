@@ -12,9 +12,11 @@ import type {
   VoiceFailure,
 } from '../voice/contracts';
 import { copyNoteSpan, matchKey, matchPerson, unmatched } from '../voice/resolve';
-import { STATUS_MAX } from '../workItem/voiceSpec';
 import { labelsOf, type InboxAction } from './actions';
+import { inboxExecutor } from './executor';
 import { compressLabels } from './rowModel';
+
+const STATUS_MAX = 500; // FeatureFieldRules.StatusLineMaxLength
 
 const key = { type: 'string', description: 'A work item key such as SHIP-907' };
 const person = { type: 'string', description: 'A name of the person who asked' };
@@ -120,7 +122,10 @@ export function waitingAnswer(inbox: InboxDto): AnswerSheetContent {
   };
 }
 
-const askerOf = (ask: InboxAskDto) => ask.from?.name ?? ask.agentName ?? ask.label;
+// The agent that asked, else the person; the same order as the rows and the review screen.
+const askerOf = (ask: InboxAskDto) => ask.agentName ?? ask.from?.name ?? ask.label;
+const askerIdOf = (ask: InboxAskDto) =>
+  ask.agentName !== null ? `agent:${ask.agentName}` : (ask.from?.id ?? ask.label);
 
 const fail = (failure: VoiceFailure) => ({ ok: false as const, failure });
 const refuse = (action: string, reason: 'invalidArgs' | 'none') =>
@@ -138,7 +143,7 @@ const posted = (k: string) => `Posted on ${k}. The next agent to pick it up read
 
 export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
   const { items } = inbox;
-  const projectKeys = items.map((i) => i.key);
+  const itemKeys = items.map((i) => i.key);
 
   const base = (item: InboxItemDto) => ({
     area: 'inbox' as const,
@@ -148,12 +153,10 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
   });
 
   const lineOf = (action: InboxAction, text: string, detail?: string, warning?: string) => ({
-    id: `inbox:${action.itemId}:${action.kind}:${labelsOf(action).join(',')}`,
-    icon: action.kind === 'newStatus' ? 'edit' : action.kind === 'seen' ? 'check' : 'note',
+    ...inboxExecutor.describe(action),
     text,
     ...(detail === undefined ? {} : { detail }),
     ...(warning === undefined ? {} : { warning }),
-    removable: true,
   });
 
   const noteOf = (call: ParsedCall, transcript: Transcript): string | null =>
@@ -169,7 +172,7 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
   ): Target {
     const spoken = str(call.args.key);
     if (spoken !== '') {
-      const m = matchKey(spoken, projectKeys);
+      const m = matchKey(spoken, itemKeys);
       if (m.kind !== 'match') return { ok: false, failure: unmatched(spoken, 'key', m) };
       const item = items.find((i) => i.key === m.value)!;
       return fits(item) ? { ok: true, item } : refuse(call.action, 'none');
@@ -179,7 +182,7 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
     if (who !== '' && byPerson !== null) {
       const askers = new Map<string, { id: string; name: string }>();
       for (const i of candidates)
-        for (const a of i.asks) if (a.from !== null) askers.set(a.from.id, a.from);
+        for (const a of i.asks) askers.set(askerIdOf(a), { id: askerIdOf(a), name: askerOf(a) });
       const m = matchPerson(who, [...askers.values()]);
       if (m.kind !== 'match') return { ok: false, failure: unmatched(who, 'person', m) };
       candidates = candidates.filter((i) => byPerson(i, m.value.id));
@@ -333,7 +336,7 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
         const t = locate(
           call,
           (i) => open(i).length > 0,
-          (i, id) => open(i).some((q) => q.from?.id === id),
+          (i, id) => open(i).some((q) => askerIdOf(q) === id),
         );
         if (!t.ok) return t;
         const r = oneAsk(call, open(t.item));
@@ -378,7 +381,7 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
         const t = locate(
           call,
           (i) => open(i).length > 0,
-          (i, id) => open(i).some((m) => m.from?.id === id),
+          (i, id) => open(i).some((m) => askerIdOf(m) === id),
         );
         if (!t.ok) return t;
         const r = oneAsk(call, open(t.item));
@@ -457,8 +460,6 @@ export function inboxVoiceSpec(inbox: InboxDto): ScreenVoiceSpec<InboxAction> {
           ...(a.question === null
             ? {}
             : { question: a.question.text, options: a.question.options }),
-          ...(a.mention === null ? {} : { excerpt: a.mention.excerpt }),
-          ...(a.status === null ? {} : { statusLine: a.status.statusLine }),
         })),
       })),
     }),
