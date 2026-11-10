@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react-native';
 import { renderScreen } from '../test-support/renderScreen';
+import { themes } from '../theme';
 import { NeedsPill } from './NeedsPill';
 import { primitiveIds } from './testIds';
 
@@ -20,5 +21,6 @@ describe.each(['light', 'dark'] as const)('NeedsPill (%s)', (scheme) => {
     await renderScreen(<NeedsPill needs={{ questions: 2, decisions: 1 }} />, { scheme });
 
     expect(screen.getByTestId(primitiveIds.needsPill)).toHaveTextContent('3');
+    expect(screen.getByText('3')).toHaveStyle({ color: themes[scheme].colors.warn });
   });
 });
