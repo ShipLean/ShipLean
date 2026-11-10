@@ -1,7 +1,7 @@
 import { memoryStore } from '@shiplean/core/platform';
 import { describe, expect, it } from 'vitest';
 import { scopeOf } from '../actions/scope';
-import { clearDraft, loadDraft, saveDraft } from './drafts';
+import { clearDraft, draftKey, loadDraft, saveDraft } from './drafts';
 
 const joel = scopeOf({ origin: 'https://shiplean.test', email: 'joel@example.com' })!;
 
@@ -23,10 +23,11 @@ describe('drafts', () => {
     const store = memoryStore();
     saveDraft(store, joel, 'item-1', { text: 'a note', mode: 'note' });
     clearDraft(store, joel, 'item-1');
-    expect(loadDraft(store, joel, 'item-1')).toBeNull();
+    expect(store.getItem(draftKey(joel, 'item-1'))).toBeNull();
 
     saveDraft(store, joel, 'item-1', { text: 'a note', mode: 'note' });
     saveDraft(store, joel, 'item-1', { text: '  ', mode: 'note' });
+    expect(store.getItem(draftKey(joel, 'item-1'))).toBeNull();
     expect(loadDraft(store, joel, 'item-1')).toBeNull();
   });
 
