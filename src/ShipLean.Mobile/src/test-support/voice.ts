@@ -95,7 +95,7 @@ export class FakeRecognizer implements SpeechRecognizer {
 // parse() answers the calls given to respond(), until respond() is called again.
 export class FakeCommandModel implements CommandModel {
   readonly prepared: string[] = [];
-  readonly parsed: { screen: string; transcript: Transcript }[] = [];
+  readonly parsed: { screen: string; transcript: Transcript; spec?: ScreenVoiceSpec }[] = [];
   private isReady = true;
   private calls: ParsedCall[] = [];
 
@@ -116,8 +116,8 @@ export class FakeCommandModel implements CommandModel {
     return { screen: spec.screen };
   }
 
-  async parse(p: PreparedScreen, t: Transcript): Promise<ParsedCall[]> {
-    this.parsed.push({ screen: p.screen, transcript: t });
+  async parse(p: PreparedScreen, t: Transcript, spec?: ScreenVoiceSpec): Promise<ParsedCall[]> {
+    this.parsed.push({ screen: p.screen, transcript: t, spec });
     return this.calls;
   }
 }

@@ -101,7 +101,7 @@ export class LlamaCommandModel implements CommandModel {
     });
   }
 
-  parse(p: PreparedScreen, t: Transcript): Promise<ParsedCall[]> {
+  parse(p: PreparedScreen, t: Transcript, spec?: ScreenVoiceSpec): Promise<ParsedCall[]> {
     return this.run(async () => {
       if (!(p instanceof PreparedPrompt))
         throw new Error('This screen was prepared by another command model.');
@@ -116,7 +116,7 @@ export class LlamaCommandModel implements CommandModel {
         ...CHAT,
         messages: [
           { role: 'system', content: prefix.system },
-          { role: 'user', content: userTurn(t, p.spec.context()) },
+          { role: 'user', content: userTurn(t, (spec ?? p.spec).context()) },
         ],
         add_generation_prompt: true,
         grammar: prefix.grammar,

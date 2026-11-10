@@ -169,6 +169,23 @@ describe('commandModelAdapter', () => {
     expect(prefixOnly(context)[0][0].messages[0].content).not.toContain('SHIP-');
   });
 
+  it('reads the context from the spec passed to parse, when a screen rebuilt it after prepare', async () => {
+    const { model, context } = await loadedModel();
+    const prepared = await model.prepare(aSpec('workItem', () => ({ focus: 'SHIP-1' })));
+
+    await model.parse(
+      prepared,
+      aTranscript({ text: 'open it' }),
+      aSpec('workItem', () => ({ focus: 'SHIP-7' })),
+    );
+
+    const users = context.completion.mock.calls
+      .filter(([params]) => params.n_predict !== 0)
+      .map(([params]) => params.messages[1].content);
+    expect(users[0]).toContain('"focus":"SHIP-7"');
+    expect(prefixOnly(context)).toHaveLength(1);
+  });
+
   it('a model that fails the memory check is not loaded and reports memory', async () => {
     // An 8 GB phone (7.6 GB reported) that chose 4B: ~3.3 GB for the app, and 4B needs ~3.6.
     const models = new FakeModelStore();
