@@ -228,7 +228,7 @@ describe('Backlog tab', () => {
     jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask', 'setImmediate'] });
     try {
       const before = designFeatures();
-      const after = [before[1]!, before[0]!, ...before.slice(2)].map((r, i) => ({
+      const after = [...before.slice(1), before[0]!].map((r, i) => ({
         ...r,
         rank: i + 1,
       }));
@@ -239,13 +239,13 @@ describe('Backlog tab', () => {
       await act(async () => {
         await queryClient.invalidateQueries();
       });
-      expect(await screen.findByTestId(backlogMovedId('SHIP-907'))).toBeOnTheScreen();
+      expect(await screen.findByTestId(backlogMovedId('SHIP-707'))).toBeOnTheScreen();
 
       await act(async () => {
         jest.advanceTimersByTime(HIGHLIGHT_MS);
       });
 
-      expect(screen.queryByTestId(backlogMovedId('SHIP-907'))).toBeNull();
+      expect(screen.queryByTestId(backlogMovedId('SHIP-707'))).toBeNull();
     } finally {
       jest.useRealTimers();
     }

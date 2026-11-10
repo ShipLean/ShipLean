@@ -80,15 +80,16 @@ export function BacklogView(props: BacklogViewProps) {
   );
   const parent =
     parentKey === null ? null : (parents.data?.rows.find((r) => r.key === parentKey) ?? null);
-  const parentPending = parentKey !== null && parents.data === undefined && !parents.isError;
-  const unknownParent = parentKey !== null && parents.data !== undefined && parent === null;
+  // A key is set but no row of the parent level matches it (yet, or the read failed): read nothing meanwhile.
+  const waitingForParent = parentKey !== null && parent === null;
+  const unknownParent = waitingForParent && parents.data !== undefined;
 
   const filter =
-    projectId === undefined || parentPending || unknownParent
+    projectId === undefined || waitingForParent
       ? null
       : backlogFilter(level, { needsMe, open, parentId: parent?.id ?? null });
   const list = useBacklogList(projectId, level, filter);
-  const rows = list.data?.rows;
+  const rows = filter === null ? undefined : list.data?.rows;
   const needing = useMemo(() => needsMeRows(rows ?? []), [rows]);
   const visible = needsMe ? needing : (rows ?? []);
   const moves = useRankMoves(
@@ -156,7 +157,7 @@ export function BacklogView(props: BacklogViewProps) {
       );
     }
     if (unknownParent) return <EmptyState title="Nothing matches this filter" />;
-    if (list.data === undefined) return <Skeleton rows={6} />;
+    if (rows === undefined) return <Skeleton rows={6} />;
     return <EmptyState title={narrowed ? 'Nothing matches this filter' : 'Nothing to show'} />;
   };
 
@@ -216,7 +217,7 @@ export function BacklogView(props: BacklogViewProps) {
       </View>
       <FlatList
         testID={backlogIds.list}
-        data={visible}
+        data={error ? [] : visible}
         keyExtractor={(row) => row.id}
         refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={refetch} />}
         ListHeaderComponent={

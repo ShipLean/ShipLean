@@ -72,16 +72,34 @@ export function needsLine(needs: NeedsYouDto): string {
   return parts.join(' · ');
 }
 
-export type RankMove = { from: number; up: boolean };
+export type RankMove = { from: number };
 
-// The rows whose rank differs from the last read, by key. A row not in the last read isn't a move.
+// The rows that moved since the last read, by key, with the rank they came from: the rows outside the longest run of
+// rows that kept their relative order (one row for a single move, as backlog.html's applied state). A row not in the
+// last read isn't a move.
 export function rankMoves(last: ReadonlyMap<string, number>, rows: BacklogRowDto[]) {
-  const moves = new Map<string, RankMove>();
-  for (const row of rows) {
-    const before = last.get(row.key);
-    if (before === undefined || row.rank === null || before === row.rank) continue;
-    moves.set(row.key, { from: before, up: row.rank < before });
+  const known = rows.flatMap((row) => {
+    const was = last.get(row.key);
+    return was === undefined || row.rank === null ? [] : [{ key: row.key, before: was }];
+  });
+  // Longest strictly increasing run of old ranks, in the new order.
+  const length: number[] = [];
+  const link: number[] = [];
+  for (let i = 0; i < known.length; i++) {
+    length[i] = 1;
+    link[i] = -1;
+    for (let j = 0; j < i; j++) {
+      if (known[j]!.before < known[i]!.before && length[j]! + 1 > length[i]!) {
+        length[i] = length[j]! + 1;
+        link[i] = j;
+      }
+    }
   }
+  const kept = new Set<string>();
+  let at = length.reduce((best, len, i) => (len > length[best]! ? i : best), 0);
+  for (; known.length > 0 && at >= 0; at = link[at]!) kept.add(known[at]!.key);
+  const moves = new Map<string, RankMove>();
+  for (const { key, before: from } of known) if (!kept.has(key)) moves.set(key, { from });
   return moves;
 }
 

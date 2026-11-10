@@ -121,7 +121,7 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
                   fontWeight: theme.font.weight.semibold,
                 }}
               >
-                {highlight.up ? '↑' : '↓'} from {highlight.from}
+                {row.rank !== null && row.rank < highlight.from ? '↑' : '↓'} from {highlight.from}
               </Text>
             ) : null}
           </View>
