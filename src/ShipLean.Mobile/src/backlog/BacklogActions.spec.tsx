@@ -45,4 +45,24 @@ describe('BacklogActionsProvider refresh', () => {
     await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: backlogKeys.root(PROJECT) }));
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  // Red when a batch of moves reads the list once per move.
+  it('reads the backlog once for a batch that settles several changes together', async () => {
+    const { runner, spy } = await mount([]);
+    const inBatch = (id: string, state: 'undo' | 'sent') =>
+      aPending({ id, batchId: 'voice', state, action: addItem });
+    await act(async () => runner.setPending([inBatch('a', 'undo'), inBatch('b', 'undo')]));
+    await act(async () => runner.setPending([inBatch('a', 'sent'), inBatch('b', 'sent')]));
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  // Red when a refusal seen once hides the same change refused again after a retry.
+  it('reads the backlog again when a change is refused, retried and refused again', async () => {
+    const { runner, spy } = await mount([]);
+    await act(async () => runner.setPending([settled('a', 'failed')]));
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+    await act(async () => runner.setPending([settled('a', 'undo')]));
+    await act(async () => runner.setPending([settled('a', 'failed')]));
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+  });
 });

@@ -66,13 +66,16 @@ function useRefreshOnSettled() {
       return;
     }
     const known = seen.current;
+    // A batch of N moves settles together: each project's backlog is read once.
+    const touched = new Set<string>();
     for (const { at, id, action } of settled) {
       if (known.has(at)) continue;
       known.set(at, id);
-      if (action.kind === 'move' || action.kind === 'addItem') void invalidate(action.projectId);
+      if (action.kind === 'move' || action.kind === 'addItem') touched.add(action.projectId);
     }
-    // Forget changes the runner no longer holds.
-    const live = new Set(pending.map((p) => p.id));
-    for (const [at, id] of known) if (!live.has(id)) known.delete(at);
+    for (const projectId of touched) void invalidate(projectId);
+    // Forget settlements that no longer hold, so a change refused again after a retry is a fresh one.
+    const now = new Set(settled.map((s) => s.at));
+    for (const at of known.keys()) if (!now.has(at)) known.delete(at);
   }, [pending, invalidate]);
 }
