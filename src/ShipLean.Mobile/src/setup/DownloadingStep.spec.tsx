@@ -1,5 +1,5 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
-import { Linking, Platform } from 'react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { AppState, Linking, Platform, type AppStateStatus } from 'react-native';
 import { renderScreen } from '../test-support/renderScreen';
 import { installFakeEngines } from '../test-support/voiceUi';
 import { FakeModelStore } from '../test-support/voice';
@@ -167,7 +167,7 @@ describe('DownloadingStep', () => {
   it('no space shows how much more is needed and offers Qwen3 1.7B when it fits', async () => {
     const stopped: Partial<ModelStatus> = {
       ...downloading(1_700_000_000),
-      phase: 'failed',
+      phase: 'paused',
       reason: 'space',
       freeBytes: 300_000_000,
     };
@@ -188,6 +188,7 @@ describe('DownloadingStep', () => {
       'Switch to Qwen3 1.7B',
     );
     expect(screen.queryByTestId(downloadingStepIds.pause)).toBeNull();
+    expect(screen.queryByTestId(downloadingStepIds.resume)).toBeNull();
 
     await fireEvent.press(screen.getByTestId(downloadingStepIds.tryAgain));
     await fireEvent.press(screen.getByTestId(downloadingStepIds.openStorage));
@@ -195,7 +196,6 @@ describe('DownloadingStep', () => {
     expect(first.models.calls).toEqual([
       { method: 'download' },
       { method: 'choose', choice: 'qwen3-1.7b' },
-      { method: 'download' },
     ]);
     expect(open).toHaveBeenCalled();
     await view.unmount();
@@ -203,13 +203,50 @@ describe('DownloadingStep', () => {
     // Too little room even for the smaller one: it isn't offered.
     const tight = render({
       ...downloading(100_000_000),
-      phase: 'failed',
+      phase: 'paused',
       reason: 'space',
       freeBytes: 10_000_000,
     });
     await tight.done;
     expect(screen.getByTestId(downloadingStepIds.noSpace)).toBeOnTheScreen();
     expect(screen.queryByTestId(downloadingStepIds.useSmaller)).toBeNull();
+    expect(screen.queryByTestId(downloadingStepIds.resume)).toBeNull();
+  });
+
+  it('offers Resume on a pause that is not for space', async () => {
+    const paused = render({ ...downloading(600_000_000), phase: 'paused', reason: 'wifi' });
+    await paused.done;
+    await fireEvent.press(screen.getByTestId(downloadingStepIds.resume));
+    expect(paused.models.calls).toEqual([{ method: 'download' }]);
+  });
+
+  it.each(['checksum', 'network'] as const)(
+    'a download that failed for %s offers Try again, which downloads again',
+    async (reason) => {
+      const failed = render({ ...downloading(600_000_000), phase: 'failed', reason });
+      await failed.done;
+      expect(screen.queryByTestId(downloadingStepIds.noSpace)).toBeNull();
+      await fireEvent.press(screen.getByTestId(downloadingStepIds.failedTryAgain));
+      expect(failed.models.calls).toEqual([{ method: 'download' }]);
+    },
+  );
+
+  it('drops the Microphone is off card when the app comes back with the microphone allowed', async () => {
+    const listeners: ((s: AppStateStatus) => void)[] = [];
+    // Not restored: mockRestore would wipe React Native's own jest mock of AppState.
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_t, cb) => {
+      listeners.push(cb as (s: AppStateStatus) => void);
+      return { remove: () => {} };
+    });
+    const back = render(downloading(0));
+    back.mic.set('deniedFinal');
+    await back.done;
+    expect(await screen.findByTestId(downloadingStepIds.micOff)).toBeOnTheScreen();
+
+    // Open Settings, allow the microphone, return to the app.
+    back.mic.set('granted');
+    await act(async () => listeners.forEach((cb) => cb('active')));
+    await waitFor(() => expect(screen.queryByTestId(downloadingStepIds.micOff)).toBeNull());
   });
 
   it('offers to set up voice when nothing is downloading', async () => {

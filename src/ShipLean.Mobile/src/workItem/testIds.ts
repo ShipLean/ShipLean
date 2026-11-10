@@ -56,6 +56,19 @@ export const criterionId = (index: number) => `wi-criterion-${index}`;
 
 // WI4
 export const timelineId = 'wi-timeline';
+export const timelineFilterId = 'wi-timeline-filter';
+export const timelineEmptyId = 'wi-timeline-empty';
+export const timelineErrorId = (half: 'comments' | 'history') => `wi-timeline-error-${half}`;
+export const timelineRetryId = (half: 'comments' | 'history') => `wi-timeline-retry-${half}`;
+// One entry by its id: a comment's id, "rev-<number>" for a revision, "ask-<kind>-<badge>-<time>" for an ask event.
+export const timelineEntryId = (id: string) => `wi-timeline-entry-${id}`;
+export const timelineWhoId = (id: string) => `wi-timeline-who-${id}`;
+export const timelineAgentTagId = (id: string) => `wi-timeline-agent-${id}`;
+export const timelineWhenId = (id: string) => `wi-timeline-when-${id}`;
+export const timelineBodyId = (id: string) => `wi-timeline-body-${id}`;
+export const timelineEditedId = (id: string) => `wi-timeline-edited-${id}`;
+export const timelineSupersededId = (id: string) => `wi-timeline-superseded-${id}`;
+export const timelineChangeId = (id: string, index: number) => `wi-timeline-change-${id}-${index}`;
 
 // WI5
 export const itemActionsRowId = 'wi-actions-row';
