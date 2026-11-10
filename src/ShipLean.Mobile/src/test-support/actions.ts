@@ -39,6 +39,7 @@ export interface FakeRunner extends ActionRunner {
 }
 
 // Records every call and sends nothing. describe uses a registered executor for the action's area, else the kind.
+// Unlike the real runner, pending() lists every item whether or not its area registered: it proves nothing about that rule.
 export function fakeRunner(): FakeRunner {
   const dispatched: FakeRunner['dispatched'] = [];
   const undone: string[] = [];

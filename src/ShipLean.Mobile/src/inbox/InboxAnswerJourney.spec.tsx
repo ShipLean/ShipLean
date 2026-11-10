@@ -1,6 +1,9 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
+import { outboxKey } from '../actions/outbox';
+import { scopeOf } from '../actions/scope';
+import type { Pending } from '../actions/types';
 import { apiError } from '../test-support/fakeApi';
-import { aProject } from '../test-support/builders';
+import { TEST_ORIGIN, aMe, aProject } from '../test-support/builders';
 import { inboxApi } from '../test-support/inbox';
 import { designInbox } from '../test-support/inboxDesign';
 import { renderApp } from '../test-support/renderApp';
@@ -8,6 +11,7 @@ import { kvValues } from '../test-support/storage';
 import { projectRowId } from '../screens/projects/testIds';
 import { tabIds } from '../screens/testIds';
 import { primitiveIds } from '../ui/testIds';
+import type { InboxAction } from './actions';
 import {
   answerQuickId,
   inboxBtnId,
@@ -127,5 +131,57 @@ describe('answering from the Inbox', () => {
     );
     expect(screen.getByTestId(inboxBtnId('SHIP-906', 'D10', 'approve'))).toBeOnTheScreen();
     expect(badge()).toHaveTextContent('15');
+  });
+});
+
+describe('an Inbox answer kept in the outbox from before a restart', () => {
+  // The phone was closed inside D10's 5 s undo window: the held tap is in the kv store when the app opens again.
+  function seedHeldApprove() {
+    const at = Date.now();
+    const action: InboxAction = {
+      area: 'inbox',
+      kind: 'approve',
+      projectId: project.id,
+      itemId: idOf('SHIP-906'),
+      key: 'SHIP-906',
+      numbers: [10],
+    };
+    const held: Pending = {
+      id: 'before-1',
+      batchId: 'before-0',
+      action,
+      origin: 'tap',
+      state: 'undo',
+      undoUntil: new Date(at + 5000).toISOString(),
+      error: null,
+      failure: null,
+      retryable: false,
+      createdAt: new Date(at).toISOString(),
+      undoOutcome: null,
+      receipt: null,
+    };
+    const scope = scopeOf({ origin: TEST_ORIGIN, email: aMe().email }) as string;
+    kvValues.set(
+      outboxKey(scope),
+      JSON.stringify({
+        items: [held],
+        batches: { 'before-0': { mode: 'hold', allOrNothing: true, live: true } },
+        sentAt: {},
+      }),
+    );
+  }
+
+  // A restart gives it a fresh 5 s window.
+  it('opens the app, offers Undo on the kept answer and sends it when its window ends', async () => {
+    seedHeldApprove();
+    const api = inboxApi({}, { inbox });
+
+    await renderApp({ url: '/p/SHIP/inbox', api });
+    await screen.findByTestId(inboxRowId('SHIP-906'));
+
+    expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(/D10 approved/);
+    expect(api.callsTo(confirmRoute('SHIP-906'))).toHaveLength(0);
+    await passSeconds(5);
+    expect(api.callsTo(confirmRoute('SHIP-906')).map((c) => c.body)).toEqual([{ numbers: [10] }]);
   });
 });

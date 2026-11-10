@@ -272,6 +272,8 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       if (existing !== undefined)
         throw new Error(`Another executor is already registered for ${e.area}.`);
       executors.set(e.area, e as unknown as Executor<AppAction>);
+      // What the outbox kept for this area shows in pending() from now on.
+      notify();
       reconcileAll(e.area);
       void pump();
     },
@@ -339,7 +341,9 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       void pump();
     },
 
-    pending: () => visible(box, now()),
+    // An area's actions wait, unsent and unlisted, until its executor registers: a batch the outbox kept from before a
+    // restart can be loaded before the area provider's effect registers it, and nothing could describe it yet.
+    pending: () => visible(box, now()).filter((p) => executors.has(p.action.area)),
 
     subscribe(cb: () => void): () => void {
       listeners.add(cb);
@@ -361,6 +365,10 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       if (!stopped) return;
       stopped = false;
       halted = false;
+      // The owner starts the runner in its effect, which runs after every effect below it: the area providers have
+      // registered by now, and a subscriber that rendered before they did (the undo toast) has subscribed since and
+      // missed register's notification. It reads pending() again.
+      notify();
       resume();
     },
 

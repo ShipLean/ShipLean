@@ -54,7 +54,7 @@ On a Feature, `comment` is its session log. End every working session with one c
 - what you found,
 - what is next.
 
-Then call `set_status` even when nothing changed, so the Feature shows it was checked.
+Then call `set_status` even when nothing changed, so the Feature shows it was checked. `set_status` also takes an optional `health` (`onTrack`, `atRisk`, `blocked`): set it explicitly at the end of a session; a status that says blocked doesn't set it.
 
 ## Evaluate
 

@@ -28,6 +28,7 @@ describe('InMemoryActionRunner', () => {
   it('holds a dispatched batch in undo until its window ends', () => {
     const time = clock();
     const runner = new InMemoryActionRunner({ now: time.now });
+    runner.register(executor());
     runner.dispatch([action('1'), action('2')], {
       undo: UNDO.tap,
       origin: 'tap',
@@ -46,6 +47,7 @@ describe('InMemoryActionRunner', () => {
 
   it('removes a batch on undo and notifies subscribers', async () => {
     const runner = new InMemoryActionRunner({ now: clock().now });
+    runner.register(executor());
     const kept = runner.dispatch([action('1')], {
       undo: UNDO.tap,
       origin: 'tap',
@@ -71,6 +73,19 @@ describe('InMemoryActionRunner', () => {
     ]);
     expect(runner.pending().map((p) => p.batchId)).toEqual([kept]);
     expect(changed).toHaveBeenCalled();
+  });
+
+  it("lists an area's actions only once its executor registers, and tells subscribers then", () => {
+    const runner = new InMemoryActionRunner({ now: clock().now });
+    runner.dispatch([action('1')], { undo: UNDO.tap, origin: 'tap', allOrNothing: true });
+    expect(runner.pending()).toEqual([]);
+    const changed = vi.fn();
+    runner.subscribe(changed);
+
+    runner.register(executor());
+
+    expect(changed).toHaveBeenCalledTimes(1);
+    expect(runner.pending().map((p) => runner.describe(p.action).text)).toEqual(['setState']);
   });
 
   it('ignores the same executor twice and rejects another for its area', () => {
