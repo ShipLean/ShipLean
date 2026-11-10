@@ -135,6 +135,7 @@ export function flowHarness(
         undo: source === 'typed' ? UNDO.typed : UNDO.voice,
         origin: source,
         allOrNothing: true,
+        via: 'voice',
       });
     },
   });
