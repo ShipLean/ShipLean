@@ -110,7 +110,7 @@ const ROUTES = [
   {
     url: '/p/SHIP/retro',
     screen: 'retro',
-    api: () => retroApi({}, { projectId: PROJECT }),
+    api: () => retroApi(signedInApi(), { projectId: PROJECT }),
     loaded: screenIds.retro,
   },
 ] as const;
@@ -220,11 +220,12 @@ describe('Wiring', () => {
       { url: ITEM_URL, screen: 'workItem', api: workItem, loaded: workItemHeaderId, mic: 'dock' },
     ] as const;
     for (const route of routes) {
-      const { model } = installFakeEngines();
+      const { model, recognizer } = installFakeEngines();
+      recognizer.script([], 'what is this');
       const app = await renderApp({ url: route.url, api: route.api() });
       await screen.findByTestId(route.loaded);
       await hold(route.mic);
-      await waitFor(() => expect(model.prepared).toEqual([route.screen]));
+      await waitFor(() => expect([route.url, model.prepared]).toEqual([route.url, [route.screen]]));
       await app.unmount();
     }
   });
