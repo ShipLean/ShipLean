@@ -316,6 +316,9 @@ def run(argv: list[str], *, server_factory=LlamaServer, speech_factory=Speech, h
         print(f"all done: {run_file}")
         return 0
 
+    # The model and the server binary are found before any audio work, so a missing file fails at once.
+    gguf = model_gguf(a.cache, manifest, a.model)
+    binary = a.llama_server or find_llama_server(a.cache)
     heard: dict[int, tuple[str, int]] = {}
     if a.tier == "audio":
         speech = speech_factory(a.cache, manifest, out, a.threads, available)
@@ -324,9 +327,8 @@ def run(argv: list[str], *, server_factory=LlamaServer, speech_factory=Speech, h
         gc.collect()
         todo = [i for i in todo if i in heard]
 
-    gguf = model_gguf(a.cache, manifest, a.model)
     require_memory(a.model, available)
-    server = server_factory(a.llama_server or find_llama_server(a.cache), gguf, a.threads, out / "runs" / date / "llama-server.log")
+    server = server_factory(binary, gguf, a.threads, out / "runs" / date / "llama-server.log")
     written = 0
     slowest = 0.0
     cpu = cpu_name()
