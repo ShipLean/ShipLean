@@ -123,6 +123,7 @@ describe('work item voice spec', () => {
     );
     expect(a).toMatchObject({
       kind: 'addNote',
+      projectId: aFeatureItem().projectId,
       key: 'SHIP-906',
       body: 'Parakeet needs 1.4 GB, on the S22!',
     });

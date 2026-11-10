@@ -163,7 +163,12 @@ export function workItemVoiceSpec(ctx: WorkItemVoiceContext): ScreenVoiceSpec<Wo
     ...item.links.flatMap((l) => (l.key === null ? [] : [{ key: l.key, title: l.title ?? '' }])),
   ];
 
-  const base = { area: 'workItem' as const, itemId: item.id, key: item.key };
+  const base = {
+    area: 'workItem' as const,
+    projectId: item.projectId,
+    itemId: item.id,
+    key: item.key,
+  };
 
   const noteOf = (call: ParsedCall, transcript: Transcript): string | VoiceFailure => {
     const text = call.noteSpan === undefined ? null : copyNoteSpan(transcript, call.noteSpan);
