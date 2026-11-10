@@ -1,7 +1,7 @@
 import type { DecisionDto, QuestionDto, WaitingChildDto } from '@shiplean/core/api/asks';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, type FC } from 'react';
+import type { FC } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { PendingAnswer } from '../../inbox/actions';
 import { useInboxActions } from '../../inbox/InboxActions';
@@ -11,8 +11,9 @@ import { links } from '../../links';
 import { useProject } from '../../shell/useProject';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
+import { ErrorState } from '../../ui/ErrorState';
 import { useVoice } from '../../voice/VoiceProvider';
-import { useInvalidateWorkItem, useItemAsksQuery } from '../queries';
+import { useItemAsksQuery } from '../queries';
 import {
   needsAgentTagId,
   needsAskTextId,
@@ -21,12 +22,11 @@ import {
   needsChildId,
   needsFromId,
   needsKindId,
+  needsRecommendedId,
   needsPendingId,
   needsRetryAnswerId,
-  needsYouRetryId,
   needsSayId,
   needsUndoId,
-  needsYouErrorId,
   needsYouSectionId,
   needsYouTitleId,
 } from '../testIds';
@@ -92,42 +92,19 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
   const { dispatch, undo, retry, pending } = useInboxActions();
   const sheets = useInboxSheets();
   const voice = useVoice();
-  const invalidate = useInvalidateWorkItem();
-
-  // When an answer to this item has been sent, the asks read is stale: read it again once.
-  const mine = pending.filter((p) => p.action.itemId === item.id);
-  const sentBefore = useRef(new Set<string>());
-  useEffect(() => {
-    let fresh = false;
-    for (const p of mine) {
-      if (p.state === 'sent' && !sentBefore.current.has(p.id)) {
-        sentBefore.current.add(p.id);
-        fresh = true;
-      }
-    }
-    if (fresh) void invalidate(projectId, item.key, item.id);
-  });
 
   const root = { testID: needsYouSectionId };
   if (query.isError) {
     return (
-      <View {...root} style={{ padding: theme.space[4], gap: theme.space[2] }}>
-        <Text
-          testID={needsYouErrorId}
-          accessibilityRole="alert"
-          style={{ color: colors.danger, fontSize: theme.font.size.sm }}
-        >
-          {`Couldn't load what is waiting on you. ${query.error.message}`}
-        </Text>
-        <View style={{ flexDirection: 'row' }}>
-          <Button
-            testID={needsYouRetryId}
-            label="Retry"
-            variant="ghost"
-            busy={query.isFetching}
-            onPress={() => void query.refetch()}
-          />
-        </View>
+      <View {...root}>
+        <ErrorState
+          title="Couldn't load what needs you."
+          action={{
+            label: 'Retry',
+            busy: query.isFetching,
+            onPress: () => void query.refetch(),
+          }}
+        />
       </View>
     );
   }
@@ -143,13 +120,17 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
   const showSay = voice.state.kind !== 'disabled';
   const small = { fontSize: theme.font.size.sm, color: colors.muted };
 
-  const pick = (label: string) => inboxItem.asks.find((a) => a.label === label)!;
+  const open = (mode: 'discuss' | 'question', label: string) => {
+    const ask = inboxItem.asks.find((a) => a.label === label);
+    if (ask !== undefined) sheets.openAnswer({ mode, item: inboxItem, ask, projectId });
+  };
   const target = { area: 'inbox', projectId, itemId: item.id, key: item.key } as const;
 
   const card = (
     label: string,
     heading: string,
-    ask: { who: string | null; agent: string | null },
+    ask: { who: string | null; agent: string | null; at: string },
+    recommended: string | null,
     say: string,
     buttons: {
       id: 'approve' | 'discuss' | 'reply';
@@ -197,9 +178,17 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
         >
           {heading}
         </Text>
+        {recommended === null || recommended === '' ? null : (
+          <Text
+            testID={needsRecommendedId(label)}
+            style={{ marginTop: 4, color: colors.text, fontSize: theme.font.size.sm }}
+          >
+            {recommended}
+          </Text>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
           <Text testID={needsFromId(label)} style={small}>
-            {ask.agent ?? ask.who ?? ''}
+            {[ask.agent ?? ask.who ?? '', ask.at].filter((part) => part !== '').join(' · ')}
           </Text>
           {ask.agent === null ? null : (
             <Text
@@ -272,7 +261,8 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
     card(
       d.label,
       `${d.label} · ${d.question}`,
-      { who: d.raisedBy.name, agent: d.raisedAgentName },
+      { who: d.raisedBy.name, agent: d.raisedAgentName, at: d.raisedAtLabel },
+      d.recommended,
       `approve ${d.label}`,
       [
         {
@@ -285,8 +275,7 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
           id: 'discuss',
           label: 'Discuss',
           primary: false,
-          press: () =>
-            sheets.openAnswer({ mode: 'discuss', item: inboxItem, ask: pick(d.label), projectId }),
+          press: () => open('discuss', d.label),
         },
       ],
     );
@@ -295,15 +284,15 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
     card(
       q.label,
       `${q.label} · ${q.text}`,
-      { who: q.askedBy.name, agent: q.agentName },
+      { who: q.askedBy.name, agent: q.agentName, at: q.askedAtLabel },
+      null,
       'reply: …',
       [
         {
           id: 'reply',
           label: 'Reply',
           primary: false,
-          press: () =>
-            sheets.openAnswer({ mode: 'question', item: inboxItem, ask: pick(q.label), projectId }),
+          press: () => open('question', q.label),
         },
       ],
     );
@@ -347,9 +336,6 @@ function Asks({ item, projectKey, projectId }: NeedsYouSectionProps & { projectI
           </Text>
         </Pressable>
       ))}
-      <Text style={[small, { paddingHorizontal: theme.space[4], paddingTop: theme.space[2] }]}>
-        {`Answers are posted on ${item.key}. The next agent to pick it up reads them.`}
-      </Text>
     </View>
   );
 }

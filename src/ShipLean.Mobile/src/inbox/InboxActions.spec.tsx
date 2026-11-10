@@ -1,3 +1,4 @@
+import { asksKeys } from '@shiplean/core/api/asks';
 import { inboxKeys } from '@shiplean/core/api/inbox';
 import { act, fireEvent } from '@testing-library/react-native';
 import { Pressable, Text } from 'react-native';
@@ -170,6 +171,21 @@ describe('InboxActions', () => {
     expect(screen.queryClient.getQueryState(inboxKey)?.isInvalidated).toBe(true);
     expect(screen.queryClient.getQueryState(answeredKey)?.isInvalidated).toBe(true);
     expect(screen.queryClient.getQueryState(otherKey)?.isInvalidated).toBe(false);
+  });
+
+  it("invalidates the sent answer's work item asks", async () => {
+    const screen = await render(approve);
+    const mine = asksKeys.item(at.projectId, at.key);
+    const other = asksKeys.item(at.projectId, 'SHIP-1');
+    for (const key of [mine, other]) screen.queryClient.setQueryData(key, {});
+    await fireEvent.press(screen.getByTestId('dispatch'));
+
+    await setPending(screen.runner, partsOf(screen.runner, ['undo']));
+    expect(screen.queryClient.getQueryState(mine)?.isInvalidated).toBe(false);
+
+    await setPending(screen.runner, partsOf(screen.runner, ['sent']));
+    expect(screen.queryClient.getQueryState(mine)?.isInvalidated).toBe(true);
+    expect(screen.queryClient.getQueryState(other)?.isInvalidated).toBe(false);
   });
 
   describe('the executor it registers', () => {

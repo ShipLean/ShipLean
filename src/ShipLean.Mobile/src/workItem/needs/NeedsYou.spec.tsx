@@ -4,10 +4,10 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { labelsOf, type InboxAction, type PendingAnswer } from '../../inbox/actions';
-import { InboxActionsContext } from '../../inbox/InboxActions';
+import { InboxActionsContext, InboxActionsProvider } from '../../inbox/InboxActions';
 import { InboxSheetsContext } from '../../inbox/InboxSheets';
 import { links } from '../../links';
-import { aPending } from '../../test-support/actions';
+import { aPending, fakeRunner } from '../../test-support/actions';
 import { aProject } from '../../test-support/builders';
 import { apiError } from '../../test-support/fakeApi';
 import { fakeInboxActions, fakeInboxSheets } from '../../test-support/inbox';
@@ -20,6 +20,7 @@ import {
   workItemApi,
 } from '../../test-support/workItem';
 import { themes } from '../../theme';
+import { uiIds } from '../../ui/testIds';
 import * as ids from '../testIds';
 import { NeedsYouSection } from './NeedsYouSection';
 
@@ -139,12 +140,17 @@ describe.each(['light', 'dark'] as const)('Needs you on a Work item (%s)', (sche
     expect(screen.getByTestId(ids.needsAskTextId('D10'))).toHaveTextContent(
       'D10 · Download the models on Wi-Fi only?',
     );
+    expect(screen.getByTestId(ids.needsRecommendedId('D10'))).toHaveTextContent(
+      'Wi-Fi only, ask before mobile data',
+    );
     expect(screen.getByTestId(ids.needsAskTextId('Q1'))).toHaveTextContent(
       'Q1 · Ship 1.7B as it is, or try FunctionGemma first?',
     );
     expect(screen.getByTestId(ids.needsKindId('D10'))).toHaveTextContent('Decision to confirm');
     expect(screen.getByTestId(ids.needsKindId('Q1'))).toHaveTextContent('Needs input');
-    expect(screen.getByTestId(ids.needsFromId('Q1'))).toHaveTextContent('Claude Code (claude.ai)');
+    expect(screen.getByTestId(ids.needsFromId('Q1'))).toHaveTextContent(
+      `Claude Code (claude.ai) · ${aQuestion().askedAtLabel}`,
+    );
     expect(screen.getByTestId(ids.needsAgentTagId('Q1'))).toHaveTextContent('Agent');
     expect(screen.getByTestId(ids.needsSayId('D10'))).toHaveTextContent('Or say “approve D10”');
     expect(screen.getByTestId(ids.needsSayId('Q1'))).toHaveTextContent('Or say “reply: …”');
@@ -339,6 +345,7 @@ describe.each(['light', 'dark'] as const)('Needs you on a Work item (%s)', (sche
     expect(screen.getByTestId(ids.needsPendingId('D10'))).toHaveTextContent(
       `Posted on ${feature.key}. The next agent to pick it up reads it.`,
     );
+    expect(text).not.toContain('reads them');
   });
 
   // Red when a failed read shows nothing, or Retry does not read again.
@@ -351,35 +358,70 @@ describe.each(['light', 'dark'] as const)('Needs you on a Work item (%s)', (sche
     api.failNext(ASKS(feature.id), apiError(500, 'Server error'));
     await open(feature, { scheme, api });
 
-    expect(await screen.findByTestId(ids.needsYouErrorId)).toBeOnTheScreen();
+    expect(await screen.findByTestId(uiIds.errorState)).toBeOnTheScreen();
     expect(screen.queryByTestId(ids.needsCardId('D10'))).toBeNull();
-    await fireEvent.press(screen.getByTestId(ids.needsYouRetryId));
+    await fireEvent.press(screen.getByTestId(uiIds.errorStateAction));
     expect(await screen.findByTestId(ids.needsCardId('D10'))).toBeOnTheScreen();
-    expect(screen.queryByTestId(ids.needsYouErrorId)).toBeNull();
+    expect(screen.queryByTestId(uiIds.errorState)).toBeNull();
   });
 
-  // Red when a cold open reads the asks before the project is known.
+  // Red when the asks are read before the project is known (useItemAsksQuery(project?.id ?? '', ...)).
   it('reads nothing with an empty project id', async () => {
     const feature = aFeatureItem({ projectId });
-    const api = workItemApi({}, { projectId, items: [feature], asks: [] });
-    await open(feature, { scheme, api });
-    for (const call of api.calls) expect(call.path).not.toContain('//');
+    const api = workItemApi(
+      {},
+      { projectId, items: [feature], asks: [anItemAsks(feature.id, { decisions: [d10()] })] },
+    );
+    api.hang('GET /api/projects');
+    api.install();
+    const result = await renderWithVoice(
+      <InboxActionsContext.Provider value={fakeInboxActions([])}>
+        <InboxSheetsContext.Provider value={fakeInboxSheets()}>
+          <NeedsYouSection item={feature} projectKey="SHIP" />
+        </InboxSheetsContext.Provider>
+      </InboxActionsContext.Provider>,
+      { scheme },
+    );
+
+    await waitFor(() => expect(api.callsTo('GET /api/projects')).toHaveLength(1));
+    expect(api.callsTo(ASKS(feature.id))).toHaveLength(0);
+    expect(screen.getByTestId(ids.needsYouSectionId)).toBeEmptyElement();
+
+    api.release('GET /api/projects');
+    expect(await screen.findByTestId(ids.needsCardId('D10'))).toBeOnTheScreen();
+    expect(api.callsTo(ASKS(feature.id))).toHaveLength(1);
+    expect(result.queryClient.isFetching()).toBe(0);
   });
 
-  // Red when an answer sent from here leaves the card on screen with the old asks.
+  // Red when an answer sent through the Inbox's actions leaves the card on screen with the old asks.
   it('reads the asks again once an answer to this item has been sent', async () => {
     const feature = aFeatureItem({ projectId });
     const api = workItemApi(
       {},
       { projectId, items: [feature], asks: [anItemAsks(feature.id, { decisions: [d10()] })] },
     );
-    await open(feature, { scheme, api });
+    api.install();
+    const runner = fakeRunner();
+    await renderWithVoice(
+      <InboxActionsProvider>
+        <InboxSheetsContext.Provider value={fakeInboxSheets()}>
+          <NeedsYouSection item={feature} projectKey="SHIP" />
+        </InboxSheetsContext.Provider>
+      </InboxActionsProvider>,
+      { scheme, runner },
+    );
     await waitFor(() => expect(api.callsTo(ASKS(feature.id))).toHaveLength(1));
 
-    const sent = fakeInboxActions([
-      pendingAnswer(feature, { kind: 'approve', numbers: [10] }, 'sent'),
-    ]);
-    await act(async () => control.swap(sent));
+    const part = (state: 'undo' | 'sent') =>
+      aPending({
+        id: 'pending-9',
+        batchId: 'batch-9',
+        state,
+        action: pendingAnswer(feature, { kind: 'approve', numbers: [10] }, state).action,
+      });
+    await act(async () => runner.setPending([part('undo')]));
+    expect(api.callsTo(ASKS(feature.id))).toHaveLength(1);
+    await act(async () => runner.setPending([part('sent')]));
 
     await waitFor(() => expect(api.callsTo(ASKS(feature.id))).toHaveLength(2));
   });
