@@ -261,7 +261,7 @@ export function workItemVoiceSpec(ctx: WorkItemVoiceContext): ScreenVoiceSpec<Wo
           from: item.statusLine === '' ? null : item.statusLine,
         };
         // P-X1: a status that says blocked also proposes the health, as its own removable line.
-        if (/blocked/i.test(text) && item.health !== 'blocked')
+        if (/\bblocked\b/i.test(text) && item.health !== 'blocked')
           return {
             ok: true,
             done: {
@@ -389,11 +389,12 @@ export function workItemVoiceSpec(ctx: WorkItemVoiceContext): ScreenVoiceSpec<Wo
         for (const action of out.done.actions) {
           actions.push(action);
           const line = workItemExecutor.describe(action);
-          // A discussion post and a reply are read by the next agent: the preview says where they go.
+          // A discussion post and a reply are read by the next agent: the preview quotes the words and says where they go.
           lines.push(
             action.kind === 'discuss' || action.kind === 'reply'
               ? {
                   ...line,
+                  text: `${line.text}: "${action.body}"`,
                   detail: `Posted on ${action.key}. The next agent to pick it up reads it.`,
                 }
               : line,

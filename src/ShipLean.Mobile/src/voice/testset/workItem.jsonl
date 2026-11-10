@@ -55,3 +55,4 @@
 {"screen":"workItem","utterance":"Mm hmm okay","calls":[],"note":null}
 {"screen":"workItem","utterance":"Never mind","calls":[],"note":null}
 {"screen":"workItem","utterance":"What","calls":[],"note":null}
+{"screen":"workItem","utterance":"Status: unblocked by the review","calls":[{"action":"set_status","args":{"note":"x"}}],"note":"unblocked by the review"}
