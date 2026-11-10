@@ -241,6 +241,43 @@ describe('applyFailed', () => {
     await expect.poll(() => v.state().kind).toBe('idle');
   });
 
+  it('Try again and Send when online retire the old refused parts once the new batch of a reversed batch is out', async () => {
+    for (const choose of [retryApply, queueApply]) {
+      const { v, runner } = failedBatch();
+      await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
+      const batchId = v.dispatch(['state', 'approve-D10', 'note']);
+      const [setState, approve, note] = runner.dispatched[0].batch;
+      const parts = [
+        aPending({
+          id: 'p1',
+          batchId,
+          action: setState,
+          origin: 'voice',
+          state: 'sent',
+          undoOutcome: 'undone',
+        }),
+        aPending({
+          id: 'p2',
+          batchId,
+          action: approve,
+          origin: 'voice',
+          state: 'failed',
+          failure: 'server',
+          retryable: true,
+        }),
+        aPending({ id: 'p3', batchId, action: note, origin: 'voice', state: 'failed' }),
+      ];
+      runner.setPending(parts);
+      onApplyFailed(v, batchId, parts);
+
+      choose(v);
+
+      expect(runner.dispatched).toHaveLength(2);
+      expect(runner.retired).toEqual([['p2', 'p3']]);
+      expect(runner.pending().map((p) => p.id)).toEqual(['p1']);
+    }
+  });
+
   it('gives each line its part id, so a part that left pending() moves no other line', async () => {
     const { v, runner } = failedBatch();
     await v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });

@@ -43,6 +43,8 @@ export interface Pending {
   batchId: string;
   action: AppAction;
   origin: Origin;
+  // Copied from DispatchOptions.via and kept with the item over a restart; absent on everything else.
+  via?: 'voice';
   state: PendingState;
   // ISO 8601 UTC; null when the action has no undo window.
   undoUntil: string | null;
@@ -84,6 +86,10 @@ export interface DispatchOptions {
   undo: UndoWindow;
   origin: Origin;
   allOrNothing: boolean;
+  // 'voice' when the voice provider sent the batch, whatever its origin: a command typed into the voice preview has
+  // origin 'typed' like a typed post, and only via tells them apart (VoiceSendFailedBanner lists the first, not the
+  // second). Left out by everything else.
+  via?: 'voice';
 }
 
 export interface ActionRunner {
@@ -99,6 +105,10 @@ export interface ActionRunner {
   // it is removed instead of queued again. Sent and failed parts are left as they are. retry(id) never queues a part
   // with no answer again, but does queue a failed part: an explicit Retry is a new choice. Subscribers are told.
   discardUnsent(batchId: string): void;
+  // Removes each given part that is failed and was never undone (undoOutcome null); any other id is left alone. For a
+  // batch the voice preview sent again as a new batch (Try again): its old refusal is not shown any more. Subscribers
+  // are told, and the outbox keeps the change.
+  retireFailed(ids: string[]): void;
   // Only the actions of areas whose executor has registered, so describe() takes each of them. The others are kept and
   // not sent until their area registers.
   pending(): Pending[];

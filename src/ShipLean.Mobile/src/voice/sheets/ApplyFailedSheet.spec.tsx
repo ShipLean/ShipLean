@@ -159,6 +159,8 @@ describe('ApplyFailedSheet', () => {
     expect(h.runner.dispatched[1].opts).toMatchObject({ origin: 'voice', allOrNothing: true });
     expect(h.v.state()).toEqual({ kind: 'applying', batchId: h.runner.dispatched[1].batchId });
 
+    // Try again retired the refused note: the same failure is reported afresh for Send when online.
+    await act(async () => h.runner.setPending(partlyApplied(h)));
     h.v.set(state);
     await fireEvent.press(screen.getByTestId(applyFailedQueueId));
     expect(h.runner.dispatched).toHaveLength(3);

@@ -127,7 +127,7 @@ describe('PreviewSheet', () => {
     expect(runner.dispatched).toEqual([
       {
         batch: [action('setState'), action('addNote')],
-        opts: { undo: UNDO.voice, origin: 'voice', allOrNothing: true },
+        opts: { undo: UNDO.voice, origin: 'voice', allOrNothing: true, via: 'voice' },
         batchId: 'batch-1',
       },
     ]);
@@ -150,7 +150,7 @@ describe('PreviewSheet', () => {
     expect(runner.dispatched).toEqual([
       {
         batch: [action('setState'), action('approve'), action('addNote')],
-        opts: { undo: UNDO.typed, origin: 'typed', allOrNothing: true },
+        opts: { undo: UNDO.typed, origin: 'typed', allOrNothing: true, via: 'voice' },
         batchId: 'batch-1',
       },
     ]);
@@ -169,7 +169,7 @@ describe('PreviewSheet', () => {
     expect(runner.dispatched).toEqual([
       {
         batch: [action('setState'), action('approve')],
-        opts: { undo: UNDO.voice, origin: 'voice', allOrNothing: true },
+        opts: { undo: UNDO.voice, origin: 'voice', allOrNothing: true, via: 'voice' },
         batchId: 'batch-1',
       },
     ]);

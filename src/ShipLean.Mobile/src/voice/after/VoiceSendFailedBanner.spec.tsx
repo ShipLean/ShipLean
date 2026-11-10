@@ -1,6 +1,11 @@
+import { ApiRequestError } from '@shiplean/core/api/client';
+import { memoryStore } from '@shiplean/core/platform';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
+import { systemNow } from '../../actions/clock';
+import { createActionRunner } from '../../actions/runner';
 import type { AppAction, Executor } from '../../actions/types';
+import { UNDO } from '../../actions/undo';
 import { aPending, fakeRunner } from '../../test-support/actions';
 import { renderWithRunner } from '../../test-support/renderWithRunner';
 import { FakeCommandModel } from '../../test-support/voice';
@@ -94,6 +99,29 @@ describe('VoiceSendFailedBanner', () => {
     );
   });
 
+  it('counts every part of a mixed typed batch on its work item, its work item changes too', async () => {
+    const runner = fakeRunner();
+    runner.register(executor);
+    const typed = { batchId: 'b1', origin: 'typed', via: 'voice' } as const;
+    runner.setPending([
+      aPending({ ...typed, id: 'm1', state: 'sent', action: part('m1', 'setState').action }),
+      aPending({
+        ...typed,
+        id: 'm2',
+        state: 'failed',
+        failure: 'validation',
+        error: 'Not in this backlog.',
+        action: { area: 'backlog', kind: 'move', itemId: 'item-1', key: 'SHIP-906' },
+      }),
+    ]);
+    await renderWithRunner(<VoiceSendFailedBanner itemId="item-1" itemKey="SHIP-906" />, {
+      runner,
+    });
+
+    expect(screen.getByText('1 of 2 voice changes wasn’t applied · SHIP-906')).toBeOnTheScreen();
+    expect(screen.getByTestId(voiceSendFailedRefusedId('m2'))).toBeOnTheScreen();
+  });
+
   it('Dismiss hides the banner without undoing anything', async () => {
     const runner = sentLater();
     await renderWithRunner(<VoiceSendFailedBanner itemId="item-1" />, { runner });
@@ -134,11 +162,19 @@ describe('VoiceSendFailedBanner', () => {
       await renderWithVoice(<Screen>{ui}</Screen>, { engines: { model }, runner });
       await act(async () => probe.voice!.submitTyped('set it to active'));
       await act(async () => probe.voice!.apply());
-      const [{ batchId, batch }] = runner.dispatched;
+      const [{ batchId, batch, opts }] = runner.dispatched;
       const refused = { state: 'failed' as const, failure: 'server' as const, retryable: true };
       await act(async () =>
         runner.setPending([
-          aPending({ id: 't1', batchId, action: batch[0], origin: 'typed', ...refused }),
+          // As the runner keeps it: with the via the provider dispatched it with.
+          aPending({
+            id: 't1',
+            batchId,
+            action: batch[0],
+            origin: 'typed',
+            via: opts.via,
+            ...refused,
+          }),
           aPending({
             id: 'other',
             batchId: 'add-row',
@@ -170,6 +206,70 @@ describe('VoiceSendFailedBanner', () => {
 
       expect(screen.getByTestId(refusedChangeId('t1'))).toBeOnTheScreen();
       expect(screen.queryByTestId(voiceSendFailedRefusedId('t1'))).toBeNull();
+    });
+
+    // The real runner over a kept outbox: "set it to active" typed into the voice preview, and a post typed into the
+    // dock (origin typed, no via, as DockComposer sends it), both refused. Then the app restarts on the same store.
+    async function refusedThenRestarted() {
+      const store = memoryStore();
+      const refusing: Executor<AppAction> = {
+        ...executor,
+        send: async () => {
+          throw new ApiRequestError('Refused.', 500, 'internal_error');
+        },
+      };
+      const session = () =>
+        createActionRunner({
+          store,
+          scope: 'https://ship.test\ntom@ship.test',
+          isOffline: () => false,
+          onOnline: () => () => {},
+          now: systemNow,
+        });
+      const first = session();
+      first.register(refusing);
+      first.start();
+      const model = new FakeCommandModel();
+      model.respond([{ action: 'set_state', args: { state: 'Active' } }]);
+      const view = await renderWithVoice(<Screen>{null}</Screen>, {
+        engines: { model },
+        runner: first,
+      });
+      await act(async () => probe.voice!.submitTyped('set it to active'));
+      await act(async () => probe.voice!.apply());
+      await act(async () => {
+        first.dispatch([{ area: 'workItem', kind: 'addNote', itemId: 'item-1', key: 'SHIP-906' }], {
+          undo: UNDO.typed,
+          origin: 'typed',
+          allOrNothing: true,
+        });
+      });
+      expect(first.pending().map((p) => [p.action.kind, p.state])).toEqual([
+        ['setState', 'failed'],
+        ['addNote', 'failed'],
+      ]);
+      await view.unmount();
+      first.stop();
+
+      const second = session();
+      second.register(refusing);
+      second.start();
+      const ids = Object.fromEntries(second.pending().map((p) => [p.action.kind, p.id]));
+      return { runner: second, typed: ids.setState, dock: ids.addNote };
+    }
+
+    it('still shows its refusal after a restart, and never a post typed into the dock', async () => {
+      const { runner, typed, dock } = await refusedThenRestarted();
+      try {
+        await renderWithRunner(<VoiceSendFailedBanner />, { runner });
+
+        expect(screen.getByTestId(voiceSendFailedRefusedId(typed))).toHaveTextContent(
+          /^SHIP-906 · “State → Active”/,
+        );
+        expect(screen.queryByTestId(voiceSendFailedRefusedId(dock))).toBeNull();
+      } finally {
+        runner.stop();
+      }
     });
   });
 });

@@ -45,6 +45,24 @@ describe('InMemoryActionRunner', () => {
     expect(runner.pending().map((p) => p.state)).toEqual(['queued', 'queued']);
   });
 
+  it('keeps via on each part, and retireFailed leaves a part that is not failed', () => {
+    const runner = new InMemoryActionRunner({ now: clock().now });
+    runner.register(executor());
+    runner.dispatch([action('1')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: true,
+      via: 'voice',
+    });
+    const heard = vi.fn();
+    runner.subscribe(heard);
+
+    runner.retireFailed(runner.pending().map((p) => p.id));
+
+    expect(runner.pending().map((p) => [p.state, p.via])).toEqual([['undo', 'voice']]);
+    expect(heard).not.toHaveBeenCalled();
+  });
+
   it('removes a batch on undo and notifies subscribers', async () => {
     const runner = new InMemoryActionRunner({ now: clock().now });
     runner.register(executor());

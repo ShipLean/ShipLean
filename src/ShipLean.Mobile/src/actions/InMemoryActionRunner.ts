@@ -49,6 +49,7 @@ export class InMemoryActionRunner implements ActionRunner {
         batchId,
         action,
         origin: opts.origin,
+        ...(opts.via === undefined ? {} : { via: opts.via }),
         state: undoUntil === null ? 'queued' : 'undo',
         undoUntil,
         error: null,
@@ -91,6 +92,18 @@ export class InMemoryActionRunner implements ActionRunner {
     this.items = this.items.filter(
       (p) => p.batchId !== batchId || (p.state !== 'queued' && p.state !== 'undo'),
     );
+    this.notify();
+  }
+
+  // As the real runner: only a failed part that was never undone goes.
+  retireFailed(ids: string[]): void {
+    const gone = new Set(
+      this.items
+        .filter((p) => ids.includes(p.id) && p.state === 'failed' && p.undoOutcome === null)
+        .map((p) => p.id),
+    );
+    if (gone.size === 0) return;
+    this.items = this.items.filter((p) => !gone.has(p.id));
     this.notify();
   }
 

@@ -56,7 +56,9 @@ export function retryApply(v: VoiceInternals): void {
     void rest(v, s);
     return;
   }
-  v.set({ kind: 'applying', batchId: v.dispatch(ids) });
+  const batchId = v.dispatch(ids);
+  retireRefused(v, parts);
+  v.set({ kind: 'applying', batchId });
 }
 
 // Send when online: as Try again, but the sheet closes at once and the runner keeps what it sends in the outbox while
@@ -68,7 +70,10 @@ export function queueApply(v: VoiceInternals): void {
   const parts = partsOf(v, s);
   if (parts.some(reversed)) {
     const ids = resendIds(v, parts);
-    if (ids.length > 0) v.dispatch(ids);
+    if (ids.length > 0) {
+      v.dispatch(ids);
+      retireRefused(v, parts);
+    }
   } else retryFailed(v, parts);
   void rest(v, s);
 }
@@ -98,6 +103,12 @@ const reversed = (p: Pending) => p.state === 'sent' && p.undoOutcome === 'undone
 // The runner queues each failed part again, in the batch's order.
 function retryFailed(v: VoiceInternals, parts: Pending[]): void {
   for (const p of parts) if (p.state === 'failed') v.runner.retry(p.id);
+}
+
+// Once the new batch is dispatched, the old batch's refused and never-sent parts have gone again in it: the runner
+// drops them, so nothing (VoiceSendFailedBanner) goes on saying they didn't send.
+function retireRefused(v: VoiceInternals, parts: Pending[]): void {
+  v.runner.retireFailed(parts.filter((p) => p.state === 'failed').map((p) => p.id));
 }
 
 // Sent again in a new batch: a part the runner reversed, or one it refused or never sent because of the refusal. Never

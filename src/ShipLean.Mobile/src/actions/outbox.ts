@@ -52,6 +52,7 @@ export function addBatch(
     batchId,
     action,
     origin: opts.origin,
+    ...(opts.via === undefined ? {} : { via: opts.via }),
     state: held ? 'undo' : 'queued',
     undoUntil,
     ...cleared,
@@ -191,14 +192,20 @@ export function serialise(o: Outbox): string | null {
   return JSON.stringify(stored);
 }
 
+// A part the server refused while its live voice batch was being reversed: the runner keeps the refusal on it, still
+// sending, before it reverses (runner.ts refused()).
+const refusedWhileSending = (p: Pending) => p.state === 'sending' && typeof p.failure === 'string';
+
 // After a restart: a hold gets a fresh window from now, as long as the one it had; queued and failed stay; a send
-// that was under way may or may not have reached the server, so it is uncertain; a sent entry stays sent, with its
+// that was under way may or may not have reached the server, so it is uncertain, unless it was refused (then it and
+// the parts queued behind it in its batch fail); a sent entry stays sent, with its
 // receipt and sentAt, until its 10 minutes are over. Every batch has waited. Throws when raw isn't an outbox.
 export function load(raw: string | null, now: Date): Outbox {
   if (raw === null) return emptyOutbox;
   const stored: unknown = JSON.parse(raw);
   if (!isStored(stored)) throw new Error('The stored outbox has the wrong shape.');
   const sentAt = stored.sentAt ?? {};
+  const refusedBatches = new Set(stored.items.filter(refusedWhileSending).map((p) => p.batchId));
   const items = stored.items
     // A sent entry with no time can't be aged, so it goes.
     .filter((p) => p.state !== 'sent' || typeof sentAt[p.id] === 'string')
@@ -207,7 +214,12 @@ export function load(raw: string | null, now: Date): Outbox {
         const length = Date.parse(p.undoUntil) - Date.parse(p.createdAt);
         return { ...p, undoUntil: new Date(now.getTime() + length).toISOString() };
       }
+      // A refusal kept before the runner reversed its batch: the server answered, so it failed.
+      if (refusedWhileSending(p)) return { ...p, state: 'failed' };
       if (p.state === 'sending') return { ...p, state: 'uncertain' };
+      // Queued behind a refusal the app died reversing: the batch stopped there, so it never goes.
+      if (p.state === 'queued' && refusedBatches.has(p.batchId))
+        return { ...p, state: 'failed', ...cleared };
       return p;
     });
   const kept = new Set(items.map((p) => p.id));

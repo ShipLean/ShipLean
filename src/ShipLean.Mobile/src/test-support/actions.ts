@@ -33,6 +33,8 @@ export interface FakeRunner extends ActionRunner {
   readonly retried: string[];
   // Every discardUnsent batch id, in order.
   readonly discarded: string[];
+  // Every retireFailed call's ids, in order.
+  readonly retired: string[][];
   readonly registered: Executor<AppAction>[];
   // Replaces what pending() returns and notifies subscribers.
   setPending(items: Pending[]): void;
@@ -47,6 +49,7 @@ export function fakeRunner(): FakeRunner {
   const undone: string[] = [];
   const retried: string[] = [];
   const discarded: string[] = [];
+  const retired: string[][] = [];
   const registered: Executor<AppAction>[] = [];
   const listeners = new Set<() => void>();
   const conflictListeners = new Set<(batchId: string, lines: PreviewLine[]) => void>();
@@ -60,6 +63,7 @@ export function fakeRunner(): FakeRunner {
     undone,
     retried,
     discarded,
+    retired,
     registered,
     register: (e) => {
       registered.push(e as unknown as Executor<AppAction>);
@@ -84,6 +88,16 @@ export function fakeRunner(): FakeRunner {
       discarded.push(batchId);
       const kept = items.filter(
         (p) => p.batchId !== batchId || (p.state !== 'queued' && p.state !== 'undo'),
+      );
+      if (kept.length === items.length) return;
+      items = kept;
+      notify();
+    },
+    // Drops the given failed items that were never undone, as the real runner does.
+    retireFailed: (ids) => {
+      retired.push(ids);
+      const kept = items.filter(
+        (p) => !(ids.includes(p.id) && p.state === 'failed' && p.undoOutcome === null),
       );
       if (kept.length === items.length) return;
       items = kept;

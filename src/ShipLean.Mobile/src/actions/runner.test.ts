@@ -256,6 +256,126 @@ describe('ActionRunner', () => {
     ]);
   });
 
+  it('keeps a refusal over a restart that cut the reversal off, and never sends the refused part or its followers again', async () => {
+    const store = memoryStore();
+    const rec = recorder();
+    const first = build(rec, { store });
+    rec.sendFails.set('2', refusal(400, 'validation'));
+    // The undo of part 1 never settles: the app is killed while the batch is being reversed.
+    rec.executor.undo = async (a) => {
+      rec.calls.push(`undo ${a.itemId}`);
+      await new Promise(() => undefined);
+    };
+    first.runner.dispatch([act('setState', '1'), act('setState', '2'), act('setState', '3')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+    await flush();
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'undo 1']);
+
+    rec.sendFails.clear();
+    rec.executor.reconcile = async (items) => items.map(() => 'notSent' as const);
+    const second = build(rec, { store });
+    await flush();
+
+    expect(byItem(second.runner, '2')).toMatchObject({ state: 'failed', failure: 'validation' });
+    expect(byItem(second.runner, '3')).toMatchObject({
+      state: 'failed',
+      failure: null,
+      error: null,
+      retryable: false,
+    });
+    // Part 1's undo was cut off: it shows as still applied, and its row Undo can try again.
+    expect(byItem(second.runner, '1')).toMatchObject({ state: 'sent', undoOutcome: null });
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'undo 1']);
+  });
+
+  it('reports a refused live voice batch, Partly applied, even when reversing it throws', async () => {
+    const rec = recorder();
+    const runner = runnerWith(rec);
+    rec.sendFails.set('2', refusal(400, 'validation'));
+    const settled: string[][] = [];
+    runner.subscribe(() => settled.push(runner.pending().map((p) => p.state)));
+    runner.dispatch([act('setState', '1'), act('setState', '2'), act('setState', '3')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+    rec.executor.reversible = () => {
+      throw new Error('The executor broke.');
+    };
+    await flush();
+
+    expect(byItem(runner, '2')).toMatchObject({
+      state: 'failed',
+      failure: 'validation',
+      error: 'Partly applied. Title is too long.',
+    });
+    expect(byItem(runner, '3')).toMatchObject({ state: 'failed', failure: null });
+    expect(byItem(runner, '1')).toMatchObject({ state: 'sent', undoOutcome: null });
+    expect(settled.at(-1)).toEqual(['sent', 'failed', 'failed']);
+  });
+
+  it('keeps via on each part over a restart, and leaves it off a batch dispatched without it', async () => {
+    const store = memoryStore();
+    const rec = recorder();
+    rec.executor.send = () => new Promise(() => undefined);
+    const first = build(rec, { store });
+    first.runner.dispatch([act('setState', '1'), act('assign', '2')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: true,
+      via: 'voice',
+    });
+    first.runner.dispatch([act('addNote', '3')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: true,
+    });
+    first.runner.stop();
+
+    const second = build(recorder(), { store, start: false });
+
+    expect(second.runner.pending().map((p) => [p.action.itemId, p.via])).toEqual([
+      ['1', 'voice'],
+      ['2', 'voice'],
+      ['3', undefined],
+    ]);
+    expect(second.runner.pending()[2]).not.toHaveProperty('via');
+  });
+
+  it('retires only the failed parts nobody undid, tells subscribers and keeps the change over a restart', async () => {
+    const store = memoryStore();
+    const rec = recorder();
+    const first = build(rec, { store });
+    rec.sendFails.set('2', refusal(400, 'validation'));
+    first.runner.dispatch([act('setState', '1'), act('setState', '2'), act('setState', '3')], {
+      undo: UNDO.voice,
+      origin: 'voice',
+      allOrNothing: true,
+    });
+    await flush();
+    const heard = vi.fn();
+    first.runner.subscribe(heard);
+    const ids = first.runner.pending().map((p) => p.id);
+
+    first.runner.retireFailed([...ids, 'not-a-part']);
+
+    expect(heard).toHaveBeenCalledTimes(1);
+    // Part 1 was sent and reversed: it stays, with its undo outcome.
+    expect(first.runner.pending().map((p) => [p.action.itemId, p.state, p.undoOutcome])).toEqual([
+      ['1', 'sent', 'undone'],
+    ]);
+    heard.mockClear();
+    first.runner.retireFailed(ids);
+    expect(heard).not.toHaveBeenCalled();
+    first.runner.stop();
+
+    const second = build(rec, { store });
+    expect(second.runner.pending().map((p) => p.action.itemId)).toEqual(['1']);
+  });
+
   it('maps 404, 400, 500 and no response to the error copy, failure and retryable flag', async () => {
     const rec = recorder();
     const runner = runnerWith(rec);

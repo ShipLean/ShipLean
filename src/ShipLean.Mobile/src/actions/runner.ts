@@ -175,7 +175,16 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
       // A live voice batch is reversed before anyone hears of the refusal: the refused part stays 'sending' (which
       // also holds the parts queued behind it) until every sent part has its undo outcome. Then the refused part and
       // its followers fail in one set(), so a subscriber sees the whole batch settled, and only then are conflicts told.
-      const stayed = await reverseVoiceBatch(p);
+      // The refusal is kept first, still 'sending' (nothing keys on the failure of a part that is sending): if the app
+      // dies while it reverses, load() finds it and fails the part and its followers instead of sending them again.
+      set(update(box, p.id, { ...mapped }));
+      // An executor or the store that throws while it reverses: not every undo ran, so something may have stayed.
+      let stayed: boolean;
+      try {
+        stayed = await reverseVoiceBatch(p);
+      } catch {
+        stayed = true;
+      }
       let next = update(box, p.id, {
         state: 'failed',
         ...mapped,
@@ -208,6 +217,7 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
   }
 
   // A refused live voice batch: reverse what was sent and has a reverse, newest first. Says whether anything stayed.
+  // Throws when the executor's reversible() or the store does (undoSent catches what undo itself throws).
   async function reverseVoiceBatch(failed: Pending): Promise<boolean> {
     const sent = ofBatch(failed.batchId)
       .filter((q) => q.state === 'sent')
@@ -384,6 +394,14 @@ export function createActionRunner(deps: ActionRunnerDeps): SessionRunner {
         timers.delete(batchId);
       }
       set(discard(box, batchId));
+    },
+
+    retireFailed(ids: string[]): void {
+      const gone = ids.filter((id) => {
+        const p = find(id);
+        return p?.state === 'failed' && p.undoOutcome === null;
+      });
+      if (gone.length > 0) set(remove(box, gone));
     },
 
     // An area's actions wait, unsent and unlisted, until its executor registers: a batch the outbox kept from before a

@@ -4,7 +4,6 @@ import { useActionRunner, usePending } from '../../actions/ActionRunnerProvider'
 import type { Pending } from '../../actions/types';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
-import { useVoiceDispatched } from '../VoiceProvider';
 import { ChangeLine } from './ChangeLine';
 import { UNDO_COPY } from './undoCopy';
 import {
@@ -25,20 +24,18 @@ const isRefused = (p: Pending) =>
 
 // Queued voice changes ShipLean refused when they were sent (voice D18): which one and the runner's reason, and what
 // of the same batch went through. There is no push: this banner is the only place it shows. A command typed into the
-// voice preview counts too (it is sent by the voice provider, with origin 'typed'). On a work item (itemId given) its
+// voice preview counts too (it has origin 'typed', and via 'voice' because the voice provider sent it); a typed change
+// another screen sent (a Dock post, an Add row) has no via and shows on its own screen. On a work item (itemId given) its
 // work item changes are left to RefusedChanges, which lists every refused tapped or typed workItem change of the item,
 // so the two never show the same change.
 export function VoiceSendFailedBanner({ itemId, itemKey }: VoiceSendFailedBannerProps) {
   const theme = useTheme();
   const { colors } = theme;
   const runner = useActionRunner();
-  const dispatched = useVoiceDispatched();
   const pending = usePending(
     (p) =>
       p.origin === 'voice' ||
-      (p.origin === 'typed' &&
-        dispatched(p.batchId) &&
-        !(itemId !== undefined && p.action.area === 'workItem')),
+      (p.via === 'voice' && !(itemId !== undefined && p.action.area === 'workItem')),
   );
   // Dismissing hides the banner here; undoing the batch is the row's Undo, not this.
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
@@ -48,13 +45,13 @@ export function VoiceSendFailedBanner({ itemId, itemKey }: VoiceSendFailedBanner
   );
   const batchIds = [...new Set(refused.map((p) => p.batchId))];
   const text = (p: Pending) => runner.describe(p.action).text;
+  // The whole batch counts, its work item parts left to RefusedChanges included.
+  const batchSize = (batchId: string) =>
+    runner.pending().filter((p) => p.batchId === batchId).length;
   const title =
     itemId === undefined || batchIds.length !== 1
       ? UNDO_COPY.refusedAllTitle(refused.length)
-      : UNDO_COPY.refusedTitle(
-          refused.length,
-          pending.filter((p) => p.batchId === batchIds[0]).length,
-        );
+      : UNDO_COPY.refusedTitle(refused.length, batchSize(batchIds[0]));
 
   return (
     <View testID={voiceSendFailedId}>

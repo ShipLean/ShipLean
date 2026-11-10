@@ -3,7 +3,7 @@
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { memoryStore } from '@shiplean/core/platform';
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { systemNow } from '../../actions/clock';
 import { createActionRunner, type SessionRunner } from '../../actions/runner';
 import type { Executor } from '../../actions/types';
@@ -11,12 +11,15 @@ import { UNDO } from '../../actions/undo';
 import { FakeCommandModel, FakeRecognizer } from '../../test-support/voice';
 import { flowSpec, type FlowAction, type FlowContext } from '../../test-support/voiceFlows';
 import { renderWithVoice } from '../../test-support/voiceUi';
+import { VoiceSendFailedBanner } from '../after/VoiceSendFailedBanner';
+import { voiceSendFailedRefusedId } from '../after/VoiceSendFailedBanner.testIds';
 import type { ParsedCall, ScreenVoiceSpec } from '../contracts';
 import { heardFailureNoteId } from '../failures/HeardFailure.testIds';
 import {
   applyFailedGroupId,
   applyFailedHeadingId,
   applyFailedLineId,
+  applyFailedRetryId,
   applyFailedSheetId,
 } from '../sheets/ApplyFailedSheet.testIds';
 import { previewApplyId, previewMarkId, previewSheetId } from '../sheets/PreviewSheet.testIds';
@@ -45,13 +48,18 @@ function screenSpec(context: FlowContext): ScreenVoiceSpec<FlowAction> {
 }
 
 const probe: { voice: VoiceApi | null } = { voice: null };
-function Screen({ spec }: { spec: ScreenVoiceSpec<FlowAction> }) {
+function Screen({ spec, children }: { spec: ScreenVoiceSpec<FlowAction>; children?: ReactNode }) {
   useScreenVoice(spec as ScreenVoiceSpec);
   const voice = useVoice();
   useEffect(() => {
     probe.voice = voice;
   });
-  return <VoiceSheetsHost />;
+  return (
+    <>
+      {children}
+      <VoiceSheetsHost />
+    </>
+  );
 }
 const voice = () => probe.voice!;
 
@@ -81,15 +89,17 @@ function staleRunner() {
 }
 
 // The real runner, started, over a connection the test switches: its work item executor refuses approve with
-// `refusal`, and logs every send, undo and read of the screen's context (a resolve) in order.
+// `refusal` while `refusing.approve` is true, and logs every send, undo and read of the screen's context (a resolve) in
+// order.
 function switchedRunner(refusal: ApiRequestError, offline: boolean) {
   const log: string[] = [];
+  const refusing = { approve: true };
   const connection = { offline, online: new Set<() => void>() };
   const executor: Executor<FlowAction> = {
     area: 'workItem',
     send: async (a) => {
       log.push(`send ${a.kind}`);
-      if (a.kind === 'approve') throw refusal;
+      if (a.kind === 'approve' && refusing.approve) throw refusal;
     },
     describe: (a) => ({ id: a.kind, icon: 'dot', text: a.kind, removable: true }),
     reversible: (kind) => kind !== 'approve',
@@ -116,11 +126,11 @@ function switchedRunner(refusal: ApiRequestError, offline: boolean) {
       await jest.advanceTimersByTimeAsync(0);
     });
   };
-  return { runner, log, goOnline };
+  return { runner, log, goOnline, refusing };
 }
 
 // Speaks HEARD on a work item screen over `runner`, and applies the preview. `log` hears each read of the context.
-async function speakAndApply(runner: SessionRunner, log: string[] = []) {
+async function speakAndApply(runner: SessionRunner, log: string[] = [], children?: ReactNode) {
   const context: FlowContext = { key: 'SHIP-906', state: 'New', revision: 4, decisions: ['D10'] };
   const spec = screenSpec(context);
   const logged: ScreenVoiceSpec<FlowAction> = {
@@ -133,7 +143,10 @@ async function speakAndApply(runner: SessionRunner, log: string[] = []) {
   const recognizer = new FakeRecognizer();
   const model = new FakeCommandModel();
   model.respond(CALLS);
-  await renderWithVoice(<Screen spec={logged} />, { engines: { recognizer, model }, runner });
+  await renderWithVoice(<Screen spec={logged}>{children}</Screen>, {
+    engines: { recognizer, model },
+    runner,
+  });
   recognizer.script([], HEARD);
   await act(async () => voice().holdStart());
   await act(async () => {
@@ -224,7 +237,8 @@ describe('voice flows through the provider', () => {
             text: 'the S22 runs warm',
           },
         ],
-        opts: { undo: UNDO.typed, origin: 'typed', allOrNothing: true },
+        // Sent by the voice provider: via 'voice', so VoiceSendFailedBanner lists it if it is refused.
+        opts: { undo: UNDO.typed, origin: 'typed', allOrNothing: true, via: 'voice' },
         batchId: 'batch-1',
       },
     ]);
@@ -288,5 +302,32 @@ describe('voice flows through the provider', () => {
     expect(log).toEqual(['send setState', 'send approve', 'undo setState', 'resolve']);
     expect(voice().state).toMatchObject({ kind: 'preview', source: 'voice' });
     expect(screen.queryByTestId(applyFailedSheetId)).toBeNull();
+  });
+
+  it('Try again on a reversed voice batch retires its old refused part, so the banner stops showing it', async () => {
+    const { runner, log, refusing } = switchedRunner(
+      new ApiRequestError('Refused.', 500, 'internal_error'),
+      false,
+    );
+    started = runner;
+    await speakAndApply(runner, [], <VoiceSendFailedBanner />);
+    const refused = partOf(runner, 'approve').id;
+    expect(screen.getByTestId(voiceSendFailedRefusedId(refused))).toBeOnTheScreen();
+
+    refusing.approve = false;
+    await fireEvent.press(screen.getByTestId(applyFailedRetryId));
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(0);
+    });
+
+    expect(log).toEqual([
+      'send setState',
+      'send approve',
+      'undo setState',
+      'send setState',
+      'send approve',
+    ]);
+    expect(runner.pending().map((p) => p.id)).not.toContain(refused);
+    expect(screen.queryByTestId(voiceSendFailedRefusedId(refused))).toBeNull();
   });
 });
