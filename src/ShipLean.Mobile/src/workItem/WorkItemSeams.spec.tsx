@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { UNDO } from '../actions/undo';
 import { fakeRunner } from '../test-support/actions';
+import { WorkItemProvider } from '../shell/providers/workItem';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import { aFeatureItem, aStoryItem } from '../test-support/workItem';
 import type { WorkItemAction } from './actions';
@@ -37,15 +38,15 @@ function Tapper() {
   );
 }
 
-// Renders the provider again with new children, the way a parent's update does.
+// Renders the slot again with new children, the way a parent's update does.
 function Host() {
   const [n, setN] = useState(0);
   return (
-    <WorkItemActionsProvider>
+    <WorkItemProvider projectKey="SHIP">
       <Pressable testID="bump" onPress={() => setN(n + 1)}>
         <Text>{n}</Text>
       </Pressable>
-    </WorkItemActionsProvider>
+    </WorkItemProvider>
   );
 }
 
