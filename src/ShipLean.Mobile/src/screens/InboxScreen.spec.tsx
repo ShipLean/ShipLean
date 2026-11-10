@@ -92,6 +92,8 @@ describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
     await act(async () => runner.setPending([aPending({ action, state: 'undo' })]));
     expect(screen.getByTestId('badge-probe').props.children).toBe('7');
     expect(screen.getByText('7 asks on 5 items')).toBeTruthy();
+    // Inside the undo window the row stays, for its Undo.
+    expect(screen.getByTestId(inboxRowId('SHIP-907'))).toBeTruthy();
     // Past the undo window every ask on SHIP-907 is answered: the row leaves too.
     await act(async () => runner.setPending([aPending({ action, state: 'sent' })]));
     expect(screen.queryByTestId(inboxRowId('SHIP-907'))).toBeNull();
