@@ -241,6 +241,11 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `question.asked` | `ask` |  |
 | `question.answered` | `answer_question` | `WorkItemQuestions.Answer` |
 | `question.withdrawn` |  | `WorkItemQuestions.Withdraw` |
+| `retro.point_supported` |  | `RetroSupport.Support` |
+| `retro.point_unsupported` |  | `RetroSupport.Withdraw` |
+| `feature.digest_seen` |  | `FeatureDigest.MarkSeen` |
+| `mention.seen` |  | `Mentions.Seen` |
+| `mention.replied` |  | `Mentions.Reply` |
 | `import.started` |  | `ImportJobs.Start` |
 | `import.job_changed` |  | `ImportJobs.Rerun`, `ImportJobs.Retry`, `ImportJobs.Skip`, `ImportJobs.Stop` |
 | `import.jira_connected` |  | `Jira.Put` |

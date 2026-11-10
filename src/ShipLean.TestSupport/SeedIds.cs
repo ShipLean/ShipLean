@@ -485,6 +485,21 @@ public static class SeedIds
         public static readonly Guid SeenMentionComment = new("00000005-0000-4000-8002-000000001242");
     }
 
+    // The phone app's screens (db/seed/0014_phone_screens.sql). The features, user and project are properties, not fields: they name
+    // existing rows again. AtRiskFeature (SHIP-102) and BlockedFeature (SHIP-108) are Tom's, their health set by Tom a day before
+    // today. Retro is Joel's person retro on Sprint 24 with one improve point, RetroPoint, that Priya supports (RetroSupport, live).
+    // Tom saw SHIP's Feature digest 2 days before today: feature_digest_seen is keyed (user_id, project_id), so it has no id of its own.
+    public static class Screens
+    {
+        public static Guid AtRiskFeature => WorkItems.Ship102;
+        public static Guid BlockedFeature => WorkItems.Ship108;
+        public static Guid DigestSeenUser => Users.Tom;
+        public static Guid DigestSeenProject => Projects.Ship;
+        public static readonly Guid Retro = new("0000000d-0000-4000-8001-000000000001");
+        public static readonly Guid RetroPoint = new("0000000d-0000-4000-8001-000000000002");
+        public static readonly Guid RetroSupport = new("0000000d-0000-4000-8001-000000000003");
+    }
+
     public static class ImportJobs
     {
         public static readonly Guid MobImport = new("00000006-0000-4000-8000-000000000001");
