@@ -217,7 +217,7 @@ class CheckListingTests(TempCase):
         args = self.staged_with(PLAY_IMAGES + "/featureGraphic.png", png(1024, 500, alpha=True))
         self.assert_bad(args, "featureGraphic.png")
 
-    def test_flags_a_play_icon_without_alpha_never(self):
+    def test_accepts_a_play_icon_without_alpha(self):
         args = self.staged_with(PLAY_IMAGES + "/icon.png", png(512, 512))
         self.assertEqual(run_check(*args)[0], 0)
 
