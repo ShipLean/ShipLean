@@ -13,6 +13,7 @@ import {
 import type { ParsedCall, ResolveResult, TestSetRow, VoiceFailure } from '../voice/contracts';
 import { resolveCommand } from '../voice/resolve';
 import { links } from '../links';
+import { answerFor } from './voiceAnswers';
 import type { WorkItemAction } from './actions';
 import { WORK_ITEM_ACTIONS, workItemVoiceSpec, type WorkItemVoiceContext } from './voiceSpec';
 
@@ -183,6 +184,7 @@ describe('work item voice spec', () => {
       number: 2,
       body: 'the 4 GB number looks too low',
     });
+    expect(r.lines[0].text).toBe('Discuss D2: "the 4 GB number looks too low"');
     expect(r.lines[0].detail).toBe('Posted on SHIP-906. The next agent to pick it up reads it.');
   });
 
@@ -229,6 +231,28 @@ describe('work item voice spec', () => {
     });
   });
 
+  it('set_status refuses a line with a newline', () => {
+    const text = 'first line\nsecond line';
+    const r = run(context(), `Status: ${text}`, [['set_status', { note: 'x' }]], text);
+    expect(failed(r)).toEqual({
+      kind: 'noValidAction',
+      detail: { action: 'set_status', reason: 'invalidArgs' },
+    });
+  });
+
+  it('does not propose health Blocked for a status that says unblocked', () => {
+    const r = done(
+      run(
+        context(),
+        'Status: unblocked by the review',
+        [['set_status', { note: 'x' }]],
+        'unblocked by the review',
+      ),
+    );
+    expect(r.actions.map((a) => a.kind)).toEqual(['setStatus']);
+    expect(r.lines).toHaveLength(1);
+  });
+
   it('proposes health Blocked as its own line for a blocked status on a Feature', () => {
     const r = done(
       run(
@@ -255,7 +279,7 @@ describe('work item voice spec', () => {
 
   it('set_health sets the health on a Feature only', () => {
     expect(
-      only(run(context(), 'Mark this at risk', [['set_health', { health: 'onTrack' }]])),
+      only(run(context(), 'Mark this on track', [['set_health', { health: 'onTrack' }]])),
     ).toMatchObject({
       kind: 'setHealth',
       health: 'onTrack',
@@ -291,6 +315,19 @@ describe('work item voice spec', () => {
     expect(r.view).toMatchObject({ kind: 'answer', content: { rows: [{ key: 'SHIP-141' }] } });
     const needs = done(run(context(), 'What needs me?', [['ask', { topic: 'whatNeedsMe' }]]));
     expect(needs.view).toMatchObject({ content: { lead: '3 waiting on you' } });
+    const item = aFeatureItem();
+    const blocked = done(run(context(), "What's blocked?", [['ask', { topic: 'whatsBlocked' }]]));
+    expect(blocked.view).toEqual({
+      kind: 'answer',
+      content: answerFor('whatsBlocked', item, context().asks),
+    });
+    expect(blocked.view).toMatchObject({ content: { lead: expect.stringContaining(item.key) } });
+    const owns = done(run(context(), 'Who owns this?', [['ask', { topic: 'whoOwns' }]]));
+    expect(owns.view).toEqual({
+      kind: 'answer',
+      content: answerFor('whoOwns', item, context().asks),
+    });
+    expect(owns.view).toMatchObject({ content: { lead: expect.stringContaining(item.key) } });
   });
 
   it('open resolves a child key', () => {
@@ -333,6 +370,10 @@ describe('work item voice spec', () => {
 
   it('resolves the listening state: Active, approve D10 and a note in one utterance, in order', () => {
     const ctx = context();
+    ctx.item = {
+      ...ctx.item,
+      state: { id: STATES[0].id, name: STATES[0].name, category: STATES[0].category },
+    };
     ctx.asks = anItemAsks(ctx.item.id, { decisions: [aDecision({ number: 10, label: 'D10' })] });
     const text = 'Set it to active, approve D10 and note that the model is cached';
     const r = done(
@@ -349,7 +390,7 @@ describe('work item voice spec', () => {
     );
     expect(r.actions.map((a) => a.kind)).toEqual(['setState', 'approve', 'addNote']);
     expect(r.lines.map((l) => l.text)).toEqual([
-      'State: Active → Active',
+      'State: New → Active',
       'Approve D10',
       'Note on SHIP-906: "the model is cached"',
     ]);
@@ -366,7 +407,7 @@ describe('work item voice spec', () => {
       ),
     );
     expect(r.lines[0]).toMatchObject({
-      text: 'Reply to Q1',
+      text: 'Reply to Q1: "Yes, use the small model, but only on Wi-Fi."',
       detail: 'Posted on SHIP-906. The next agent to pick it up reads it.',
       removable: true,
     });
@@ -448,9 +489,13 @@ describe('work item voice spec', () => {
           a.name,
         ).toBeGreaterThanOrEqual(3);
       expect(rows.filter((r) => r.calls.length > 1).length).toBeGreaterThanOrEqual(6);
-      const kinds = Object.values(FAILS);
-      expect(kinds.filter((k) => k === 'ambiguous')).toHaveLength(4);
-      expect(kinds.filter((k) => k === 'noValidAction')).toHaveLength(4);
+      expect(rows.filter((r) => FAILS[r.utterance] === 'ambiguous')).toHaveLength(4);
+      expect(rows.filter((r) => FAILS[r.utterance] === 'noValidAction')).toHaveLength(4);
+      for (const utterance of Object.keys(FAILS))
+        expect(
+          rows.some((r) => r.utterance === utterance),
+          utterance,
+        ).toBe(true);
       expect(rows.filter((r) => r.calls.length === 0)).toHaveLength(4);
     });
 
@@ -476,7 +521,7 @@ describe('work item voice spec', () => {
         const expected = row.calls.flatMap((c) => {
           const kind = KIND[c.action];
           if (kind === undefined) return [];
-          return c.action === 'set_status' && /blocked/i.test(row.note ?? '')
+          return c.action === 'set_status' && /\bblocked\b/i.test(row.note ?? '')
             ? [kind, 'setHealth']
             : [kind];
         });
@@ -494,6 +539,32 @@ describe('work item voice spec', () => {
                 : [],
           );
           expect(noted, label).toEqual([row.note]);
+        }
+        // The resolved targets, per kind, against the row's args.
+        for (const [i, c] of row.calls.entries()) {
+          const action = r.actions.find((x) => x.kind === KIND[c.action]);
+          if (c.action === 'set_state')
+            expect(action, label).toMatchObject({ stateName: c.args.state });
+          if (c.action === 'approve_decision')
+            expect(action, label).toMatchObject({ numbers: c.args.decisions });
+          if (c.action === 'discuss_decision')
+            expect(action, label).toMatchObject({ number: c.args.decision });
+          if (c.action === 'reply' && c.args.question !== undefined)
+            expect(action, label).toMatchObject({ number: c.args.question });
+          if (c.action === 'set_health')
+            expect(action, label).toMatchObject({ health: c.args.health });
+          if (c.action === 'assign')
+            expect(action, label).toMatchObject({
+              name: (members as MemberDto[]).find((m) =>
+                m.user.name.startsWith(String(c.args.person)),
+              )?.user.name,
+            });
+          if (c.action === 'open')
+            expect(r.view, `${label} #${i}`).toEqual({
+              kind: 'navigate',
+              // Every spoken form in the set names the item's one child.
+              link: links.item('SHIP', aFeatureItem().children[0].key),
+            });
         }
         const viewCalls = row.calls.filter((c) => c.action === 'ask' || c.action === 'open');
         expect(r.view?.kind ?? null, label).toBe(
