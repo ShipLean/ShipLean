@@ -53,7 +53,12 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
       ? saveError.message
       : confirmError;
   const { healthSet } = item;
-  const setBy = healthSet === null ? null : (healthSet.agent ?? healthSet.by?.name ?? null);
+  const setBy =
+    healthSet === null
+      ? null
+      : healthSet.agent !== null
+        ? `${healthSet.agent} (agent)`
+        : (healthSet.by?.name ?? null);
 
   return (
     <section
