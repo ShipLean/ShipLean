@@ -29,6 +29,8 @@ jobs:
       # No secrets: proves Ruby, the bundle and the image staging work, and that no key is written.
       - id: setup
         uses: ./.github/actions/store-listing-setup
+      - name: Check the listing limits and images
+        run: python3 -I store/check_listing.py --staged "${{ steps.setup.outputs.staged }}"
       - name: Check the setup outputs
         env:
           STAGED: ${{ steps.setup.outputs.staged }}
@@ -46,3 +48,68 @@ jobs:
             echo "::error::The setup action wrote a key file with no key inputs"
             exit 1
           fi
+
+  # The dry runs need a store secret, which fork pull requests don't get: the job then ends green
+  # after one notice. They never write to a store: Play validates the whole edit and discards it;
+  # the App Store run only downloads the current listing (store/README.md, "What the dry run proves").
+  verify-android:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - id: gate
+        run: |
+          set -euo pipefail
+          if [ -n "$PLAY_JSON" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::The Google Play dry run was skipped: GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not available (fork pull requests get no secrets)."
+          fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+      - id: setup
+        if: steps.gate.outputs.run == 'true'
+        uses: ./.github/actions/store-listing-setup
+        with:
+          play_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      - name: Google Play dry run (validate only)
+        if: steps.gate.outputs.run == 'true'
+        env:
+          STAGED: ${{ steps.setup.outputs.staged }}
+          PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
+        run: store/push_listing.sh android verify
+
+  verify-ios:
+    needs: check
+    runs-on: ${{ vars.STORE_IOS_RUNNER || 'ubuntu-latest' }}
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+    steps:
+      - id: gate
+        run: |
+          set -euo pipefail
+          if [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_KEY_P8" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::The App Store dry run was skipped: the ASC_API_KEY_* secrets are not available (fork pull requests get no secrets)."
+          fi
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+      - id: setup
+        if: steps.gate.outputs.run == 'true'
+        uses: ./.github/actions/store-listing-setup
+        with:
+          asc_key_id: ${{ secrets.ASC_API_KEY_ID }}
+          asc_issuer_id: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          asc_key_p8: ${{ secrets.ASC_API_KEY_P8 }}
+      - name: App Store dry run (download the current listing)
+        if: steps.gate.outputs.run == 'true'
+        env:
+          STAGED: ${{ steps.setup.outputs.staged }}
+          ASC_KEY_PATH: ${{ steps.setup.outputs.asc_key_path }}
+        run: store/push_listing.sh ios verify
