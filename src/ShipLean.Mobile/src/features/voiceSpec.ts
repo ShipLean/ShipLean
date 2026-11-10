@@ -121,7 +121,10 @@ const TAB_ACTIONS: VoiceActionSpec[] = [
       properties: {
         feature,
         relation: { type: 'string', enum: ['above', 'below'] },
-        other: feature,
+        other: {
+          type: 'string',
+          description: 'The Feature key to move above or below, such as SHIP-906.',
+        },
       },
       required: ['feature', 'relation', 'other'],
     },
@@ -263,7 +266,9 @@ export function featuresVoiceSpec(ctx: FeaturesVoiceContext): ScreenVoiceSpec<Fe
     switch (call.action) {
       case 'ask_status': {
         let only: FeatureRowDto | null = null;
-        if (a.feature !== undefined || ctx.focus !== null) {
+        // A question on the tab is about every Feature on screen, even with a row expanded; on a Feature's board
+        // (or with a key named) it is about that one Feature.
+        if (a.feature !== undefined || (ctx.board && ctx.focus !== null)) {
           const row = find(a.feature, call);
           if (isFailure(row)) return { ok: false, failure: row };
           only = row;
