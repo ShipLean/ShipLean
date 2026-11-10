@@ -48,7 +48,7 @@ function anAdd(overrides: Partial<BacklogAddItem> = {}): BacklogAddItem {
 describe('backlog add executor', () => {
   it('sends one item at the top with no sprint and the parent', async () => {
     const fake = controlledApi(backlogApi());
-    const receipt = await sendAddItem(anAdd(), api);
+    const receipt = await sendAddItem(anAdd({ placement: null }), api);
     const [call] = fake.callsTo(ADD);
     expect(call.body).toEqual({
       items: [
@@ -65,15 +65,6 @@ describe('backlog add executor', () => {
       placement: { slot: 'first', beforeItemId: null },
     });
     expect(receipt.createdId).toMatch(/^[0-9a-f-]{36}$/);
-  });
-
-  it('sends a null placement as the top', async () => {
-    const fake = controlledApi(backlogApi());
-    await sendAddItem(anAdd({ placement: null }), api);
-    expect((fake.callsTo(ADD)[0].body as { placement: unknown }).placement).toEqual({
-      slot: 'first',
-      beforeItemId: null,
-    });
   });
 
   it('sends at the bottom when the action says so', async () => {
@@ -171,9 +162,9 @@ describe('backlog add executor', () => {
 
   it('fails the undo when the receipt is null', async () => {
     const fake = controlledApi(backlogApi({ [STATES]: states }));
-    await expect(undoAddItem(anAdd(), api, null)).rejects.toThrow();
-    await expect(undoAddItem(anAdd(), api)).rejects.toThrow();
-    expect(fake.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+    await expect(undoAddItem(anAdd(), api, null)).rejects.toThrow(/not known/);
+    await expect(undoAddItem(anAdd(), api)).rejects.toThrow(/not known/);
+    expect(fake.calls).toHaveLength(0);
   });
 
   it('fails the undo when the new item is no longer on the level', async () => {

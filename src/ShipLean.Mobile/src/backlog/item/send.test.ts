@@ -73,8 +73,8 @@ describe('backlog item executor', () => {
 
   it('fails the undo when the receipt is null', async () => {
     const fake = controlledApi(backlogApi());
-    await expect(undoAddNote(note, api, null)).rejects.toThrow();
-    await expect(undoAddNote(note, api)).rejects.toThrow();
+    await expect(undoAddNote(note, api, null)).rejects.toThrow(/not known/);
+    await expect(undoAddNote(note, api)).rejects.toThrow(/not known/);
     expect(fake.calls).toHaveLength(0);
   });
 
