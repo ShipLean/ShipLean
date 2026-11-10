@@ -1,3 +1,4 @@
+import { WorkItemActionsProvider } from './WorkItemActions';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { QueryClient } from '@tanstack/react-query';
@@ -42,7 +43,9 @@ async function open(
   const ui: ReactElement = (
     <InboxActionsContext.Provider value={actions}>
       <InboxSheetsContext.Provider value={sheets}>
-        <WorkItemScreen projectKey="SHIP" itemKey={itemKey} />
+        <WorkItemActionsProvider>
+          <WorkItemScreen projectKey="SHIP" itemKey={itemKey} />
+        </WorkItemActionsProvider>
       </InboxSheetsContext.Provider>
     </InboxActionsContext.Provider>
   );
