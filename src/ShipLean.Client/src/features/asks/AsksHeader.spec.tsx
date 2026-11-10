@@ -160,7 +160,16 @@ for (const [name, asks] of shots) {
       const component = await mount(
         <AsksHarness
           projectKey="SHIP"
-          item={name === 'feature' ? { ...item, type: { id: 'feature', name: 'Feature' } } : item}
+          item={
+            name === 'feature'
+              ? {
+                  ...item,
+                  id: feature.workItemId,
+                  key: 'SHIP-101',
+                  type: { id: 'feature', name: 'Feature' },
+                }
+              : item
+          }
         />,
       );
       const root = component.getByTestId(ids.section);
