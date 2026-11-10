@@ -1,6 +1,12 @@
+import { VoiceProvider as VoiceStateProvider, VoiceSheetsHost } from '../../voice/VoiceProvider';
 import type { ProjectSlotProps } from './types';
 
-// TODO: the voice engines and command provider replaces this pass-through.
+// The voice state for the project's screens, with its sheets over them.
 export function VoiceProvider({ children }: ProjectSlotProps) {
-  return children;
+  return (
+    <VoiceStateProvider>
+      {children}
+      <VoiceSheetsHost />
+    </VoiceStateProvider>
+  );
 }

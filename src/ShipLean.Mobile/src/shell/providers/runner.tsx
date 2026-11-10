@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { systemNow } from '../../actions/clock';
 import { ActionRunnerProvider } from '../../actions/ActionRunnerProvider';
 import { InMemoryActionRunner } from '../../actions/InMemoryActionRunner';
+import { UndoToastHost } from '../../actions/UndoToastHost';
 import { useSession } from '../../session/useSession';
 import { ToastHost } from '../../ui/Toast';
 import type { ProjectSlotProps } from './types';
@@ -20,7 +21,10 @@ export function RunnerProvider({ children }: ProjectSlotProps) {
   if (runner === null) return children;
   return (
     <ActionRunnerProvider runner={runner}>
-      <ToastHost>{children}</ToastHost>
+      <ToastHost>
+        {children}
+        <UndoToastHost />
+      </ToastHost>
     </ActionRunnerProvider>
   );
 }
