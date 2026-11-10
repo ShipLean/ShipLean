@@ -87,7 +87,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: src
         env:
-          RNLLAMA_SKIP_POSTINSTALL: '1'
+          RNLLAMA_SKIP_POSTINSTALL: "1"
       # The platform-neutral core the SPA (and the phone app) import as @shiplean/core. Its tests are few and run in
       # plain Node, so they always run in full.
       - name: Core format, lint, typecheck, test
@@ -174,7 +174,7 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
             changed=$(git diff --name-only "$BASE_SHA")
-            if ! grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|modules/.*)|src/(pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+            if ! grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|react-native\.config\.js|modules/.*|assets/.*)|src/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml)$' <<<"$changed"; then
               echo "Skipping the Android build: this pull request changes nothing native (the app's package.json, the lockfile, the workspace file, app.json, app.config.ts, modules/ or ci.yml)"
               echo "run=false" >> "$GITHUB_OUTPUT"
               exit 0

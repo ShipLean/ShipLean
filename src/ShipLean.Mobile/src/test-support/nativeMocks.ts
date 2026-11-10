@@ -13,6 +13,14 @@ export type AudioStreamCall =
   | { call: 'start' }
   | { call: 'stop' };
 
+// What an expo-audio stream hands its 'audioStreamBuffer' listeners.
+export interface AudioBufferEvent {
+  data: ArrayBuffer;
+  sampleRate: number;
+  channels: number;
+  timestamp: number;
+}
+
 export type DownloadOutcome = { status: number } | { error: string };
 
 export interface PendingDownload {
@@ -29,6 +37,7 @@ interface NativeState {
   mic: MicPermissionAnswer;
   micRequests: number;
   streamCalls: AudioStreamCall[];
+  audioListeners: ((buffer: AudioBufferEvent) => void)[];
   totalMemory: number | null;
   deviceName: string | null;
   modelName: string | null;
@@ -45,6 +54,7 @@ function initial(): NativeState {
     mic: { status: 'undetermined', granted: false, canAskAgain: true },
     micRequests: 0,
     streamCalls: [],
+    audioListeners: [],
     totalMemory: 12 * 1024 ** 3,
     deviceName: 'Test phone',
     modelName: 'Pixel 9',
@@ -61,6 +71,14 @@ export const native: NativeState = initial();
 
 export function resetNativeMocks(): void {
   Object.assign(native, initial());
+}
+
+// Pushes 16 kHz mono PCM through every listener a spec attached with stream.addListener('audioStreamBuffer', ...).
+export function emitAudio(pcm: Int16Array): void {
+  const data = pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength) as ArrayBuffer;
+  for (const listener of [...native.audioListeners]) {
+    listener({ data, sampleRate: 16000, channels: 1, timestamp: 0 });
+  }
 }
 
 export function setMicPermission(answer: MicPermissionAnswer): void {

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react-native';
+import { renderHook, screen } from '@testing-library/react-native';
 import * as expoAudio from 'expo-audio';
 import * as expoDevice from 'expo-device';
 import * as expoFileSystem from 'expo-file-system';
@@ -7,7 +7,13 @@ import * as llamaRn from 'llama.rn';
 import * as sherpaStt from 'react-native-sherpa-onnx/stt';
 import { screenIds } from '../screens/testIds';
 import { nativeAdapters } from '../voice/native';
-import { native, setMicPermission, setTotalMemory } from './nativeMocks';
+import {
+  emitAudio,
+  native,
+  resetNativeMocks,
+  setMicPermission,
+  setTotalMemory,
+} from './nativeMocks';
 import { renderApp } from './renderApp';
 
 // Every native module the voice code binds, as the app imports it. Without its mock in jest.setup.ts the app would get
@@ -67,5 +73,39 @@ describe('native mocks', () => {
     native.downloads[0]!.finish({ status: 200 }, 'model');
     await expect(done).resolves.toMatchObject({ status: 200 });
     expect(native.files.get('file:///document/m.gguf')).toBe('model');
+  });
+
+  it('records one stream per mounted hook, however often it re-renders', async () => {
+    const audio = jest.requireMock<typeof import('expo-audio')>('expo-audio');
+    const { result, rerender } = await renderHook(() =>
+      audio.useAudioStream({ sampleRate: 16000 }),
+    );
+    const first = result.current.stream;
+    await rerender({});
+    await rerender({});
+    expect(result.current.stream).toBe(first);
+    expect(native.streamCalls.filter((c) => c.call === 'create')).toHaveLength(1);
+  });
+
+  it('delivers PCM to stream listeners until they are removed, and a reset clears them', () => {
+    const audio = jest.requireMock<typeof import('expo-audio')>('expo-audio');
+    const stream = new audio.AudioModule.AudioStream({
+      sampleRate: 16000,
+      channels: 1,
+      encoding: 'int16',
+    });
+    const heard: number[][] = [];
+    const sub = stream.addListener('audioStreamBuffer', (b) => {
+      heard.push([...new Int16Array(b.data)]);
+    });
+    emitAudio(new Int16Array([1, -2, 3]));
+    expect(heard).toEqual([[1, -2, 3]]);
+    sub.remove();
+    emitAudio(new Int16Array([9]));
+    expect(heard).toHaveLength(1);
+    stream.addListener('audioStreamBuffer', () => undefined);
+    expect(native.audioListeners).toHaveLength(1);
+    resetNativeMocks();
+    expect(native.audioListeners).toHaveLength(0);
   });
 });

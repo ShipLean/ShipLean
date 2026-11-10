@@ -71,7 +71,7 @@ afterEach(() => {
 // Native voice modules (T0v): llama.rn, react-native-sherpa-onnx, expo-audio, expo-file-system and expo-device. Their
 // settable state is in nativeMocks.ts; the local model-files module's mock is in mocks/modelFiles.ts.
 import './mocks/modelFiles';
-import { resetNativeMocks } from './nativeMocks';
+import { resetNativeMocks, type AudioBufferEvent } from './nativeMocks';
 
 type NativeMocks = typeof import('./nativeMocks');
 
@@ -133,8 +133,14 @@ jest.mock('expo-audio', () => {
       this.isStreaming = false;
       native.streamCalls.push({ call: 'stop' });
     }
-    addListener() {
-      return { remove: () => undefined };
+    addListener(event: string, listener: (buffer: AudioBufferEvent) => void) {
+      if (event === 'audioStreamBuffer') native.audioListeners.push(listener);
+      return {
+        remove: () => {
+          const at = native.audioListeners.indexOf(listener);
+          if (at >= 0) native.audioListeners.splice(at, 1);
+        },
+      };
     }
     release() {}
   }
@@ -148,14 +154,17 @@ jest.mock('expo-audio', () => {
     AudioModule: { AudioStream, getRecordingPermissionsAsync, requestRecordingPermissionsAsync },
     useAudioStream: (
       options: { sampleRate?: number; channels?: number; encoding?: string } = {},
-    ) => ({
-      stream: new AudioStream({
+    ) => {
+      // One stream per mounted hook, as the real hook keeps one: a re-render must not log another 'create'.
+      const { useRef } = jest.requireActual<typeof import('react')>('react');
+      const held = useRef<AudioStream | null>(null);
+      held.current ??= new AudioStream({
         sampleRate: options.sampleRate ?? 16000,
         channels: options.channels ?? 1,
         encoding: options.encoding ?? 'int16',
-      }),
-      isStreaming: false,
-    }),
+      });
+      return { stream: held.current, isStreaming: false };
+    },
     getRecordingPermissionsAsync,
     requestRecordingPermissionsAsync,
     setAudioModeAsync: jest.fn(async () => undefined),
