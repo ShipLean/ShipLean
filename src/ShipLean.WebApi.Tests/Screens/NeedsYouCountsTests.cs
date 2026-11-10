@@ -41,8 +41,8 @@ public class NeedsYouCountsTests : ApiFixture
         await using var connection = await OpenDatabaseAsync();
         var owner = await NeedsYouArrangement.MemberAsync(connection);
         var item = await NeedsYouArrangement.ItemAsync(connection, "story", owner);
-        await new QuestionBuilder(item).Withdrawn(owner, DateTimeOffset.UtcNow).BuildAsync(connection);
-        await new DecisionBuilder(item).State("confirmed").AnsweredBy(owner, DateTimeOffset.UtcNow).BuildAsync(connection);
+        await new QuestionBuilder(item).Withdrawn(owner, TimeProvider.System.GetUtcNow()).BuildAsync(connection);
+        await new DecisionBuilder(item).State("confirmed").AnsweredBy(owner, TimeProvider.System.GetUtcNow()).BuildAsync(connection);
 
         var counts = await CountsAsync(owner, item);
 
