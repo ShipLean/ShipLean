@@ -21,20 +21,19 @@ import {
   correctionStateId,
 } from './CorrectionFailure.testIds';
 
-const item = (key: string, title: string, projectKey: string): SearchItemDto =>
-  ({
-    key,
-    title,
-    type: 'Story',
-    state: 'Active',
-    stateCategory: 'InProgress',
-    projectKey,
-    parentPath: [],
-    matchedIn: 'title',
-    snippet: '',
-    url: `/p/${projectKey}/items/${key}`,
-    attachment: null,
-  }) as SearchItemDto;
+const item = (key: string, title: string, projectKey: string): SearchItemDto => ({
+  key,
+  title,
+  type: 'story',
+  state: 'Active',
+  stateCategory: 'inProgress',
+  projectKey,
+  parentPath: [],
+  matchedIn: 'title',
+  snippet: '',
+  url: `/p/${projectKey}/items/${key}`,
+  attachment: null,
+});
 
 const view = (items: SearchItemDto[]): SearchViewDto => ({
   query: '',
