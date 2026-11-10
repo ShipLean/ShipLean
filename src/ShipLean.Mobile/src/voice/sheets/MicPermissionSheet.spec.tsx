@@ -33,7 +33,7 @@ describe('MicPermissionSheet', () => {
     const { mic } = installFakeEngines();
     mic.set('undetermined');
     const rechecks: string[] = [];
-    onMicRecheck(() => rechecks.push('recheck'));
+    const off = onMicRecheck(() => rechecks.push('recheck'));
     await mount('undetermined').shown;
 
     expect(screen.getByTestId(micPermissionIds.formAsk)).toBeOnTheScreen();
@@ -53,6 +53,7 @@ describe('MicPermissionSheet', () => {
     expect(screen.queryByTestId(micPermissionSheetId)).toBeNull();
     // The watcher is told to read again, which shows the toast.
     expect(rechecks).toEqual(['recheck']);
+    off();
   });
 
   it('deniedFinal on iOS shows the Settings drawing and Open Settings', async () => {
