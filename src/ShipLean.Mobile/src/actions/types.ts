@@ -87,11 +87,14 @@ export interface DispatchOptions {
 }
 
 export interface ActionRunner {
+  // Tells subscribers: the area's actions kept in the outbox show in pending() from now on.
   register<A extends AppAction>(e: Executor<A>): void;
   // Returns the batch id.
   dispatch(batch: AppAction[], opts: DispatchOptions): string;
   undo(batchId: string): Promise<UndoOutcome[]>;
   retry(id: string): void;
+  // Only the actions of areas whose executor has registered, so describe() takes each of them. The others are kept and
+  // not sent until their area registers.
   pending(): Pending[];
   subscribe(cb: () => void): () => void;
   describe(a: AppAction): PreviewLine;

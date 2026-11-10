@@ -1,4 +1,5 @@
 // The jest-expo specs' setup (jest.config.js setupFilesAfterEnv): native modules the app binds, faked in memory.
+import { queryClient } from '../queryClient';
 import { restoreFetch } from './fakeApi';
 
 jest.mock('expo-secure-store', () => {
@@ -67,6 +68,11 @@ afterEach(() => {
   restoreFetch();
   jest.clearAllMocks();
 });
+
+// renderApp's screens read through the app's one query cache (renderScreen's own clients never collect). Each query
+// whose screen unmounts schedules its garbage collection on a real timer (5 minutes; 7 days for the Inbox), so the
+// last spec of a file left jest unable to exit (SHIP-1328). Dropping the cache once the file is done clears them.
+afterAll(() => queryClient.clear());
 
 // Native voice modules (T0v): llama.rn, react-native-sherpa-onnx, expo-audio, expo-file-system and expo-device. Their
 // settable state is in nativeMocks.ts; the local model-files module's mock is in mocks/modelFiles.ts.

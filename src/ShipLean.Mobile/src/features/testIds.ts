@@ -2,6 +2,7 @@
 
 // F1
 export const featureRowId = (key: string) => `feature-row-${key}`;
+export const featureRowExpandId = (key: string) => `feature-expand-${key}`;
 export const featureGroupId = (category: string) => `feature-group-${category}`;
 export const featureGroupCountId = (category: string) => `feature-group-${category}-count`;
 export const featureWhoId = (key: string) => `feature-who-${key}`;
@@ -85,3 +86,28 @@ export const featureBoardTaskTextId = (key: string) => `feature-board-tasks-text
 
 // F4
 export const featureDigestItemId = (key: string) => `feature-digest-item-${key}`;
+export const featureDigestIds = {
+  back: 'feature-digest-back',
+  seenTop: 'feature-digest-seen-top',
+  seenBottom: 'feature-digest-seen-bottom',
+  scroll: 'feature-digest-scroll',
+  since: 'feature-digest-since',
+  needsYou: 'feature-digest-needs-you',
+  changed: 'feature-digest-changed',
+  empty: 'feature-digest-empty',
+  loadingMore: 'feature-digest-loading-more',
+  pageRetry: 'feature-digest-page-retry',
+} as const;
+export const featureDigestItemTypeId = (key: string) => `feature-digest-item-type-${key}`;
+export const featureDigestLineId = (key: string, index: number) =>
+  `feature-digest-line-${key}-${index}`;
+export const featureDigestLineKindId = (key: string, index: number) =>
+  `feature-digest-line-kind-${key}-${index}`;
+export const featureDigestLineTextId = (key: string, index: number) =>
+  `feature-digest-line-text-${key}-${index}`;
+export const featureDigestLineWhoId = (key: string, index: number) =>
+  `feature-digest-line-who-${key}-${index}`;
+export const featureDigestLineAgentTagId = (key: string, index: number) =>
+  `feature-digest-line-agent-${key}-${index}`;
+export const featureDigestLineAtId = (key: string, index: number) =>
+  `feature-digest-line-at-${key}-${index}`;

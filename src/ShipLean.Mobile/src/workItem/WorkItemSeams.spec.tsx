@@ -23,6 +23,7 @@ import { WorkItemActionsProvider, useWorkItemActions } from './WorkItemActions';
 
 const note: WorkItemAction = {
   area: 'workItem',
+  projectId: 'p1',
   kind: 'addNote',
   itemId: 'i1',
   key: 'SHIP-1',
@@ -56,7 +57,7 @@ describe('Work item seams', () => {
     const story = aStoryItem();
     const close = () => undefined;
     await renderWithRunner(
-      <>
+      <WorkItemActionsProvider>
         <WorkItemHeader item={feature} projectKey="SHIP" />
         <NeedsYouSection item={feature} projectKey="SHIP" />
         <CompactProgress item={feature} projectId="p" />
@@ -68,7 +69,7 @@ describe('Work item seams', () => {
         <ItemActionsRow item={feature} projectKey="SHIP" />
         <ChangeStateSheet item={feature} open onClose={close} />
         <AssignSheet item={feature} open onClose={close} />
-      </>,
+      </WorkItemActionsProvider>,
     );
     for (const id of [
       ids.workItemHeaderId,

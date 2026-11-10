@@ -132,6 +132,38 @@ describe('machine', () => {
     expect(model.prepared).toEqual(['work-item', 'backlog']);
   });
 
+  it('prepare is keyed by the screen and its action names, not the spec object', async () => {
+    const model = new FakeCommandModel();
+    const cache = new PreparedCache();
+    // Screens build their spec on every render: the same screen and actions keep the prepared prefix.
+    for (let i = 0; i < 3; i++) await cache.get(model, spec('work-item'));
+    expect(model.prepared).toEqual(['work-item']);
+
+    const more = spec('work-item');
+    await cache.get(model, {
+      ...more,
+      actions: [...more.actions, { name: 'merge', description: 'Merge', args: {} }],
+    });
+    expect(model.prepared).toEqual(['work-item', 'work-item']);
+  });
+
+  it('a rejected prepare is prepared again on the next get', async () => {
+    const model = new FakeCommandModel();
+    const prepare = model.prepare.bind(model);
+    let fail = true;
+    model.prepare = (s) => {
+      if (!fail) return prepare(s);
+      fail = false;
+      return Promise.reject(new Error('The model failed to load.'));
+    };
+    const cache = new PreparedCache();
+    const workItem = spec('work-item');
+
+    await expect(cache.get(model, workItem)).rejects.toThrow('The model failed to load.');
+    expect(await cache.get(model, workItem)).toEqual({ screen: 'work-item' });
+    expect(model.prepared).toEqual(['work-item']);
+  });
+
   it('isYes takes only "yes" or "apply"', () => {
     expect(isYes('Yes.')).toBe(true);
     expect(isYes('apply')).toBe(true);

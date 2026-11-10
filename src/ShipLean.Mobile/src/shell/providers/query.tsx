@@ -1,8 +1,24 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import Constants from 'expo-constants';
+import { useMemo } from 'react';
+import { currentInboxQueryStoreKey } from '../../inbox/storage';
+import { createInboxPersister, inboxPersistOptions, keepInboxQueries } from '../../query/persist';
 import { queryClient } from '../../queryClient';
+import { kvStore } from '../../session/session';
 import type { AppSlotProps } from './types';
 
-// TODO: a PersistQueryClientProvider with the sync storage persister replaces the plain provider.
+// The one query cache, with the Inbox and Answered kept on the phone (query/persist.ts).
 export function QueryProvider({ children }: AppSlotProps) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  const persistOptions = useMemo(() => {
+    keepInboxQueries(queryClient);
+    return inboxPersistOptions(
+      createInboxPersister(kvStore, currentInboxQueryStoreKey),
+      Constants.expoConfig?.version ?? '',
+    );
+  }, []);
+  return (
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+      {children}
+    </PersistQueryClientProvider>
+  );
 }

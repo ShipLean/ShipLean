@@ -80,6 +80,27 @@ Plain `http` works in development: iOS allows local networking (`NSAllowsLocalNe
 7. In the app, pull down on Projects: the next request answers `session_ended` and the app returns to Sign in.
 8. Sign in again, then sign out from the app's Account (it asks first) and check the web list no longer shows the phone.
 
+## Inbox
+
+The Inbox tab lists everything waiting on you in a project, and the Answered segment lists what you answered in the last 7 days. It shows four kinds of ask: decisions (with a recommended answer), questions, mentions that need a reply or a Seen, and a Feature's status line once it is 3 days old. Rows run longest waiting first. The tab badge counts open asks, not items. An answer goes on the work item; nothing in the app promises a notification and nothing is read aloud.
+
+Answers wait 5 seconds so Undo can catch them, then send. With no connection they stay on the phone (Answered says "Sends when you're online"), survive a restart, and send one by one when the phone is back online. A send that gets no response is checked against a fresh Inbox before it is ever sent again.
+
+**Signing in as Tom Okafor.** Tom owns the seeded asks. Follow "Manual run against a local server", but sign in as `tom@shiplean.local` with `tom-dev-password` (the seeded dev passwords are in `src/ShipLean.TestSupport/SeedIds.cs`, `Passwords`). In the Inbox he should see:
+
+- SHIP-124, his Story: decisions D1 to D4 and questions Q1 and Q2, all open;
+- one open mention, a comment from Priya naming him (the other mention is already seen, so it is not listed);
+- one stale status line, on SHIP-103 (a Feature whose status line was verified 5 days ago).
+
+**Manual checklist** (dev build on an emulator, as above):
+
+- [ ] Answer each kind: approve or change a decision, answer a question, reply to a mention and mark one Seen, and confirm the status line is still true.
+- [ ] Undo inside 5 seconds: the ask comes back to Waiting and nothing is sent.
+- [ ] Airplane mode on, answer a decision, wait 5 seconds: Answered shows "Sends when you're online" and the offline banner shows. Force-stop and reopen the app in airplane mode: the Inbox and the waiting answer are both there. Then airplane mode off: the answer sends once (check the item on the web: one confirmation, not two), and Answered shows who picked it up.
+- [ ] The Inbox tab badge drops by one when you answer, and comes back if the send fails.
+- [ ] Dark mode: set the phone to dark and check the rows, the sheets and the banner.
+- [ ] Tap a row's header: the app's Work item screen opens for that item.
+
 ## Native voice modules
 
 Voice runs on the phone, so the app needs a development build (`npx expo prebuild`); Expo Go can't load these. The adapters live in `src/voice/native/` behind N9's interfaces (`src/voice/contracts.ts`) and the ports in `src/voice/native/ports.ts`; jest mocks every one of these modules in `src/test-support/jest.setup.ts`, with settable state in `src/test-support/nativeMocks.ts`.
