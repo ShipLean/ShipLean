@@ -62,6 +62,12 @@ describe('backlog', () => {
     );
   });
 
+  it('every backlog level key starts with the root', () => {
+    for (const level of ['epics', 'features', 'stories'] as const) {
+      expect(backlogKeys.level('p', level, filter).slice(0, 3)).toEqual(backlogKeys.root('p'));
+    }
+  });
+
   it('backlogKeys.level differs by level and filter', () => {
     expect(backlogKeys.level('p', 'stories', filter)).not.toEqual(
       backlogKeys.level('p', 'features', filter),

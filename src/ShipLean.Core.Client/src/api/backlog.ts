@@ -22,8 +22,16 @@ export interface BacklogFilter {
 }
 
 export const backlogKeys = {
+  /** Every level and mode of the project's backlog. */
+  root: (projectId: string) => ['projects', projectId, 'backlog'] as const,
   level: (projectId: string, level: BacklogLevel, filter: BacklogFilter) =>
-    ['backlog', projectId, level, filter.mode, filter.filter, filter.includeCompleted] as const,
+    [
+      ...backlogKeys.root(projectId),
+      level,
+      filter.mode,
+      filter.filter,
+      filter.includeCompleted,
+    ] as const,
 };
 
 export const getBacklog = (projectId: string, level: BacklogLevel, filter: BacklogFilter) => {

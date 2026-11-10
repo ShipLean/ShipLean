@@ -31,6 +31,12 @@ describe('featureBoard', () => {
       method: 'GET',
       body: undefined,
     });
-    expect(featureBoardKeys.board('p', 'K')).toEqual(['featureBoard', 'p', 'K']);
+    expect(featureBoardKeys.board('p', 'K')).toEqual([
+      'projects',
+      'p',
+      'feature-board',
+      'by-key',
+      'K',
+    ]);
   });
 });

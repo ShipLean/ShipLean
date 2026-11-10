@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import conflictHistory from '../../../ShipLean.TestSupport/DtoFixtures/workItems/conflict-history.json';
+import { asksKeys } from './asks';
 import { ApiRequestError } from './client';
 import { conflictOf, type WorkItemChanges } from './workItems';
 import { getChildren, getItemByKey, patchItem, workItemKeys } from './workItem';
@@ -67,9 +68,10 @@ describe('workItem', () => {
     expect(sent(typed).url).toBe('/api/work-items/id/children?type=story');
   });
 
-  it('workItemKeys start with workItem and differ per id', () => {
-    expect(workItemKeys.byKey('p', 'K-1')).toEqual(['workItem', 'byKey', 'p', 'K-1']);
+  it('workItemKeys are under the project like the SPA and the asks key', () => {
+    expect(workItemKeys.byKey('p', 'K-1')).toEqual(['projects', 'p', 'work-items', 'K-1']);
     expect(workItemKeys.children('i')).toEqual(['workItem', 'children', 'i']);
-    expect(workItemKeys.item('p')[0]).toBe('workItem');
+    expect(workItemKeys.byKey('p', 'K').slice(0, 3)).toEqual(workItemKeys.item('p'));
+    expect(asksKeys.item('p', 'K').slice(0, 4)).toEqual(workItemKeys.byKey('p', 'K'));
   });
 });

@@ -35,6 +35,6 @@ describe('projectMeta', () => {
       method: 'GET',
       body: undefined,
     });
-    expect(projectMetaKeys[segment]('p')).toEqual(['projectMeta', 'p', segment]);
+    expect(projectMetaKeys[segment]('p')).toEqual(['projects', 'p', segment]);
   });
 });

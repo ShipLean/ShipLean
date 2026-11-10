@@ -1,13 +1,15 @@
 // Work item fetchers for the phone screens: the read by key, the revision-checked write and the children. The shapes are in
 // workItems.ts. Routes are the SPA's (features/workItem/workItemApi.ts).
 import { api, type RequestOptions } from './client';
+import type { WorkItemTypeId } from './refs';
 import type { ChildSummaryDto, WorkItemChanges, WorkItemDto, WriteResult } from './workItems';
 
 export const workItemKeys = {
-  byKey: (projectId: string, itemKey: string) => ['workItem', 'byKey', projectId, itemKey] as const,
+  byKey: (projectId: string, itemKey: string) =>
+    ['projects', projectId, 'work-items', itemKey] as const,
   children: (itemId: string) => ['workItem', 'children', itemId] as const,
-  /** Every item of the project: invalidates the by-key reads and the children lists. */
-  item: (projectId: string) => ['workItem', 'byKey', projectId] as const,
+  /** Every by-key read of the project, and the asks under it; children lists are keyed by id: invalidate workItemKeys.children(id) as well. */
+  item: (projectId: string) => ['projects', projectId, 'work-items'] as const,
 };
 
 export const getItemByKey = (projectId: string, itemKey: string, options?: RequestOptions) =>
@@ -22,7 +24,7 @@ export const patchItem = (id: string, expectedRevision: number, changes: WorkIte
     changes,
   });
 
-export const getChildren = (itemId: string, type?: string) =>
+export const getChildren = (itemId: string, type?: WorkItemTypeId) =>
   api.get<ChildSummaryDto[]>(
     `/api/work-items/${encodeURIComponent(itemId)}/children${
       type === undefined ? '' : `?type=${encodeURIComponent(type)}`

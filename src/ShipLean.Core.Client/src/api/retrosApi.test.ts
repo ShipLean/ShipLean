@@ -43,7 +43,7 @@ describe('retrosApi', () => {
   it('retroKeys differ by id, range and query', () => {
     expect(retroKeys.sprint('s')).toEqual(['retro', 'sprint', 's']);
     expect(retroKeys.insights('p', 'all')).not.toEqual(retroKeys.insights('p', '6'));
-    expect(retroKeys.features('p')).toEqual(['retro', 'p', 'features']);
+    expect(retroKeys.features('p')).toEqual(['projects', 'p', 'retros', 'features']);
     expect(retroKeys.actionDialog('p', { itemId: 'a' })).not.toEqual(
       retroKeys.actionDialog('p', { itemId: 'b' }),
     );

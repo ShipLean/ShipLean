@@ -52,10 +52,10 @@ export interface RetroActionDialogQuery {
 export const retroKeys = {
   sprint: (sprintId: string) => ['retro', 'sprint', sprintId] as const,
   insights: (projectId: string, range: RetroRange) =>
-    ['retro', projectId, 'insights', range] as const,
-  features: (projectId: string) => ['retro', projectId, 'features'] as const,
+    ['projects', projectId, 'retros', 'insights', range] as const,
+  features: (projectId: string) => ['projects', projectId, 'retros', 'features'] as const,
   actionDialog: (projectId: string, query: RetroActionDialogQuery) =>
-    ['retro', projectId, 'actionDialog', query] as const,
+    ['projects', projectId, 'retros', 'actionDialog', query] as const,
 };
 
 const projectPath = (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}`;

@@ -4,9 +4,9 @@ import type { MemberDto, StateDto } from './projects';
 import type { SprintDto } from './sprints';
 
 export const projectMetaKeys = {
-  states: (projectId: string) => ['projectMeta', projectId, 'states'] as const,
-  members: (projectId: string) => ['projectMeta', projectId, 'members'] as const,
-  sprints: (projectId: string) => ['projectMeta', projectId, 'sprints'] as const,
+  states: (projectId: string) => ['projects', projectId, 'states'] as const,
+  members: (projectId: string) => ['projects', projectId, 'members'] as const,
+  sprints: (projectId: string) => ['projects', projectId, 'sprints'] as const,
 };
 
 const projectPath = (projectId: string) => `/api/projects/${encodeURIComponent(projectId)}`;

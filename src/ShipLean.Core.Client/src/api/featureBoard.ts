@@ -4,7 +4,7 @@ import type { FeatureBoardViewDto } from './views';
 
 export const featureBoardKeys = {
   board: (projectId: string, featureKey: string) =>
-    ['featureBoard', projectId, featureKey] as const,
+    ['projects', projectId, 'feature-board', 'by-key', featureKey] as const,
 };
 
 export const getFeatureBoard = (projectId: string, featureKey: string) =>
