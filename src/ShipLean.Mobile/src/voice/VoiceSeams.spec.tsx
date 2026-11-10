@@ -131,7 +131,8 @@ describe('voice seams', () => {
       text: 'Move SHIP-1 to Done',
       removable: true,
     };
-    await renderScreen(
+    // The voice change row and the refused-change banner read the runner.
+    await renderWithRunner(
       <ToastHost>
         <MicSlot placement="tabBar" />
         <MicSlot placement="dock" />
