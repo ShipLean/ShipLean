@@ -65,3 +65,32 @@ export const retroProposalKeepId = (proposalId: string) => `retro-proposal-${pro
 // RT3b: an owner chip is the member's user id; an open action item row is its key.
 export const retroDecideOwnerId = (userId: string) => `retro-decide-owner-${userId}`;
 export const retroDecideExistingId = (key: string) => `retro-decide-existing-${key}`;
+
+// RT4: the Features view. The recurring and Features-with-retros reads each have their own error and empty ids.
+export const retroFeaturesIds = {
+  recurring: 'retro-features-recurring',
+  recurringCount: 'retro-features-recurring-count',
+  recurringError: 'retro-features-recurring-error',
+  recurringEmpty: 'retro-features-recurring-empty',
+  list: 'retro-features-list',
+  listError: 'retro-features-list-error',
+  listEmpty: 'retro-features-list-empty',
+  legend: 'retro-features-legend',
+} as const;
+// A recurring theme's row, its strip cell and fix mark (by column index), and what it links to.
+export const retroHeatId = (themeId: string) => `retro-features-theme-${themeId}`;
+export const retroHeatCellId = (themeId: string, column: number) =>
+  `retro-features-theme-${themeId}-cell-${column}`;
+export const retroHeatFixId = (themeId: string, column: number) =>
+  `retro-features-theme-${themeId}-fix-${column}`;
+export const retroHeatNoActionId = (themeId: string) => `retro-features-theme-${themeId}-no-action`;
+export const retroHeatActionId = (themeId: string, key: string) =>
+  `retro-features-theme-${themeId}-action-${key}`;
+// A Feature row (or a loose story or bug), its category bar and parts, and its badges.
+export const retroFeatureRowId = (key: string) => `retro-features-row-${key}`;
+export const retroFeatureBarId = (key: string) => `retro-features-row-${key}-bar`;
+export const retroFeaturePartId = (key: string, category: string) =>
+  `retro-features-row-${key}-part-${category}`;
+export const retroFeatureToDecideId = (key: string) => `retro-features-row-${key}-to-decide`;
+export const retroFeatureNoRetroId = (key: string) => `retro-features-row-${key}-no-retro`;
+export const retroFeatureLastId = (key: string) => `retro-features-row-${key}-last`;
