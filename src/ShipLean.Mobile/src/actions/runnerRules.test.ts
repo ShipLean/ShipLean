@@ -1,16 +1,17 @@
-// N8's rules for the real runner. Red until the real runner replaces createActionRunner's stub.
+// N8's rules for the real runner.
 import { memoryStore, type KeyValueStore } from '@shiplean/core/platform';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { controlledApi } from '../test-support/controlledApi';
 import { restoreFetch } from '../test-support/fakeApi';
 import { createActionRunner } from './runner';
+import { scopeOf } from './scope';
 import type { ActionRunner, AppAction, Executor, Pending } from './types';
 import { UNDO, VOICE_ROW_MS } from './undo';
 
 afterEach(restoreFetch);
 
 const T0 = Date.parse('2030-01-01T09:00:00.000Z');
-const SCOPE = 'https://shiplean.test tom@example.com';
+const SCOPE = scopeOf({ origin: 'https://shiplean.test', email: 'tom@example.com' }) as string;
 
 const act = (kind: string, itemId: string, area: AppAction['area'] = 'workItem'): AppAction => ({
   area,
@@ -99,7 +100,7 @@ const settle = async () => {
 };
 
 describe('createActionRunner', () => {
-  it.fails('R1: sends an allOrNothing batch in order and stops at the first failure', async () => {
+  it('R1: sends an allOrNothing batch in order and stops at the first failure', async () => {
     const batch = [act('setState', '1'), act('setState', '2'), act('setState', '3')];
     const api = controlledApi(Object.fromEntries(batch.map((a) => [sendRoute(a), ok])));
     api.failNext(sendRoute(batch[1]), { status: 400, body: { error: 'Bad.', code: 'validation' } });
@@ -119,7 +120,7 @@ describe('createActionRunner', () => {
     expect(stateOf(runner, '3')).not.toBe('sent');
   });
 
-  it.fails(
+  it(
     'R1: fails a 409 with failure conflict, not retryable, and reports it to subscribeConflicts',
     async () => {
       const batch = [act('setState', '1'), act('setState', '2')];
@@ -153,7 +154,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails(
+  it(
     'R1: sends an after batch at once and undo calls executor.undo with an outcome per action',
     async () => {
       const batch = [act('setState', '1'), act('assign', '2')];
@@ -191,7 +192,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails(
+  it(
     'R1: resolves irreversible without a call for a kind the executor marks not reversible, or with no undo',
     async () => {
       const batch = [act('approve', '1'), act('addPoint', '2', 'retro')];
@@ -214,7 +215,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails(
+  it(
     'R1: stops a failed voice batch at the first failure and reverses only the sent reversible actions',
     async () => {
       const batch = [
@@ -265,7 +266,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails(
+  it(
     'R1: queues offline and sends one by one when back online, carrying on past a refusal',
     async () => {
       const actions = [act('setState', '1'), act('setState', '2'), act('setState', '3')];
@@ -295,7 +296,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails(
+  it(
     'R1: marks a send with no response uncertain and resends it only when reconcile says notSent or retry(id) is called',
     async () => {
       const a = act('setState', '1');
@@ -347,7 +348,7 @@ describe('createActionRunner', () => {
     },
   );
 
-  it.fails('R1: keeps sent entries for 10 minutes', async () => {
+  it('R1: keeps sent entries for 10 minutes', async () => {
     const a = act('setState', '1');
     controlledApi({ [sendRoute(a)]: ok });
     const w = world();
@@ -362,7 +363,7 @@ describe('createActionRunner', () => {
     expect(w.runner.pending()).toEqual([]);
   });
 
-  it.fails('R1: keeps the outbox per scope (origin + email)', async () => {
+  it('R1: keeps the outbox per scope (origin + email)', async () => {
     controlledApi({});
     const store: KeyValueStore = memoryStore();
     const tom = world({ store, offline: true });
@@ -373,7 +374,7 @@ describe('createActionRunner', () => {
       allOrNothing: true,
     });
 
-    const amy = world({ store, offline: true, scope: 'https://shiplean.test amy@example.com' });
+    const amy = world({ store, offline: true, scope: scopeOf({ origin: 'https://shiplean.test', email: 'amy@example.com' }) as string });
     expect(amy.runner.pending()).toEqual([]);
 
     const tomAgain = world({ store, offline: true });
@@ -382,7 +383,7 @@ describe('createActionRunner', () => {
     ]);
   });
 
-  it.fails('R1: gives undo-window items a fresh window after a restart', () => {
+  it('R1: gives undo-window items a fresh window after a restart', () => {
     controlledApi({});
     const store: KeyValueStore = memoryStore();
     const before = world({ store, offline: true });
