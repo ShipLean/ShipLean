@@ -58,6 +58,13 @@ describe('speechPresent', () => {
     expect(speechPresent(spoken)).toBe(true);
   });
 
+  it('a voice far off, under the floor, gives false', () => {
+    // A television in the next room: speech-shaped, but about -50 dBFS at the phone.
+    expect(
+      speechPresent(pcm(new Float64Array(8000), phrase(1.5, 200), new Float64Array(8000))),
+    ).toBe(false);
+  });
+
   it('a phrase with no pause around it still counts', () => {
     expect(speechPresent(pcm(phrase(0.8, 4000)))).toBe(true);
   });
