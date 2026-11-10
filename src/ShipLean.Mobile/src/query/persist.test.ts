@@ -29,7 +29,9 @@ function setup(buster = '1.0.0') {
 
 const keptQueries = (store: ReturnType<typeof memoryStore>): unknown[] => {
   const raw = store.values.get(KEY);
-  return raw === undefined ? [] : (JSON.parse(raw) as PersistedClient).clientState.queries.map((q) => q.queryKey);
+  return raw === undefined
+    ? []
+    : (JSON.parse(raw) as PersistedClient).clientState.queries.map((q) => q.queryKey);
 };
 
 describe('persisted queries', () => {
@@ -37,25 +39,25 @@ describe('persisted queries', () => {
   afterEach(() => vi.useRealTimers());
 
   it('keeps only Inbox and Answered queries', async () => {
-    const { store, persister, options } = setup();
+    const { store, options } = setup();
     const client = new QueryClient();
     client.setQueryData(inboxKeys.inbox('p1'), { items: [] });
     client.setQueryData(inboxKeys.answered('p1'), { rows: [] });
     client.setQueryData(['projects'], [{ key: 'SHIP' }]);
     client.setQueryData(['work-item', 'SHIP-1'], { title: 'x' });
 
-    await persistQueryClientSave({ queryClient: client, persister, ...options });
+    await persistQueryClientSave({ queryClient: client, ...options });
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(keptQueries(store)).toEqual([inboxKeys.inbox('p1'), inboxKeys.answered('p1')]);
   });
 
   it('keeps nothing, and removes the entry, when no Inbox query is left', async () => {
-    const { store, persister, options } = setup();
+    const { store, options } = setup();
     store.values.set(KEY, 'old');
     const client = new QueryClient();
     client.setQueryData(['projects'], []);
-    await persistQueryClientSave({ queryClient: client, persister, ...options });
+    await persistQueryClientSave({ queryClient: client, ...options });
     await vi.advanceTimersByTimeAsync(1000);
     expect(store.values.has(KEY)).toBe(false);
   });
@@ -67,7 +69,6 @@ describe('persisted queries', () => {
     client.setQueryData(inboxKeys.inbox('p1'), { items: [] });
     await persistQueryClientSave({
       queryClient: client,
-      persister,
       ...inboxPersistOptions(persister, '1.0.0'),
     });
     await vi.advanceTimersByTimeAsync(1000);
@@ -75,44 +76,43 @@ describe('persisted queries', () => {
   });
 
   it('restores what was kept', async () => {
-    const { persister, options } = setup();
+    const { options } = setup();
     const first = new QueryClient();
     first.setQueryData(inboxKeys.inbox('p1'), { items: ['a'] });
-    await persistQueryClientSave({ queryClient: first, persister, ...options });
+    await persistQueryClientSave({ queryClient: first, ...options });
     await vi.advanceTimersByTimeAsync(1000);
 
     const restarted = new QueryClient();
-    await persistQueryClientRestore({ queryClient: restarted, persister, ...options });
+    await persistQueryClientRestore({ queryClient: restarted, ...options });
     expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toEqual({ items: ['a'] });
   });
 
   it('drops a cache written by another app version', async () => {
-    const { store, persister, options } = setup('1.0.0');
+    const { store, options } = setup('1.0.0');
     const first = new QueryClient();
     first.setQueryData(inboxKeys.inbox('p1'), { items: ['a'] });
-    await persistQueryClientSave({ queryClient: first, persister, ...options });
+    await persistQueryClientSave({ queryClient: first, ...options });
     await vi.advanceTimersByTimeAsync(1000);
 
     const restarted = new QueryClient();
     await persistQueryClientRestore({
       queryClient: restarted,
-      persister,
-      ...inboxPersistOptions(persister, '1.1.0'),
+      ...inboxPersistOptions(options.persister, '1.1.0'),
     });
     expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toBeUndefined();
     expect(store.values.has(KEY)).toBe(false);
   });
 
   it('drops a cache older than 7 days', async () => {
-    const { store, persister, options } = setup();
+    const { store, options } = setup();
     const first = new QueryClient();
     first.setQueryData(inboxKeys.inbox('p1'), { items: ['a'] });
-    await persistQueryClientSave({ queryClient: first, persister, ...options });
+    await persistQueryClientSave({ queryClient: first, ...options });
     await vi.advanceTimersByTimeAsync(1000);
 
     vi.setSystemTime(Date.now() + INBOX_MAX_AGE_MS + 60_000);
     const restarted = new QueryClient();
-    await persistQueryClientRestore({ queryClient: restarted, persister, ...options });
+    await persistQueryClientRestore({ queryClient: restarted, ...options });
     expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toBeUndefined();
     expect(store.values.has(KEY)).toBe(false);
   });

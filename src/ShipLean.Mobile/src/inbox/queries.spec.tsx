@@ -16,7 +16,10 @@ function Probe({ projectId }: { projectId: string | undefined }) {
   return (
     <>
       <Text testID="state">{`${inbox.status}/${answered.status}`}</Text>
-      <Pressable testID="refresh" onPress={() => projectId !== undefined && invalidate(projectId)} />
+      <Pressable
+        testID="refresh"
+        onPress={() => projectId !== undefined && invalidate(projectId)}
+      />
     </>
   );
 }

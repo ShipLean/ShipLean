@@ -16,20 +16,23 @@ export const isInboxQuery = (query: Pick<Query, 'queryKey' | 'state'>): boolean 
 // The sync persister over the kv store. The kv key is the session's now (null: signed out with no server, so nothing is
 // kept). An empty cache serialises to '' and removes the entry instead of writing one, so a save that lands after a
 // clear (the persister throttles, and always writes the latest state) leaves nothing behind.
-export function createInboxPersister(store: KeyValueStore, currentKey: () => string | null): Persister {
+export function createInboxPersister(
+  store: KeyValueStore,
+  currentKey: () => string | null,
+): Persister {
   return createSyncStoragePersister({
     storage: {
-      getItem: (_k) => {
+      getItem: () => {
         const key = currentKey();
         return key === null ? null : store.getItem(key);
       },
-      setItem: (_k, value) => {
+      setItem: (_key, value) => {
         const key = currentKey();
         if (key === null) return;
         if (value === '') store.removeItem(key);
         else store.setItem(key, value);
       },
-      removeItem: (_k) => {
+      removeItem: () => {
         const key = currentKey();
         if (key !== null) store.removeItem(key);
       },
