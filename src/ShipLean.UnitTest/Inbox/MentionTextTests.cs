@@ -68,6 +68,8 @@ public class MentionTextTests
 
     [TestCase("Run `@Priya Shah` here")]
     [TestCase("Run ``say @Priya Shah`` here")]
+    [TestCase("Run `say @Priya Shah now` here")]
+    [TestCase("Run ``a ` then @Priya Shah, ok`` here")]
     [TestCase("```\n@Priya Shah\n```")]
     [TestCase("Before\n~~~ text\nlook @Priya Shah\n~~~\n")]
     [TestCase("````\n```\n@Priya Shah\n````")]
