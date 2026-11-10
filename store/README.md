@@ -57,9 +57,8 @@ Apple accepts changes to the name, subtitle, keywords, categories and screenshot
 
 1. The org secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` (the Play service account key EAS already holds), shared with this repo like the `ASC_API_KEY_*` org secrets. It is not a repo secret. Without it the Android dry run is skipped with a notice.
 2. Play: one build uploaded (an internal-track submit counts). Before that, Play refuses the dry run.
-3. App Store: `version` in `src/ShipLean.Mobile/app.json` set to `1.0.0`, and a build in App Store Connect, so an editable version exists.
+3. App Store: `version` in `src/ShipLean.Mobile/app.json` (`0.0.1` for the first release) matches the version on App Store Connect's Prepare for Submission page. The listing push writes to that version.
 4. If the App Store dry run fails on Linux, set the repo variable `STORE_IOS_RUNNER` to `macos-latest`.
-5. Joel confirms the age-rating answers (below).
 
 ## Set by hand
 
@@ -78,4 +77,4 @@ The store APIs, or these tools, can't set these. They are one-off or rare.
 
 ### Age rating
 
-TODO: Joel confirms `ios/age_rating.json` before the first real push; until then it holds the lowest answer for every question (`NONE`, or `false`). Check in particular `userGeneratedContent` and `messagingAndChat`: people write notes and comments their team reads, which may need `true`. The release push sends this file as it is.
+`ios/age_rating.json` holds the lowest answer for every question (`NONE`, or `false`), confirmed by Joel on 11 Nov 2026: the app has no adult content. The release push sends this file as it is.
