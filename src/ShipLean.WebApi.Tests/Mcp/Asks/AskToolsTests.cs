@@ -76,7 +76,7 @@ public class AskToolsTests : McpFixture
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
 
         var reply = await CallToolAsync(token, "record_decisions",
-            $$"""{"item":"{{Item}}","decisions":[{"number":61,"question":"Backfilled?","recommended":"Rec","alternatives":["First","Second"],"settled":{"by":"me","on":"2026-10-01","answer":"alternative:2"}}]}""");
+            $$$"""{"item":"{{{Item}}}","decisions":[{"number":61,"question":"Backfilled?","recommended":"Rec","alternatives":["First","Second"],"settled":{"by":"me","on":"2026-10-01","answer":"alternative:2"}}]}""");
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
         var row = await DecisionAsync(61);
@@ -92,7 +92,7 @@ public class AskToolsTests : McpFixture
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
 
         var reply = await CallToolAsync(token, "record_decisions",
-            $$"""{"item":"{{Item}}","decisions":[{"number":62,"question":"Bad day?","recommended":"Rec","settled":{"by":"me","on":"1 Oct","answer":"recommended"}}]}""");
+            $$$"""{"item":"{{{Item}}}","decisions":[{"number":62,"question":"Bad day?","recommended":"Rec","settled":{"by":"me","on":"1 Oct","answer":"recommended"}}]}""");
 
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
