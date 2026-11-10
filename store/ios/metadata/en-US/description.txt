@@ -1,0 +1,31 @@
+Keep up with your team's work, answer what's waiting on you, and change priorities by voice.
+
+ShipLean is a lean planning tool for small teams and the agents that work with them. The phone app is for the times you're away from your desk: checking progress, answering questions, approving decisions and moving work up or down the backlog.
+
+HOLD TO TALK
+• Hold the mic and say what you want: "move SHIP-12 above SHIP-9", "add a note: customers want this before Friday", "what's left on this Feature?"
+• Keys, names and states on the screen are matched as you speak.
+• Every command shows its changes before anything happens. Nothing changes until you tap Apply or say "yes", and you can undo it.
+• Speech is recognised on the phone, with voice models you download once.
+
+EVERYTHING WAITING ON YOU
+• The Inbox lists the questions, decisions and approvals waiting on you, from people and agents, longest waiting first.
+• Answer from the list: tap a quick answer, approve, or hold to reply.
+• Your answer goes on the work item, for the next person or agent who picks it up.
+
+SEE HOW THINGS ARE GOING
+• Features shows progress across every Feature: on track, at risk or blocked, and what needs you.
+• "Since yesterday" sums up what changed.
+• Backlogs for Epics, Features and Stories, in rank order.
+
+RETROS
+• Add retro notes by voice during the sprint, and decide which ones become action items.
+
+FIND ANY WORK ITEM
+• The same search as ShipLean on the web, typed or spoken.
+
+WORKS WITH YOUR SERVER
+• Sign in to prod.shiplean.app or your own ShipLean server. The app uses your server's own sign-in page, in the browser.
+• Switch between your projects, choose light or dark, and get a notification when someone asks you something by name.
+
+You need a ShipLean account to use the app.
