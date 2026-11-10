@@ -1,11 +1,16 @@
-import { StackPlaceholder } from '../shell/StackPlaceholder';
+import { DigestView } from '../features/digest/DigestView';
+import { Screen } from '../ui/Screen';
 import { screenIds } from './testIds';
 
 export interface DigestScreenProps {
   projectKey: string;
 }
 
-// TODO: the Features digest replaces this placeholder.
+// What changed in the project's Features since you last pressed Mark as seen.
 export function DigestScreen({ projectKey }: DigestScreenProps) {
-  return <StackPlaceholder title={`${projectKey} digest`} testID={screenIds.digest} />;
+  return (
+    <Screen testID={screenIds.digest}>
+      <DigestView key={projectKey} projectKey={projectKey} />
+    </Screen>
+  );
 }

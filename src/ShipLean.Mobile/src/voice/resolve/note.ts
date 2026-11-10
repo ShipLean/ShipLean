@@ -6,7 +6,8 @@ const WORD = /[\p{L}\p{N}']/u;
 
 const isWord = (c: string | undefined) => c !== undefined && WORD.test(c);
 
-const LEAD = /^(?:[\s:,]+|(?:colon|that)(?![\p{L}\p{N}']))/iu;
+const PUNCT = /^[\s\p{P}]+/u;
+const LEAD = /^(?:colon|that)(?![\p{L}\p{N}'])/iu;
 
 // The note's words, or null when the span lies outside the transcript, cuts a word in half or holds no words.
 export function noteText(
@@ -20,8 +21,7 @@ export function noteText(
   if (isWord(text[start - 1]) && isWord(text[start])) return null;
   if (isWord(text[end - 1]) && isWord(text[end])) return null;
   let note = text.slice(start, end);
-  for (let lead = LEAD.exec(note); lead !== null; lead = LEAD.exec(note))
-    note = note.slice(lead[0].length);
-  note = note.trim();
+  note = note.replace(PUNCT, '');
+  note = note.replace(LEAD, '').replace(PUNCT, '').trim();
   return note === '' ? null : note;
 }

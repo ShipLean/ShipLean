@@ -136,7 +136,7 @@ public sealed class AnsweredReader(NpgsqlDataSource dataSource, ICurrentUser cur
                     FROM comment c
                     WHERE c.work_item_id = t.item_id AND c.created_at > t.answered_at AND c.archived_at IS NULL
                       AND NOT EXISTS (SELECT 1 FROM github_issue_comment g WHERE g.comment_id = c.id)
-                      AND NOT EXISTS (SELECT 1 FROM comment_ask_tag tag WHERE tag.comment_id = c.id AND tag.kind IN ('answer', 'changed'))
+                      AND NOT (c.author_id = @userId AND EXISTS (SELECT 1 FROM comment_ask_tag tag WHERE tag.comment_id = c.id AND tag.kind IN ('answer', 'changed')))
                       AND (c.agent_name IS NOT NULL OR c.author_id IS DISTINCT FROM @userId AND c.author_id IS NOT NULL)
                     UNION ALL
                     SELECT 'agentPickedUp', r.changed_by, r.agent_name, r.changed_at

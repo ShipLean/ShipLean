@@ -17,6 +17,13 @@ export const retroIds = {
   toDecideInsightsRetry: 'retro-to-decide-insights-retry',
   // RT3b
   decideSheet: 'sheet-retro-decide',
+  decideMode: 'retro-decide-mode',
+  decideTitle: 'retro-decide-title',
+  decideNoOwner: 'retro-decide-no-owner',
+  decideReason: 'retro-decide-reason',
+  decideSubmit: 'retro-decide-submit',
+  decideExisting: 'retro-decide-existing',
+  decideMembersError: 'retro-decide-members-error',
   // RT4
   features: 'retro-features',
 } as const;
@@ -54,3 +61,7 @@ export const retroDecideCauseId = (pointId: string) => `retro-point-${pointId}-c
 export const retroProposalId = (proposalId: string) => `retro-proposal-${proposalId}`;
 export const retroProposalMergeId = (proposalId: string) => `retro-proposal-${proposalId}-merge`;
 export const retroProposalKeepId = (proposalId: string) => `retro-proposal-${proposalId}-keep`;
+
+// RT3b: an owner chip is the member's user id; an open action item row is its key.
+export const retroDecideOwnerId = (userId: string) => `retro-decide-owner-${userId}`;
+export const retroDecideExistingId = (key: string) => `retro-decide-existing-${key}`;
