@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { QuestionDto } from '@shiplean/core/api/asks';
 import { textareaClass } from '../workItem/form/inputClasses';
+import { QuickAnswers } from './QuickAnswers';
 import { asksTestIds as ids } from './testIds';
 import type { AskWrites } from './useAskWrites';
 
@@ -15,6 +16,7 @@ export function QuestionReply({
   onClose(): void;
 }) {
   const [text, setText] = useState('');
+  const input = useRef<HTMLTextAreaElement>(null);
   const { answer } = writes;
   const body = text.trim();
   const post = () => {
@@ -26,7 +28,16 @@ export function QuestionReply({
       <span className="text-[length:var(--text-xs)] font-medium text-ink-muted">
         Answer {question.label}
       </span>
+      <QuickAnswers
+        label={question.label}
+        options={question.options}
+        onChoose={(option) => {
+          setText(option);
+          input.current?.focus();
+        }}
+      />
       <textarea
+        ref={input}
         data-testid={ids.questionReplyInput}
         aria-label={`Answer ${question.label}`}
         rows={3}

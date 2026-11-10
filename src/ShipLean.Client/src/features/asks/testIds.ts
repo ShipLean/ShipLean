@@ -56,6 +56,8 @@ export const asksTestIds = {
   // W1
   questionReplyError: 'asks-question-reply-error',
   questionWithdrawError: 'asks-question-withdraw-error',
+  // SHIP-916 W2
+  questionQuickAnswer: 'asks-question-quick-answer',
   // W2a
   // W2b
   changeError: 'asks-change-error',
