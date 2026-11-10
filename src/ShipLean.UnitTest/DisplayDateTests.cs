@@ -13,6 +13,17 @@ public class DisplayDateTests
         DisplayDate.WeekdayDay(DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(expected);
     }
 
+    // 20:00 UTC is 03:00 the next day at +07:00, so the weekday is the next day's.
+    [Test]
+    public void Weekday_WhenTheZoneIsOnTheNextDay_ShouldNameTheLocalWeekday()
+    {
+        var clock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(TestDates.Today);
+        clock.SetLocalTimeZone(TimeZoneInfo.CreateCustomTimeZone("Test+07", TimeSpan.FromHours(7), "Test+07", "Test+07"));
+        var value = TestDates.Today.AddHours(20);
+
+        DisplayDate.Weekday(value, clock).ShouldBe(TestDates.Today.AddDays(1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     [Test]
     public void Age_WhenUnderAnHour_ShouldSayNow()
     {

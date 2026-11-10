@@ -129,6 +129,12 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.MentionSeen), "Mentions.Seen");
         Add(ActionUsage.Track(UsageEventNames.MentionReplied), "Mentions.Reply");
 
+        // Phone screens (SHIP-916)
+        Add(ActionUsage.Untracked("A read: the phone's Features screen view already counts it."), "FeaturesOverview.Get", "FeatureDigest.Get");
+        Add(ActionUsage.Track(UsageEventNames.FeatureDigestSeen), "FeatureDigest.MarkSeen");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointSupported), "RetroSupport.Support");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointUnsupported), "RetroSupport.Withdraw");
+
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
