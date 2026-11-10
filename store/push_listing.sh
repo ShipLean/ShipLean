@@ -7,7 +7,8 @@
 # Environment:
 #   ASC_KEY_PATH   App Store Connect API key JSON (ios), from store/write_keys.py
 #   PLAY_KEY_PATH  Play service account JSON (android), from store/write_keys.py
-#   STAGED         staged images from store/stage_images.py (ios push, android push and verify)
+#   STAGED         the staged listing from store/stage_images.py: text and images, en-US and
+#                  its mirrored locales (ios push, android push and verify)
 #
 # Exit 2 on bad arguments, 1 when a variable it needs is missing, otherwise fastlane's exit code.
 set -euo pipefail
@@ -53,7 +54,7 @@ if [ "$platform" = ios ]; then
       --api_key_path "$ASC_KEY_PATH" \
       --app_identifier "$app_id" \
       --app_version "$version" \
-      --metadata_path store/ios/metadata \
+      --metadata_path "$STAGED/ios/metadata" \
       --screenshots_path "$STAGED/ios/screenshots" \
       --app_rating_config_path store/ios/age_rating.json \
       --skip_binary_upload true \

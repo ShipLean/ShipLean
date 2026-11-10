@@ -1,11 +1,18 @@
-"""Copy the store images from design/appstore/exports into fastlane's layout (contract C2).
+"""Stage the store listing, text and images, into fastlane's layout (contract C2).
 
     python3 -I store/stage_images.py <out> [--exports <dir>]
 
-Builds <out>/ios/screenshots/en-US/ for deliver and <out>/android/metadata/
-(a copy of store/android/metadata plus en-US/images/) for supply. Files are
-copied byte for byte, never edited. Every source is checked before anything is
-copied; on a problem it exits 1 naming the path on stderr.
+Builds, for deliver:
+    <out>/ios/metadata/         a copy of store/ios/metadata
+    <out>/ios/screenshots/en-US/ the iPhone sets from design/appstore/exports
+and, for supply:
+    <out>/android/metadata/     a copy of store/android/metadata plus en-US/images/
+
+The text lives once in git, under en-US. Every locale in MIRROR_LOCALES gets a
+copy of the staged en-US folder in all three places, so the stores show the
+same text and images in each. Files are copied byte for byte, never edited.
+Every source is checked before anything is copied; on a problem it exits 1
+naming the path on stderr.
 """
 import argparse
 import os
@@ -15,7 +22,14 @@ import sys
 
 STORE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_EXPORTS = os.path.join(os.path.dirname(STORE), "design", "appstore", "exports")
+IOS_METADATA = os.path.join(STORE, "ios", "metadata")
 ANDROID_METADATA = os.path.join(STORE, "android", "metadata")
+
+# The text and images are kept once, under SOURCE_LOCALE, and staged again under each of
+# these. The App Store app's primary language is English (Australia); deliver creates a
+# version language that is missing, and supply uploads every language folder.
+SOURCE_LOCALE = "en-US"
+MIRROR_LOCALES = ["en-AU"]
 
 SCREENSHOTS_PER_SET = 8
 
@@ -91,11 +105,21 @@ def _require_empty(out):
 def plan(exports, out):
     """Check every source and return the iOS and the Play (source, destination) copies, or raise StageError."""
     _require_empty(out)
-    if not os.path.isdir(ANDROID_METADATA):
-        raise StageError("missing folder: " + ANDROID_METADATA)
+    for metadata in (IOS_METADATA, ANDROID_METADATA):
+        source = os.path.join(metadata, SOURCE_LOCALE)
+        if not os.path.isdir(source):
+            raise StageError("missing folder: " + source)
+        for locale in MIRROR_LOCALES:
+            mirror = os.path.join(metadata, locale)
+            if os.path.exists(mirror):
+                raise StageError(
+                    "the text lives once under {}; staging makes {}, remove: {}".format(
+                        SOURCE_LOCALE, locale, mirror
+                    )
+                )
 
     ios = []
-    ios_out = os.path.join(out, "ios", "screenshots", "en-US")
+    ios_out = os.path.join(out, "ios", "screenshots", SOURCE_LOCALE)
     for size in IOS_SETS:
         folder = os.path.join(exports, "ios", "screenshots-" + size)
         for number, rest, src in _caption_order(folder):
@@ -104,7 +128,7 @@ def plan(exports, out):
             ios.append((src, os.path.join(ios_out, name)))
 
     play = []
-    images_out = os.path.join(out, "android", "metadata", "en-US", "images")
+    images_out = os.path.join(out, "android", "metadata", SOURCE_LOCALE, "images")
     for src_name, dest_name in PLAY_IMAGES:
         src = _require_file(os.path.join(exports, "play", src_name))
         play.append((src, os.path.join(images_out, dest_name)))
@@ -118,12 +142,18 @@ def plan(exports, out):
 
 def stage(exports, out):
     ios, play = plan(exports, out)
+    shutil.copytree(IOS_METADATA, os.path.join(out, "ios", "metadata"))
     shutil.copytree(ANDROID_METADATA, os.path.join(out, "android", "metadata"))
     for src, dest in ios + play:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(src, dest)
-    return "Staged {} iOS screenshots (iPhone {}) and {} Play images into {}".format(
-        len(ios), ", ".join(IOS_SETS), len(play), out
+    # Each folder that holds one locale's listing, copied whole to every mirrored locale.
+    for parent in (("ios", "metadata"), ("ios", "screenshots"), ("android", "metadata")):
+        folder = os.path.join(out, *parent)
+        for locale in MIRROR_LOCALES:
+            shutil.copytree(os.path.join(folder, SOURCE_LOCALE), os.path.join(folder, locale))
+    return "Staged the listing text, {} iOS screenshots (iPhone {}) and {} Play images for each of {} into {}".format(
+        len(ios), ", ".join(IOS_SETS), len(play), ", ".join([SOURCE_LOCALE] + MIRROR_LOCALES), out
     )
 
 

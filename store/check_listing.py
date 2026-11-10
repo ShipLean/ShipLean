@@ -4,12 +4,15 @@
 Usage: python3 -I store/check_listing.py [--store <dir>] [--staged <dir>]
 
 --store   the listing text folder (default: store)
---staged  the folder store/stage_images.py built; also checks its images
+--staged  the folder store/stage_images.py built; also checks its images in every
+          locale folder, and that each mirrored locale (en-AU) is there and its
+          text is byte for byte the en-US text
 
 Prints one `ok` or `BAD` line per item and exits 1 when any item is BAD.
 Limits are the ones in design/appstore/listing.md.
 """
 import argparse
+import importlib.util
 import os
 import struct
 import sys
@@ -57,8 +60,21 @@ PLAY_SCREENSHOT_MAX_RATIO = 2
 PLAY_ICON_SIZE = (512, 512)
 PLAY_FEATURE_SIZE = (1024, 500)
 PLAY_SCREENSHOT_FOLDERS = ["phoneScreenshots", "sevenInchScreenshots", "tenInchScreenshots"]
-PLAY_IMAGES = "android/metadata/en-US/images"
-IOS_SCREENSHOTS = "ios/screenshots/en-US"
+IOS_METADATA = "ios/metadata"
+IOS_SCREENSHOTS = "ios/screenshots"
+ANDROID_METADATA = "android/metadata"
+
+
+def _locales():
+    """stage_images.py's SOURCE_LOCALE and MIRROR_LOCALES: the list is kept there, once."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stage_images.py")
+    spec = importlib.util.spec_from_file_location("stage_images", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.SOURCE_LOCALE, list(module.MIRROR_LOCALES)
+
+
+SOURCE_LOCALE, MIRROR_LOCALES = _locales()
 
 
 class Report:
@@ -230,15 +246,16 @@ def swapped(size):
     return {size, (size[1], size[0])}
 
 
-def check_ios_images(report, staged):
-    folder = os.path.join(staged, IOS_SCREENSHOTS)
+def check_ios_images(report, staged, screenshots):
+    """screenshots: one locale's folder under the staged tree, e.g. ios/screenshots/en-US."""
+    folder = os.path.join(staged, screenshots)
     if not os.path.isdir(folder):
-        report.fail(IOS_SCREENSHOTS, "missing")
+        report.fail(screenshots, "missing")
         return
     names = pngs_in(folder)
     sets = {}
     for name in names:
-        rel = IOS_SCREENSHOTS + "/" + name
+        rel = screenshots + "/" + name
         parts = name.split("-")
         key = parts[1] if len(parts) > 2 and parts[0] == "iphone" else None
         if key not in IOS_SIZES:
@@ -247,26 +264,27 @@ def check_ios_images(report, staged):
         sets.setdefault(key, []).append(name)
         check_image(report, staged, rel, swapped(IOS_SIZES[key]), alpha_allowed=False)
     for key in sorted(sets):
-        check_count(report, "%s (iphone-%s set)" % (IOS_SCREENSHOTS, key),
+        check_count(report, "%s (iphone-%s set)" % (screenshots, key),
                     len(sets[key]), *IOS_SET_COUNT)
     if not sets:
-        report.fail(IOS_SCREENSHOTS, "no iPhone screenshots")
+        report.fail(screenshots, "no iPhone screenshots")
 
 
-def check_play_images(report, staged):
-    images = os.path.join(staged, PLAY_IMAGES)
+def check_play_images(report, staged, play_images):
+    """play_images: one locale's images folder, e.g. android/metadata/en-US/images."""
+    images = os.path.join(staged, play_images)
     if not os.path.isdir(images):
-        report.fail(PLAY_IMAGES, "missing")
+        report.fail(play_images, "missing")
         return
     for name, size, alpha in (("icon.png", PLAY_ICON_SIZE, True),
                               ("featureGraphic.png", PLAY_FEATURE_SIZE, False)):
-        rel = PLAY_IMAGES + "/" + name
+        rel = play_images + "/" + name
         if os.path.isfile(os.path.join(staged, rel)):
             check_image(report, staged, rel, {size}, alpha_allowed=alpha)
         else:
             report.fail(rel, "missing")
     for folder in PLAY_SCREENSHOT_FOLDERS:
-        rel = PLAY_IMAGES + "/" + folder
+        rel = play_images + "/" + folder
         path = os.path.join(staged, rel)
         if not os.path.isdir(path):
             report.fail(rel, "missing")
@@ -278,6 +296,61 @@ def check_play_images(report, staged):
                         side_rule=True)
 
 
+def text_files(folder):
+    """The .txt files under folder, as /-separated paths relative to it."""
+    found = set()
+    for top, _, names in os.walk(folder):
+        for name in names:
+            if name.endswith(".txt"):
+                found.add(os.path.relpath(os.path.join(top, name), folder).replace(os.sep, "/"))
+    return found
+
+
+def check_mirrored_text(report, staged, parent, locale):
+    """The text under parent/<locale> must be the text under parent/en-US, byte for byte."""
+    source_rel, mirror_rel = parent + "/" + SOURCE_LOCALE, parent + "/" + locale
+    source, mirror = os.path.join(staged, source_rel), os.path.join(staged, mirror_rel)
+    if not (os.path.isdir(source) and os.path.isdir(mirror)):
+        return  # check_staged reports the missing folder.
+    bad_before = report.bad
+    names = sorted(text_files(source) | text_files(mirror))
+    for name in names:
+        source_file, mirror_file = os.path.join(source, name), os.path.join(mirror, name)
+        rel = mirror_rel + "/" + name
+        if not os.path.isfile(mirror_file):
+            report.fail(rel, "missing; %s has it" % source_rel)
+        elif not os.path.isfile(source_file):
+            report.fail(rel, "not in %s" % source_rel)
+        else:
+            with open(source_file, "rb") as a, open(mirror_file, "rb") as b:
+                if a.read() != b.read():
+                    report.fail(rel, "differs from %s/%s" % (source_rel, name))
+    if report.bad == bad_before:
+        report.ok(mirror_rel, "text matches %s (%d files)" % (SOURCE_LOCALE, len(names)))
+
+
+def locale_folders(staged, parent):
+    folder = os.path.join(staged, parent)
+    if not os.path.isdir(folder):
+        return []
+    return sorted(n for n in os.listdir(folder) if os.path.isdir(os.path.join(folder, n)))
+
+
+def check_staged(report, staged):
+    for parent in (IOS_METADATA, IOS_SCREENSHOTS, ANDROID_METADATA):
+        for locale in [SOURCE_LOCALE] + MIRROR_LOCALES:
+            rel = parent + "/" + locale
+            if not os.path.isdir(os.path.join(staged, rel)):
+                report.fail(rel, "missing")
+    for parent in (IOS_METADATA, ANDROID_METADATA):
+        for locale in MIRROR_LOCALES:
+            check_mirrored_text(report, staged, parent, locale)
+    for locale in locale_folders(staged, IOS_SCREENSHOTS):
+        check_ios_images(report, staged, IOS_SCREENSHOTS + "/" + locale)
+    for locale in locale_folders(staged, ANDROID_METADATA):
+        check_play_images(report, staged, ANDROID_METADATA + "/" + locale + "/images")
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description="Check the store listing against the store limits.")
     parser.add_argument("--store", default="store", help="the listing text folder")
@@ -286,8 +359,7 @@ def main(argv):
     report = Report()
     check_text(report, args.store)
     if args.staged:
-        check_ios_images(report, args.staged)
-        check_play_images(report, args.staged)
+        check_staged(report, args.staged)
     if report.bad:
         print("%d item(s) BAD" % report.bad)
         return 1

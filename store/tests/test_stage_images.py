@@ -21,6 +21,9 @@ CAPTIONS = [
     "8-setup-models.png",
 ]
 
+# Staging copies each en-US folder to these; git holds only en-US.
+MIRRORED = ["en-AU"]
+
 IOS_FOLDERS = ["screenshots-6.9", "screenshots-6.5", "screenshots-6.3", "screenshots-ipad-13"]
 PLAY_FOLDERS = ["phone-screenshots", "tablet-7-screenshots", "tablet-10-screenshots"]
 
@@ -34,6 +37,16 @@ def _write(path, content):
 def _read(path):
     with open(path, "rb") as f:
         return f.read()
+
+
+def _tree(top):
+    """{path relative to top: bytes} for every file under top; empty when top is missing."""
+    found = {}
+    for folder, _, names in os.walk(top):
+        for name in names:
+            path = os.path.join(folder, name)
+            found[os.path.relpath(path, top)] = _read(path)
+    return found
 
 
 def _source_bytes(rel):
@@ -59,9 +72,9 @@ class StageTests(unittest.TestCase):
     def _export(self, rel):
         _write(os.path.join(self.exports, rel), _source_bytes(rel))
 
-    def _stage(self):
+    def _stage(self, script=SCRIPT):
         return subprocess.run(
-            [sys.executable, "-I", SCRIPT, self.out, "--exports", self.exports],
+            [sys.executable, "-I", script, self.out, "--exports", self.exports],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -73,8 +86,8 @@ class StageTests(unittest.TestCase):
         self.assertEqual(len(result.stdout.strip().splitlines()), 1, result.stdout)
         return result
 
-    def _assert_fails_naming(self, path):
-        result = self._stage()
+    def _assert_fails_naming(self, path, script=SCRIPT):
+        result = self._stage(script)
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn(path, result.stderr)
         self.assertNotIn("Traceback", result.stderr)
@@ -133,6 +146,70 @@ class StageTests(unittest.TestCase):
         staged = [_read(self._ios_path(name)) for name in self._ios_staged()]
         self.assertEqual([content for content in staged if b"ipad" in content], [])
         self.assertEqual(len(staged), 24)
+
+    def test_mirrors_en_us_to_en_au(self):
+        # Mutation caught: MIRROR_LOCALES = [] (nothing is staged under en-AU).
+        self._staged_ok()
+        for parent in ("ios/metadata", "ios/screenshots", "android/metadata"):
+            folder = os.path.join(self.out, parent)
+            en_us = _tree(os.path.join(folder, "en-US"))
+            for locale in MIRRORED:
+                with self.subTest(folder=parent, locale=locale):
+                    self.assertEqual(_tree(os.path.join(folder, locale)), en_us)
+        # The Android copy holds the images as well as the text.
+        android = _tree(os.path.join(self.out, "android", "metadata", "en-AU"))
+        self.assertIn(os.path.join("images", "icon.png"), android)
+        self.assertIn("title.txt", android)
+        self.assertEqual(len([rel for rel in android if "Screenshots" in rel]), 24)
+        self.assertEqual(len(os.listdir(os.path.join(self.out, "ios", "screenshots", "en-AU"))), 24)
+
+    def test_stages_ios_text_as_it_is(self):
+        # Mutation caught: skip copying store/ios/metadata.
+        self._staged_ok()
+        staged = _tree(os.path.join(self.out, "ios", "metadata"))
+        source = _tree(os.path.join(STORE, "ios", "metadata"))
+        self.assertIn("primary_category.txt", source)
+        self.assertIn(os.path.join("review_information", "notes.txt"), source)
+        self.assertEqual({rel: data for rel, data in staged.items()
+                          if rel.split(os.sep)[0] not in MIRRORED}, source)
+
+    def test_en_au_is_not_committed(self):
+        # Mutation caught: mkdir store/ios/metadata/en-AU (the text must live once, under en-US).
+        committed = [
+            os.path.relpath(os.path.join(folder, name), STORE)
+            for folder, names, _ in os.walk(STORE)
+            for name in names
+            if name in MIRRORED
+        ]
+        self.assertEqual(committed, [])
+
+    def _store_copy(self):
+        """A copy of the script and its listing text, for breaking the text without touching git."""
+        store = os.path.join(self.tmp, "store")
+        for rel in ("ios", "android"):
+            shutil.copytree(os.path.join(STORE, rel), os.path.join(store, rel))
+        shutil.copyfile(SCRIPT, os.path.join(store, "stage_images.py"))
+        return store
+
+    def test_fails_naming_missing_en_us_text(self):
+        # Mutation caught: drop the en-US folder check (staging then dies in a traceback).
+        store = self._store_copy()
+        for platform in ("ios", "android"):
+            with self.subTest(platform=platform):
+                folder = os.path.join(store, platform, "metadata", "en-US")
+                moved = folder + ".moved"
+                os.rename(folder, moved)
+                self._assert_fails_naming(folder, os.path.join(store, "stage_images.py"))
+                self.assertFalse(os.path.exists(self.out))
+                os.rename(moved, folder)
+
+    def test_refuses_a_committed_mirror_locale(self):
+        # Mutation caught: loop the committed-mirror check over [] (copytree then dies in a traceback).
+        store = self._store_copy()
+        folder = os.path.join(store, "ios", "metadata", "en-AU")
+        shutil.copytree(os.path.join(store, "ios", "metadata", "en-US"), folder)
+        self._assert_fails_naming(folder, os.path.join(store, "stage_images.py"))
+        self.assertFalse(os.path.exists(self.out))
 
     def test_fails_naming_a_missing_folder(self):
         folder = os.path.join(self.exports, "ios", "screenshots-6.5")

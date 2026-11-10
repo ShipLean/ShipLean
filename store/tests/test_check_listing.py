@@ -21,6 +21,9 @@ WORKFLOWS = os.path.join(ROOT, ".github", "workflows")
 
 IOS_FOLDER = "ios/screenshots/en-US"
 PLAY_IMAGES = "android/metadata/en-US/images"
+# stage_images.py stages each of these as a copy of en-US.
+MIRRORED = ["en-AU"]
+LOCALE_PARENTS = ["ios/metadata", "ios/screenshots", "android/metadata"]
 
 
 @functools.lru_cache(maxsize=None)
@@ -96,14 +99,20 @@ class TempCase(unittest.TestCase):
             handle.write(content if isinstance(content, bytes) else content.encode("utf-8"))
 
     def staged_tree(self):
-        """A small valid staged tree: one iOS set of 1 and Play folders of 2."""
+        """A small valid staged tree: the real text, one iOS set of 1 and Play folders of 2,
+        with en-US copied to each mirrored locale as stage_images.py does."""
         root = tempfile.mkdtemp(dir=self.tmp)
+        for rel in ("ios/metadata", "android/metadata"):
+            shutil.copytree(os.path.join(STORE, rel), os.path.join(root, rel))
         self.write(root, IOS_FOLDER + "/iphone-6.9-01-a.png", png(1320, 2868))
         self.write(root, PLAY_IMAGES + "/icon.png", png(512, 512, alpha=True))
         self.write(root, PLAY_IMAGES + "/featureGraphic.png", png(1024, 500))
         for folder in ("phoneScreenshots", "sevenInchScreenshots", "tenInchScreenshots"):
             for number in (1, 2):
                 self.write(root, "%s/%s/0%d-a.png" % (PLAY_IMAGES, folder, number), png(540, 960))
+        for parent in LOCALE_PARENTS:
+            for locale in MIRRORED:
+                shutil.copytree(os.path.join(root, parent, "en-US"), os.path.join(root, parent, locale))
         return root
 
 
@@ -276,6 +285,36 @@ class CheckListingTests(TempCase):
     def test_flags_an_ios_name_without_a_known_size(self):
         args = self.staged_with(IOS_FOLDER + "/iphone-5.5-02-a.png", png(1242, 2208))
         self.assert_bad(args, "iphone-5.5-02-a.png")
+
+    def test_flags_en_au_text_that_differs(self):
+        # Mutation caught: check_mirrored_text reads the en-US file twice (compares en-US with itself).
+        for rel, change in (("ios/metadata/en-AU/name.txt", b"Another name"),
+                            ("android/metadata/en-AU/title.txt", b"Another title"),
+                            ("android/metadata/en-AU/changelogs/default.txt", None)):
+            with self.subTest(rel):
+                staged = self.staged_tree()
+                if change is None:
+                    os.remove(os.path.join(staged, rel))
+                else:
+                    self.write(staged, rel, change)
+                self.assert_bad(["--store", self.store_copy(), "--staged", staged], rel)
+
+    def test_flags_a_missing_mirrored_locale(self):
+        # Mutation caught: the missing-folder check loops over [SOURCE_LOCALE] only.
+        for parent in LOCALE_PARENTS:
+            for locale in MIRRORED:
+                with self.subTest(parent=parent, locale=locale):
+                    staged = self.staged_tree()
+                    shutil.rmtree(os.path.join(staged, parent, locale))
+                    self.assert_bad(["--store", self.store_copy(), "--staged", staged],
+                                    "%s/%s" % (parent, locale))
+
+    def test_checks_images_in_every_locale_folder(self):
+        # Mutation caught: check images in the en-US folders only.
+        for rel, data in (("ios/screenshots/en-AU/iphone-6.9-01-a.png", png(1320, 2868, alpha=True)),
+                          ("android/metadata/en-AU/images/featureGraphic.png", png(1024, 501))):
+            with self.subTest(rel):
+                self.assert_bad(self.staged_with(rel, data), rel)
 
     def test_flags_a_missing_staged_folder(self):
         staged = self.staged_tree()
