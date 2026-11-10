@@ -64,7 +64,8 @@ the host CPU and thread count. These are CPU times on this host, not phone times
 ## Known problem on this host
 
 The prebuilt llama.cpp b10256 (`ubuntu-x64`) needs glibc 2.34 and GLIBCXX 3.4.30, and this host is Ubuntu 20.04
-(glibc 2.31) with no compiler: `llama-server` doesn't start here. The text tier needs a `llama-server` b10256 that
+(glibc 2.31, no libssl 3, no libgomp) with no compiler: `llama-server` exits with 127 here ("libssl.so.3: cannot
+open shared object file"). The text tier needs a `llama-server` b10256 that
 runs on this host, passed with `--llama-server`. The audio tier's speech steps (TTS and Parakeet) run.
 
 ## Tests
