@@ -1,4 +1,5 @@
 using ShipLean.Core;
+using ShipLean.TestSupport;
 
 namespace ShipLean.UnitTest;
 
@@ -10,6 +11,55 @@ public class DisplayDateTests
     public void WeekdayDay_WhenDate_ReturnsWeekdayDayMonth(string day, string expected)
     {
         DisplayDate.WeekdayDay(DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(expected);
+    }
+
+    [Test]
+    public void Age_WhenUnderAnHour_ShouldSayNow()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddMinutes(-59), now).ShouldBe("now");
+    }
+
+    [Test]
+    public void Age_WhenOneHour_ShouldSay1h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-1), now).ShouldBe("1h");
+    }
+
+    [Test]
+    public void Age_When23Hours_ShouldSay23h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-23).AddMinutes(-59), now).ShouldBe("23h");
+    }
+
+    [Test]
+    public void Age_WhenOneDay_ShouldSay1d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-1), now).ShouldBe("1d");
+    }
+
+    [Test]
+    public void Age_WhenSixDays_ShouldSay6d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-6).AddHours(-23), now).ShouldBe("6d");
+    }
+
+    [Test]
+    public void Age_WhenSevenDays_ShouldSay1w()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-7), now).ShouldBe("1w");
+        DisplayDate.Age(now.AddDays(-20), now).ShouldBe("2w");
     }
 
     [Test]

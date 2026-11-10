@@ -25,6 +25,17 @@ public sealed class WorkItemBuilder(Guid projectId)
     private string? _swimlaneId;
     private string? _columnOrder;
     private string? _backlogOrder;
+    private Guid? _createdBy;
+    private DateTimeOffset? _createdAt;
+    private string? _statusLine;
+    private DateTimeOffset? _statusVerifiedAt;
+    private Guid? _statusVerifiedBy;
+    private string? _statusVerifiedAgent;
+    private bool _hasHealth;
+    private string? _health;
+    private DateTimeOffset? _healthSetAt;
+    private Guid? _healthSetBy;
+    private string? _healthSetAgent;
 
     public WorkItemBuilder WithId(Guid id)
     {
@@ -109,6 +120,41 @@ public sealed class WorkItemBuilder(Guid projectId)
         return this;
     }
 
+    public WorkItemBuilder WithCreatedBy(Guid userId)
+    {
+        _createdBy = userId;
+        return this;
+    }
+
+    public WorkItemBuilder WithCreatedAt(DateTimeOffset createdAt)
+    {
+        _createdAt = createdAt;
+        return this;
+    }
+
+    // A Feature's status line and when, by whom and through which agent it was last verified (null verifiedAt: never verified).
+    // The schema refuses these on any other type.
+    public WorkItemBuilder WithStatusLine(string text, DateTimeOffset? verifiedAt, Guid? verifiedBy, string? verifiedAgent)
+    {
+        _statusLine = text;
+        _statusVerifiedAt = verifiedAt;
+        _statusVerifiedBy = verifiedBy;
+        _statusVerifiedAgent = verifiedAgent;
+        return this;
+    }
+
+    // A Feature's health (onTrack | atRisk | blocked) and who set it when. The health columns are written only when this is
+    // called, so every other insert works on a schema without them.
+    public WorkItemBuilder WithHealth(string health, DateTimeOffset setAt, Guid? setBy, string? setAgent)
+    {
+        _hasHealth = true;
+        _health = health;
+        _healthSetAt = setAt;
+        _healthSetBy = setBy;
+        _healthSetAgent = setAgent;
+        return this;
+    }
+
     public async Task<Guid> InsertAsync(NpgsqlConnection connection)
     {
         var number = await connection.ExecuteScalarAsync<int>(
@@ -117,7 +163,8 @@ public sealed class WorkItemBuilder(Guid projectId)
         await connection.ExecuteAsync(
             """
             INSERT INTO work_item (id, project_id, number, key, type, title, state_id, assigned_to, sprint_id, priority, story_points,
-                                   backlog_order, parent_id, parent_type, tags, board_column_id, board_column_done, swimlane_id, column_order)
+                                   backlog_order, parent_id, parent_type, tags, board_column_id, board_column_done, swimlane_id, column_order,
+                                   created_by, created_at, status_line, status_verified_at, status_verified_by, status_verified_agent)
             SELECT @id, project.id, @number, project.key || '-' || @number, @type, @title,
                    coalesce(@stateId::uuid, (SELECT state.id FROM state
                                        WHERE state.project_id = project.id AND state.type = @type
@@ -126,7 +173,9 @@ public sealed class WorkItemBuilder(Guid projectId)
                    @assignee::uuid, @sprintId::uuid, @priority, @points::numeric,
                    coalesce(@backlogOrder::text, '9' || lpad(@number::text, 7, '0')),
                    @parentId::uuid, (SELECT parent.type FROM work_item parent WHERE parent.id = @parentId::uuid),
-                   @tags::text[], @boardColumnId::text, @boardColumnDone, @swimlaneId::text, @columnOrder::text
+                   @tags::text[], @boardColumnId::text, @boardColumnDone, @swimlaneId::text, @columnOrder::text,
+                   @createdBy::uuid, coalesce(@createdAt::timestamptz, now()), @statusLine::text, @statusVerifiedAt::timestamptz,
+                   @statusVerifiedBy::uuid, @statusVerifiedAgent::text
             FROM project WHERE project.id = @projectId
             """,
             new
@@ -149,7 +198,22 @@ public sealed class WorkItemBuilder(Guid projectId)
                 boardColumnDone = _boardColumnDone,
                 swimlaneId = _swimlaneId,
                 columnOrder = _columnOrder,
+                createdBy = _createdBy,
+                createdAt = _createdAt?.ToUniversalTime(),
+                statusLine = _statusLine,
+                statusVerifiedAt = _statusVerifiedAt?.ToUniversalTime(),
+                statusVerifiedBy = _statusVerifiedBy,
+                statusVerifiedAgent = _statusVerifiedAgent,
             });
+        if (_hasHealth)
+        {
+            await connection.ExecuteAsync(
+                """
+                UPDATE work_item SET health = @health, health_set_at = @setAt, health_set_by = @setBy::uuid, health_set_agent = @setAgent::text
+                WHERE id = @id
+                """,
+                new { id = _id, health = _health, setAt = _healthSetAt?.ToUniversalTime(), setBy = _healthSetBy, setAgent = _healthSetAgent });
+        }
         await connection.ExecuteAsync(
             """
             INSERT INTO revision (work_item_id, rev, changed_by, changed_at, changes)

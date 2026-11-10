@@ -17,6 +17,7 @@ The seed is the world drawn in `design/screens/shared.js`. Ids are deterministic
 | `0010_attachments.sql` | Two text attachments by Joel on SHIP-90 (`SeedIds.Attachments`); rows only, their bytes are in `SeedAttachmentBlobs` (TestSupport) for tests that pin an in-memory blob store |
 | `0011_feature_editor_links.sql` | Two URL links by Joel on SHIP-101, a Feature (`SeedIds.Links`): a GitHub pull request with a stored preview (its image and favicon blobs are in `SeedAttachmentBlobs`) and a page link for archive tests; routes keyed on a link id need them |
 | `0012_asks.sql` | Open decisions D1-D4 and questions Q1-Q2 on SHIP-124, Tom's Story (`SeedIds.Asks`), each with its raised or asked event: the access sweep's asks rows (D1 confirm, D2 change, D3 withdraw, D4 discuss, Q1 answer, Q2 withdraw). Tom owns the item, so tests acting as Joel, Mei, Priya or Kai never wait on them |
+| `0013_inbox.sql` | Tom's Inbox (`SeedIds.Inbox`): SHIP-104 assigned to Tom with a status line verified at the start of `today` (its revision 1 rewritten to carry the assignee); two comments by Priya on SHIP-124 naming `@Tom Okafor`, one mention `open`, one `seen` |
 
 ## Accounts and first-run projects (`0007`)
 
