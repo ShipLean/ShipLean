@@ -1,9 +1,10 @@
 import { projectsKey } from '@shiplean/core/api/projects';
 import { memoryStore } from '@shiplean/core/platform';
-import { fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { createActionRunner } from '../../actions/runner';
 import { UNDO } from '../../actions/undo';
+import { aPending, fakeRunner } from '../../test-support/actions';
 import { aProject } from '../../test-support/builders';
 import { apiError, restoreFetch } from '../../test-support/fakeApi';
 import { retroApi } from '../../test-support/retro';
@@ -101,6 +102,35 @@ describe.each<Scheme>(['light', 'dark'])('Add point sheet (%s)', (scheme) => {
       origin: 'typed',
       allOrNothing: true,
     });
+  });
+
+  it('closes once the send has landed and stays open while it has not', async () => {
+    const onClose = jest.fn();
+    retroApi({ 'GET /api/projects': [project] }, { projectId: project.id });
+    const runner = fakeRunner();
+    await renderWithRunner(
+      <RetroActionsProvider>
+        <AddPointSheet
+          projectId={project.id}
+          sprintId="sprint-25"
+          open
+          onClose={onClose}
+          category="improve"
+        />
+      </RetroActionsProvider>,
+      { scheme, runner },
+    );
+    await type('Profile the small model first.');
+    await add();
+    const batchId = runner.dispatched[0].batchId;
+    await act(async () => {
+      runner.setPending([aPending({ batchId, state: 'sending' })]);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    await act(async () => {
+      runner.setPending([aPending({ batchId, state: 'sent' })]);
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows the server validation message', async () => {

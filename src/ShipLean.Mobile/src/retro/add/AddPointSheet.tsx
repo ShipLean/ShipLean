@@ -3,7 +3,7 @@ import { RETRO_CATEGORIES, type RetroCategory } from '@shiplean/core/api/retros'
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { usePending } from '../../actions/ActionRunnerProvider';
+import { useActionRunner, usePending } from '../../actions/ActionRunnerProvider';
 import { UNDO } from '../../actions/undo';
 import { useTheme } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
@@ -32,15 +32,20 @@ function useProjectKey(projectId: string): string | undefined {
 
 // Add a point: a category and the text. The point is about the item the text names (the first PROJECTKEY-n), else the
 // shown sprint (P-R1). It is sent at once and can be undone from the toast; the sheet stays open until the send
-// lands, and shows what the server said when it refuses.
-export function AddPointSheet({
-  projectId,
-  sprintId,
-  open,
-  onClose,
-  category,
-}: AddPointSheetProps) {
+// lands, and shows what the server said when it refuses. The form is mounted only while the sheet is open, so each
+// opening starts clean.
+export function AddPointSheet(props: AddPointSheetProps) {
+  const { open, onClose } = props;
+  return (
+    <BottomSheet title="Add a point" open={open} onClose={onClose} testID={retroIds.addSheet}>
+      {open ? <AddPointForm {...props} /> : null}
+    </BottomSheet>
+  );
+}
+
+function AddPointForm({ projectId, sprintId, onClose, category }: AddPointSheetProps) {
   const theme = useTheme();
+  const runner = useActionRunner();
   const { dispatch } = useRetroActions();
   const projectKey = useProjectKey(projectId);
   const [picked, setPicked] = useState<RetroCategory | null>(category);
@@ -48,26 +53,20 @@ export function AddPointSheet({
   const [batchId, setBatchId] = useState<string | null>(null);
   const mine = usePending((p) => batchId !== null && p.batchId === batchId);
 
-  // A sheet opened again starts clean, with the Notes view's category.
+  // Sent, or queued offline: the toast carries it from here, so the sheet closes.
   useEffect(() => {
-    if (!open) return;
-    setPicked(category);
-    setText('');
-    setBatchId(null);
-  }, [open, category]);
+    if (batchId === null) return undefined;
+    const check = () => {
+      const batch = runner.pending().filter((p) => p.batchId === batchId);
+      if (batch.length > 0 && batch.every((p) => p.state === 'sent' || p.state === 'queued'))
+        onClose();
+    };
+    check();
+    return runner.subscribe(check);
+  }, [runner, batchId, onClose]);
 
   const failed = mine.find((p) => p.state === 'failed');
-  const sending =
-    batchId !== null && failed === undefined && mine.some((p) => p.state === 'sending');
-  // Sent, or queued offline: the toast carries it from here.
-  const landed = mine.length > 0 && mine.every((p) => p.state === 'sent' || p.state === 'queued');
-  useEffect(() => {
-    if (landed) {
-      setBatchId(null);
-      onClose();
-    }
-  }, [landed, onClose]);
-
+  const sending = mine.some((p) => p.state === 'sending');
   const body = text.trim();
   const about = aboutOf(body, projectKey, sprintId);
   const canAdd =
@@ -94,39 +93,37 @@ export function AddPointSheet({
   };
 
   return (
-    <BottomSheet title="Add a point" open={open} onClose={onClose} testID={retroIds.addSheet}>
-      <View style={{ gap: theme.space[3], paddingTop: theme.space[2] }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
-          {RETRO_CATEGORIES.map((c) => (
-            <Chip
-              key={c}
-              testID={retroAddCategoryId(c)}
-              label={CATEGORY_LABELS[c]}
-              selected={picked === c}
-              onPress={() => setPicked(c)}
-            />
-          ))}
-        </View>
-        <TextField
-          testID={retroIds.addText}
-          label="Point"
-          value={text}
-          onChangeText={setText}
-          hint={
-            about.key === null
-              ? 'About this sprint. Name an item by its key to make it about that.'
-              : `About ${about.key}.`
-          }
-          error={failed?.error ?? undefined}
-        />
-        <Button
-          testID={retroIds.addSubmit}
-          label="Add"
-          disabled={!canAdd}
-          busy={sending}
-          onPress={add}
-        />
+    <View style={{ gap: theme.space[3], paddingTop: theme.space[2] }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space[2] }}>
+        {RETRO_CATEGORIES.map((c) => (
+          <Chip
+            key={c}
+            testID={retroAddCategoryId(c)}
+            label={CATEGORY_LABELS[c]}
+            selected={picked === c}
+            onPress={() => setPicked(c)}
+          />
+        ))}
       </View>
-    </BottomSheet>
+      <TextField
+        testID={retroIds.addText}
+        label="Point"
+        value={text}
+        onChangeText={setText}
+        hint={
+          about.key === null
+            ? 'About this sprint. Name an item by its key to make it about that.'
+            : `About ${about.key}.`
+        }
+        error={failed?.error ?? undefined}
+      />
+      <Button
+        testID={retroIds.addSubmit}
+        label="Add"
+        disabled={!canAdd}
+        busy={sending}
+        onPress={add}
+      />
+    </View>
   );
 }

@@ -43,12 +43,12 @@ describe('the Retro seams', () => {
     const point = aRetroPoint();
     const noop = () => undefined;
     const add = await renderWithRunner(
-      <>
+      <RetroActionsProvider>
         <AddPointSheet projectId="p" sprintId="s" open onClose={noop} category={null} />
         <DecideSheet point={point} projectId="p" open onClose={noop} />
         <ToDecideView projectId="p" sprintId="s" />
         <RetroFeaturesView projectId="p" />
-      </>,
+      </RetroActionsProvider>,
     );
     for (const id of [
       retroIds.addSheet,
