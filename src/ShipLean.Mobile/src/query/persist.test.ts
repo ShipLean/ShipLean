@@ -6,7 +6,12 @@ import {
   type PersistedClient,
 } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createInboxPersister, inboxPersistOptions, INBOX_MAX_AGE_MS } from './persist';
+import {
+  createInboxPersister,
+  inboxPersistOptions,
+  INBOX_MAX_AGE_MS,
+  keepInboxQueries,
+} from './persist';
 
 const KEY = 'shiplean.inbox.v1:https://shiplean.test:me@example.com';
 
@@ -115,5 +120,36 @@ describe('persisted queries', () => {
     await persistQueryClientRestore({ queryClient: restarted, ...options });
     expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toBeUndefined();
     expect(store.values.has(KEY)).toBe(false);
+  });
+
+  it('restores a cache 6 days old', async () => {
+    const { options } = setup();
+    const first = new QueryClient();
+    first.setQueryData(inboxKeys.inbox('p1'), { items: ['a'] });
+    await persistQueryClientSave({ queryClient: first, ...options });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    vi.setSystemTime(Date.now() + 6 * 24 * 60 * 60 * 1000);
+    const restarted = new QueryClient();
+    await persistQueryClientRestore({ queryClient: restarted, ...options });
+    expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toEqual({ items: ['a'] });
+  });
+
+  it('keeps a restored Inbox and Answered in the cache with nothing observing them', async () => {
+    const { options } = setup();
+    const first = new QueryClient();
+    first.setQueryData(inboxKeys.inbox('p1'), { items: ['a'] });
+    first.setQueryData(inboxKeys.answered('p1'), { rows: ['b'] });
+    await persistQueryClientSave({ queryClient: first, ...options });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    // gcTime is Infinity under node, so state the app's default (5 minutes) the way React Native sees it.
+    const restarted = new QueryClient({ defaultOptions: { queries: { gcTime: 5 * 60 * 1000 } } });
+    keepInboxQueries(restarted);
+    await persistQueryClientRestore({ queryClient: restarted, ...options });
+    await vi.advanceTimersByTimeAsync(6 * 60 * 1000);
+
+    expect(restarted.getQueryData(inboxKeys.inbox('p1'))).toEqual({ items: ['a'] });
+    expect(restarted.getQueryData(inboxKeys.answered('p1'))).toEqual({ rows: ['b'] });
   });
 });

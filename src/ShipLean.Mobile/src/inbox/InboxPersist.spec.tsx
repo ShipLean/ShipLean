@@ -3,7 +3,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { act, screen, waitFor } from '@testing-library/react-native';
 import Constants from 'expo-constants';
 import { queryClient } from '../queryClient';
-import { isInboxQuery } from '../query/persist';
+import { INBOX_MAX_AGE_MS, isInboxQuery } from '../query/persist';
 import { signOutNow } from '../screens/account/signOutNow';
 import { lostSession } from '../session/lostSession';
 import { TEST_ORIGIN, aMe, aProject } from '../test-support/builders';
@@ -53,6 +53,13 @@ describe('the Inbox across restarts and sign-out', () => {
     );
     expect(keys).toContainEqual(inboxKeys.inbox(project.id));
     expect(keys.every((k: unknown[]) => k[0] === 'inbox')).toBe(true);
+  });
+
+  it('keeps Inbox and Answered queries in the cache for as long as they are persisted', async () => {
+    await renderApp({ url: '/p/SHIP/inbox', api: inboxApi({}, { inbox: kept }) });
+    expect(
+      queryClient.getQueryDefaults(inboxKeys.answered(project.id)).gcTime,
+    ).toBeGreaterThanOrEqual(INBOX_MAX_AGE_MS);
   });
 
   it('shows the kept Inbox before the fetch answers after a restart', async () => {
