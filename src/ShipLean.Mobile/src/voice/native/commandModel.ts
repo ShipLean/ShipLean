@@ -55,6 +55,19 @@ function sessionPath(model: CommandModelId, screen: string): string {
   return new File(Paths.cache, name).uri.replace(/^file:\/\//, '');
 }
 
+// Each session is the KV cache of a whole prefix, 100 MB or more: they go when the model does, and nothing a previous
+// run saved is ever reused.
+function deleteSession(path: string): void {
+  const file = new File(`file://${path}`);
+  if (file.exists) file.delete();
+}
+
+function deleteStaleSessions(): void {
+  for (const entry of Paths.cache.list()) {
+    if (entry instanceof File && /^command-prefix-.*\.session$/.test(entry.name)) entry.delete();
+  }
+}
+
 export class LlamaCommandModel implements CommandModel {
   private context: LlamaContext | null = null;
   private loaded: CommandModelId | null = null;
@@ -69,6 +82,7 @@ export class LlamaCommandModel implements CommandModel {
   // Without deps (nativeAdapters() before VW wires it) nothing is loaded and ready() stays false.
   constructor(deps?: CommandModelDeps) {
     if (deps === undefined) return;
+    deleteStaleSessions();
     deps.models.subscribe(() => this.syncWith(deps));
     this.syncWith(deps);
   }
@@ -107,6 +121,10 @@ export class LlamaCommandModel implements CommandModel {
         throw new Error('This screen was prepared by another command model.');
       const { context } = this.loadedModel();
       const { prefix } = p;
+      // The context comes from the spec passed in, the system prompt and grammar from the prepared prefix: they must
+      // be the same screen and actions.
+      if (spec !== undefined && `${buildSystemPrompt(spec)}\n${buildGrammar(spec)}` !== prefix.key)
+        throw new Error('Prepare this spec first.');
       // Another screen's prefix is in the cache: load this one's. A prefix since replaced for its screen (or from
       // before a model change) has no session any more, and is evaluated with the command.
       if (this.live !== prefix && this.prefixes.get(p.screen) === prefix)
@@ -149,6 +167,8 @@ export class LlamaCommandModel implements CommandModel {
   private async sync({ files, models }: CommandModelDeps): Promise<void> {
     const status = models.status();
     if (status.phase === 'none' || status.phase === 'skipped') {
+      // The models are gone: a model that didn't fit gets reported again if it comes back.
+      this.refused = null;
       await this.unload();
       return;
     }
@@ -162,11 +182,10 @@ export class LlamaCommandModel implements CommandModel {
 
     await this.unload();
     this.refused = null;
-    const check = memoryCheck(
-      want,
-      await files.bytesOnDisk(file.id),
-      availableBytes(models.deviceMemory().reportedGb),
-    );
+    // No file, nothing to load (and a check on the cache and headroom alone would pass).
+    const bytes = await files.bytesOnDisk(file.id);
+    if (bytes === 0) return;
+    const check = memoryCheck(want, bytes, availableBytes(models.deviceMemory().reportedGb));
     if (!check.fits) {
       this.refused = want;
       models.reportLoadFailure('memory');
@@ -187,6 +206,7 @@ export class LlamaCommandModel implements CommandModel {
     const context = this.context;
     this.context = null;
     this.loaded = null;
+    for (const prefix of this.prefixes.values()) deleteSession(prefix.session);
     this.prefixes.clear();
     this.live = null;
     if (context !== null) await context.release();

@@ -6,6 +6,7 @@ using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Inbox;
 
 namespace ShipLean.Application.Features.Asks.Questions;
 
@@ -24,7 +25,6 @@ public sealed class QuestionWrites(
     public async Task<AskedQuestion> AskAsync(
         Guid workItemId, string text, IReadOnlyList<string>? options = null, CancellationToken cancellationToken = default)
     {
-        // TODO: store options in question.options, refusing more than InboxRules.MaxQuestionOptions or a blank or duplicate one.
         var cleaned = text?.Trim();
         if (string.IsNullOrEmpty(cleaned))
         {
@@ -36,6 +36,7 @@ public sealed class QuestionWrites(
             throw ApiException.Validation($"A question can be at most {MaxText} characters.", "text");
         }
 
+        var cleanOptions = CleanOptions(options);
         var agentName = AgentStamp.Of(currentAgent);
         var now = clock.GetUtcNow();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
@@ -46,15 +47,37 @@ public sealed class QuestionWrites(
         var id = Guid.NewGuid();
         await connection.ExecuteAsync(new CommandDefinition(
             """
-            INSERT INTO question (id, work_item_id, number, text, state, created_by_user_id, created_agent_name, created_at)
-            VALUES (@id, @workItemId, @number, @text, 'open', @userId, @agentName, @now)
+            INSERT INTO question (id, work_item_id, number, text, state, created_by_user_id, created_agent_name, created_at, options)
+            VALUES (@id, @workItemId, @number, @text, 'open', @userId, @agentName, @now, to_jsonb(@options::text[]))
             """,
-            new { id, workItemId, number, text = cleaned, userId = currentUser.Id, agentName, now }, transaction, cancellationToken: cancellationToken));
+            new { id, workItemId, number, text = cleaned, options = cleanOptions, userId = currentUser.Id, agentName, now }, transaction, cancellationToken: cancellationToken));
         await AskEventWriter.InsertAsync(transaction, new AskEventRow(
             Guid.NewGuid(), workItemId, null, id, "asked", null, null, null, null, currentUser.Id, agentName, now, false), cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await events.PublishAsync(new AsksChanged(projectId, workItemId));
         return new AskedQuestion(number, $"Q{number}");
+    }
+
+    // Trims each option and keeps the order. More than the cap, a blank option or a duplicate (ignoring case) is refused before any write.
+    private static string[] CleanOptions(IReadOnlyList<string>? options)
+    {
+        var cleaned = (options ?? []).Select(o => o?.Trim() ?? string.Empty).ToArray();
+        if (cleaned.Length > InboxRules.MaxQuestionOptions)
+        {
+            throw ApiException.Validation($"A question can offer at most {InboxRules.MaxQuestionOptions} options.", "options");
+        }
+
+        if (cleaned.Any(o => o.Length == 0))
+        {
+            throw ApiException.Validation("An option cannot be blank.", "options");
+        }
+
+        if (cleaned.Distinct(StringComparer.OrdinalIgnoreCase).Count() != cleaned.Length)
+        {
+            throw ApiException.Validation("Each option must be different.", "options");
+        }
+
+        return cleaned;
     }
 
     public async Task<Guid> AnswerAsync(Guid workItemId, int number, string body, CancellationToken cancellationToken = default)

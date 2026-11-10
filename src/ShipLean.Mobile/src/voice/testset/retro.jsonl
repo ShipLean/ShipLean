@@ -1,0 +1,44 @@
+{"screen": "retro", "utterance": "Retro note: the S22 build took 40 minutes again", "calls": [{"action": "add_point", "args": {"note": "x", "category": "wentBadly"}}], "note": "the S22 build took 40 minutes again"}
+{"screen": "retro", "utterance": "Add a point: reviews were quick this sprint", "calls": [{"action": "add_point", "args": {"note": "x", "category": "wentWell"}}], "note": "reviews were quick this sprint"}
+{"screen": "retro", "utterance": "Retro note: the model download for SHIP-906 stalled", "calls": [{"action": "add_point", "args": {"note": "x", "category": "wentBadly"}}], "note": "the model download for SHIP-906 stalled"}
+{"screen": "retro", "utterance": "Retro note: we should profile SHIP-958 first", "calls": [{"action": "add_point", "args": {"note": "x", "category": "improve"}}], "note": "we should profile SHIP-958 first"}
+{"screen": "retro", "utterance": "Add a point: the signing key expired again", "calls": [{"action": "add_point", "args": {"note": "x", "category": "notInPlan"}}], "note": "the signing key expired again"}
+{"screen": "retro", "utterance": "Went badly: two agents edited the same file again", "calls": [{"action": "add_point_in", "args": {"category": "wentBadly", "note": "x"}}], "note": "two agents edited the same file again"}
+{"screen": "retro", "utterance": "Went well: SHIP-912 shipped on Tuesday", "calls": [{"action": "add_point_in", "args": {"category": "wentWell", "note": "x"}}], "note": "SHIP-912 shipped on Tuesday"}
+{"screen": "retro", "utterance": "Can be improved: say which baselines come from CI", "calls": [{"action": "add_point_in", "args": {"category": "improve", "note": "x"}}], "note": "say which baselines come from CI"}
+{"screen": "retro", "utterance": "Not in the plan: the Play account review took a week", "calls": [{"action": "add_point_in", "args": {"category": "notInPlan", "note": "x"}}], "note": "the Play account review took a week"}
+{"screen": "retro", "utterance": "Went badly: SHIP-941 slipped for a third time", "calls": [{"action": "add_point_in", "args": {"category": "wentBadly", "note": "x"}}], "note": "SHIP-941 slipped for a third time"}
+{"screen": "retro", "utterance": "Plus one on the build point", "calls": [{"action": "support", "args": {"point": "the build point"}}], "note": null}
+{"screen": "retro", "utterance": "Plus one that", "calls": [{"action": "support", "args": {"point": "that"}}], "note": null}
+{"screen": "retro", "utterance": "Plus one the contracts one", "calls": [{"action": "support", "args": {"point": "the contracts one"}}], "note": null}
+{"screen": "retro", "utterance": "Plus one on reviews", "calls": [{"action": "support", "args": {"point": "reviews"}}], "note": null}
+{"screen": "retro", "utterance": "Plus one this one", "calls": [{"action": "support", "args": {"point": "this one"}}], "note": null}
+{"screen": "retro", "utterance": "Make an action for Priya from the signing key point", "calls": [{"action": "make_action", "args": {"point": "the signing key point", "person": "Priya"}}], "note": null}
+{"screen": "retro", "utterance": "Make that an action", "calls": [{"action": "make_action", "args": {"point": "that"}}], "note": null}
+{"screen": "retro", "utterance": "Turn the profile one into an action for Priya Shah", "calls": [{"action": "make_action", "args": {"point": "the profile one", "person": "Priya Shah"}}], "note": null}
+{"screen": "retro", "utterance": "Make an action from that, owner Priya", "calls": [{"action": "make_action", "args": {"point": "that", "person": "Priya"}}], "note": null}
+{"screen": "retro", "utterance": "Add the signing key point to SHIP-958", "calls": [{"action": "add_to_action", "args": {"point": "the signing key point", "action": "SHIP-958"}}], "note": null}
+{"screen": "retro", "utterance": "Add that to SHIP-960", "calls": [{"action": "add_to_action", "args": {"point": "that", "action": "SHIP-960"}}], "note": null}
+{"screen": "retro", "utterance": "Add the profile point to action ship nine five eight", "calls": [{"action": "add_to_action", "args": {"point": "the profile point", "action": "ship nine five eight"}}], "note": null}
+{"screen": "retro", "utterance": "The signing key point is not needed, SHIP-958 covers it", "calls": [{"action": "not_needed", "args": {"point": "the signing key point", "reason": "SHIP-958 covers it"}}], "note": null}
+{"screen": "retro", "utterance": "Mark the same file one as not needed", "calls": [{"action": "not_needed", "args": {"point": "the same file one"}}], "note": null}
+{"screen": "retro", "utterance": "Mark that as not needed, we already fixed it", "calls": [{"action": "not_needed", "args": {"point": "that", "reason": "we already fixed it"}}], "note": null}
+{"screen": "retro", "utterance": "Mark the signing key point not needed", "calls": [{"action": "not_needed", "args": {"point": "the signing key point"}}], "note": null}
+{"screen": "retro", "utterance": "Merge them", "calls": [{"action": "answer_merge", "args": {"answer": "merge"}}], "note": null}
+{"screen": "retro", "utterance": "Keep them apart", "calls": [{"action": "answer_merge", "args": {"answer": "keepApart"}}], "note": null}
+{"screen": "retro", "utterance": "Merge contracts first worked into screenshot baselines", "calls": [{"action": "answer_merge", "args": {"answer": "merge", "proposal": "contracts first worked"}}], "note": null}
+{"screen": "retro", "utterance": "Yes, merge those themes", "calls": [{"action": "answer_merge", "args": {"answer": "merge"}}], "note": null}
+{"screen": "retro", "utterance": "Show went badly", "calls": [{"action": "show", "args": {"view": "wentBadly"}}], "note": null}
+{"screen": "retro", "utterance": "Show me what is left to decide", "calls": [{"action": "show", "args": {"view": "toDecide"}}], "note": null}
+{"screen": "retro", "utterance": "Show the Features", "calls": [{"action": "show", "args": {"view": "features"}}], "note": null}
+{"screen": "retro", "utterance": "Show can be improved", "calls": [{"action": "show", "args": {"view": "improve"}}], "note": null}
+{"screen": "retro", "utterance": "Go to went well", "calls": [{"action": "show", "args": {"view": "wentWell"}}], "note": null}
+{"screen": "retro", "utterance": "What keeps going wrong?", "calls": [{"action": "ask", "args": {"topic": "keepsGoingWrong"}}], "note": null}
+{"screen": "retro", "utterance": "What is left to decide?", "calls": [{"action": "ask", "args": {"topic": "leftToDecide"}}], "note": null}
+{"screen": "retro", "utterance": "What went well?", "calls": [{"action": "ask", "args": {"topic": "whatWentWell"}}], "note": null}
+{"screen": "retro", "utterance": "What keeps breaking?", "calls": [{"action": "ask", "args": {"topic": "keepsGoingWrong"}}], "note": null}
+{"screen": "retro", "utterance": "Retro note: the review queue for SHIP-950 grew", "calls": [{"action": "add_point", "args": {"note": "x", "category": "wentBadly"}}], "note": "the review queue for SHIP-950 grew"}
+{"screen": "retro", "utterance": "Um", "calls": [], "note": null}
+{"screen": "retro", "utterance": "Never mind", "calls": [], "note": null}
+{"screen": "retro", "utterance": "Hmm, what was it", "calls": [], "note": null}
+{"screen": "retro", "utterance": "Retro note", "calls": [], "note": null}

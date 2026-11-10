@@ -1,6 +1,7 @@
 import { platform } from '@shiplean/core/platform';
 import { clearOutbox } from '../actions/outbox';
 import { scopeOf } from '../actions/scope';
+import { clearInboxStorage } from '../inbox/storage';
 import { queryClient } from '../queryClient';
 import { session } from './session';
 
@@ -9,6 +10,8 @@ import { session } from './session';
 export function lostSession(): void {
   queryClient.clear();
   const scope = scopeOf(session.get());
+  // The kept Inbox of this session.
+  clearInboxStorage();
   session.clearSecret();
   // The runner's outbox for this session. After clearSecret, so the runner has already stopped (runner.tsx).
   if (scope !== null) clearOutbox(platform().persistentStore(), scope);

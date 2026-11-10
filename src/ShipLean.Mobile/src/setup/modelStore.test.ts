@@ -139,7 +139,11 @@ describe('modelStore', () => {
       reason: null,
       bytesDone: bytes('parakeet', 'qwen3-4b'),
     });
-    expect(store.status().files.map((f) => f.state)).toEqual(['checked', 'checked']);
+    expect(store.status().files.map((f) => f.state)).toEqual(
+      ids('parakeet')
+        .concat(ids('qwen3-4b'))
+        .map(() => 'checked'),
+    );
   });
 
   it('pauses for Wi-Fi on mobile data, and useMobileDataOnce continues this download only', async () => {
@@ -237,7 +241,9 @@ describe('modelStore', () => {
     const [parakeet] = ids('parakeet');
     first.files.wrongChecksum(parakeet, 1);
     first.store.download();
-    await complete(first.files, 'parakeet');
+    await flush();
+    first.files.task(parakeet).complete();
+    await flush();
     expect(first.files.removed).toEqual([parakeet]);
     expect(first.files.downloads.map((t) => t.file.id)).toEqual([parakeet, parakeet]);
     await complete(first.files, 'parakeet', 'qwen3-4b');

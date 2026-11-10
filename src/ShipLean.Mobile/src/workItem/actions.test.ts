@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { AppAction } from '../actions/types';
 import type { WorkItemAction } from './actions';
 
-const base = { area: 'workItem', itemId: 'i1', key: 'SHIP-1' } as const;
+const base = { area: 'workItem', projectId: 'p1', itemId: 'i1', key: 'SHIP-1' } as const;
 
 const everyKind: { [K in WorkItemAction['kind']]: Extract<WorkItemAction, { kind: K }> } = {
   setState: {

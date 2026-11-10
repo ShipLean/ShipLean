@@ -23,6 +23,8 @@ export type RetroAction =
       itemId: null;
       key: null;
       projectId: string;
+      // The sprint retro the points are in; send and reconcile read it.
+      sprintId: string;
       pointIds: string[];
       title: string;
       ownerId: string | null;
@@ -35,6 +37,7 @@ export type RetroAction =
       // The action item.
       itemId: string;
       key: string;
+      projectId: string;
       pointIds: string[];
     }
   | {
@@ -42,6 +45,8 @@ export type RetroAction =
       kind: 'notNeeded';
       itemId: null;
       key: null;
+      projectId: string;
+      sprintId: string;
       pointId: string;
       // May be '' (P-R4); send() posts 'Not needed' then, since the server refuses ''.
       reason: string;

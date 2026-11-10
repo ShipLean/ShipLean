@@ -1,0 +1,46 @@
+{"screen":"features","utterance":"What is blocked","calls":[{"action":"ask_status","args":{"topic":"blocked"}}],"note":null}
+{"screen":"features","utterance":"Which Features are at risk","calls":[{"action":"ask_status","args":{"topic":"atRisk"}}],"note":null}
+{"screen":"features","utterance":"How far is SHIP-906","calls":[{"action":"ask_status","args":{"topic":"howFar","feature":"SHIP-906"}}],"note":null}
+{"screen":"features","utterance":"How far along are we","calls":[{"action":"ask_status","args":{"topic":"howFar"}}],"note":null}
+{"screen":"features","utterance":"What changed since Monday","calls":[{"action":"ask_changed","args":{"since":"Monday"}}],"note":null}
+{"screen":"features","utterance":"Open the digest","calls":[{"action":"ask_changed","args":{}}],"note":null}
+{"screen":"features","utterance":"What is new","calls":[{"action":"ask_changed","args":{}}],"note":null}
+{"screen":"features","utterance":"Move SHIP-892 to Active","calls":[{"action":"set_state","args":{"feature":"SHIP-892","state":"Active"}}],"note":null}
+{"screen":"features","utterance":"Set SHIP-893 to Closed","calls":[{"action":"set_state","args":{"feature":"SHIP-893","state":"Closed"}}],"note":null}
+{"screen":"features","utterance":"Close SHIP-906","calls":[{"action":"set_state","args":{"feature":"SHIP-906","state":"Closed"}}],"note":null}
+{"screen":"features","utterance":"Put SHIP-743 back to New","calls":[{"action":"set_state","args":{"feature":"SHIP-743","state":"New"}}],"note":null}
+{"screen":"features","utterance":"Add a note to SHIP-906: the 4 GB fallback needs a device test","calls":[{"action":"add_note","args":{"feature":"SHIP-906"}}],"note":"the 4 GB fallback needs a device test"}
+{"screen":"features","utterance":"Note on SHIP-707 that touch drag is waiting on review","calls":[{"action":"add_note","args":{"feature":"SHIP-707"}}],"note":"touch drag is waiting on review"}
+{"screen":"features","utterance":"Leave a note on SHIP-743: Sam is chasing the pg_dump package","calls":[{"action":"add_note","args":{"feature":"SHIP-743"}}],"note":"Sam is chasing the pg_dump package"}
+{"screen":"features","utterance":"Set the status of SHIP-707 to retro and insights are in review","calls":[{"action":"set_status","args":{"feature":"SHIP-707"}}],"note":"retro and insights are in review"}
+{"screen":"features","utterance":"SHIP-893 status: waiting on the dark mode colours","calls":[{"action":"set_status","args":{"feature":"SHIP-893"}}],"note":"waiting on the dark mode colours"}
+{"screen":"features","utterance":"Update SHIP-906 status: Parakeet is stable on the S22","calls":[{"action":"set_status","args":{"feature":"SHIP-906"}}],"note":"Parakeet is stable on the S22"}
+{"screen":"features","utterance":"Set SHIP-892 status: blocked on the artifact upload design","calls":[{"action":"set_status","args":{"feature":"SHIP-892"}}],"note":"blocked on the artifact upload design"}
+{"screen":"features","utterance":"SHIP-906 status is blocked until the model licence is cleared","calls":[{"action":"set_status","args":{"feature":"SHIP-906"}}],"note":"blocked until the model licence is cleared"}
+{"screen":"features","utterance":"Status for SHIP-707: Blocked by the store review","calls":[{"action":"set_status","args":{"feature":"SHIP-707"}}],"note":"Blocked by the store review"}
+{"screen":"features","utterance":"Set the status of SHIP-893 to blocked waiting on the Play upload","calls":[{"action":"set_status","args":{"feature":"SHIP-893"}}],"note":"blocked waiting on the Play upload"}
+{"screen":"features","utterance":"Mark SHIP-906 at risk","calls":[{"action":"set_health","args":{"feature":"SHIP-906","health":"atRisk"}}],"note":null}
+{"screen":"features","utterance":"Mark SHIP-892 as blocked","calls":[{"action":"set_health","args":{"feature":"SHIP-892","health":"blocked"}}],"note":null}
+{"screen":"features","utterance":"Set SHIP-707 back to on track","calls":[{"action":"set_health","args":{"feature":"SHIP-707","health":"onTrack"}}],"note":null}
+{"screen":"features","utterance":"Answer question 1 on SHIP-906: use the 4 GB fallback","calls":[{"action":"answer","args":{"feature":"SHIP-906","question":1}}],"note":"use the 4 GB fallback"}
+{"screen":"features","utterance":"On SHIP-707 answer Q2 with ship it on Friday","calls":[{"action":"answer","args":{"feature":"SHIP-707","question":2}}],"note":"ship it on Friday"}
+{"screen":"features","utterance":"Reply to the question on SHIP-906: cap demo videos at 60 megabytes","calls":[{"action":"answer","args":{"feature":"SHIP-906"}}],"note":"cap demo videos at 60 megabytes"}
+{"screen":"features","utterance":"Approve D1 on SHIP-743","calls":[{"action":"approve","args":{"feature":"SHIP-743","decisions":[1]}}],"note":null}
+{"screen":"features","utterance":"Approve D1 to D8 on SHIP-743","calls":[{"action":"approve","args":{"feature":"SHIP-743","decisions":[1,2,3,4,5,6,7,8]}}],"note":null}
+{"screen":"features","utterance":"Confirm D1 and D2 on SHIP-893","calls":[{"action":"approve","args":{"feature":"SHIP-893","decisions":[1,2]}}],"note":null}
+{"screen":"features","utterance":"Approve decision 3 on SHIP-743","calls":[{"action":"approve","args":{"feature":"SHIP-743","decisions":[3]}}],"note":null}
+{"screen":"features","utterance":"Move SHIP-893 above SHIP-906","calls":[{"action":"move_rank","args":{"feature":"SHIP-893","relation":"above","other":"SHIP-906"}}],"note":null}
+{"screen":"features","utterance":"Put SHIP-906 below SHIP-707","calls":[{"action":"move_rank","args":{"feature":"SHIP-906","relation":"below","other":"SHIP-707"}}],"note":null}
+{"screen":"features","utterance":"Move SHIP-892 above SHIP-743","calls":[{"action":"move_rank","args":{"feature":"SHIP-892","relation":"above","other":"SHIP-743"}}],"note":null}
+{"screen":"features","utterance":"Move SHIP-707 below SHIP-893","calls":[{"action":"move_rank","args":{"feature":"SHIP-707","relation":"below","other":"SHIP-893"}}],"note":null}
+{"screen":"features","utterance":"Show what needs me","calls":[{"action":"filter_open","args":{"filter":"needsMe"}}],"note":null}
+{"screen":"features","utterance":"Show only what is at risk","calls":[{"action":"filter_open","args":{"filter":"atRisk"}}],"note":null}
+{"screen":"features","utterance":"Show what is blocked","calls":[{"action":"filter_open","args":{"filter":"blocked"}}],"note":null}
+{"screen":"features","utterance":"Show everything","calls":[{"action":"filter_open","args":{"filter":"all"}}],"note":null}
+{"screen":"features","utterance":"Open the board for SHIP-906","calls":[{"action":"filter_open","args":{"board":true,"feature":"SHIP-906"}}],"note":null}
+{"screen":"features","utterance":"Move the task to Done","calls":[{"action":"move_tasks","args":{}}],"note":null}
+{"screen":"features","utterance":"Create a new Feature called dark mode","calls":[{"action":"create_feature","args":{}}],"note":null}
+{"screen":"features","utterance":"Um, the thing","calls":[],"note":null}
+{"screen":"features","utterance":"Okay so","calls":[],"note":null}
+{"screen":"features","utterance":"Never mind about that","calls":[],"note":null}
+{"screen":"features","utterance":"Features features","calls":[],"note":null}

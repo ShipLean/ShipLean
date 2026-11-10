@@ -1,12 +1,79 @@
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
-import type { FC } from 'react';
+import { useRouter } from 'expo-router';
+import { useState, type FC } from 'react';
 import { View } from 'react-native';
-import { itemActionsRowId } from '../testIds';
+import { links } from '../../links';
+import { useTheme } from '../../theme';
+import { Button } from '../../ui/Button';
+import { AssignSheet } from '../sheets/AssignSheet';
+import { ChangeStateSheet } from '../sheets/ChangeStateSheet';
+import { assignButtonId, childrenLinkId, changeStateButtonId, itemActionsRowId } from '../testIds';
 
 export interface ItemActionsRowProps {
   item: WorkItemDto;
   projectKey: string;
 }
 
-// TODO: the action row from the design (state, assign, note). Dispatch setState/assign/addNote via useWorkItemActions with item.revision and the from* values; no mutation hook.
-export const ItemActionsRow: FC<ItemActionsRowProps> = () => <View testID={itemActionsRowId} />;
+// Under the header: Change state, Assign, and on an Epic or Feature the count of what sits under it, which opens
+// the Backlog filtered to it (a Feature's stories, an Epic's features). Every change is a dispatch from the sheets.
+export const ItemActionsRow: FC<ItemActionsRowProps> = ({ item, projectKey }) => {
+  const theme = useTheme();
+  const router = useRouter();
+  const [stateOpen, setStateOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  // A Feature counts every story-level child (stories, bugs, action items), as the Backlog at Stories level lists them.
+  const below =
+    item.type.id === 'feature'
+      ? { counts: isStoryLevel, one: 'story', many: 'stories' }
+      : item.type.id === 'epic'
+        ? { counts: (type: string) => type === 'feature', one: 'feature', many: 'features' }
+        : null;
+  const count = below === null ? 0 : item.children.filter((c) => below.counts(c.type.id)).length;
+
+  const open = () => {
+    if (below === null) return;
+    router.push(
+      item.type.id === 'feature'
+        ? links.backlog(projectKey, { level: 'stories', feature: item.key })
+        : links.backlog(projectKey, { level: 'features', epic: item.key }),
+    );
+  };
+
+  return (
+    <View
+      testID={itemActionsRowId}
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: theme.space[2],
+        paddingHorizontal: theme.space[4],
+        paddingVertical: theme.space[2],
+      }}
+    >
+      <Button
+        label="Change state"
+        variant="ghost"
+        testID={changeStateButtonId}
+        onPress={() => setStateOpen(true)}
+      />
+      <Button
+        label="Assign"
+        variant="ghost"
+        testID={assignButtonId}
+        onPress={() => setAssignOpen(true)}
+      />
+      {below === null ? null : (
+        <Button
+          label={`${count} ${count === 1 ? below.one : below.many} ›`}
+          variant="ghost"
+          testID={childrenLinkId}
+          onPress={open}
+        />
+      )}
+      <ChangeStateSheet item={item} open={stateOpen} onClose={() => setStateOpen(false)} />
+      <AssignSheet item={item} open={assignOpen} onClose={() => setAssignOpen(false)} />
+    </View>
+  );
+};

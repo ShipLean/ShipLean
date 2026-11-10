@@ -84,4 +84,7 @@ public static class BoardTestIds
     public const string ChildAddCancel = "board-child-add-cancel";
     public const string ChildAddError = "board-child-add-error";
     public const string LocationProbe = "board-location-probe";
+
+    // SHIP-916 W1
+    public const string CardHealth = "board-card-health";
 }

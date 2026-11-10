@@ -57,7 +57,8 @@ export function downloadView(
   }
   // The speech model first, as the design lists it.
   models.sort((a, b) => Number(b === 'parakeet') - Number(a === 'parakeet'));
-  const stopped = status.reason === 'space';
+  // A model change that waits for space leaves the phase ready: nothing has stopped then.
+  const stopped = status.reason === 'space' && status.phase !== 'ready';
   const rows = models.map((model): FileRowView => {
     const mine = status.files.filter((f) => modelOf(files, f.id) === model);
     const bytes = modelBytes(files, model);
@@ -149,11 +150,12 @@ export function noSpaceView(
   status: ModelStatus,
   files: readonly ModelFile[] = MODEL_FILES,
 ): NoSpaceView | null {
-  if (status.reason !== 'space') return null;
+  if (status.reason !== 'space' || status.phase === 'ready') return null;
   const stopped = status.resolved;
   const view = downloadView(status, files);
   const row = view.rows.find((r) => r.state === 'stopped' && r.model !== 'parakeet');
-  const model = row?.name ?? files.find((f) => f.model === stopped)?.name ?? 'The model';
+  const model = row?.name ?? files.find((f) => f.model === stopped)?.name;
+  if (model === undefined) throw new Error(`The manifest has no ${stopped}.`);
   let smaller: NoSpaceView['smaller'] = null;
   if (stopped === 'qwen3-4b') {
     const small = files.filter((f) => f.model === 'qwen3-1.7b');

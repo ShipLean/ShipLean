@@ -54,7 +54,11 @@ const refusal = (
 // A started runner over its own connection: goOnline() fires what the runner gave onOnline.
 function build(
   rec: ReturnType<typeof recorder>,
-  { store = memoryStore(), start = true }: { store?: KeyValueStore; start?: boolean } = {},
+  {
+    store = memoryStore(),
+    start = true,
+    register = true,
+  }: { store?: KeyValueStore; start?: boolean; register?: boolean } = {},
 ) {
   const listeners = new Set<() => void>();
   const runner = createActionRunner({
@@ -68,7 +72,7 @@ function build(
     now: () => new Date(),
   });
   if (start) runner.start();
-  runner.register(rec.executor);
+  if (register) runner.register(rec.executor);
   return {
     runner,
     store,
@@ -221,6 +225,25 @@ describe('ActionRunner', () => {
       'conflict',
       false,
     ]);
+  });
+
+  it('tries a failed undo of a sent action again and leaves an undone one alone', async () => {
+    const rec = recorder();
+    const runner = runnerWith(rec);
+    const batchId = runner.dispatch([act('setState', '1'), act('setState', '2')], {
+      undo: UNDO.typed,
+      origin: 'typed',
+      allOrNothing: false,
+    });
+    await flush();
+    rec.undoFails.add('1');
+
+    expect((await runner.undo(batchId)).map((o) => o.outcome)).toEqual(['undone', 'failed']);
+    rec.undoFails.delete('1');
+    expect((await runner.undo(batchId)).map((o) => o.outcome)).toEqual(['undone', 'undone']);
+
+    expect(rec.calls).toEqual(['send 1', 'send 2', 'undo 2', 'undo 1', 'undo 1']);
+    expect(byItem(runner, '1')?.undoOutcome).toBe('undone');
   });
 
   it('keeps what send returned and gives it to undo', async () => {
@@ -480,6 +503,90 @@ describe('ActionRunner', () => {
     await flush();
     expect(seen).toEqual([['7']]);
     expect(byItem(third.runner, '7')?.state).toBe('sent');
+  });
+
+  it('keeps a batch restored before its area registers, unsent and unlisted, and lists it once the area registers', async () => {
+    const store = memoryStore();
+    // Before a restart: a held tap and a queued action, neither sent (the first runner never started).
+    const first = build(recorder(), { store, start: false });
+    first.runner.dispatch([act('setState', '1')], {
+      undo: UNDO.tap,
+      origin: 'tap',
+      allOrNothing: true,
+    });
+    first.runner.dispatch([act('assign', '2')], {
+      undo: UNDO.none,
+      origin: 'tap',
+      allOrNothing: true,
+    });
+    const restored = JSON.parse(store.getItem(outboxKey(SCOPE)) as string).items;
+    expect(restored).toHaveLength(2);
+
+    // After it: the new runner starts before the Work item area registers its executor.
+    const rec = recorder();
+    const { runner } = build(rec, { store, register: false });
+    await flush();
+
+    // What a toast or banner reads before the area registers: nothing it can't describe, and no throw.
+    expect(() => runner.pending().map((p) => runner.describe(p.action))).not.toThrow();
+    expect(runner.pending()).toEqual([]);
+    expect(rec.calls).toEqual([]);
+    expect(JSON.parse(store.getItem(outboxKey(SCOPE)) as string).items).toEqual(restored);
+
+    const heard = vi.fn();
+    runner.subscribe(heard);
+    runner.register(rec.executor);
+    expect(heard).toHaveBeenCalled();
+    expect(byItem(runner, '1')?.state).toBe('undo');
+    expect(runner.pending().map((p) => runner.describe(p.action).text)).toEqual([
+      'setState',
+      'assign',
+    ]);
+    await flush();
+    expect(rec.calls).toEqual(['send 2']);
+
+    await vi.advanceTimersByTimeAsync(UNDO.tap.ms);
+    expect(rec.calls).toEqual(['send 2', 'send 1']);
+  });
+
+  it('tells subscribers when an area registers, even with nothing of its to send', () => {
+    const store = memoryStore();
+    const first = build(recorder(), { store, start: false });
+    first.runner.dispatch([act('setState', '1')], {
+      undo: UNDO.tap,
+      origin: 'tap',
+      allOrNothing: true,
+    });
+    const rec = recorder();
+    const { runner } = build(rec, { store, register: false });
+    const heard = vi.fn();
+    runner.subscribe(heard);
+
+    runner.register(rec.executor);
+
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(byItem(runner, '1')?.state).toBe('undo');
+  });
+
+  it('tells subscribers on start(), so one that subscribed after an area registered reads pending() again', () => {
+    const store = memoryStore();
+    build(recorder(), { store, start: false }).runner.dispatch([act('setState', '1')], {
+      undo: UNDO.tap,
+      origin: 'tap',
+      allOrNothing: true,
+    });
+    const rec = recorder();
+    const { runner } = build(rec, { store, start: false, register: false });
+    // As the app mounts: the toast reads pending() before the area registers, and subscribes after it did.
+    expect(runner.pending()).toEqual([]);
+    runner.register(rec.executor);
+    const heard = vi.fn();
+    runner.subscribe(heard);
+
+    runner.start();
+
+    expect(heard).toHaveBeenCalled();
+    expect(byItem(runner, '1')?.state).toBe('undo');
   });
 
   it('reconciles what a restart left uncertain when its area registers', async () => {

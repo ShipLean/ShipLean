@@ -18,11 +18,11 @@ export const HEADROOM_BYTES = 512 * 1024 ** 2;
 
 // The share of the memory a phone reports that a foreground app can count on. Android's low-memory killer and iOS's
 // per-app limit (with the increased-memory-limit entitlement) leave an app well under the phone's RAM, and Parakeet
-// (~0.7 GB) and the app itself need the rest. On a 12 GB phone that leaves ~4.5 GB (4B fits); on the 8 GB class
-// ~3 GB (4B doesn't, 1.7B does).
+// (~0.7 GB) and the app itself need the rest. On a 12 GB phone that leaves ~5.6 GB and on the 8 GB class ~3.7 GB
+// (4B needs ~3.4 GB, so it fits, as chooseModel's 'warn' says); a 6 GB phone gets ~2.75 GB (only 1.7B fits).
 // TODO: calibrate against the device runs (S22, S24, iPhone), and read os_proc_available_memory() on iOS once a
 // native module exposes it.
-export const APP_SHARE = 0.4;
+export const APP_SHARE = 0.5;
 
 // The bytes a model needs loaded: its file, the KV cache for nCtx tokens and the headroom.
 export function bytesNeeded(
