@@ -11,7 +11,7 @@ import {
   FakeRecognizer,
 } from '../test-support/voice';
 import { renderWithVoice } from '../test-support/voiceUi';
-import type { ParsedCall, ScreenVoiceSpec, ViewIntent } from './contracts';
+import type { ParsedCall, RecognitionSession, ScreenVoiceSpec, ViewIntent } from './contracts';
 import { onApplyFailed } from './flows/applyFailed';
 import { onConflict } from './flows/conflict';
 import { fixHeard, startFix } from './flows/fix';
@@ -99,8 +99,9 @@ const probe: { voice: VoiceApi | null; internals: VoiceInternals | null } = {
   voice: null,
   internals: null,
 };
-function Screen({ onView }: { onView?: ScreenViewHandler }) {
-  useScreenVoice(workItemSpec, { onView });
+// freshSpec builds the spec on every render, as the screens do.
+function Screen({ onView, freshSpec }: { onView?: ScreenViewHandler; freshSpec?: boolean }) {
+  useScreenVoice(freshSpec === true ? { ...workItemSpec } : workItemSpec, { onView });
   const voice = useVoice();
   const internals = useVoiceInternals();
   useEffect(() => {
@@ -117,15 +118,23 @@ function Screen({ onView }: { onView?: ScreenViewHandler }) {
 const voice = () => probe.voice!;
 const internals = () => probe.internals!;
 const kind = () => screen.getByTestId('voice-kind').props.children as string;
+const SET_STATE: ParsedCall[] = [{ action: 'setState', args: {} }];
+// A session whose stop() rejects, as a native recognizer may.
+const brokenSession = (): RecognitionSession => ({
+  onPartial: () => {},
+  onLevel: () => {},
+  stop: () => Promise.reject(new Error('The recognizer stopped.')),
+  cancel: () => {},
+});
 
-async function mount(onView?: ScreenViewHandler) {
+async function mount(onView?: ScreenViewHandler, freshSpec = false) {
   const recognizer = new FakeRecognizer();
   const model = new FakeCommandModel();
   const mic = new FakeMicPermission();
   const runner = fakeRunner();
   // Words to hear unless a test scripts others.
   recognizer.script([], 'do it');
-  await renderWithVoice(<Screen onView={onView} />, {
+  await renderWithVoice(<Screen onView={onView} freshSpec={freshSpec} />, {
     engines: { recognizer, model, mic },
     runner,
   });
@@ -294,5 +303,139 @@ describe('VoiceProvider', () => {
     const unsure = aPending({ id: 'p1', batchId: 'batch-1', state: 'uncertain', origin: 'voice' });
     await act(async () => runner.setPending([unsure]));
     expect(onApplyFailed).toHaveBeenCalledWith(internals(), 'batch-1', [unsure]);
+  });
+  it('a sent batch whose parts have all left pending() is forgotten', async () => {
+    const { model, runner } = await mount();
+    model.respond(SET_STATE);
+    await hold();
+    await act(async () => voice().apply());
+    const sending = aPending({ id: 'p1', batchId: 'batch-1', state: 'sending', origin: 'voice' });
+    await act(async () => runner.setPending([sending]));
+    await act(async () => runner.setPending([]));
+
+    // Forgotten: the same id again is not a batch this provider is watching.
+    const failed = aPending({ id: 'p1', batchId: 'batch-1', state: 'failed', failure: 'server' });
+    await act(async () => runner.setPending([failed]));
+    expect(onApplyFailed).not.toHaveBeenCalled();
+  });
+
+  it('a rejected parse or prepare gives a failure, and the next hold reaches the preview', async () => {
+    const { model } = await mount();
+    model.respond(SET_STATE);
+    jest.spyOn(model, 'prepare').mockRejectedValueOnce(new Error('The model failed to load.'));
+    await hold();
+    expect(internals().state()).toEqual({
+      kind: 'failure',
+      failure: { kind: 'unclear', detail: { heard: 'do it' } },
+      heard: 'do it',
+      source: 'voice',
+    });
+
+    await act(async () => voice().dismiss());
+    jest.spyOn(model, 'parse').mockRejectedValueOnce(new Error('The grammar failed.'));
+    await hold();
+    expect(internals().state()).toMatchObject({
+      kind: 'failure',
+      failure: { kind: 'unclear', detail: { heard: 'do it' } },
+    });
+
+    await act(async () => voice().dismiss());
+    await hold();
+    expect(kind()).toBe('preview');
+    expect(screen.getByTestId(previewLineId('setState'))).toBeOnTheScreen();
+    // The rejected prepare was dropped from the cache and prepared again.
+    expect(model.prepared).toEqual(['SHIP-906 Voice commands']);
+  });
+
+  it('a rejected release never leaves listening: nothingHeard, or the open preview back', async () => {
+    const { recognizer, model } = await mount();
+    model.respond(SET_STATE);
+    jest.spyOn(recognizer, 'start').mockResolvedValueOnce(brokenSession());
+    await hold();
+    expect(internals().state()).toEqual({
+      kind: 'failure',
+      failure: { kind: 'nothingHeard', detail: {} },
+      heard: null,
+      source: 'voice',
+    });
+
+    await act(async () => voice().dismiss());
+    await hold();
+    const preview = internals().state();
+    expect(preview.kind).toBe('preview');
+
+    jest.spyOn(recognizer, 'start').mockResolvedValueOnce(brokenSession());
+    await hold();
+    expect(internals().state()).toEqual(preview);
+  });
+
+  it('a rejected mic read on a hold drops the hold instead of leaving it listening', async () => {
+    const { recognizer, mic } = await mount();
+    jest.spyOn(mic, 'status').mockRejectedValueOnce(new Error('The permission check failed.'));
+    await act(async () => voice().holdStart());
+    expect(kind()).toBe('idle');
+    expect(recognizer.cancelled).toBe(1);
+  });
+
+  it('prepares once across three holds while the screen rebuilds its spec on every render', async () => {
+    const { model } = await mount(undefined, true);
+    model.respond(SET_STATE);
+    const specs = new Set<ScreenVoiceSpec | null>();
+    for (let i = 0; i < 3; i++) {
+      specs.add(internals().spec());
+      await hold();
+      expect(kind()).toBe('preview');
+    }
+    // Each hold re-rendered the screen, which registered a new spec object.
+    expect(specs.size).toBe(3);
+    expect(model.parsed).toHaveLength(3);
+    expect(model.prepared).toHaveLength(1);
+  });
+
+  it('Apply after a resolveCalls rebuild sends the rebuilt actions', async () => {
+    const { model, runner } = await mount();
+    model.respond(SET_STATE);
+    await hold();
+    const preview = internals().state();
+    if (preview.kind !== 'preview') throw new Error('expected the preview');
+
+    // A flow (Fix, a conflict) resolves the merged calls again and shows the rebuilt preview.
+    const rebuilt = internals().resolveCalls(
+      [{ action: 'addNote', args: {} }],
+      aTranscript({ text: 'add a note' }),
+    );
+    if (!rebuilt.ok) throw new Error('expected a resolved command');
+    await act(async () => internals().set({ ...preview, lines: rebuilt.lines }));
+    await act(async () => voice().apply());
+
+    expect(runner.dispatched.map((d) => d.batch)).toEqual([[action('addNote')]]);
+  });
+
+  it('"yes" with every line removed sends nothing', async () => {
+    const { recognizer, model, runner } = await mount();
+    model.respond(SET_STATE);
+    await hold();
+    const preview = internals().state();
+    if (preview.kind !== 'preview') throw new Error('expected the preview');
+    await act(async () => internals().set({ ...preview, removed: ['setState'] }));
+
+    recognizer.script([], 'yes');
+    await hold();
+    expect(runner.dispatched).toEqual([]);
+    expect(kind()).toBe('preview');
+  });
+
+  it('while fixing, "yes" goes to fixHeard and applies nothing', async () => {
+    const { recognizer, model, runner } = await mount();
+    model.respond(SET_STATE);
+    await hold();
+    const preview = internals().state();
+    if (preview.kind !== 'preview') throw new Error('expected the preview');
+    await act(async () => internals().set({ ...preview, fixing: true }));
+
+    recognizer.script([], 'yes');
+    await hold();
+    expect(fixHeard).toHaveBeenCalledWith(internals(), aTranscript({ text: 'yes' }));
+    expect(runner.dispatched).toEqual([]);
   });
 });

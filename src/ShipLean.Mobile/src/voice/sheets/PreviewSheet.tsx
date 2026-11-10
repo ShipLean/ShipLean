@@ -34,17 +34,19 @@ export interface PreviewSheetProps {
 export function PreviewSheet({ state, onApply, onFix, onCancel }: PreviewSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
-  // A removed line is kept in the voice state too, so saying "yes" applies what the sheet shows.
+  // Removed lines live in the voice state, so saying "yes" applies what the sheet shows and a flow that sets the
+  // preview again is shown as set. Rendered alone (no provider), the sheet keeps them itself.
   const internals = useContext(VoiceInternalsContext);
-  const [removed, setRemoved] = useState(state.removed);
-  const shown = { ...state, removed };
-  const kept = keptLineIds(shown);
+  const [localRemoved, setLocalRemoved] = useState(state.removed);
+  const removed = internals === null ? localRemoved : state.removed;
+  const kept = keptLineIds({ ...state, removed });
+  const changes = state.lines.filter((l) => !isRejectedLine(l.id)).length;
   const voice = state.source === 'voice';
 
   const remove = (id: string) => {
     const next = [...removed, id];
-    setRemoved(next);
-    internals?.set({ ...state, removed: next });
+    if (internals === null) setLocalRemoved(next);
+    else internals.set({ ...state, removed: next });
   };
 
   return (
@@ -163,7 +165,7 @@ export function PreviewSheet({ state, onApply, onFix, onCancel }: PreviewSheetPr
         />
         <View style={{ flex: 1 }}>
           <Button
-            label={kept.length === state.lines.length ? 'Apply' : `Apply ${kept.length}`}
+            label={kept.length === changes ? 'Apply' : `Apply ${kept.length}`}
             onPress={() => onApply(kept)}
             disabled={kept.length === 0}
             testID={previewApplyId}

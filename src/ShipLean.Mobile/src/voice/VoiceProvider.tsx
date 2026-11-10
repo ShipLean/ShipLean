@@ -25,6 +25,7 @@ import type {
   ScreenVoiceSpec,
   Transcript,
   VoiceEngines,
+  VoiceFailure,
   ViewIntent,
 } from './contracts';
 import { engines } from './engines';
@@ -128,8 +129,8 @@ class VoiceStore {
   // Bumped by every new hold, resolve, apply, cancel and dismiss, so a late answer for an older one is dropped.
   turn = 0;
   readonly cache = new PreparedCache();
-  // Batches this provider dispatched, and those already handed to onApplyFailed.
-  readonly ours = new Set<string>();
+  // Batches this provider dispatched (true once seen in pending()), and those already handed to onApplyFailed.
+  private readonly ours = new Map<string, boolean>();
   readonly reported = new Set<string>();
   private screens: ScreenEntry[] = [];
   private version = 0;
@@ -166,6 +167,27 @@ class VoiceStore {
   remember(last: NonNullable<VoiceStore['last']>, source: VoiceSource): void {
     this.last = last;
     this.source = source;
+  }
+
+  own(batchId: string): void {
+    this.ours.set(batchId, false);
+  }
+
+  // The parts still in pending() of each batch this provider sent. A batch whose parts have all left pending() is
+  // forgotten, so the sets don't grow for the whole session.
+  sent(all: Pending[]): { batchId: string; parts: Pending[] }[] {
+    const out: { batchId: string; parts: Pending[] }[] = [];
+    for (const [batchId, seen] of this.ours) {
+      const parts = all.filter((p) => p.batchId === batchId);
+      if (parts.length > 0) {
+        this.ours.set(batchId, true);
+        out.push({ batchId, parts });
+      } else if (seen) {
+        this.ours.delete(batchId);
+        this.reported.delete(batchId);
+      }
+    }
+    return out;
   }
 
   // The newest registration is the focused screen; unregistering hands back to the one before.
@@ -217,10 +239,14 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
   const readMic = useCallback(() => e.mic.status(), [e]);
   useEffect(() => {
     let live = true;
+    // A failed read keeps the last known permission.
     const read = () =>
-      void readMic().then((p) => {
-        if (live) store.setPermission(p);
-      });
+      void readMic().then(
+        (p) => {
+          if (live) store.setPermission(p);
+        },
+        () => {},
+      );
     read();
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') read();
@@ -254,8 +280,21 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
           return;
         }
         store.setMachine({ kind: 'thinking', heard: t.text, source });
-        const prepared = await store.cache.get(e.model, spec);
-        const calls = await e.model.parse(prepared, t);
+        let calls: ParsedCall[];
+        try {
+          const prepared = await store.cache.get(e.model, spec);
+          calls = await e.model.parse(prepared, t);
+        } catch {
+          // A model that fails to prepare or parse leaves a way forward, never a stuck 'thinking'.
+          if (store.turn === turn)
+            store.setMachine({
+              kind: 'failure',
+              failure: { kind: 'unclear', detail: { heard: t.text } },
+              heard: t.text,
+              source,
+            });
+          return;
+        }
         if (store.turn !== turn) return;
         const result = resolveCommand(spec, calls, t);
         store.remember({ calls, transcript: t, result }, source);
@@ -283,16 +322,22 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
             }
         }
       },
+      // Resolves calls without the model (Fix, a conflict) and keeps the result as last(), so Apply and "yes" send the
+      // rebuilt actions.
       resolveCalls: (calls, t) => {
         const spec = store.spec();
-        if (spec === null)
-          return {
-            ok: false,
-            failure: { kind: 'noValidAction', detail: { action: null, reason: 'none' } },
-          };
-        return resolveCommand(spec, calls, t);
+        const result: ResolveResult =
+          spec === null
+            ? {
+                ok: false,
+                failure: { kind: 'noValidAction', detail: { action: null, reason: 'none' } },
+              }
+            : resolveCommand(spec, calls, t);
+        store.remember({ calls, transcript: t, result }, store.source);
+        return result;
       },
-      // Each kept line's own action (lines[i] ↔ actions[i]), sent now with the toast's undo for its source.
+      // Each kept line's own action (lines[i] ↔ actions[i]) from the newest resolved result, sent now with the
+      // toast's undo for its source.
       dispatch: (lineIds) => {
         const last = store.last;
         if (last === null || !last.result.ok) throw new Error('There is no preview to apply.');
@@ -302,7 +347,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
           origin: store.source,
           allOrNothing: true,
         });
-        store.ours.add(batchId);
+        store.own(batchId);
         return batchId;
       },
     };
@@ -319,9 +364,8 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
   // ends once nothing of the batch is still sending; the runner's toast offers Undo from there.
   const settle = useCallback(() => {
     const all = runner.pending();
-    for (const batchId of store.ours) {
+    for (const { batchId, parts } of store.sent(all)) {
       if (store.reported.has(batchId)) continue;
-      const parts = all.filter((p) => p.batchId === batchId);
       if (parts.some(failedPart)) {
         store.reported.add(batchId);
         onApplyFailed(internals, batchId, parts);
@@ -340,8 +384,10 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     const apply = (lineIds?: string[]) => {
       const s = store.machine;
       if (s?.kind !== 'preview') return;
+      const ids = lineIds ?? keptLineIds(s);
+      if (ids.length === 0) return;
       store.nextTurn();
-      const batchId = internals.dispatch(lineIds ?? keptLineIds(s));
+      const batchId = internals.dispatch(ids);
       store.setMachine({ kind: 'applying', batchId });
       settle();
     };
@@ -378,41 +424,56 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
         const held: HeldMic = { hold, prior };
         store.setHeld(held);
         store.setMachine(listening(''));
-        // The mic may have been refused since the last read: drop the hold and show why.
-        void readMic().then((p) => {
-          store.setPermission(p);
-          if ((p === 'deniedCanAsk' || p === 'deniedFinal') && store.held === held) {
+        // The mic may have been refused since the last read: drop the hold and show why. A read that fails is
+        // treated as refused for this hold; the last known permission stays.
+        void readMic().then(
+          (p) => {
+            store.setPermission(p);
+            if ((p === 'deniedCanAsk' || p === 'deniedFinal') && store.held === held) {
+              dropHold();
+              rest();
+            }
+          },
+          () => {
+            if (store.held !== held) return;
             dropHold();
             rest();
-          }
-        });
+          },
+        );
       },
       holdEnd: () => {
         const held = store.held;
         if (held === null) return;
         store.setHeld(null);
         const turn = store.turn;
-        void held.hold.release().then((out) => {
-          if (store.turn !== turn) return;
-          const { prior } = held;
-          if (out.kind === 'failure') {
-            store.setMachine(
-              prior ?? { kind: 'failure', failure: out.failure, heard: null, source: 'voice' },
-            );
-            return;
-          }
-          if (prior !== null && isYes(out.transcript.text)) {
-            store.setMachine(prior);
-            apply();
-            return;
-          }
-          if (prior?.fixing === true) {
-            store.setMachine(prior);
-            void fixHeard(internals, out.transcript);
-            return;
-          }
-          void internals.resolve(out.transcript, { source: 'voice' });
-        });
+        const { prior } = held;
+        const failed = (failure: VoiceFailure) =>
+          store.setMachine(prior ?? { kind: 'failure', failure, heard: null, source: 'voice' });
+        void held.hold.release().then(
+          (out) => {
+            if (store.turn !== turn) return;
+            if (out.kind === 'failure') {
+              failed(out.failure);
+              return;
+            }
+            // While fixing, every hold is the correction, "yes" included.
+            if (prior?.fixing === true) {
+              store.setMachine(prior);
+              void fixHeard(internals, out.transcript);
+              return;
+            }
+            if (prior !== null && isYes(out.transcript.text)) {
+              store.setMachine(prior);
+              apply();
+              return;
+            }
+            void internals.resolve(out.transcript, { source: 'voice' });
+          },
+          // A recognizer that fails to start or stop never leaves 'listening'.
+          () => {
+            if (store.turn === turn) failed({ kind: 'nothingHeard', detail: {} });
+          },
+        );
       },
       cancel: () => {
         store.nextTurn();

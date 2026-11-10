@@ -230,8 +230,25 @@ describe('PreviewSheet', () => {
     expect(screen.queryByTestId(previewRemoveId('rejected:0'))).toBeNull();
     expect(screen.getByTestId(previewMarkId('setState'))).toHaveTextContent('Changed by Fix');
     expect(screen.getByTestId(previewTitleId)).toHaveTextContent('1 change to apply');
+    // Nothing was removed, so the struck-out part doesn't make it "Apply 1".
+    expect(screen.getByTestId(previewApplyId)).toHaveTextContent(/^Apply$/);
 
     await fireEvent.press(screen.getByTestId(previewApplyId));
     expect(applied).toEqual([['setState']]);
+  });
+
+  it('shows the removed lines of the voice state when a flow sets the same preview again', async () => {
+    const { recognizer } = await mount();
+    await say(recognizer, 'set this to Active, approve D10, and add a note: fine for v1');
+    const preview = internals().state();
+    if (preview.kind !== 'preview') throw new Error('expected the preview');
+
+    await act(async () => internals().set({ ...preview, removed: ['approve'] }));
+    expect(screen.queryByTestId(previewLineId('approve'))).toBeNull();
+    expect(screen.getByTestId(previewApplyId)).toHaveTextContent('Apply 2');
+
+    await act(async () => internals().set({ ...preview, removed: [] }));
+    expect(screen.getByTestId(previewLineId('approve'))).toBeOnTheScreen();
+    expect(screen.getByTestId(previewApplyId)).toHaveTextContent(/^Apply$/);
   });
 });
