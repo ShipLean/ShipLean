@@ -8,6 +8,8 @@ export const retroIds = {
   list: 'retro-list',
   // RT2
   addSheet: 'sheet-retro-add',
+  addText: 'retro-add-text',
+  addSubmit: 'retro-add-submit',
   // RT3a
   toDecide: 'retro-to-decide',
   // RT3b
@@ -36,3 +38,6 @@ export const retroAddActionId = (pointId: string) => `retro-point-${pointId}-add
 export const retroNotNeededId = (pointId: string) => `retro-point-${pointId}-not-needed`;
 export const retroActionKeyId = (pointId: string) => `retro-point-${pointId}-action-key`;
 export const retroNotNeededReasonId = (pointId: string) => `retro-point-${pointId}-reason`;
+
+// RT2: a category chip of the Add a point sheet.
+export const retroAddCategoryId = (category: string) => `retro-add-category-${category}`;
