@@ -28,6 +28,8 @@ export type FeaturesAction = { area: 'features' } & (
   | {
       // bulkPlace (P-F3).
       kind: 'moveRank';
+      // bulkPlace needs it; send gets only the action.
+      projectId: string;
       itemId: string;
       key: string;
       fromRank: number;

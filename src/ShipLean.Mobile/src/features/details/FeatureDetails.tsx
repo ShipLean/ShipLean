@@ -8,7 +8,11 @@ export interface FeatureDetailsProps {
   projectKey: string;
 }
 
-// TODO: the expanded row from the design (status line, health, state, asks and actions).
+// TODO: every change dispatches through useFeaturesActions(), never a mutation hook or a direct core write.
+// TODO: dates come from the server's labels (statusVerified.atLabel), never formatted on the client.
+// TODO: show the D8 warning on closing with open stories.
+// TODO: 44 pt tap targets and 15 pt body.
+// TODO: layout and copy from design/mobileapp/feature-board.html?state=feature.
 export function FeatureDetails({ row }: FeatureDetailsProps) {
   return <View testID={featureDetailsId(row.key)} />;
 }

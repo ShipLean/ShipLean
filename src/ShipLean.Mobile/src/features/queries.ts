@@ -36,7 +36,8 @@ export function useFeatureStatesQuery(projectId: string) {
   });
 }
 
-// Everything the Features screens read for the project.
+// The overview and digest. The board (featureBoardKeys.board) is keyed separately; invalidate it too after a write that
+// shows on the board.
 export function useInvalidateFeatures() {
   const client = useQueryClient();
   return (projectId: string) =>

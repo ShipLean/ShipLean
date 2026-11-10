@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { UNDO } from '../actions/undo';
 import { fakeRunner } from '../test-support/actions';
+import { FeaturesProvider } from '../shell/providers/features';
 import { aFeatureRow } from '../test-support/features';
 import { renderWithRunner } from '../test-support/renderWithRunner';
 import type { FeaturesAction } from './actions';
@@ -31,11 +32,11 @@ function Tapper() {
 function Host() {
   const [n, setN] = useState(0);
   return (
-    <FeaturesActionsProvider>
+    <FeaturesProvider projectKey="SHIP">
       <Pressable testID="bump" onPress={() => setN(n + 1)}>
         <Text>{n}</Text>
       </Pressable>
-    </FeaturesActionsProvider>
+    </FeaturesProvider>
   );
 }
 

@@ -18,7 +18,11 @@ export interface FeaturesVoiceContext {
   filtering: boolean;
 }
 
-// TODO: the Features voice actions and their resolution replace this stub.
+// TODO: resolve to FeaturesAction kinds only, with N9's ResolveResult and its view.
+// TODO: rank moves are refused while ctx.filtering, as the web's isFiltering.
+// TODO: approve and answer resolve against ctx.asks.
+// TODO: note and status text is copied word for word with copyNoteSpan.
+// TODO: answers show on screen, never read aloud.
 export function featuresVoiceSpec(ctx: FeaturesVoiceContext): ScreenVoiceSpec<FeaturesAction> {
   return {
     screen: 'features',
