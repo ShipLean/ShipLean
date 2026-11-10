@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { aBacklogRow, designFeatures } from '../../test-support/backlog';
 import { blockedWarning, plannedKeys } from './blockedBy';
 import { rankPlan } from '../../actions/rankPlan';
+import { rankRows } from './rankRows';
 
 describe('blockedBy warning', () => {
-  const rows = designFeatures();
-  const row = (key: string) => rows.find((r) => r.key === key)!;
+  const features = designFeatures();
+  const rows = rankRows(features);
+  const row = (key: string) => features.find((r) => r.key === key)!;
 
   it('warns when the item would sit above an item it is blocked by', () => {
     const moved = row('SHIP-906');
