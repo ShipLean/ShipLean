@@ -58,7 +58,7 @@ export function TaskCardFace({
       data-key={card.key}
       data-state={card.state.id}
       data-style-rule={rule?.id}
-      className="paper paper-postit paper-sheet group relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 rounded-[2px] border p-2 [overflow-wrap:anywhere]"
+      className="paper paper-postit paper-sheet group relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1 rounded-[2px] border p-2 [overflow-wrap:break-word]"
       style={{
         ...style,
         ...ruleCardStyle(rule ?? null, 12),
@@ -97,7 +97,7 @@ export function TaskCardFace({
       ) : null}
       <span className="flex items-start gap-1.5 text-[length:var(--text-sm)] text-ink">
         <TypeIcon type="task" />
-        <span data-testid={id(ids.cardTitle)}>
+        <span data-testid={id(ids.cardTitle)} className="[overflow-wrap:anywhere]">
           {preview ? (
             card.title
           ) : (
