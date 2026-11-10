@@ -1,19 +1,24 @@
 // The microphone permission through expo-audio's recording permission.
+import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from 'expo-audio';
+import { Linking } from 'react-native';
 import type { MicPermission } from '../contracts';
+import { permissionState } from '../mic/permissionState';
 
 export class ExpoMicPermission implements MicPermission {
-  status(): Promise<'granted' | 'undetermined' | 'deniedCanAsk' | 'deniedFinal'> {
-    // TODO: map expo-audio's { status, granted, canAskAgain } to the four statuses.
-    return Promise.reject(new Error('TODO: the microphone permission status'));
+  async status(): Promise<'granted' | 'undetermined' | 'deniedCanAsk' | 'deniedFinal'> {
+    return permissionState(await getRecordingPermissionsAsync());
   }
 
-  request(): Promise<boolean> {
-    // TODO: ask with expo-audio's requestRecordingPermissionsAsync.
-    return Promise.reject(new Error('TODO: ask for the microphone'));
+  // Asks only while the phone can still show its prompt; a refusal it won't ask about again needs the settings.
+  async request(): Promise<boolean> {
+    const now = await getRecordingPermissionsAsync();
+    if (now.granted) return true;
+    if (!now.canAskAgain) return false;
+    const answer = await requestRecordingPermissionsAsync();
+    return answer.granted;
   }
 
   openSettings(): void {
-    // TODO: open the app's page in the phone's settings.
-    throw new Error('TODO: open the phone settings');
+    void Linking.openSettings();
   }
 }
