@@ -12,8 +12,6 @@ namespace ShipLean.Application.Features.IssueIntake.Records;
 // It publishes nothing (ICommentStore's transactional overload doesn't either): the caller publishes the result's Changed after commit.
 public sealed class DbMirroredComments(NpgsqlDataSource dataSource, ICommentStore comments) : IMirroredComments
 {
-    private const string AgentNamePrefix = "GitHub @";
-
     public Task<Guid?> FindByUrlAsync(string htmlUrl, DbTransaction? transaction = null, CancellationToken cancellationToken = default)
         => dataSource.RunAsync(
             (connection, tx) => FindAsync(connection, htmlUrl, tx, cancellationToken),
@@ -35,7 +33,7 @@ public sealed class DbMirroredComments(NpgsqlDataSource dataSource, ICommentStor
             new { comment.GitHubIssueId }, transaction, cancellationToken: cancellationToken))
             ?? throw new InvalidOperationException($"github_issue {comment.GitHubIssueId} does not exist.");
         var added = await comments.AddAsAgentAsync(
-            target.WorkItemId, new CommentCreate(comment.Body), AgentNamePrefix + comment.AuthorLogin, comment.RunAsUserId, transaction, cancellationToken);
+            target.WorkItemId, new CommentCreate(comment.Body), MirroredComment.AgentNamePrefix + comment.AuthorLogin, comment.RunAsUserId, transaction, cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             """
             INSERT INTO github_issue_comment (comment_id, github_issue_id, github_comment_id, html_url, author_login, body, created_at)
