@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Transport;
@@ -89,6 +90,59 @@ public class OrientItemTests : McpFixture
         JsonElement.DeepEquals(item, reply.Structured()).ShouldBeTrue();
         item.GetProperty("tags").EnumerateArray().Select(t => t.GetString()).ShouldBe(["payments"]);
         item.GetProperty("children").GetArrayLength().ShouldBe(2);
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenItemHasDecisionsAndQuestions_ShouldReturnThem()
+    {
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", """{"key":"SHIP-124"}""");
+
+        var item = reply.Structured();
+        item.GetProperty("open_decisions").GetInt32().ShouldBe(4);
+        item.GetProperty("open_questions").GetInt32().ShouldBe(2);
+        var decisions = item.GetProperty("decisions").EnumerateArray().ToList();
+        decisions.Select(d => d.GetProperty("number").GetInt32()).ShouldBe([1, 2, 3, 4]);
+        decisions.ShouldAllBe(d => d.GetProperty("state").GetString() == "open" && d.GetProperty("answer_kind").GetString() == "recommended");
+        decisions[0].GetProperty("question").GetString().ShouldBe("Where does the Apple Pay button sit on the payment step?");
+        decisions[0].GetProperty("answer").GetString().ShouldBe("Above the card form");
+        decisions[0].GetProperty("alternatives").EnumerateArray().Select(a => a.GetString()).ShouldBe(["Below the card form", "In the order summary"]);
+        decisions[0].GetProperty("agent_name").GetString().ShouldBe("Claude Code");
+        decisions[0].GetProperty("history_count").GetInt32().ShouldBe(1);
+        var questions = item.GetProperty("questions").EnumerateArray().ToList();
+        questions.Count.ShouldBe(2);
+        questions[0].GetProperty("asked_by").GetString().ShouldBe("Tom Okafor");
+        questions[0].GetProperty("agent_name").GetString().ShouldBe("Claude Code");
+        questions[0].GetProperty("state").GetString().ShouldBe("open");
+        reply.Texts()[0].ShouldEndWith(" · 2 open questions · 4 decisions going with recommended.");
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenQuestionAnsweredOrWithdrawn_ShouldListBothWithTheAnswerBody()
+    {
+        Guid item;
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithTitle("Asks arrangement").InsertAsync(connection);
+            key = await KeyAsync(connection, item);
+            var comment = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Joel).WithBody("Use **merchant.prod**").InsertAsync(connection);
+            await new QuestionBuilder(item).Number(1).Text("Which merchant account?").Answered(comment, SeedIds.Users.Joel, AskDefaults.Now()).BuildAsync(connection);
+            await new QuestionBuilder(item).Number(2).Text("Dropped question").Withdrawn(SeedIds.Users.Joel, AskDefaults.Now()).BuildAsync(connection);
+            await new DecisionBuilder(item).Number(1).Question("Retries?").State("confirmed").AnsweredBy(SeedIds.Users.Joel, AskDefaults.Now(), "Claude Code (test)").BuildAsync(connection);
+        }
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
+
+        var result = reply.Structured();
+        var questions = result.GetProperty("questions").EnumerateArray().ToList();
+        questions.Select(q => q.GetProperty("state").GetString()).ShouldBe(["answered", "withdrawn"]);
+        questions[0].GetProperty("answer").GetProperty("body").GetString().ShouldBe("Use **merchant.prod**");
+        questions[0].GetProperty("answer").GetProperty("by").GetString().ShouldBe("Joel Dickson");
+        questions[1].GetProperty("withdrawn_at").GetString().ShouldNotBeNullOrEmpty();
+        result.GetProperty("open_questions").GetInt32().ShouldBe(0);
+        result.GetProperty("decisions")[0].GetProperty("state").GetString().ShouldBe("confirmed");
+        result.GetProperty("decisions")[0].GetProperty("answered_agent_name").GetString().ShouldBe("Claude Code (test)");
+        reply.Texts()[0].ShouldEndWith("recent comments.");
     }
 
     [Test]

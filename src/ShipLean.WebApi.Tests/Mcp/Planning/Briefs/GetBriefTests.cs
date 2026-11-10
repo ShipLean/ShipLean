@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Contracts.Attachments;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Plans;
 using ShipLean.WebApi.Features.Mcp.Planning;

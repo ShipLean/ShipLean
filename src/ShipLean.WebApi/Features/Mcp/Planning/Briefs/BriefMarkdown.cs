@@ -3,6 +3,7 @@ using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Plans;
+using ShipLean.Contracts.Asks;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 
@@ -72,6 +73,35 @@ public static class BriefMarkdown
         }
         return text.ToString().TrimEnd();
     }
+
+    // The decisions and questions on the brief's item and its plan parents, so an agent sees what its owner already
+    // settled and what still waits. Withdrawn decisions and questions are left out. Null when no item has any.
+    public static string? Asks(IReadOnlyList<(string Key, ItemAsksDto Asks)> items)
+    {
+        var sections = new List<string>();
+        foreach (var (key, asks) in items)
+        {
+            var lines = new List<string>();
+            lines.AddRange(asks.Decisions.Where(d => d.State != DecisionState.Withdrawn).Select(DecisionLine));
+            lines.AddRange(asks.Questions.Where(q => q.State != QuestionState.Withdrawn).Select(QuestionLine));
+            if (lines.Count > 0)
+            {
+                sections.Add($"### {key}\n\n" + string.Join("\n", lines));
+            }
+        }
+        return sections.Count == 0 ? null : "## Decisions and questions\n\n" + string.Join("\n\n", sections);
+    }
+
+    private static string DecisionLine(DecisionDto d)
+    {
+        var how = d.AnswerKind == AnswerKind.Alternative ? $"alternative {d.AlternativeIndex + 1}" : d.AnswerKind.ToString().ToLowerInvariant();
+        return $"- {d.Label} ({d.State.ToString().ToLowerInvariant()}, {how}): {Line(d.Question)} → {Line(d.CurrentAnswer)}";
+    }
+
+    private static string QuestionLine(QuestionDto q)
+        => q.Answer is { } a
+            ? $"- {q.Label} (answered): {Line(q.Text)} → {Line(a.Body)}"
+            : $"- {q.Label} (open): {Line(q.Text)}";
 
     // A title as one line, for a heading: a line break in it would start a section of its own.
     private static string Line(string text) => text.ReplaceLineEndings(" ");

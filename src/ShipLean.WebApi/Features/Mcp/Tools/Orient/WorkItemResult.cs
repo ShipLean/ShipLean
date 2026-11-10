@@ -31,6 +31,10 @@ public sealed record WorkItemResult(
     [property: JsonPropertyName("comments_older")] string? CommentsOlder,
     [property: JsonPropertyName("attachments")] IReadOnlyList<WorkItemResult.Attachment> Attachments,
     [property: JsonPropertyName("history")] IReadOnlyList<WorkItemResult.HistoryEntry> History,
+    [property: JsonPropertyName("decisions")] IReadOnlyList<WorkItemResult.DecisionView> Decisions,
+    [property: JsonPropertyName("questions")] IReadOnlyList<WorkItemResult.QuestionView> Questions,
+    [property: JsonPropertyName("open_questions")] int OpenQuestions,
+    [property: JsonPropertyName("open_decisions")] int OpenDecisions,
     [property: JsonPropertyName("goal")] string? Goal = null,
     [property: JsonPropertyName("status")] string? Status = null,
     [property: JsonPropertyName("verified")] VerifiedLine? Verified = null,
@@ -86,4 +90,37 @@ public sealed record WorkItemResult(
         [property: JsonPropertyName("field")] string Field,
         [property: JsonPropertyName("from")] string? From,
         [property: JsonPropertyName("to")] string? To);
+
+    // number is the D-number; state, answer_kind and kind are lower-case. answer_alternative is 1-based like the wire of answer_decision.
+    public sealed record DecisionView(
+        [property: JsonPropertyName("number")] int Number,
+        [property: JsonPropertyName("question")] string Question,
+        [property: JsonPropertyName("recommended")] string Recommended,
+        [property: JsonPropertyName("alternatives")] IReadOnlyList<string> Alternatives,
+        [property: JsonPropertyName("answer")] string Answer,
+        [property: JsonPropertyName("answer_kind")] string AnswerKind,
+        [property: JsonPropertyName("state")] string State,
+        [property: JsonPropertyName("raised_by")] string? RaisedBy,
+        [property: JsonPropertyName("agent_name")] string? AgentName,
+        [property: JsonPropertyName("raised_at")] string RaisedAt,
+        [property: JsonPropertyName("answered_by")] string? AnsweredBy,
+        [property: JsonPropertyName("answered_agent_name")] string? AnsweredAgentName,
+        [property: JsonPropertyName("answered_at")] string? AnsweredAt,
+        [property: JsonPropertyName("history_count")] int HistoryCount);
+
+    public sealed record QuestionView(
+        [property: JsonPropertyName("number")] int Number,
+        [property: JsonPropertyName("text")] string Text,
+        [property: JsonPropertyName("state")] string State,
+        [property: JsonPropertyName("asked_by")] string? AskedBy,
+        [property: JsonPropertyName("agent_name")] string? AgentName,
+        [property: JsonPropertyName("asked_at")] string AskedAt,
+        [property: JsonPropertyName("answer")] QuestionAnswer? Answer,
+        [property: JsonPropertyName("withdrawn_at")] string? WithdrawnAt);
+
+    public sealed record QuestionAnswer(
+        [property: JsonPropertyName("body")] string Body,
+        [property: JsonPropertyName("by")] string? By,
+        [property: JsonPropertyName("agent_name")] string? AgentName,
+        [property: JsonPropertyName("at")] string At);
 }

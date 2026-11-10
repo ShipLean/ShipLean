@@ -6,6 +6,7 @@ using ModelContextProtocol.Server;
 using ShipLean.Application.Features.Mcp.Orient;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
@@ -30,6 +31,7 @@ internal sealed class GetWorkItemTool(
     IWorkTreeReads tree,
     OrientReads reads,
     IAgentAddresses addresses,
+    IItemAsks asks,
     TimeProvider clock)
 {
     private const int CommentCount = 5;
@@ -54,6 +56,7 @@ internal sealed class GetWorkItemTool(
             item.Id,
             [.. revisions.Where(r => r.ChangedBy is not null).Select(r => r.ChangedBy!.Value).Concat(isFeature && snapshot.StatusVerifiedBy is { } verifier ? [verifier] : []).Distinct()],
             cancellationToken);
+        var itemAsks = await asks.GetAsync(item.Id, cancellationToken);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
 
         var result = new WorkItemResult(
@@ -86,13 +89,40 @@ internal sealed class GetWorkItemTool(
                 r.AgentName,
                 r.ChangedAt.ToString("O"),
                 [.. r.Changes.Select(c => new WorkItemResult.Change(c.Field, Shown(c.FromLabel, c.From), Shown(c.ToLabel, c.To)))]))],
+            [.. itemAsks.Decisions.Select(d => new WorkItemResult.DecisionView(
+                d.Number, d.Question, d.Recommended, d.Alternatives, d.CurrentAnswer, d.AnswerKind.ToString().ToLowerInvariant(), d.State.ToString().ToLowerInvariant(),
+                d.RaisedBy.Name, d.RaisedAgentName, d.RaisedAt.ToString("O"), d.AnsweredBy?.Name, d.AnsweredAgentName, d.AnsweredAt?.ToString("O"), d.History.Count))],
+            [.. itemAsks.Questions.Select(q => new WorkItemResult.QuestionView(
+                q.Number, q.Text, q.State.ToString().ToLowerInvariant(), q.AskedBy.Name, q.AgentName, q.AskedAt.ToString("O"),
+                q.Answer is { } a ? new WorkItemResult.QuestionAnswer(a.Body, a.By?.Name, a.AgentName, a.At.ToString("O")) : null,
+                q.WithdrawnAt?.ToString("O")))],
+            itemAsks.OpenQuestions,
+            itemAsks.OpenDecisions,
             isFeature ? snapshot.Goal : null,
             isFeature ? snapshot.StatusLine : null,
             isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock) : null,
             isFeature ? snapshot.Slug : null,
             StartedLabel(snapshot));
-        return OrientReply.Of(result, $"{result.Key} {result.Title}: {result.State}, revision {result.Revision}, {result.Children.Count} children, {result.Attachments.Count} attachments, {result.Comments.Count} recent comments.");
+        return OrientReply.Of(result, $"{result.Key} {result.Title}: {result.State}, revision {result.Revision}, {result.Children.Count} children, {result.Attachments.Count} attachments, {result.Comments.Count} recent comments{AsksSuffix(itemAsks)}.");
     }
+
+    // " · 2 open questions · 4 decisions going with recommended": only the parts that are not zero.
+    private static string AsksSuffix(ItemAsksDto asks)
+    {
+        var going = asks.Decisions.Count(d => d.State == DecisionState.Open);
+        var text = string.Empty;
+        if (asks.OpenQuestions > 0)
+        {
+            text += $" · {asks.OpenQuestions} open {Plural(asks.OpenQuestions, "question")}";
+        }
+        if (going > 0)
+        {
+            text += $" · {going} {Plural(going, "decision")} going with recommended";
+        }
+        return text;
+    }
+
+    private static string Plural(int count, string noun) => count == 1 ? noun : noun + "s";
 
     private static (IReadOnlyList<CommentDto> Page, string? Older) CommentPage(IReadOnlyList<CommentDto> all, string? before)
     {
