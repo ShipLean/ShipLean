@@ -152,6 +152,13 @@ class StageTests(unittest.TestCase):
         self._assert_fails_naming(folder)
         self.assertFalse(os.path.exists(self.out))
 
+    def test_fails_on_a_duplicate_caption_number(self):
+        # Mutation caught: drop the 1-to-8-once-each check (eight PNGs, caption 8 missing, stages).
+        folder = os.path.join(self.exports, "ios", "screenshots-6.5")
+        os.rename(os.path.join(folder, CAPTIONS[-1]), os.path.join(folder, "1-setup-models.png"))
+        self._assert_fails_naming(folder)
+        self.assertFalse(os.path.exists(self.out))
+
     def test_fails_on_a_non_png_file(self):
         path = os.path.join(self.exports, "ios", "screenshots-6.3", "notes.txt")
         _write(path, b"not an image")

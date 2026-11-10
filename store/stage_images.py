@@ -67,6 +67,13 @@ def _caption_order(folder):
         if not match:
             raise StageError("name does not start with its caption number: " + os.path.join(folder, name))
         shots.append((int(match.group(1)), match.group(2), os.path.join(folder, name)))
+    numbers = sorted(number for number, _, _ in shots)
+    if numbers != list(range(1, SCREENSHOTS_PER_SET + 1)):
+        raise StageError(
+            "caption numbers must be 1 to {} once each, found {}: {}".format(
+                SCREENSHOTS_PER_SET, numbers, folder
+            )
+        )
     return sorted(shots)
 
 
