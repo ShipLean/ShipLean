@@ -34,7 +34,7 @@ Keep four blocks in the description (plain Markdown):
 1. **Goal** — use the Goal field, not a heading in the description.
 2. **Key facts** — what is known. Record each decision with `record_decisions` on the Feature, not in the body; one nobody has answered stands as recommended.
 3. **Next** — the very next step for whoever picks this up.
-4. **Open questions** — ask each with `ask` on the Feature; the owner answers on the item, and the next session reads the answer with `get_work_item`. Never wait for it.
+4. **Open questions** — ask each with `ask` on the Feature (add up to 6 `options` for a pick-one question); the owner answers on the item, and the next session reads the answer with `get_work_item`. Never wait for it.
 
 A new Feature's description opens with a `## Why` section of four bullets: Problem, Who, We believe and Measure (a measure not yet agreed says "to confirm"). `create_sprint_demo` narrates it.
 

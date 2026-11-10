@@ -74,7 +74,11 @@ const VIEWS: Record<string, ViewIntent> = {
 // Each call is one change (its line worded from TEXT), or, when it names a view, that view with no change.
 const workItemSpec: ScreenVoiceSpec = {
   screen: 'SHIP-906 Voice commands',
-  actions: [],
+  actions: [...Object.keys(TEXT), ...Object.keys(VIEWS)].map((name) => ({
+    name,
+    description: name,
+    args: { type: 'object' },
+  })),
   context: () => ({}),
   hotwords: () => ['SHIP-906', 'Active'],
   toActions: (calls: ParsedCall[]) => {
