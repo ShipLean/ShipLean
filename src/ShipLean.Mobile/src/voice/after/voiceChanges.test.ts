@@ -77,6 +77,26 @@ describe('voiceChanges', () => {
     ]);
   });
 
+  it('a batch with any action gone out, or maybe gone out, is not waiting and has its window', () => {
+    const partly = [
+      sent('m1', 'bm'),
+      aPending({ id: 'm2', batchId: 'bm', origin: 'voice', state: 'queued', createdAt: SENT }),
+    ];
+    const uncertain = [
+      aPending({ id: 'u1', batchId: 'bu', origin: 'voice', state: 'uncertain', createdAt: SENT }),
+    ];
+    const sending = [
+      aPending({ id: 's1', batchId: 'bs', origin: 'voice', state: 'sending', createdAt: SENT }),
+    ];
+    const result = voiceChanges([...partly, ...uncertain, ...sending], 'item-1', [], ME, at(1_000));
+    const until = at(VOICE_ROW_MS).toISOString();
+    expect(result).toEqual([
+      expect.objectContaining({ batchId: 'bm', state: 'sent', undoUntil: until, undoable: true }),
+      expect.objectContaining({ batchId: 'bu', state: 'sent', undoUntil: until, undoable: true }),
+      expect.objectContaining({ batchId: 'bs', state: 'sent', undoUntil: until, undoable: true }),
+    ]);
+  });
+
   it('keeps only the batches on the item, and drops one already undone', () => {
     const other = aPending({
       id: 'o1',

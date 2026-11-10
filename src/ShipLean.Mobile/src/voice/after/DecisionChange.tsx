@@ -1,4 +1,11 @@
-import { changeDecision, getItemAsks, type ChangeDecisionRequest } from '@shiplean/core/api/asks';
+import {
+  asksKeys,
+  changeDecision,
+  getItemAsks,
+  type ChangeDecisionRequest,
+} from '@shiplean/core/api/asks';
+import { commentKeys } from '@shiplean/core/api/commentsApi';
+import { historyKeys } from '@shiplean/core/api/history';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
@@ -38,10 +45,10 @@ export function DecisionChange({ itemId, itemKey, number, onDone }: DecisionChan
   const theme = useTheme();
   const { colors } = theme;
   const queryClient = useQueryClient();
-  const asks = useQuery({
-    queryKey: ['voice-after', 'asks', itemId],
-    queryFn: () => getItemAsks(itemId),
-  });
+  // TODO: read under asksKeys.item(projectId, itemKey) once the conductor's contract fix "projectId on backlog approve
+  // actions" lands; until then this private key doesn't share a cache with the Work item's asks panel.
+  const asksKey = ['voice-after', 'asks', itemId];
+  const asks = useQuery({ queryKey: asksKey, queryFn: () => getItemAsks(itemId) });
   const [choice, setChoice] = useState<Choice | null>(null);
   const [text, setText] = useState('');
   const [sent, setSent] = useState<'no' | 'sending' | 'posted' | 'failed'>('no');
@@ -55,8 +62,15 @@ export function DecisionChange({ itemId, itemKey, number, onDone }: DecisionChan
       return;
     }
     setSent('posted');
-    // Anything read under the item's key (the item, its asks, its history) is out of date now.
-    void queryClient.invalidateQueries({ predicate: (q) => q.queryKey.includes(itemKey) });
+    // The item's history, comments and asks are out of date now, and so is what's waiting on me; anything read
+    // under the item's key (the item and its asks) too.
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: historyKeys.item(itemId) }),
+      queryClient.invalidateQueries({ queryKey: commentKeys.list(itemId) }),
+      queryClient.invalidateQueries({ queryKey: asksKey }),
+      queryClient.invalidateQueries({ queryKey: asksKeys.waiting }),
+      queryClient.invalidateQueries({ predicate: (q) => q.queryKey.includes(itemKey) }),
+    ]);
   };
   const decision = asks.data?.decisions.find((d) => d.number === number);
   const label = `D${number}`;

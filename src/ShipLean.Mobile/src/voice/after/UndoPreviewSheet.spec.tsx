@@ -5,9 +5,11 @@ import { renderWithRunner } from '../../test-support/renderWithRunner';
 import { UndoPreviewSheet } from './UndoPreviewSheet';
 import {
   undoPreviewConfirmId,
+  undoPreviewDoneId,
   undoPreviewFailedId,
   undoPreviewLineId,
   undoPreviewRetryId,
+  undoPreviewUndoneId,
 } from './UndoPreviewSheet.testIds';
 import { undoPartialSheetId, undoPartialStayedId } from './UndoPartialSheet.testIds';
 
@@ -64,6 +66,11 @@ describe('UndoPreviewSheet', () => {
     ]);
     await fireEvent.press(screen.getByTestId(undoPreviewRetryId));
     expect(undo.mock.calls).toEqual([['b1'], ['b1']]);
+    expect(screen.getByTestId(undoPreviewUndoneId)).toHaveTextContent(
+      'Undone · SHIP-906 is as it was',
+    );
+    expect(onClose).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId(undoPreviewDoneId));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

@@ -5,3 +5,6 @@ export const undoPreviewConfirmId = 'voice-undo-preview-confirm';
 // The undo couldn't reach ShipLean: nothing was undone.
 export const undoPreviewFailedId = 'voice-undo-preview-failed';
 export const undoPreviewRetryId = 'voice-undo-preview-retry';
+// Every outcome undone: "Undone", and Done closes the sheet.
+export const undoPreviewUndoneId = 'voice-undo-preview-undone';
+export const undoPreviewDoneId = 'voice-undo-preview-done';

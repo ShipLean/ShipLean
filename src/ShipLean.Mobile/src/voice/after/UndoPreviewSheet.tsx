@@ -11,10 +11,12 @@ import { UndoPartialSheet } from './UndoPartialSheet';
 import {
   undoPreviewCancelId,
   undoPreviewConfirmId,
+  undoPreviewDoneId,
   undoPreviewFailedId,
   undoPreviewLineId,
   undoPreviewRetryId,
   undoPreviewSheetId,
+  undoPreviewUndoneId,
 } from './UndoPreviewSheet.testIds';
 
 export interface UndoPreviewSheetProps {
@@ -26,7 +28,7 @@ export interface UndoPreviewSheetProps {
 }
 
 // Undo after the toast (voice D20): what will be undone, previewed like any change; only Undo here runs it. Every
-// outcome undone closes it; none reached ShipLean leaves Try again; anything else shows what stayed.
+// outcome undone says Undone, with Done; none reached ShipLean leaves Try again; anything else shows what stayed.
 export function UndoPreviewSheet({ batchId, itemKey, items, onClose }: UndoPreviewSheetProps) {
   const theme = useTheme();
   const { colors } = theme;
@@ -38,11 +40,30 @@ export function UndoPreviewSheet({ batchId, itemKey, items, onClose }: UndoPrevi
     setBusy(true);
     const result = await runner.undo(batchId);
     setBusy(false);
-    if (result.every((o) => o.outcome === 'undone')) onClose();
-    else setOutcomes(result);
+    setOutcomes(result);
   };
 
+  const undone = outcomes !== null && outcomes.every((o) => o.outcome === 'undone');
   const failed = outcomes !== null && outcomes.every((o) => o.outcome === 'failed');
+  if (undone)
+    return (
+      <BottomSheet
+        title={UNDO_COPY.undoneHeading}
+        open
+        onClose={onClose}
+        testID={undoPreviewSheetId}
+      >
+        <View style={{ gap: theme.space[3] }}>
+          <Text
+            testID={undoPreviewUndoneId}
+            style={{ color: colors.text, fontSize: theme.font.size.body15 }}
+          >
+            {UNDO_COPY.undone(itemKey)}
+          </Text>
+          <Button testID={undoPreviewDoneId} label="Done" onPress={onClose} />
+        </View>
+      </BottomSheet>
+    );
   if (outcomes !== null && !failed)
     return (
       <UndoPartialSheet

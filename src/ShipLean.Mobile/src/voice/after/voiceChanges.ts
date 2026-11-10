@@ -11,8 +11,8 @@ export interface ItemChange {
   at: string;
 }
 
-// waiting: some of it hasn't reached ShipLean yet (offline, or still sending). sent: all of it went through.
-// refused: ShipLean refused part of it when it was sent; the rest went through.
+// waiting: none of it has gone out yet (every action queued, or still in its undo toast). sent: some or all of it went
+// out, or may have (sent, sending or uncertain). refused: ShipLean refused part of it when it was sent.
 export type VoiceChangeState = 'waiting' | 'sent' | 'refused';
 
 export interface VoiceChange {
@@ -41,8 +41,8 @@ export function historyChanges(history: HistoryDto): ItemChange[] {
 
 function stateOf(items: Pending[]): VoiceChangeState {
   if (items.some((p) => p.state === 'failed')) return 'refused';
-  if (items.every((p) => p.state === 'sent')) return 'sent';
-  return 'waiting';
+  if (items.every((p) => p.state === 'queued' || p.state === 'undo')) return 'waiting';
+  return 'sent';
 }
 
 const isSomeoneElse = (c: ItemChange, meId: string) => c.agentName !== null || c.byId !== meId;

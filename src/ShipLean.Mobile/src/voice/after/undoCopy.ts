@@ -24,9 +24,10 @@ export function whyStayed(kind: string, outcome: Exclude<UndoResult, 'undone'>):
 
 // The decision numbers an action answered, which Change D<n> can change instead of undoing.
 export function decisionNumbers(action: AppAction): number[] {
-  const a = action as AppAction & { numbers?: unknown; number?: unknown };
-  if (a.kind === 'approve' && Array.isArray(a.numbers)) return a.numbers as number[];
-  if (a.kind === 'chooseDecision' && typeof a.number === 'number') return [a.number];
+  if (action.kind === 'approve' && 'numbers' in action && Array.isArray(action.numbers))
+    return action.numbers.filter((n): n is number => typeof n === 'number');
+  if (action.kind === 'chooseDecision' && 'number' in action && typeof action.number === 'number')
+    return [action.number];
   return [];
 }
 

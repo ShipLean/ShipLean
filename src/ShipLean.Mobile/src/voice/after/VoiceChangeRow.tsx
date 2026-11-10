@@ -25,12 +25,15 @@ export function VoiceChangeRow({ itemId, itemKey }: VoiceChangeRowProps) {
   const [, setTick] = useState(0);
   const [previewing, setPreviewing] = useState<VoiceChange | null>(null);
   const pending = runner.pending();
-  // Only a sent batch needs to know who changed the item since; a waiting one makes no request.
+  // Only a batch that went out (or may have) needs to know who changed the item since; a waiting one makes no request.
   const anySent = pending.some(
     (p) =>
       p.origin === 'voice' &&
       p.action.itemId === itemId &&
-      (p.state === 'sent' || p.state === 'failed'),
+      (p.state === 'sent' ||
+        p.state === 'sending' ||
+        p.state === 'uncertain' ||
+        p.state === 'failed'),
   );
   const history = useQuery({
     queryKey: historyKeys.item(itemId),
@@ -72,11 +75,16 @@ export function VoiceChangeRow({ itemId, itemKey }: VoiceChangeRowProps) {
           onUndo={() => {
             // Nothing has gone out: dropping it from the queue undoes it, with no request and nothing to preview.
             if (c.state === 'waiting') void runner.undo(c.batchId);
-            else setPreviewing(c);
+            else {
+              // Read who changed the item again, so a change made since the row loaded is caught before Undo.
+              void history.refetch();
+              setPreviewing(c);
+            }
           }}
         />
       ))}
-      {previewing === null ? null : (
+      {previewing === null ||
+      changes.some((c) => c.batchId === previewing.batchId && c.changedSince) ? null : (
         <UndoPreviewSheet
           batchId={previewing.batchId}
           itemKey={itemKey}

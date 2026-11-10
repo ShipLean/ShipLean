@@ -40,7 +40,7 @@ export function UndoPartialSheet({ items, outcomes, onRetry, onClose }: UndoPart
     return o !== undefined && o !== 'undone';
   });
   const changeable = stayed.flatMap((p) =>
-    outcomeOf.get(p.id) === 'irreversible' && p.action.itemId !== null
+    outcomeOf.get(p.id) === 'irreversible' && p.action.itemId !== null && p.action.key !== null
       ? decisionNumbers(p.action).map((number) => ({ pending: p, number }))
       : [],
   );
@@ -53,10 +53,12 @@ export function UndoPartialSheet({ items, outcomes, onRetry, onClose }: UndoPart
       onClose={onClose}
       testID={undoPartialSheetId}
     >
-      {changing !== null && changing.pending.action.itemId !== null ? (
+      {changing !== null &&
+      changing.pending.action.itemId !== null &&
+      changing.pending.action.key !== null ? (
         <DecisionChange
           itemId={changing.pending.action.itemId}
-          itemKey={changing.pending.action.key ?? ''}
+          itemKey={changing.pending.action.key}
           number={changing.number}
           onDone={onClose}
         />

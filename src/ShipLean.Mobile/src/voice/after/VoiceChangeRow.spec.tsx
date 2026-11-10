@@ -1,6 +1,6 @@
 import type { RevisionDto } from '@shiplean/core/api/workItems';
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import type { AppAction, Executor } from '../../actions/types';
+import type { AppAction, Executor, PendingState } from '../../actions/types';
 import { aPending, fakeRunner } from '../../test-support/actions';
 import { aMe } from '../../test-support/builders';
 import { fakeApi } from '../../test-support/fakeApi';
@@ -15,9 +15,11 @@ import {
   voiceChangeWaitingId,
 } from './VoiceChangeRow.testIds';
 import {
+  undoPreviewCancelId,
   undoPreviewConfirmId,
   undoPreviewLineId,
   undoPreviewSheetId,
+  undoPreviewUndoneId,
 } from './UndoPreviewSheet.testIds';
 
 const NOW = new Date('2030-01-01T09:00:00.000Z');
@@ -38,10 +40,10 @@ function runnerWith(items: ReturnType<typeof aPending>[]) {
   return runner;
 }
 
-const voice = (id: string, state: 'sent' | 'queued', kind = 'setState') =>
+const voice = (id: string, state: PendingState, kind = 'setState', batchId = 'b1') =>
   aPending({
     id,
-    batchId: 'b1',
+    batchId,
     origin: 'voice',
     state,
     createdAt: SENT,
@@ -96,6 +98,27 @@ describe('VoiceChangeRow', () => {
 
     await fireEvent.press(screen.getByTestId(undoPreviewConfirmId));
     expect(runner.undone).toEqual(['b1']);
+    expect(screen.getByTestId(undoPreviewUndoneId)).toHaveTextContent(
+      'Undone · SHIP-906 is as it was',
+    );
+  });
+
+  it('a batch partly sent, or uncertain, is not Waiting to send and its Undo opens the preview', async () => {
+    serverWith([aRevision({})]);
+    const runner = runnerWith([
+      voice('m1', 'sent', 'setState', 'b-partly'),
+      voice('m2', 'queued', 'addNote', 'b-partly'),
+      voice('u1', 'uncertain', 'setState', 'b-uncertain'),
+    ]);
+    await renderWithRunner(<VoiceChangeRow itemId="item-1" itemKey="SHIP-906" />, { runner });
+
+    for (const batchId of ['b-partly', 'b-uncertain']) {
+      await fireEvent.press(await screen.findByTestId(voiceChangeUndoId(batchId)));
+      expect(screen.queryByTestId(voiceChangeWaitingId(batchId))).toBeNull();
+      expect(screen.getByTestId(undoPreviewSheetId)).toBeOnTheScreen();
+      expect(runner.undone).toEqual([]);
+      await fireEvent.press(screen.getByTestId(undoPreviewCancelId));
+    }
   });
 
   it('a queued voice batch shows Waiting to send and Undo removes it without a request', async () => {
