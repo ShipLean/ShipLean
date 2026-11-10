@@ -59,7 +59,10 @@ public class AskInboxSourceTests
         decision.Ask.AtLabel.ShouldBe(DisplayDate.Relative(raisedAt, _clock));
         decision.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         decision.Ask.AgentName.ShouldBe("Claude Code");
-        decision.Ask.Decision.ShouldBe(new InboxDecisionDto(1, "Which store?", "Postgres", ["Redis", "Files"]));
+        decision.Ask.Decision!.Number.ShouldBe(1);
+        decision.Ask.Decision.Question.ShouldBe("Which store?");
+        decision.Ask.Decision.Recommended.ShouldBe("Postgres");
+        decision.Ask.Decision.Alternatives.ShouldBe(["Redis", "Files"]);
         decision.Ask.Question.ShouldBeNull();
         var question = rows.Single(r => r.Ask.Kind == InboxAskKind.Question);
         question.Ask.Label.ShouldBe("Q1");
