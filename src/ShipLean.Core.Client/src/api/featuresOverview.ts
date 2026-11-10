@@ -82,7 +82,7 @@ export interface FeatureDigestDto {
 }
 
 export const featuresKeys = {
-  root: (projectId: string) => ['features', projectId] as const,
+  root: (projectId: string) => ['projects', projectId, 'features'] as const,
   overview: (projectId: string) => [...featuresKeys.root(projectId), 'overview'] as const,
   digest: (projectId: string, cursor: string | null) =>
     [...featuresKeys.root(projectId), 'digest', cursor] as const,

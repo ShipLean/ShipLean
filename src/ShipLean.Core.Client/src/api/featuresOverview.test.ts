@@ -104,8 +104,9 @@ describe('featuresOverview', () => {
 
   it('featuresKeys share one root so a seen invalidates the overview and the digest', () => {
     const root = featuresKeys.root('p');
-    expect(featuresKeys.overview('p').slice(0, 2)).toEqual(root);
-    expect(featuresKeys.digest('p', null).slice(0, 2)).toEqual(root);
+    expect(root).toEqual(['projects', 'p', 'features']);
+    expect(featuresKeys.overview('p').slice(0, 3)).toEqual(root);
+    expect(featuresKeys.digest('p', null).slice(0, 3)).toEqual(root);
     expect(featuresKeys.digest('p', 'c')).not.toEqual(featuresKeys.digest('p', null));
   });
 });
