@@ -471,12 +471,11 @@ public static class SeedIds
     }
 
     // Tom's Inbox (db/seed/0013_inbox.sql). The features are properties, not fields: they name existing work items again.
+    // StaleFeature (SHIP-103) is Tom's, with its status line verified 5 days before the start of today, so it is stale in his Inbox.
     // FreshFeature (SHIP-104) is Tom's, with its status line verified at the start of today, so it is never in the Inbox. The two
     // mentions are Priya's comments on SHIP-124 naming @Tom Okafor: one open, one seen.
     public static class Inbox
     {
-        // TODO: the seed does not yet make SHIP-103 Tom's or stale (verified 5 days ago): BoardViewFeaturesApiTests pins its assignee as
-        // null, and the conductor decides which item takes this role.
         public static Guid StaleFeature => WorkItems.Ship103;
         public static Guid FreshFeature => WorkItems.Ship104;
         public static readonly Guid OpenMention = new("0000000c-0000-4000-8001-000000000001");

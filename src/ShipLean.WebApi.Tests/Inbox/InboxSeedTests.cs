@@ -17,7 +17,6 @@ public class InboxSeedTests
     [OneTimeTearDown]
     public async Task TearDown() => await _database.DisposeAsync();
 
-    // SHIP-1093: red until the seed makes SeedIds.Inbox.StaleFeature Tom's and stale (see the TODO on SeedIds.Inbox).
     [Test]
     public async Task Seed_WhenLoaded_ShouldGiveTomTheInboxSeed()
     {

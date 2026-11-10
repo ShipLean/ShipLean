@@ -51,7 +51,7 @@ public class BoardViewFeaturesApiTests : ApiFixture
         var reporting = board.Cards().Single(c => c.Key == "SHIP-103");
         reporting.Rollups.ShouldContain(r => r.Type == WorkItemTypeId.Feature && r.Open == 1 && r.Closed == 0);
         reporting.Rollups.ShouldNotContain(r => r.Type == WorkItemTypeId.Task);
-        reporting.Assignee.ShouldBeNull();
+        reporting.Assignee!.Id.ShouldBe(SeedIds.Users.Tom);
     }
 
     [Test]
