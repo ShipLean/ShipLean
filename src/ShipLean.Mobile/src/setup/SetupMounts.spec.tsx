@@ -1,0 +1,40 @@
+import { screen } from '@testing-library/react-native';
+import { renderApp } from '../test-support/renderApp';
+import { renderScreen } from '../test-support/renderScreen';
+import { TabRootBar } from '../ui/TabRootBar';
+import { primitiveIds } from '../ui/testIds';
+import { projectRowId } from '../screens/projects/testIds';
+import { downloadBannerIds } from '../voice/DownloadBanner.testIds';
+
+const mockMounted = jest.fn();
+const mockGate = {
+  useGate: () => {
+    const { useEffect } = jest.requireActual<typeof import('react')>('react');
+    useEffect(() => {
+      mockMounted();
+    }, []);
+  },
+};
+jest.mock('./setupGate', () => ({
+  // Counts component instances that call the hook, so a call per row would show up.
+  useSetupGate: () => mockGate.useGate(),
+}));
+
+describe('setup mounts', () => {
+  it('renders voice-download-banner under the tab root bar', async () => {
+    await renderScreen(
+      <TabRootBar projectKey="SHIP" title="Inbox" onTilePress={() => undefined} />,
+    );
+
+    expect(screen.getByTestId(primitiveIds.tabRootBar)).toBeOnTheScreen();
+    expect(screen.getByTestId(downloadBannerIds.root)).toBeOnTheScreen();
+  });
+
+  it('Projects calls useSetupGate once when it renders', async () => {
+    await renderApp();
+    await screen.findByTestId(projectRowId('SHIP'));
+    expect(screen.getByTestId(projectRowId('OPS'))).toBeOnTheScreen();
+
+    expect(mockMounted).toHaveBeenCalledTimes(1);
+  });
+});
