@@ -29,8 +29,8 @@ const NOTHING_YET = 'No agent has picked it up yet.';
 export function nextLine(next: AnsweredNextDto | null): string {
   if (next === null) return NOTHING_YET;
   if (next.kind === 'agentPickedUp')
-    return `${next.agentName ?? next.by?.name ?? 'An agent'} picked it up · ${next.atLabel}`;
-  return `${next.by?.name ?? 'Someone'} replied · ${next.atLabel}`;
+    return `${next.agentName ?? ''} picked it up · ${next.atLabel}`;
+  return `${next.by?.name ?? ''} replied · ${next.atLabel}`;
 }
 
 // Answers the runner still holds, newest first. Those in their undo window are on the Waiting row, and a sent one is
@@ -47,7 +47,7 @@ export const shownPending = (pending: PendingAnswer[]): PendingAnswer[] =>
 
 function pendingStatus(p: PendingAnswer): string {
   if (p.state === 'queued') return 'Sends when you’re online';
-  if (p.state === 'failed') return p.error ?? 'Didn’t send';
+  if (p.state === 'failed') return p.error === null ? 'Didn’t send' : `Didn’t send · ${p.error}`;
   return 'Sending…';
 }
 
@@ -64,7 +64,7 @@ export function AnsweredList({ projectId }: AnsweredListProps) {
   const rows = answered.data?.rows ?? [];
 
   const body = () => {
-    if (answered.data === undefined && shown.length === 0)
+    if (answered.data === undefined)
       return answered.isError ? (
         <ErrorState
           title="Couldn't load your answers."
@@ -108,21 +108,54 @@ export function AnsweredList({ projectId }: AnsweredListProps) {
     </Text>
   );
 
-  const serverRow = (row: AnsweredRowDto) => (
-    <Pressable
-      key={row.itemId}
-      testID={answeredRowId(row.key)}
-      accessibilityRole="button"
-      onPress={() => router.push(links.item(projectKey, row.key))}
-      style={rowStyle}
-    >
-      {title(`${row.key} ${row.title}`)}
-      <Text style={{ color: colors.text, fontSize: theme.font.size.sm }}>
-        {`${row.summary} · ${row.answeredAtLabel}`}
-      </Text>
-      {line(nextLine(row.next), answeredNextId(row.key))}
-    </Pressable>
-  );
+  const serverRow = (row: AnsweredRowDto) => {
+    const happened = row.next !== null;
+    return (
+      <Pressable
+        key={`${row.itemId}:${row.kind}:${row.answeredAt}`}
+        testID={answeredRowId(row.key)}
+        accessibilityRole="button"
+        onPress={() => router.push(links.item(projectKey, row.key))}
+        style={rowStyle}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[2] }}>
+          <Text
+            style={{
+              color: colors.muted,
+              fontSize: theme.font.size.sm,
+              textTransform: 'capitalize',
+            }}
+          >
+            {row.type}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>{row.key}</Text>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              color: colors.text,
+              fontSize: theme.font.size.sm,
+              fontWeight: theme.font.weight.semibold,
+            }}
+          >
+            {row.title}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
+            {row.answeredAtLabel}
+          </Text>
+        </View>
+        <Text style={{ color: colors.text, fontSize: theme.font.size.md }}>{row.summary}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[2] }}>
+          <Text
+            style={{ color: happened ? colors.ok : colors.muted, fontSize: theme.font.size.sm }}
+          >
+            {happened ? '✓' : '◷'}
+          </Text>
+          {line(nextLine(row.next), answeredNextId(row.key), happened ? colors.ok : colors.muted)}
+        </View>
+      </Pressable>
+    );
+  };
 
   const pendingRow = (p: PendingAnswer) => (
     <View key={p.id} testID={answeredPendingId(p.id)} style={rowStyle}>

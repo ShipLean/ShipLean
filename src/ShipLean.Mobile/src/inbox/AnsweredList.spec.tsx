@@ -1,5 +1,5 @@
 import type { AnsweredNextDto } from '@shiplean/core/api/inbox';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { aPending } from '../test-support/actions';
 import { aProject } from '../test-support/builders';
 import { apiError } from '../test-support/fakeApi';
@@ -118,7 +118,7 @@ describe.each<Scheme>(['light', 'dark'])('AnsweredList (%s)', (scheme) => {
     ]);
     await openAnswered({ answered: anAnswered({ rows: [] }), actions }, scheme);
     expect(await screen.findByTestId(answeredPendingStatusId('p1'))).toHaveTextContent(
-      'The server is down.',
+      'Didn’t send · The server is down.',
     );
     await fireEvent.press(screen.getByTestId(answeredRetryId('p1')));
     expect(actions.retried).toEqual(['p1']);
@@ -129,7 +129,7 @@ describe.each<Scheme>(['light', 'dark'])('AnsweredList (%s)', (scheme) => {
       pendingAnswer('p1', 'failed', { error: 'Someone changed it first.', retryable: false }),
     ]);
     await openAnswered({ answered: anAnswered({ rows: [] }), actions }, scheme);
-    expect(await screen.findByText('Someone changed it first.')).toBeTruthy();
+    expect(await screen.findByText('Didn’t send · Someone changed it first.')).toBeTruthy();
     expect(screen.queryByTestId(answeredRetryId('p1'))).toBeNull();
   });
 
@@ -163,6 +163,16 @@ describe.each<Scheme>(['light', 'dark'])('AnsweredList (%s)', (scheme) => {
     expect(api.callsTo(ANSWERED_ROUTE)).toHaveLength(3);
   });
 
+  it('shows the error under pending answers when the first load fails', async () => {
+    const api = inboxApi({}, { inbox: anInbox({ projectId: project.id }) });
+    api.failNext(ANSWERED_ROUTE, apiError(500, 'server_error'));
+    api.failNext(ANSWERED_ROUTE, apiError(500, 'server_error'));
+    const actions = fakeInboxActions([pendingAnswer('p1', 'queued')]);
+    await openAnswered({ api, actions }, scheme);
+    expect(await screen.findByTestId(answeredPendingId('p1'))).toBeTruthy();
+    expect(await screen.findByTestId(uiIds.errorState)).toBeTruthy();
+  });
+
   it('refetches on pull down', async () => {
     const api = inboxApi({}, { inbox: anInbox({ projectId: project.id }) });
     await openAnswered({ api, actions: fakeInboxActions() }, scheme);
@@ -182,6 +192,7 @@ describe.each<Scheme>(['light', 'dark'])('AnsweredList (%s)', (scheme) => {
     await renderApp({ url: '/p/SHIP/inbox', api, scheme });
     await fireEvent.press(await screen.findByTestId(optionId(inboxIds.segment, 'answered')));
     await fireEvent.press(await screen.findByTestId(answeredRowId('SHIP-743')));
-    expect(await screen.findByTestId(screenIds.workItem)).toBeOnTheScreen();
+    const opened = await screen.findByTestId(screenIds.workItem);
+    expect(within(opened).getByTestId(uiIds.topBarTitle)).toHaveTextContent('SHIP-743');
   });
 });
