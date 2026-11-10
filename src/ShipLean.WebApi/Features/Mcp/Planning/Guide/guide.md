@@ -170,7 +170,7 @@ After applying the plan, give every Story a rough estimate in story points, foll
 
 The conductor reads the Feature with `get_brief` (the Feature's key) for its waves and the first startable one, and `plan_status` for the whole picture. A wave can start when every Story of the wave before it is Completed or Removed, so every Story must be closed (Step 7, item 7).
 
-Keep the Feature's one-line status current with `set_status`: when a wave starts, when it closes, and when the run ends.
+Keep the Feature's one-line status current with `set_status`: when a wave starts, when it closes, and when the run ends. `set_status` also takes an optional `health` (`onTrack`, `atRisk`, `blocked`): set it explicitly at the end of a session; a status that says blocked doesn't set it.
 
 ## Step 6: Run the tasks
 
