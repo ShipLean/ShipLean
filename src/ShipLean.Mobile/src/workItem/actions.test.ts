@@ -34,6 +34,7 @@ const everyKind: { [K in WorkItemAction['kind']]: Extract<WorkItemAction, { kind
 
 describe('WorkItemAction', () => {
   it('every kind is a workItem AppAction', () => {
+    // The typecheck is the real check (the mapped type and expectTypeOf); the runtime loop only reads back `base`.
     expectTypeOf<WorkItemAction>().toExtend<AppAction>();
     const actions: AppAction[] = Object.values(everyKind);
     expect(actions).toHaveLength(9);

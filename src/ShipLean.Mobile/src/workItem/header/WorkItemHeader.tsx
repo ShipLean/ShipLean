@@ -8,5 +8,5 @@ export interface WorkItemHeaderProps {
   projectKey: string;
 }
 
-// TODO: the header from the design (key, title, state, assignee, health).
+// TODO: the header from the design (key, title, state, assignee, health); server labels only (no client dates); goal and status line render word for word.
 export const WorkItemHeader: FC<WorkItemHeaderProps> = () => <View testID={workItemHeaderId} />;

@@ -7,5 +7,5 @@ export interface GoalDetailsProps {
   item: WorkItemDto;
 }
 
-// TODO: the goal and status line from the design.
+// TODO: the goal and status line from the design; server labels only (no client dates); goal and status line render word for word.
 export const GoalDetails: FC<GoalDetailsProps> = () => <View testID={goalDetailsId} />;

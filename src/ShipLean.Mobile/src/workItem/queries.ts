@@ -67,13 +67,13 @@ export function useMembersQuery(projectId: string) {
   });
 }
 
-// Everything the Work item screen reads for one item: the item and its asks (both under its by-key key), comments,
+// Everything the Work item screen reads for one item: every by-key read of the project (so a parent Feature's rollups refresh too) and the asks under it, comments,
 // history, children and the Feature boards.
 export function useInvalidateWorkItem() {
   const client = useQueryClient();
   return async (projectId: string, itemKey: string, itemId: string): Promise<void> => {
     await Promise.all([
-      client.invalidateQueries({ queryKey: workItemKeys.byKey(projectId, itemKey) }),
+      client.invalidateQueries({ queryKey: workItemKeys.item(projectId) }),
       client.invalidateQueries({ queryKey: commentKeys.list(itemId) }),
       client.invalidateQueries({ queryKey: historyKeys.item(itemId) }),
       client.invalidateQueries({ queryKey: workItemKeys.children(itemId) }),

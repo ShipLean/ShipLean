@@ -14,10 +14,18 @@ const REVERSIBLE: Record<WorkItemAction['kind'], boolean> = {
   confirmStatus: false,
 };
 
-// TODO: the real executor sends each kind through @shiplean/core and adds undo and reconcile.
+// TODO: the real executor replaces this stub. send per kind: setState/assign/setHealth patchItem(itemId, revision, changes);
+// setStatus setStatusLine(itemId, revision, text); confirmStatus confirmStatus(itemId, revision); addNote addComment(itemId,
+// body), resolving { createdId: comment.id }; approve confirmDecisions; discuss discussDecision; reply answerQuestion.
+// undo: addNote archiveComment(receipt.createdId), and a null receipt is a failed outcome, never a guess;
+// setState/assign/setHealth patch the from* value back; setStatus patches statusLine `from` back (null clears it).
+// The send moved the revision, so undo reads the current revision first instead of reusing a.revision. approve,
+// discuss, reply and confirmStatus have no undo. reconcile: an uncertain send re-reads the item or its asks; a 409 is
+// read with conflictOf(error).current, never retried blind. describe uses words copied exactly (stateName, name, body)
+// and no client-made dates.
 export const workItemExecutor: Executor<WorkItemAction> = {
   area: 'workItem',
-  send() {
+  async send() {
     throw new Error('The Work item executor does not send yet.');
   },
   describe(a): PreviewLine {

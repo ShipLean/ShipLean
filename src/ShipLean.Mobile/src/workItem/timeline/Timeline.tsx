@@ -7,5 +7,5 @@ export interface TimelineProps {
   item: WorkItemDto;
 }
 
-// TODO: the notes and history timeline from the design.
+// TODO: notes and history from the design, newest first as the web orders them. Dates are the server's *Label fields, never a client-formatted Date. Note bodies render word for word.
 export const Timeline: FC<TimelineProps> = () => <View testID={timelineId} />;

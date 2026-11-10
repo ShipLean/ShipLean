@@ -9,7 +9,7 @@ export interface ChangeStateSheetProps {
   onClose: () => void;
 }
 
-// TODO: the change-state sheet from the design.
+// TODO: the change-state sheet from the design. Dispatch setState/assign/addNote via useWorkItemActions with item.revision and the from* values; no mutation hook.
 export const ChangeStateSheet: FC<ChangeStateSheetProps> = () => (
   <View testID={changeStateSheetId} />
 );

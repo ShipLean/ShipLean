@@ -8,5 +8,5 @@ export interface ItemActionsRowProps {
   projectKey: string;
 }
 
-// TODO: the action row from the design (state, assign, note).
+// TODO: the action row from the design (state, assign, note). Dispatch setState/assign/addNote via useWorkItemActions with item.revision and the from* values; no mutation hook.
 export const ItemActionsRow: FC<ItemActionsRowProps> = () => <View testID={itemActionsRowId} />;

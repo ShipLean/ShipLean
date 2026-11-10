@@ -8,5 +8,5 @@ export interface NeedsYouSectionProps {
   projectKey: string;
 }
 
-// TODO: the asks section from the design (decisions and questions).
+// TODO: the asks section from the design (decisions and questions). Approve, Discuss and Reply dispatch approve/discuss/reply through useWorkItemActions, never a core write. Labels and dates are the server's. Copy after posting: 'Posted on SHIP-n; the next agent to pick it up reads it'. It never promises a notification.
 export const NeedsYouSection: FC<NeedsYouSectionProps> = () => <View testID={needsYouSectionId} />;

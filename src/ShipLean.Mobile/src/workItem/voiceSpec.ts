@@ -11,7 +11,7 @@ export interface WorkItemVoiceContext {
   members: MemberDto[];
 }
 
-// TODO: the Work item voice actions and their resolution replace this stub.
+// TODO: the Work item voice actions and their resolution replace this stub. A note's body is copyNoteSpan of the transcript, word for word; states and members resolve from ctx.
 export function workItemVoiceSpec(ctx: WorkItemVoiceContext): ScreenVoiceSpec<WorkItemAction> {
   return {
     screen: 'workItem',
