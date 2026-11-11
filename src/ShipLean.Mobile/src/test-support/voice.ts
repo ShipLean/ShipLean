@@ -101,6 +101,25 @@ export class FakeRecognizer implements SpeechRecognizer {
     return this.inUse;
   }
 
+  // The level watchers a test has open; emitLevel and failWatch drive them.
+  readonly watchers = new Set<{ onLevel(l: number): void; onFailed(): void }>();
+
+  watchLevel(onLevel: (level: number) => void, onFailed: () => void): () => void {
+    const watcher = { onLevel, onFailed };
+    this.watchers.add(watcher);
+    return () => {
+      this.watchers.delete(watcher);
+    };
+  }
+
+  emitLevel(level: number): void {
+    for (const w of [...this.watchers]) w.onLevel(level);
+  }
+
+  failWatch(): void {
+    for (const w of [...this.watchers]) w.onFailed();
+  }
+
   async start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession> {
     this.starts.push(opts);
     const { partials, final, levels, frames } = this.next;

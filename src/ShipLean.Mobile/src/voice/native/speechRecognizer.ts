@@ -23,6 +23,7 @@ import { resample, TARGET_RATE } from '../speech/resample';
 import { speechPresent } from '../speech/speechPresent';
 import { toWords } from '../speech/words';
 import { openMicStream } from './micStream';
+import type { MicStream } from './micStream';
 import type { ModelFiles } from './ports';
 
 // Parakeet's tokens file in the manifest. The model directory is the one it lands in.
@@ -73,6 +74,10 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
   private engine: SttEngine | null = null;
   private loading: Promise<SttEngine> | null = null;
   private inUse: AudioInput | null = null;
+  // The level-only stream: one for every watcher, closed while a session runs.
+  private readonly watchers = new Set<{ onLevel(l: number): void; onFailed(): void }>();
+  private levelStream: { stream: MicStream; listener: { remove(): void } } | null = null;
+  private sessions = 0;
 
   // Without deps (the wave 0 wiring in native/index.ts) the recognizer is never ready.
   constructor(private readonly deps?: SpeechRecognizerDeps) {
@@ -93,7 +98,75 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
     return this.inUse;
   }
 
+  watchLevel(onLevel: (level: number) => void, onFailed: () => void): () => void {
+    const watcher = { onLevel, onFailed };
+    this.watchers.add(watcher);
+    this.syncLevelStream();
+    return () => {
+      this.watchers.delete(watcher);
+      this.syncLevelStream();
+    };
+  }
+
+  // Opens the level stream when someone watches and no session runs, and closes it otherwise.
+  private syncLevelStream(): void {
+    const wanted = this.watchers.size > 0 && this.sessions === 0;
+    if (!wanted) {
+      this.closeLevelStream();
+      return;
+    }
+    if (this.levelStream !== null) return;
+    const deps = this.deps;
+    if (deps === undefined) {
+      for (const w of [...this.watchers]) w.onFailed();
+      return;
+    }
+    const input = resolveInput(deps.tuning.pickedInput(), deps.inputs.list());
+    const stream = openMicStream({ sampleRate: TARGET_RATE, inputId: input.id });
+    const listener = stream.onBuffer((samples, sampleRate, channels) => {
+      const l = level(resample(samples, sampleRate, channels));
+      for (const w of [...this.watchers]) w.onLevel(l);
+    });
+    const opened = { stream, listener };
+    this.levelStream = opened;
+    stream.start().catch(() => {
+      if (this.levelStream !== opened) return;
+      this.closeLevelStream();
+      for (const w of [...this.watchers]) w.onFailed();
+    });
+  }
+
+  private closeLevelStream(): void {
+    const open = this.levelStream;
+    if (open === null) return;
+    this.levelStream = null;
+    open.listener.remove();
+    open.stream.stop();
+  }
+
   async start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession> {
+    // A session owns the mic: the level stream pauses until it ends or fails to start.
+    this.sessions++;
+    this.syncLevelStream();
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      this.sessions--;
+      this.syncLevelStream();
+    };
+    try {
+      return await this.startSession(opts, release);
+    } catch (error) {
+      release();
+      throw error;
+    }
+  }
+
+  private async startSession(
+    opts: { hotwords: string[]; decodeAlways?: boolean },
+    release: () => void,
+  ): Promise<RecognitionSession> {
     const engine = await this.load();
     await this.useHotwords(engine, opts.hotwords);
     const deps = this.deps;
@@ -101,6 +174,7 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
     const input = resolveInput(deps.tuning.pickedInput(), deps.inputs.list());
     return startSession(engine, {
       input,
+      onEnd: release,
       line: () => activeLine(deps.tuning.tuning(input.id)),
       decodeAlways: opts.decodeAlways === true,
       routed: (id) => {
@@ -209,6 +283,8 @@ interface SessionOptions {
   input: AudioInput;
   line(): number | undefined;
   decodeAlways: boolean;
+  // Called once when the session's stream ends (stop, cancel, the hold cap or a failed start).
+  onEnd(): void;
   // Called after the stream starts with the input the OS routed to, or null when it doesn't say.
   routed(id: string | null): void;
 }
@@ -243,6 +319,7 @@ async function startSession(engine: SttEngine, opts: SessionOptions): Promise<Re
     ended = true;
     listener.remove();
     stream.stop();
+    opts.onEnd();
   };
   try {
     await stream.start();

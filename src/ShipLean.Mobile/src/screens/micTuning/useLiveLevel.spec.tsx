@@ -11,48 +11,44 @@ jest.mock('expo-router', () => ({
 }));
 
 describe('useLiveLevel', () => {
-  it('returns the level of a session while active, and cancels it on unmount', async () => {
+  it('returns the level of the watched stream while active, and stops watching on unmount', async () => {
     const { recognizer } = installFakeEngines();
-    recognizer.script([], '', [0.25, 0.5]);
 
     const hook = await renderHook(() => useLiveLevel(true));
-    await act(async () => {});
+    expect(recognizer.watchers.size).toBe(1);
+    await act(async () => recognizer.emitLevel(0.5));
 
     expect(hook.result.current).toEqual({ level: 0.5, failed: false });
-    expect(recognizer.starts).toHaveLength(1);
+    expect(recognizer.starts).toEqual([]);
 
     await hook.unmount();
-    expect(recognizer.cancelled).toBe(1);
+    expect(recognizer.watchers.size).toBe(0);
   });
 
-  it('starts nothing while inactive', async () => {
+  it('watches nothing while inactive', async () => {
     const { recognizer } = installFakeEngines();
 
     const hook = await renderHook(() => useLiveLevel(false));
     await act(async () => {});
 
     expect(hook.result.current).toEqual({ level: 0, failed: false });
-    expect(recognizer.starts).toEqual([]);
+    expect(recognizer.watchers.size).toBe(0);
   });
 
-  it('is failed when start rejects, and clears when active turns on again', async () => {
+  it('is failed when the stream fails, and clears when active turns on again', async () => {
     const { recognizer } = installFakeEngines();
-    const start = jest.spyOn(recognizer, 'start').mockRejectedValueOnce(new Error('no model'));
 
     const hook = await renderHook<ReturnType<typeof useLiveLevel>, { on: boolean }>(
       ({ on }) => useLiveLevel(on),
-      {
-        initialProps: { on: true },
-      },
+      { initialProps: { on: true } },
     );
-    await act(async () => {});
+    await act(async () => recognizer.failWatch());
     expect(hook.result.current.failed).toBe(true);
 
     await hook.rerender({ on: false });
     expect(hook.result.current.failed).toBe(false);
-    start.mockRestore();
+    expect(recognizer.watchers.size).toBe(0);
     await hook.rerender({ on: true });
-    await act(async () => {});
     expect(hook.result.current.failed).toBe(false);
   });
 });
