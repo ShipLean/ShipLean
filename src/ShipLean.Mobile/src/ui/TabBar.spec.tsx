@@ -3,7 +3,7 @@ import { Text } from 'react-native';
 import { renderScreen } from '../test-support/renderScreen';
 import { themes } from '../theme';
 import { TabBar, type TabBarTab } from './TabBar';
-import { primitiveIds, tabBadgeId, tabId } from './testIds';
+import { primitiveIds, tabBadgeId, tabIconId, tabId } from './testIds';
 
 const tabs = (inboxBadge?: number): TabBarTab[] => [
   { id: 'inbox', label: 'Inbox', badge: inboxBadge },
@@ -21,6 +21,24 @@ describe.each(['light', 'dark'] as const)('TabBar (%s)', (scheme) => {
     for (const id of ['inbox', 'backlog', 'features', 'retro']) {
       expect(screen.getByTestId(tabId(id))).toHaveStyle({ minHeight: 44 });
     }
+  });
+
+  it("draws each tab's icon over its label, in the accent colour on the active tab", async () => {
+    await renderScreen(<TabBar tabs={tabs()} active="backlog" onPress={() => {}} center={null} />, {
+      scheme,
+    });
+
+    for (const id of ['inbox', 'backlog', 'features', 'retro']) {
+      expect(screen.getByTestId(tabIconId(id))).toBeOnTheScreen();
+    }
+    expect(screen.getByTestId(tabIconId('backlog'))).toHaveProp(
+      'stroke',
+      themes[scheme].colors.accent,
+    );
+    expect(screen.getByTestId(tabIconId('inbox'))).toHaveProp(
+      'stroke',
+      themes[scheme].colors.muted,
+    );
   });
 
   it('hides a 0 badge', async () => {

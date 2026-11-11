@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { links } from '../links';
 import { fakeVoice, renderWithVoice, type FakeVoice } from '../test-support/voiceUi';
 import { micLabelId, micSlotId, micStrikeId, type MicPlacement } from './MicSlot.testIds';
+import { themes } from '../theme';
 import { MicSlot } from './MicSlot';
 import { micPermissionSheetId } from './sheets/MicPermissionSheet.testIds';
 import type { VoiceUiState } from './internals';
@@ -29,6 +30,28 @@ async function mount(state: VoiceUiState, placement: MicPlacement = 'tabBar'): P
 const idle: VoiceUiState = { kind: 'idle', permission: 'granted' };
 
 describe('MicSlot', () => {
+  it('in the tab bar is the accent circle, red while listening and grey when voice cannot run', async () => {
+    const { colors } = themes.light;
+    const voice = await mount(idle);
+    expect(screen.getByTestId(micSlotId('tabBar'))).toHaveStyle({
+      backgroundColor: colors.accent,
+      borderColor: colors.surface,
+    });
+
+    await act(async () =>
+      voice.set({ kind: 'listening', partial: '', screen: 'backlog', hotwords: [] }),
+    );
+    expect(screen.getByTestId(micSlotId('tabBar'))).toHaveStyle({ backgroundColor: colors.danger });
+
+    await act(async () =>
+      voice.set({ kind: 'disabled', reason: 'downloading', permission: 'granted' }),
+    );
+    expect(screen.getByTestId(micSlotId('tabBar'))).toHaveStyle({
+      backgroundColor: colors.surface2,
+    });
+    expect(screen.getByTestId(micLabelId('tabBar'))).toHaveTextContent('Downloading');
+  });
+
   it('press in starts and release ends a hold', async () => {
     const voice = await mount(idle);
     expect(screen.getByTestId(micLabelId('tabBar'))).toHaveTextContent('Hold to talk');

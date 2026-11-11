@@ -41,6 +41,7 @@ export const primitiveIds = {
 // TabBar: the same ids as the shell's simple tabs, so swapping TabBar in keeps the shell specs green.
 export const tabId = (id: string) => `tab-${id}`;
 export const tabBadgeId = (id: string) => `tab-${id}-badge`;
+export const tabIconId = (id: string) => `tab-${id}-icon`;
 // Segmented: one id per option, and its count.
 export const optionId = (testID: string, value: string) => `${testID}-option-${value}`;
 export const optionCountId = (testID: string, value: string) => `${optionId(testID, value)}-count`;
