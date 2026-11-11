@@ -299,7 +299,7 @@ describe('VoiceProvider', () => {
 
     const lines: PreviewLine[] = [{ id: 'l1', icon: 'flag', text: 'State', removable: true }];
     await act(async () => runner.emitConflict('batch-7', lines));
-    expect(onConflict).toHaveBeenCalledWith(internals(), 'batch-7', lines);
+    expect(onConflict).toHaveBeenCalledWith(internals(), 'batch-7', lines, expect.any(Set));
 
     // Apply sends batch-1. A conflict part is the conflict flow's, and another origin's batch isn't ours.
     await act(async () => internals().set({ ...preview, fixing: false }));

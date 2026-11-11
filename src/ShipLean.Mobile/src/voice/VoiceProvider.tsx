@@ -380,11 +380,18 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     return self;
   }, [store, e, runner]);
 
-  // A 409 on a voice batch rebuilds its preview.
-  useEffect(
-    () => runner.subscribeConflicts((batchId, lines) => onConflict(internals, batchId, lines)),
-    [runner, internals],
-  );
+  // A 409 on a voice batch rebuilds its preview. A rebuild still waiting for the screen to read the item again is
+  // cancelled with the provider, so no timer or spec watcher outlives it.
+  useEffect(() => {
+    const waits = new Set<() => void>();
+    const stop = runner.subscribeConflicts((batchId, lines) =>
+      onConflict(internals, batchId, lines, waits),
+    );
+    return () => {
+      stop();
+      for (const cancel of [...waits]) cancel();
+    };
+  }, [runner, internals]);
 
   // A batch this provider sent with a refused or unconfirmed part goes to onApplyFailed, once. Otherwise applying
   // ends once nothing of the batch is still sending; the runner's toast offers Undo from there.
