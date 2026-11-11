@@ -78,7 +78,8 @@
         {
           "url": "https://sentry.io/",
           "organization": "hosted-solutions",
-          "project": "shiplean"
+          "project": "shiplean",
+          "useNativeInit": true
         }
       ]
     ],
@@ -93,8 +94,7 @@
       },
       "eas": {
         "projectId": "856debd2-f67c-42e9-adf2-32de70375531"
-      },
-      "sentryDsn": "https://7d6a2b3f40d7d70714d4cf3694a41f51@o4512410817789952.ingest.us.sentry.io/4512410938310656"
+      }
     }
   }
 }
