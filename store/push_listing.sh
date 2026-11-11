@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Push or verify a store listing with fastlane (contract C5). This is the only place fastlane
-# is called, and the only place its flags live. Run from the repo root:
+# Push or verify a store listing, or submit the newest build for review, with fastlane (contract
+# C5). This is the only place fastlane is called, and the only place its flags live. Run from the
+# repo root:
 #
-#   store/push_listing.sh <ios|android> <push|verify>
+#   store/push_listing.sh <ios|android> <push|verify|submit>
 #
 # Environment:
 #   ASC_KEY_PATH   App Store Connect API key JSON (ios), from store/write_keys.py
@@ -16,7 +17,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: store/push_listing.sh <ios|android> <push|verify>" >&2
+  echo "usage: store/push_listing.sh <ios|android> <push|verify|submit>" >&2
   exit 2
 }
 
@@ -41,10 +42,46 @@ require_staged() {
 platform=$1
 mode=$2
 case "$platform" in ios | android) ;; *) usage ;; esac
-case "$mode" in push | verify) ;; *) usage ;; esac
+case "$mode" in push | verify | submit) ;; *) usage ;; esac
 
 export BUNDLE_GEMFILE=store/Gemfile
 app_id=app.shiplean.mobile
+
+# submit: send the newest build for store review (the Store submit workflow). The listing is
+# not pushed again here; Mobile release pushes it.
+if [ "$mode" = submit ]; then
+  if [ "$platform" = ios ]; then
+    require_key_file ASC_KEY_PATH
+    # submit_build attaches the newest processed build ("latest", waiting while it processes) to
+    # the editable App Store version and submits it. The skips keep it from touching the listing.
+    # Export compliance needs no answer here: app.json sets ITSAppUsesNonExemptEncryption false.
+    bundle exec fastlane deliver submit_build \
+      --api_key_path "$ASC_KEY_PATH" \
+      --app_identifier "$app_id" \
+      --build_number latest \
+      --skip_metadata true \
+      --skip_screenshots true \
+      --skip_binary_upload true \
+      --force true \
+      --run_precheck_before_submit false
+  else
+    require_key_file PLAY_KEY_PATH
+    # Promotes the internal track's rolled-out release (what internal testers have) to production
+    # as a full release, which sends it to Google's review. No binary, listing or release notes.
+    bundle exec fastlane supply \
+      --json_key "$PLAY_KEY_PATH" \
+      --package_name "$app_id" \
+      --track internal \
+      --track_promote_to production \
+      --skip_upload_aab true \
+      --skip_upload_apk true \
+      --skip_upload_metadata true \
+      --skip_upload_changelogs true \
+      --skip_upload_images true \
+      --skip_upload_screenshots true
+  fi
+  exit 0
+fi
 
 if [ "$platform" = ios ]; then
   require_key_file ASC_KEY_PATH

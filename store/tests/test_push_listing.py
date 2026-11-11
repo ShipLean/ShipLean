@@ -156,6 +156,39 @@ class PushListingTests(unittest.TestCase):
             "--validate_only", "true",
         ])
 
+    # Mutation caught: drop --skip_metadata or --skip_screenshots (the submit would push the listing).
+    def test_ios_submit_sends_the_newest_build_only(self):
+        result = self.run_script("ios", "submit", ASC_KEY_PATH=self.asc_key)
+
+        self.assert_fastlane(result, "deliver", [
+            "submit_build",
+            "--api_key_path", self.asc_key,
+            "--app_identifier", "app.shiplean.mobile",
+            "--build_number", "latest",
+            "--skip_metadata", "true",
+            "--skip_screenshots", "true",
+            "--skip_binary_upload", "true",
+            "--force", "true",
+            "--run_precheck_before_submit", "false",
+        ])
+
+    # Mutation caught: --track_promote_to beta, or drop a --skip_upload_* (the submit would upload).
+    def test_android_submit_promotes_internal_to_production(self):
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key)
+
+        self.assert_fastlane(result, "supply", [
+            "--json_key", self.play_key,
+            "--package_name", "app.shiplean.mobile",
+            "--track", "internal",
+            "--track_promote_to", "production",
+            "--skip_upload_aab", "true",
+            "--skip_upload_apk", "true",
+            "--skip_upload_metadata", "true",
+            "--skip_upload_changelogs", "true",
+            "--skip_upload_images", "true",
+            "--skip_upload_screenshots", "true",
+        ])
+
     # Mutation caught: skip the key (or STAGED) check.
     def test_missing_key_names_the_variable(self):
         missing_file = os.path.join(self._tmp.name, "no-such-key.json")
@@ -171,6 +204,10 @@ class PushListingTests(unittest.TestCase):
             ("ios", "push", "STAGED", ""),
             ("android", "push", "STAGED", ""),
             ("android", "verify", "STAGED", ""),
+            ("ios", "submit", "ASC_KEY_PATH", ""),
+            ("ios", "submit", "ASC_KEY_PATH", missing_file),
+            ("android", "submit", "PLAY_KEY_PATH", ""),
+            ("android", "submit", "PLAY_KEY_PATH", missing_file),
         ]
         for platform, mode, name, value in cases:
             with self.subTest(platform=platform, mode=mode, name=name, value=value):
@@ -184,7 +221,8 @@ class PushListingTests(unittest.TestCase):
 
     # Mutation caught: append `|| true` to the fastlane call.
     def test_fastlane_failure_exit_code_passes_through(self):
-        for platform, mode in (("ios", "push"), ("ios", "verify"), ("android", "push"), ("android", "verify")):
+        for platform, mode in (("ios", "push"), ("ios", "verify"), ("android", "push"), ("android", "verify"),
+                               ("ios", "submit"), ("android", "submit")):
             with self.subTest(platform=platform, mode=mode):
                 result = self.run_script(platform, mode, FAKE_BUNDLE_EXIT="3", **self.keys())
 
@@ -196,7 +234,7 @@ class PushListingTests(unittest.TestCase):
                 result = self.run_script(*args, **self.keys())
 
                 self.assertEqual(result.returncode, 2)
-                self.assertIn("usage: store/push_listing.sh <ios|android> <push|verify>", result.stderr)
+                self.assertIn("usage: store/push_listing.sh <ios|android> <push|verify|submit>", result.stderr)
                 self.assertFalse(os.path.exists(self.log), "fastlane ran")
 
 

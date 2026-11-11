@@ -1,0 +1,98 @@
+name: Store submit
+
+# Sends the newest phone app build to store review, so nobody signs in to App Store Connect or
+# Play Console to do it. Run by hand, from main only, after Mobile release has built and
+# uploaded the build you want (store/README.md, "Submitting for review").
+#   Google Play: promotes the internal track's rolled-out release (what internal testers have)
+#                to production as a full release, which goes to Google's review and is published
+#                when approved (unless Managed publishing is on in Play Console).
+#   App Store:   attaches the newest processed TestFlight build to the editable version (the one
+#                on Prepare for Submission) and submits it for review. The release after approval
+#                follows the version's release setting; Mobile release's listing push sets it to
+#                manual.
+# Neither job pushes the listing. Both use store/push_listing.sh <platform> submit.
+#
+# Needs the same secrets as Mobile release's listing jobs: GOOGLE_PLAY_SERVICE_ACCOUNT_JSON, and
+# ASC_API_KEY_ID, ASC_API_KEY_ISSUER_ID, ASC_API_KEY_P8; STORE_IOS_RUNNER (variable) as there.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Store to submit to
+        type: choice
+        options: [all, ios, android]
+        default: all
+
+concurrency:
+  group: store-submit
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  main-only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse any branch but main
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::Run Store submit from main (this run is on $REF)."
+            exit 1
+          fi
+
+  submit-android:
+    needs: main-only
+    if: ${{ inputs.platform != 'ios' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+        env:
+          PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_JSON" ]; then
+            echo "::error::Add the GOOGLE_PLAY_SERVICE_ACCOUNT_JSON repository secret first."
+            exit 1
+          fi
+      - uses: ./.github/actions/store-listing-setup
+        id: setup
+        with:
+          play_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      - name: Promote the internal release to production
+        env:
+          PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
+        run: store/push_listing.sh android submit
+
+  submit-ios:
+    needs: main-only
+    if: ${{ inputs.platform != 'android' }}
+    runs-on: ${{ vars.STORE_IOS_RUNNER || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the App Store Connect secrets
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(ASC_API_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(ASC_API_KEY_ISSUER_ID)
+          [ -n "$ASC_KEY_P8" ] || missing+=(ASC_API_KEY_P8)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Add the missing repository secret(s) first: ${missing[*]}"
+            exit 1
+          fi
+      - uses: ./.github/actions/store-listing-setup
+        id: setup
+        with:
+          asc_key_id: ${{ secrets.ASC_API_KEY_ID }}
+          asc_issuer_id: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
+          asc_key_p8: ${{ secrets.ASC_API_KEY_P8 }}
+      - name: Submit the newest build for App Store review
+        env:
+          ASC_KEY_PATH: ${{ steps.setup.outputs.asc_key_path }}
+        run: store/push_listing.sh ios submit
