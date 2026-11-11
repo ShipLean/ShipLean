@@ -96,6 +96,11 @@ sleep 10; gh run watch -R ShipLean/ShipLean --exit-status $(gh run list -R ShipL
 ```
 
 - It promotes the **rolled-out internal release**, so [put the build in testers' hands](#put-a-new-build-in-testers-hands) first and let that run finish.
+- **The first time:** until its first review Play calls the app a *draft app* and takes only draft releases outside internal testing. Add `-f play_release_status=draft`, then send that release for review in Play Console › Publishing overview. Every later run can leave it at the default, `completed`.
+
+```bash
+gh workflow run store-submit.yml -R ShipLean/ShipLean --ref main -f platform=android -f play_track=alpha -f play_release_status=draft
+```
 - The tester list (email list or Google Group) and countries are set once in Play Console under Closed testing – Alpha › Testers.
 - Each Google account counts once: `name+tag@gmail.com` addresses are the same account.
 
@@ -146,7 +151,7 @@ gh run rerun -R ShipLean/ShipLean --failed <run-id>
 |---|---|
 | `Add the … repository secret first` | A secret is missing. They are org secrets (`EXPO_TOKEN`, `ASC_API_KEY_*`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`) shared with this repo. |
 | `Google Api Error: … Package not found` | Play can't see the app: the service account isn't invited to it in Play Console, or no build was ever uploaded by hand. |
-| `Only releases with status draft may be created on draft app` | Play still treats the app as unpublished. Set `releaseStatus` to `draft` in `src/ShipLean.Mobile/eas.json` until it's published, and roll each release out by hand in Play Console meanwhile. |
+| `Only releases with status draft may be created on draft app` | Play still calls the app a draft app (never reviewed). For Store submit, run it with `-f play_release_status=draft` and send the release for review in Play Console › Publishing overview. If Mobile release's internal upload says it, set `releaseStatus` to `draft` in `src/ShipLean.Mobile/eas.json` until the first review. |
 | `Track 'internal' doesn't have any releases` | Store submit found nothing rolled out to internal testers: run a build first. |
 | Play or Apple names a missing declaration | Something only a person can set in the console is missing (App Privacy, Data safety, content rating, target audience, the reviewer login). The list is in [Set by hand](../store/README.md#set-by-hand). |
 | `eas build exited with …` | A build or submission failed on EAS. The Build step's log and expo.dev say why; the files that did build are still saved on the run. |
