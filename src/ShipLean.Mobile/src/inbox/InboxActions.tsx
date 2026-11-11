@@ -58,29 +58,48 @@ export function InboxActionsProvider({ children }: { children: ReactNode }) {
 // When every part of a batch has been sent, the project's Inbox and Answered are refreshed once. A batch already sent
 // when first seen (kept from before a restart) refreshes nothing: the queries load fresh then. Each sent part's work item
 // reads its asks again too, so a Work item's Needs you is not left stale by an answer from the Inbox.
+// A part refused with a conflict (a status line or ask that moved on since it was read) reads the same again, once per
+// refusal, tap or voice, so the Inbox (and a voice preview waiting on it) holds the item at its new revision. A refusal
+// already there when the provider first renders (kept from before a restart) refreshes nothing.
 function useInvalidateOnSent(pending: InboxPending[]) {
   const invalidate = useInvalidateInbox();
   const client = useQueryClient();
   const seen = useRef(new Map<string, boolean>());
+  // The ids of the parts already handled as refused with a conflict; null until the first render.
+  const refused = useRef<Set<string> | null>(null);
   useEffect(() => {
+    const read = (parts: InboxPending[]) => {
+      for (const projectId of new Set(parts.map((p) => p.action.projectId)))
+        void invalidate(projectId);
+      for (const p of parts)
+        void client.invalidateQueries({
+          queryKey: asksKeys.item(p.action.projectId, p.action.key),
+        });
+    };
     const batches = new Map<string, InboxPending[]>();
     for (const p of pending) batches.set(p.batchId, [...(batches.get(p.batchId) ?? []), p]);
     for (const [batchId, parts] of batches) {
       const sent = parts.every((p) => p.state === 'sent');
       const before = seen.current.get(batchId);
       seen.current.set(batchId, sent);
-      if (sent && before === false) {
-        for (const projectId of new Set(parts.map((p) => p.action.projectId)))
-          void invalidate(projectId);
-        for (const p of parts)
-          void client.invalidateQueries({
-            queryKey: asksKeys.item(p.action.projectId, p.action.key),
-          });
-      }
+      if (sent && before === false) read(parts);
     }
     // Forget batches the runner no longer holds.
     for (const batchId of seen.current.keys())
       if (!batches.has(batchId)) seen.current.delete(batchId);
+
+    const conflicts = pending.filter((p) => p.state === 'failed' && p.failure === 'conflict');
+    if (refused.current === null) {
+      refused.current = new Set(conflicts.map((p) => p.id));
+      return;
+    }
+    const known = refused.current;
+    const fresh = conflicts.filter((p) => !known.has(p.id));
+    for (const p of fresh) known.add(p.id);
+    if (fresh.length > 0) read(fresh);
+    // Forget refusals no longer held, so a part refused, retried and refused again reads again.
+    const now = new Set(conflicts.map((p) => p.id));
+    for (const id of [...known]) if (!now.has(id)) known.delete(id);
   }, [pending, invalidate, client]);
 }
 

@@ -188,6 +188,44 @@ describe('InboxActions', () => {
     expect(screen.queryClient.getQueryState(other)?.isInvalidated).toBe(false);
   });
 
+  it("invalidates Inbox, Answered and the item's asks once when a part is refused with a conflict", async () => {
+    const stillTrue: InboxAction = { ...at, kind: 'stillTrue', revision: 3 };
+    const screen = await render(stillTrue);
+    const inboxKey = inboxKeys.inbox(at.projectId);
+    const answeredKey = inboxKeys.answered(at.projectId);
+    const asks = asksKeys.item(at.projectId, at.key);
+    const otherKey = inboxKeys.inbox('project-2');
+    const fill = () => {
+      for (const key of [inboxKey, answeredKey, asks, otherKey])
+        screen.queryClient.setQueryData(key, {});
+    };
+    const invalidated = () =>
+      [inboxKey, answeredKey, asks, otherKey].map(
+        (key) => screen.queryClient.getQueryState(key)?.isInvalidated,
+      );
+    fill();
+    await fireEvent.press(screen.getByTestId('dispatch'));
+    const refused = (failure: 'conflict' | 'server') =>
+      partsOf(screen.runner, ['failed']).map((p) => ({
+        ...p,
+        failure,
+        error: 'Someone changed it.',
+      }));
+
+    await setPending(screen.runner, partsOf(screen.runner, ['undo']));
+    await setPending(screen.runner, refused('server'));
+    expect(invalidated()).toEqual([false, false, false, false]);
+
+    await setPending(screen.runner, partsOf(screen.runner, ['sending']));
+    await setPending(screen.runner, refused('conflict'));
+    expect(invalidated()).toEqual([true, true, true, false]);
+
+    // The same refusal on a later render is not read again.
+    fill();
+    await setPending(screen.runner, refused('conflict'));
+    expect(invalidated()).toEqual([false, false, false, false]);
+  });
+
   describe('the executor it registers', () => {
     const api = {} as Api;
     const item = anInboxItem({ id: 'item-1', key: 'SHIP-907' });

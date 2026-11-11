@@ -35,6 +35,7 @@ import { micSlotId } from '../MicSlot.testIds';
 import {
   applyFailedGroupId,
   applyFailedHeadingId,
+  applyFailedReasonId,
   applyFailedSheetId,
 } from '../sheets/ApplyFailedSheet.testIds';
 import { heardQuoteId, heardQuoteLabelId } from '../sheets/HeardQuote.testIds';
@@ -170,7 +171,12 @@ beforeEach(() => {
     if (k.startsWith('shiplean.outbox') || k.startsWith('shiplean.voice.')) kvValues.delete(k);
   setConnected(true);
 });
-afterEach(() => jest.useRealTimers());
+afterEach(async () => {
+  await act(async () => {
+    await jest.runOnlyPendingTimersAsync();
+  });
+  jest.useRealTimers();
+});
 
 describe('VoiceApplyJourney', () => {
   it('holds on SHIP-906, removes the note line, applies, and sends only the state change and D10', async () => {
@@ -191,6 +197,8 @@ describe('VoiceApplyJourney', () => {
       },
     ]);
     expect(api.callsTo(CONFIRM)[0].body).toEqual({ numbers: [10] });
+    // Let any late send land before checking the removed note never went.
+    await advance(1000);
     expect(api.callsTo(COMMENT)).toHaveLength(0);
   });
 
@@ -214,6 +222,8 @@ describe('VoiceApplyJourney', () => {
     const sheet = await screen.findByTestId(undoPartialSheetId);
     // The approval stayed: Change D10 is offered instead.
     expect(within(sheet).getByTestId(undoPartialChangeId(10))).toBeOnTheScreen();
+    expect(within(sheet).getAllByTestId(/^voice-undo-partial-stayed-/)).toHaveLength(1);
+    expect(within(sheet).getAllByTestId(/^voice-undo-partial-undone-/)).toHaveLength(1);
     expect(screen.queryByTestId(undoneToastId)).toBeNull();
     // The approval has no reverse: nothing more was sent.
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
@@ -275,7 +285,8 @@ describe('VoiceApplyJourney', () => {
       'Some changes stayed applied',
     );
     expect(within(sheet).getByTestId(applyFailedGroupId('stillApplied'))).toBeOnTheScreen();
-    expect(within(sheet).queryByText(/Nothing changed/)).toBeNull();
+    expect(within(sheet).getByTestId(applyFailedReasonId)).toHaveTextContent(/^Partly applied/);
+    expect(within(sheet).queryByTestId(applyFailedGroupId('reversed'))).toBeNull();
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
     expect(api.callsTo(PATCH)).toHaveLength(1);
   });
@@ -291,6 +302,8 @@ describe('VoiceApplyJourney', () => {
     expect(within(sheet).getByTestId(applyFailedHeadingId)).toHaveTextContent(
       'Nothing was changed',
     );
+    expect(within(sheet).getByTestId(applyFailedGroupId('notSent'))).toBeOnTheScreen();
+    expect(within(sheet).getByTestId(applyFailedReasonId)).toHaveTextContent(/^Nothing changed/);
     expect(within(sheet).queryByTestId(applyFailedGroupId('stillApplied'))).toBeNull();
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
     expect(api.callsTo(PATCH)).toHaveLength(0);
@@ -308,6 +321,7 @@ describe('VoiceApplyJourney', () => {
     expect(patchBodies(api)).toHaveLength(1);
     // "yes" never went to the model.
     expect(engines.model.parsed).toHaveLength(1);
+    expect(engines.model.parsed[0].transcript.text).toContain('approve D10');
     expect(screen.queryByTestId(previewSheetId)).toBeNull();
   });
 
@@ -380,9 +394,11 @@ describe('VoiceApplyJourney', () => {
     await waitFor(() => expect(api.callsTo(CONFIRM)).toHaveLength(1));
     expect(api.callsTo(CONFIRM)[0].body).toEqual({ numbers: [10] });
     // A typed batch never shows as Your voice change.
+    await advance(1000);
     const rowIds = screen
       .queryAllByTestId(new RegExp(`^${voiceChangeId('')}`))
       .map((e) => e.props.testID as string);
     expect(rowIds).toEqual([voiceChangeRowId]);
+    expect(screen.queryAllByTestId(/^voice-change-(?!row$)/)).toHaveLength(0);
   });
 });
