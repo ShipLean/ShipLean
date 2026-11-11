@@ -120,12 +120,15 @@ export const RETRO_ACTIONS: VoiceActionSpec[] = [
     description: 'Rename or merge themes by hand.',
     args: { properties: {} },
     webOnly: 'Renaming and merging themes by hand: the web Insights',
+    webPage: { page: 'retroInsights' },
   },
   {
     name: 'archive_point',
     description: 'Archive a point.',
     args: { properties: {} },
     webOnly: 'Archiving a point: the web retro board',
+    // The sprint on screen: CorrectionFailure reads its id from the context.
+    webPage: { page: 'sprintRetro' },
   },
 ];
 
@@ -413,6 +416,7 @@ export function retroVoiceSpec(ctx: RetroVoiceContext): ScreenVoiceSpec<RetroAct
       states: [],
       key: touched?.workItem?.key ?? null,
       sprint: ctx.sprint?.name ?? null,
+      sprintId: ctx.sprint?.id ?? null,
       category: ctx.category === null ? null : CATEGORY_LABELS[ctx.category],
       points: ctx.points.map((p) => ({
         text: p.text,

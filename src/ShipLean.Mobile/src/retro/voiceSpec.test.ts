@@ -443,7 +443,24 @@ describe('retro voice spec', () => {
   });
 
   it('refuses the web-only actions and returns hotwords and the screen keys', () => {
-    expect(failed(run(context(), 'Rename the theme', [['rename_theme', {}]])).kind).toBe('webOnly');
+    expect(failed(run(context(), 'Rename the theme', [['rename_theme', {}]]))).toEqual({
+      kind: 'webOnly',
+      detail: {
+        action: 'rename_theme',
+        where: 'Renaming and merging themes by hand: the web Insights',
+        page: { page: 'retroInsights' },
+      },
+    });
+    expect(failed(run(context(), 'Archive that', [['archive_point', {}]]))).toEqual({
+      kind: 'webOnly',
+      detail: {
+        action: 'archive_point',
+        where: 'Archiving a point: the web retro board',
+        page: { page: 'sprintRetro' },
+      },
+    });
+    // The sprint on screen is in the context, for the sheet that opens its retro board.
+    expect(retroVoiceSpec(context()).context().sprintId).toBe(context().sprint?.id);
     const spec = retroVoiceSpec(context({ lastTouchedId: byText('Profile').id }));
     expect(spec.hotwords()).toEqual(
       expect.arrayContaining([

@@ -152,6 +152,7 @@ const TAB_ACTIONS: VoiceActionSpec[] = [
     description: 'Create a Feature.',
     args: { properties: {} },
     webOnly: 'New Features: the web Backlog, or say it on the Backlog tab',
+    webPage: { page: 'backlog', level: 'features' },
   },
 ];
 

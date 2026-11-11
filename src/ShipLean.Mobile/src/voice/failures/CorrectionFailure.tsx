@@ -266,6 +266,8 @@ function webTarget(
   const origin = platform().apiOrigin();
   if (page?.page === 'backlog' && page.level === undefined && context.level !== null)
     return webPageUrl(origin, projectKey, { page: 'backlog', level: context.level });
+  if (page?.page === 'sprintRetro' && page.sprintId === undefined && context.sprintId !== null)
+    return webPageUrl(origin, projectKey, { page: 'sprintRetro', sprintId: context.sprintId });
   if (page !== undefined) return webPageUrl(origin, projectKey, page);
   return context.focusKey === null ? null : webUrl(origin, projectKey, context.focusKey);
 }

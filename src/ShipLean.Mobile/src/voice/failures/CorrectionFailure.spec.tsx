@@ -57,6 +57,12 @@ function specWith(context: Record<string, unknown>): ScreenVoiceSpec {
   };
 }
 
+const retroBoard = {
+  action: 'archive_point',
+  where: 'The web retro board',
+  page: { page: 'sprintRetro' },
+} as const;
+
 const HEARD = 'Set the onboarding story to Active';
 
 async function show(
@@ -239,6 +245,44 @@ describe('CorrectionFailure', () => {
     expect(openBrowserAsync).toHaveBeenCalledWith(
       `${platform().apiOrigin()}/p/SHIP/backlogs/features`,
     );
+  });
+
+  it('webOnly with the retro Insights page opens it on the web', async () => {
+    await show(
+      {
+        kind: 'webOnly',
+        detail: {
+          action: 'rename_theme',
+          where: 'The web Insights',
+          page: { page: 'retroInsights' },
+        },
+      },
+      { spec: specWith({ key: null }), projectKey: 'SHIP', heard: 'Rename the theme' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/retros/insights`,
+    );
+  });
+
+  it("webOnly with a sprint retro page opens the screen's sprint retro board", async () => {
+    await show(
+      { kind: 'webOnly', detail: retroBoard },
+      { spec: specWith({ key: null, sprintId: 's-25' }), projectKey: 'SHIP', heard: 'Archive it' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/sprints/s-25/retro`,
+    );
+  });
+
+  it('webOnly with a sprint retro page and no sprint on screen opens the retro search', async () => {
+    await show(
+      { kind: 'webOnly', detail: retroBoard },
+      { spec: specWith({ key: null }), projectKey: 'SHIP', heard: 'Archive it' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(`${platform().apiOrigin()}/p/SHIP/retros`);
   });
 
   it('passes the unmatched span to HeardQuote and says nothing was changed', async () => {

@@ -90,4 +90,17 @@ describe('webPageUrl', () => {
       'https://shiplean.example/p/SHIP/backlogs/stories?mode=planning',
     );
   });
+
+  it('gives the retro Insights page, a sprint retro board, and the retro search when no sprint is known', () => {
+    const origin = 'https://shiplean.example';
+    expect(webPageUrl(origin, 'SHIP', { page: 'retroInsights' })).toBe(
+      'https://shiplean.example/p/SHIP/retros/insights',
+    );
+    expect(webPageUrl(origin, 'SHIP', { page: 'sprintRetro', sprintId: 's-25' })).toBe(
+      'https://shiplean.example/p/SHIP/sprints/s-25/retro',
+    );
+    expect(webPageUrl(origin, 'SHIP', { page: 'sprintRetro' })).toBe(
+      'https://shiplean.example/p/SHIP/retros',
+    );
+  });
 });

@@ -24,6 +24,8 @@ export interface SpecContext {
   focusKey: string | null;
   // The backlog level the screen shows, when it shows one, for the web Backlog at the same level.
   level: BacklogLevelParam | null;
+  // The sprint the screen is on, when it is on one, for that sprint's web retro board.
+  sprintId: string | null;
 }
 
 export function readSpecContext(spec: ScreenVoiceSpec | null): SpecContext {
@@ -33,5 +35,6 @@ export function readSpecContext(spec: ScreenVoiceSpec | null): SpecContext {
     states: Array.isArray(context.states) ? context.states.filter(isString) : [],
     focusKey: isString(context.key) ? context.key : null,
     level: isBacklogLevel(context.level) ? context.level : null,
+    sprintId: isString(context.sprintId) ? context.sprintId : null,
   };
 }

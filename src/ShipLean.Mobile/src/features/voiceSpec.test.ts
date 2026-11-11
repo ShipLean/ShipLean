@@ -500,7 +500,14 @@ describe('features voice spec', () => {
       kind: 'webOnly',
       detail: { action: 'move_tasks', where: 'Tasks move on the web task board' },
     });
-    expect(failed(run(spec(), 'Create a Feature', [['create_feature', {}]])).kind).toBe('webOnly');
+    expect(failed(run(spec(), 'Create a Feature', [['create_feature', {}]]))).toEqual({
+      kind: 'webOnly',
+      detail: {
+        action: 'create_feature',
+        where: 'New Features: the web Backlog, or say it on the Backlog tab',
+        page: { page: 'backlog', level: 'features' },
+      },
+    });
   });
 
   it('fails with unclear when there are no calls', () => {

@@ -7,9 +7,13 @@ import { openBrowserAsync } from 'expo-web-browser';
 import { dockIds } from '../../dock/testIds';
 import { backlogRowId } from '../../backlog/testIds';
 import { inboxRowId } from '../../inbox/testIds';
+import { retroTileId } from '../../retro/testIds';
+import { screenIds } from '../../screens/testIds';
 import { readyCoachMarkIds } from '../../setup/ReadyCoachMark.testIds';
 import { aProject } from '../../test-support/builders';
 import { backlogApi, designFeatures } from '../../test-support/backlog';
+import { designOverview, featuresApi } from '../../test-support/features';
+import { designRetro, retroApi } from '../../test-support/retro';
 import { controlledApi } from '../../test-support/controlledApi';
 import type { ApiTable } from '../../test-support/fakeApi';
 import { inboxApi } from '../../test-support/inbox';
@@ -296,6 +300,71 @@ describe('VoiceFailuresJourney', () => {
     }
     expect(openBrowserAsync).toHaveBeenCalledTimes(2);
     expect(api.callsTo(BULK)).toHaveLength(0);
+  });
+
+  it('opens the web Features backlog for New Features, with no item focused', async () => {
+    const { model, recognizer } = installFakeEngines();
+    await renderApp({
+      url: '/p/SHIP/features',
+      api: featuresApi({}, { projectId: PROJECT, overview: designOverview() }),
+    });
+    await screen.findByTestId(screenIds.features);
+    await skipCoachMark();
+    jest.mocked(openBrowserAsync).mockClear();
+
+    recognizer.script([], 'create a feature');
+    model.respond([{ action: 'create_feature', args: {} }]);
+    await hold('tabBar');
+
+    expect(await screen.findByTestId(correctionFailureDetailId)).toHaveTextContent(
+      'New Features: the web Backlog, or say it on the Backlog tab',
+    );
+    const open = screen.getByTestId(correctionFailureOpenWebId);
+    expect(open).toBeEnabled();
+    await fireEvent.press(open);
+    expect(openBrowserAsync).toHaveBeenCalledTimes(1);
+    expect(openBrowserAsync).toHaveBeenLastCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/backlogs/features`,
+    );
+  });
+
+  it("opens the web Insights and the sprint's retro board for the Retro web-only actions", async () => {
+    const { model, recognizer } = installFakeEngines();
+    const retro = designRetro();
+    await renderApp({
+      url: '/p/SHIP/retro',
+      api: retroApi(signedInApi(), { projectId: PROJECT, retro }),
+    });
+    await screen.findByTestId(retroTileId('wentBadly'));
+    await skipCoachMark();
+    jest.mocked(openBrowserAsync).mockClear();
+
+    const steps = [
+      {
+        said: 'rename the theme',
+        action: 'rename_theme',
+        where: 'Renaming and merging themes by hand: the web Insights',
+        page: '/p/SHIP/retros/insights',
+      },
+      {
+        said: 'archive that point',
+        action: 'archive_point',
+        where: 'Archiving a point: the web retro board',
+        page: `/p/SHIP/sprints/${retro.sprint.id}/retro`,
+      },
+    ];
+    for (const step of steps) {
+      recognizer.script([], step.said);
+      model.respond([{ action: step.action, args: {} }]);
+      await hold('tabBar');
+
+      expect(await screen.findByTestId(correctionFailureDetailId)).toHaveTextContent(step.where);
+      const open = screen.getByTestId(correctionFailureOpenWebId);
+      expect(open).toBeEnabled();
+      await fireEvent.press(open);
+      expect(openBrowserAsync).toHaveBeenLastCalledWith(`${platform().apiOrigin()}${step.page}`);
+    }
+    expect(openBrowserAsync).toHaveBeenCalledTimes(2);
   });
 
   it('strikes out the web-only part and applies the rest', async () => {
