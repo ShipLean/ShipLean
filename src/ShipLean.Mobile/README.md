@@ -103,9 +103,9 @@ Answers wait 5 seconds so Undo can catch them, then send. With no connection the
 
 ## Crash reports
 
-Release builds send crashes and unhandled errors, JavaScript and native, to Sentry (`@sentry/react-native`). `src/crashReports.ts` starts it, and `index.ts` imports that first so a crash while the app loads is caught too. Nothing else is sent: no tracing, session replay, logs or personal data. Development builds never send.
+Release builds send crashes and unhandled errors, JavaScript and native, to Sentry (`@sentry/react-native`). Native code starts Sentry before React Native loads (`useNativeInit` in the plugin's options in `app.json`: `RNSentrySDK.init` in `MainApplication`, `RNSentrySDK.start` in the `AppDelegate`), so a crash in a native module at launch is reported. `src/crashReports.ts`, which `index.ts` imports first, starts the JavaScript side. Nothing else is sent: no tracing, session replay, logs or personal data. Development builds turn Sentry off once JavaScript runs, so only a native crash before that sends from one.
 
-- **DSN:** `expo.extra.sentryDsn` in `app.json`. It's public by design (every installed app carries it). Empty, the app sends nothing.
+- **Options and DSN:** `sentry.options.json`. Both native SDKs read it from the app's assets (copied at build time) and Metro bundles it into JavaScript (`getSentryExpoConfig`). The DSN is public by design: every installed app carries it.
 - **Readable stack traces:** `metro.config.js` (`getSentryExpoConfig`) stamps each bundle and its source map with a debug ID, and the release build uploads the source maps from EAS. The organization (`hosted-solutions`) and project (`shiplean`) are in the Sentry plugin's options in `app.json`. The upload's token is the EAS environment variable `SENTRY_AUTH_TOKEN` (a Sentry organization token, secret, set account-wide on expo.dev). A release build fails without it; to build without uploading, set `SENTRY_DISABLE_AUTO_UPLOAD=true`.
 - **Store declarations:** crash logs are collected data. Play's Data safety form and Apple's App Privacy must say so ("Crash logs" / "Diagnostics", not linked to the user, not used for tracking).
 
