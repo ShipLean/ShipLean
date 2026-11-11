@@ -42,6 +42,7 @@ import {
   previewApplyId,
   previewFixId,
   previewLineId,
+  previewMarkId,
   previewRemoveId,
   previewSheetId,
 } from '../sheets/PreviewSheet.testIds';
@@ -333,6 +334,30 @@ describe('VoiceApplyJourney', () => {
     ]);
     expect(api.callsTo(CONFIRM)).toHaveLength(1);
     expect(screen.queryByTestId(WAITING)).toBeNull();
+  });
+
+  it('brings the preview back after a 409 with the changed row marked, and sends after confirming', async () => {
+    const { api, current, editElsewhere } = server();
+    const engines = await open(api);
+    await say(engines, SAID, [SET_ACTIVE, APPROVE_D10]);
+    editElsewhere();
+    await fireEvent.press(screen.getByTestId(previewApplyId));
+
+    await waitFor(() => expect(api.callsTo(PATCH)).toHaveLength(1));
+    const preview = await screen.findByTestId(previewSheetId);
+    expect(within(preview).getByTestId(previewMarkId(line('setState')))).toBeOnTheScreen();
+    expect(api.callsTo(CONFIRM)).toHaveLength(0);
+    expect(screen.queryByTestId(applyFailedSheetId)).toBeNull();
+
+    await fireEvent.press(within(preview).getByTestId(previewApplyId));
+    await waitFor(() => expect(patchBodies(api)).toHaveLength(2));
+    // Sent again at the revision the 409 reported, so it lands.
+    expect(patchBodies(api)[1]).toEqual({
+      expectedRevision: ITEM.revision + 1,
+      changes: expect.objectContaining({ state: { value: ACTIVE.id } }),
+    });
+    await waitFor(() => expect(api.callsTo(CONFIRM)).toHaveLength(1));
+    expect(current().state.id).toBe(ACTIVE.id);
   });
 
   it('posts a typed command through the preview with You typed and Edit', async () => {
