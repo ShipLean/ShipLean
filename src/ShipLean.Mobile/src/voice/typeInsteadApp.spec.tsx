@@ -8,7 +8,9 @@ import { installFakeEngines } from '../test-support/voiceUi';
 import { aFeatureItem, aHistory, workItemApi } from '../test-support/workItem';
 import { micSlotId, type MicPlacement } from './MicSlot.testIds';
 import { micPermissionIds } from './sheets/MicPermissionSheet.testIds';
-import { micCheckTypeInsteadId } from './failures/MicCheck.testIds';
+import { router } from 'expo-router';
+import { screenIds } from '../screens/testIds';
+import { requestTypeInstead } from './micTuning/returnIntent';
 import { heardQuoteId, heardQuoteLabelId } from './sheets/HeardQuote.testIds';
 import { previewSheetId } from './sheets/PreviewSheet.testIds';
 import {
@@ -19,6 +21,13 @@ import {
 } from './typed/CommandComposer.testIds';
 import { typedCommandSheetId } from './typed/TypedCommandSheet.testIds';
 import { workItemHeaderId } from '../workItem/testIds';
+
+// The setup's Sentry mock has no addBreadcrumb, which the Mic tuning page calls when it opens.
+jest.mock('@sentry/react-native', () => ({
+  __esModule: true,
+  init: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
 
 const PROJECT = aProject().id;
 const ITEM = aFeatureItem({ projectId: PROJECT });
@@ -80,12 +89,12 @@ describe('Type instead from the mic sheet', () => {
     expect(screen.queryByTestId(typedCommandSheetId)).not.toBeOnTheScreen();
   });
 
-  it('opens the Command sheet from the Mic check after three silent holds', async () => {
+  it('opens the Command sheet when the Mic tuning page asks for Type instead, after three silent holds', async () => {
     installFakeEngines();
     jest.useFakeTimers();
     try {
       await renderApp({ url: '/p/SHIP/inbox', api: inboxApi({}, { inbox: designInbox() }) });
-      // The first hold only shows the first-use tip; the next three are silent holds in a row, and the third opens the Mic check.
+      // The first hold only shows the first-use tip; the next three are silent holds in a row, and the third opens the page.
       for (let hold = 0; hold < 4; hold += 1) {
         await fireEvent(screen.getByTestId(micSlotId('tabBar')), 'responderGrant', at);
         await act(async () => {
@@ -96,10 +105,15 @@ describe('Type instead from the mic sheet', () => {
           jest.advanceTimersByTime(3000);
         });
       }
-      await fireEvent.press(await screen.findByTestId(micCheckTypeInsteadId));
+      expect(await screen.findByTestId(screenIds.micTuning)).toBeOnTheScreen();
+      // The page's Type instead button calls this same pair (requestTypeInstead, then back).
+      await act(async () => {
+        requestTypeInstead();
+        router.back();
+      });
       expect(await screen.findByTestId(typedCommandSheetId)).toBeOnTheScreen();
       expect(screen.getByTestId(commandComposerId)).toBeOnTheScreen();
-      await waitFor(() => expect(screen.queryByTestId(micCheckTypeInsteadId)).toBeNull());
+      await waitFor(() => expect(screen.queryByTestId(screenIds.micTuning)).toBeNull());
     } finally {
       jest.useRealTimers();
     }
