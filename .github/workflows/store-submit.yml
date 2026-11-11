@@ -8,6 +8,9 @@ name: Store submit
 #                published when approved (unless Managed publishing is on in Play Console):
 #                alpha (Closed testing - Alpha, which a new personal account must run with 12
 #                testers for 14 days before Play allows production) or production.
+#                Until the app's first review Play calls it a draft app and takes only draft
+#                releases outside internal testing: run with play_release_status draft, then send
+#                that release for review once in Play Console (Publishing overview).
 #   App Store:   attaches the newest processed TestFlight build to the editable version (the one
 #                on Prepare for Submission) and submits it for review. The release after approval
 #                follows the version's release setting; Mobile release's listing push sets it to
@@ -31,6 +34,14 @@ on:
         type: choice
         options: [alpha, production]
         default: alpha
+      play_release_status:
+        description: >-
+          Google Play release status: completed (sent to Google's review) or draft. Pick draft
+          while Play calls the app a draft app (it has never been reviewed), then send that first
+          release for review in Play Console (Publishing overview)
+        type: choice
+        options: [completed, draft]
+        default: completed
 
 concurrency:
   group: store-submit
@@ -74,6 +85,7 @@ jobs:
         env:
           PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
           PLAY_TRACK: ${{ inputs.play_track }}
+          PLAY_RELEASE_STATUS: ${{ inputs.play_release_status }}
         run: store/push_listing.sh android submit
 
   submit-ios:
