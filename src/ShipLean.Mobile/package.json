@@ -3,6 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "main": "index.ts",
+  "expo": {
+    "autolinking": {
+      "buildFromSource": [
+        "^expo-audio$"
+      ]
+    }
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",

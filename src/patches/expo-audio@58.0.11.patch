@@ -1,0 +1,207 @@
+diff --git a/android/src/main/java/expo/modules/audio/AudioModule.kt b/android/src/main/java/expo/modules/audio/AudioModule.kt
+index 6c81fce3dd518d3b82e3280940a001c7be84dd0a..b65191c3630e9a5f3c6186eb49748ed3cfe6567f 100644
+--- a/android/src/main/java/expo/modules/audio/AudioModule.kt
++++ b/android/src/main/java/expo/modules/audio/AudioModule.kt
+@@ -857,6 +857,10 @@ class AudioModule : Module() {
+         stream.isStreaming
+       }
+ 
++      Property("routedInputId") { stream: AudioStream ->
++        stream.routedInputId
++      }
++
+       AsyncFunction("start") Coroutine { stream: AudioStream ->
+         checkRecordingPermission()
+         stream.start()
+diff --git a/android/src/main/java/expo/modules/audio/AudioRecords.kt b/android/src/main/java/expo/modules/audio/AudioRecords.kt
+index b6b3b73c3d1422a8023e2d943c54d7714c6354b6..4757fcc429b869ad054e789fb1bcd559576e1224 100644
+--- a/android/src/main/java/expo/modules/audio/AudioRecords.kt
++++ b/android/src/main/java/expo/modules/audio/AudioRecords.kt
+@@ -151,6 +151,9 @@ class AudioStreamOptions : Record {
+   @Field var channels: Int = 1
+ 
+   @Field var encoding: AudioStreamEncoding = AudioStreamEncoding.FLOAT32
++
++  // The id of the input device to record from (AudioDeviceInfo.id). Null means the system's choice.
++  @Field var preferredInputId: String? = null
+ }
+ 
+ enum class RecordingSource(val value: String) : Enumerable {
+diff --git a/android/src/main/java/expo/modules/audio/AudioStream.kt b/android/src/main/java/expo/modules/audio/AudioStream.kt
+index 99c5a797f73c4542c6d70dcee59f3f36732cc010..e903c82ea6aa354c8f827f9726448bcb00f3c6f5 100644
+--- a/android/src/main/java/expo/modules/audio/AudioStream.kt
++++ b/android/src/main/java/expo/modules/audio/AudioStream.kt
+@@ -1,7 +1,10 @@
+ package expo.modules.audio
+ 
+ import android.Manifest
++import android.content.Context
++import android.media.AudioDeviceInfo
+ import android.media.AudioFormat
++import android.media.AudioManager
+ import android.media.AudioRecord
+ import android.media.MediaRecorder
+ import androidx.annotation.RequiresPermission
+@@ -55,6 +58,10 @@ class AudioStream(
+   var isStreaming: Boolean = false
+     private set
+ 
++  // The id (AudioDeviceInfo.id) of the input the system really records from, or null when it doesn't say.
++  val routedInputId: String?
++    get() = audioRecord?.routedDevice?.id?.toString()
++
+   private var startTimeNanos: Long = 0
+ 
+   private var fileWriter: AudioStreamFileWriter? = null
+@@ -68,6 +75,7 @@ class AudioStream(
+ 
+     val config = resolveAudioConfig()
+     val recorder = createAudioRecord(config)
++    preferredInputDevice()?.let { recorder.setPreferredDevice(it) }
+ 
+     try {
+       recorder.startRecording()
+@@ -153,6 +161,12 @@ class AudioStream(
+     }
+   }
+ 
++  private fun preferredInputDevice(): AudioDeviceInfo? {
++    val id = options.preferredInputId ?: return null
++    val manager = appContext?.reactContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return null
++    return manager.getDevices(AudioManager.GET_DEVICES_INPUTS).firstOrNull { it.id.toString() == id }
++  }
++
+   private fun resolveAudioConfig(): ResolvedAudioConfig {
+     val channelConfig = if (options.channels == 2) {
+       AudioFormat.CHANNEL_IN_STEREO
+diff --git a/build/AudioStream.types.d.ts b/build/AudioStream.types.d.ts
+index 02f19fb298f3d782e764df76c8b77be4d60dd16b..257d454dcb318d99d6be0df73b889d2a43ce4ff1 100644
+--- a/build/AudioStream.types.d.ts
++++ b/build/AudioStream.types.d.ts
+@@ -94,6 +94,7 @@ export declare class AudioStream extends SharedObject<AudioStreamEvents> {
+         sampleRate: number;
+         channels: number;
+         encoding: string;
++        preferredInputId?: string;
+     });
+     id: string;
+     /** Actual sample rate being delivered, in Hz. Available after `start()`. */
+@@ -101,6 +102,11 @@ export declare class AudioStream extends SharedObject<AudioStreamEvents> {
+     /** Actual number of channels being delivered. Available after `start()`. */
+     readonly channels: number;
+     readonly isStreaming: boolean;
++    /**
++     * The id of the input the system really records from (`AudioDeviceInfo.id` on Android, the port's `uid` on iOS),
++     * or null when it doesn't say. Available after `start()`.
++     */
++    readonly routedInputId: string | null;
+     /**
+      * Begins capturing audio from the microphone.
+      * Requires microphone permission — call `requestRecordingPermissionsAsync()` first.
+diff --git a/ios/AudioModule.swift b/ios/AudioModule.swift
+index 42ce9e8f213ebc243db25ef836456757b0daeb09..4a1a47c37db058d7df17d1eee055ef93b0b847d3 100644
+--- a/ios/AudioModule.swift
++++ b/ios/AudioModule.swift
+@@ -576,6 +576,10 @@ public class AudioModule: Module {
+         stream.isStreaming
+       }
+ 
++      Property("routedInputId") { (stream: AudioStream) in
++        stream.routedInputId
++      }
++
+       AsyncFunction("start") { (stream: AudioStream) in
+         try checkPermissions()
+         try stream.start()
+diff --git a/ios/AudioRecords.swift b/ios/AudioRecords.swift
+index 7b8b42175d2dceb0be8d178d91b69465c5a84c09..06343fec6e189ad600908eb85f5172dc292b99d3 100644
+--- a/ios/AudioRecords.swift
++++ b/ios/AudioRecords.swift
+@@ -120,6 +120,8 @@ struct AudioStreamOptions: Record {
+   @Field var sampleRate: Double = 48000
+   @Field var channels: Int = 1
+   @Field var encoding: AudioStreamEncoding = .float32
++  // The uid of the input port to record from (AVAudioSessionPortDescription.uid). Nil means the built-in mic.
++  @Field var preferredInputId: String? = nil
+ }
+ 
+ enum AudioStreamFileFormat: String, Enumerable {
+diff --git a/ios/AudioStream.swift b/ios/AudioStream.swift
+index 1534fe5582a4d3aefb15deb567a2b9a7cbb3fb6a..81477c8f282c66a019e61e23e1bc964cc544455d 100644
+--- a/ios/AudioStream.swift
++++ b/ios/AudioStream.swift
+@@ -10,6 +10,7 @@ class AudioStream: SharedObject {
+   private let requestedSampleRate: Double
+   private let requestedChannels: Int
+   private let encoding: AudioStreamEncoding
++  private let preferredInputId: String?
+ 
+   private var audioEngine: AVAudioEngine?
+   private var converter: AVAudioConverter?
+@@ -17,6 +18,11 @@ class AudioStream: SharedObject {
+   private(set) var sampleRate: Double = 0
+   private(set) var channels: Int = 0
+   private(set) var isStreaming: Bool = false
++
++  // The uid of the input port the session really records from, or nil when the system doesn't say.
++  var routedInputId: String? {
++    AVAudioSession.sharedInstance().currentRoute.inputs.first?.uid
++  }
+   private var startTimestamp: AVAudioTime?
+ 
+   private var fileWriter: AudioStreamFileWriter?
+@@ -27,6 +33,7 @@ class AudioStream: SharedObject {
+     self.requestedSampleRate = options.sampleRate
+     self.requestedChannels = options.channels
+     self.encoding = options.encoding
++    self.preferredInputId = options.preferredInputId
+     super.init()
+   }
+ 
+@@ -34,9 +41,14 @@ class AudioStream: SharedObject {
+     guard !isStreaming else { return }
+ 
+     let session = AVAudioSession.sharedInstance()
+-    try session.setCategory(.record, mode: .measurement)
++    try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
+     try session.setPreferredSampleRate(requestedSampleRate)
+     try session.setActive(true)
++    let inputs = session.availableInputs ?? []
++    let chosen = inputs.first { $0.uid == preferredInputId } ?? inputs.first { $0.portType == .builtInMic }
++    if let chosen {
++      try session.setPreferredInput(chosen)
++    }
+ 
+     let engine = AVAudioEngine()
+     let inputNode = engine.inputNode
+diff --git a/src/AudioStream.types.ts b/src/AudioStream.types.ts
+index 1b72c2ba0de8789f92678d4151021e69bed16d60..064777f318714e2aa545b532380d26a1b0c90854 100644
+--- a/src/AudioStream.types.ts
++++ b/src/AudioStream.types.ts
+@@ -106,7 +106,12 @@ export type AudioStreamFileRecordingResult = {
+  */
+ export declare class AudioStream extends SharedObject<AudioStreamEvents> {
+   /** @hidden */
+-  constructor(options: { sampleRate: number; channels: number; encoding: string });
++  constructor(options: {
++    sampleRate: number;
++    channels: number;
++    encoding: string;
++    preferredInputId?: string;
++  });
+ 
+   id: string;
+ 
+@@ -118,6 +123,12 @@ export declare class AudioStream extends SharedObject<AudioStreamEvents> {
+ 
+   readonly isStreaming: boolean;
+ 
++  /**
++   * The id of the input the system really records from (same form as `preferredInputId`), or null when it
++   * doesn't say. Available after `start()`.
++   */
++  readonly routedInputId: string | null;
++
+   /**
+    * Begins capturing audio from the microphone.
+    * Requires microphone permission — call `requestRecordingPermissionsAsync()` first.
