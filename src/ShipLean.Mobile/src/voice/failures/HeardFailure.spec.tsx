@@ -1,6 +1,10 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
+import { Pressable } from 'react-native';
+import { links } from '../../links';
+import { fakeInternals } from '../../test-support/voiceInternals';
 import { renderWithVoice, fakeVoice, installFakeEngines } from '../../test-support/voiceUi';
+import type { ScreenVoiceSpec } from '../contracts';
 import { primitiveIds } from '../../ui/testIds';
 import { ToastHost } from '../../ui/Toast';
 import { heardQuoteId, heardQuoteLabelId, heardQuoteTextId } from '../sheets/HeardQuote.testIds';
@@ -12,8 +16,26 @@ import {
   heardFailureSheetId,
   heardFailureWhatCanISayId,
 } from './HeardFailure.testIds';
-import { micCheckId, micCheckInputId } from './MicCheck.testIds';
 import { resetSilentHolds } from './silentHolds';
+
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  useRouter: () => ({ push: mockPush }),
+}));
+
+// A screen spec that says only what its context() holds.
+const specInternals = (context: Record<string, unknown>) =>
+  fakeInternals({
+    spec: (): ScreenVoiceSpec => ({
+      screen: 'test',
+      actions: [],
+      context: () => context,
+      hotwords: () => [],
+      toActions: () => ({ ok: true, actions: [], lines: [], rejected: [], view: null }),
+    }),
+  });
+const focusedOn = (key: string) => specInternals({ key });
 
 type Heard = HeardFailureProps['failure'];
 
@@ -34,6 +56,17 @@ function props(failure: Heard, over: Partial<HeardFailureProps> = {}): HeardFail
   };
 }
 
+// Re-renders HeardFailure with the same failure each time the bump is pressed.
+function Bumpy(p: HeardFailureProps) {
+  const [, setN] = useState(0);
+  return (
+    <ToastHost>
+      <Pressable testID="bump" onPress={() => setN((n) => n + 1)} />
+      <HeardFailure {...p} />
+    </ToastHost>
+  );
+}
+
 const withToasts = (p: HeardFailureProps): ReactElement => (
   <ToastHost>
     <HeardFailure {...p} />
@@ -42,6 +75,7 @@ const withToasts = (p: HeardFailureProps): ReactElement => (
 
 beforeEach(() => {
   resetSilentHolds();
+  mockPush.mockClear();
   jest.useFakeTimers();
 });
 afterEach(() => jest.useRealTimers());
@@ -63,7 +97,6 @@ describe('HeardFailure', () => {
     );
     expect(screen.queryByTestId(heardFailureSheetId)).toBeNull();
     expect(screen.queryByTestId(primitiveIds.sheetBackdrop)).toBeNull();
-    expect(screen.queryByTestId(micCheckId)).toBeNull();
     expect(p.onClose).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -87,7 +120,6 @@ describe('HeardFailure', () => {
     );
     expect(screen.queryByTestId(heardFailureSheetId)).toBeNull();
     expect(screen.queryByTestId(primitiveIds.sheetBackdrop)).toBeNull();
-    expect(screen.queryByTestId(micCheckId)).toBeNull();
     expect(p.onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -100,44 +132,83 @@ describe('HeardFailure', () => {
     );
   });
 
-  it('the third nothingHeard in a row opens the mic check, and a success in between resets the count', async () => {
-    const engines = installFakeEngines();
-    engines.recognizer.setInputName('AirPods Pro');
+  it('the first silent hold has no action and the second offers Tune mic, which opens the page', async () => {
+    installFakeEngines();
+    const first = await hold(silent());
+    expect(screen.getByTestId(primitiveIds.toast)).toBeOnTheScreen();
+    expect(screen.queryByText('Tune mic')).toBeNull();
+    await first.unmount();
 
-    for (let i = 0; i < 2; i++) {
-      const { unmount } = await hold(silent());
-      expect(screen.queryByTestId(micCheckId)).toBeNull();
-      await unmount();
-    }
-    const third = await hold(silent());
-    expect(screen.getByTestId(micCheckId)).toBeOnTheScreen();
-    expect(screen.getByTestId(micCheckInputId)).toHaveTextContent(/AirPods Pro/);
-    expect(third.p.onClose).not.toHaveBeenCalled();
-    await third.unmount();
+    const second = await hold(silent());
+    expect(mockPush).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Tune mic'));
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith(links.micTuning('second_hold'));
+    expect(mockPush.mock.calls[0][0]).toEqual({
+      pathname: '/mic-tuning',
+      params: { from: 'second_hold' },
+    });
+    await second.unmount();
 
-    // Two silent holds, then a hold that was understood: the next silent hold counts as the first again.
-    resetSilentHolds();
+    // The page opening reset the count: the next silent hold is a plain toast again.
+    const next = await hold(silent());
+    expect(screen.queryByText('Tune mic')).toBeNull();
+    await next.unmount();
+  });
+
+  it('the third silent hold pushes the page once, even across re-renders, and shows no toast', async () => {
+    installFakeEngines();
+    for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
+    mockPush.mockClear();
+    const p = props(silent());
+    const view = await renderWithVoice(<Bumpy {...p} />, { internals: focusedOn('SHIP-12') });
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush.mock.calls[0][0]).toEqual({
+      pathname: '/mic-tuning',
+      params: { from: 'third_hold', key: 'SHIP-12' },
+    });
+    expect(p.onClose).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
+    await fireEvent.press(screen.getByTestId('bump'));
+    await fireEvent.press(screen.getByTestId('bump'));
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    await view.unmount();
+
+    // The count was reset by the push, so the next silent hold is a plain toast.
+    const after = await hold(silent());
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Tune mic')).toBeNull();
+    expect(screen.getByTestId(primitiveIds.toast)).toBeOnTheScreen();
+    await after.unmount();
+  });
+
+  it('falls back to the first visible key when the screen is not on an item', async () => {
+    installFakeEngines();
+    for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
+    mockPush.mockClear();
+    await renderWithVoice(withToasts(props(silent())), {
+      internals: specInternals({ rows: [{ key: 'SHIP-7', title: 'Seven' }] }),
+    });
+    expect(mockPush.mock.calls[0][0]).toEqual({
+      pathname: '/mic-tuning',
+      params: { from: 'third_hold', key: 'SHIP-7' },
+    });
+  });
+
+  it('a success in between, or a different failure, resets the count', async () => {
+    installFakeEngines();
     for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
     resetSilentHolds();
-    const afterSuccess = await hold(silent());
-    expect(screen.queryByTestId(micCheckId)).toBeNull();
-    expect(screen.getByTestId(primitiveIds.toast)).toBeOnTheScreen();
-    await afterSuccess.unmount();
+    await (await hold(silent())).unmount();
+    expect(mockPush).not.toHaveBeenCalled();
 
-    // A different failure in between resets it too.
+    resetSilentHolds();
     for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
     await (await hold(short())).unmount();
     const afterShort = await hold(silent());
-    expect(screen.queryByTestId(micCheckId)).toBeNull();
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.queryByText('Tune mic')).toBeNull();
     await afterShort.unmount();
-  });
-
-  it('opens Type instead from the mic check', async () => {
-    installFakeEngines();
-    for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
-    const { p } = await hold(silent());
-    await fireEvent.press(screen.getByTestId('mic-check-type-instead'));
-    expect(p.onTypeInstead).toHaveBeenCalledTimes(1);
   });
 
   it('unclear offers Add as a note for voice and Post as a note for typed, which also applies', async () => {
