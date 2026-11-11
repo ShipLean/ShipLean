@@ -10,6 +10,8 @@
 #   PLAY_KEY_PATH  Play service account JSON (android), from store/write_keys.py
 #   STAGED         the staged listing from store/stage_images.py: text and images, en-US and
 #                  its mirrored locales (ios push, android push and verify)
+#   APP_VERSION_PATCH  optional (ios push): set by a run that also builds; the push then targets
+#                  that build's version, from store/app_version.py
 #
 # Exit 2 on bad arguments, 1 when a variable it needs is missing, otherwise fastlane's exit code.
 set -euo pipefail
@@ -85,8 +87,13 @@ if [ "$platform" = ios ]; then
   require_key_file ASC_KEY_PATH
   if [ "$mode" = push ]; then
     require_staged
-    version=$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))["expo"]["version"])' \
-      src/ShipLean.Mobile/app.json)
+    # With APP_VERSION_PATCH (a run that also builds), the listing goes to that build's version,
+    # which deliver creates or renames the editable version to. Without it (a listing-only run),
+    # --app_version is left out and deliver updates the version that is editable now.
+    version_args=()
+    if [ -n "${APP_VERSION_PATCH:-}" ]; then
+      version_args=(--app_version "$(python3 -I store/app_version.py)")
+    fi
     repo=$PWD
     # deliver 2.241.2 asks "No deliver configuration found ... setup deliver?" unless the current
     # directory has a Deliverfile or a metadata/ folder (--metadata_path doesn't count), and a
@@ -96,7 +103,7 @@ if [ "$platform" = ios ]; then
     BUNDLE_GEMFILE="$repo/store/Gemfile" bundle exec fastlane deliver \
       --api_key_path "$ASC_KEY_PATH" \
       --app_identifier "$app_id" \
-      --app_version "$version" \
+      "${version_args[@]}" \
       --metadata_path "$STAGED/ios/metadata" \
       --screenshots_path "$STAGED/ios/screenshots" \
       --app_rating_config_path "$repo/store/ios/age_rating.json" \
