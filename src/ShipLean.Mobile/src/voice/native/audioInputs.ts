@@ -14,7 +14,7 @@ function toInput(input: NativeInput): AudioInput {
   return { id: input.id, kind: input.kind, name: input.name, connected: input.connected };
 }
 
-// The inputs the OS lists: the phone first (always there, always connected), then Bluetooth, then wired.
+// The inputs the OS lists, with one phone entry however many built-in mics the OS lists: the phone first (always there, always connected), then Bluetooth, then wired.
 export class NativeAudioInputs implements AudioInputs {
   list(): AudioInput[] {
     const others = nativeInputs()

@@ -14,7 +14,7 @@ index 6c81fce3dd518d3b82e3280940a001c7be84dd0a..b65191c3630e9a5f3c6186eb49748ed3
          checkRecordingPermission()
          stream.start()
 diff --git a/android/src/main/java/expo/modules/audio/AudioRecords.kt b/android/src/main/java/expo/modules/audio/AudioRecords.kt
-index b6b3b73c3d1422a8023e2d943c54d7714c6354b6..4757fcc429b869ad054e789fb1bcd559576e1224 100644
+index b6b3b73c3d1422a8023e2d943c54d7714c6354b6..4ae7b1e5115a00b4b0a1e610ccb8b0acf68e3dc2 100644
 --- a/android/src/main/java/expo/modules/audio/AudioRecords.kt
 +++ b/android/src/main/java/expo/modules/audio/AudioRecords.kt
 @@ -151,6 +151,9 @@ class AudioStreamOptions : Record {
@@ -22,13 +22,13 @@ index b6b3b73c3d1422a8023e2d943c54d7714c6354b6..4757fcc429b869ad054e789fb1bcd559
  
    @Field var encoding: AudioStreamEncoding = AudioStreamEncoding.FLOAT32
 +
-+  // The id of the input device to record from (AudioDeviceInfo.id). Null means the system's choice.
++  // The id of the input device to record from (the stable "<kind>:<address>" key). Null means the system's choice.
 +  @Field var preferredInputId: String? = null
  }
  
  enum class RecordingSource(val value: String) : Enumerable {
 diff --git a/android/src/main/java/expo/modules/audio/AudioStream.kt b/android/src/main/java/expo/modules/audio/AudioStream.kt
-index 99c5a797f73c4542c6d70dcee59f3f36732cc010..e903c82ea6aa354c8f827f9726448bcb00f3c6f5 100644
+index 99c5a797f73c4542c6d70dcee59f3f36732cc010..92e916184aea12984ed98d6a1889e0cdd4f21fae 100644
 --- a/android/src/main/java/expo/modules/audio/AudioStream.kt
 +++ b/android/src/main/java/expo/modules/audio/AudioStream.kt
 @@ -1,7 +1,10 @@
@@ -42,33 +42,101 @@ index 99c5a797f73c4542c6d70dcee59f3f36732cc010..e903c82ea6aa354c8f827f9726448bcb
  import android.media.AudioRecord
  import android.media.MediaRecorder
  import androidx.annotation.RequiresPermission
-@@ -55,6 +58,10 @@ class AudioStream(
+@@ -55,6 +58,13 @@ class AudioStream(
    var isStreaming: Boolean = false
      private set
  
-+  // The id (AudioDeviceInfo.id) of the input the system really records from, or null when it doesn't say.
++  // The stable key ("<kind>:<address>") of the input the system really records from, or null when it doesn't say.
 +  val routedInputId: String?
-+    get() = audioRecord?.routedDevice?.id?.toString()
++    get() = audioRecord?.routedDevice?.let { inputKey(it) }
++
++  // Set while a picked Bluetooth input has been made the communication device (or SCO started) for this stream.
++  private var bluetoothRouted = false
 +
    private var startTimeNanos: Long = 0
  
    private var fileWriter: AudioStreamFileWriter? = null
-@@ -68,6 +75,7 @@ class AudioStream(
+@@ -68,10 +78,17 @@ class AudioStream(
  
      val config = resolveAudioConfig()
      val recorder = createAudioRecord(config)
-+    preferredInputDevice()?.let { recorder.setPreferredDevice(it) }
++    val preferred = preferredInputDevice()
++    preferred?.let { recorder.setPreferredDevice(it) }
++    // Only a picked Bluetooth input touches the communication device; the phone path never does.
++    if (preferred != null && inputKind(preferred) == "bluetooth") {
++      routeBluetooth(preferred)
++    }
  
      try {
        recorder.startRecording()
-@@ -153,6 +161,12 @@ class AudioStream(
+     } catch (e: IllegalStateException) {
++      clearBluetooth()
+       recorder.release()
+       throw AudioStreamInitializationException(
+         "Failed to start the audio stream. The microphone is likely held by another app or by the system"
+@@ -98,6 +115,7 @@ class AudioStream(
+     audioRecord?.stop()
+     audioRecord?.release()
+     audioRecord = null
++    clearBluetooth()
+     emitStatus()
+ 
+     // Auto-finalize any in-progress file recording.
+@@ -153,6 +171,59 @@ class AudioStream(
      }
    }
  
++  private val audioManager: AudioManager?
++    get() = appContext?.reactContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
++
++  // The kind of a device, as the app names it, or null for a type the app doesn't list.
++  private fun inputKind(device: AudioDeviceInfo): String? = when (device.type) {
++    AudioDeviceInfo.TYPE_BUILTIN_MIC -> "phone"
++    AudioDeviceInfo.TYPE_BLUETOOTH_SCO, AudioDeviceInfo.TYPE_BLE_HEADSET -> "bluetooth"
++    AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_USB_HEADSET -> "wired"
++    else -> null
++  }
++
++  // "<kind>:<address>" (the Bluetooth MAC, API 28+), or "<kind>:<productName>" when the address is empty. Never
++  // AudioDeviceInfo.id, which changes on every reconnect. Same form as the audio-input module's ids.
++  private fun inputKey(device: AudioDeviceInfo): String? {
++    val kind = inputKind(device) ?: return null
++    val address = if (android.os.Build.VERSION.SDK_INT >= 28) device.address.orEmpty() else ""
++    return "$kind:${address.ifEmpty { device.productName?.toString().orEmpty() }}"
++  }
++
++  // Resolves the stable key to the device connected now.
 +  private fun preferredInputDevice(): AudioDeviceInfo? {
-+    val id = options.preferredInputId ?: return null
-+    val manager = appContext?.reactContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return null
-+    return manager.getDevices(AudioManager.GET_DEVICES_INPUTS).firstOrNull { it.id.toString() == id }
++    val key = options.preferredInputId ?: return null
++    return audioManager?.getDevices(AudioManager.GET_DEVICES_INPUTS)?.firstOrNull { inputKey(it) == key }
++  }
++
++  // setPreferredDevice on a MIC AudioRecord doesn't open the Bluetooth SCO link, so make the headset the
++  // communication device (API 31+), or start SCO below that.
++  private fun routeBluetooth(input: AudioDeviceInfo) {
++    val manager = audioManager ?: return
++    if (android.os.Build.VERSION.SDK_INT >= 31) {
++      val target = manager.availableCommunicationDevices.firstOrNull {
++        it.type == input.type && it.address == input.address
++      } ?: return
++      bluetoothRouted = manager.setCommunicationDevice(target)
++    } else {
++      manager.startBluetoothSco()
++      bluetoothRouted = true
++    }
++  }
++
++  private fun clearBluetooth() {
++    if (!bluetoothRouted) {
++      return
++    }
++    bluetoothRouted = false
++    val manager = audioManager ?: return
++    if (android.os.Build.VERSION.SDK_INT >= 31) {
++      manager.clearCommunicationDevice()
++    } else {
++      manager.stopBluetoothSco()
++    }
 +  }
 +
    private fun resolveAudioConfig(): ResolvedAudioConfig {
@@ -127,7 +195,7 @@ index 7b8b42175d2dceb0be8d178d91b69465c5a84c09..06343fec6e189ad600908eb85f5172dc
  
  enum AudioStreamFileFormat: String, Enumerable {
 diff --git a/ios/AudioStream.swift b/ios/AudioStream.swift
-index 1534fe5582a4d3aefb15deb567a2b9a7cbb3fb6a..81477c8f282c66a019e61e23e1bc964cc544455d 100644
+index 1534fe5582a4d3aefb15deb567a2b9a7cbb3fb6a..2cb5427b59627151553323b338d9e809bdef3cb6 100644
 --- a/ios/AudioStream.swift
 +++ b/ios/AudioStream.swift
 @@ -10,6 +10,7 @@ class AudioStream: SharedObject {
@@ -158,12 +226,18 @@ index 1534fe5582a4d3aefb15deb567a2b9a7cbb3fb6a..81477c8f282c66a019e61e23e1bc964c
      super.init()
    }
  
-@@ -34,9 +41,14 @@ class AudioStream: SharedObject {
+@@ -34,9 +41,20 @@ class AudioStream: SharedObject {
      guard !isStreaming else { return }
  
      let session = AVAudioSession.sharedInstance()
 -    try session.setCategory(.record, mode: .measurement)
-+    try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
++    var options: AVAudioSession.CategoryOptions = [.defaultToSpeaker]
++#if compiler(>=6.2) // Xcode 26
++    options.insert(.allowBluetoothHFP)
++#else
++    options.insert(.allowBluetooth)
++#endif
++    try session.setCategory(.playAndRecord, mode: .default, options: options)
      try session.setPreferredSampleRate(requestedSampleRate)
      try session.setActive(true)
 +    let inputs = session.availableInputs ?? []

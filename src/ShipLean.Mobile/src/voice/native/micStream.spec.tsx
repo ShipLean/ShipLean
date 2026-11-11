@@ -24,8 +24,18 @@ jest.mock('expo-audio', () => {
   return { __esModule: true, AudioModule: { AudioStream } };
 });
 
-const builtIn: NativeInput = { id: '7', kind: 'phone', name: 'Built-in', connected: true };
-const pods: NativeInput = { id: '12', kind: 'bluetooth', name: 'Pods', connected: true };
+const builtIn: NativeInput = {
+  id: 'phone:Built-in Microphone',
+  kind: 'phone',
+  name: 'Built-in',
+  connected: true,
+};
+const pods: NativeInput = {
+  id: 'bluetooth:AA:BB:CC:DD:EE:01',
+  kind: 'bluetooth',
+  name: 'Pods',
+  connected: true,
+};
 
 beforeEach(() => {
   created.length = 0;
@@ -34,33 +44,57 @@ beforeEach(() => {
 
 describe('openMicStream', () => {
   it('asks the stream for the picked input by the OS id', () => {
-    openMicStream({ sampleRate: 16000, inputId: '12' });
+    openMicStream({ sampleRate: 16000, inputId: pods.id });
 
     expect(created[0]!.options).toEqual({
       sampleRate: 16000,
       channels: 1,
       encoding: 'int16',
-      preferredInputId: '12',
+      preferredInputId: pods.id,
     });
   });
 
   it("asks the stream for the phone's built-in device for the phone input", () => {
     openMicStream({ sampleRate: 16000, inputId: 'phone' });
 
-    expect(created[0]!.options.preferredInputId).toBe('7');
+    expect(created[0]!.options.preferredInputId).toBe(builtIn.id);
   });
 
   it('maps the device the OS routed to back to the AudioInput id', () => {
-    const stream = openMicStream({ sampleRate: 16000, inputId: '12' });
+    const stream = openMicStream({ sampleRate: 16000, inputId: pods.id });
 
-    created[0]!.routed = '7';
+    created[0]!.routed = builtIn.id;
     expect(stream.routedInputId()).toBe('phone');
-    created[0]!.routed = '12';
-    expect(stream.routedInputId()).toBe('12');
+    created[0]!.routed = pods.id;
+    expect(stream.routedInputId()).toBe(pods.id);
+  });
+
+  it('reads a second built-in mic the OS routed to as the phone, looked up after start', () => {
+    const back: NativeInput = {
+      id: 'phone:Back Microphone',
+      kind: 'phone',
+      name: 'Back',
+      connected: true,
+    };
+    jest.mocked(nativeInputs).mockReturnValue([builtIn]);
+    const stream = openMicStream({ sampleRate: 16000, inputId: 'phone' });
+    jest.mocked(nativeInputs).mockReturnValue([builtIn, back]);
+
+    created[0]!.routed = back.id;
+    expect(stream.routedInputId()).toBe('phone');
+  });
+
+  it('resolves a stable id to the same AudioInput id after a reconnect', () => {
+    const stream = openMicStream({ sampleRate: 16000, inputId: pods.id });
+    // The headset reconnected: the OS gave it a new numeric id, but the native key is the same.
+    jest.mocked(nativeInputs).mockReturnValue([builtIn, { ...pods }]);
+
+    created[0]!.routed = pods.id;
+    expect(stream.routedInputId()).toBe(pods.id);
   });
 
   it('reports null when the OS says nothing, not the input that was asked for', () => {
-    const stream = openMicStream({ sampleRate: 16000, inputId: '12' });
+    const stream = openMicStream({ sampleRate: 16000, inputId: pods.id });
 
     expect(stream.routedInputId()).toBeNull();
   });

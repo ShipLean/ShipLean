@@ -6,9 +6,19 @@ jest.mock('../../../modules/audio-input', () => ({
   onInputsChanged: jest.fn(),
 }));
 
-const builtIn: NativeInput = { id: '7', kind: 'phone', name: 'Built-in', connected: true };
-const pods: NativeInput = { id: '12', kind: 'bluetooth', name: 'Pods', connected: true };
-const cable: NativeInput = { id: '15', kind: 'wired', name: 'Headset', connected: true };
+const builtIn: NativeInput = {
+  id: 'phone:Built-in Microphone',
+  kind: 'phone',
+  name: 'Built-in',
+  connected: true,
+};
+const pods: NativeInput = {
+  id: 'bluetooth:AA:BB:CC:DD:EE:01',
+  kind: 'bluetooth',
+  name: 'Pods',
+  connected: true,
+};
+const cable: NativeInput = { id: 'wired:Headset', kind: 'wired', name: 'Headset', connected: true };
 
 function listed(...inputs: NativeInput[]) {
   jest.mocked(nativeInputs).mockReturnValue(inputs);
@@ -36,9 +46,28 @@ describe('NativeAudioInputs', () => {
     listed(builtIn, pods, cable);
 
     expect(new NativeAudioInputs().list().slice(1)).toEqual([
-      { id: '12', kind: 'bluetooth', name: 'Pods', connected: true },
-      { id: '15', kind: 'wired', name: 'Headset', connected: true },
+      { id: 'bluetooth:AA:BB:CC:DD:EE:01', kind: 'bluetooth', name: 'Pods', connected: true },
+      { id: 'wired:Headset', kind: 'wired', name: 'Headset', connected: true },
     ]);
+  });
+
+  it('keeps one phone entry when the OS lists several built-in mics', () => {
+    listed(
+      builtIn,
+      { id: 'phone:Back Microphone', kind: 'phone', name: 'Back', connected: true },
+      pods,
+    );
+
+    expect(new NativeAudioInputs().list().map((i) => i.kind)).toEqual(['phone', 'bluetooth']);
+  });
+
+  it('gives a reconnected input the same id: the id is the native stable key', () => {
+    listed(builtIn, pods);
+    const before = new NativeAudioInputs().list()[1]!.id;
+    listed(builtIn, { ...pods });
+
+    expect(new NativeAudioInputs().list()[1]!.id).toBe(before);
+    expect(before).toBe('bluetooth:AA:BB:CC:DD:EE:01');
   });
 
   it('tells subscribers when the OS reports a change, and stops after unsubscribe', () => {
