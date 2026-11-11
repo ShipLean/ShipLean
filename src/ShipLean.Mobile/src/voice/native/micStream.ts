@@ -19,7 +19,7 @@ export interface MicStream {
   routedInputId(): string | null;
 }
 
-// The OS's id of the phone's own mic, or undefined when the OS lists none.
+// The stable key of the phone's own mic, or undefined when the OS lists none.
 function builtInId(): string | undefined {
   return nativeInputs().find((i) => i.kind === 'phone')?.id;
 }
@@ -48,7 +48,9 @@ export function openMicStream(opts: MicStreamOptions): MicStream {
     routedInputId() {
       const routed = stream.routedInputId;
       if (routed === null || routed === undefined) return null;
-      return routed === builtIn ? PHONE_INPUT_ID : routed;
+      // Looked up now, after start: the phone can list several built-in mics, and any of them is the phone.
+      const device = nativeInputs().find((i) => i.id === routed);
+      return device?.kind === 'phone' ? PHONE_INPUT_ID : routed;
     },
   };
 }

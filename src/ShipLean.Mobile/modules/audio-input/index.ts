@@ -1,6 +1,7 @@
 // The local audio-input module: the inputs this phone can record from, and when one connects or disconnects.
-// Ids are the OS's own (Android AudioDeviceInfo.id, iOS port uid): the ones the patched expo-audio stream takes as
-// preferredInputId and reports as routedInputId. src/voice/native/audioInputs.ts maps them to the app's AudioInput.
+// Ids are stable keys: on Android "<kind>:<address>" (or "<kind>:<productName>" with no address), never the numeric
+// AudioDeviceInfo.id, which changes on every reconnect; on iOS the port uid. They are the ids the patched expo-audio
+// stream takes as preferredInputId and reports as routedInputId. src/voice/native/audioInputs.ts maps them to the app's AudioInput.
 import { requireOptionalNativeModule } from 'expo';
 
 export type NativeInputKind = 'phone' | 'bluetooth' | 'wired';

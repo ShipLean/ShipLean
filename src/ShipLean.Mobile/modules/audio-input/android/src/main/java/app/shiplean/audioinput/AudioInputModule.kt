@@ -9,8 +9,9 @@ import android.os.Looper
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
-// The inputs this phone can record from. An input's id is AudioDeviceInfo.id as a string, the same id the patched
-// expo-audio stream takes as preferredInputId and reports as routedInputId.
+// The inputs this phone can record from. An input's id is a stable key, "<kind>:<address>" (the Bluetooth MAC, API 28+)
+// or "<kind>:<productName>" when the address is empty, never AudioDeviceInfo.id, which changes on every reconnect. It
+// is the same key the patched expo-audio stream takes as preferredInputId and reports as routedInputId.
 class AudioInputModule : Module() {
   private var callback: AudioDeviceCallback? = null
 
@@ -27,7 +28,7 @@ class AudioInputModule : Module() {
       manager.getDevices(AudioManager.GET_DEVICES_INPUTS).mapNotNull { device ->
         val kind = kindOf(device) ?: return@mapNotNull null
         mapOf(
-          "id" to device.id.toString(),
+          "id" to stableKey(device, kind),
           "kind" to kind,
           "name" to nameOf(device, kind),
           "connected" to true
@@ -53,6 +54,12 @@ class AudioInputModule : Module() {
       callback?.let { audioManager?.unregisterAudioDeviceCallback(it) }
       callback = null
     }
+  }
+
+  private fun stableKey(device: AudioDeviceInfo, kind: String): String {
+    val address = if (android.os.Build.VERSION.SDK_INT >= 28) device.address.orEmpty() else ""
+    val suffix = address.ifEmpty { device.productName?.toString().orEmpty() }
+    return "$kind:$suffix"
   }
 
   private fun kindOf(device: AudioDeviceInfo): String? = when (device.type) {
