@@ -255,6 +255,8 @@ export const DownloadingStep: FunctionComponent<DownloadingStepProps> = ({ onUse
   ].filter((p): p is string => p !== null);
   const running = status.phase === 'downloading' || status.phase === 'checking';
   const stoppedForSpace = space !== null;
+  // Every file downloaded and checked. A model change also reads ready while it downloads, so the bytes decide.
+  const finished = status.phase === 'ready' && status.bytesDone >= status.bytesTotal;
 
   return (
     <>
@@ -354,9 +356,11 @@ export const DownloadingStep: FunctionComponent<DownloadingStepProps> = ({ onUse
         <Button
           testID={downloadingStepIds.useApp}
           label={
-            stoppedForSpace
-              ? 'Use ShipLean while you sort this out'
-              : 'Use ShipLean while this downloads'
+            finished
+              ? 'Use ShipLean'
+              : stoppedForSpace
+                ? 'Use ShipLean while you sort this out'
+                : 'Use ShipLean while this downloads'
           }
           onPress={onUseApp}
         />

@@ -10,10 +10,11 @@ describe('manifest', () => {
     expect(soldGb(3.7)).toBe(4);
   });
 
-  it('chooses 4B at 11 GB reported, 1.7B with a warning at 8, 1.7B only at 6 and nothing below', () => {
+  it('chooses 4B from 12 GB sold, 1.7B with a warning at 8, 1.7B only at 6 and nothing below', () => {
     expect(chooseModel(11)).toEqual({ auto: 'qwen3-4b', fourB: 'ok', reason: null });
     expect(chooseModel(15.1)).toEqual({ auto: 'qwen3-4b', fourB: 'ok', reason: null });
-    expect(chooseModel(10.9)).toEqual({ auto: 'qwen3-1.7b', fourB: 'warn', reason: null });
+    // A 12 GB Galaxy S25 Ultra: 11,379,708 kB in /proc/meminfo.
+    expect(chooseModel(10.9)).toEqual({ auto: 'qwen3-4b', fourB: 'ok', reason: null });
     expect(chooseModel(7.6)).toEqual({ auto: 'qwen3-1.7b', fourB: 'warn', reason: null });
     expect(chooseModel(5.6)).toEqual({ auto: 'qwen3-1.7b', fourB: 'blocked', reason: null });
     expect(chooseModel(3.7)).toEqual({ auto: null, fourB: 'blocked', reason: 'lowMemory' });
