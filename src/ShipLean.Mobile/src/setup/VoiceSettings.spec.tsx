@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { renderScreen } from '../test-support/renderScreen';
 import { FakeModelStore } from '../test-support/voice';
 import { installFakeEngines } from '../test-support/voiceUi';
-import type { ModelStatus } from '../voice/contracts';
+import { PHONE_INPUT_ID, type ModelStatus } from '../voice/contracts';
 import { MODEL_FILES } from '../voice/manifest';
 import { micPermissionSheetId } from '../voice/sheets/MicPermissionSheet.testIds';
 import { VoiceSettings } from './VoiceSettings';
@@ -255,5 +255,53 @@ describe('VoiceSettings', () => {
 
     expect(await screen.findByTestId('sheet-change-model')).toBeOnTheScreen();
     await act(async () => {});
+  });
+
+  it('shows the Mic tuning row with the input, when it was tested and Automatic, and opens the page', async () => {
+    const { tuning } = await render(ready());
+    await act(async () =>
+      tuning.save({
+        inputId: PHONE_INPUT_ID,
+        roomRms: 40,
+        voiceRms: 900,
+        lineRms: 190,
+        testedAt: new Date().toISOString(),
+        automatic: true,
+        manualStep: null,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId(voiceSettingsIds.micTuning)).toHaveTextContent(
+        'Phone · speakerphone · tested today',
+        { exact: false },
+      ),
+    );
+    expect(screen.getByTestId(voiceSettingsIds.micTuningValue)).toHaveTextContent('Automatic');
+    await fireEvent.press(screen.getByTestId(voiceSettingsIds.micTuning));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/mic-tuning',
+      params: { from: 'settings' },
+    });
+  });
+
+  it('says Manual when the line is set by hand', async () => {
+    const { tuning } = await render(ready());
+    await act(async () =>
+      tuning.save({
+        inputId: PHONE_INPUT_ID,
+        roomRms: 40,
+        voiceRms: 900,
+        lineRms: 190,
+        testedAt: new Date().toISOString(),
+        automatic: false,
+        manualStep: 4,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId(voiceSettingsIds.micTuningValue)).toHaveTextContent('Manual'),
+    );
   });
 });
