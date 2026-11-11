@@ -26,6 +26,8 @@ export const copy = {
   holdRelease: "Release when you've finished",
   heard: 'Heard',
   nothingHeard: 'Nothing was transcribed',
+  wrongInput: (asked: string, routed: string) =>
+    `Wrong input: the test asked for ${asked}, but the phone recorded from ${routed}.`,
   sensitivity: (n: number) => `Sensitivity Automatic ${n} of 10`,
 } as const;
 

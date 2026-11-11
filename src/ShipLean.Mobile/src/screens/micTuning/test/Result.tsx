@@ -1,4 +1,5 @@
 import { Platform, Text, View } from 'react-native';
+import type { AudioInput } from '../../../voice/contracts';
 import type { TuningResult } from '../../../voice/micTuning/line';
 import { lineToSlider } from '../../../voice/micTuning/line';
 import { useTheme } from '../../../theme';
@@ -18,10 +19,12 @@ export interface ResultProps {
   heard: string;
   // The line before this test, for the too-quiet note.
   oldLine: number;
+  // The input asked for and the one the phone really used, when they differ.
+  wrongInput?: { asked: AudioInput; routed: AudioInput } | null;
 }
 
 // One result of the test: its headline, then what the numbers say. Words heard, never played back.
-export function Result({ result, heard, oldLine }: ResultProps) {
+export function Result({ result, heard, oldLine, wrongInput = null }: ResultProps) {
   const theme = useTheme();
   const { colors } = theme;
   const { kind } = result;
@@ -50,6 +53,14 @@ export function Result({ result, heard, oldLine }: ResultProps) {
         </Text>
         <Text style={{ color: colors.muted, fontSize: theme.font.size.base }}>{text.body}</Text>
       </View>
+      {wrongInput === null ? null : (
+        <Text
+          testID={ids.wrongInput}
+          style={{ color: colors.warn, fontSize: theme.font.size.base }}
+        >
+          {copy.wrongInput(wrongInput.asked.name, wrongInput.routed.name)}
+        </Text>
+      )}
       {kind === 'noSignal' ? (
         <View style={{ gap: theme.space[2] }}>
           <Text style={{ color: colors.muted, fontSize: theme.font.size.sm }}>
