@@ -15,7 +15,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SCRIPT = os.path.join("store", "push_listing.sh")
 FAKES = os.path.join(REPO, "store", "tests", "fakes")
 OWN_VARS = ("ASC_KEY_PATH", "PLAY_KEY_PATH", "STAGED", "FAKE_BUNDLE_EXIT", "FAKE_BUNDLE_LOG",
-            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH")
+            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH", "PLAY_TRACK")
 UPLOAD_OPTIONS = ("--screenshots_path", "--overwrite_screenshots", "--skip_binary_upload",
                   "--submit_for_review", "--automatic_release", "--app_rating_config_path")
 
@@ -43,7 +43,8 @@ class PushListingTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def keys(self):
-        return {"ASC_KEY_PATH": self.asc_key, "PLAY_KEY_PATH": self.play_key, "STAGED": self.staged}
+        return {"ASC_KEY_PATH": self.asc_key, "PLAY_KEY_PATH": self.play_key, "STAGED": self.staged,
+                "PLAY_TRACK": "alpha"}
 
     def run_script(self, *args, **env_vars):
         env = {k: v for k, v in os.environ.items() if k not in OWN_VARS}
@@ -174,7 +175,7 @@ class PushListingTests(unittest.TestCase):
 
     # Mutation caught: --track_promote_to beta, or drop a --skip_upload_* (the submit would upload).
     def test_android_submit_promotes_internal_to_production(self):
-        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key)
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="production")
 
         self.assert_fastlane(result, "supply", [
             "--json_key", self.play_key,
@@ -188,6 +189,25 @@ class PushListingTests(unittest.TestCase):
             "--skip_upload_images", "true",
             "--skip_upload_screenshots", "true",
         ])
+
+    # Closed testing (Play's "alpha" track), which a new personal account runs before production.
+    # Mutation caught: --track_promote_to production whatever PLAY_TRACK says.
+    def test_android_submit_promotes_internal_to_closed_testing(self):
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="alpha")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, argv = self.bundle_call()
+        self.assertEqual(argv[7:11], ["--track", "internal", "--track_promote_to", "alpha"])
+
+    # Mutation caught: pass PLAY_TRACK through unchecked (a typo would create a new track).
+    def test_android_submit_refuses_any_other_track(self):
+        for track in ("", "beta", "internal", "Production"):
+            with self.subTest(track=track):
+                result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK=track)
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("PLAY_TRACK", result.stderr)
+                self.assertFalse(os.path.exists(self.log), "fastlane ran")
 
     # Mutation caught: skip the key (or STAGED) check.
     def test_missing_key_names_the_variable(self):

@@ -10,6 +10,8 @@
 #   PLAY_KEY_PATH  Play service account JSON (android), from store/write_keys.py
 #   STAGED         the staged listing from store/stage_images.py: text and images, en-US and
 #                  its mirrored locales (ios push, android push and verify)
+#   PLAY_TRACK     android submit: the track to promote the internal release to, alpha (closed
+#                  testing) or production
 #   APP_VERSION_PATCH  optional (ios push): set by a run that also builds; the push then targets
 #                  that build's version, from store/app_version.py
 #
@@ -66,13 +68,20 @@ if [ "$mode" = submit ]; then
       --run_precheck_before_submit false
   else
     require_key_file PLAY_KEY_PATH
-    # Promotes the internal track's rolled-out release (what internal testers have) to production
+    case "${PLAY_TRACK:-}" in
+      alpha | production) ;;
+      *)
+        echo "push_listing.sh: PLAY_TRACK must be alpha (closed testing) or production, found '${PLAY_TRACK:-}'" >&2
+        exit 1
+        ;;
+    esac
+    # Promotes the internal track's rolled-out release (what internal testers have) to PLAY_TRACK
     # as a full release, which sends it to Google's review. No binary, listing or release notes.
     bundle exec fastlane supply \
       --json_key "$PLAY_KEY_PATH" \
       --package_name "$app_id" \
       --track internal \
-      --track_promote_to production \
+      --track_promote_to "$PLAY_TRACK" \
       --skip_upload_aab true \
       --skip_upload_apk true \
       --skip_upload_metadata true \
