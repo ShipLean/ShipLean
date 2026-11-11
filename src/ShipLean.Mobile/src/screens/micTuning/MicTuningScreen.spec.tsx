@@ -48,8 +48,8 @@ describe('MicTuningScreen', () => {
     await renderApp({ url: '/mic-tuning?from=settings&key=SHIP-7' });
     await screen.findByTestId(screenIds.micTuning);
 
-    // A re-render: the params change but not where it came from.
-    await act(async () => router.setParams({ key: 'SHIP-8' }));
+    // The params change while the page is open, where it came from included.
+    await act(async () => router.setParams({ key: 'SHIP-8', from: 'third_hold' }));
 
     expect(micTuningOpened).toHaveBeenCalledTimes(1);
     expect(micTuningOpened).toHaveBeenCalledWith('settings');

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from 'react-native';
@@ -25,7 +25,11 @@ export function MicTuningScreen() {
   const from = fromOf(params.from);
   const key = params.key !== undefined && params.key !== '' ? params.key : undefined;
 
+  // Once per mount, even if the params change while the page is open.
+  const opened = useRef(false);
   useEffect(() => {
+    if (opened.current) return;
+    opened.current = true;
     micTuningOpened(from);
   }, [from]);
 

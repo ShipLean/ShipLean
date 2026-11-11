@@ -21,7 +21,7 @@ export function rmsToLevel(rms: number): number {
 
 // A bar: a track, the live level, and markers for the speech line, the room and the voice.
 export function LevelMeter({ level, lineRms, roomRms, voiceRms, testID }: LevelMeterProps) {
-  const { colors, radius } = useTheme();
+  const { colors } = useTheme();
   const marker = (rms: number | undefined, color: string, id: string) =>
     rms === undefined ? null : (
       <View
@@ -29,8 +29,8 @@ export function LevelMeter({ level, lineRms, roomRms, voiceRms, testID }: LevelM
         testID={testID === undefined ? undefined : `${testID}-${id}`}
         style={{
           position: 'absolute',
-          top: -3,
-          bottom: -3,
+          top: -8,
+          bottom: -8,
           width: 2,
           left: `${rmsToLevel(rms) * 100}%`,
           backgroundColor: color,
@@ -43,8 +43,8 @@ export function LevelMeter({ level, lineRms, roomRms, voiceRms, testID }: LevelM
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamp(level) * 100) }}
       style={{
-        height: 10,
-        borderRadius: radius.sm,
+        height: 16,
+        borderRadius: 8,
         backgroundColor: colors.surface2,
         borderWidth: 1,
         borderColor: colors.border,
@@ -55,13 +55,13 @@ export function LevelMeter({ level, lineRms, roomRms, voiceRms, testID }: LevelM
         style={{
           width: `${clamp(level) * 100}%`,
           height: '100%',
-          borderRadius: radius.sm,
+          borderRadius: 8,
           backgroundColor: colors.accent,
         }}
       />
       {marker(roomRms, colors.muted, 'room')}
       {marker(voiceRms, colors.ok, 'voice')}
-      {marker(lineRms, colors.warn, 'line')}
+      {marker(lineRms, colors.text, 'line')}
     </View>
   );
 }

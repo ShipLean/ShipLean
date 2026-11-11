@@ -104,7 +104,8 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
       line: () => activeLine(deps.tuning.tuning(input.id)),
       decodeAlways: opts.decodeAlways === true,
       routed: (id) => {
-        this.inUse = id === null ? input : (deps.inputs.list().find((i) => i.id === id) ?? input);
+        // The OS names the input it routed to; one this phone doesn't list is unknown, never the one asked for.
+        this.inUse = id === null ? input : (deps.inputs.list().find((i) => i.id === id) ?? null);
       },
     });
   }

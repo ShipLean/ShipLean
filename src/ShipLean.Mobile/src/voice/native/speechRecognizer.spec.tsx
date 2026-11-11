@@ -300,6 +300,15 @@ describe('speechAdapter', () => {
     expect(recognizer.inputInUse()).toEqual(pods);
     expect(recognizer.inputName()).toBe('AirPods Pro');
 
+    // The OS names an input this phone doesn't list: unknown, not the one asked for.
+    jest.mocked(openMicStream).mockImplementationOnce((o) => ({
+      ...real(o),
+      routedInputId: () => 'usb-9',
+    }));
+    await recognizer.start({ hotwords: [] });
+    expect(recognizer.inputInUse()).toBeNull();
+    expect(recognizer.inputName()).toBeNull();
+
     // The OS says nothing: the requested input, the phone.
     tuning.pick('phone');
     await recognizer.start({ hotwords: [] });
