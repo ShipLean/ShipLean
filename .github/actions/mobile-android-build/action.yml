@@ -51,6 +51,8 @@ runs:
     - shell: bash
       working-directory: src/ShipLean.Mobile
       run: npx expo prebuild --platform android --no-install --clean
+    # --build-cache: Kotlin and Java compiles (about 4 minutes cold) come from Gradle's build cache, which lives under
+    # ~/.gradle/caches and so is saved with the Gradle cache.
     # React Native pins NDK 27.1, which the runner doesn't have: installing it took about 4 minutes. The runner image
     # ships a newer 27.x, and Expo's root project plugin takes ndkVersion from a project property when one is set.
     # If the image has no 27.x, the property is left off and Gradle installs the pinned one as before.
@@ -67,7 +69,7 @@ runs:
         ndk=$(ls "$ANDROID_HOME/ndk" 2>/dev/null | grep -E '^27\.' | sort -V | tail -n 1 || true)
         echo "NDK: ${ndk:-the version React Native pins}"
         ccache --zero-stats
-        ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64 ${ndk:+-PndkVersion=$ndk}
+        ./gradlew assembleDebug --no-daemon --build-cache -PreactNativeArchitectures=arm64-v8a,x86_64 ${ndk:+-PndkVersion=$ndk}
         ccache --show-stats
     - if: inputs.save-caches == 'true' && steps.gradle-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
