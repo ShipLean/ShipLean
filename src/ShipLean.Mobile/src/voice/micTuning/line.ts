@@ -42,29 +42,52 @@ export interface TuningResult {
   lineRms: number;
 }
 
-function median(values: number[]): number {
+const MIN_LINE_RMS = 20;
+const MAX_LINE_RMS = CEILING_RMS;
+const SILENT_RMS = 2;
+const MIN_VOICE_OVER_ROOM = 2;
+const MIN_STEP = 1;
+const MAX_STEP = 10;
+
+function percentile90(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
+  return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))];
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+// The room level is the loud end of the quiet step; the voice level is the loud end of the frames of the speaking step
+// that rise above the room (the whole step when none do). The line sits halfway between them on a log scale.
 export function classify(roomFrames: number[], voiceFrames: number[]): TuningResult {
-  // TODO: the real classification (no signal, too quiet, noisy) and the line halfway between room and voice.
-  const roomRms = median(roomFrames);
-  const voiceRms = median(voiceFrames);
-  return { kind: 'good', roomRms, voiceRms, lineRms: DEFAULT_FLOOR_RMS };
+  const roomRms = percentile90(roomFrames);
+  const aboveRoom = voiceFrames.filter((level) => level > roomRms);
+  const voiceRms = percentile90(aboveRoom.length > 0 ? aboveRoom : voiceFrames);
+  const lineRms = clamp(Math.sqrt(roomRms * voiceRms), MIN_LINE_RMS, MAX_LINE_RMS);
+  const result = (kind: TuningResultKind): TuningResult => ({ kind, roomRms, voiceRms, lineRms });
+
+  if ([...roomFrames, ...voiceFrames].every((level) => level < SILENT_RMS))
+    return result('noSignal');
+  if (voiceRms / roomRms < MIN_VOICE_OVER_ROOM) return result('noisy');
+  if (!speechPresentInFrames(voiceFrames) && speechPresentInFrames(voiceFrames, lineRms)) {
+    return result('tooQuiet');
+  }
+  return result('good');
 }
 
+// Step 1 is the least sensitive (the highest line), step 10 the most sensitive (the lowest), on a log scale.
 export function sliderToLine(step: number): number {
-  // TODO: a log scale over steps 1..10.
-  void step;
-  return DEFAULT_FLOOR_RMS;
+  const t = (clamp(step, MIN_STEP, MAX_STEP) - MIN_STEP) / (MAX_STEP - MIN_STEP);
+  return MAX_LINE_RMS * Math.pow(MIN_LINE_RMS / MAX_LINE_RMS, t);
 }
 
 export function lineToSlider(lineRms: number): number {
-  // TODO: the inverse of sliderToLine.
-  void lineRms;
-  return 5;
+  const t =
+    Math.log(MAX_LINE_RMS / clamp(lineRms, MIN_LINE_RMS, MAX_LINE_RMS)) /
+    Math.log(MAX_LINE_RMS / MIN_LINE_RMS);
+  return clamp(Math.round(MIN_STEP + t * (MAX_STEP - MIN_STEP)), MIN_STEP, MAX_STEP);
 }
 
 // undefined means the default floor.

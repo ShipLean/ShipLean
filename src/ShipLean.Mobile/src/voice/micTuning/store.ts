@@ -1,28 +1,48 @@
 import { PHONE_INPUT_ID, type MicTuning, type MicTuningStore } from '../contracts';
 
-// TODO: persist to the kv store under voice.micTuning as { picked, tunings }. For now the state is in memory and the
-// storage is not read.
+const KEY = 'voice.micTuning';
+
+interface Persisted {
+  picked: string;
+  tunings: Record<string, MicTuning>;
+}
+
+const EMPTY: Persisted = { picked: PHONE_INPUT_ID, tunings: {} };
+
+// Corrupt or foreign JSON reads as empty; it never throws.
+function read(raw: string | null): Persisted {
+  if (raw === null) return EMPTY;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return EMPTY;
+    const { picked, tunings } = parsed as Partial<Persisted>;
+    return {
+      picked: typeof picked === 'string' && picked !== '' ? picked : PHONE_INPUT_ID,
+      tunings:
+        typeof tunings === 'object' && tunings !== null && !Array.isArray(tunings) ? tunings : {},
+    };
+  } catch {
+    return EMPTY;
+  }
+}
+
 export function createMicTuningStore(storage: {
   getItemSync(k: string): string | null;
   setItemSync(k: string, v: string): void;
 }): MicTuningStore {
-  void storage;
-  let picked = PHONE_INPUT_ID;
-  const tunings = new Map<string, MicTuning>();
   const listeners = new Set<() => void>();
-  const notify = () => {
+  const load = () => read(storage.getItemSync(KEY));
+  const write = (next: Persisted) => {
+    storage.setItemSync(KEY, JSON.stringify(next));
     for (const cb of [...listeners]) cb();
   };
   return {
-    pickedInput: () => picked,
-    pick(inputId) {
-      picked = inputId;
-      notify();
-    },
-    tuning: (inputId) => tunings.get(inputId) ?? null,
+    pickedInput: () => load().picked,
+    pick: (inputId) => write({ ...load(), picked: inputId }),
+    tuning: (inputId) => load().tunings[inputId] ?? null,
     save(t) {
-      tunings.set(t.inputId, t);
-      notify();
+      const current = load();
+      write({ ...current, tunings: { ...current.tunings, [t.inputId]: t } });
     },
     subscribe(cb) {
       listeners.add(cb);
