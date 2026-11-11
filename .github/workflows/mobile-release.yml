@@ -1,7 +1,7 @@
 name: Mobile release
 
 # Builds the phone app on EAS and, by default, submits it: iOS to TestFlight, Android to the
-# Play internal track as a draft (src/ShipLean.Mobile/eas.json, submit.production).
+# Play internal track, rolled out to internal testers (src/ShipLean.Mobile/eas.json, submit.production).
 # With `listing` it also pushes the store listing from store/.
 # Run by hand only: a run with `build` uses EAS build credits and bumps the build number.
 # The build job waits for EAS and saves what it built (the Android .aab, the iOS .ipa) as the
