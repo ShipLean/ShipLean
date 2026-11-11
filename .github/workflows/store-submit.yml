@@ -4,8 +4,10 @@ name: Store submit
 # Play Console to do it. Run by hand, from main only, after Mobile release has built and
 # uploaded the build you want (store/README.md, "Submitting for review").
 #   Google Play: promotes the internal track's rolled-out release (what internal testers have)
-#                to production as a full release, which goes to Google's review and is published
-#                when approved (unless Managed publishing is on in Play Console).
+#                to the chosen track as a full release, which goes to Google's review and is
+#                published when approved (unless Managed publishing is on in Play Console):
+#                alpha (Closed testing - Alpha, which a new personal account must run with 12
+#                testers for 14 days before Play allows production) or production.
 #   App Store:   attaches the newest processed TestFlight build to the editable version (the one
 #                on Prepare for Submission) and submits it for review. The release after approval
 #                follows the version's release setting; Mobile release's listing push sets it to
@@ -22,6 +24,13 @@ on:
         type: choice
         options: [all, ios, android]
         default: all
+      play_track:
+        description: >-
+          Google Play track to promote the internal release to: alpha (Closed testing) or
+          production
+        type: choice
+        options: [alpha, production]
+        default: alpha
 
 concurrency:
   group: store-submit
@@ -61,9 +70,10 @@ jobs:
         id: setup
         with:
           play_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-      - name: Promote the internal release to production
+      - name: Promote the internal release to ${{ inputs.play_track }}
         env:
           PLAY_KEY_PATH: ${{ steps.setup.outputs.play_key_path }}
+          PLAY_TRACK: ${{ inputs.play_track }}
         run: store/push_listing.sh android submit
 
   submit-ios:

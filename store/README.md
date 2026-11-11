@@ -65,7 +65,7 @@ A run that builds also pushes the App Store listing to that version: `deliver` c
 
 Run **Store submit** (Actions) from `main` once Mobile release has uploaded the build you want. It sends that build to review and never pushes the listing:
 
-- **Google Play:** promotes the internal track's rolled-out release, the one internal testers have, to production as a full release. Google reviews it and publishes it when approved, unless Managed publishing is on in Play Console. An account that still needs its closed test (12 testers, 14 days) is refused by Play until that's done.
+- **Google Play:** promotes the internal track's rolled-out release, the one internal testers have, to the **Play track** chosen for the run as a full release. Google reviews it and publishes it when approved, unless Managed publishing is on in Play Console. `alpha` (the default) is Closed testing – Alpha: a new personal account must run it with 12 testers for 14 days before Play allows production. `production` is the store itself, which Play refuses until that closed test is done.
 - **App Store:** attaches the newest processed TestFlight build to the version on Prepare for Submission and submits it. The build's version must match that version, which Mobile release sees to when it builds and pushes the listing in the same run. After approval the version waits for a manual release, because Mobile release's listing push sets `automatic_release false`.
 
 Both stores refuse a submission while something under [Set by hand](#set-by-hand) is missing, such as App Privacy, Data safety or the content rating. The run fails with the store's message.
