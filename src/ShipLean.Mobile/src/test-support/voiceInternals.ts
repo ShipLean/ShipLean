@@ -37,6 +37,7 @@ export function fakeInternals(overrides: Partial<VoiceInternals> = {}): FakeInte
       sets.push(s);
     },
     spec: () => null,
+    watchSpec: () => () => {},
     engines: () => engines,
     runner: fakeRunner(),
     last: () => null,

@@ -93,6 +93,8 @@ export interface FlowHarness {
   runner: FakeRunner;
   // Every transcript text the model was asked to parse, in order.
   parsed: string[];
+  // The screen renders again with its spec (after its context changed): watchSpec's subscribers are told.
+  rendered(): void;
 }
 
 // Internals that behave as the provider's: resolve parses with `model`, keeps the result as last() and shows the
@@ -105,11 +107,18 @@ export function flowHarness(
   const spec = flowSpec(() => context);
   const runner = fakeRunner();
   const parsed: string[] = [];
+  const watchers = new Set<() => void>();
   let last: { calls: ParsedCall[]; transcript: Transcript; result: ResolveResult } | null = null;
   let source: 'voice' | 'typed' = 'voice';
   const v: FakeInternals = fakeInternals({
     runner,
     spec: () => spec,
+    watchSpec: (cb) => {
+      watchers.add(cb);
+      return () => {
+        watchers.delete(cb);
+      };
+    },
     last: () => last,
     resolve: async (t, opts) => {
       v.resolved.push({ transcript: t, source: opts.source });
@@ -139,5 +148,12 @@ export function flowHarness(
       });
     },
   });
-  return { v, runner, parsed };
+  return {
+    v,
+    runner,
+    parsed,
+    rendered: () => {
+      for (const cb of [...watchers]) cb();
+    },
+  };
 }
