@@ -517,11 +517,24 @@ describe('backlog voice spec', () => {
     ]);
   });
 
-  it('refuses the web-only actions with where to do it', () => {
+  it('refuses the web-only actions with where to do it and the web page that does it', () => {
     const f = failed(run(features(), "Let's do sprint planning", [['plan_sprint', {}]]));
     expect(f).toEqual({
       kind: 'webOnly',
-      detail: { action: 'plan_sprint', where: 'Sprint planning: the web Backlog’s Planning view' },
+      detail: {
+        action: 'plan_sprint',
+        where: 'Sprint planning: the web Backlog’s Planning view',
+        page: { page: 'planning' },
+      },
+    });
+    // Bulk edit names no level: the sheet opens the web Backlog at the level the phone shows.
+    expect(failed(run(features(), 'Bulk edit these', [['bulk_edit', {}]]))).toEqual({
+      kind: 'webOnly',
+      detail: {
+        action: 'bulk_edit',
+        where: 'Bulk edit: the web Backlog',
+        page: { page: 'backlog' },
+      },
     });
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, test } from 'vitest';
-import { links, webUrl } from './links';
+import { links, webPageUrl, webUrl } from './links';
 
 test('links_WhenBuilt_ShouldGiveTheRoutesObjectForm', () => {
   expect(links.signIn()).toEqual({ pathname: '/sign-in', params: {} });
@@ -70,6 +70,24 @@ describe('links', () => {
     );
     expect(webUrl('https://shiplean.test', 'SHIP', 'SHIP-12', 'board')).toBe(
       'https://shiplean.test/p/SHIP/items/SHIP-12/board',
+    );
+  });
+});
+
+describe('webPageUrl', () => {
+  it('gives the web Backlog at a level, Stories when none is given, and the Planning view on Stories', () => {
+    const origin = 'https://shiplean.example';
+    expect(webPageUrl(origin, 'SHIP', { page: 'backlog', level: 'features' })).toBe(
+      'https://shiplean.example/p/SHIP/backlogs/features',
+    );
+    expect(webPageUrl(origin, 'SHIP', { page: 'backlog', level: 'epics' })).toBe(
+      'https://shiplean.example/p/SHIP/backlogs/epics',
+    );
+    expect(webPageUrl(origin, 'SHIP', { page: 'backlog' })).toBe(
+      'https://shiplean.example/p/SHIP/backlogs/stories',
+    );
+    expect(webPageUrl(origin, 'SHIP', { page: 'planning' })).toBe(
+      'https://shiplean.example/p/SHIP/backlogs/stories?mode=planning',
     );
   });
 });

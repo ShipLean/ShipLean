@@ -260,6 +260,44 @@ describe('VoiceFailuresJourney', () => {
     expect(api.callsTo(ITEM_PATCH)).toHaveLength(0);
   });
 
+  it('opens the web Backlog for its web-only actions: the Planning view, and the level the phone shows', async () => {
+    const { model, recognizer } = installFakeEngines();
+    const api = backlog();
+    await renderApp({ url: '/p/SHIP/backlog', api });
+    await screen.findByTestId(backlogRowId('SHIP-906'));
+    await skipCoachMark();
+    jest.mocked(openBrowserAsync).mockClear();
+
+    // No item is focused on the list: the next step is the web page that does it, not an item.
+    const steps = [
+      {
+        said: 'plan the next sprint',
+        action: 'plan_sprint',
+        where: 'Sprint planning: the web Backlog’s Planning view',
+        page: '/p/SHIP/backlogs/stories?mode=planning',
+      },
+      {
+        said: 'bulk edit these',
+        action: 'bulk_edit',
+        where: 'Bulk edit: the web Backlog',
+        page: '/p/SHIP/backlogs/features',
+      },
+    ];
+    for (const step of steps) {
+      recognizer.script([], step.said);
+      model.respond([{ action: step.action, args: {} }]);
+      await hold('tabBar');
+
+      expect(await screen.findByTestId(correctionFailureDetailId)).toHaveTextContent(step.where);
+      const open = screen.getByTestId(correctionFailureOpenWebId);
+      expect(open).toBeEnabled();
+      await fireEvent.press(open);
+      expect(openBrowserAsync).toHaveBeenLastCalledWith(`${platform().apiOrigin()}${step.page}`);
+    }
+    expect(openBrowserAsync).toHaveBeenCalledTimes(2);
+    expect(api.callsTo(BULK)).toHaveLength(0);
+  });
+
   it('strikes out the web-only part and applies the rest', async () => {
     const { model, recognizer } = installFakeEngines();
     const api = workItem();

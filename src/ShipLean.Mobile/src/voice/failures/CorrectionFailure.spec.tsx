@@ -211,6 +211,36 @@ describe('CorrectionFailure', () => {
     expect(openBrowserAsync).toHaveBeenCalledWith(`${platform().apiOrigin()}/p/SHIP/items/SHIP-5`);
   });
 
+  it("webOnly with a page and no focused item opens the action's page on the web", async () => {
+    // The Backlog's list has no focused item: the action's page is the place, not an item.
+    await show(
+      {
+        kind: 'webOnly',
+        detail: { action: 'plan_sprint', where: 'Sprint planning', page: { page: 'planning' } },
+      },
+      { spec: specWith({ key: null, level: 'features' }), projectKey: 'SHIP', heard: 'Plan it' },
+    );
+    expect(screen.getByTestId(correctionFailureOpenWebId)).toBeEnabled();
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/backlogs/stories?mode=planning`,
+    );
+  });
+
+  it('webOnly with a backlog page and no level opens the web Backlog at the level the screen shows', async () => {
+    await show(
+      {
+        kind: 'webOnly',
+        detail: { action: 'bulk_edit', where: 'Bulk edit', page: { page: 'backlog' } },
+      },
+      { spec: specWith({ key: null, level: 'features' }), projectKey: 'SHIP', heard: 'Bulk edit' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/backlogs/features`,
+    );
+  });
+
   it('passes the unmatched span to HeardQuote and says nothing was changed', async () => {
     const { voice } = await show(noMatch);
     expect(screen.getByTestId(heardQuoteMissId(heardQuoteId))).toHaveTextContent(

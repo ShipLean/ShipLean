@@ -3,7 +3,7 @@ import { platform } from '@shiplean/core/platform';
 import { useQuery } from '@tanstack/react-query';
 import { openBrowserAsync } from 'expo-web-browser';
 import { Pressable, Text, View } from 'react-native';
-import { webUrl } from '../../links';
+import { webPageUrl, webUrl, type WebPage } from '../../links';
 import { useTheme } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Button } from '../../ui/Button';
@@ -38,7 +38,7 @@ import {
   correctionFailureYesId,
   correctionStateId,
 } from './CorrectionFailure.testIds';
-import { readSpecContext } from './specContext';
+import { readSpecContext, type SpecContext } from './specContext';
 import { useOffline } from './useOffline';
 
 export type CorrectionFailureKind = Exclude<
@@ -236,11 +236,7 @@ function useBody(props: CorrectionFailureProps, text: string): Body {
     }
     case 'webOnly': {
       const copy = webOnlyCopy(failure.detail.where);
-      // TODO: webUrl has no project-only page, so without a focused item there is nowhere to open.
-      const target =
-        projectKey === undefined || context.focusKey === null
-          ? null
-          : webUrl(platform().apiOrigin(), projectKey, context.focusKey);
+      const target = webTarget(failure.detail.page, context, projectKey);
       return {
         copy,
         misses: [],
@@ -257,6 +253,21 @@ function useBody(props: CorrectionFailureProps, text: string): Body {
       };
     }
   }
+}
+
+// Where Open on the web goes: the action's own page (a backlog page at the level the screen shows), else the focused
+// item's page, else nowhere.
+function webTarget(
+  page: WebPage | undefined,
+  context: SpecContext,
+  projectKey: string | undefined,
+): string | null {
+  if (projectKey === undefined) return null;
+  const origin = platform().apiOrigin();
+  if (page?.page === 'backlog' && page.level === undefined && context.level !== null)
+    return webPageUrl(origin, projectKey, { page: 'backlog', level: context.level });
+  if (page !== undefined) return webPageUrl(origin, projectKey, page);
+  return context.focusKey === null ? null : webUrl(origin, projectKey, context.focusKey);
 }
 
 function Rows({ rows }: { rows: { id: string; label: string; onPress: () => void }[] }) {
