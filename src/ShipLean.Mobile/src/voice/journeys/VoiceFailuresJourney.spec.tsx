@@ -215,6 +215,8 @@ describe('VoiceFailuresJourney', () => {
     expect(screen.getByTestId(dockIds.draftLabel)).toHaveTextContent('Note draft');
     await fireEvent.press(screen.getByTestId(dockIds.open));
     expect(screen.getByTestId(dockIds.noteField).props.value).toBe('the S22 runs warm');
+    // The saved draft was not cleared on the way to the page either.
+    expect([...kvValues.values()].some((v) => v.includes('the S22 runs warm'))).toBe(true);
   });
 
   it('offers SHIP-906 for SHIP-960 on the Backlog and goes on to the rank preview', async () => {
