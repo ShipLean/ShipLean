@@ -158,6 +158,11 @@ describe('notes model', () => {
       name: 'Claude Code',
       lane: 'lane C',
     });
+    expect(authorLabel({ ...base, agentName: 'Claude Code (claude.ai) · lane C' })).toEqual({
+      name: 'Claude Code',
+      lane: 'lane C',
+    });
+    expect(authorLabel({ ...base, agentName: 'Claude Code (claude.ai)' }).name).toBe('Claude Code');
     expect(authorLabel({ ...base, agentName: 'Claude Code', role: 'conductor' })).toEqual({
       name: 'Claude Code',
       lane: 'conductor',

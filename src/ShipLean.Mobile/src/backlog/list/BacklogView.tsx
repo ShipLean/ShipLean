@@ -3,13 +3,14 @@ import { ApiRequestError } from '@shiplean/core/api/client';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { links } from '../../links';
 import { useProject } from '../../shell/useProject';
 import { useTheme } from '../../theme';
 import { EmptyState } from '../../ui/EmptyState';
 import { ErrorState } from '../../ui/ErrorState';
 import { Chip } from '../../ui/Chip';
+import { Icon } from '../../ui/Icon';
 import { Segmented } from '../../ui/Segmented';
 import { Skeleton } from '../../ui/Skeleton';
 import { TabRootBar } from '../../ui/TabRootBar';
@@ -46,6 +47,8 @@ const LEVELS: { value: BacklogLevel; label: string }[] = [
   { value: 'features', label: 'Features' },
   { value: 'stories', label: 'Stories' },
 ];
+
+const LEVEL_NOUN = { epics: 'Epics', features: 'Features', stories: 'Stories' } as const;
 
 const NOUN = { features: 'Epic', stories: 'Feature' } as const;
 
@@ -198,6 +201,8 @@ export function BacklogView(props: BacklogViewProps) {
         <Chip
           label="Needs me"
           count={needing.length}
+          icon="inbox"
+          tone={needing.length > 0 ? 'ask' : undefined}
           selected={needsMe}
           onPress={() => setNeedsMe(!needsMe)}
           testID={backlogIds.chipNeedsMe}
@@ -212,6 +217,7 @@ export function BacklogView(props: BacklogViewProps) {
           <Chip
             label={parentKey ?? `All ${noun.toLowerCase()}s`}
             selected={parentKey !== null}
+            trailing="down"
             onPress={() => setPickerOpen(true)}
             testID={backlogIds.chipParent}
           />
@@ -222,14 +228,53 @@ export function BacklogView(props: BacklogViewProps) {
         data={error ? [] : visible}
         keyExtractor={(row) => row.id}
         refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={refetch} />}
+        contentContainerStyle={{ paddingBottom: theme.space[5] }}
         ListHeaderComponent={
-          projectId !== undefined && level !== 'epics' ? (
-            <AddRow
-              projectId={projectId}
-              level={level}
-              parent={parent === null ? null : { id: parent.id, key: parent.key }}
-            />
-          ) : undefined
+          <>
+            {filtering || rows === undefined ? null : (
+              <View
+                testID={backlogIds.hint}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: theme.space[2],
+                  marginHorizontal: theme.space[4],
+                  marginTop: theme.space[3],
+                }}
+              >
+                <Icon name="mic" size={16} color={theme.colors.accent} />
+                <Text style={{ color: theme.colors.muted, fontSize: theme.font.size.sm }}>
+                  Rank order. Hold the mic to move, or tap
+                </Text>
+                <Icon name="rank" size={16} color={theme.colors.muted} />
+              </View>
+            )}
+            {rows === undefined || error ? null : (
+              <Text
+                testID={backlogIds.count}
+                style={{
+                  paddingHorizontal: theme.space[4],
+                  paddingTop: theme.space[4] + 2,
+                  paddingBottom: theme.space[2],
+                  color: theme.colors.muted,
+                  fontSize: theme.font.size.xs,
+                  fontWeight: theme.font.weight.semibold,
+                  letterSpacing: 0.5,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {visible.length} {open ? 'open ' : ''}
+                {LEVEL_NOUN[level]}
+              </Text>
+            )}
+            {projectId !== undefined && level !== 'epics' ? (
+              <AddRow
+                projectId={projectId}
+                level={level}
+                parent={parent === null ? null : { id: parent.id, key: parent.key }}
+              />
+            ) : null}
+          </>
         }
         ListEmptyComponent={empty()}
         renderItem={({ item }) => (

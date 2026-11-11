@@ -1,6 +1,9 @@
 // What an Inbox row says, as pure functions (K7b): which asks it opens with, its kind label, the line that opens the
 // other asks, the buttons an ask gets, and what an answer in flight shows in place of those buttons.
 import type { InboxAskDto, InboxAskKind, InboxItemDto } from '@shiplean/core/api/inbox';
+import type { UserRef } from '@shiplean/core/api/refs';
+import { agentDisplayName } from '../ui/agentName';
+import type { IconName } from '../ui/Icon';
 import type { PendingAnswer } from './actions';
 
 // The asks a row opens with: one ask, or every decision when it opens with a decision (a batch, never one tap).
@@ -53,17 +56,40 @@ function groups(asks: InboxAskDto[]): InboxAskDto[][] {
   return out;
 }
 
-const kindOf = (group: InboxAskDto[]): string => {
+const kindOf = (group: InboxAskDto[]): { label: string; detail: string | null } => {
   const kind = group[0]!.kind;
-  if (kind !== 'decision') return KIND_TEXT[kind];
+  if (kind === 'status') return { label: KIND_TEXT.status, detail: 'you own this' };
+  if (kind !== 'decision') return { label: KIND_TEXT[kind], detail: null };
   const range = compressLabels(group.map((a) => a.label));
-  return group.length === 1 ? `Decision · ${range}` : `${group.length} decisions · ${range}`;
+  return { label: group.length === 1 ? 'Decision' : `${group.length} decisions`, detail: range };
 };
 
-// "Decision · D10", "8 decisions · D1–D8", "Needs input", "Mentioned you", "Status line to check". A mix of kinds
-// joins one label per kind: "Needs input + 2 decisions · D10–D11".
+// "Decision", "8 decisions", "Needs input", "Mentioned you", "Status line to check". A mix of kinds joins one label
+// per kind: "Needs input + 2 decisions". The decision numbers are in kindDetail, not here.
 export function kindLabel(asks: InboxAskDto[]): string {
-  return groups(asks).map(kindOf).join(' + ');
+  return groups(asks)
+    .map((g) => kindOf(g).label)
+    .join(' + ');
+}
+
+// The muted text after the label: "D10", "D1–D8", "you own this" on a status line. Null when there is none.
+export function kindDetail(asks: InboxAskDto[]): string | null {
+  const details = groups(asks)
+    .map((g) => kindOf(g).detail)
+    .filter((d): d is string => d !== null);
+  return details.length === 0 ? null : details.join(', ');
+}
+
+const KIND_ICON: Record<InboxAskKind, IconName> = {
+  decision: 'check',
+  question: 'message',
+  mention: 'user',
+  status: 'clock',
+};
+
+// The icon before the label: the first kind's.
+export function kindIcon(asks: InboxAskDto[]): IconName {
+  return KIND_ICON[asks[0]!.kind];
 }
 
 const NOUN: Record<InboxAskKind, [string, string]> = {
@@ -104,6 +130,7 @@ export interface AskButton {
   id: string;
   label: string;
   primary: boolean;
+  icon?: IconName;
   intent: ButtonIntent;
 }
 
@@ -124,6 +151,7 @@ export function buttonsFor(asks: InboxAskDto[]): AskButton[] {
           id: 'approve-all',
           label: `Approve all ${asks.length}`,
           primary: true,
+          icon: 'check',
           intent: { kind: 'review', scrollToConfirm: true },
         },
       ];
@@ -133,6 +161,7 @@ export function buttonsFor(asks: InboxAskDto[]): AskButton[] {
         id: 'approve',
         label: 'Approve',
         primary: true,
+        icon: 'check',
         intent: { kind: 'approve', number: ask.decision!.number },
       },
       {
@@ -152,26 +181,46 @@ export function buttonsFor(asks: InboxAskDto[]): AskButton[] {
         primary: false,
         intent: { kind: 'option', number: question.number, optionIndex, option },
       })),
-      { id: 'reply', label: 'Reply', primary: false, intent: { kind: 'sheet', mode: 'question' } },
+      {
+        id: 'reply',
+        label: 'Reply',
+        primary: false,
+        icon: 'mic',
+        intent: { kind: 'sheet', mode: 'question' },
+      },
     ];
   }
   if (ask.kind === 'mention') {
     return [
-      { id: 'reply', label: 'Reply', primary: false, intent: { kind: 'sheet', mode: 'mention' } },
+      {
+        id: 'reply',
+        label: 'Reply',
+        primary: false,
+        icon: 'mic',
+        intent: { kind: 'sheet', mode: 'mention' },
+      },
       {
         id: 'seen',
         label: 'Seen',
         primary: false,
+        icon: 'check',
         intent: { kind: 'seen', mentionId: ask.mention!.mentionId },
       },
     ];
   }
   return [
-    { id: 'still-true', label: 'Still true', primary: true, intent: { kind: 'stillTrue' } },
+    {
+      id: 'still-true',
+      label: 'Still true',
+      primary: false,
+      icon: 'check',
+      intent: { kind: 'stillTrue' },
+    },
     {
       id: 'new-status',
       label: 'New status',
       primary: false,
+      icon: 'mic',
       intent: { kind: 'sheet', mode: 'status' },
     },
   ];
@@ -226,10 +275,17 @@ export function waitsLine(item: InboxItemDto): string | null {
   return `${list} ${names.length === 1 ? 'waits' : 'wait'} on this`;
 }
 
-// Where an ask came from: the agent's name or the person's. A status line shows who last checked it, and when.
+// Where an ask came from: the agent's name (without the host) or the person's. A status line shows who last checked it,
+// and when.
 export function fromLine(ask: InboxAskDto): string {
   if (ask.kind === 'status') {
     return ask.from === null ? 'Never checked' : `Checked by ${ask.from.name} · ${ask.atLabel}`;
   }
-  return ask.agentName ?? ask.from?.name ?? '';
+  return ask.agentName === null ? (ask.from?.name ?? '') : agentDisplayName(ask.agentName);
+}
+
+// The avatar before the from line: AI for an agent, the person's initials otherwise. Null when nobody is named.
+export function fromAvatar(ask: InboxAskDto): { user: UserRef; agent: boolean } | null {
+  if (ask.from === null) return null;
+  return { user: ask.from, agent: ask.kind !== 'status' && ask.agentName !== null };
 }

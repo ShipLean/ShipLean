@@ -2,7 +2,8 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { renderScreen } from '../test-support/renderScreen';
 import { themes } from '../theme';
 import { Chip } from './Chip';
-import { countId } from './testIds';
+import { tint } from './layout';
+import { countId, dotId } from './testIds';
 
 describe.each(['light', 'dark'] as const)('Chip (%s)', (scheme) => {
   it('fills a selected chip with the accent soft colour and marks it selected', async () => {
@@ -34,5 +35,58 @@ describe.each(['light', 'dark'] as const)('Chip (%s)', (scheme) => {
       backgroundColor: themes[scheme].colors.surface,
     });
     expect(screen.queryByTestId(countId('open'))).toBeNull();
+  });
+});
+
+describe.each(['light', 'dark'] as const)('Chip extras (%s)', (scheme) => {
+  it('ask tone takes the tan fill and no border', async () => {
+    await renderScreen(
+      <Chip label="Needs me" tone="ask" selected={false} onPress={() => {}} testID="c" />,
+      { scheme },
+    );
+
+    expect(screen.getByTestId('c')).toHaveStyle({
+      backgroundColor: tint(themes[scheme].colors.warn, 0.14),
+      borderColor: 'transparent',
+    });
+  });
+
+  it('shows a colour dot, a leading icon and a trailing chevron when asked', async () => {
+    await renderScreen(
+      <Chip
+        label="Open"
+        dot="#123456"
+        icon="inbox"
+        trailing="chevron"
+        selected={false}
+        onPress={() => {}}
+        testID="c"
+      />,
+      { scheme },
+    );
+
+    expect(screen.getByTestId(dotId('c'))).toHaveStyle({ backgroundColor: '#123456' });
+    expect(screen.getByTestId('icon-inbox', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('icon-chevron', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('draws none of them by default', async () => {
+    await renderScreen(<Chip label="Open" selected={false} onPress={() => {}} testID="c" />, {
+      scheme,
+    });
+
+    expect(screen.queryByTestId(dotId('c'))).toBeNull();
+    expect(screen.queryByTestId('icon-down', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('icon-chevron', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('trailing down draws the down arrow', async () => {
+    await renderScreen(
+      <Chip label="All epics" trailing="down" selected={false} onPress={() => {}} testID="c" />,
+      { scheme },
+    );
+
+    expect(screen.getByTestId('icon-down', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('icon-chevron', { includeHiddenElements: true })).toBeNull();
   });
 });

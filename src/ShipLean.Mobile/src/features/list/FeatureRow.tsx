@@ -5,9 +5,11 @@ import { HealthPill } from '../../ui/HealthPill';
 import { layout, tint } from '../../ui/layout';
 import { NeedsPill } from '../../ui/NeedsPill';
 import { countStoryLevelUnder } from '../../ui/progress';
+import { TypeChip } from '../../ui/TypeChip';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { FeatureDetails } from '../details/FeatureDetails';
 import {
+  featureAccentId,
   featureMovedId,
   featureRowExpandId,
   featureRollupId,
@@ -16,7 +18,10 @@ import {
   featureStatusId,
   featureWhoId,
 } from '../testIds';
-import { rollupText, statusBy, type RankMove } from './filters';
+import { rollupLabel, statusBy, type RankMove } from './filters';
+
+// The left bar of a row that needs you (app.css .row.ask).
+const ACCENT_BAR = 3;
 
 export interface FeatureRowProps {
   row: FeatureRowDto;
@@ -42,7 +47,7 @@ export function FeatureRow({
   const { colors } = theme;
   const small = { fontSize: theme.font.size.sm, color: colors.muted } as const;
   const counts = countStoryLevelUnder(row.rollups);
-  const roll = rollupText(row.rollups);
+  const roll = rollupLabel(row.rollups);
   return (
     <View
       testID={featureRowId(row.key)}
@@ -52,6 +57,19 @@ export function FeatureRow({
         borderBottomColor: colors.border,
       }}
     >
+      {row.needsYou === null ? null : (
+        <View
+          testID={featureAccentId(row.key)}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: ACCENT_BAR,
+            backgroundColor: colors.warn,
+          }}
+        />
+      )}
       <Pressable
         testID={featureRowExpandId(row.key)}
         accessibilityRole="button"
@@ -65,8 +83,9 @@ export function FeatureRow({
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[2] }}>
+          <TypeChip type="Feature" />
           <Text style={{ ...small, fontFamily: theme.font.mono }}>{row.key}</Text>
-          <HealthPill health={row.health} />
+          <HealthPill health={row.health} showOnTrack />
           {highlight ? (
             <Text
               testID={featureMovedId(row.key)}
@@ -80,7 +99,7 @@ export function FeatureRow({
             </Text>
           ) : null}
           <View style={{ flex: 1 }} />
-          <NeedsPill needs={row.needsYou} />
+          <NeedsPill needs={row.needsYou} variant="label" />
         </View>
         <Text
           numberOfLines={2}

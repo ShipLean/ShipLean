@@ -6,7 +6,7 @@ import { optionCountId, optionId } from './testIds';
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
-  // Shown after the label when given (0 included).
+  // Shown after the label as "Label · N" when given (0 included).
   count?: number;
 }
 
@@ -71,12 +71,21 @@ export function Segmented<T extends string>({
               {o.label}
             </Text>
             {o.count === undefined ? null : (
-              <Text
-                testID={optionCountId(testID, o.value)}
-                style={{ color: colors.muted, fontSize: theme.font.size.sm }}
-              >
-                {o.count}
-              </Text>
+              <>
+                <Text
+                  style={{ color: colors.muted, fontSize: theme.font.size.sm }}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                >
+                  ·
+                </Text>
+                <Text
+                  testID={optionCountId(testID, o.value)}
+                  style={{ color: colors.muted, fontSize: theme.font.size.sm }}
+                >
+                  {o.count}
+                </Text>
+              </>
             )}
           </Pressable>
         );

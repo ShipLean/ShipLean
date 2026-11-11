@@ -8,21 +8,20 @@ import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import { ErrorState } from '../../ui/ErrorState';
-import { layout, tint } from '../../ui/layout';
+import { tint } from '../../ui/layout';
 import { Skeleton } from '../../ui/Skeleton';
 import type { MergeAction } from '../actions';
+import { DecisionButtons } from '../notes/DecisionButtons';
 import { Face } from '../notes/Face';
 import { authorLabel, CATEGORY_LABELS } from '../notes/notesModel';
 import { useRetroInsightsQuery, useSprintRetroQuery } from '../queries';
 import { useRetroActions } from '../RetroActions';
 import {
-  retroAddActionId,
   retroDecideCardId,
   retroDecideCauseId,
   retroDecideLogId,
   retroDecideLogToggleId,
   retroIds,
-  retroNotNeededId,
   retroPointId,
   retroPointTextId,
   retroProposalId,
@@ -172,34 +171,6 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
   );
 
   const pointRow = (point: RetroPointDto) => {
-    const compact = (label: string, onPress: () => void, testID: string, solid: boolean) => (
-      <Pressable
-        testID={testID}
-        accessibilityRole="button"
-        hitSlop={{ top: layout.compactSlop, bottom: layout.compactSlop }}
-        onPress={onPress}
-        style={{
-          height: layout.compact,
-          paddingHorizontal: theme.space[3],
-          borderRadius: theme.radius.md,
-          borderWidth: 1,
-          borderColor: solid ? colors.accent : colors.border,
-          backgroundColor: solid ? colors.accent : 'transparent',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text
-          style={{
-            fontSize: theme.font.size.base,
-            fontWeight: theme.font.weight.semibold,
-            color: solid ? colors.accentFg : colors.muted,
-          }}
-        >
-          {label}
-        </Text>
-      </Pressable>
-    );
     return (
       <View
         key={point.id}
@@ -230,10 +201,11 @@ export function ToDecideView({ projectId, sprintId }: ToDecideViewProps) {
             {point.rootCause}
           </Text>
         )}
-        <View style={{ flexDirection: 'row', gap: theme.space[2] }}>
-          {compact('+ Action item', () => setDeciding(point), retroAddActionId(point.id), true)}
-          {compact('Not needed', () => setDeciding(point), retroNotNeededId(point.id), false)}
-        </View>
+        <DecisionButtons
+          pointId={point.id}
+          onAddAction={() => setDeciding(point)}
+          onNotNeeded={() => setDeciding(point)}
+        />
       </View>
     );
   };

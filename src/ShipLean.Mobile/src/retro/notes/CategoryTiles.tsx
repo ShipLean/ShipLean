@@ -2,7 +2,13 @@ import { RETRO_CATEGORIES, type RetroCategory } from '@shiplean/core/api/retros'
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { tint } from '../../ui/layout';
-import { retroIds, retroTileCountId, retroTileId, retroTileToDecideId } from '../testIds';
+import {
+  retroIds,
+  retroTileCountId,
+  retroTileId,
+  retroTileStubId,
+  retroTileToDecideId,
+} from '../testIds';
 import { CATEGORY_LABELS } from './notesModel';
 
 export interface CategoryTilesProps {
@@ -39,7 +45,7 @@ export function CategoryTiles({ counts, selected, onSelect }: CategoryTilesProps
             onPress={() => onSelect(category)}
             style={{
               flex: 1,
-              minHeight: 72,
+              minHeight: 84,
               gap: 2,
               padding: theme.space[2],
               borderRadius: theme.radius.md,
@@ -48,23 +54,38 @@ export function CategoryTiles({ counts, selected, onSelect }: CategoryTilesProps
               backgroundColor: on ? tint(colour[category], 0.12) : colors.surface,
             }}
           >
+            <View
+              testID={retroTileStubId(category)}
+              style={{
+                width: 18,
+                height: 4,
+                borderRadius: 2,
+                marginBottom: 4,
+                backgroundColor: colour[category],
+              }}
+            />
             <Text
               testID={retroTileCountId(category)}
               style={{
                 fontSize: theme.font.size.lg,
-                fontWeight: theme.font.weight.bold,
-                color: colour[category],
+                fontWeight: theme.font.weight.semibold,
+                color: colors.text,
               }}
             >
               {points}
             </Text>
-            <Text style={{ fontSize: theme.font.size.xs, color: colors.text }}>
+            <Text style={{ fontSize: theme.font.size.xs, color: on ? colors.text : colors.muted }}>
               {CATEGORY_LABELS[category]}
             </Text>
             {toDecide > 0 ? (
               <Text
                 testID={retroTileToDecideId(category)}
-                style={{ fontSize: theme.font.size.xxs, color: colors.muted }}
+                style={{
+                  marginTop: 'auto',
+                  fontSize: theme.font.size.xxs,
+                  fontWeight: theme.font.weight.semibold,
+                  color: colors.warn,
+                }}
               >
                 {toDecide} to decide
               </Text>

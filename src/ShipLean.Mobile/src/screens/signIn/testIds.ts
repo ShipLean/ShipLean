@@ -4,5 +4,7 @@ export const signInIds = {
   button: 'sign-in-button',
   error: 'sign-in-error',
   version: 'sign-in-version',
-  logo: 'sign-in-logo',
+  body: 'sign-in-body',
+  connectedDot: 'sign-in-connected-dot',
+  howCard: 'sign-in-how-card',
 } as const;

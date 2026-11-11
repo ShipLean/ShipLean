@@ -68,7 +68,7 @@ describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
     await mount(inbox, { scheme });
     expect(await screen.findByTestId(inboxRowId('SHIP-743'))).toBeTruthy();
     expect(rowKeys()).toEqual(inbox.items.map((i) => i.key));
-    expect(screen.getByText('15 asks on 6 items')).toBeTruthy();
+    expect(screen.getByText(`${project.name} · 15 asks on 6 items`)).toBeTruthy();
   });
 
   it('indents a Story under its Feature', async () => {
@@ -93,13 +93,13 @@ describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
     const action = approve(item.id, item.key, [1, 2, 3, 4, 5, 6, 7, 8]);
     await act(async () => runner.setPending([aPending({ action, state: 'undo' })]));
     expect(screen.getByTestId('badge-probe').props.children).toBe('7');
-    expect(screen.getByText('7 asks on 5 items')).toBeTruthy();
+    expect(screen.getByText(`${project.name} · 7 asks on 5 items`)).toBeTruthy();
     // Inside the undo window the row stays, for its Undo.
     expect(screen.getByTestId(inboxRowId('SHIP-907'))).toBeTruthy();
     // Past the undo window every ask on SHIP-907 is answered: the row leaves too.
     await act(async () => runner.setPending([aPending({ action, state: 'sent' })]));
     expect(screen.queryByTestId(inboxRowId('SHIP-907'))).toBeNull();
-    expect(screen.getByText('7 asks on 5 items')).toBeTruthy();
+    expect(screen.getByText(`${project.name} · 7 asks on 5 items`)).toBeTruthy();
   });
 
   it('raises the badge again when the answer fails', async () => {
@@ -164,7 +164,7 @@ describe.each<Scheme>(['light', 'dark'])('InboxScreen (%s)', (scheme) => {
     expect(await screen.findByText('You answered 6 today')).toBeTruthy();
     expect(screen.getByText('Agents have picked up 4 of them')).toBeTruthy();
     expect(screen.queryByTestId(inboxIds.emptyNew)).toBeNull();
-    expect(screen.getByText('nothing waiting')).toBeTruthy();
+    expect(screen.getByText(`${project.name} · nothing waiting`)).toBeTruthy();
   });
 
   it('shows the kinds of ask to a person who never had one', async () => {
