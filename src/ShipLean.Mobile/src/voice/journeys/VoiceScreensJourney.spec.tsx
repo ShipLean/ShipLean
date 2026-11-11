@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { inboxRowId } from '../../inbox/testIds';
 import { retroTileId } from '../../retro/testIds';
 import { screenIds } from '../../screens/testIds';
+import { firstResultView } from '../../setup/guide';
 import { firstResultSheetIds } from '../../setup/FirstResultSheet.testIds';
 import { fromSetupTipIds } from '../../setup/FromSetupTip.testIds';
 import { readyCoachMarkIds } from '../../setup/ReadyCoachMark.testIds';
@@ -220,9 +221,16 @@ describe('voice on each screen of the wired app', () => {
     recognizer.script([], 'what needs me');
     model.respond([{ action: 'ask', args: { topic: 'whatNeedsMe' } }]);
     await hold('tabBar');
+    expect(model.parsed.map((p) => p.screen)).toEqual(['backlog']);
 
     // The first answer opens the first-result sheet, whose Open Inbox lands on the Inbox with its tip.
-    await fireEvent.press(await screen.findByTestId(firstResultSheetIds.openInbox));
+    const open = await screen.findByTestId(firstResultSheetIds.openInbox);
+    // The sheet read the Inbox: its lead is the one made from these rows, and the Inbox was fetched.
+    expect(api.callsTo(`GET /api/projects/${PROJECT}/inbox`).length).toBeGreaterThan(0);
+    expect(screen.getByTestId(firstResultSheetIds.lead)).toHaveTextContent(
+      firstResultView(INBOX).lead,
+    );
+    await fireEvent.press(open);
     const tip = await screen.findByTestId(fromSetupTipIds.card);
     expect(within(screen.getByTestId(screenIds.inbox)).getByTestId(fromSetupTipIds.card)).toBe(tip);
     expect(screen.getByTestId(inboxRowId('SHIP-906'))).toBeOnTheScreen();
