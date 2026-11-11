@@ -21,8 +21,7 @@ export function buildEngines(
 ): VoiceEngines {
   const { files, network, memoryBytes } = adapters;
   const models = createModelStore({ files, network, kv, memoryBytes, manifest, clock });
-  // TODO: the kv store behind the tuning store, once it persists.
-  const tuning = createMicTuningStore({ getItemSync: () => null, setItemSync: () => {} });
+  const tuning = createMicTuningStore({ getItemSync: kv.getItem, setItemSync: kv.setItem });
   const { inputs } = adapters;
   return {
     recognizer: adapters.recognizer({ files, models, inputs, tuning }),
