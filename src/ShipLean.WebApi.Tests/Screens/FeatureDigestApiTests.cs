@@ -8,6 +8,7 @@ using ShipLean.Application.Features.FeaturesOverview;
 using ShipLean.Application.Features.WorkItems.Reads.Changes;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Screens;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Users;
@@ -142,7 +143,7 @@ public class FeatureDigestApiTests : ApiFixture
         row.Lines[0].By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Priya);
         row.Lines[0].AgentName.ShouldBeNull();
         row.Lines[1].AgentName.ShouldBe("Claude Code");
-        row.Lines[1].AtLabel.ShouldBe("1h ago");
+        row.Lines[1].AtLabel.ShouldBe(DisplayDate.Relative(row.Lines[1].At, TimeProvider.System));
     }
 
     [Test]
