@@ -22,6 +22,10 @@ export function notReadyEngines(): VoiceEngines {
       inputName: () => null,
       inputInUse: () => null,
       start: () => Promise.reject(new Error('The speech recognizer is not configured.')),
+      watchLevel: (_onLevel, onFailed) => {
+        onFailed();
+        return () => {};
+      },
     },
     model: {
       ready: () => false,

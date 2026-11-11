@@ -6,7 +6,8 @@ import type { SttEngine, SttRecognitionResult } from 'react-native-sherpa-onnx/s
 import { FakeModelFiles } from '../../test-support/modelFiles';
 import { emitAudio, native } from '../../test-support/nativeMocks';
 import { FakeModelStore, fakeAudioInputs, fakeTuningStore } from '../../test-support/voice';
-import type { AudioInput } from '../contracts';
+import type { AudioInput, MicTuning } from '../contracts';
+import { sliderToLine } from '../micTuning/line';
 import { toHotwords } from '../speech/hotwords';
 import { createPartials } from '../speech/partials';
 import { createPcmBuffer } from '../speech/pcmBuffer';
@@ -81,6 +82,17 @@ const result = (text: string, tokens: string[] = [], timestamps: number[] = []) 
 async function engineOf(index = 0): Promise<jest.Mocked<SttEngine>> {
   return (await jest.mocked(createSTT).mock.results[index].value) as jest.Mocked<SttEngine>;
 }
+
+const aTuning = (over: Partial<MicTuning>): MicTuning => ({
+  inputId: 'phone',
+  roomRms: 50,
+  voiceRms: 2000,
+  lineRms: 300,
+  testedAt: '2026-11-12T00:00:00.000Z',
+  automatic: true,
+  manualStep: null,
+  ...over,
+});
 
 const pods: AudioInput = { id: 'bt-1', kind: 'bluetooth', name: 'AirPods Pro', connected: true };
 
@@ -313,6 +325,113 @@ describe('speechAdapter', () => {
     tuning.pick('phone');
     await recognizer.start({ hotwords: [] });
     expect(recognizer.inputName()).toBe('Phone');
+  });
+
+  describe('watchLevel', () => {
+    const opened = () => native.streamCalls.filter((c) => c.call === 'create').length;
+
+    it('reports levels without decoding, and keeps reporting past the hold cap', async () => {
+      const { recognizer } = setUp();
+      const levels: number[] = [];
+      recognizer.watchLevel(
+        (l) => levels.push(l),
+        () => undefined,
+      );
+      await waitFor(() => expect(native.audioListeners).toHaveLength(1));
+
+      const second = 16000 * 2; // MAX_HOLD_MS is 120 s: send 130 s
+      for (let i = 0; i < MAX_HOLD_MS / 2000 + 5; i++) emitAudio(tone(second, 3277));
+
+      expect(levels).toHaveLength(MAX_HOLD_MS / 2000 + 5);
+      expect(levels.at(-1)).toBeGreaterThan(0.5);
+      expect((await engineOf()).transcribeSamples).not.toHaveBeenCalled();
+      expect(jest.mocked(createPartials)).not.toHaveBeenCalled();
+      expect(native.audioListeners).toHaveLength(1);
+    });
+
+    it('two watchers open one stream, and it closes with the last', async () => {
+      const { recognizer } = setUp();
+      const a: number[] = [];
+      const b: number[] = [];
+      const stopA = recognizer.watchLevel(
+        (l) => a.push(l),
+        () => undefined,
+      );
+      const stopB = recognizer.watchLevel(
+        (l) => b.push(l),
+        () => undefined,
+      );
+
+      expect(opened()).toBe(1);
+      emitAudio(tone(1600));
+      expect(a).toHaveLength(1);
+      expect(b).toHaveLength(1);
+
+      stopA();
+      expect(native.audioListeners).toHaveLength(1);
+      stopB();
+      expect(native.audioListeners).toHaveLength(0);
+      expect(native.streamCalls.at(-1)).toEqual({ call: 'stop' });
+    });
+
+    it('pauses while a session runs and resumes after it ends', async () => {
+      const { recognizer } = setUp();
+      const levels: number[] = [];
+      recognizer.watchLevel(
+        (l) => levels.push(l),
+        () => undefined,
+      );
+      expect(opened()).toBe(1);
+
+      const session = await recognizer.start({ hotwords: [] });
+      // One listener: the session's. The watcher hears nothing while the session records.
+      expect(native.audioListeners).toHaveLength(1);
+      emitAudio(tone(1600));
+      expect(levels).toEqual([]);
+
+      session.cancel();
+      expect(opened()).toBe(3);
+      expect(native.audioListeners).toHaveLength(1);
+      emitAudio(tone(1600));
+      expect(levels).toHaveLength(1);
+    });
+
+    it('calls onFailed when the stream cannot start', async () => {
+      const { recognizer } = setUp();
+      jest.mocked(openMicStream).mockImplementationOnce((o) => {
+        const real = jest.requireActual<typeof import('./micStream')>('./micStream');
+        return { ...real.openMicStream(o), start: () => Promise.reject(new Error('refused')) };
+      });
+      const failed = jest.fn();
+      recognizer.watchLevel(() => undefined, failed);
+
+      await waitFor(() => expect(failed).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  it('gates with the saved automatic line of the resolved input', async () => {
+    const { recognizer, tuning } = setUp([pods]);
+    tuning.pick('bt-1');
+    tuning.save(aTuning({ inputId: 'bt-1', automatic: true, lineRms: 123 }));
+    tuning.save(aTuning({ inputId: 'phone', automatic: true, lineRms: 999 }));
+    const session = await recognizer.start({ hotwords: [] });
+    emitAudio(new Int16Array(8000));
+    await session.stop();
+
+    expect(jest.mocked(speechPresent)).toHaveBeenCalledWith(expect.any(Int16Array), 123);
+  });
+
+  it('gates with the slider line when the tuning is manual', async () => {
+    const { recognizer, tuning } = setUp();
+    tuning.save(aTuning({ inputId: 'phone', automatic: false, manualStep: 8, lineRms: 5 }));
+    const session = await recognizer.start({ hotwords: [] });
+    emitAudio(new Int16Array(8000));
+    await session.stop();
+
+    expect(jest.mocked(speechPresent)).toHaveBeenCalledWith(
+      expect.any(Int16Array),
+      sliderToLine(8),
+    );
   });
 
   it('cancel discards the buffer and resolves nothing', async () => {

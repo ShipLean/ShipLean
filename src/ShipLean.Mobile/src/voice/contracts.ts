@@ -70,6 +70,10 @@ export interface SpeechRecognizer {
   inputInUse(): AudioInput | null;
   // With decodeAlways, stop() decodes even when no speech is present (the Mic tuning test's second step).
   start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession>;
+  // A level-only stream for a live meter (0..1): the mic's frames to a level, with no decoding, no partials and no
+  // hold cap. Every watcher shares one stream. It pauses while a start() session runs and resumes after. onFailed is
+  // called when the stream can't start (mic refused). Returns the stop function.
+  watchLevel(onLevel: (level: number) => void, onFailed: () => void): () => void;
 }
 
 export interface VoiceActionSpec {
