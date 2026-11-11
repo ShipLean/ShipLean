@@ -2,13 +2,13 @@ import type { FeatureRowDto } from '@shiplean/core/api/featuresOverview';
 import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useInboxQuery } from '../../inbox/queries';
 import { links } from '../../links';
 import { useProject } from '../../shell/useProject';
 import { useTheme } from '../../theme';
-import { Banner } from '../../ui/Banner';
 import { Chip } from '../../ui/Chip';
+import { Icon } from '../../ui/Icon';
 import { EmptyState } from '../../ui/EmptyState';
 import { ErrorState } from '../../ui/ErrorState';
 import { Skeleton } from '../../ui/Skeleton';
@@ -17,7 +17,7 @@ import { TabRootBar } from '../../ui/TabRootBar';
 import { VoiceSendFailedBanner } from '../../voice/after/VoiceSendFailedBanner';
 import { useScreenVoice } from '../../voice/VoiceProvider';
 import { useFeatureStatesQuery, useFeaturesOverviewQuery } from '../queries';
-import { featureGroupCountId, featureGroupId, featuresIds } from '../testIds';
+import { featureGroupCountId, featureGroupId, featureGroupNeedsId, featuresIds } from '../testIds';
 import { featuresVoiceSpec } from '../voiceSpec';
 import { EpicPicker } from './EpicPicker';
 import { FeatureRow } from './FeatureRow';
@@ -27,12 +27,17 @@ import {
   epicsOf,
   groupInboxByFeature,
   isFiltered,
+  needYouCount,
+  openFeatureCount,
   shownGroups,
   type FeatureChip,
 } from './filters';
 import { NeedsYouView } from './NeedsYouView';
 import { useFeatureMembers } from './useFeatureMembers';
 import { useFeatureMoves } from './useFeatureMoves';
+
+// The list's bottom padding (app.css .scroll).
+const LIST_BOTTOM = 24;
 
 export interface FeaturesViewProps {
   projectKey: string;
@@ -224,6 +229,15 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
                   </Text>
                 </>
               )}
+              <View style={{ flex: 1 }} />
+              {needYouCount(rows) === 0 ? null : (
+                <Text
+                  testID={featureGroupNeedsId(group.stateCategory)}
+                  style={{ color: theme.colors.muted, fontSize: theme.font.size.sm }}
+                >
+                  {needYouCount(rows)} need you
+                </Text>
+              )}
             </View>
             {rows.map((row) => (
               <FeatureRow
@@ -242,32 +256,66 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
     );
   };
 
-  const since =
-    overview === undefined
-      ? null
-      : overview.changedSince === 0
-        ? { text: `No changes ${overview.sinceLabel}`, action: undefined }
-        : {
-            text: `${overview.changedSince} ${overview.changedSince === 1 ? 'change' : 'changes'} ${overview.sinceLabel}`,
-            action: {
-              label: 'View',
-              onPress: () => router.push(links.digest(projectKey)),
-            },
-          };
+  const needing = needYouCount(allRows);
+  const open = () => router.push(links.digest(projectKey));
+  const digest =
+    overview === undefined ? null : (
+      <Pressable
+        testID={featuresIds.sinceBanner}
+        accessibilityRole={overview.changedSince === 0 ? undefined : 'button'}
+        onPress={overview.changedSince === 0 ? undefined : open}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: theme.space[3],
+          marginHorizontal: theme.space[4],
+          marginTop: theme.space[2],
+          paddingVertical: theme.space[3],
+          paddingHorizontal: theme.space[3],
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          backgroundColor: theme.colors.surface,
+        }}
+      >
+        <Icon name="spark" size={16} color={theme.colors.text} />
+        <Text style={{ flex: 1, color: theme.colors.text, fontSize: theme.font.size.sm }}>
+          <Text style={{ fontWeight: theme.font.weight.bold }}>
+            {overview.changedSince === 0
+              ? `No changes ${overview.sinceLabel}`
+              : `${overview.changedSince} ${overview.changedSince === 1 ? 'change' : 'changes'} ${overview.sinceLabel}`}
+          </Text>
+          {needing === 0 ? null : (
+            <Text style={{ color: theme.colors.muted }}> · {needing} need you</Text>
+          )}
+        </Text>
+        {overview.changedSince === 0 ? null : (
+          <Icon name="chevron" size={16} color={theme.colors.muted} />
+        )}
+      </Pressable>
+    );
 
   return (
     <>
       <TabRootBar
         projectKey={projectKey}
         title="Features"
-        subtitle={project?.name}
+        subtitle={
+          project === undefined
+            ? undefined
+            : overview === undefined
+              ? project.name
+              : `${project.name} · ${openFeatureCount(overview)} open ${openFeatureCount(overview) === 1 ? 'Feature' : 'Features'}`
+        }
         onTilePress={() => router.dismissTo(links.projects())}
       />
       <VoiceSendFailedBanner />
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
+      {digest}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{
           gap: theme.space[2],
           padding: theme.space[4],
           paddingBottom: theme.space[2],
@@ -287,6 +335,7 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
           label="Needs you"
           count={counts?.needsYou}
           selected={chip === 'needsYou'}
+          tone={chip === 'needsYou' ? undefined : 'ask'}
           onPress={() => toggleChip('needsYou')}
           testID={featuresIds.chipNeeds}
         />
@@ -294,6 +343,7 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
           label="At risk"
           count={counts?.atRisk}
           selected={chip === 'atRisk'}
+          dot={theme.colors.warn}
           onPress={() => toggleChip('atRisk')}
           testID={featuresIds.chipRisk}
         />
@@ -301,6 +351,7 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
           label="Blocked"
           count={counts?.blocked}
           selected={chip === 'blocked'}
+          dot={theme.colors.danger}
           onPress={() => toggleChip('blocked')}
           testID={featuresIds.chipBlocked}
         />
@@ -312,17 +363,10 @@ function FeaturesList({ projectId, projectKey }: FeaturesListProps) {
             testID={featuresIds.chipEpic}
           />
         )}
-      </View>
-      {since === null ? null : (
-        <Banner
-          tone="info"
-          text={since.text}
-          action={since.action}
-          testID={featuresIds.sinceBanner}
-        />
-      )}
+      </ScrollView>
       <ScrollView
         testID={featuresIds.list}
+        contentContainerStyle={{ paddingBottom: LIST_BOTTOM }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
       >
         {body()}

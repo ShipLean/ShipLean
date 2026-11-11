@@ -24,6 +24,8 @@ import {
   featureDetailsId,
   featureGroupCountId,
   featureGroupId,
+  featureAccentId,
+  featureGroupNeedsId,
   featureMovedId,
   featureNeedsHeaderId,
   featureEpicOptionId,
@@ -130,12 +132,29 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     expect(screen.getByTestId(featureGroupCountId('completed'))).toHaveTextContent('Closed · 2');
     expect(screen.queryByTestId(featureRowId('SHIP-742'))).toBeNull();
     expect(screen.getByTestId(featureStatusId('SHIP-892'))).toHaveTextContent('No status yet.');
-    expect(screen.getByTestId(featureRollupId('SHIP-906'))).toHaveTextContent('2/9 stories');
+    expect(screen.getByTestId(featureRollupId('SHIP-906'))).toHaveTextContent('S 2/9');
     expect(screen.getByTestId(featuresIds.sinceBanner)).toHaveTextContent(
-      '3 changes since Mon 09:12View',
+      /^3 changes since Mon 09:12 · \d+ need you$/,
     );
     expect(screen.getByTestId(countId(featuresIds.chipNeeds))).toHaveTextContent('3');
     expect(screen.getByTestId(countId(featuresIds.chipAll))).toHaveTextContent('7');
+  });
+
+  it('shows the cards as the mock-up: type chip, health, Needs you with an accent bar, need-you counts', async () => {
+    await renderTab({ scheme });
+    const row = within(await screen.findByTestId(featureRowId('SHIP-906')));
+
+    expect(row.getByTestId(primitiveIds.typeChip)).toBeOnTheScreen();
+    expect(row.getByTestId(primitiveIds.healthPill)).toBeOnTheScreen();
+    expect(row.getByTestId(primitiveIds.needsPill)).toHaveTextContent('Needs you');
+    expect(row.getByTestId(featureAccentId('SHIP-906'))).toBeOnTheScreen();
+    expect(screen.queryByTestId(featureAccentId('SHIP-892'))).toBeNull();
+    expect(screen.getByTestId(featureGroupNeedsId('inProgress'))).toHaveTextContent(
+      /^\d+ need you$/,
+    );
+    expect(screen.getByTestId(screenIds.features)).toHaveTextContent(
+      /ShipLean · \d+ open Features/,
+    );
   });
 
   it('marks a stale status line in the warn colour and names the agent', async () => {
@@ -148,9 +167,7 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     expect(stale).toHaveTextContent('Sam · 4 days old');
     expect(stale).toHaveStyle({ color: themes[scheme].colors.warn });
     expect(screen.getByTestId(featureStaleId('SHIP-743'))).toHaveTextContent('Stale');
-    expect(screen.getByTestId(featureWhoId('SHIP-906'))).toHaveTextContent(
-      'Claude Code (agent) · 3h ago',
-    );
+    expect(screen.getByTestId(featureWhoId('SHIP-906'))).toHaveTextContent('Claude Code · 3h ago');
     expect(screen.getByTestId(featureWhoId('SHIP-906'))).not.toHaveStyle({
       color: themes[scheme].colors.warn,
     });
@@ -211,7 +228,7 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
 
   it('opens the digest from the since banner', async () => {
     await renderTab({ scheme });
-    await fireEvent.press(await screen.findByTestId(`${featuresIds.sinceBanner}-action`));
+    await fireEvent.press(await screen.findByTestId(featuresIds.sinceBanner));
 
     expect(mockPush).toHaveBeenCalledWith(links.digest('SHIP'));
   });
@@ -221,9 +238,9 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     await renderTab({ scheme, overview });
 
     expect(await screen.findByTestId(featuresIds.sinceBanner)).toHaveTextContent(
-      'No changes since yesterday',
+      /^No changes since yesterday/,
     );
-    expect(screen.queryByTestId(`${featuresIds.sinceBanner}-action`)).toBeNull();
+    expect(screen.queryByTestId(featuresIds.sinceBanner)).not.toHaveProp('onPress');
   });
 
   it('renders the move-applied state: the moved row highlighted with its old rank', async () => {
@@ -259,11 +276,11 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     }
   });
 
-  it('shows no health pill on an on-track Feature', async () => {
+  it('shows On track on an on-track Feature', async () => {
     await renderTab({ scheme });
 
     const onTrack = await screen.findByTestId(featureRowId('SHIP-707'));
-    expect(within(onTrack).queryByTestId(primitiveIds.healthPill)).toBeNull();
+    expect(within(onTrack).getByTestId(primitiveIds.healthPill)).toHaveTextContent('On track');
     expect(
       within(screen.getByTestId(featureRowId('SHIP-906'))).getByTestId(primitiveIds.healthPill),
     ).toHaveTextContent('At risk');

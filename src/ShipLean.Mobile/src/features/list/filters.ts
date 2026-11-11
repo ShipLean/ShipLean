@@ -6,6 +6,7 @@ import type {
 import type { InboxItemDto } from '@shiplean/core/api/inbox';
 import type { RollupCountDto } from '@shiplean/core/api/views';
 import type { ParentRefDto } from '@shiplean/core/api/workItems';
+import { agentDisplayName } from '../../ui/agentName';
 
 export type FeatureChip = 'all' | 'needsYou' | 'atRisk' | 'blocked';
 
@@ -175,10 +176,38 @@ export function rollupText(rollups: RollupCountDto[]): string {
   return parts.join(' · ');
 }
 
-// Who wrote the status line and how long ago: a person's name or "‹agent› (agent)", then the server's age label.
+const LETTERS: Partial<Record<RollupCountDto['type'], string>> = {
+  story: 'S',
+  bug: 'B',
+  action: 'A',
+  feature: 'F',
+};
+
+// "S 2/9 · B 0/1": what is closed of what is under the Feature, by type letter. Empty when nothing is.
+export function rollupLabel(rollups: RollupCountDto[]): string {
+  const parts: string[] = [];
+  for (const [type, letter] of Object.entries(LETTERS)) {
+    const entry = rollups.find((r) => r.type === type);
+    if (entry === undefined) continue;
+    const total = entry.open + entry.closed;
+    if (total > 0) parts.push(`${letter} ${entry.closed}/${total}`);
+  }
+  return parts.join(' · ');
+}
+
+// The Features that are not closed: the server's count of every group but Closed.
+export const openFeatureCount = (overview: FeaturesOverviewDto): number =>
+  overview.groups.filter((g) => g.stateCategory !== 'completed').reduce((n, g) => n + g.count, 0);
+
+// Rows with something waiting on the person.
+export const needYouCount = (rows: FeatureRowDto[]): number =>
+  rows.filter((r) => r.needsYou !== null).length;
+
+// Who wrote the status line and how long ago: a person's name or the agent's name, then the server's age label.
 export function statusBy(row: FeatureRowDto): string {
   const verified = row.statusVerified;
   if (verified === null) return '';
-  const who = verified.agent === null ? (verified.by?.name ?? '') : `${verified.agent} (agent)`;
+  const who =
+    verified.agent === null ? (verified.by?.name ?? '') : agentDisplayName(verified.agent);
   return who === '' ? verified.atLabel : `${who} · ${verified.atLabel}`;
 }
