@@ -51,7 +51,8 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
   const [remaining, setRemaining] = useState(QUIET_SECONDS);
   const [holding, setHolding] = useState(false);
   const live = useLiveLevel(phase.kind === 'start');
-  const notReady = live.failed || failedStart;
+  // The level stream fails only when the mic can't open; a recognizer without its models is not ready either.
+  const notReady = live.failed || failedStart || !engines().recognizer.ready();
 
   const sessions = useRef<Set<RecognitionSession>>(new Set());
   const pressed = useRef(false);

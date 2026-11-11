@@ -246,11 +246,20 @@ describe('MicTuningTest steps', () => {
     expect(screen.getByTestId(ids.phrase)).toHaveTextContent(/Show my inbox/);
   });
 
-  it('shows that voice is not ready instead of the test when the recognizer cannot start', async () => {
+  it('shows that voice is not ready instead of the test when the recognizer is not ready', async () => {
     const fakes = installFakeEngines();
-    jest.spyOn(fakes.recognizer, 'start').mockRejectedValue(new Error('no model'));
+    fakes.recognizer.setReady(false);
     await renderScreen(<MicTuningTest from="third_hold" now={now} />);
     await act(async () => {});
+
+    expect(screen.getByTestId(ids.notReady)).toBeOnTheScreen();
+    expect(screen.queryByTestId(ids.startButton)).toBeNull();
+  });
+
+  it('shows that voice is not ready instead of the test when the mic stream cannot start', async () => {
+    const fakes = installFakeEngines();
+    await renderScreen(<MicTuningTest from="third_hold" now={now} />);
+    await act(async () => fakes.recognizer.failWatch());
 
     expect(screen.getByTestId(ids.notReady)).toBeOnTheScreen();
     expect(screen.queryByTestId(ids.startButton)).toBeNull();
