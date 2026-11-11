@@ -2,10 +2,11 @@ import { PHONE_INPUT_ID, type MicTuning, type MicTuningStore } from '../contract
 
 // TODO: persist to the kv store under voice.micTuning as { picked, tunings }. For now the state is in memory and the
 // storage is not read.
-export function createMicTuningStore(_storage: {
+export function createMicTuningStore(storage: {
   getItemSync(k: string): string | null;
   setItemSync(k: string, v: string): void;
 }): MicTuningStore {
+  void storage;
   let picked = PHONE_INPUT_ID;
   const tunings = new Map<string, MicTuning>();
   const listeners = new Set<() => void>();

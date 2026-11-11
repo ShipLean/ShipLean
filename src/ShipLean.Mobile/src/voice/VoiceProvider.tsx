@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AppState } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { NavigationContext } from 'expo-router/react-navigation';
 import { useActionRunner } from '../actions/ActionRunnerProvider';
 import { systemNow } from '../actions/clock';
@@ -540,13 +540,16 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
   }, [state, store, e, internals, readMic, settle]);
 
   // The Mic tuning page sits above this screen. When it asks for "Type instead" and goes back, the screen regains
-  // focus here and opens the composer (voice/micTuning/returnIntent).
-  const typeInstead = api.typeInstead;
-  useFocusEffect(
-    useCallback(() => {
-      if (takeTypeInstead()) typeInstead();
-    }, [typeInstead]),
-  );
+  // focus here and opens the composer (voice/micTuning/returnIntent). Outside a navigator there is no focus to follow.
+  const nav = useContext(NavigationContext);
+  const typeInstead = useRef(api.typeInstead);
+  typeInstead.current = api.typeInstead;
+  useEffect(() => {
+    if (nav === undefined) return undefined;
+    return nav.addListener('focus', () => {
+      if (takeTypeInstead()) typeInstead.current();
+    });
+  }, [nav]);
 
   return (
     <EnginesContext.Provider value={e}>

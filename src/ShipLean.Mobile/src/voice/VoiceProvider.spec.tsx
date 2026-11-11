@@ -38,16 +38,31 @@ import {
   type VoiceApi,
 } from './VoiceProvider';
 
-// The provider's screen is not inside a navigator here, so a test drives focus itself: focusScreen() runs the effect
-// the provider gave useFocusEffect, as a focus event would.
-let focusEffect: (() => void) | null = null;
+// The provider's screen is not inside a navigator here, so a fake navigation object is the context's default: a test
+// calls focusScreen() as a focus event would.
+const mockFocusListeners = new Set<() => void>();
+const focusScreen = () => {
+  for (const cb of [...mockFocusListeners]) cb();
+};
 jest.mock('expo-router', () => ({
   ...jest.requireActual<object>('expo-router'),
   router: { push: jest.fn() },
-  useFocusEffect: (effect: () => void) => {
-    focusEffect = effect;
-  },
 }));
+jest.mock('expo-router/react-navigation', () => {
+  const { createContext } = jest.requireActual<typeof import('react')>('react');
+  const nav = {
+    isFocused: () => true,
+    addListener: (event: string, cb: () => void) => {
+      if (event === 'focus') mockFocusListeners.add(cb);
+      return () => mockFocusListeners.delete(cb);
+    },
+  };
+  return {
+    ...jest.requireActual<object>('expo-router/react-navigation'),
+    NavigationContext: createContext(nav),
+  };
+});
+
 jest.mock('./flows/fix', () => ({ startFix: jest.fn(), fixHeard: jest.fn(async () => {}) }));
 jest.mock('./flows/typed', () => ({ submitTyped: jest.fn(async () => {}) }));
 jest.mock('./flows/conflict', () => ({ onConflict: jest.fn() }));
@@ -193,16 +208,16 @@ describe('VoiceProvider', () => {
     expect(composer.result.current.request).toBeNull();
 
     // No request from the Mic tuning page: a focus opens nothing.
-    await act(async () => focusEffect?.());
+    await act(async () => focusScreen());
     expect(composer.result.current.request).toBeNull();
 
     requestTypeInstead();
-    await act(async () => focusEffect?.());
+    await act(async () => focusScreen());
     expect(composer.result.current.request).toMatchObject({ mode: 'command', text: '' });
 
     // The dock took it; a later focus does not open it again.
     await act(async () => composer.result.current.consume());
-    await act(async () => focusEffect?.());
+    await act(async () => focusScreen());
     expect(composer.result.current.request).toBeNull();
   });
 

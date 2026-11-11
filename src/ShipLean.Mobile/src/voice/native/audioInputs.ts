@@ -8,7 +8,7 @@ export class NativeAudioInputs implements AudioInputs {
     return [PHONE];
   }
 
-  subscribe(_cb: () => void): () => void {
+  subscribe(): () => void {
     return () => {};
   }
 }

@@ -9,6 +9,7 @@ export interface MicTuningTestProps {
 }
 
 // TODO: the two-step test (room, then voice), its result and the line it sets.
-export function MicTuningTest(_props: MicTuningTestProps) {
+export function MicTuningTest(props: MicTuningTestProps) {
+  void props;
   return <View testID={micTuningTestId} />;
 }

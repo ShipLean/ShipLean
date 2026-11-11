@@ -55,13 +55,15 @@ export function classify(roomFrames: number[], voiceFrames: number[]): TuningRes
   return { kind: 'good', roomRms, voiceRms, lineRms: DEFAULT_FLOOR_RMS };
 }
 
-export function sliderToLine(_step: number): number {
+export function sliderToLine(step: number): number {
   // TODO: a log scale over steps 1..10.
+  void step;
   return DEFAULT_FLOOR_RMS;
 }
 
-export function lineToSlider(_lineRms: number): number {
+export function lineToSlider(lineRms: number): number {
   // TODO: the inverse of sliderToLine.
+  void lineRms;
   return 5;
 }
 
