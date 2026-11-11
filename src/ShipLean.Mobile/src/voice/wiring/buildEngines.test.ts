@@ -37,6 +37,7 @@ describe('buildEngines', () => {
       files,
       network,
       memoryBytes: 7.4 * GIB,
+      keepAlive: { start: () => true, stop: () => undefined },
     };
     const kv = memoryStore();
 

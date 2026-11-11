@@ -1,3 +1,4 @@
+import { startDownloadService, stopDownloadService } from '../../../modules/model-files';
 import type { CommandModel, MicPermission, SpeechRecognizer } from '../contracts';
 import { FakeModelFiles } from '../../test-support/modelFiles';
 import { setTotalMemory } from '../../test-support/nativeMocks';
@@ -66,8 +67,22 @@ describe('native adapters', () => {
     expect(adapters.files).toBeInstanceOf(ExpoModelFiles);
     expect(adapters.network).toBeInstanceOf(NetInfoNetworkKind);
     expect(adapters.memoryBytes).toBe(8 * 1024 ** 3);
+    // The keep-alive is the model-files module's download service.
+    expect(adapters.keepAlive.start(42)).toBe(true);
+    expect(startDownloadService).toHaveBeenCalledWith(42);
+    adapters.keepAlive.stop();
+    expect(stopDownloadService).toHaveBeenCalled();
     expect(Object.keys(adapters).sort()).toEqual(
-      ['files', 'inputs', 'memoryBytes', 'mic', 'model', 'network', 'recognizer'].sort(),
+      [
+        'files',
+        'inputs',
+        'keepAlive',
+        'memoryBytes',
+        'mic',
+        'model',
+        'network',
+        'recognizer',
+      ].sort(),
     );
   });
 });

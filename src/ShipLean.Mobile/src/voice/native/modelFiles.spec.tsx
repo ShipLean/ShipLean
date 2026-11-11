@@ -341,6 +341,28 @@ describe('modelFilesAdapter', () => {
     expect(lastTask().calls).toEqual(['resume']);
   });
 
+  it('on Android a restart carries on from the part file, not from an older saved pause', async () => {
+    android = jest.replaceProperty(Platform, 'OS', 'android');
+    const { task } = start();
+    await settle();
+    lastTask().progress(1500);
+    task.pause();
+    await task.done;
+    // Resumed, and 2700 bytes on disk before the transfer stuck: the saved pause still says 1500.
+    task.resume();
+    await settle();
+    lastTask().progress(2700);
+
+    start(new ExpoModelFiles());
+    await settle();
+    expect(lastTask().restoredFrom).toEqual({
+      url: mockQwen.url,
+      fileUri: 'file:///app/Documents/models/qwen3-4b/qwen3-4b-q4_k_m.part',
+      isDirectory: false,
+      resumeData: '2700',
+    });
+  });
+
   it('a no-space failure resolves done as error space; a dropped connection as error network', async () => {
     const first = start();
     await settle();
