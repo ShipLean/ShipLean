@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { links } from '../links';
+import { themes } from '../theme';
 import { fakeVoice, renderWithVoice, type FakeVoice } from '../test-support/voiceUi';
 import { micLabelId, micSlotId, micStrikeId, type MicPlacement } from './MicSlot.testIds';
 import { MicSlot } from './MicSlot';
@@ -50,6 +51,28 @@ describe('MicSlot', () => {
     expect(within(button).getByTestId('icon-mic', HIDDEN)).toBeOnTheScreen();
     expect(screen.getByTestId(micLabelId('tabBar'))).toHaveTextContent('Hold to talk');
     expect(within(button).queryByTestId(micLabelId('tabBar'))).toBeNull();
+  });
+
+  it('paints the raised mic solid accent when idle', async () => {
+    const colours = themes.light.colors;
+    await mount(idle);
+    expect(screen.getByTestId(micSlotId('tabBar'))).toHaveStyle({
+      backgroundColor: colours.accent,
+    });
+  });
+
+  it('turns the raised mic danger red while listening', async () => {
+    await mount({ kind: 'listening', partial: '', screen: '', hotwords: [] });
+    expect(screen.getByTestId(micSlotId('tabBar'))).toHaveStyle({
+      backgroundColor: themes.light.colors.danger,
+    });
+  });
+
+  it('keeps the dock mic on its soft accent', async () => {
+    await mount(idle, 'dock');
+    expect(screen.getByTestId(micSlotId('dock'))).toHaveStyle({
+      backgroundColor: themes.light.colors.accentSoft,
+    });
   });
 
   it('keeps the dock mic 52 points with its label inside', async () => {
