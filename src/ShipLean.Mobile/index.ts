@@ -1,4 +1,6 @@
-// Polyfills first: the core reads crypto at load, and Hermes has neither randomUUID nor getRandomValues.
+// Crash reports first, so a crash while anything below loads is reported.
+import './src/crashReports';
+// Polyfills next: the core reads crypto at load, and Hermes has neither randomUUID nor getRandomValues.
 import './src/polyfills';
 import { systemNow } from './src/actions/clock';
 import { kvStore } from './src/session/session';

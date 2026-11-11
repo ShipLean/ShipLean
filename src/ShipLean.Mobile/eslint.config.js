@@ -30,7 +30,7 @@ module.exports = tseslint.config(
     files: ['*.js'],
     languageOptions: {
       sourceType: 'commonjs',
-      globals: { module: 'writable', require: 'readonly' },
+      globals: { module: 'writable', require: 'readonly', __dirname: 'readonly' },
     },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
