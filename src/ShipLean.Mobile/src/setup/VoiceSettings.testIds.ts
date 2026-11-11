@@ -17,6 +17,8 @@ export const voiceSettingsIds = {
   deleteLine: 'settings-voice-delete-line',
   deleteConfirm: 'settings-voice-delete-confirm',
   deleteCancel: 'settings-voice-delete-cancel',
+  micTuning: 'settings-voice-mic-tuning',
+  micTuningValue: 'settings-voice-mic-tuning-value',
   microphone: 'settings-voice-microphone',
   microphoneValue: 'settings-voice-microphone-value',
   licences: 'settings-voice-licences',
