@@ -134,7 +134,9 @@ jobs:
               platform = build["platform"].lower()
               extension = posixpath.splitext(urllib.parse.urlsplit(url).path)[1] or ".bin"
               name = "shiplean-{}-{}-{}{}".format(platform, build.get("appVersion"), build.get("appBuildVersion"), extension)
-              with urllib.request.urlopen(url) as response, open(os.path.join(out, name), "wb") as handle:
+              # expo.dev answers Python's default User-Agent (Python-urllib) with 403 Forbidden.
+              request = urllib.request.Request(url, headers={"User-Agent": "shiplean-mobile-release"})
+              with urllib.request.urlopen(request) as response, open(os.path.join(out, name), "wb") as handle:
                   while chunk := response.read(1 << 20):
                       handle.write(chunk)
               print("Saved", name)
