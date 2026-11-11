@@ -1,6 +1,8 @@
 // The recognizer's only way to a microphone stream.
 import { AudioModule } from 'expo-audio';
 import type { AudioStreamBuffer } from 'expo-audio';
+import { nativeInputs } from '../../../modules/audio-input';
+import { PHONE_INPUT_ID } from '../contracts';
 
 export interface MicStreamOptions {
   sampleRate: number;
@@ -17,12 +19,19 @@ export interface MicStream {
   routedInputId(): string | null;
 }
 
+// The OS's id of the phone's own mic, or undefined when the OS lists none.
+function builtInId(): string | undefined {
+  return nativeInputs().find((i) => i.kind === 'phone')?.id;
+}
+
 export function openMicStream(opts: MicStreamOptions): MicStream {
-  // TODO: choose the device with opts.inputId and report the routed one; expo-audio's stream has no device option.
+  const builtIn = builtInId();
+  // The phone is its own mic, never the system's choice; any other input is picked by the OS's id.
   const stream = new AudioModule.AudioStream({
     sampleRate: opts.sampleRate,
     channels: 1,
     encoding: 'int16',
+    preferredInputId: opts.inputId === PHONE_INPUT_ID ? builtIn : opts.inputId,
   });
   return {
     onBuffer(cb) {
@@ -36,6 +45,10 @@ export function openMicStream(opts: MicStreamOptions): MicStream {
     },
     start: () => stream.start(),
     stop: () => stream.stop(),
-    routedInputId: () => null,
+    routedInputId() {
+      const routed = stream.routedInputId;
+      if (routed === null || routed === undefined) return null;
+      return routed === builtIn ? PHONE_INPUT_ID : routed;
+    },
   };
 }
