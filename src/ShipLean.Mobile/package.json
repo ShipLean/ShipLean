@@ -17,6 +17,7 @@
     "bundle": "expo export --platform android --output-dir .expo/bundle-check"
   },
   "dependencies": {
+    "@dr.pogodin/react-native-fs": "2.41.0",
     "@react-native-community/netinfo": "12.0.1",
     "@sentry/react-native": "8.32.0",
     "@shiplean/core": "workspace:*",
