@@ -5,7 +5,6 @@ using Dapper;
 using ShipLean.Contracts.Retros;
 using ShipLean.Contracts.Screens;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
@@ -15,8 +14,7 @@ namespace ShipLean.WebApi.Tests.Screens;
 
 // The screens' server paths as the phone drives them: a device bearer for the person, /mcp as the agent. The person is a fresh
 // member of SHIP, so the seed's own Features, digest marks and retro points never reach them. The Feature is made through
-// create_feature and everything after it through a route or tool; only the Story is placed by a builder, as no route makes one
-// under an owner of our choosing.
+// create_feature and everything after it through a route or tool.
 [TestFixture]
 [CancelAfter(120000)]
 public class ScreensJourneyTests : McpFixture
@@ -91,11 +89,12 @@ public class ScreensJourneyTests : McpFixture
         reply.IsToolError().ShouldBeFalse(reply.ResultText());
 
         var overview = await OverviewAsync(app);
+        overview.ChangedSince.ShouldBeGreaterThan(0);
         ActiveRow(overview, feature.Key).Health.ShouldBe(FeatureHealth.AtRisk);
 
         var digest = await DigestAsync(app);
         var line = digest.Changed.Single(i => i.Id == feature.Id).Lines.Single(l => l.Kind == DigestLineKind.Health);
-        line.AgentName.ShouldNotBeNull().ShouldStartWith("Test Agent");
+        line.AgentName.ShouldBe("Test Agent (unverified)");
 
         await NoContentAsync(app.PostJsonAsync($"api/projects/{Ship}/features/digest/seen"));
 
@@ -113,9 +112,9 @@ public class ScreensJourneyTests : McpFixture
         var feature = await CreateFeatureAsync(agent, "Needs you journey");
         var set = await CallToolAsync(agent, "set_status", $$"""{"feature":"{{feature.Key}}","status":"Going","state":"Active"}""");
         set.IsToolError().ShouldBeFalse(set.ResultText());
-        await using var connection = await OpenDatabaseAsync();
-        var story = await NeedsYouArrangement.ItemAsync(connection, "story", user, feature.Id);
-        var storyKey = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @story", new { story });
+        var made = await CallToolAsync(agent, "break_down", $$"""{"parent":"{{feature.Key}}","children":[{"title":"Needs you story"}]}""");
+        made.IsToolError().ShouldBeFalse(made.ResultText());
+        var storyKey = made.Structured().GetProperty("items")[0].GetProperty("key").GetString()!;
 
         ActiveRow(await OverviewAsync(app), feature.Key).NeedsYou.ShouldBeNull();
 
@@ -133,6 +132,7 @@ public class ScreensJourneyTests : McpFixture
         var app = new ApiClient(phone.Client);
         var sprint = SeedIds.Sprints.Sprint24;
         var text = $"Journey point {Guid.NewGuid():N}";
+        // Not RetroPointCreate: ApiClient writes enums as numbers and the API reads only the camel-case name.
         using var created = await app.PostJsonAsync($"api/projects/{Ship}/retros/points",
             new { sprintId = sprint, category = "improve", text });
         created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
