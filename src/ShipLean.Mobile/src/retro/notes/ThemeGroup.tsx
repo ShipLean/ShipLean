@@ -1,6 +1,7 @@
 import type { RetroThemeGroupDto } from '@shiplean/core/api/retros';
 import { Text, View } from 'react-native';
 import { useTheme } from '../../theme';
+import { Icon } from '../../ui/Icon';
 import { tint } from '../../ui/layout';
 import { retroRecurringId, retroThemeId } from '../testIds';
 
@@ -26,39 +27,42 @@ export function ThemeGroupHeading({ group }: ThemeGroupProps) {
         paddingBottom: theme.space[1],
       }}
     >
-      {group.theme === null ? (
-        <Text
-          style={{
-            fontSize: theme.font.size.sm,
-            fontStyle: 'italic',
-            color: colors.muted,
-          }}
-        >
-          Unthemed
-        </Text>
-      ) : (
-        <Text
-          numberOfLines={1}
-          style={{
-            flexShrink: 1,
-            fontSize: theme.font.size.sm,
-            fontWeight: theme.font.weight.semibold,
-            color: colors.muted,
-          }}
-        >
-          {group.theme.name}
-        </Text>
-      )}
+      <Text
+        numberOfLines={1}
+        style={{
+          flexShrink: 1,
+          fontSize: theme.font.size.sm,
+          fontWeight: theme.font.weight.semibold,
+          fontStyle: group.theme === null ? 'italic' : 'normal',
+          color: group.theme === null ? colors.muted : colors.text,
+        }}
+      >
+        <Text style={{ color: colors.muted }}># </Text>
+        {group.theme === null ? 'Unthemed' : group.theme.name}
+      </Text>
       {group.recurring ? (
         <View
           testID={retroRecurringId(id)}
           style={{
-            paddingHorizontal: theme.space[2],
-            borderRadius: theme.radius.xs,
-            backgroundColor: tint(colors.warn, 0.18),
+            height: 20,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.space[1],
+            paddingHorizontal: 7,
+            borderRadius: 10,
+            backgroundColor: tint(colors.danger, 0.12),
           }}
         >
-          <Text style={{ fontSize: theme.font.size.xs, color: colors.text }}>Recurring</Text>
+          <Icon name="retro" size={16} color={colors.danger} />
+          <Text
+            style={{
+              fontSize: theme.font.size.xs,
+              fontWeight: theme.font.weight.semibold,
+              color: colors.danger,
+            }}
+          >
+            Recurring
+          </Text>
         </View>
       ) : null}
       <View style={{ flex: 1 }} />

@@ -31,3 +31,17 @@ describe.each(['light', 'dark'] as const)('HealthPill (%s)', (scheme) => {
     expect(screen.getByText('Blocked')).toHaveStyle({ color: themes[scheme].colors.danger });
   });
 });
+
+describe('HealthPill showOnTrack', () => {
+  it('shows On track in the ok colour only when asked', async () => {
+    await renderScreen(<HealthPill health="onTrack" showOnTrack />, { scheme: 'dark' });
+
+    expect(screen.getByText('On track')).toHaveStyle({ color: themes.dark.colors.ok });
+  });
+
+  it('still shows nothing for null with showOnTrack', async () => {
+    await renderScreen(<HealthPill health={null} showOnTrack />);
+
+    expect(screen.queryByTestId(primitiveIds.healthPill)).toBeNull();
+  });
+});

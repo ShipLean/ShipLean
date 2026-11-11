@@ -1,5 +1,5 @@
 import type { InboxAskDto, InboxItemDto } from '@shiplean/core/api/inbox';
-import { fireEvent, screen } from '@testing-library/react-native';
+import { fireEvent, screen, within } from '@testing-library/react-native';
 import { useState } from 'react';
 import { themes, type Scheme } from '../theme';
 import { aPending } from '../test-support/actions';
@@ -22,6 +22,8 @@ import {
   inboxAgeId,
   inboxAskId,
   inboxBtnId,
+  inboxFromId,
+  inboxKindDetailId,
   inboxKindId,
   inboxMoreId,
   inboxPendingId,
@@ -29,6 +31,7 @@ import {
 } from './testIds';
 
 const PROJECT = 'project-1';
+const HIDDEN = { includeHiddenElements: true };
 const designItem = (key: string): InboxItemDto =>
   designInbox(PROJECT).items.find((i) => i.key === key)!;
 
@@ -99,6 +102,29 @@ const tap = (id: string) => fireEvent.press(screen.getByTestId(id));
 const text = (id: string) => screen.getByTestId(id).props.children;
 
 describe('InboxRow', () => {
+  it('shows a status ask with the clock icon, who owns it, an avatar and soft icon buttons', async () => {
+    const item = anInboxItem({ key: 'SHIP-743', type: 'feature', asks: [aStatusAsk()] });
+    await renderRow(item);
+    expect(screen.getByTestId('icon-clock', HIDDEN)).toBeTruthy();
+    expect(text(inboxKindDetailId('SHIP-743', 'Status'))).toBe('· you own this');
+    expect(screen.getByLabelText('Priya Shah')).toBeTruthy();
+    expect(screen.getByLabelText('Feature')).toBeTruthy();
+    const still = screen.getByTestId(inboxBtnId('SHIP-743', 'Status', 'still-true'));
+    expect(still).toHaveStyle({ backgroundColor: themes.light.colors.surface2 });
+    expect(within(still).getByTestId('icon-check', HIDDEN)).toBeTruthy();
+    const next = screen.getByTestId(inboxBtnId('SHIP-743', 'Status', 'new-status'));
+    expect(within(next).getByTestId('icon-mic', HIDDEN)).toBeTruthy();
+  });
+
+  it('shows an agent ask with the AI avatar and the name without the host', async () => {
+    const ask = aDecisionAsk({ number: 3 }, { agentName: 'Claude Code (claude.ai)' });
+    const item = anInboxItem({ asks: [ask] });
+    await renderRow(item);
+    expect(screen.getByLabelText('AI agent')).toBeTruthy();
+    expect(screen.getByTestId(inboxFromId(item.key, 'D3'))).toHaveTextContent(/^Claude Code$/);
+    expect(screen.getAllByTestId('icon-check', HIDDEN)).toHaveLength(2);
+  });
+
   it("shows the first ask and the more line for the design's SHIP-906 row", async () => {
     const item = designItem('SHIP-906');
     await renderRow(item);
@@ -135,7 +161,8 @@ describe('InboxRow', () => {
   it('opens the review sheet scrolled to Confirm when Approve all is tapped', async () => {
     const item = designItem('SHIP-907');
     const { actions, sheets } = await renderRow(item);
-    expect(text(inboxKindId('SHIP-907', 'D1'))).toBe('8 decisions · D1–D8');
+    expect(text(inboxKindId('SHIP-907', 'D1'))).toBe('8 decisions');
+    expect(text(inboxKindDetailId('SHIP-907', 'D1'))).toBe('· D1–D8');
     await tap(inboxBtnId('SHIP-907', 'D1', 'approve-all'));
     expect(actions.dispatched).toEqual([]);
     expect(sheets.calls).toEqual([
@@ -219,7 +246,8 @@ describe('InboxRow', () => {
     await tap(inboxMoreId('SHIP-906'));
     expect(screen.getByTestId(inboxAskId('SHIP-906', 'D10'))).toBeTruthy();
     expect(screen.getByTestId(inboxAskId('SHIP-906', 'D11'))).toBeTruthy();
-    expect(text(inboxKindId('SHIP-906', 'D10'))).toBe('Decision · D10');
+    expect(text(inboxKindId('SHIP-906', 'D10'))).toBe('Decision');
+    expect(text(inboxKindDetailId('SHIP-906', 'D10'))).toBe('· D10');
     expect(screen.getByTestId(inboxMoreId('SHIP-906'))).toHaveTextContent('Open SHIP-906');
     // Each opened ask answers on its own.
     await tap(inboxBtnId('SHIP-906', 'D11', 'approve'));

@@ -9,6 +9,7 @@ import {
   NO_FILTER,
   rankMoves,
   ranksOf,
+  rollupLabel,
   rollupText,
   shownGroups,
   statusBy,
@@ -111,7 +112,18 @@ describe('features filters', () => {
         ...row,
         statusVerified: { ...row.statusVerified!, agent: 'Claude Code', by: null },
       }),
-    ).toBe('Claude Code (agent) · 3h ago');
+    ).toBe('Claude Code · 3h ago');
     expect(statusBy(aFeatureRow())).toBe('');
+  });
+
+  it('words the roll-ups as S 2/9 · B 0/1', () => {
+    expect(
+      rollupLabel([
+        { type: 'story', open: 7, closed: 2, inCurrentSprint: 0, inOtherSprint: 0 },
+        { type: 'bug', open: 1, closed: 0, inCurrentSprint: 0, inOtherSprint: 0 },
+        { type: 'task', open: 4, closed: 4, inCurrentSprint: 0, inOtherSprint: 0 },
+      ]),
+    ).toBe('S 2/9 · B 0/1');
+    expect(rollupLabel([])).toBe('');
   });
 });

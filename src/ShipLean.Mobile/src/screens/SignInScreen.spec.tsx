@@ -9,10 +9,17 @@ import { renderApp } from '../test-support/renderApp';
 import { renderScreen } from '../test-support/renderScreen';
 import { signedInApi } from '../test-support/signedInApi';
 import { secureValues } from '../test-support/storage';
-import { fieldErrorId, fieldHintId } from '../ui/testIds';
+import { fieldClearId } from '../ui/TextField';
+import { topBarBackId, topBarSubId } from '../ui/TopBar';
+import { fieldErrorId, fieldHintId, iconId, uiIds } from '../ui/testIds';
 import { SignInScreen } from './SignInScreen';
 import { signInIds } from './signIn/testIds';
 import { screenIds } from './testIds';
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '1.0.0' } },
+}));
 
 const field = screenIds.signInServerField;
 const EXCHANGE = 'POST /api/auth/device-sessions/exchange';
@@ -65,6 +72,42 @@ test('first run prefills the default server and checks it', async () => {
   );
   expect(enabled()).toBe(true);
   expect(screen.getByTestId(signInIds.version)).toBeOnTheScreen();
+});
+
+test('shows the step header, heading, help and the browser card', async () => {
+  api();
+  await renderScreen(<SignInScreen />);
+
+  expect(screen.getByTestId(uiIds.topBarTitle)).toHaveTextContent('Sign in');
+  expect(screen.getByTestId(topBarSubId)).toHaveTextContent('Step 1 of 3');
+  expect(screen.queryByTestId(topBarBackId)).toBeNull();
+  expect(screen.getByText('Sign in to your server')).toBeOnTheScreen();
+  expect(screen.getByText('Use the address you open ShipLean at on the web.')).toBeOnTheScreen();
+  expect(screen.getByTestId(signInIds.howCard)).toHaveTextContent(/Sign in opens your browser/);
+  expect(screen.getByTestId(iconId('link'), { includeHiddenElements: true })).toBeOnTheScreen();
+  expect(screen.getByTestId(signInIds.version)).toHaveTextContent('App version 1.0.0');
+});
+
+test('the connected line has a green dot and the server version', async () => {
+  api({ 'GET /api/health': aHealth({ version: '1.9.0+abc' }) });
+  await renderScreen(<SignInScreen />);
+
+  expect(await screen.findByTestId(fieldHintId(field))).toHaveTextContent(
+    'ShipLean 1.9.0 · connected',
+  );
+  expect(screen.getByTestId(signInIds.connectedDot)).toBeOnTheScreen();
+});
+
+test('the clear button empties the field and disables Sign in', async () => {
+  api();
+  await renderScreen(<SignInScreen />);
+  await waitFor(() => expect(enabled()).toBe(true));
+
+  await fireEvent.press(screen.getByTestId(fieldClearId(field)));
+
+  expect(screen.getByTestId(field)).toHaveDisplayValue('');
+  expect(screen.queryByTestId(fieldClearId(field))).toBeNull();
+  expect(enabled()).toBe(false);
 });
 
 test('shows each normalisation message', async () => {

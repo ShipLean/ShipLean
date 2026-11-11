@@ -11,6 +11,7 @@ import {
 } from '@shiplean/core/api/retros';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import type { Pending } from '../../actions/types';
+import { agentDisplayName } from '../../ui/agentName';
 
 export const CATEGORY_LABELS: Record<RetroCategory, string> = {
   wentWell: 'Went well',
@@ -120,7 +121,8 @@ export function withMySupport(
 // "lane C"; an agent name without a lane takes the role's words.
 export function authorLabel(author: RetroAuthorDto): { name: string; lane: string | null } {
   if (author.agentName === null) return { name: author.user.name, lane: null };
-  const [name, ...rest] = author.agentName.split('·').map((part) => part.trim());
+  const [stamp, ...rest] = author.agentName.split('·').map((part) => part.trim());
+  const name = agentDisplayName(stamp);
   const lane = rest.join(' · ');
   return { name, lane: lane === '' ? (author.role === 'conductor' ? 'conductor' : null) : lane };
 }

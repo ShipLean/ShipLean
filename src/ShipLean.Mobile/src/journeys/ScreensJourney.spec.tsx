@@ -168,7 +168,7 @@ describe('Screens journeys', () => {
     });
 
     // 2. The since banner opens the digest; Mark as seen sends one seen, and the tab reads the overview again.
-    await fireEvent.press(await screen.findByTestId(`${featuresIds.sinceBanner}-action`));
+    await fireEvent.press(await screen.findByTestId(featuresIds.sinceBanner));
     expect(await screen.findByTestId(screenIds.digest)).toBeOnTheScreen();
     await screen.findByTestId(featureDigestItemId('SHIP-906'));
     const reads = api.callsTo(route.overview).length;

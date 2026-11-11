@@ -4,11 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { Icon, type IconName } from './Icon';
 import { layout } from './layout';
-import { primitiveIds, tabBadgeId, tabIconId, tabId } from './testIds';
+import { primitiveIds, tabBadgeId, tabId } from './testIds';
 
 export type TabId = 'inbox' | 'backlog' | 'features' | 'retro';
 
-// Each tab's icon in the design's tab bar (app.js tabBar).
 const TAB_ICON: Record<TabId, IconName> = {
   inbox: 'inbox',
   backlog: 'list',
@@ -39,24 +38,41 @@ export function TabBar({ tabs, active, onPress, center }: TabBarProps) {
   const tab = (t: TabBarTab) => (
     <TabButton key={t.id} tab={t} active={t.id === active} onPress={() => onPress(t.id)} />
   );
+  // The mic rises above the bar, and a touch outside a parent's bounds never reaches its child on Android. So the
+  // root reaches up by the rise (a negative margin lays the bar over the scene's last 26 points) and holds the mic
+  // slot at full height; the bar's own surface is a layer behind, and the root passes touches through elsewhere.
   return (
     <View
       testID={primitiveIds.tabBar}
       accessibilityRole="tablist"
+      pointerEvents="box-none"
       style={{
-        height: layout.tabBar + insets.bottom,
+        height: layout.micRaise + layout.tabBar + insets.bottom,
+        marginTop: -layout.micRaise,
+        paddingTop: layout.micRaise,
         paddingBottom: insets.bottom,
         flexDirection: 'row',
         alignItems: 'stretch',
-        backgroundColor: theme.colors.surface,
-        borderTopWidth: 1,
-        borderTopColor: theme.colors.border,
       }}
     >
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: layout.micRaise,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+        }}
+      />
       {tabs.slice(0, half).map(tab)}
       <View
         testID={primitiveIds.tabMic}
-        style={{ width: layout.micSlot, alignItems: 'center', justifyContent: 'center' }}
+        pointerEvents="box-none"
+        style={{ width: layout.micSlot, marginTop: -layout.micRaise, alignItems: 'center' }}
       >
         {center}
       </View>
@@ -89,14 +105,10 @@ function TabButton({
         minHeight: theme.touch.control,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: layout.tabIconGap,
+        gap: layout.tabGap,
       }}
     >
-      <Icon
-        testID={tabIconId(tab.id)}
-        name={TAB_ICON[tab.id]}
-        color={active ? colors.accent : colors.muted}
-      />
+      <Icon name={TAB_ICON[tab.id]} size={24} color={active ? colors.accent : colors.muted} />
       <Text
         style={{
           color: active ? colors.accent : colors.muted,

@@ -15,6 +15,8 @@ import {
   buttonsFor,
   compressLabels,
   fromLine,
+  kindDetail,
+  kindIcon,
   kindLabel,
   moreLine,
   pendingFor,
@@ -35,15 +37,22 @@ const answer = (action: InboxAction, state: PendingAnswer['state']): PendingAnsw
 
 describe('rowModel', () => {
   it('labels each kind and a mix of kinds', () => {
-    expect(kindLabel(decisions(10))).toBe('Decision · D10');
-    expect(kindLabel(decisions(1, 2, 3, 4, 5, 6, 7, 8))).toBe('8 decisions · D1–D8');
-    expect(kindLabel(decisions(1, 2, 4))).toBe('3 decisions · D1–D2, D4');
+    expect(kindLabel(decisions(10))).toBe('Decision');
+    expect(kindDetail(decisions(10))).toBe('D10');
+    expect(kindLabel(decisions(1, 2, 3, 4, 5, 6, 7, 8))).toBe('8 decisions');
+    expect(kindDetail(decisions(1, 2, 3, 4, 5, 6, 7, 8))).toBe('D1–D8');
+    expect(kindDetail(decisions(1, 2, 4))).toBe('D1–D2, D4');
     expect(kindLabel([aQuestionAsk()])).toBe('Needs input');
+    expect(kindDetail([aQuestionAsk()])).toBeNull();
     expect(kindLabel([aMentionAsk()])).toBe('Mentioned you');
     expect(kindLabel([aStatusAsk()])).toBe('Status line to check');
-    expect(kindLabel([aQuestionAsk(), ...decisions(10, 11)])).toBe(
-      'Needs input + 2 decisions · D10–D11',
-    );
+    expect(kindDetail([aStatusAsk()])).toBe('you own this');
+    expect(kindLabel([aQuestionAsk(), ...decisions(10, 11)])).toBe('Needs input + 2 decisions');
+    expect(kindDetail([aQuestionAsk(), ...decisions(10, 11)])).toBe('D10–D11');
+    expect(kindIcon([aStatusAsk()])).toBe('clock');
+    expect(kindIcon([aQuestionAsk()])).toBe('message');
+    expect(kindIcon([aMentionAsk()])).toBe('user');
+    expect(kindIcon(decisions(1))).toBe('check');
     expect(compressLabels(['D3', 'D1', 'D2', 'Q1'])).toBe('D1–D3, Q1');
   });
 
@@ -155,6 +164,9 @@ describe('rowModel', () => {
     ).toBe('SHIP-1, SHIP-2 and 2 more wait on this');
     expect(waitsLine(anInboxItem())).toBeNull();
     expect(fromLine(aDecisionAsk())).toBe('Claude Code');
+    expect(fromLine(aDecisionAsk({}, { agentName: 'Claude Code (claude.ai)' }))).toBe(
+      'Claude Code',
+    );
     expect(fromLine(aMentionAsk())).toBe('Priya Shah');
     expect(fromLine(aStatusAsk({}, { atLabel: '4 days ago' }))).toBe(
       'Checked by Priya Shah · 4 days ago',

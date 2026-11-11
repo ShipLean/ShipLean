@@ -31,3 +31,16 @@ describe('theme tokens', () => {
     expect(out).toContain('base: 13,');
   });
 });
+
+describe('type colours', () => {
+  it('emits colors.type for every work item type in both schemes', () => {
+    const tokens = JSON.parse(readFileSync(tokensPath, 'utf8'));
+    const out = generate(tokensPath);
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const [id, hex] of Object.entries<string>(tokens.type[scheme])) {
+        expect(out).toContain(`${id}: '${hex}',`);
+      }
+    }
+    expect(out).toContain('type: {');
+  });
+});

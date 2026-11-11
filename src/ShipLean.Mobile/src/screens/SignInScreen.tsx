@@ -5,20 +5,23 @@ import { getRandomBytes } from 'expo-crypto';
 import * as Device from 'expo-device';
 import { openAuthSessionAsync } from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Text, View } from 'react-native';
-import logo from '../../assets/splash-icon.png';
+import { Text, View } from 'react-native';
 import { queryClient } from '../queryClient';
 import { session } from '../session/session';
-import { hostOfOrigin, normaliseServerAddress } from '../session/serverAddress';
+import { normaliseServerAddress } from '../session/serverAddress';
 import { checkLine, checkServer, type ServerCheck } from '../session/serverCheck';
 import { createSignIn } from '../session/signIn';
 import { useSession } from '../session/useSession';
+import { Body, Heading, StepBody, StepFoot } from '../setup/SetupParts';
+import { useTheme } from '../theme';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
 import { TextField } from '../ui/TextField';
 import { TopBar } from '../ui/TopBar';
 import { signInIds } from './signIn/testIds';
 import { screenIds } from './testIds';
+import { fieldHintId } from '../ui/testIds';
 
 const MAX_DEVICE_NAME = 100;
 
@@ -42,6 +45,7 @@ const flow = createSignIn({
 type CheckState = { origin: string; result: ServerCheck | null };
 
 export function SignInScreen() {
+  const theme = useTheme();
   const { origin: remembered } = useSession();
   const [text, setText] = useState(remembered ?? '');
   const [check, setCheck] = useState<CheckState | null>(null);
@@ -103,8 +107,7 @@ export function SignInScreen() {
     if (check.result === null) hint = 'Checking…';
     else {
       const line = checkLine(check.result, address.host);
-      if (check.result.state === 'ok') hint = line ?? undefined;
-      else error = line ?? undefined;
+      if (check.result.state !== 'ok') error = line ?? undefined;
     }
   }
 
@@ -120,29 +123,96 @@ export function SignInScreen() {
     }
   }
 
+  const connected = address.ok && passed && check?.result?.state === 'ok' ? check.result : null;
+  const appVersion = Constants.expoConfig?.version ?? '';
+
   return (
     <Screen testID={screenIds.signIn}>
-      <TopBar
-        title={remembered === null ? 'ShipLean' : `ShipLean · ${hostOfOrigin(remembered)}`}
-        left={
-          <Image
-            testID={signInIds.logo}
-            accessibilityLabel="ShipLean"
-            source={logo}
-            style={{ width: 24, height: 24 }}
+      <TopBar title="Sign in" sub="Step 1 of 3" />
+      <StepBody testID={signInIds.body}>
+        <View style={{ gap: theme.space[1] }}>
+          <Heading>Sign in to your server</Heading>
+          <Body muted>Use the address you open ShipLean at on the web.</Body>
+        </View>
+        <View>
+          <TextField
+            label="Server"
+            value={text}
+            onChangeText={onChangeText}
+            onBlur={onBlur}
+            onClear={() => onChangeText('')}
+            hint={hint}
+            error={error}
+            testID={screenIds.signInServerField}
           />
-        }
-      />
-      <View>
-        <TextField
-          label="Server"
-          value={text}
-          onChangeText={onChangeText}
-          onBlur={onBlur}
-          hint={hint}
-          error={error}
-          testID={screenIds.signInServerField}
-        />
+          {connected === null ? null : (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.space[2],
+                marginTop: theme.space[2],
+              }}
+            >
+              <View
+                testID={signInIds.connectedDot}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: theme.colors.ok,
+                }}
+              />
+              <Text
+                testID={fieldHintId(screenIds.signInServerField)}
+                style={{ color: theme.colors.muted, fontSize: theme.font.size.sm }}
+              >
+                <Text style={{ color: theme.colors.text, fontWeight: theme.font.weight.semibold }}>
+                  {`ShipLean ${connected.version.split('+')[0]}`}
+                </Text>
+                {' · connected'}
+              </Text>
+            </View>
+          )}
+        </View>
+        <View
+          testID={signInIds.howCard}
+          style={{
+            flexDirection: 'row',
+            gap: theme.space[3],
+            padding: 14,
+            borderRadius: 14,
+            backgroundColor: theme.colors.surface2,
+          }}
+        >
+          <Icon name="link" color={theme.colors.accent} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text
+              style={{
+                color: theme.colors.text,
+                fontSize: theme.font.size.body15,
+                fontWeight: theme.font.weight.semibold,
+              }}
+            >
+              Sign in opens your browser
+            </Text>
+            <Text style={{ color: theme.colors.muted, fontSize: theme.font.size.md }}>
+              Password, Google and password changes work just as they do on the web. The app never
+              asks for your password.
+            </Text>
+          </View>
+        </View>
+        {failure !== null ? (
+          <Text
+            testID={signInIds.error}
+            accessibilityRole="alert"
+            style={{ color: theme.colors.danger, fontSize: theme.font.size.md }}
+          >
+            {failure}
+          </Text>
+        ) : null}
+      </StepBody>
+      <StepFoot>
         <Button
           label="Sign in"
           onPress={() => void onSignIn()}
@@ -150,15 +220,17 @@ export function SignInScreen() {
           busy={busy}
           testID={signInIds.button}
         />
-        {failure !== null ? (
-          <Text testID={signInIds.error} accessibilityRole="alert">
-            {failure}
-          </Text>
-        ) : null}
-      </View>
-      <Text testID={signInIds.version}>
-        {`ShipLean ${Constants.expoConfig?.version ?? ''}`.trim()}
-      </Text>
+        <Text
+          testID={signInIds.version}
+          style={{
+            textAlign: 'center',
+            color: theme.colors.muted,
+            fontSize: theme.font.size.xs,
+          }}
+        >
+          {`App version ${appVersion}`.trim()}
+        </Text>
+      </StepFoot>
     </Screen>
   );
 }

@@ -35,6 +35,18 @@ describe.each(['light', 'dark'] as const)('Segmented (%s)', (scheme) => {
     expect(screen.queryByTestId(optionCountId('level', 'epics'))).toBeNull();
   });
 
+  it('reads a count as "Label · N" with the dot outside the count id, and none without a count', async () => {
+    await renderScreen(
+      <Segmented options={options} value="features" onChange={() => {}} testID="level" />,
+      { scheme },
+    );
+
+    expect(screen.getByTestId(optionId('level', 'features'))).toHaveTextContent(
+      /^Features\s*·\s*12$/,
+    );
+    expect(screen.getByTestId(optionId('level', 'epics'))).toHaveTextContent(/^Epics$/);
+  });
+
   it('raises the selected option on the theme surface', async () => {
     await renderScreen(
       <Segmented options={options} value="features" onChange={() => {}} testID="level" />,

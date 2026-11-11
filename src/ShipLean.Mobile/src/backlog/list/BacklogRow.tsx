@@ -1,12 +1,14 @@
 import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
+import { Icon } from '../../ui/Icon';
 import { HealthPill } from '../../ui/HealthPill';
 import { layout, tint } from '../../ui/layout';
 import { NeedsPill } from '../../ui/NeedsPill';
 import { countStoryLevelUnder, countUnder } from '../../ui/progress';
 import { ProgressBar } from '../../ui/ProgressBar';
 import { StatePill } from '../../ui/StatePill';
+import { TypeChip } from '../../ui/TypeChip';
 import type { BacklogLevel } from '../actions';
 import {
   backlogAsksId,
@@ -35,6 +37,9 @@ export interface BacklogRowProps {
   showAsks?: boolean;
 }
 
+// app.css .move-btn: 36 square, reaching 44 with hitSlop.
+const MOVE_BUTTON = 36;
+
 // One backlog item in rank order (backlog.html .row): rank, title, type and key, state, health, the needs marker, then
 // a Feature's or Epic's progress, or a Story's owner, tasks and Feature.
 export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: BacklogRowProps) {
@@ -47,7 +52,7 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
       testID={backlogRowId(row.key)}
       style={{
         flexDirection: 'row',
-        alignItems: 'stretch',
+        alignItems: 'flex-start',
         backgroundColor: highlight ? tint(colors.accent, 0.12) : colors.surface,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
@@ -56,7 +61,17 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
       {needs ? (
         <View
           testID={backlogNeedsBarId(row.key)}
-          style={{ width: 3, backgroundColor: colors.warn }}
+          // app.css .row.ask::before: inset from the top and bottom, out of the flow so titles line up.
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: theme.space[2],
+            bottom: theme.space[2],
+            width: 3,
+            borderTopRightRadius: 2,
+            borderBottomRightRadius: 2,
+            backgroundColor: colors.warn,
+          }}
         />
       ) : null}
       <Pressable
@@ -69,16 +84,17 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
           gap: theme.space[3],
           paddingVertical: theme.space[2],
           paddingLeft: theme.space[4],
+          paddingRight: theme.space[1],
         }}
       >
         <Text
           testID={backlogRankId(row.key)}
           style={{
             width: 22,
+            paddingTop: 2,
             textAlign: 'right',
             color: colors.muted,
-            fontSize: theme.font.size.base,
-            fontWeight: theme.font.weight.semibold,
+            fontSize: theme.font.size.sm,
             fontVariant: ['tabular-nums'],
           }}
         >
@@ -104,14 +120,14 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
             }}
           >
             {row.type ? (
-              <Text testID={backlogTypeId(row.key)} style={small}>
-                {row.type.name}
-              </Text>
+              <View testID={backlogTypeId(row.key)} accessibilityLabel={row.type.name}>
+                <TypeChip type={row.type} />
+              </View>
             ) : null}
             <Text style={{ ...small, fontFamily: theme.font.mono }}>{row.key}</Text>
             {row.state ? <StatePill state={row.state} /> : null}
             <HealthPill health={row.health} />
-            <NeedsPill needs={needs} />
+            <NeedsPill needs={needs} variant="kinds" />
             {highlight ? (
               <Text
                 testID={backlogMovedId(row.key)}
@@ -139,7 +155,7 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
           )}
         </View>
       </Pressable>
-      <View style={{ width: theme.touch.control, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: theme.touch.control, alignItems: 'center' }}>
         {onMove ? (
           <Pressable
             testID={backlogMoveButtonId(row.key)}
@@ -147,14 +163,18 @@ export function BacklogRow({ row, level, highlight, onMove, onOpen, showAsks }: 
             accessibilityLabel={`Move ${row.key}`}
             hitSlop={theme.space[1]}
             onPress={() => onMove(row)}
+            // app.css .move-btn: 36 square, lifted 4 to sit level with the title.
             style={{
-              width: theme.touch.control,
-              height: theme.touch.control,
+              width: MOVE_BUTTON,
+              height: MOVE_BUTTON,
+              marginTop: theme.space[2] - theme.space[1],
+              marginRight: theme.space[2] - theme.space[1],
+              borderRadius: theme.radius.md,
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: colors.muted, fontSize: theme.font.size.lg }}>↑↓</Text>
+            <Icon name="rank" size={20} color={highlight ? colors.accent : colors.muted} />
           </Pressable>
         ) : null}
       </View>
@@ -169,13 +189,17 @@ function Progress({ row, level }: { row: BacklogRowDto; level: BacklogLevel }) {
     level === 'epics' ? countUnder(row.rollups, 'feature') : countStoryLevelUnder(row.rollups);
   if (counts.total === 0) return null;
   return (
-    <View style={{ gap: theme.space[1] }}>
-      <ProgressBar rollups={row.rollups} />
+    // app.css .prog-line: the bar fills the row, the count sits after it.
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space[2] }}>
+      <View style={{ flex: 1 }}>
+        <ProgressBar rollups={row.rollups} />
+      </View>
       <Text
         testID={backlogDoneId(row.key)}
-        style={{ color: theme.colors.muted, fontSize: theme.font.size.sm }}
+        style={{ color: theme.colors.muted, fontSize: theme.font.size.xs }}
       >
-        {counts.closed} of {counts.total} {level === 'epics' ? 'features' : 'stories'} done
+        {counts.closed} of {counts.total}
+        {level === 'epics' ? ' features done' : ''}
       </Text>
     </View>
   );

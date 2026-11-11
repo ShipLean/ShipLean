@@ -25,6 +25,8 @@ export interface Colors {
   progressOtherSprint: string;
   // The dim over the screen behind a sheet.
   scrim: string;
+  // The work item type chip fills (design/tokens.json type), by type id.
+  type: Record<'epic' | 'feature' | 'story' | 'bug' | 'task' | 'action' | 'bau', string>;
 }
 
 export type StateCategory = 'proposed' | 'inProgress' | 'resolved' | 'completed' | 'removed';

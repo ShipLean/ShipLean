@@ -9,6 +9,8 @@ export const featureWhoId = (key: string) => `feature-who-${key}`;
 export const featureStatusId = (key: string) => `feature-status-${key}`;
 export const featureStaleId = (key: string) => `feature-stale-${key}`;
 export const featureRollupId = (key: string) => `feature-rollup-${key}`;
+export const featureAccentId = (key: string) => `feature-accent-${key}`;
+export const featureGroupNeedsId = (category: string) => `feature-group-${category}-needs`;
 export const featureMovedId = (key: string) => `feature-moved-${key}`;
 // The Needs you view: one header per Feature, and the Epic picker's options.
 export const featureNeedsHeaderId = (key: string) => `feature-needs-header-${key}`;

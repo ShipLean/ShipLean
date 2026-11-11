@@ -49,6 +49,9 @@ import {
 import { PointCard } from './PointCard';
 import { ThemeGroupHeading } from './ThemeGroup';
 
+// app.css .scroll padding-bottom.
+const LIST_BOTTOM = 24;
+
 type Segment = 'notes' | 'toDecide' | 'features';
 
 export interface RetroViewProps {
@@ -82,16 +85,17 @@ export function RetroView({ projectKey }: RetroViewProps) {
       </>
     );
   }
-  return <RetroTab projectKey={projectKey} projectId={project.id} />;
+  return <RetroTab projectKey={projectKey} projectId={project.id} projectName={project.name} />;
 }
 
 interface RetroTabProps {
   projectKey: string;
   projectId: string;
+  projectName: string;
 }
 
 // The sprint's points by category and theme (Notes), with the To decide and Features segments beside them.
-function RetroTab({ projectKey, projectId }: RetroTabProps) {
+function RetroTab({ projectKey, projectId, projectName }: RetroTabProps) {
   const theme = useTheme();
   const router = useRouter();
   const { dispatch } = useRetroActions();
@@ -244,6 +248,7 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
     return (
       <ScrollView
         testID={retroIds.list}
+        contentContainerStyle={{ paddingBottom: LIST_BOTTOM }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetch} />}
       >
         <CategoryTiles counts={counts} selected={category} onSelect={choose} />
@@ -274,6 +279,14 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
             </View>
           ))
         )}
+        <View style={{ padding: theme.space[3] }}>
+          <Button
+            label="+ Add point"
+            variant="ghost"
+            onPress={() => setAdding(true)}
+            testID={retroIds.addPoint}
+          />
+        </View>
       </ScrollView>
     );
   };
@@ -287,7 +300,7 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
         subtitle={
           sprint === null || retro === undefined
             ? undefined
-            : `${sprint.datesLabel} · ${retro.kpis.withRetro} ${retro.kpis.withRetro === 1 ? 'retro' : 'retros'} logged`
+            : `${projectName} · ${sprint.datesLabel} · ${retro.kpis.withRetro} ${retro.kpis.withRetro === 1 ? 'retro' : 'retros'} so far`
         }
         onTilePress={() => router.dismissTo(links.projects())}
       />
@@ -315,16 +328,6 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
         </View>
       )}
       <View style={{ flex: 1 }}>{body()}</View>
-      {retro === undefined ? null : (
-        <View style={{ padding: theme.space[3] }}>
-          <Button
-            label="+ Add point"
-            variant="ghost"
-            onPress={() => setAdding(true)}
-            testID={retroIds.addPoint}
-          />
-        </View>
-      )}
       {retro === undefined ? null : (
         <AddPointSheet
           projectId={projectId}
