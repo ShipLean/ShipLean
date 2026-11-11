@@ -56,7 +56,8 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function VoiceSettings() {
+// `now` is the clock for the 'tested' label; tests pass their own.
+export function VoiceSettings({ now = systemNow }: { now?: () => Date } = {}) {
   const router = useRouter();
   const theme = useTheme();
   const { colors } = theme;
@@ -65,7 +66,7 @@ export function VoiceSettings() {
   const { mic, refresh } = useMicStatus();
   const { inUse, tuningOf } = useVoiceInputs();
   const tuned = tuningOf(inUse.id);
-  const tested = tuned === null ? null : testedLabel(tuned.testedAt, systemNow());
+  const tested = tuned === null ? null : testedLabel(tuned.testedAt, now());
   const [changing, setChanging] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [micSheet, setMicSheet] = useState(false);
