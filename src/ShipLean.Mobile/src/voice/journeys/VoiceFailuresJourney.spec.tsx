@@ -5,8 +5,8 @@ import { platform } from '@shiplean/core/platform';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { openBrowserAsync } from 'expo-web-browser';
 import { dockIds } from '../../dock/testIds';
+import { backlogRowId } from '../../backlog/testIds';
 import { inboxRowId } from '../../inbox/testIds';
-import { screenIds } from '../../screens/testIds';
 import { readyCoachMarkIds } from '../../setup/ReadyCoachMark.testIds';
 import { aProject } from '../../test-support/builders';
 import { backlogApi, designFeatures } from '../../test-support/backlog';
@@ -157,7 +157,8 @@ describe('VoiceFailuresJourney', () => {
     const { model, recognizer } = installFakeEngines();
     const api = backlog();
     await renderApp({ url: '/p/SHIP/backlog', api });
-    await screen.findByTestId(screenIds.backlog);
+    // The spec reads the loaded rows: wait for them, not just the screen.
+    await screen.findByTestId(backlogRowId('SHIP-906'));
     await skipCoachMark();
 
     recognizer.script([], 'move SHIP-960 to the top');
@@ -186,7 +187,8 @@ describe('VoiceFailuresJourney', () => {
     const { model, recognizer } = installFakeEngines();
     const api = backlog({ 'GET /api/search': SEARCH });
     await renderApp({ url: '/p/SHIP/backlog', api });
-    await screen.findByTestId(screenIds.backlog);
+    // The spec reads the loaded rows: wait for them, not just the screen.
+    await screen.findByTestId(backlogRowId('SHIP-906'));
     await skipCoachMark();
 
     recognizer.script([], 'move the dictation work to the top');
