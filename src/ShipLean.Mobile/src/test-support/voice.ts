@@ -158,9 +158,15 @@ export function fakeAudioInputs(list: AudioInput[] = []): FakeAudioInputs {
   return new FakeAudioInputs(list);
 }
 
-// An in-memory tuning store (nothing is persisted).
+// A tuning store over in-memory storage (nothing reaches the device's kv store).
 export function fakeTuningStore(): MicTuningStore {
-  return createMicTuningStore({ getItemSync: () => null, setItemSync: () => {} });
+  const values = new Map<string, string>();
+  return createMicTuningStore({
+    getItemSync: (k) => values.get(k) ?? null,
+    setItemSync: (k, v) => {
+      values.set(k, v);
+    },
+  });
 }
 
 // parse() answers the calls given to respond(), until respond() is called again.
