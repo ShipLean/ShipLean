@@ -1,6 +1,10 @@
 import type { InboxAskDto, InboxItemDto } from '@shiplean/core/api/inbox';
 import { Pressable, Text, View } from 'react-native';
+import { typeName } from '@shiplean/core/api/workItemTypes';
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
+import { TypeChip } from '../ui/TypeChip';
 import { layout } from '../ui/layout';
 import { useTheme } from '../theme';
 import type { PendingAnswer } from './actions';
@@ -8,7 +12,10 @@ import { useInboxActions } from './InboxActions';
 import { useInboxSheets } from './InboxSheets';
 import {
   buttonsFor,
+  fromAvatar,
   fromLine,
+  kindDetail,
+  kindIcon,
   kindLabel,
   moreLine,
   pendingFor,
@@ -22,6 +29,7 @@ import {
   inboxAskId,
   inboxBtnId,
   inboxFromId,
+  inboxKindDetailId,
   inboxKindId,
   inboxMoreId,
   inboxOpenId,
@@ -117,6 +125,8 @@ export function InboxRow({
     );
     const inFlight = answer !== null && answer.state !== 'failed';
     const who = fromLine(head);
+    const avatar = fromAvatar(head);
+    const detail = kindDetail(asks);
     return (
       <View
         key={head.label}
@@ -133,19 +143,36 @@ export function InboxRow({
             : undefined
         }
       >
-        <Text
-          testID={inboxKindId(item.key, head.label)}
+        <View
           style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
             marginTop: theme.space[2] + 2,
-            color: colors.warn,
-            fontSize: theme.font.size.xs,
-            fontWeight: theme.font.weight.bold,
-            letterSpacing: 0.5,
-            textTransform: 'uppercase',
           }}
         >
-          {kindLabel(asks)}
-        </Text>
+          <Icon name={kindIcon(asks)} size={16} color={colors.warn} />
+          <Text
+            testID={inboxKindId(item.key, head.label)}
+            style={{
+              color: colors.warn,
+              fontSize: theme.font.size.xs,
+              fontWeight: theme.font.weight.bold,
+              letterSpacing: 0.5,
+              textTransform: 'uppercase',
+            }}
+          >
+            {kindLabel(asks)}
+          </Text>
+          {detail === null ? null : (
+            <Text
+              testID={inboxKindDetailId(item.key, head.label)}
+              style={{ color: colors.muted, fontSize: theme.font.size.xs }}
+            >
+              {`· ${detail}`}
+            </Text>
+          )}
+        </View>
         <Text style={[text, { marginTop: 4 }]}>{body}</Text>
         {extra === null ? null : <Text style={[small, { marginTop: 2 }]}>{extra}</Text>}
         {head.decision !== null && asks.length === 1 ? (
@@ -156,9 +183,12 @@ export function InboxRow({
             </Text>
           </Text>
         ) : null}
-        <Text testID={inboxFromId(item.key, head.label)} style={[small, { marginTop: 6 }]}>
-          {[who, opts.withWaits ? waits : null].filter((s) => s !== null && s !== '').join(' · ')}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+          {avatar === null ? null : <Avatar user={avatar.user} agent={avatar.agent} size="sm" />}
+          <Text testID={inboxFromId(item.key, head.label)} style={[small, { flex: 1 }]}>
+            {[who, opts.withWaits ? waits : null].filter((s) => s !== null && s !== '').join(' · ')}
+          </Text>
+        </View>
         {answer !== null ? (
           <Text
             testID={inboxPendingId(item.key, head.label)}
@@ -181,7 +211,8 @@ export function InboxRow({
                 key={button.id}
                 testID={inboxBtnId(item.key, head.label, button.id)}
                 label={button.label}
-                variant={button.primary ? 'primary' : 'ghost'}
+                variant={button.primary ? 'primary' : 'soft'}
+                icon={button.icon}
                 onPress={() => press(asks, button)}
               />
             ))}
@@ -215,7 +246,7 @@ export function InboxRow({
         onPress={onOpenItem}
         style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 }}
       >
-        <Text style={[small, { textTransform: 'capitalize' }]}>{item.type}</Text>
+        <TypeChip type={{ id: item.type, name: typeName(item.type) }} />
         <Text style={{ ...small, fontFamily: theme.font.mono }}>{item.key}</Text>
         <Text
           numberOfLines={1}

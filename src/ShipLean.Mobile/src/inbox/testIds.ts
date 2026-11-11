@@ -40,6 +40,8 @@ export const inboxBtnId = (key: string, label: string, action: string) =>
 // who-asked line; the row's age and the item's header (a tap opens the item).
 export const inboxPendingId = (key: string, label: string) => `inbox-pending-${key}-${label}`;
 export const inboxKindId = (key: string, label: string) => `inbox-kind-${key}-${label}`;
+export const inboxKindDetailId = (key: string, label: string) =>
+  `inbox-kind-detail-${key}-${label}`;
 export const inboxFromId = (key: string, label: string) => `inbox-from-${key}-${label}`;
 export const inboxAgeId = (key: string) => `inbox-age-${key}`;
 export const inboxOpenId = (key: string) => `inbox-open-${key}`;
