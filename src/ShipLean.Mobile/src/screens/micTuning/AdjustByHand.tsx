@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
@@ -42,14 +42,13 @@ function Panel({ inputId }: { inputId: string }) {
     tuning?.manualStep ?? lineToSlider(activeLine(tuning) ?? DEFAULT_FLOOR_RMS),
   );
   // A test (or Settings) saving a new line replaces the draft: the panel shows what is stored.
-  const storedAutomatic = tuning?.automatic;
-  const storedStep = tuning?.manualStep;
-  const storedAt = tuning?.testedAt;
-  const storedLine = tuning?.lineRms;
-  useEffect(() => {
-    setAutomatic(storedAutomatic ?? true);
-    setStep(storedStep ?? lineToSlider(storedLine ?? DEFAULT_FLOOR_RMS));
-  }, [storedAutomatic, storedStep, storedAt, storedLine]);
+  const stored = `${tuning?.automatic}|${tuning?.manualStep}|${tuning?.testedAt}|${tuning?.lineRms}`;
+  const [seen, setSeen] = useState(stored);
+  if (seen !== stored) {
+    setSeen(stored);
+    setAutomatic(tuning?.automatic ?? true);
+    setStep(tuning?.manualStep ?? lineToSlider(activeLine(tuning) ?? DEFAULT_FLOOR_RMS));
+  }
   const { level, failed } = useLiveLevel(expanded);
   const store = engines().tuning;
 
