@@ -136,6 +136,18 @@ if [ "$platform" = ios ]; then
 else
   require_key_file PLAY_KEY_PATH
   require_staged
+  # supply ties a listing upload to one release of --track, for release notes, even with them
+  # skipped: with no --version_code the track must hold exactly one release, and it fails with
+  # "More than one release found in this track" once internal has a draft beside the rolled-out
+  # release. Name the newest build on internal, which is in exactly one of its releases.
+  lookup=$(FASTLANE_DISABLE_COLORS=1 bundle exec fastlane run google_play_track_version_codes \
+    json_key:"$PLAY_KEY_PATH" package_name:"$app_id" track:internal)
+  version_code=$(printf '%s\n' "$lookup" | sed -n 's/.*Result: \[\(.*\)\].*/\1/p' | tr -c '0-9' '\n' \
+    | sed '/^$/d' | sort -n | tail -n 1)
+  if [ -z "$version_code" ]; then
+    echo "push_listing.sh: Play's internal track has no build; upload one first (Mobile release)" >&2
+    exit 1
+  fi
   args=(
     --json_key "$PLAY_KEY_PATH"
     --package_name "$app_id"
@@ -147,6 +159,7 @@ else
     # code given". EAS submit ships the binary.
     --skip_upload_changelogs true
     --track internal
+    --version_code "$version_code"
   )
   if [ "$mode" = verify ]; then
     # Play validates the whole edit (text and images) and then discards it.

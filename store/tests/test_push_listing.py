@@ -15,7 +15,8 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SCRIPT = os.path.join("store", "push_listing.sh")
 FAKES = os.path.join(REPO, "store", "tests", "fakes")
 OWN_VARS = ("ASC_KEY_PATH", "PLAY_KEY_PATH", "STAGED", "FAKE_BUNDLE_EXIT", "FAKE_BUNDLE_LOG",
-            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH", "PLAY_TRACK")
+            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH", "PLAY_TRACK",
+            "FAKE_FASTLANE_RUN_OUTPUT", "FAKE_RUN_EXIT")
 UPLOAD_OPTIONS = ("--screenshots_path", "--overwrite_screenshots", "--skip_binary_upload",
                   "--submit_for_review", "--automatic_release", "--app_rating_config_path")
 
@@ -140,7 +141,48 @@ class PushListingTests(unittest.TestCase):
             "--skip_upload_apk", "true",
             "--skip_upload_changelogs", "true",
             "--track", "internal",
+            "--version_code", "7",
         ])
+
+    # The first real listing push failed "More than one release found in this track" once internal
+    # held a draft beside the rolled-out release (Mobile release run 42931892069).
+    # Mutation caught: ask another track, or skip the lookup.
+    def test_android_listing_looks_up_the_internal_version_codes(self):
+        result = self.run_script("android", "push", **self.keys())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with open(self.log + ".run") as handle:
+            lookup = handle.read().splitlines()
+        self.assertEqual(lookup, [
+            "exec", "fastlane", "run", "google_play_track_version_codes",
+            "json_key:" + self.play_key, "package_name:app.shiplean.mobile", "track:internal",
+        ])
+
+    # Mutation caught: take the first code in the list instead of the highest.
+    def test_android_listing_names_the_newest_build(self):
+        for output, expected in (("[00:00:00]: Result: [5, 12, 7]", "12"), ("Result: [3]", "3")):
+            with self.subTest(output=output):
+                result = self.run_script("android", "verify", FAKE_FASTLANE_RUN_OUTPUT=output, **self.keys())
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                _, argv = self.bundle_call()
+                self.assertEqual(argv[argv.index("--version_code") + 1], expected)
+
+    # Mutation caught: run supply with an empty --version_code.
+    def test_android_listing_without_a_build_stops_before_uploading(self):
+        for output in ("[00:00:00]: Result: []", ""):
+            with self.subTest(output=output):
+                result = self.run_script("android", "push", FAKE_FASTLANE_RUN_OUTPUT=output, **self.keys())
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("internal track has no build", result.stderr)
+                self.assertFalse(os.path.exists(self.log), "supply ran")
+
+    def test_android_listing_lookup_failure_passes_through(self):
+        result = self.run_script("android", "push", FAKE_RUN_EXIT="4", **self.keys())
+
+        self.assertEqual(result.returncode, 4, result.stderr)
+        self.assertFalse(os.path.exists(self.log), "supply ran")
 
     # Mutation caught: drop --validate_only true.
     def test_android_verify_is_validate_only(self):
@@ -154,6 +196,7 @@ class PushListingTests(unittest.TestCase):
             "--skip_upload_apk", "true",
             "--skip_upload_changelogs", "true",
             "--track", "internal",
+            "--version_code", "7",
             "--validate_only", "true",
         ])
 
