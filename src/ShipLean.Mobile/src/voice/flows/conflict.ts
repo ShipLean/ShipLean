@@ -17,8 +17,15 @@ export const REFRESH_WAIT_MS = 10_000;
 // The 409 comes before the screen has read the item again (its area refreshes on the refusal, after this), so a spec
 // that still builds the refused action at the revision it was refused at is stale: the rebuild waits, still applying,
 // until the screen renders with the server's item, and only then rebuilds. A screen that hasn't by REFRESH_WAIT_MS
-// (offline, or navigated away) gets the apply-failed sheet with the runner's reason instead.
-export function onConflict(v: VoiceInternals, batchId: string, lines: PreviewLine[]): void {
+// (offline) gets the apply-failed sheet with the runner's reason instead, and so does a person who has gone to another
+// screen or item, as soon as it renders.
+// A wait adds its cancel to `waits` and takes it out when it ends; the provider cancels what is left when it unmounts.
+export function onConflict(
+  v: VoiceInternals,
+  batchId: string,
+  lines: PreviewLine[],
+  waits: Set<() => void> = new Set(),
+): void {
   // lines are the batch as the runner describes it; the rows are compared with the preview the person saw instead.
   void lines;
   const last = v.last();
@@ -64,47 +71,70 @@ export function onConflict(v: VoiceInternals, batchId: string, lines: PreviewLin
     v.set({ ...shown.state, marks, removed });
   };
 
-  // The screen holds the server's item once the refused action no longer comes out at the revision it was refused at.
-  const fresh = (): boolean => {
-    const stale = refused === undefined ? null : revisionOf(refused.action);
-    if (stale === null) return true;
+  // Where the screen is now. 'stale': it still builds the refused action at the revision it was refused at (its area
+  // hasn't read the item again yet). 'fresh': it holds the server's item (or the action carries no revision, or the
+  // calls no longer resolve, which the rebuild shows). 'elsewhere': the person has left for another screen or another
+  // item (a parent, child or link is a work item screen too), so a rebuild would build their command for something
+  // else.
+  const probe = (): 'stale' | 'fresh' | 'elsewhere' => {
     const spec = v.spec();
-    if (spec === null || spec.screen !== screen) return false;
-    const probe = spec.toActions(calls, transcript);
-    if (!probe.ok) return true;
-    const again = probe.actions.find((a) => isRefused(refused, a));
-    return again === undefined || revisionOf(again) !== stale;
+    if (spec === null || spec.screen !== screen) return 'elsewhere';
+    const stale = refused === undefined ? null : revisionOf(refused.action);
+    if (stale === null) return 'fresh';
+    const result = spec.toActions(calls, transcript);
+    if (!result.ok) return 'fresh';
+    const again = result.actions.find((a) => isRefused(refused, a));
+    if (again === undefined) return 'elsewhere';
+    return revisionOf(again) === stale ? 'stale' : 'fresh';
   };
-
-  if (fresh()) {
-    rebuild();
-    return;
-  }
-  const waiting: VoiceUiState = { kind: 'applying', batchId };
-  v.set(waiting);
-  let done = false;
-  const finish = () => {
-    done = true;
-    stop();
-    clearTimeout(timer);
-  };
-  const stop = v.watchSpec(() => {
-    if (done) return;
-    if (v.state() !== waiting) return finish();
-    if (!fresh()) return;
-    finish();
-    rebuild();
-  });
-  const timer = setTimeout(() => {
-    if (done) return;
-    finish();
-    if (v.state() !== waiting) return;
+  const failed = () =>
     showApplyFailed(
       v,
       batchId,
       v.runner.pending().filter((p) => p.batchId === batchId),
     );
+
+  const first = probe();
+  if (first === 'fresh') {
+    rebuild();
+    return;
+  }
+  // A batch sent with Send when online can be refused while the person is on another sheet or holding to talk: that
+  // state stays, and VoiceSendFailedBanner shows the refused change.
+  if (!ours(v.state(), batchId)) return;
+  if (first === 'elsewhere') {
+    failed();
+    return;
+  }
+  const waiting: VoiceUiState = { kind: 'applying', batchId };
+  v.set(waiting);
+  const finish = () => {
+    waits.delete(finish);
+    stop();
+    clearTimeout(timer);
+  };
+  const stop = v.watchSpec(() => {
+    if (!waits.has(finish)) return;
+    if (v.state() !== waiting) return finish();
+    const now = probe();
+    if (now === 'stale') return;
+    finish();
+    if (now === 'fresh') rebuild();
+    else failed();
+  });
+  const timer = setTimeout(() => {
+    if (!waits.has(finish)) return;
+    finish();
+    if (v.state() === waiting) failed();
   }, REFRESH_WAIT_MS);
+  waits.add(finish);
+}
+
+// The states a wait may take over: resting, or applying this batch.
+function ours(s: VoiceUiState, batchId: string): boolean {
+  return (
+    s.kind === 'idle' || s.kind === 'disabled' || (s.kind === 'applying' && s.batchId === batchId)
+  );
 }
 
 // A conflict this flow doesn't rebuild: if the provider is still applying the batch, it rests.

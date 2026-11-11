@@ -3,6 +3,7 @@ import { aPending } from '../../test-support/actions';
 import { aTranscript } from '../../test-support/voice';
 import { flowHarness, type FlowContext } from '../../test-support/voiceFlows';
 import type { ParsedCall } from '../contracts';
+import type { VoiceUiState } from '../internals';
 import { CHANGED_HERE, REFRESH_WAIT_MS, onConflict } from './conflict';
 
 const HEARD = 'set it to active and approve D10';
@@ -22,6 +23,8 @@ async function refusedAsStale() {
   const h = sentBatch();
   await h.v.resolve(aTranscript({ text: HEARD }), { source: 'voice' });
   const batchId = h.v.dispatch(['state', 'approve-D10']);
+  // As the provider's Apply does: it shows applying while the batch sends.
+  h.v.set({ kind: 'applying', batchId });
   const [setState, approve] = h.runner.dispatched[0].batch;
   h.runner.setPending([
     aPending({
@@ -155,5 +158,96 @@ describe('conflict', () => {
       retryable: false,
     });
     expect(runner.dispatched).toHaveLength(1);
+  });
+
+  it('gives up with apply-failed when the person opens another item while it waits, so nothing is rebuilt for it', async () => {
+    const { v, runner, context, batchId, rendered } = await refusedAsStale();
+
+    onConflict(v, batchId, []);
+    expect(v.state()).toEqual({ kind: 'applying', batchId });
+    // They tap a child: SHIP-907 is a work item screen too.
+    context.key = 'SHIP-907';
+    context.revision = 9;
+    rendered();
+
+    expect(v.state()).toMatchObject({ kind: 'applyFailed', batchId });
+    expect(runner.dispatched).toHaveLength(1);
+  });
+
+  it('gives up with apply-failed at once when the person is on another item by the time the 409 comes', async () => {
+    const { v, runner, context, batchId } = await refusedAsStale();
+    // Sent with Send when online; it is refused after they have opened SHIP-907.
+    context.key = 'SHIP-907';
+    context.revision = 9;
+
+    onConflict(v, batchId, []);
+
+    expect(v.state()).toMatchObject({
+      kind: 'applyFailed',
+      batchId,
+      reason: 'Changed on the server. Open SHIP-906 to check.',
+    });
+    expect(runner.dispatched).toHaveLength(1);
+  });
+
+  it('leaves a state the person has moved on to alone, and does not wait', async () => {
+    const { v, context, batchId, rendered } = await refusedAsStale();
+    // A queued batch's 409 comes while they hold to talk.
+    const listening: VoiceUiState = {
+      kind: 'listening',
+      partial: '',
+      screen: 'workItem',
+      hotwords: [],
+    };
+    v.set(listening);
+
+    onConflict(v, batchId, []);
+    expect(v.state()).toBe(listening);
+    context.state = 'Resolved';
+    context.revision = 5;
+    rendered();
+
+    expect(v.state()).toBe(listening);
+  });
+
+  it('stops waiting when the provider cancels its waits', async () => {
+    vi.useFakeTimers();
+    const { v, context, batchId, rendered } = await refusedAsStale();
+    const waits = new Set<() => void>();
+
+    onConflict(v, batchId, [], waits);
+    expect(waits.size).toBe(1);
+    for (const cancel of [...waits]) cancel();
+    expect(waits.size).toBe(0);
+    context.state = 'Resolved';
+    context.revision = 5;
+    rendered();
+    vi.advanceTimersByTime(REFRESH_WAIT_MS);
+
+    expect(v.state()).toEqual({ kind: 'applying', batchId });
+  });
+
+  it('a wait that ends takes itself out of the waits', async () => {
+    const { v, context, batchId, rendered } = await refusedAsStale();
+    const waits = new Set<() => void>();
+
+    onConflict(v, batchId, [], waits);
+    expect(waits.size).toBe(1);
+    context.revision = 5;
+    rendered();
+
+    expect(v.state()).toMatchObject({ kind: 'preview' });
+    expect(waits.size).toBe(0);
+  });
+
+  it('rests a batch it is still applying when the preview it came from is gone', async () => {
+    const { v, runner } = sentBatch();
+    v.set({ kind: 'applying', batchId: 'batch-9' });
+    runner.setPending([
+      aPending({ batchId: 'batch-9', origin: 'voice', state: 'failed', failure: 'conflict' }),
+    ]);
+
+    onConflict(v, 'batch-9', []);
+    await vi.waitFor(() => expect(v.state()).toEqual({ kind: 'idle', permission: 'granted' }));
   });
 });

@@ -430,7 +430,7 @@ describe('voice seams', () => {
       span: { start: 5, end: 11 },
       value: 'SHIP-2',
     });
-    expect(onConflict).toHaveBeenCalledWith(internals(), 'batch-9', lines);
+    expect(onConflict).toHaveBeenCalledWith(internals(), 'batch-9', lines, expect.any(Set));
   });
 
   it('the failure router sends each kind to its sheet', async () => {
