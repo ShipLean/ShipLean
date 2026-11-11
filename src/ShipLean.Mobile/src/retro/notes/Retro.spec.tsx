@@ -1,5 +1,5 @@
 import type { RetroActionRefDto, RetroPointDto, SprintRetroDto } from '@shiplean/core/api/retros';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { UNDO } from '../../actions/undo';
 import { RetroScreen } from '../../screens/RetroScreen';
 import { RetroProvider } from '../../shell/providers/retro';
@@ -13,6 +13,7 @@ import type { ScreenVoiceSpec } from '../../voice/contracts';
 import { aTranscript } from '../../test-support/voice';
 import { primitiveIds, optionCountId, optionId, uiIds } from '../../ui/testIds';
 import { screenIds } from '../../screens/testIds';
+import { themes } from '../../theme';
 import type { RetroAction } from '../actions';
 import {
   retroActionKeyId,
@@ -22,9 +23,11 @@ import {
   retroNotNeededId,
   retroNotNeededReasonId,
   retroPlusId,
+  retroPointAuthorId,
   retroPointId,
   retroTileCountId,
   retroTileId,
+  retroTileStubId,
   retroTileToDecideId,
 } from '../testIds';
 
@@ -172,7 +175,9 @@ describe('Retro tab', () => {
 
       // The top bar: the sprint, its dates from getSprints, and how many retros are logged.
       expect(screen.getByText('Sprint 25 retro')).toBeTruthy();
-      expect(screen.getByText(`${aSprint().datesLabel} · 4 retros logged`)).toBeTruthy();
+      expect(
+        screen.getByText(`${PROJECT.name} · ${aSprint().datesLabel} · 4 retros so far`),
+      ).toBeTruthy();
       expect(screen.getByTestId(optionCountId(retroIds.segment, 'toDecide'))).toHaveTextContent(
         String(retro.kpis.pointsToDecide),
       );
@@ -189,7 +194,7 @@ describe('Retro tab', () => {
       // Two points, one point, then the unthemed group.
       expect(order).toEqual([baselines, slow, 'none']);
       expect(screen.getAllByText('Recurring')).toHaveLength(1);
-      expect(screen.getByText('Unthemed')).toBeTruthy();
+      expect(screen.getByText('# Unthemed')).toBeTruthy();
       // More supporters first inside a theme.
       expect(screen.getAllByTestId(/-text$/).map((t) => t.props.children)).toEqual([
         'Baselines went stale on main again.',
@@ -197,6 +202,59 @@ describe('Retro tab', () => {
         'The S22 build took 40 minutes.',
         'Two agents edited the same file.',
       ]);
+    });
+
+    it('draws the kit: tile stubs, # headers, AI avatars, thumb +1 with voters, soft Action item and link Not needed, Add point in the list', async () => {
+      const retro = designRetro();
+      makeApi(retro);
+      await renderRetro(scheme);
+      await screen.findByTestId(retroIds.tiles);
+      const colors = themes[scheme].colors;
+
+      // Tiles: a colour stub on top, the number in the text colour, "to decide" in the warn colour.
+      expect(screen.getByTestId(retroTileStubId('wentBadly'))).toHaveStyle({
+        backgroundColor: colors.danger,
+      });
+      expect(screen.getByTestId(retroTileCountId('wentBadly'))).toHaveStyle({ color: colors.text });
+      expect(screen.getByTestId(retroTileToDecideId('notInPlan'))).toHaveStyle({
+        color: colors.warn,
+      });
+
+      // The subtitle starts with the project name.
+      expect(screen.getByText(new RegExp(`^${PROJECT.name} ·`))).toBeTruthy();
+
+      // Not in the plan opens: an agent's point shows AI, its name without the lane, the lane chip and a type chip.
+      const lone = pointText(retro, 'The signing key expired mid-sprint.');
+      const author = within(screen.getByTestId(retroPointAuthorId(lone.id)));
+      expect(author.getByText('Claude Code')).toBeTruthy();
+      expect(author.getByText('lane A')).toBeTruthy();
+      expect(
+        within(screen.getByTestId(retroPointId(lone.id))).getByLabelText('AI agent'),
+      ).toBeTruthy();
+      expect(author.getByLabelText(lone.workItem!.type.name)).toBeTruthy();
+      // Soft Action item with the plus icon, Not needed as a link.
+      expect(screen.getByTestId(retroAddActionId(lone.id))).toHaveStyle({
+        backgroundColor: colors.surface2,
+      });
+      expect(screen.getByTestId('icon-plus', { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByTestId(retroNotNeededId(lone.id))).toHaveStyle({
+        backgroundColor: 'transparent',
+      });
+
+      // Went badly: the theme header has "# ", Recurring has the retro icon, +1 has the thumb and the voters' faces.
+      await fireEvent.press(screen.getByTestId(retroTileId('wentBadly')));
+      expect(screen.getByText('# Slow builds')).toBeTruthy();
+      expect(screen.getAllByTestId('icon-retro', { includeHiddenElements: true })).toHaveLength(2);
+      const slow = pointText(retro, 'The S22 build took 40 minutes.');
+      expect(
+        within(screen.getByTestId(retroPlusId(slow.id))).getByTestId('icon-thumb', {
+          includeHiddenElements: true,
+        }),
+      ).toBeTruthy();
+      expect(screen.getByTestId(retroFaceId(slow.id, slow.supporters[0].id))).toBeTruthy();
+
+      // + Add point scrolls with the list.
+      expect(within(screen.getByTestId(retroIds.list)).getByTestId(retroIds.addPoint)).toBeTruthy();
     });
 
     it('renders the agree state: +1 dispatches support and shows my face', async () => {
@@ -209,7 +267,7 @@ describe('Retro tab', () => {
 
       expect(screen.queryByTestId(retroFaceId(point.id, ME.id))).toBeNull();
       // At zero the button says +1; with a supporter it is the bare count.
-      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('👍 +1');
+      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('+1');
       await fireEvent.press(screen.getByTestId(retroPlusId(point.id)));
 
       expect(runner.dispatched).toHaveLength(1);
@@ -220,7 +278,7 @@ describe('Retro tab', () => {
       await act(async () => runner.setPending([aPending({ action: support(point.id) })]));
       expect(screen.getByTestId(retroFaceId(point.id, ME.id))).toBeTruthy();
       expect(screen.getByTestId(retroPlusId(point.id))).toBeSelected();
-      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('👍 1');
+      expect(screen.getByTestId(retroPlusId(point.id))).toHaveTextContent('1');
     });
 
     it('takes a +1 back with a second tap', async () => {
@@ -316,7 +374,7 @@ describe('Retro tab', () => {
 
       await fireEvent.press(screen.getByTestId(retroTileId('improve')));
       // Undecided: both buttons.
-      expect(screen.getByTestId(retroAddActionId(open.id))).toHaveTextContent('+ Action item');
+      expect(screen.getByTestId(retroAddActionId(open.id))).toHaveTextContent('Action item');
       expect(screen.getByTestId(retroNotNeededId(open.id))).toHaveTextContent('Not needed');
       // Actioned: the action's key and state, and no buttons.
       expect(screen.getByTestId(retroActionKeyId(actioned.id))).toHaveTextContent(/^SHIP-958/);

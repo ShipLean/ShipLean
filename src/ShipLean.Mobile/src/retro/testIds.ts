@@ -31,6 +31,7 @@ export const retroIds = {
 // RT1: ids that carry a category, a theme or a point.
 export const retroTileId = (category: string) => `retro-tile-${category}`;
 export const retroTileCountId = (category: string) => `retro-tile-${category}-count`;
+export const retroTileStubId = (category: string) => `retro-tile-${category}-stub`;
 export const retroTileToDecideId = (category: string) => `retro-tile-${category}-to-decide`;
 // A theme's heading; the unthemed group is `none`.
 export const retroThemeId = (themeId: string | null) => `retro-theme-${themeId ?? 'none'}`;

@@ -6,7 +6,7 @@ import { aProject } from '../../test-support/builders';
 import { apiError, restoreFetch } from '../../test-support/fakeApi';
 import { aSprintRetro, designInsights, retroApi } from '../../test-support/retro';
 import { renderWithRunner } from '../../test-support/renderWithRunner';
-import type { Scheme } from '../../theme/themes';
+import { themes, type Scheme } from '../../theme/themes';
 import { uiIds } from '../../ui/testIds';
 import type { RetroAction } from '../actions';
 import { RetroActionsProvider } from '../RetroActions';
@@ -194,6 +194,17 @@ describe.each<Scheme>(['light', 'dark'])('Retro to decide (%s)', (scheme) => {
     await renderView(scheme);
     expect(screen.queryByTestId(retroIds.decideSheet)).toBeNull();
     const [first, second] = [SAVED_CARDS.points[1], SAVED_CARDS.points[3]];
+
+    // Same pair as the Notes card: a soft Action item with the plus icon, Not needed as a link.
+    expect(await screen.findByTestId(retroAddActionId(first.id))).toHaveStyle({
+      backgroundColor: themes[scheme].colors.surface2,
+    });
+    expect(
+      screen.getAllByTestId('icon-plus', { includeHiddenElements: true }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByTestId(retroNotNeededId(first.id))).toHaveStyle({
+      backgroundColor: 'transparent',
+    });
 
     await fireEvent.press(await screen.findByTestId(retroAddActionId(first.id)));
     expect(screen.getByTestId(retroIds.decideSheet)).toBeTruthy();
