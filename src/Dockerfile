@@ -12,6 +12,8 @@ WORKDIR /source/src
 # build scripts it hasn't been told about. Only the SPA and what it depends on are installed (the filter), so the
 # phone app's dependencies never enter this image.
 COPY src/package.json src/pnpm-workspace.yaml src/pnpm-lock.yaml ./
+# pnpm checks every patchedDependencies file in the workspace, even for a package the filter leaves out.
+COPY src/patches/ ./patches/
 COPY src/ShipLean.Client/package.json ./ShipLean.Client/
 COPY src/ShipLean.Core.Client/package.json ./ShipLean.Core.Client/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile --filter shiplean-client...
