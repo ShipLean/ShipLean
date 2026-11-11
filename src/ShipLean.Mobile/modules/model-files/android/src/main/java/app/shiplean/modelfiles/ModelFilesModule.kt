@@ -19,7 +19,7 @@ class ModelFilesModule : Module() {
     }
 
     Function("stopDownloadService") {
-      val context = appContext.reactContext?.applicationContext ?: return@Function
+      val context = appContext.reactContext?.applicationContext ?: return@Function null
       ModelDownloadService.stop(context)
     }
   }
