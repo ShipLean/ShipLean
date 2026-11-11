@@ -205,6 +205,8 @@ export function retroVoiceSpec(ctx: RetroVoiceContext): ScreenVoiceSpec<RetroAct
     const picked = call.args.category;
     if (!isCategory(picked)) return refuse(call.action, 'invalidArgs');
     const about = aboutOf(text, ctx.projectKey, ctx.sprint?.id ?? null);
+    // A point about neither an item nor a known sprint cannot be sent, so it is never previewed.
+    if (about.key === null && about.sprintId === null) return refuse(call.action, 'invalidArgs');
     return {
       ok: true,
       view: null,
