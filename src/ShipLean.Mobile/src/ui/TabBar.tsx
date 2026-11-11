@@ -2,10 +2,19 @@ import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
+import { Icon, type IconName } from './Icon';
 import { layout } from './layout';
-import { primitiveIds, tabBadgeId, tabId } from './testIds';
+import { primitiveIds, tabBadgeId, tabIconId, tabId } from './testIds';
 
 export type TabId = 'inbox' | 'backlog' | 'features' | 'retro';
+
+// Each tab's icon in the design's tab bar (app.js tabBar).
+const TAB_ICON: Record<TabId, IconName> = {
+  inbox: 'inbox',
+  backlog: 'list',
+  features: 'board',
+  retro: 'retro',
+};
 
 export interface TabBarTab {
   id: TabId;
@@ -80,8 +89,14 @@ function TabButton({
         minHeight: theme.touch.control,
         alignItems: 'center',
         justifyContent: 'center',
+        gap: layout.tabIconGap,
       }}
     >
+      <Icon
+        testID={tabIconId(tab.id)}
+        name={TAB_ICON[tab.id]}
+        color={active ? colors.accent : colors.muted}
+      />
       <Text
         style={{
           color: active ? colors.accent : colors.muted,
