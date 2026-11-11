@@ -6,12 +6,11 @@ import { useTheme } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Button } from '../../ui/Button';
 import { useToast } from '../../ui/Toast';
-import type { VoiceFailure } from '../contracts';
+import type { ScreenVoiceSpec, VoiceFailure } from '../contracts';
 import { engines } from '../engines';
 import type { RetryChange, VoiceSource } from '../internals';
 import { HeardQuote } from '../sheets/HeardQuote';
 import { heardQuoteId } from '../sheets/HeardQuote.testIds';
-import { useVoiceInternals } from '../internals';
 import { useVoice } from '../VoiceProvider';
 import {
   heardFailureFixId,
@@ -37,6 +36,8 @@ export interface HeardFailureProps {
   failure: Extract<VoiceFailure, { kind: HeardFailureKind }>;
   heard: string | null;
   source: VoiceSource;
+  // The focused screen's spec: the Mic tuning page's Back label names its focused or first visible item.
+  spec: ScreenVoiceSpec | null;
   // { asNote: true } keeps an unclear sentence as a note.
   onRetry: (change: RetryChange) => void;
   onTypeInstead: () => void;
@@ -62,10 +63,9 @@ export function HeardFailure(props: HeardFailureProps) {
 
 // A tap or silence: a toast and no sheet. The second silent hold in a row adds a Tune mic action; the third pushes the
 // Mic tuning page instead of another toast (voice D1, D2). The page is pushed, so Back restores the screen as it was.
-function SilentFailure({ failure, onClose }: HeardFailureProps) {
+function SilentFailure({ failure, spec, onClose }: HeardFailureProps) {
   const toast = useToast();
   const router = useRouter();
-  const internals = useVoiceInternals();
   const holds = useSilentHolds(failure);
   const handled = useRef<VoiceFailure | null>(null);
   const silent = failure.kind === 'nothingHeard';
@@ -74,7 +74,7 @@ function SilentFailure({ failure, onClose }: HeardFailureProps) {
     if (handled.current === failure) return;
     handled.current = failure;
     // The page's Back label names an item: the focused one, else the first the screen shows.
-    const context = readSpecContext(internals.spec());
+    const context = readSpecContext(spec);
     const key = context.focusKey ?? context.rows[0]?.key;
     if (silent && holds >= SILENT_HOLDS_FOR_MIC_TUNING) {
       resetSilentHolds();
@@ -101,7 +101,7 @@ function SilentFailure({ failure, onClose }: HeardFailureProps) {
         : copy,
     );
     onClose();
-  }, [silent, holds, failure, toast, router, internals, onClose]);
+  }, [silent, holds, failure, toast, router, spec, onClose]);
 
   return null;
 }

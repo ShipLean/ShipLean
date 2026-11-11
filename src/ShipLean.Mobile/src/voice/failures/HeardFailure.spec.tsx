@@ -2,7 +2,6 @@ import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useState, type ReactElement } from 'react';
 import { Pressable } from 'react-native';
 import { links } from '../../links';
-import { fakeInternals } from '../../test-support/voiceInternals';
 import { renderWithVoice, fakeVoice, installFakeEngines } from '../../test-support/voiceUi';
 import type { ScreenVoiceSpec } from '../contracts';
 import { primitiveIds } from '../../ui/testIds';
@@ -25,17 +24,14 @@ jest.mock('expo-router', () => ({
 }));
 
 // A screen spec that says only what its context() holds.
-const specInternals = (context: Record<string, unknown>) =>
-  fakeInternals({
-    spec: (): ScreenVoiceSpec => ({
-      screen: 'test',
-      actions: [],
-      context: () => context,
-      hotwords: () => [],
-      toActions: () => ({ ok: true, actions: [], lines: [], rejected: [], view: null }),
-    }),
-  });
-const focusedOn = (key: string) => specInternals({ key });
+const screenSpec = (context: Record<string, unknown>): ScreenVoiceSpec => ({
+  screen: 'test',
+  actions: [],
+  context: () => context,
+  hotwords: () => [],
+  toActions: () => ({ ok: true, actions: [], lines: [], rejected: [], view: null }),
+});
+const focusedOn = (key: string) => screenSpec({ key });
 
 type Heard = HeardFailureProps['failure'];
 
@@ -48,6 +44,7 @@ function props(failure: Heard, over: Partial<HeardFailureProps> = {}): HeardFail
     failure,
     heard: null,
     source: 'voice',
+    spec: null,
     onRetry: jest.fn(),
     onTypeInstead: jest.fn(),
     onWhatCanISay: jest.fn(),
@@ -160,8 +157,8 @@ describe('HeardFailure', () => {
     installFakeEngines();
     for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
     mockPush.mockClear();
-    const p = props(silent());
-    const view = await renderWithVoice(<Bumpy {...p} />, { internals: focusedOn('SHIP-12') });
+    const p = props(silent(), { spec: focusedOn('SHIP-12') });
+    const view = await renderWithVoice(<Bumpy {...p} />);
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush.mock.calls[0][0]).toEqual({
       pathname: '/mic-tuning',
@@ -186,9 +183,11 @@ describe('HeardFailure', () => {
     installFakeEngines();
     for (let i = 0; i < 2; i++) await (await hold(silent())).unmount();
     mockPush.mockClear();
-    await renderWithVoice(withToasts(props(silent())), {
-      internals: specInternals({ rows: [{ key: 'SHIP-7', title: 'Seven' }] }),
-    });
+    await renderWithVoice(
+      withToasts(
+        props(silent(), { spec: screenSpec({ rows: [{ key: 'SHIP-7', title: 'Seven' }] }) }),
+      ),
+    );
     expect(mockPush.mock.calls[0][0]).toEqual({
       pathname: '/mic-tuning',
       params: { from: 'third_hold', key: 'SHIP-7' },
