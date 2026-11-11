@@ -94,3 +94,31 @@ export function webUrl(
   const item = `${origin}/p/${projectKey}/items/${itemKey}`;
   return page === 'board' ? `${item}/board` : item;
 }
+
+// A project page on the web, for an action the phone can't take (voice D7): the web Backlog at a level, or its
+// Planning view. A backlog page with no level is the level the phone screen shows; webPageUrl takes Stories then.
+export type WebPage =
+  | { page: 'backlog'; level?: BacklogLevelParam }
+  | { page: 'planning' }
+  // The retro Insights page, and a sprint's retro board (the retro search when the sprint isn't known).
+  | { page: 'retroInsights' }
+  | { page: 'sprintRetro'; sprintId?: string };
+
+// The web page of a project page on the signed-in server. The SPA's patterns are /p/:key/backlogs/:level, and the
+// Planning view is /p/:key/backlogs/stories?mode=planning (it exists on the Stories level only). Callers pass
+// platform().apiOrigin().
+export function webPageUrl(origin: string, projectKey: string, page: WebPage): string {
+  const project = `${origin}/p/${projectKey}`;
+  switch (page.page) {
+    case 'planning':
+      return `${project}/backlogs/stories?mode=planning`;
+    case 'retroInsights':
+      return `${project}/retros/insights`;
+    case 'sprintRetro':
+      return page.sprintId === undefined
+        ? `${project}/retros`
+        : `${project}/sprints/${page.sprintId}/retro`;
+    case 'backlog':
+      return `${project}/backlogs/${page.level ?? 'stories'}`;
+  }
+}

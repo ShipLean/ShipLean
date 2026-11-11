@@ -167,7 +167,13 @@ function RetroTab({ projectKey, projectId }: RetroTabProps) {
 
   useScreenVoice(
     retroVoiceSpec({
-      sprint: retro === undefined ? null : { id: retro.sprint.id, name: retro.sprint.name },
+      // The shown sprint is known before its retro loads, so a spoken point about it is sendable at once.
+      sprint:
+        retro !== undefined
+          ? { id: retro.sprint.id, name: retro.sprint.name }
+          : sprint === null
+            ? null
+            : { id: sprint.id, name: sprint.name },
       category: segment === 'notes' ? category : null,
       points: picked,
       lastTouchedId: touched.pointId,

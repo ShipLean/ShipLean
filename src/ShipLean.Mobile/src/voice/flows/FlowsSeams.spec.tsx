@@ -3,7 +3,7 @@
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { memoryStore } from '@shiplean/core/platform';
 import { act, fireEvent, screen, within } from '@testing-library/react-native';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { systemNow } from '../../actions/clock';
 import { createActionRunner, type SessionRunner } from '../../actions/runner';
 import type { Executor } from '../../actions/types';
@@ -33,20 +33,6 @@ const CALLS: ParsedCall[] = [
   { action: 'approve', args: { number: 'D10' } },
 ];
 
-const text = { type: 'string' };
-// flowSpec with argument schemas, so the provider's resolveCommand passes its calls.
-function screenSpec(context: FlowContext): ScreenVoiceSpec<FlowAction> {
-  const spec = flowSpec(() => context);
-  return {
-    ...spec,
-    actions: [
-      { ...spec.actions[0], args: { properties: { number: text }, required: ['number'] } },
-      { ...spec.actions[1], args: { properties: { state: text }, required: ['state'] } },
-      { ...spec.actions[2], args: { properties: { text } } },
-    ],
-  };
-}
-
 const probe: { voice: VoiceApi | null } = { voice: null };
 function Screen({ spec, children }: { spec: ScreenVoiceSpec<FlowAction>; children?: ReactNode }) {
   useScreenVoice(spec as ScreenVoiceSpec);
@@ -62,6 +48,16 @@ function Screen({ spec, children }: { spec: ScreenVoiceSpec<FlowAction>; childre
   );
 }
 const voice = () => probe.voice!;
+
+// The work item screen: a refetch renders it again with the server's item.
+const refetch: { now: (() => void) | null } = { now: null };
+function Refetching({ spec }: { spec: ScreenVoiceSpec<FlowAction> }) {
+  const [, setN] = useState(0);
+  useEffect(() => {
+    refetch.now = () => setN((n) => n + 1);
+  });
+  return <Screen spec={spec} />;
+}
 
 // The real runner, started, with a work item executor that refuses setState with a 409 (a stale revision).
 function staleRunner() {
@@ -132,7 +128,7 @@ function switchedRunner(refusal: ApiRequestError, offline: boolean) {
 // Speaks HEARD on a work item screen over `runner`, and applies the preview. `log` hears each read of the context.
 async function speakAndApply(runner: SessionRunner, log: string[] = [], children?: ReactNode) {
   const context: FlowContext = { key: 'SHIP-906', state: 'New', revision: 4, decisions: ['D10'] };
-  const spec = screenSpec(context);
+  const spec = flowSpec(() => context);
   const logged: ScreenVoiceSpec<FlowAction> = {
     ...spec,
     toActions: (calls, t) => {
@@ -184,7 +180,7 @@ describe('voice flows through the provider', () => {
     const recognizer = new FakeRecognizer();
     const model = new FakeCommandModel();
     model.respond(CALLS);
-    await renderWithVoice(<Screen spec={screenSpec(context)} />, {
+    await renderWithVoice(<Screen spec={flowSpec(() => context)} />, {
       engines: { recognizer, model },
       runner,
     });
@@ -212,12 +208,61 @@ describe('voice flows through the provider', () => {
     expect(screen.getByTestId(previewMarkId('state'))).toHaveTextContent(CHANGED_HERE);
   });
 
+  it('a 409 the screen has not read yet keeps applying through a runner update, and the preview comes back once it has', async () => {
+    const context: FlowContext = { key: 'SHIP-906', state: 'New', revision: 4, decisions: [] };
+    const spec = flowSpec(() => context);
+    const { runner, sent } = staleRunner();
+    started = runner;
+    const recognizer = new FakeRecognizer();
+    const model = new FakeCommandModel();
+    model.respond([{ action: 'set_state', args: { state: 'Active' } }]);
+    await renderWithVoice(<Refetching spec={spec} />, { engines: { recognizer, model }, runner });
+    recognizer.script([], 'set it to active');
+    await act(async () => voice().holdStart());
+    await act(async () => {
+      jest.advanceTimersByTime(900);
+    });
+    await act(async () => voice().holdEnd());
+
+    // Refused as stale before the screen has read SHIP-906 again: it waits, applying.
+    await fireEvent.press(screen.getByTestId(previewApplyId));
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(sent).toEqual(['setState']);
+    expect(voice().state).toMatchObject({ kind: 'applying' });
+
+    // The runner tells its subscribers again meanwhile (a tapped note sends).
+    await act(async () => {
+      const note: FlowAction = {
+        area: 'workItem',
+        itemId: 'item-1',
+        key: 'SHIP-906',
+        kind: 'addNote',
+        text: 'hi',
+      };
+      runner.dispatch([note], { undo: UNDO.typed, origin: 'tap', allOrNothing: false });
+      await jest.advanceTimersByTimeAsync(0);
+    });
+    expect(sent).toEqual(['setState', 'addNote']);
+    expect(voice().state).toMatchObject({ kind: 'applying' });
+
+    // The refetch lands: Priya resolved it meanwhile.
+    context.state = 'Resolved';
+    context.revision = 5;
+    await act(async () => refetch.now?.());
+
+    expect(voice().state).toMatchObject({ kind: 'preview', source: 'voice' });
+    expect(screen.getByTestId(previewSheetId)).toBeOnTheScreen();
+    expect(screen.getByTestId(previewMarkId('state'))).toHaveTextContent(CHANGED_HERE);
+  });
+
   it('typed Post as a note retries as a note and applies it with origin typed', async () => {
     const context: FlowContext = { key: 'SHIP-906', state: 'New', revision: 4, decisions: [] };
     const model = new FakeCommandModel();
     // Nothing the model can parse: the typed words come back unclear.
     model.respond([]);
-    const view = await renderWithVoice(<Screen spec={screenSpec(context)} />, {
+    const view = await renderWithVoice(<Screen spec={flowSpec(() => context)} />, {
       engines: { model },
     });
 

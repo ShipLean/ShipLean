@@ -109,6 +109,8 @@ interface ScreenEntry {
 type Register = (entry: ScreenEntry) => () => void;
 
 const RegisterContext = createContext<Register | null>(null);
+// Called by a registered screen each time it renders with its spec, so watchSpec's subscribers read the new data.
+const SpecRenderedContext = createContext<(() => void) | null>(null);
 const EnginesContext = createContext<VoiceEngines | null>(null);
 
 export { restingState } from './machine';
@@ -137,6 +139,7 @@ class VoiceStore {
   private screens: ScreenEntry[] = [];
   private version = 0;
   private readonly listeners = new Set<() => void>();
+  private readonly specListeners = new Set<() => void>();
 
   readonly subscribe = (cb: () => void) => {
     this.listeners.add(cb);
@@ -195,9 +198,21 @@ class VoiceStore {
   // The newest registration is the focused screen; unregistering hands back to the one before.
   readonly register: Register = (entry) => {
     this.screens = [...this.screens, entry];
+    this.specRendered();
     return () => {
       this.screens = this.screens.filter((e) => e !== entry);
     };
+  };
+
+  readonly watchSpec = (cb: () => void) => {
+    this.specListeners.add(cb);
+    return () => {
+      this.specListeners.delete(cb);
+    };
+  };
+
+  readonly specRendered = () => {
+    for (const cb of [...this.specListeners]) cb();
   };
 
   focused(): ScreenEntry | null {
@@ -265,6 +280,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       state: () => stateOf(store, e.models.status()),
       set: (s) => store.setMachine(s),
       spec: () => store.spec(),
+      watchSpec: store.watchSpec,
       engines: () => e,
       runner,
       last: () => store.last,
@@ -364,11 +380,18 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     return self;
   }, [store, e, runner]);
 
-  // A 409 on a voice batch rebuilds its preview.
-  useEffect(
-    () => runner.subscribeConflicts((batchId, lines) => onConflict(internals, batchId, lines)),
-    [runner, internals],
-  );
+  // A 409 on a voice batch rebuilds its preview. A rebuild still waiting for the screen to read the item again is
+  // cancelled with the provider, so no timer or spec watcher outlives it.
+  useEffect(() => {
+    const waits = new Set<() => void>();
+    const stop = runner.subscribeConflicts((batchId, lines) =>
+      onConflict(internals, batchId, lines, waits),
+    );
+    return () => {
+      stop();
+      for (const cancel of [...waits]) cancel();
+    };
+  }, [runner, internals]);
 
   // A batch this provider sent with a refused or unconfirmed part goes to onApplyFailed, once. Otherwise applying
   // ends once nothing of the batch is still sending; the runner's toast offers Undo from there.
@@ -383,7 +406,14 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     }
     const s = store.machine;
     if (s?.kind !== 'applying' || store.reported.has(s.batchId)) return;
-    if (all.some((p) => p.batchId === s.batchId && p.state === 'sending')) return;
+    // A refused conflict is the conflict flow's: it keeps applying until the screen holds the server's item, then
+    // brings the preview back.
+    if (
+      all.some(
+        (p) => p.batchId === s.batchId && (p.state === 'sending' || p.failure === 'conflict'),
+      )
+    )
+      return;
     store.setMachine(restingState(e.models.status(), store.permission));
   }, [runner, store, internals, e]);
   useEffect(() => runner.subscribe(settle), [runner, settle]);
@@ -512,7 +542,9 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     <EnginesContext.Provider value={e}>
       <VoiceInternalsContext.Provider value={internals}>
         <RegisterContext.Provider value={store.register}>
-          <VoiceContext.Provider value={api}>{children}</VoiceContext.Provider>
+          <SpecRenderedContext.Provider value={store.specRendered}>
+            <VoiceContext.Provider value={api}>{children}</VoiceContext.Provider>
+          </SpecRenderedContext.Provider>
         </RegisterContext.Provider>
       </VoiceInternalsContext.Provider>
     </EnginesContext.Provider>
@@ -529,12 +561,14 @@ export function useVoice(): VoiceApi {
 // must not hold the mic); NavigationContext is undefined outside one, and then mount and unmount decide.
 export function useScreenVoice(spec: ScreenVoiceSpec, opts?: ScreenVoiceOptions): void {
   const register = useContext(RegisterContext);
+  const rendered = useContext(SpecRenderedContext);
   const nav = useContext(NavigationContext);
   const onView = opts?.onView;
   const entry = useRef<ScreenEntry>({ spec, onView });
   useEffect(() => {
     entry.current.spec = spec;
     entry.current.onView = onView;
+    rendered?.();
   });
   useEffect(() => {
     if (register === null) return;

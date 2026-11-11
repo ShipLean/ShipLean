@@ -1,5 +1,5 @@
 import type { RetroActionRefDto, RetroPointDto, SprintRetroDto } from '@shiplean/core/api/retros';
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { UNDO } from '../../actions/undo';
 import { RetroScreen } from '../../screens/RetroScreen';
 import { RetroProvider } from '../../shell/providers/retro';
@@ -9,6 +9,8 @@ import { apiError } from '../../test-support/fakeApi';
 import { aRetroPoint, designRetro, retroApi } from '../../test-support/retro';
 import { signedInApi } from '../../test-support/signedInApi';
 import { renderWithVoice } from '../../test-support/voiceUi';
+import type { ScreenVoiceSpec } from '../../voice/contracts';
+import { aTranscript } from '../../test-support/voice';
 import { primitiveIds, optionCountId, optionId, uiIds } from '../../ui/testIds';
 import { screenIds } from '../../screens/testIds';
 import type { RetroAction } from '../actions';
@@ -415,6 +417,34 @@ describe('Retro tab', () => {
       await renderRetro(scheme);
       expect(await screen.findByText('Sprint 26 retro')).toBeTruthy();
       expect(screen.queryByText('Sprint 25 retro')).toBeNull();
+    });
+
+    it('puts a spoken point on the shown sprint before its retro has loaded', async () => {
+      const retro = designRetro();
+      makeApi(retro, { [retroRoute(retro)]: () => new Promise(() => {}) });
+      await renderRetro(scheme);
+      const latest = () => mockVoice.mock.calls.at(-1)![0] as ScreenVoiceSpec<RetroAction>;
+      await waitFor(() => expect(latest().context().sprint).toBe(retro.sprint.name));
+      expect(screen.getByTestId(primitiveIds.skeleton)).toBeTruthy();
+      const spec = latest();
+      const note = 'the queue grew';
+      const text = `Retro note: ${note}`;
+      const result = spec.toActions(
+        [
+          {
+            action: 'add_point',
+            args: { note, category: 'improve' },
+            noteSpan: { start: text.indexOf(note), end: text.length },
+          },
+        ],
+        aTranscript({ text }),
+      );
+      if (!result.ok) throw new Error(`failed: ${result.failure.kind}`);
+      expect(result.actions[0]).toMatchObject({
+        kind: 'addPoint',
+        key: null,
+        sprintId: retro.sprint.id,
+      });
     });
 
     it('applies a screen view from voice: show To decide picks the segment', async () => {

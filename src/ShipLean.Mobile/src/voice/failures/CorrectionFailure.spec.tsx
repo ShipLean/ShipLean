@@ -57,6 +57,12 @@ function specWith(context: Record<string, unknown>): ScreenVoiceSpec {
   };
 }
 
+const retroBoard = {
+  action: 'archive_point',
+  where: 'The web retro board',
+  page: { page: 'sprintRetro' },
+} as const;
+
 const HEARD = 'Set the onboarding story to Active';
 
 async function show(
@@ -209,6 +215,74 @@ describe('CorrectionFailure', () => {
     expect(screen.getByText('Tasks move on the web')).toBeOnTheScreen();
     await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
     expect(openBrowserAsync).toHaveBeenCalledWith(`${platform().apiOrigin()}/p/SHIP/items/SHIP-5`);
+  });
+
+  it("webOnly with a page and no focused item opens the action's page on the web", async () => {
+    // The Backlog's list has no focused item: the action's page is the place, not an item.
+    await show(
+      {
+        kind: 'webOnly',
+        detail: { action: 'plan_sprint', where: 'Sprint planning', page: { page: 'planning' } },
+      },
+      { spec: specWith({ key: null, level: 'features' }), projectKey: 'SHIP', heard: 'Plan it' },
+    );
+    expect(screen.getByTestId(correctionFailureOpenWebId)).toBeEnabled();
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/backlogs/stories?mode=planning`,
+    );
+  });
+
+  it('webOnly with a backlog page and no level opens the web Backlog at the level the screen shows', async () => {
+    await show(
+      {
+        kind: 'webOnly',
+        detail: { action: 'bulk_edit', where: 'Bulk edit', page: { page: 'backlog' } },
+      },
+      { spec: specWith({ key: null, level: 'features' }), projectKey: 'SHIP', heard: 'Bulk edit' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/backlogs/features`,
+    );
+  });
+
+  it('webOnly with the retro Insights page opens it on the web', async () => {
+    await show(
+      {
+        kind: 'webOnly',
+        detail: {
+          action: 'rename_theme',
+          where: 'The web Insights',
+          page: { page: 'retroInsights' },
+        },
+      },
+      { spec: specWith({ key: null }), projectKey: 'SHIP', heard: 'Rename the theme' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/retros/insights`,
+    );
+  });
+
+  it("webOnly with a sprint retro page opens the screen's sprint retro board", async () => {
+    await show(
+      { kind: 'webOnly', detail: retroBoard },
+      { spec: specWith({ key: null, sprintId: 's-25' }), projectKey: 'SHIP', heard: 'Archive it' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      `${platform().apiOrigin()}/p/SHIP/sprints/s-25/retro`,
+    );
+  });
+
+  it('webOnly with a sprint retro page and no sprint on screen opens the retro search', async () => {
+    await show(
+      { kind: 'webOnly', detail: retroBoard },
+      { spec: specWith({ key: null }), projectKey: 'SHIP', heard: 'Archive it' },
+    );
+    await fireEvent.press(screen.getByTestId(correctionFailureOpenWebId));
+    expect(openBrowserAsync).toHaveBeenCalledWith(`${platform().apiOrigin()}/p/SHIP/retros`);
   });
 
   it('passes the unmatched span to HeardQuote and says nothing was changed', async () => {

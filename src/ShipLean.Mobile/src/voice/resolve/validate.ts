@@ -81,7 +81,11 @@ export function checkCall(
   if (action.webOnly !== undefined)
     return rejected(call, {
       kind: 'webOnly',
-      detail: { action: action.name, where: action.webOnly },
+      detail: {
+        action: action.name,
+        where: action.webOnly,
+        ...(action.webPage === undefined ? {} : { page: action.webPage }),
+      },
     });
   let args = call.args;
   if (action.noteArg !== undefined) {

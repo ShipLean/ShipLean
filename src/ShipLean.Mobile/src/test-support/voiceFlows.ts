@@ -10,7 +10,7 @@ import type {
   VoiceFailure,
 } from '../voice/contracts';
 import { keptActions, turnOf } from '../voice/machine';
-import { copyNoteSpan } from '../voice/resolve';
+import { copyNoteSpan, resolveCommand } from '../voice/resolve';
 import { fakeRunner, type FakeRunner } from './actions';
 import { fakeInternals, type FakeInternals } from './voiceInternals';
 
@@ -31,15 +31,30 @@ export interface FlowAction extends AppAction {
   text?: string;
 }
 
+const text = { type: 'string' };
+
 // approve(number), set_state(state) and add_note (noteArg text): lines[i] describes actions[i]. An unknown decision
-// is rejected as noMatch.
+// is rejected as noMatch. The arguments are declared, so resolveCommand passes the calls as the provider does.
 export function flowSpec(context: () => FlowContext): ScreenVoiceSpec<FlowAction> {
   return {
     screen: 'workItem',
     actions: [
-      { name: 'approve', description: 'Approve a decision', args: {} },
-      { name: 'set_state', description: 'Set the state', args: {} },
-      { name: 'add_note', description: 'Add a note', args: {}, noteArg: 'text' },
+      {
+        name: 'approve',
+        description: 'Approve a decision',
+        args: { properties: { number: text }, required: ['number'] },
+      },
+      {
+        name: 'set_state',
+        description: 'Set the state',
+        args: { properties: { state: text }, required: ['state'] },
+      },
+      {
+        name: 'add_note',
+        description: 'Add a note',
+        args: { properties: { text }, required: ['text'] },
+        noteArg: 'text',
+      },
     ],
     context: () => ({ ...context() }),
     hotwords: () => [],
@@ -93,10 +108,13 @@ export interface FlowHarness {
   runner: FakeRunner;
   // Every transcript text the model was asked to parse, in order.
   parsed: string[];
+  // The screen renders again with its spec (after its context changed): watchSpec's subscribers are told.
+  rendered(): void;
 }
 
-// Internals that behave as the provider's: resolve parses with `model`, keeps the result as last() and shows the
-// preview or failure; resolveCalls resolves without the model and keeps its result as last(); dispatch sends the kept
+// Internals that behave as the provider's: resolve parses with `model`, resolves the calls with resolveCommand, keeps
+// the result as last() and shows the preview or failure; resolveCalls resolves without the model (resolveCommand too)
+// and keeps its result as last(); dispatch sends the kept
 // lines' actions through the runner with the undo window for the source.
 export function flowHarness(
   context: FlowContext,
@@ -105,18 +123,25 @@ export function flowHarness(
   const spec = flowSpec(() => context);
   const runner = fakeRunner();
   const parsed: string[] = [];
+  const watchers = new Set<() => void>();
   let last: { calls: ParsedCall[]; transcript: Transcript; result: ResolveResult } | null = null;
   let source: 'voice' | 'typed' = 'voice';
   const v: FakeInternals = fakeInternals({
     runner,
     spec: () => spec,
+    watchSpec: (cb) => {
+      watchers.add(cb);
+      return () => {
+        watchers.delete(cb);
+      };
+    },
     last: () => last,
     resolve: async (t, opts) => {
       v.resolved.push({ transcript: t, source: opts.source });
       parsed.push(t.text);
       source = opts.source;
       const calls = model(t.text);
-      const result = spec.toActions(calls, t);
+      const result = resolveCommand(spec, calls, t);
       last = { calls, transcript: t, result };
       const turn = turnOf(spec, result, t.text, opts.source);
       if (turn.kind === 'preview') v.set(turn.state);
@@ -124,7 +149,7 @@ export function flowHarness(
         v.set({ kind: 'failure', failure: turn.failure, heard: t.text, source: opts.source });
     },
     resolveCalls: (calls, t) => {
-      const result = spec.toActions(calls, t);
+      const result = resolveCommand(spec, calls, t);
       last = { calls, transcript: t, result };
       return result;
     },
@@ -139,5 +164,12 @@ export function flowHarness(
       });
     },
   });
-  return { v, runner, parsed };
+  return {
+    v,
+    runner,
+    parsed,
+    rendered: () => {
+      for (const cb of [...watchers]) cb();
+    },
+  };
 }

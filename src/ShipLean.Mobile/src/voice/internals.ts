@@ -67,6 +67,9 @@ export interface VoiceInternals {
   state(): VoiceUiState;
   set(s: VoiceUiState): void;
   spec(): ScreenVoiceSpec | null;
+  // Calls cb each time a screen registers its spec or renders with it again (so spec() holds the data the screen has
+  // now). Returns the unsubscribe.
+  watchSpec(cb: () => void): () => void;
   engines(): VoiceEngines;
   runner: ActionRunner;
   last(): { calls: ParsedCall[]; transcript: Transcript; result: ResolveResult } | null;
