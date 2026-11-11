@@ -1,5 +1,6 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useTheme } from '../theme';
+import { iconId } from './testIds';
 
 // Shapes of one icon, ported from the mock kit's own paths (design/mobileapp/app.js, object P), 24x24 viewBox.
 type Shape =
@@ -76,7 +77,7 @@ export function Icon({ name, size = 20, color }: IconProps) {
   const ink = color ?? theme.colors.text;
   return (
     <Svg
-      testID={`icon-${name}`}
+      testID={iconId(name)}
       width={size}
       height={size}
       viewBox="0 0 24 24"
