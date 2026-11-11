@@ -13,6 +13,7 @@ Everything the App Store and Google Play listings show for the phone app, kept i
 | `android/metadata/en-US/` | Play text: `title.txt`, `short_description.txt`, `full_description.txt`, and `changelogs/default.txt` (release notes for any version without its own `changelogs/<versionCode>.txt`). The listing push doesn't send them: release notes belong to a release, and it sends no binary. |
 | `assets/` | Every image the stores show (icons, screenshots, the Play feature graphic), drawn by `assets/asset.html` and written to `assets/exports/` by `assets/export.sh`, plus `assets/listing.md` (captions, the stores' limits, decisions D1–D10). See `assets/README.md`. |
 | `stage_images.py` | Stages the text and the images from `assets/exports/` into fastlane's layout at run time, for each locale (below). |
+| `app_version.py` | Prints the app's version, major.minor from `app.json` and the patch from `APP_VERSION_PATCH`; `--write` puts it in `app.json` ([Version](#version)). |
 | `push_listing.sh` | The only place fastlane is called: `push_listing.sh <ios\|android> <push\|verify>`. |
 | `tests/` | `python3 -I -m unittest discover -s store/tests -v` |
 
@@ -50,15 +51,33 @@ It exits 1, naming the path, when `ios/metadata/en-US/` or `android/metadata/en-
 
 ## How a release pushes it
 
+The step-by-step release journeys, with the commands to paste, are in [`docs/mobile-release.md`](../docs/mobile-release.md).
+
 Run **Mobile release** (Actions) with `listing` on. After the build, it stages the listing and pushes it to the stores the run's `platform` names: on the App Store it replaces the screenshots and leaves the version unsubmitted; on Google Play it replaces the screenshots and images. A listing-only run (`listing` on, no build) pushes the listing alone.
 
 Apple accepts changes to the name, subtitle, keywords, categories and screenshots only while a version is editable (Prepare for Submission), so the App Store push belongs with a release. Play takes listing changes at any time once a build has been uploaded; on a published app they go through review.
+
+## Version
+
+The phone app's version is `major.minor.patch`. Major and minor are the first two numbers of `expo.version` in `src/ShipLean.Mobile/app.json`: change them there by hand when a release deserves it. The patch is the Mobile release run number (`github.run_number`), so every release gets a higher version without a commit. The build job writes the version into its checkout's `app.json` before EAS builds (`store/app_version.py --write`), and the patch in git (`0`) only shows in local builds. The iOS build number and the Android version code are EAS's own counters.
+
+A run that builds also pushes the App Store listing to that version: `deliver` creates it, or renames the version that is editable now. A listing-only run leaves the version alone.
+
+## Submitting for review
+
+Run **Store submit** (Actions) from `main` once Mobile release has uploaded the build you want. It sends that build to review and never pushes the listing:
+
+- **Google Play:** promotes the internal track's rolled-out release, the one internal testers have, to the **Play track** chosen for the run as a full release. Google reviews it and publishes it when approved, unless Managed publishing is on in Play Console. `alpha` (the default) is Closed testing – Alpha: a new personal account must run it with 12 testers for 14 days before Play allows production. `production` is the store itself, which Play refuses until that closed test is done.
+- **Google Play, the first time:** until its first review, Play calls the app a *draft app* and refuses anything but a draft release outside internal testing ("Only releases with status draft may be created on draft app"). Run Store submit with **Play release status** `draft`, then send that release for review once in Play Console › Publishing overview. After that first review, `completed` (the default) needs no console step.
+- **App Store:** attaches the newest processed TestFlight build to the version on Prepare for Submission and submits it. The build's version must match that version, which Mobile release sees to when it builds and pushes the listing in the same run. After approval the version waits for a manual release, because Mobile release's listing push sets `automatic_release false`.
+
+Both stores refuse a submission while something under [Set by hand](#set-by-hand) is missing, such as App Privacy, Data safety or the content rating. The run fails with the store's message.
 
 ## Before the first push
 
 1. The org secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` (the Play service account key EAS already holds), shared with this repo like the `ASC_API_KEY_*` org secrets. It is not a repo secret. Without it the Android dry run is skipped with a notice.
 2. Play: one build uploaded (an internal-track submit counts). Before that, Play refuses the dry run.
-3. App Store: `version` in `src/ShipLean.Mobile/app.json` (`0.0.1` for the first release) matches the version on App Store Connect's Prepare for Submission page. The listing push writes to that version.
+3. App Store: a run that builds sets the version on App Store Connect's Prepare for Submission page to the build's version ([Version](#version)). A listing-only run writes to whichever version is editable then.
 4. If the App Store dry run fails on Linux, set the repo variable `STORE_IOS_RUNNER` to `macos-latest`.
 
 ## Set by hand

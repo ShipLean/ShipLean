@@ -4,7 +4,7 @@
     "slug": "shiplean",
     "owner": "dickos-team",
     "scheme": "shiplean",
-    "version": "0.0.1",
+    "version": "0.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/ios-icon.png",
@@ -71,6 +71,15 @@
         "llama.rn",
         {
           "enableEntitlements": false
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "hosted-solutions",
+          "project": "shiplean",
+          "useNativeInit": true
         }
       ]
     ],

@@ -15,14 +15,16 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SCRIPT = os.path.join("store", "push_listing.sh")
 FAKES = os.path.join(REPO, "store", "tests", "fakes")
 OWN_VARS = ("ASC_KEY_PATH", "PLAY_KEY_PATH", "STAGED", "FAKE_BUNDLE_EXIT", "FAKE_BUNDLE_LOG",
-            "BUNDLE_GEMFILE", "TMPDIR")
+            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH", "PLAY_TRACK",
+            "FAKE_FASTLANE_RUN_OUTPUT", "FAKE_RUN_EXIT",
+            "PLAY_RELEASE_STATUS")
 UPLOAD_OPTIONS = ("--screenshots_path", "--overwrite_screenshots", "--skip_binary_upload",
                   "--submit_for_review", "--automatic_release", "--app_rating_config_path")
 
 
-def app_version():
+def major_minor():
     with open(os.path.join(REPO, "src", "ShipLean.Mobile", "app.json")) as handle:
-        return json.load(handle)["expo"]["version"]
+        return ".".join(json.load(handle)["expo"]["version"].split(".")[:2])
 
 
 class PushListingTests(unittest.TestCase):
@@ -43,7 +45,8 @@ class PushListingTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def keys(self):
-        return {"ASC_KEY_PATH": self.asc_key, "PLAY_KEY_PATH": self.play_key, "STAGED": self.staged}
+        return {"ASC_KEY_PATH": self.asc_key, "PLAY_KEY_PATH": self.play_key, "STAGED": self.staged,
+                "PLAY_TRACK": "alpha", "PLAY_RELEASE_STATUS": "completed"}
 
     def run_script(self, *args, **env_vars):
         env = {k: v for k, v in os.environ.items() if k not in OWN_VARS}
@@ -71,13 +74,14 @@ class PushListingTests(unittest.TestCase):
 
     # Mutation caught: drop --overwrite_screenshots.
     # Mutation caught: --metadata_path store/ios/metadata (the text without the en-AU mirror).
+    # Mutation caught: --app_version from app.json's patch instead of the run's (APP_VERSION_PATCH).
     def test_ios_push_passes_the_listing_options(self):
-        result = self.run_script("ios", "push", **self.keys())
+        result = self.run_script("ios", "push", APP_VERSION_PATCH="42", **self.keys())
 
         self.assert_fastlane(result, "deliver", [
             "--api_key_path", self.asc_key,
             "--app_identifier", "app.shiplean.mobile",
-            "--app_version", app_version(),
+            "--app_version", major_minor() + ".42",
             "--metadata_path", self.staged + "/ios/metadata",
             "--screenshots_path", self.staged + "/ios/screenshots",
             "--app_rating_config_path", os.path.join(REPO, "store", "ios", "age_rating.json"),
@@ -88,6 +92,18 @@ class PushListingTests(unittest.TestCase):
             "--force", "true",
             "--run_precheck_before_submit", "false",
         ], pwd=self.staged + "/ios", gemfile=os.path.join(REPO, "store", "Gemfile"))
+
+    # A listing-only run has no new build, so deliver must update the version that is editable
+    # now; --app_version would rename it away from the build already uploaded for it.
+    # Mutation caught: always pass --app_version.
+    def test_ios_push_without_a_build_leaves_the_version_alone(self):
+        result = self.run_script("ios", "push", **self.keys())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, argv = self.bundle_call()
+        self.assertEqual(argv[3:7], ["--api_key_path", self.asc_key, "--app_identifier", "app.shiplean.mobile"])
+        self.assertEqual(argv[7], "--metadata_path")
+        self.assertNotIn("--app_version", argv)
 
     # Mutation caught: run deliver from the repo root, where it has no ./metadata and asks to set
     # itself up, which crashes a non-interactive run (the first Mobile release, 10 Nov 2026).
@@ -126,7 +142,48 @@ class PushListingTests(unittest.TestCase):
             "--skip_upload_apk", "true",
             "--skip_upload_changelogs", "true",
             "--track", "internal",
+            "--version_code", "7",
         ])
+
+    # The first real listing push failed "More than one release found in this track" once internal
+    # held a draft beside the rolled-out release (Mobile release run 42931892069).
+    # Mutation caught: ask another track, or skip the lookup.
+    def test_android_listing_looks_up_the_internal_version_codes(self):
+        result = self.run_script("android", "push", **self.keys())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with open(self.log + ".run") as handle:
+            lookup = handle.read().splitlines()
+        self.assertEqual(lookup, [
+            "exec", "fastlane", "run", "google_play_track_version_codes",
+            "json_key:" + self.play_key, "package_name:app.shiplean.mobile", "track:internal",
+        ])
+
+    # Mutation caught: take the first code in the list instead of the highest.
+    def test_android_listing_names_the_newest_build(self):
+        for output, expected in (("[00:00:00]: Result: [5, 12, 7]", "12"), ("Result: [3]", "3")):
+            with self.subTest(output=output):
+                result = self.run_script("android", "verify", FAKE_FASTLANE_RUN_OUTPUT=output, **self.keys())
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                _, argv = self.bundle_call()
+                self.assertEqual(argv[argv.index("--version_code") + 1], expected)
+
+    # Mutation caught: run supply with an empty --version_code.
+    def test_android_listing_without_a_build_stops_before_uploading(self):
+        for output in ("[00:00:00]: Result: []", ""):
+            with self.subTest(output=output):
+                result = self.run_script("android", "push", FAKE_FASTLANE_RUN_OUTPUT=output, **self.keys())
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("internal track has no build", result.stderr)
+                self.assertFalse(os.path.exists(self.log), "supply ran")
+
+    def test_android_listing_lookup_failure_passes_through(self):
+        result = self.run_script("android", "push", FAKE_RUN_EXIT="4", **self.keys())
+
+        self.assertEqual(result.returncode, 4, result.stderr)
+        self.assertFalse(os.path.exists(self.log), "supply ran")
 
     # Mutation caught: drop --validate_only true.
     def test_android_verify_is_validate_only(self):
@@ -140,8 +197,87 @@ class PushListingTests(unittest.TestCase):
             "--skip_upload_apk", "true",
             "--skip_upload_changelogs", "true",
             "--track", "internal",
+            "--version_code", "7",
             "--validate_only", "true",
         ])
+
+    # Mutation caught: drop --skip_metadata or --skip_screenshots (the submit would push the listing).
+    def test_ios_submit_sends_the_newest_build_only(self):
+        result = self.run_script("ios", "submit", ASC_KEY_PATH=self.asc_key)
+
+        self.assert_fastlane(result, "deliver", [
+            "submit_build",
+            "--api_key_path", self.asc_key,
+            "--app_identifier", "app.shiplean.mobile",
+            "--build_number", "latest",
+            "--skip_metadata", "true",
+            "--skip_screenshots", "true",
+            "--skip_binary_upload", "true",
+            "--force", "true",
+            "--run_precheck_before_submit", "false",
+        ])
+
+    # Mutation caught: --track_promote_to beta, or drop a --skip_upload_* (the submit would upload).
+    def test_android_submit_promotes_internal_to_production(self):
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="production",
+                                 PLAY_RELEASE_STATUS="completed")
+
+        self.assert_fastlane(result, "supply", [
+            "--json_key", self.play_key,
+            "--package_name", "app.shiplean.mobile",
+            "--track", "internal",
+            "--track_promote_to", "production",
+            "--track_promote_release_status", "completed",
+            "--skip_upload_aab", "true",
+            "--skip_upload_apk", "true",
+            "--skip_upload_metadata", "true",
+            "--skip_upload_changelogs", "true",
+            "--skip_upload_images", "true",
+            "--skip_upload_screenshots", "true",
+        ])
+
+    # Closed testing (Play's "alpha" track), which a new personal account runs before production.
+    # Mutation caught: --track_promote_to production whatever PLAY_TRACK says.
+    def test_android_submit_promotes_internal_to_closed_testing(self):
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="alpha",
+                                 PLAY_RELEASE_STATUS="completed")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, argv = self.bundle_call()
+        self.assertEqual(argv[7:11], ["--track", "internal", "--track_promote_to", "alpha"])
+
+    # Mutation caught: pass PLAY_TRACK through unchecked (a typo would create a new track).
+    def test_android_submit_refuses_any_other_track(self):
+        for track in ("", "beta", "internal", "Production"):
+            with self.subTest(track=track):
+                result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK=track,
+                                         PLAY_RELEASE_STATUS="completed")
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("PLAY_TRACK", result.stderr)
+                self.assertFalse(os.path.exists(self.log), "fastlane ran")
+
+    # A draft app (never reviewed) refuses any other release outside internal testing: Store submit
+    # run 42936059211 failed "Only releases with status draft may be created on draft app".
+    # Mutation caught: ignore PLAY_RELEASE_STATUS (always completed).
+    def test_android_submit_can_promote_as_a_draft(self):
+        result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="alpha",
+                                 PLAY_RELEASE_STATUS="draft")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, argv = self.bundle_call()
+        self.assertEqual(argv[9:13], ["--track_promote_to", "alpha", "--track_promote_release_status", "draft"])
+
+    # Mutation caught: pass PLAY_RELEASE_STATUS through unchecked.
+    def test_android_submit_refuses_any_other_release_status(self):
+        for status in ("", "inProgress", "halted", "Draft"):
+            with self.subTest(status=status):
+                result = self.run_script("android", "submit", PLAY_KEY_PATH=self.play_key, PLAY_TRACK="alpha",
+                                         PLAY_RELEASE_STATUS=status)
+
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn("PLAY_RELEASE_STATUS", result.stderr)
+                self.assertFalse(os.path.exists(self.log), "fastlane ran")
 
     # Mutation caught: skip the key (or STAGED) check.
     def test_missing_key_names_the_variable(self):
@@ -158,6 +294,10 @@ class PushListingTests(unittest.TestCase):
             ("ios", "push", "STAGED", ""),
             ("android", "push", "STAGED", ""),
             ("android", "verify", "STAGED", ""),
+            ("ios", "submit", "ASC_KEY_PATH", ""),
+            ("ios", "submit", "ASC_KEY_PATH", missing_file),
+            ("android", "submit", "PLAY_KEY_PATH", ""),
+            ("android", "submit", "PLAY_KEY_PATH", missing_file),
         ]
         for platform, mode, name, value in cases:
             with self.subTest(platform=platform, mode=mode, name=name, value=value):
@@ -171,7 +311,8 @@ class PushListingTests(unittest.TestCase):
 
     # Mutation caught: append `|| true` to the fastlane call.
     def test_fastlane_failure_exit_code_passes_through(self):
-        for platform, mode in (("ios", "push"), ("ios", "verify"), ("android", "push"), ("android", "verify")):
+        for platform, mode in (("ios", "push"), ("ios", "verify"), ("android", "push"), ("android", "verify"),
+                               ("ios", "submit"), ("android", "submit")):
             with self.subTest(platform=platform, mode=mode):
                 result = self.run_script(platform, mode, FAKE_BUNDLE_EXIT="3", **self.keys())
 
@@ -183,7 +324,7 @@ class PushListingTests(unittest.TestCase):
                 result = self.run_script(*args, **self.keys())
 
                 self.assertEqual(result.returncode, 2)
-                self.assertIn("usage: store/push_listing.sh <ios|android> <push|verify>", result.stderr)
+                self.assertIn("usage: store/push_listing.sh <ios|android> <push|verify|submit>", result.stderr)
                 self.assertFalse(os.path.exists(self.log), "fastlane ran")
 
 

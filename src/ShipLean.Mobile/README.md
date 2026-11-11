@@ -101,6 +101,14 @@ Answers wait 5 seconds so Undo can catch them, then send. With no connection the
 - [ ] Dark mode: set the phone to dark and check the rows, the sheets and the banner.
 - [ ] Tap a row's header: the app's Work item screen opens for that item.
 
+## Crash reports
+
+Release builds send crashes and unhandled errors, JavaScript and native, to Sentry (`@sentry/react-native`). Native code starts Sentry before React Native loads (`useNativeInit` in the plugin's options in `app.json`: `RNSentrySDK.init` in `MainApplication`, `RNSentrySDK.start` in the `AppDelegate`), so a crash in a native module at launch is reported. `src/crashReports.ts`, which `index.ts` imports first, starts the JavaScript side. Nothing else is sent: no tracing, session replay, logs or personal data. Development builds turn Sentry off once JavaScript runs, so only a native crash before that sends from one.
+
+- **Options and DSN:** `sentry.options.json`. Both native SDKs read it from the app's assets (copied at build time) and Metro bundles it into JavaScript (`getSentryExpoConfig`). The DSN is public by design: every installed app carries it.
+- **Readable stack traces:** `metro.config.js` (`getSentryExpoConfig`) stamps each bundle and its source map with a debug ID, and the release build uploads the source maps from EAS. The organization (`hosted-solutions`) and project (`shiplean`) are in the Sentry plugin's options in `app.json`. The upload's token is the EAS environment variable `SENTRY_AUTH_TOKEN` (a Sentry organization token, secret, set account-wide on expo.dev). A release build fails without it; to build without uploading, set `SENTRY_DISABLE_AUTO_UPLOAD=true`.
+- **Store declarations:** crash logs are collected data. Play's Data safety form and Apple's App Privacy must say so ("Crash logs" / "Diagnostics", not linked to the user, not used for tracking).
+
 ## Native voice modules
 
 Voice runs on the phone, so the app needs a development build (`npx expo prebuild`); Expo Go can't load these. The adapters live in `src/voice/native/` behind N9's interfaces (`src/voice/contracts.ts`) and the ports in `src/voice/native/ports.ts`; jest mocks every one of these modules in `src/test-support/jest.setup.ts`, with settable state in `src/test-support/nativeMocks.ts`.

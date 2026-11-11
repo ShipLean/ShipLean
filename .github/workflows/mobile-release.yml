@@ -1,11 +1,15 @@
 name: Mobile release
 
 # Builds the phone app on EAS and, by default, submits it: iOS to TestFlight, Android to the
-# Play internal track as a draft (src/ShipLean.Mobile/eas.json, submit.production).
+# Play internal track, rolled out to internal testers (src/ShipLean.Mobile/eas.json, submit.production).
 # With `listing` it also pushes the store listing from store/.
 # Run by hand only: a run with `build` uses EAS build credits and bumps the build number.
 # The build job waits for EAS and saves what it built (the Android .aab, the iOS .ipa) as the
 # run's `app-builds` artifact, kept 90 days, so a release's files can be downloaded and inspected.
+# Version: major.minor come from expo.version in src/ShipLean.Mobile/app.json (change them by
+# hand); the patch is this workflow's run number (github.run_number), so each release is higher
+# with no commit (store/app_version.py). The build number (iOS) and version code (Android) are
+# EAS's own counters (eas.json: appVersionSource remote, autoIncrement).
 #
 # Needs these GitHub secrets and variable:
 #   EXPO_TOKEN                        an Expo robot token for the dickos-team account (build job).
@@ -82,6 +86,14 @@ jobs:
       # eas-cli reads the app config and computes the fingerprint locally, which needs the app's packages.
       - run: pnpm install --frozen-lockfile
         working-directory: src
+      # Written into this checkout's app.json only: EAS uploads the working tree, uncommitted
+      # changes included (no requireCommit in eas.json), so the build gets this version.
+      - name: Set the version
+        env:
+          APP_VERSION_PATCH: ${{ github.run_number }}
+        run: |
+          version=$(python3 -I store/app_version.py --write)
+          echo "Building version $version" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
@@ -122,7 +134,9 @@ jobs:
               platform = build["platform"].lower()
               extension = posixpath.splitext(urllib.parse.urlsplit(url).path)[1] or ".bin"
               name = "shiplean-{}-{}-{}{}".format(platform, build.get("appVersion"), build.get("appBuildVersion"), extension)
-              with urllib.request.urlopen(url) as response, open(os.path.join(out, name), "wb") as handle:
+              # expo.dev answers Python's default User-Agent (Python-urllib) with 403 Forbidden.
+              request = urllib.request.Request(url, headers={"User-Agent": "shiplean-mobile-release"})
+              with urllib.request.urlopen(request) as response, open(os.path.join(out, name), "wb") as handle:
                   while chunk := response.read(1 << 20):
                       handle.write(chunk)
               print("Saved", name)
@@ -201,4 +215,7 @@ jobs:
         env:
           STAGED: ${{ steps.setup.outputs.staged }}
           ASC_KEY_PATH: ${{ steps.setup.outputs.asc_key_path }}
+          # Only when this run builds: the listing then goes to the new build's version. A
+          # listing-only run updates the version that is editable now.
+          APP_VERSION_PATCH: ${{ inputs.build && github.run_number || '' }}
         run: store/push_listing.sh ios push

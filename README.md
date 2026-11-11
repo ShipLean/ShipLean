@@ -190,6 +190,7 @@ The house rules for anyone (or any agent) working in the repo are in [`AGENTS.md
 - [`design/README.md`](design/README.md): the design system, every reference screen, and the decisions made while designing them.
 - [`docs/`](docs/README.md): testing, sign-in and access, project events, navigation, MCP and connecting an agent.
 - [`docs/backups.md`](docs/backups.md): scheduled backups to S3, and the restore runbook.
+- [`docs/mobile-release.md`](docs/mobile-release.md): releasing the phone app to testers and the stores, with copy-paste `gh` commands for each step.
 
 ## Logo
 
