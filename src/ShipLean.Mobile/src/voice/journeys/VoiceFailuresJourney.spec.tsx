@@ -28,6 +28,7 @@ import {
   correctionFailureOpenWebId,
   correctionFailureYesId,
 } from '../failures/CorrectionFailure.testIds';
+import { NOTHING_HEARD_MS } from '../failures/heardCopy';
 import { micCheckId } from '../failures/MicCheck.testIds';
 import { resetSilentHolds } from '../failures/silentHolds';
 import { micSlotId, type MicPlacement } from '../MicSlot.testIds';
@@ -122,7 +123,12 @@ beforeEach(() => {
     if (k.startsWith('shiplean.outbox') || k.startsWith('shiplean.voice.')) kvValues.delete(k);
   resetSilentHolds();
 });
-afterEach(() => jest.useRealTimers());
+afterEach(async () => {
+  await act(async () => {
+    await jest.runOnlyPendingTimersAsync();
+  });
+  jest.useRealTimers();
+});
 
 describe('VoiceFailuresJourney', () => {
   it('shows the hold hint for a tap and nothing was changed for silence, then the mic check on the third silent hold', async () => {
@@ -137,9 +143,15 @@ describe('VoiceFailuresJourney', () => {
       'Hold the mic while you speak',
     );
     expect(screen.queryByTestId(micCheckId)).toBeNull();
+    expect(screen.queryByTestId(previewSheetId)).toBeNull();
 
     // Two silent holds: nothing was changed, each time, and still no mic check.
     for (let i = 0; i < 2; i += 1) {
+      // The last toast has gone, so the one found below is this hold's own.
+      await act(async () => {
+        jest.advanceTimersByTime(NOTHING_HEARD_MS);
+      });
+      expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
       await hold('tabBar');
       expect(await screen.findByTestId(primitiveIds.toast)).toHaveTextContent(
         "Didn't hear anything · nothing was changed",
