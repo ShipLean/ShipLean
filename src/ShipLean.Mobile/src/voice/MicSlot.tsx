@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Text, View, type GestureResponderEvent } from 'react-native';
 import { links } from '../links';
 import { useTheme } from '../theme';
+import { Icon } from '../ui/Icon';
 import { layout } from '../ui/layout';
 import type { DisabledReason } from './internals';
 import { micLabelId, micSlotId, micStrikeId, type MicPlacement } from './MicSlot.testIds';
@@ -72,7 +73,7 @@ export function MicSlot({ placement }: MicSlotProps) {
   const onMove = (e: GestureResponderEvent) => {
     if (!holding.current) return;
     const { locationX, locationY } = e.nativeEvent;
-    const size = layout.dockMic;
+    const size = placement === 'tabBar' ? layout.tabMic + 2 * layout.tabMicRing : layout.dockMic;
     const outside =
       locationX < -DRAG_OFF_SLOP ||
       locationY < -DRAG_OFF_SLOP ||
@@ -105,56 +106,115 @@ export function MicSlot({ placement }: MicSlotProps) {
   };
 
   const { colors } = theme;
-  const background = listening ? colors.accent : inert ? colors.surface2 : colors.accentSoft;
-  const foreground = listening ? colors.accentFg : inert ? colors.muted : colors.accent;
-  return (
-    <>
+  const responder = {
+    testID: micSlotId(placement),
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: label,
+    accessibilityState: { disabled: inert && !micOff },
+    onAccessibilityTap: inert ? leadToFix : undefined,
+    onStartShouldSetResponder: () => true,
+    onResponderGrant: onGrant,
+    onResponderMove: onMove,
+    onResponderRelease: onRelease,
+    onResponderTerminate: onTerminate,
+  };
+  const strike = (width: number) =>
+    micOff ? (
       <View
-        testID={micSlotId(placement)}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ disabled: inert && !micOff }}
-        onAccessibilityTap={inert ? leadToFix : undefined}
-        onStartShouldSetResponder={() => true}
-        onResponderGrant={onGrant}
-        onResponderMove={onMove}
-        onResponderRelease={onRelease}
-        onResponderTerminate={onTerminate}
+        testID={micStrikeId(placement)}
+        pointerEvents="none"
         style={{
-          width: layout.dockMic,
-          height: layout.dockMic,
-          borderRadius: layout.dockMic / 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: background,
-          opacity: inert ? 0.7 : 1,
+          position: 'absolute',
+          width,
+          height: 2,
+          backgroundColor: colors.muted,
+          transform: [{ rotate: '-45deg' }],
         }}
+      />
+    ) : null;
+
+  // The tab bar's mic (design/mobileapp app.css .mic): a raised accent circle with the mic icon, ringed in the bar's
+  // colour, red while listening, grey when voice can't run; its label sits under it at the bar's bottom.
+  const tabBarMic = () => {
+    const outer = layout.tabMic + 2 * layout.tabMicRing;
+    const fill = listening ? colors.danger : inert ? colors.surface2 : colors.accent;
+    const ink = inert ? colors.muted : colors.accentFg;
+    return (
+      <View
+        pointerEvents="box-none"
+        style={{ width: layout.micSlot, alignSelf: 'stretch', alignItems: 'center' }}
       >
+        <View
+          {...responder}
+          style={{
+            position: 'absolute',
+            top: -(layout.tabMicRaise + layout.tabMicRing),
+            width: outer,
+            height: outer,
+            borderRadius: outer / 2,
+            borderWidth: layout.tabMicRing,
+            borderColor: colors.surface,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: fill,
+          }}
+        >
+          <Icon name="mic" color={ink} size={28} strokeWidth={2} />
+          {strike(layout.tabMic)}
+        </View>
         <Text
           testID={micLabelId(placement)}
+          pointerEvents="none"
           style={{
-            color: foreground,
-            fontSize: theme.font.size.xxs,
-            fontWeight: theme.font.weight.semibold,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: layout.tabMicLabelBottom,
             textAlign: 'center',
+            color: colors.muted,
+            fontSize: theme.font.size.xxs,
+            fontWeight: theme.font.weight.medium,
           }}
         >
           {label}
         </Text>
-        {micOff ? (
-          <View
-            testID={micStrikeId(placement)}
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              width: layout.dockMic,
-              height: 2,
-              backgroundColor: colors.muted,
-              transform: [{ rotate: '-45deg' }],
-            }}
-          />
-        ) : null}
       </View>
+    );
+  };
+
+  const background = listening ? colors.accent : inert ? colors.surface2 : colors.accentSoft;
+  const foreground = listening ? colors.accentFg : inert ? colors.muted : colors.accent;
+  return (
+    <>
+      {placement === 'tabBar' ? (
+        tabBarMic()
+      ) : (
+        <View
+          {...responder}
+          style={{
+            width: layout.dockMic,
+            height: layout.dockMic,
+            borderRadius: layout.dockMic / 2,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: background,
+            opacity: inert ? 0.7 : 1,
+          }}
+        >
+          <Text
+            testID={micLabelId(placement)}
+            style={{
+              color: foreground,
+              fontSize: theme.font.size.xxs,
+              fontWeight: theme.font.weight.semibold,
+              textAlign: 'center',
+            }}
+          >
+            {label}
+          </Text>
+          {strike(layout.dockMic)}
+        </View>
+      )}
       <MicPermissionSheet
         open={permissionOpen}
         status={state.kind === 'idle' || state.kind === 'disabled' ? state.permission : 'granted'}
