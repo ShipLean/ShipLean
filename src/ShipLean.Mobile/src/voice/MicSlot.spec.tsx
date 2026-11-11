@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, within } from '@testing-library/react-native';
 import { links } from '../links';
 import { fakeVoice, renderWithVoice, type FakeVoice } from '../test-support/voiceUi';
 import { micLabelId, micSlotId, micStrikeId, type MicPlacement } from './MicSlot.testIds';
@@ -28,6 +28,9 @@ async function mount(state: VoiceUiState, placement: MicPlacement = 'tabBar'): P
 
 const idle: VoiceUiState = { kind: 'idle', permission: 'granted' };
 
+// Icons are hidden from screen readers, so the queries look at hidden elements too.
+const HIDDEN = { includeHiddenElements: true };
+
 describe('MicSlot', () => {
   it('press in starts and release ends a hold', async () => {
     const voice = await mount(idle);
@@ -37,6 +40,24 @@ describe('MicSlot', () => {
     expect(voice.calls).toEqual(['holdStart']);
     await release();
     expect(voice.calls).toEqual(['holdStart', 'holdEnd']);
+  });
+
+  it('draws the tab bar mic as a 64 point icon button with its label outside it', async () => {
+    await mount(idle);
+
+    const button = screen.getByTestId(micSlotId('tabBar'));
+    expect(button).toHaveStyle({ width: 64, height: 64, borderRadius: 32 });
+    expect(within(button).getByTestId('icon-mic', HIDDEN)).toBeOnTheScreen();
+    expect(screen.getByTestId(micLabelId('tabBar'))).toHaveTextContent('Hold to talk');
+    expect(within(button).queryByTestId(micLabelId('tabBar'))).toBeNull();
+  });
+
+  it('keeps the dock mic 52 points with its label inside', async () => {
+    await mount(idle, 'dock');
+
+    const button = screen.getByTestId(micSlotId('dock'));
+    expect(button).toHaveStyle({ width: 52, height: 52 });
+    expect(within(button).getByTestId(micLabelId('dock'))).toHaveTextContent('Hold to talk');
   });
 
   it('dragging off while held cancels', async () => {
