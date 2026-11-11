@@ -6,7 +6,7 @@ describe('agentDisplayName', () => {
     expect(agentDisplayName('Claude Code (claude.ai)')).toBe('Claude Code');
   });
   it('drops the unverified mark', () => {
-    expect(agentDisplayName('Codex (unverified)')).toBe('Codex');
+    expect(agentDisplayName('Cursor (unverified)')).toBe('Cursor');
   });
   it('leaves a plain name unchanged', () => {
     expect(agentDisplayName('Claude Code')).toBe('Claude Code');
