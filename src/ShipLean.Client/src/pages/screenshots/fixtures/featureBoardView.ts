@@ -1,4 +1,4 @@
-import type { FeatureBoardRowDto, FeatureBoardViewDto } from '../../../api/views';
+import type { FeatureBoardRowDto, FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { TASKBOARD_VIEW } from './taskboardView';
 
 // A leaf Feature whose stories and bugs are the Taskboard fixture's: two in the current sprint, one in the next, two in
@@ -18,6 +18,7 @@ const rows: FeatureBoardRowDto[] = TASKBOARD_VIEW.rows.flatMap((row, i) =>
           cells: row.cells,
           featureId: 'f-checkout',
           sprint: SPRINT_OF[i] ?? null,
+          needsYou: null,
         },
       ],
 );

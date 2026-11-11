@@ -15,7 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { moveBeforePlan } from '../bulk/movePlan';
 import { runClearingSelection } from '../bulk/runClearingSelection';
 import { useBulkRunner } from '../bulk/useBulkRun';

@@ -1,6 +1,6 @@
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
-import { isStoryLevel, typeName } from '../../../api/workItemTypes';
-import type { DuplicateItem } from '../../../api/backlogWrites';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
+import type { DuplicateItem } from '@shiplean/core/api/backlogWrites';
 import { backlogTestIds as ids } from '../testIds';
 import { pointsError, type PasteRow as Row } from './pasteParse';
 

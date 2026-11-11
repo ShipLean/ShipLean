@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../ShipLean.TestSupport/DtoFixtures/search/search-view.json';
-import type { SearchViewDto } from '../../../api/search';
+import type { SearchViewDto } from '@shiplean/core/api/search';
 import { mapSearchView } from './mapSearchView';
 
 const view = fixture as SearchViewDto;

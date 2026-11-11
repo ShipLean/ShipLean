@@ -8,6 +8,7 @@ using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Inbox;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
@@ -118,7 +119,8 @@ public class AgentFollowUpTests : ApiFixture
         // The store is what every MCP tool writes through; an unnamed client carries no agent stamp, so only the endpoint's hook can tell a person.
         var store = new CommentStore(
             scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>(), new FixedCurrentUser(SeedIds.Users.Joel), AgentIdentity.None,
-            scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, new DiscardingProjectEvents());
+            scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, new DiscardingProjectEvents(),
+            scope.ServiceProvider.GetRequiredService<IMentionRecorder>());
 
         var written = await store.AddAsync(itemId, new CommentCreate("From an MCP client that did not give its name"));
 

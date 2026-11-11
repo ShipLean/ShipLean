@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Account and the Settings screen on the phone app (SHIP-905). Account is the sheet from the avatar on Projects
+  (SHIP-907 §5, projects.md D3); Settings is the screen it leads to, holding Voice (setup.html `settings`),
+  Notifications, Shortcuts (search.html `settings`), Appearance and About. Notes and decisions: settings.md.
+  ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Projects behind the Account sheet (a lighter copy of projects.html) */
+.prow { min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 10px var(--app-gutter); border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.prow:last-child { border-bottom: 0; }
+.prow .main { flex: 1; min-width: 0; }
+.prow .t { font-size: var(--app-text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .m { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .m .here { color: var(--color-accent); font-weight: 600; }
+.prow.current { background: var(--color-accent-soft); }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 12px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; flex: none; }
+.needs svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+.dock .say-line { flex: 1; min-width: 0; font-size: var(--app-text-sm); color: var(--color-muted); line-height: 1.3; }
+.dock .say-line b { display: block; color: var(--color-text); font-size: var(--app-text); font-weight: 600; }
+.ring-av { box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 5px var(--voice); border-radius: 50%; }
+
+/* Account sheet (projects.html `account`, revised) */
+.acct-head { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; }
+.acct-head .avatar { width: 48px; height: 48px; font-size: 17px; }
+.acct-head .who { flex: 1; min-width: 0; }
+.acct-head b { display: block; font-size: var(--app-text-md); }
+.acct-head .who > span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kv { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; margin-bottom: 12px; background: var(--color-surface); }
+.kv .r { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text); }
+.kv .r:last-child { border-bottom: 0; }
+.kv .r .k { flex: 1; min-width: 0; }
+.kv .r .k small { display: block; font-size: var(--app-text-sm); color: var(--color-muted); overflow-wrap: anywhere; }
+.kv .r .v { color: var(--color-muted); font-size: var(--app-text-sm); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.kv .r > svg { color: var(--color-muted); }
+.kv .r.big { min-height: 60px; }
+.kv .r.big .k { font-weight: 600; }
+.btn.danger { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+.sheet .foot { text-align: center; font-size: var(--app-text-xs); color: var(--color-muted); margin-top: 10px; }
+
+/* Settings rows: a coloured icon tile, title, a value or a switch, a chevron */
+.set .list { margin: 0; }
+.set .row { min-height: 56px; align-items: center; gap: 12px; }
+.set .row .t { font-weight: 500; -webkit-line-clamp: 1; }
+.set .row .m { margin-top: 1px; display: block; overflow-wrap: anywhere; }
+.set .row .val { font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; flex: none; max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
+.set .row > svg.chev { color: var(--color-muted); }
+.set .row.off { opacity: .5; }
+.set .section-h { padding-top: 20px; }
+.set .note { margin: 8px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); overflow-wrap: anywhere; }
+.set .note b { color: var(--color-text); font-weight: 600; }
+.tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+.tile.voice { --c: var(--voice); } .tile.bell { --c: var(--color-warn); } .tile.short { --c: var(--color-info); }
+.tile.look { --c: var(--color-purple); } .tile.about { --c: var(--color-muted); } .tile.ok { --c: var(--color-ok); }
+.tile svg.i { width: 18px; height: 18px; }
+.gear-tile { --c: var(--color-text); }
+.pill-ask { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 13px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; flex: none; }
+.pill-ask.btnish { background: var(--color-accent); color: var(--color-accent-fg); }
+.later { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); background: var(--color-surface-2); border-radius: 5px; padding: 2px 6px; white-space: nowrap; flex: none; }
+.dotted { position: relative; }
+.dotted::after { content: ""; position: absolute; top: -5px; right: -6px; width: 10px; height: 10px; border-radius: 50%; background: var(--ask); border: 2px solid var(--color-surface); }
+
+/* Switch (copied from setup.html) */
+.switch { width: 51px; height: 31px; border-radius: 16px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch.on { background: var(--voice); border-color: var(--voice); }
+.switch.on::after { left: 22px; }
+.switch.dis { opacity: .45; }
+
+/* Notifications: an example of what arrives, the way a lock screen shows it */
+.lock { margin: 14px var(--app-gutter) 0; padding: 12px; border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--color-info) 30%, var(--color-surface-2)), color-mix(in srgb, var(--color-purple) 30%, var(--color-surface-2))); }
+.lock .n { display: flex; gap: 10px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--color-surface) 88%, transparent); box-shadow: var(--shadow-raised); }
+.lock .n + .n { margin-top: 8px; }
+.lock .app-ic { width: 30px; height: 30px; border-radius: 8px; background: var(--color-surface); border: 1px solid var(--color-border); display: grid; place-items: center; flex: none; }
+.lock .app-ic img { width: 20px; height: 20px; }
+.lock .n .b { flex: 1; min-width: 0; font-size: var(--app-text-sm); line-height: 1.35; }
+.lock .n .b b { display: flex; justify-content: space-between; gap: 8px; font-size: var(--app-text-sm); }
+.lock .n .b b span { font-weight: 400; color: var(--color-muted); }
+.lock .n .b > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lock .cap { margin: 8px 2px 0; font-size: var(--app-text-xs); color: var(--color-muted); text-align: center; }
+.notice { display: flex; gap: 10px; align-items: flex-start; margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 12px; background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); font-size: var(--app-text-sm); }
+.notice > svg { color: var(--ask); margin-top: 1px; }
+.notice b { display: block; font-size: var(--app-text); font-weight: 600; }
+.notice .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.notice .btn { margin-top: 8px; }
+
+/* Appearance: three choices drawn as tiny phones */
+.looks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px var(--app-gutter) 0; }
+.look { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: var(--app-text-sm); font-weight: 500; }
+.mini { width: 100%; aspect-ratio: 9 / 15; border-radius: 14px; border: 2px solid var(--color-border); overflow: hidden; display: flex; flex-direction: column; padding: 8px 6px; gap: 5px; }
+.look.on .mini { border-color: var(--voice); box-shadow: 0 0 0 3px var(--voice-soft); }
+.mini.light { background: #f6f7f9; } .mini.dark { background: #161b24; }
+.mini.split { background: linear-gradient(90deg, #f6f7f9 50%, #161b24 50%); }
+.mini i { display: block; height: 7px; border-radius: 3px; background: #d5d9e0; }
+.mini.dark i { background: #2c3443; }
+.mini.split i { background: #8a93a3; }
+.mini i.a { width: 40%; background: #2f6fe0; }
+.mini i.s { width: 70%; }
+.look .rd { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--color-border); display: grid; place-items: center; }
+.look.on .rd { border-color: var(--voice); }
+.look.on .rd::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--voice); }
+
+/* Licences */
+.lic .row .m { white-space: normal; }
+
+/* Sheets */
+.sheet p { margin: 4px 0 12px; font-size: var(--app-text); color: var(--color-muted); }
+.sheet .facts { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: var(--color-surface-2); font-size: var(--app-text-sm); color: var(--color-text); display: flex; flex-direction: column; gap: 8px; }
+.sheet .facts div { display: flex; gap: 8px; align-items: flex-start; }
+.sheet .facts svg { color: var(--voice); margin-top: 1px; }
+.sheet .facts svg.gone { color: var(--color-danger); }
+.sheet .go { display: flex; gap: 10px; }
+.sheet .go .btn { flex: 1; }
+
+/* Alternative: Account as one full screen */
+.acct-card { display: flex; align-items: center; gap: 12px; margin: 14px var(--app-gutter) 0; padding: 14px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-border); }
+.acct-card .avatar { width: 52px; height: 52px; font-size: 18px; }
+.acct-card .who { flex: 1; min-width: 0; }
+.acct-card b { display: block; font-size: var(--app-text-md); }
+.acct-card .who span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); }
+.pad-btn { padding: 18px var(--app-gutter) 0; }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, icon, avatar, toast, esc } = App;
+
+/* ── Extra icons (kit candidates) ───────────────────────────────────── */
+const P2 = {
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  belloff: '<path d="M6 16V11a6 6 0 0 1 9.5-4.9M18 11v5l1.5 2H8"/><path d="M10 20a2 2 0 0 0 4 0M4 4l16 16"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+  contrast: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8v.1"/>',
+  doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  shield: '<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/>',
+  help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.1"/>',
+  ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/>',
+  logout: '<path d="M10 5H5v14h5M15 8l4 4-4 4M19 12H9"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>',
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/>',
+  trash: '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+};
+const ic = (name, cls = '') => P2[name] ? `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P2[name]}</svg>` : icon(name, cls);
+const sw = (on, dis = false) => `<span class="switch${on ? ' on' : ''}${dis ? ' dis' : ''}" role="switch" aria-checked="${on}"></span>`;
+const chev = () => icon('chevron', 'sm chev');
+
+/* ── Projects behind the sheet ──────────────────────────────────────── */
+const PROJ = [['SHIP', 'ShipLean', 'Sprint 25 · 4 days left', 4, 'Backlog'], ['PAY', 'Payments', 'Sprint 12 · ends today', 2], ['MOB', 'Mobile App', 'Sprint 3 · 9 days left', 0]];
+const ALL = [['DATA', 'Data Platform', 'No sprint running', 1], ['OPS', 'Internal Tools', 'Sprint 7 · 2 days left', 0], ['PART', 'Partner Portal', 'No sprint running', 0]];
+const prow = ([k, name, line, n, here]) => `<div class="prow${here ? ' current' : ''}"><span class="pkey${here ? ' cur' : ''}">${k}</span><div class="main"><div class="t">${name}</div>
+  <div class="m">${here ? `<span class="here">You're here · ${here}</span>` : line}</div></div>${n ? `<span class="needs">${icon('inbox')}${n}</span>` : ''}${icon('chevron', 'sm muted')}</div>`;
+const projectsBody = () => `<div class="section-h">Recent</div><div class="list">${PROJ.map(prow).join('')}</div><div class="section-h">All your projects</div><div class="list">${ALL.map(prow).join('')}</div>`;
+// right: the Account avatar (SHIP-907). gear adds the alternative's separate Settings button.
+const projectsBar = ({ ring = false, gear = false, dot = false } = {}) => topBar({ title: 'Projects', sub: 'prod.shiplean.app', left: '<span style="width:8px"></span>',
+  right: iconBtn('search', { label: 'Search projects' }) + (gear ? `<button class="icon-btn" aria-label="Settings">${ic('gear')}</button>` : '') +
+    `<button class="icon-btn" aria-label="Account"><span class="${ring ? 'ring-av' : ''}${dot ? ' dotted' : ''}" style="display:inline-grid">${avatar('JD', { sm: true })}</span></button>` });
+const projectsDock = () => `<div class="dock"><div class="say-line"><b>Hold to talk</b>Say a project, or “what needs me?”</div><button class="mic" aria-label="Hold to talk">${icon('mic')}</button></div>`;
+const projects = (o = {}, overlay = '') => frame({ top: projectsBar(o), body: projectsBody(), bottom: projectsDock(), overlay });
+
+/* ── Account sheet ──────────────────────────────────────────────────── */
+// voiceOff: the Settings row carries what needs doing, and the avatar gets a dot.
+const accountSheet = ({ voiceOff = false } = {}) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+  <div class="acct-head">${avatar('JD')}<div class="who"><b>Joel Dickson</b><span>virtualjoel@gmail.com</span></div></div>
+  <div class="kv"><div class="r big"><span class="tile gear-tile">${ic('gear')}</span><span class="k">Settings<small>${voiceOff ? 'Voice is off on this phone' : 'Voice, notifications, shortcuts, appearance'}</small></span>${voiceOff ? '<span class="pill-ask">Set up</span>' : ''}${icon('chevron', 'sm')}</div></div>
+  <div class="kv"><div class="r">${ic('globe', 'sm')}<span class="k">Server</span><span class="v">prod.shiplean.app</span></div>
+    <div class="r">${ic('bolt', 'sm')}<span class="k">Server version</span><span class="v">ShipLean 1.9</span></div>
+    <div class="r">${icon('user', 'sm')}<span class="k">Profile, password and devices<small>On the web</small></span>${ic('ext', 'sm')}</div></div>
+  <button class="btn danger block">${ic('logout', 'sm')}Sign out</button>
+  <div class="foot">ShipLean for Android 1.0.0 (12)</div></div>`;
+
+/* ── Settings ───────────────────────────────────────────────────────── */
+const settingsBar = () => topBar({ title: 'Settings', sub: 'This phone · Galaxy S24 Ultra', back: true });
+const subBar = (title) => topBar({ title, sub: 'Settings', back: true });
+const srow = ({ tile, ic: name, t, m = '', val = '', right = '', ext = false, off = false }) =>
+  `<div class="row${off ? ' off' : ''}"><span class="tile ${tile}">${ic(name)}</span><div class="main"><div class="t">${t}</div>${m ? `<div class="m">${m}</div>` : ''}</div>${val ? `<span class="val">${val}</span>` : ''}${right}${ext ? ic('ext', 'sm chev') : chev()}</div>`;
+
+const settingsBody = ({ attention = false } = {}) => `<div class="set">
+  ${attention ? `<div class="notice">${icon('alert')}<div class="grow"><b>2 things need you on this phone</b>Voice is off, and notifications are off for ShipLean.</div></div>` : ''}
+  <div class="section-h">On this phone</div><div class="list">
+    ${attention ? srow({ tile: 'voice', ic: 'mic', t: 'Voice', m: 'Off · downloads 3.1 GB once', right: '<span class="pill-ask btnish">Set up</span>' })
+      : srow({ tile: 'voice', ic: 'mic', t: 'Voice', m: 'Hold to talk, on this phone', val: 'Ready · Qwen3 4B' })}
+    ${attention ? srow({ tile: 'bell', ic: 'belloff', t: 'Notifications', m: 'Off in your phone’s settings', right: '<span class="pill-ask">Off</span>' })
+      : srow({ tile: 'bell', ic: 'bell', t: 'Notifications', m: 'Asks to you and mentions', val: 'On' })}
+    ${srow({ tile: 'short', ic: 'bolt', t: 'Shortcuts', m: 'Slide up to search, Back Tap, Siri', val: '2 on' })}
+    ${srow({ tile: 'look', ic: 'contrast', t: 'Appearance', m: 'Light, dark or as the phone', val: 'As the phone' })}</div>
+  <div class="section-h">About</div><div class="list">
+    ${srow({ tile: 'about', ic: 'help', t: 'Help', m: 'The ShipLean docs, in your browser', ext: true })}
+    ${srow({ tile: 'about', ic: 'doc', t: 'Licences', m: 'Open source and the voice models' })}
+    ${srow({ tile: 'about', ic: 'shield', t: 'Privacy policy', ext: true })}
+    <div class="row"><span class="tile about">${ic('info')}</span><div class="main"><div class="t">Version</div></div><span class="val">1.0.0 (12) · Android 15</span></div></div>
+  <p class="note">These settings are kept on this phone and stay when you sign out. Your name, password and signed-in devices are on the web: <b>Account › Profile</b>.</p></div>`;
+
+/* Notifications */
+const logoMark = `<img src="../logo/shiplean-mark-light.svg" alt="">`;
+const lockPreview = () => `<div class="lock">
+  <div class="n"><span class="app-ic">${logoMark}</span><div class="b"><b>ShipLean<span>now</span></b><span><b style="display:inline">SHIP-907</b> · Claude Code asks you</span><span>Confirm 8 decisions: D1 browser sign-in…</span></div></div>
+  <div class="n"><span class="app-ic">${logoMark}</span><div class="b"><b>ShipLean<span>2m</span></b><span><b style="display:inline">PAY-41</b> · Priya mentioned you</span><span>“@Joel can refunds wait for the card fix?”</span></div></div>
+  <div class="cap">What arrives. Tapping one opens the item, in its project.</div></div>`;
+const notifBody = ({ blocked = false } = {}) => `<div class="set">
+  ${blocked ? `<div class="notice">${ic('belloff')}<div class="grow"><b>Notifications are off for ShipLean</b>Your phone is blocking them, so nothing below is sent and the app icon shows no badge. The Inbox tab still counts.<br><button class="btn sm">Open phone settings</button></div></div>` : lockPreview()}
+  <div class="section-h">Notify me when</div><div class="list">
+    <div class="row${blocked ? ' off' : ''}"><div class="main"><div class="t">Someone asks me</div><div class="m">A question or decision addressed to you by name</div></div>${sw(true, blocked)}</div>
+    <div class="row${blocked ? ' off' : ''}"><div class="main"><div class="t">I’m mentioned</div><div class="m">@Joel in a note or a comment</div></div>${sw(true, blocked)}</div>
+    <div class="row${blocked ? ' off' : ''}"><div class="main"><div class="t">An item I own gets an ask</div><div class="m">Asked of anyone. Counted on the badge either way</div></div>${sw(false, blocked)}</div></div>
+  <div class="section-h">App icon</div><div class="list">
+    <div class="row${blocked ? ' off' : ''}"><div class="main"><div class="t">Badge</div><div class="m">Asks waiting on you, as on the Inbox tab (15)</div></div>${sw(true, blocked)}</div></div>
+  <p class="note">Covers all 6 of your projects. Sound, the lock screen and Focus are set in your phone’s settings.</p></div>`;
+
+/* Appearance */
+const look = (cls, label, on) => `<div class="look${on ? ' on' : ''}"><div class="mini ${cls}"><i class="a"></i><i></i><i class="s"></i><i></i><i class="s"></i></div><span>${label}</span><span class="rd"></span></div>`;
+const appearanceBody = () => `<div class="set"><div class="looks">${look('split', 'As the phone', true)}${look('light', 'Light', false)}${look('dark', 'Dark', false)}</div>
+  <p class="note" style="margin-top:16px">Only this phone. Like the web, each device keeps its own choice, so a dark phone doesn’t change your laptop.</p></div>`;
+
+/* Licences */
+const licBody = () => `<div class="set lic">
+  <div class="section-h">Voice models</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Parakeet TDT 0.6B</div><div class="m">NVIDIA · CC-BY-4.0 · speech to text, unchanged</div></div>${chev()}</div>
+    <div class="row"><div class="main"><div class="t">Qwen3 4B</div><div class="m">Qwen team, Alibaba Cloud · Apache 2.0 · quantised for phones</div></div>${chev()}</div></div>
+  <div class="section-h">The app</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Open source packages</div><div class="m">React Native, Expo and 212 more, with their licence texts</div></div>${chev()}</div>
+    <div class="row"><div class="main"><div class="t">ShipLean</div><div class="m">The app’s own licence</div></div>${chev()}</div></div>
+  <p class="note">The same model entries are on Settings › Voice › Model licences (setup D9).</p></div>`;
+
+/* Sign out */
+const signOutSheet = () => `<div class="scrim"></div><div class="sheet"><div class="grab"></div><h3>Sign out of prod.shiplean.app?</h3>
+  <p>This phone stops being signed in, and it leaves your Signed-in devices on the web.</p>
+  <div class="facts">
+    <div>${icon('check', 'sm')}<span>Voice models (3.1 GB) and these settings stay, so signing back in needs no download.</span></div>
+    <div>${icon('check', 'sm')}<span>Your server and email stay filled in on Sign in.</span></div>
+    <div>${ic('trash', 'sm gone')}<span>Recent searches and what was loaded for reading are removed.</span></div></div>
+  <div class="go"><button class="btn">Cancel</button><button class="btn danger">Sign out</button></div></div>`;
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Account and Settings', states: [
+  { id: 'account', title: 'Account', note: 'From the avatar on Projects. One Settings row at the top; server, version, the web profile, Sign out.',
+    render: () => projects({}, accountSheet()) },
+
+  { id: 'settings', title: 'Settings', note: 'Everything kept on this phone: Voice, Notifications, Shortcuts, Appearance, then About. Back returns to Projects.',
+    render: () => frame({ top: settingsBar(), body: settingsBody() }) },
+
+  { id: 'notifications', title: 'Settings › Notifications', note: 'Inbox D13: push for asks to you by name, mentions; asks on your items only on the badge unless you turn it on.',
+    render: () => frame({ top: subBar('Notifications'), body: notifBody() }) },
+
+  { id: 'notifications-off', title: 'Notifications blocked', note: 'The phone blocks ShipLean: says so, the switches grey out, and one button opens the phone’s settings.',
+    render: () => frame({ top: subBar('Notifications'), body: notifBody({ blocked: true }) }) },
+
+  { id: 'appearance', title: 'Settings › Appearance', note: 'As the phone (default), Light or Dark. Kept per device, as the web does (SHIP-745).',
+    render: () => frame({ top: subBar('Appearance'), body: appearanceBody() }) },
+
+  { id: 'licences', title: 'Settings › Licences', note: 'About › Licences from setup D9: the two voice models first, then the app’s open source packages.',
+    render: () => frame({ top: subBar('Licences'), body: licBody() }) },
+
+  { id: 'account-attention', title: 'Account when voice is off', note: 'Voice skipped at setup: a dot on the avatar, and the Settings row says what to do.',
+    render: () => projects({ dot: true }, accountSheet({ voiceOff: true })) },
+
+  { id: 'settings-attention', title: 'Settings with things to fix', note: 'Voice off and notifications blocked: a notice at the top and the rows say what’s wrong.',
+    render: () => frame({ top: settingsBar(), body: settingsBody({ attention: true }) }) },
+
+  { id: 'sign-out', title: 'Sign out', note: 'A confirm sheet saying what stays (models, settings, server, email) and what goes.',
+    render: () => projects({}, signOutSheet()) },
+
+  { id: 'alt-one-screen', title: 'Alternative: one Account screen', note: 'Turned down (D1): Account as a full screen with the settings rows inline.',
+    render: () => frame({ top: topBar({ title: 'Account', sub: 'prod.shiplean.app · ShipLean 1.9', back: true }), body: `<div class="set">
+      <div class="acct-card">${avatar('JD')}<div class="who"><b>Joel Dickson</b><span>virtualjoel@gmail.com</span></div>${ic('ext', 'sm chev')}</div>
+      <div class="section-h">On this phone</div><div class="list">
+        ${srow({ tile: 'voice', ic: 'mic', t: 'Voice', val: 'Ready · Qwen3 4B' })}${srow({ tile: 'bell', ic: 'bell', t: 'Notifications', val: 'On' })}
+        ${srow({ tile: 'short', ic: 'bolt', t: 'Shortcuts', val: '2 on' })}${srow({ tile: 'look', ic: 'contrast', t: 'Appearance', val: 'As the phone' })}</div>
+      <div class="section-h">About</div><div class="list">${srow({ tile: 'about', ic: 'help', t: 'Help', ext: true })}${srow({ tile: 'about', ic: 'doc', t: 'Licences' })}</div>
+      <div class="pad-btn"><button class="btn danger block">${ic('logout', 'sm')}Sign out</button></div></div>` }) },
+
+  { id: 'alt-gear', title: 'Alternative: a gear on Projects', note: 'Turned down (D1): Settings gets its own button next to the avatar; Account stays as SHIP-907 wrote it.',
+    render: () => projects({ gear: true }) },
+] });
+</script></body></html>

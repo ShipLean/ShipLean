@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { AttachmentPage } from './pages/AttachmentPage';
+import { MobileSignInPage } from './features/mobileSignIn/MobileSignInPage';
 import { AuthorizePage } from './pages/AuthorizePage';
 import { LoginPage } from './features/auth/LoginPage';
 import { RootRedirect } from './features/auth/RootRedirect';
@@ -34,6 +35,7 @@ export function AppRoutes() {
     <>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path={routePattern('mobileSignIn')} element={<MobileSignInPage />} />
         <Route element={<Shell />}>
           <Route path={routePattern('newProject')} element={<NewProjectPage />} />
           <Route path={routePattern('instanceSettings')} element={<InstanceSettingsPage />} />

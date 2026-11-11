@@ -1,4 +1,4 @@
-import type { ProjectRole } from '../../../api/projects';
+import type { ProjectRole } from '@shiplean/core/api/projects';
 import { Avatar } from '../../../components/Avatar';
 import { settingsTestIds } from '../testIds';
 import type { DraftMember } from './model';

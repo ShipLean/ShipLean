@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { ApiRequestError } from '../../../../api/client';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { inputClass } from '../../../workItem/form/inputClasses';
 import { isWebUrl } from '../../../workItem/links/linkTypes';
 import { previewLink } from '../../featureApi';

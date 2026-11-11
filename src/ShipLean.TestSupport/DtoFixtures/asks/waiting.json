@@ -1,0 +1,32 @@
+{
+  "openQuestions": 3,
+  "openDecisions": 6,
+  "items": [
+    {
+      "projectId": "00000002-0000-4000-8000-000000000002",
+      "projectKey": "OPS",
+      "projectName": "Operations",
+      "id": "00000005-0000-4000-8002-000000000012",
+      "key": "OPS-12",
+      "type": "bug",
+      "title": "Nightly export times out",
+      "openQuestions": 2,
+      "openDecisions": 2,
+      "oldestAt": "2026-10-30T16:45:00+00:00",
+      "oldestAtLabel": "30 Oct"
+    },
+    {
+      "projectId": "00000002-0000-4000-8000-000000000001",
+      "projectKey": "SHIP",
+      "projectName": "ShipLean",
+      "id": "00000005-0000-4000-8001-000000000141",
+      "key": "SHIP-141",
+      "type": "story",
+      "title": "Pay with saved card",
+      "openQuestions": 1,
+      "openDecisions": 4,
+      "oldestAt": "2026-11-03T09:12:00+00:00",
+      "oldestAtLabel": "3 Nov"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { SprintDto } from '../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { previousSprint } from './previousSprint';
 
 const sprint = (id: string, startDate: string) => ({ id, startDate }) as SprintDto;

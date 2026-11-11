@@ -33,6 +33,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `presenceChanged` | `screenId` (route id), `userIds`, `sequence` | the people on a screen change (`sequence` grows with every change: a client keeps the list with the highest one per screen) |
 | `importProgress` | `jobId`, `percent`, `state`, `message` | an import job reports progress |
 | `commentsChanged` | `workItemId` | a comment on the work item is added, edited or archived |
+| `asksChanged` | `workItemId` | a decision or question on the work item is raised, edited, answered, changed or withdrawn (published after commit; a write that also posts a comment publishes `commentsChanged` too) |
 | `attachmentsChanged` | `workItemId` | an attachment on the work item is added or archived |
 | `linksChanged` | `workItemId` | a link on the work item is added, edited or archived, or a link card's state or preview is refreshed |
 | `retroChanged` | `sprintIds`, `workItemIds` | a retrospective point is logged, archived, moved to another theme, marked Not needed or un-marked (undo), added to an action item as one of its points, turned into an action item, or a theme is renamed or merged (empty lists, for a rename or merge, mean refetch every retro view) |
@@ -40,7 +41,7 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `sprintClosed` | `sprintId`, `closedBy` | a sprint's rollover is decided (Close sprint or the MCP `end_sprint`), after its `sprintChanged`. Starts the project's automatic demo when that setting is on |
 | `sprintDemoChanged` | `sprintId` | every write to a sprint's demo: a run starts or is handed over, a blocked message is stored or cleared, a video is delivered, the YouTube state moves or is retried. Open Demo tabs refetch |
 
-Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Client/src/api/events.ts`.
+Pinned by `src/ShipLean.TestSupport/DtoFixtures/events/events.json` (one example per type), C# types in `src/ShipLean.Contracts/Events/`, TypeScript twin in `src/ShipLean.Core.Client/src/api/events.ts`.
 
 ## The hub
 

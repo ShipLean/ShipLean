@@ -1,6 +1,6 @@
 // Stubs for the component tests of the issue intake settings (page.route answers; nothing here is production code).
 import type { Page } from 'playwright';
-import type { UserRef } from '../../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import sample from '../../../../../../ShipLean.TestSupport/DtoFixtures/issueIntake/issue-intake-settings.json' with { type: 'json' };
 import type { IssueIntakeSaveDto, IssueIntakeSettingsDto } from '../types';
 

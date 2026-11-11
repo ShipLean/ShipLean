@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { SprintRef } from '../../../api/refs';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { workItemTestIds as ids } from '../testIds';
 import { useProjectSprints } from '../workItemApi';
 import { FieldCell } from './FieldCell';

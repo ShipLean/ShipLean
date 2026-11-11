@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import caseFile from '../../../ShipLean.TestSupport/Contracts/Criteria/criteria-contract-cases.json';
-import type { CriteriaJson } from '../api/persisted';
+import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { CRITERIA_FIELDS } from './fieldDefinition';
-import type { CardDto } from '../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import { fieldValuesOf, matches } from './matches';
 import { checkCriteria } from './validate';
 
@@ -96,6 +96,7 @@ function card(parentType: 'epic' | 'feature' | null): CardDto {
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
   } as CardDto;
 }
 

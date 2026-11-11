@@ -1,5 +1,5 @@
 import { useLocation, useNavigationType } from 'react-router-dom';
-import type { ProjectDto } from '../../../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { ToastHost } from '../../../../../components/ToastHost';
 import { SettingsDemos } from '../../SettingsDemos';
 import { harnessLocationTestId } from './harnessIds';

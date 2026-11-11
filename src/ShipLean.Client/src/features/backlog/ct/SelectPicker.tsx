@@ -1,4 +1,4 @@
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useSelection } from '../selection/useSelection';
 
 // CT-only: one button per row that toggles it in the selection on pointer down (dnd-kit swallows clicks while a row is held), so a test picks rows in any order.

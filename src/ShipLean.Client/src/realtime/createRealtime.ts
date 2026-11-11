@@ -1,4 +1,4 @@
-import type { ProjectEvent } from '../api/events';
+import type { ProjectEvent } from '@shiplean/core/api/events';
 import { routeIds, type RouteId } from '../routes';
 import type { RealtimeConnection } from './connection';
 import type { ConnectionState } from './connectionState';

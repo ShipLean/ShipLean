@@ -1,6 +1,7 @@
 using ShipLean.WebApi.Tests.Boards.Settings;
 using Npgsql;
 using ShipLean.Application.Database;
+using ShipLean.Application.Features.Inbox;
 using ShipLean.Application.Features.WorkItemDetails.Comments;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
@@ -45,6 +46,16 @@ public class PostgresCommentStoreContractTests : CommentStoreContract
         return await new WorkItemBuilder(SeedIds.Projects.Ship).InsertAsync(connection);
     }
 
+    protected override async Task<CommentDto> AddInTransactionAndCommitAsync(ICommentStore store, Guid workItemId, CommentCreate create, string? agentName, Guid authorId)
+    {
+        await using var connection = await _dataSource.OpenConnectionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
+        var added = await store.AddInTransactionAsync(workItemId, create, agentName, authorId, transaction);
+        await transaction.CommitAsync();
+        return added;
+    }
+
     private CommentStore CreateStore(Guid actorId, ICurrentAgent agent)
-        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents());
+        => new(_dataSource, new FixedCurrentUser(actorId), agent, new MarkdownRenderer(), TimeProvider.System, new DiscardingProjectEvents(),
+            new MentionRecorder(TimeProvider.System));
 }

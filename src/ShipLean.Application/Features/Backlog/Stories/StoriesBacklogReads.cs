@@ -13,7 +13,7 @@ namespace ShipLean.Application.Features.Backlog.Stories;
 // tree mode adds the group levels. Tag colours are the Stories board's.
 public sealed class StoriesBacklogReads(
     IWorkTreeReads reads, IBoardSettingsStore boards, ISprintMetrics metrics, BacklogPlanning planning,
-    IBacklogChecks checks, BacklogTriage triage) : IStoriesBacklogReads
+    IBacklogChecks checks, BacklogTriage triage, BacklogRowExtras extras) : IStoriesBacklogReads
 {
     public async Task<BacklogViewDto> GetAsync(Guid projectId, BacklogMode mode, string? filter, bool includeCompleted, CancellationToken cancellationToken = default)
     {
@@ -32,15 +32,15 @@ public sealed class StoriesBacklogReads(
                     ? stories
                     : waiting.Visible(await reads.StackAsync(projectId, StackLevel.Requirement, criteria, true, cancellationToken));
                 var tree = await BacklogTree.BuildAsync(reads, projectId, new TreeStories(stories, withClosed, rank), criteria, factory, cancellationToken);
-                return View(projectId, mode, stories.Count, tree, [], factory, null, null, null, waiting);
+                return await extras.ApplyAsync(View(projectId, mode, stories.Count, tree, [], factory, null, null, null, waiting), cancellationToken);
             case BacklogMode.Planning:
                 var committed = await reads.StackAsync(projectId, StackLevel.Requirement, null, true, cancellationToken);
                 var sections = await planning.BuildAsync(projectId, stories, committed, factory, cancellationToken);
                 var forecast = await metrics.GetForecastAsync(projectId, cancellationToken);
                 var velocity = await metrics.GetVelocityAsync(projectId, cancellationToken);
-                return View(projectId, mode, sections.Sum(s => s.Rows.Count), [], sections, factory, forecast, velocity, await checks.ReviewAsync(projectId, cancellationToken), waiting);
+                return await extras.ApplyAsync(View(projectId, mode, sections.Sum(s => s.Rows.Count), [], sections, factory, forecast, velocity, await checks.ReviewAsync(projectId, cancellationToken), waiting), cancellationToken);
             default:
-                return View(projectId, mode, stories.Count, [.. stories.Select(s => factory.Item(s, 0, rank[s.Id]))], [], factory, null, null, await checks.ReviewAsync(projectId, cancellationToken), waiting);
+                return await extras.ApplyAsync(View(projectId, mode, stories.Count, [.. stories.Select(s => factory.Item(s, 0, rank[s.Id]))], [], factory, null, null, await checks.ReviewAsync(projectId, cancellationToken), waiting), cancellationToken);
         }
     }
 

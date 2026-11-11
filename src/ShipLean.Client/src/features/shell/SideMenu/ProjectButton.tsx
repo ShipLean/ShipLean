@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import type { ProjectSummaryDto } from '../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { ProjectKeyBadge } from '../ProjectKeyBadge';
 import { shellTestIds as ids } from '../testIds';
 

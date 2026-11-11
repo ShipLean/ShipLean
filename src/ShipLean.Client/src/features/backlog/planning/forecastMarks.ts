@@ -1,4 +1,4 @@
-import type { ForecastDto } from '../../../api/sprints';
+import type { ForecastDto } from '@shiplean/core/api/sprints';
 
 /** The label each forecast cut line carries, by the id of the item the line is drawn under: "→ Sprint 26". */
 export function forecastMarks(forecast: ForecastDto | null): ReadonlyMap<string, string> {

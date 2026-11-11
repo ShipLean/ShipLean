@@ -241,7 +241,11 @@
         "statusVerified": null,
         "slug": null,
         "startedOn": null,
-        "startedLabel": null
+        "startedLabel": null,
+        "health": null,
+        "healthSet": null,
+        "rollups": [],
+        "needsYou": null
       },
       "theirChanges": [
         {

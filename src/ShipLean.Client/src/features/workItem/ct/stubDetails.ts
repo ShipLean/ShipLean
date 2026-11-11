@@ -1,6 +1,6 @@
-import type { CommentDto } from '../../../api/comments';
-import type { UserRef } from '../../../api/refs';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { CommentDto } from '@shiplean/core/api/comments';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {
@@ -31,6 +31,7 @@ export const comment = (id: string, author: UserRef | null, body: string): Comme
   editedLabel: null,
   agentName: null,
   superseded: null,
+  askTag: null,
 });
 
 /** Stubs the comment endpoints and `GET /api/me` for a signed-in `me`. `failNext` makes the next write answer a 400. */

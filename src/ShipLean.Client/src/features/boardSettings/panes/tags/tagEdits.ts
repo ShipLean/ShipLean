@@ -1,4 +1,4 @@
-import type { Swatch, TagColourJson } from '../../../../api/persisted';
+import type { Swatch, TagColourJson } from '@shiplean/core/api/persisted';
 
 const sameTag = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 

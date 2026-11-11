@@ -42,6 +42,11 @@
   { "id": "goal", "label": "Goal", "kind": "text", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "statusLine", "label": "Status", "kind": "text", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "statusVerifiedAt", "label": "Status verified", "kind": "date", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "health", "label": "Health", "kind": "text", "appliesTo": ["feature"], "nullable": true, "usedIn": ["history"], "ops": [], "values": [
+    { "value": "onTrack", "label": "On track" },
+    { "value": "atRisk", "label": "At risk" },
+    { "value": "blocked", "label": "Blocked" }
+  ] },
   { "id": "links", "label": "Links", "kind": "links", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "createdAt", "label": "Created", "kind": "date", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": false, "usedIn": ["criteria", "cardField"], "ops": [">", "<"], "values": null },
   { "id": "createdBy", "label": "Created by", "kind": "user", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": true, "usedIn": ["criteria", "cardField"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },

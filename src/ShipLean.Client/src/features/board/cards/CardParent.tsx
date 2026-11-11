@@ -1,4 +1,4 @@
-import type { ParentRefDto } from '../../../api/workItems';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';

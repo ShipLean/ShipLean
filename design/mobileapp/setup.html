@@ -243,7 +243,7 @@ const fRow = ([key, t, s, cat, h, p, st, ask], i) => `<div class="row${ask ? ' a
 const appBar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { label: 'Search' }) }); // the key tile; Account is on Projects (projects.md D2, D3)
 const seg = () => `<div class="subbar"><div class="seg"><button>Epics</button><button class="on">Features</button><button>Stories</button></div></div>`;
 const backlog = (banner = '') => `${banner}<div class="section-h">7 open Features</div><div class="list">${F.map(fRow).join('')}</div>`;
-const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 4, mic });
+const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 15, mic });
 
 // The banner matches work-item `downloading`: same title, bar and wording.
 const dlBanner = ({ got, of, mins, pct }) => `<div class="banner dl">${icon('download')}<div class="grow"><b>Voice is getting ready</b><div class="bar"><i style="width:${pct}%"></i></div><span>${got} of ${of} GB on Wi-Fi · about ${mins} min. Read, tap and type in the meantime.</span></div>${icon('chevron', 'sm chev')}</div>`;
@@ -389,12 +389,14 @@ App.screen({ title: 'Install and setup', states: [
       overlay: `<div class="scrim"></div><div class="sheet answer"><div class="grab"></div>
         <div class="voice-ctx">${icon('spark', 'sm')}Answer <span class="sep"></span> <b>Your first command</b></div>
         <div class="q">“What needs me?”</div>
-        <div class="a">4 items wait on you: 10 decisions and 3 questions.</div>
+        <div class="a">6 items wait on you: 10 decisions, 3 questions, a mention and a status line to check.</div>
         <div class="alist">
-          <div class="arow">${type('feature')}<span class="t">Mobile app foundations</span><span class="needs">${icon('check')}8</span></div>
-          <div class="arow">${type('feature')}<span class="t">Voice commands</span><span class="needs">${icon('check')}3</span></div>
+          <div class="arow">${type('feature')}<span class="t">Nightly backups</span><span class="needs">${icon('clock')}1</span></div>
           <div class="arow">${type('feature')}<span class="t">Demo artifacts</span><span class="needs">${icon('message')}1</span></div>
+          <div class="arow">${type('feature')}<span class="t">Mobile app foundations</span><span class="needs">${icon('check')}8</span></div>
           <div class="arow">${type('story')}<span class="t">Development build</span><span class="needs">${icon('message')}1</span></div>
+          <div class="arow">${type('feature')}<span class="t">GitHub issues sync</span><span class="needs">${icon('user')}1</span></div>
+          <div class="arow">${type('feature')}<span class="t">Voice commands</span><span class="needs">${icon('check')}3</span></div>
         </div>
         <div class="src">${icon('eye', 'sm')}From your Inbox as it is now · nothing was changed</div>
         <div class="tip">${icon('mic', 'sm')}<span>Next, open an item and try “add a note: …”</span></div>

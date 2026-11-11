@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { showToast } from '../../../../components/toastStore';
-import { api } from '../../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import { errorText } from '../model';
 import type { IntegrationsSaveDto, IntegrationsSettingsDto } from './model';
 

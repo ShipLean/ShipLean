@@ -1,3 +1,4 @@
+import { CardFeatureContext } from '../cards/CardFeatureContext';
 import { TaskboardDnd } from '../moves/TaskboardDnd';
 import { TaskboardGrid } from '../grid/TaskboardGrid';
 import type { TaskboardScope } from '../taskboardScope';
@@ -10,17 +11,33 @@ const NO_FACES: ReadonlySet<string> = new Set();
 export function GridHarness({
   rowIndexes,
   scrollerHeight,
+  retitle = {},
+  peopleFeatureTitle,
 }: {
   rowIndexes: number[];
   /** Puts the grid in a scroller this tall, as the shell's main area is. */
   scrollerHeight?: number;
+  /** New titles for tasks, by key. */
+  retitle?: Record<string, string>;
+  /** Groups by People and gives every card's story this Feature title, as the Feature board does. */
+  peopleFeatureTitle?: string;
 }) {
+  const grouping = peopleFeatureTitle === undefined ? 'stories' : 'people';
+  const rows = rowIndexes
+    .map((i) => (grouping === 'people' ? VIEW.peopleRows[i] : VIEW.rows[i]))
+    .map((row) => ({
+      ...(row as (typeof VIEW.rows)[number]),
+      cells: row.cells.map((cell) => ({
+        ...cell,
+        tasks: cell.tasks.map((t) => ({ ...t, title: retitle[t.key] ?? t.title })),
+      })),
+    }));
   const grid = (
     <TaskboardDnd
       projectId={PROJECT.id}
       scope={scope}
       view={VIEW}
-      grouping="stories"
+      grouping={grouping}
       me={undefined}
       onLanded={() => undefined}
     >
@@ -29,8 +46,8 @@ export function GridHarness({
         projectId={PROJECT.id}
         scope={scope}
         view={VIEW}
-        rows={rowIndexes.map((i) => VIEW.rows[i])}
-        grouping="stories"
+        rows={rows}
+        grouping={grouping}
         faces={NO_FACES}
         me={undefined}
         isCollapsed={() => false}
@@ -39,11 +56,23 @@ export function GridHarness({
       />
     </TaskboardDnd>
   );
+  const features =
+    peopleFeatureTitle === undefined
+      ? null
+      : new Map(
+          VIEW.peopleRows
+            .flatMap((r) => r.cells.flatMap((c) => c.tasks))
+            .flatMap((t) => (t.parent ? [t.parent.id] : []))
+            .map((id) => [id, { key: 'SHIP-1', title: peopleFeatureTitle }] as const),
+        );
+  const content = (
+    <CardFeatureContext.Provider value={features}>{grid}</CardFeatureContext.Provider>
+  );
   return scrollerHeight === undefined ? (
-    grid
+    content
   ) : (
     <div data-testid="scroller" className="overflow-auto" style={{ height: scrollerHeight }}>
-      {grid}
+      {content}
     </div>
   );
 }

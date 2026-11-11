@@ -1,4 +1,4 @@
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { BoardMoveRequest } from '../boardApi';
 import { tracksOf } from '../grid/layout';
 import { locate, type DropTarget } from './applyMove';

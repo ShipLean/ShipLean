@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ModelFilesModule"]
+  },
+  "android": {
+    "modules": ["app.shiplean.modelfiles.ModelFilesModule"]
+  }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { SprintDto, SprintUpdate } from '../../../api/sprints';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { SprintDto, SprintUpdate } from '@shiplean/core/api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { useUpdateSprint } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';

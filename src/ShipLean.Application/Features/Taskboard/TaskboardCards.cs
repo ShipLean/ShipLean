@@ -45,7 +45,7 @@ public sealed class TaskboardCards(NpgsqlDataSource dataSource, ICriteriaEvaluat
             .OfType<CardFieldDto>()
             .Where(field => field.Text is not null || setting!.ShowEmptyFields)
             .ToList();
-        return new CardDto(row.Id, row.Key, row.Type, row.Title, row.State, row.Assignee, row.Points, null, false, row.Parent, tags, counts, false, styles.GetValueOrDefault(row.Id), extra, row.Revision);
+        return new CardDto(row.Id, row.Key, row.Type, row.Title, row.State, row.Assignee, row.Points, null, false, row.Parent, tags, counts, false, styles.GetValueOrDefault(row.Id), extra, row.Revision, null);
     }
 
     // Null for a field the card's type doesn't have (or one that isn't a card field).

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { BoardTypeStatesDto } from '../../../api/boards';
-import type { SprintRef } from '../../../api/refs';
-import type { CardFieldSettingJson } from '../../../api/persisted';
-import type { CardDto } from '../../../api/views';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
+import type { CardDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../components/Avatar';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';

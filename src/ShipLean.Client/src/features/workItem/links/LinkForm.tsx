@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import { LINK_TYPES, type LinkType } from '../../../api/persisted';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import { LINK_TYPES, type LinkType } from '@shiplean/core/api/persisted';
 import { inputClass } from '../form/inputClasses';
 import { linkSignature, newDraftLink, type DraftLink } from '../form/draft';
 import { workItemTestIds as ids } from '../testIds';

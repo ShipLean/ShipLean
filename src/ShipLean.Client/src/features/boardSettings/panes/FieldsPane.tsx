@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { BoardSettingsJson } from '../../../api/persisted';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';

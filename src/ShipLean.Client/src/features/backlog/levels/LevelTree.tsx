@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { ColumnSpec } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import { visibleRows } from '../tree/treeRows';

@@ -18,16 +18,19 @@ public static class RouteAllowList
         new("GET", "api/health", "Liveness probe."),
         new("GET", "api/downloads/{token}", "An agent's curl has no session; the short-lived URL token is the proof, and every token that is not live is 404."),
         new("PUT", "api/uploads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
+        new("PUT", "api/uploads/payloads/{token}", "An agent's curl has no session; the one-time URL token is the proof, and every token that is not live is 404."),
         new("POST", "api/uploads/demo", "An agent's curl has no session; the one-time URL token in the query is the proof, and every token that is not live is 404."),
         new("GET", "api/downloads/demo-logo", "An agent's curl has no session; the project-logo URL token in the query is the proof, and every token that is not live is 404."),
         new("GET", "api/youtube/callback", "Google's browser comes back with no session of its own; the service validates the signed state, the signed-in user and their Admin role, and a signed-out caller is redirected with youtube=error and nothing stored."),
         new("POST", "api/webhooks/github", "GitHub delivers pull request events with no session; the shared secret's signature is the proof, and the endpoint is 404 while its secret is unset."),
+        new("POST", "api/auth/device-sessions/exchange", "The phone app has no session yet: the single-use code and its PKCE verifier are the proof; anything else is 400 Sign-in expired.", Body: """{"code":"sweep-code","verifier":"sweep-verifier"}"""),
         new("POST", "api/webhooks/gitlab", "GitLab delivers merge request events with no session; the shared secret token is the proof, and the endpoint is 404 while its secret is unset."),
     ];
 
     public static IReadOnlyList<Entry> SignedIn { get; } =
     [
         new("GET", "api/me", "The caller's own account."),
+        new("GET", "api/me/waiting", "Lists only the open asks on items the caller owns, in projects they are a live member of."),
         new("GET", "api/import/jobs", "Lists only the import jobs of projects the caller administers; a caller who administers none gets an empty list."),
         new("POST", "api/auth/password", "The caller changes their own password."),
         new("POST", "api/auth/sign-out-others", "The caller ends their own other sessions."),
@@ -50,7 +53,13 @@ public static class RouteAllowList
         new("GET", "api/agents/consent/{id:guid}", "A pending authorize request is the caller's own; another user's is not_found."),
         new("POST", "api/agents/consent/{id:guid}", "Decides the caller's own pending authorize request; another user's is not_found."),
         new("POST", "api/usage/screen", "Reports a screen view for the caller's own usage; a project id goes through the member check before anything is recorded.", Body: """{"screen":"profile","projectId":null}"""),
+        new("POST", "api/auth/device-sessions/codes", "Makes a sign-in code for the caller's own phone; touches no project data.", Body: """{"challenge":"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM","deviceName":"Sweep phone"}"""),
+        new("GET", "api/auth/device-sessions", "The caller's own signed-in phones."),
+        new("DELETE", "api/auth/device-sessions/{id:guid}", "Signs out one of the caller's own phones; another user's is not_found."),
+        new("DELETE", "api/auth/device-sessions/current", "Ends the device session the request used; a browser's is not_found."),
         new("GET", "api/agents/mcp-url", "The server's own /mcp address; names nothing about a project."),
+        new("POST", "api/mentions/{id:guid}/seen", "The caller's own mention: the mention's own user and project are checked inside, and anyone else's is not_found."),
+        new("POST", "api/mentions/{id:guid}/reply", "The caller's own mention: the mention's own user and project are checked inside, and anyone else's is not_found.", Body: """{"body":"Sweep reply"}"""),
     ];
 
     // Allow-listed entries with a route parameter, other than the caller-owned and any-user routes below. A parameter usually means an
@@ -65,13 +74,16 @@ public static class RouteAllowList
         "api/me/preferences/{key}",
         "api/me/agents/{id:guid}",
         "api/agents/consent/{id:guid}",
+        "api/auth/device-sessions/{id:guid}",
+        "api/mentions/{id:guid}/seen",
+        "api/mentions/{id:guid}/reply",
     ];
 
     // The parameter names any user, and every signed-in user may read it (v1: one organisation per instance); an unknown id is not_found.
     private static readonly string[] AnyUserRoutes = ["api/users/{id:guid}/photo"];
 
     // The parameter is a secret token that is itself the credential; an unknown one is not_found.
-    private static readonly string[] TokenRoutes = ["api/downloads/{token}", "api/uploads/{token}"];
+    private static readonly string[] TokenRoutes = ["api/downloads/{token}", "api/uploads/{token}", "api/uploads/payloads/{token}"];
 
     public static bool Contains(IReadOnlyList<Entry> list, ApiAction action)
         => list.Any(e => e.Method == action.Method && e.Template == action.Template);

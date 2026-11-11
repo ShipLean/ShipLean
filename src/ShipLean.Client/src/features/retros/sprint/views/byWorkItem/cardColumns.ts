@@ -1,10 +1,10 @@
-import { RETRO_CATEGORIES } from '../../../../../api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import type { AddTarget } from '../../../../retroShared/board/AddTarget';
 import type {
   RetroCardDto,
   RetroCategoryColumnDto,
   RetroPointDto,
-} from '../../../../../api/retros';
+} from '@shiplean/core/api/retros';
 
 /** One retro's points as board columns in K3's order: one unthemed group per column, `toDecide` counted from the points. */
 export function cardColumns(points: RetroPointDto[]): RetroCategoryColumnDto[] {

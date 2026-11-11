@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.WorkItems;
+using ShipLean.WebApi.Infrastructure;
 
 namespace ShipLean.WebApi.Features.Usage;
 
@@ -35,7 +36,7 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
         var properties = PropertiesOf(tracked, scope);
         events.Track(new UsageEvent(
             tracked.EventName!,
-            UsageSurface.Web,
+            UsageSurfaces.Of(context.HttpContext.User),
             actor,
             scope.ProjectId,
             scope.ProjectCount,

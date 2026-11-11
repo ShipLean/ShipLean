@@ -1,5 +1,5 @@
-import type { BoardLevel, BoardTypeStatesDto, BoardWarningDto } from '../../api/boards';
-import type { BoardSettingsJson } from '../../api/persisted';
+import type { BoardLevel, BoardTypeStatesDto, BoardWarningDto } from '@shiplean/core/api/boards';
+import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import type { PaneGroup } from '../../components/SettingsDialog/types';
 import { AutomationsPane } from './panes/AutomationsPane';
 import { AnnotationsPane } from './panes/AnnotationsPane';

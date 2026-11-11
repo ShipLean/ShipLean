@@ -19,11 +19,12 @@ permissions:
   actions: write
 
 jobs:
-  # Changes CI cannot see: top-level *.md (Markdown under src/ and db/ is test or app input), docs/
-  # and docker-publish.yml. A pull request with only those sets code=false, and the jobs below skip,
-  # which the ruleset counts as passing (acceptance skips its steps instead: a skipped matrix job
-  # reports an unexpanded name). A hand run has no base and always runs. If this job fails, code is
-  # empty and everything runs.
+  # Changes CI cannot see: top-level *.md (Markdown under src/ and db/ is test or app input),
+  # docs/, store/ (the store listing; the Store listing workflow checks it) and
+  # docker-publish.yml. A pull request with only those sets code=false, and the jobs below skip,
+  # which the ruleset counts as passing (acceptance skips its steps instead: a skipped matrix
+  # job reports an unexpanded name). A hand run has no base and always runs. If this job fails,
+  # code is empty and everything runs.
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -44,7 +45,7 @@ jobs:
           git fetch --depth=1 origin "$BASE_SHA"
           changed=$(git diff --name-only "$BASE_SHA" HEAD)
           printf '%s\n' "$changed"
-          code_files=$(printf '%s\n' "$changed" | grep -Ev '^([^/]+\.md|docs/.*|\.github/workflows/docker-publish\.yml)?$' || true)
+          code_files=$(printf '%s\n' "$changed" | grep -Ev '^([^/]+\.md|docs/.*|store/.*|\.github/workflows/docker-publish\.yml)?$' || true)
           if [ -n "$code_files" ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
@@ -75,18 +76,52 @@ jobs:
           restore-keys: nuget-${{ github.job }}-
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: src/ShipLean.Client/package.json
+          package_json_file: src/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+          cache-dependency-path: src/pnpm-lock.yaml
       - run: dotnet build src/ShipLean.slnx --configuration Release
+      # llama.rn's postinstall downloads ~770 MB of native Android and iOS libraries. This job runs jest and a JS bundle
+      # only, so it skips them; mobile-android-build installs without the flag and gets them.
       - run: pnpm install --frozen-lockfile
-        working-directory: src/ShipLean.Client
+        working-directory: src
+        env:
+          RNLLAMA_SKIP_POSTINSTALL: "1"
+      # The platform-neutral core the SPA (and the phone app) import as @shiplean/core. Its tests are few and run in
+      # plain Node, so they always run in full.
+      - name: Core format, lint, typecheck, test
+        working-directory: src/ShipLean.Core.Client
+        run: pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm test
+      # The phone app (Expo). bundle is a Metro Android export: it proves every import resolves, with no device or
+      # Android SDK. On a pull request the step runs only when the diff reaches what the app depends on: its own folder,
+      # the core, the workspace files and the design tokens its theme is generated from.
+      - name: Mobile format, lint, typecheck, vitest, jest, bundle
+        working-directory: src/ShipLean.Mobile
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA")
+            if ! grep -Eq '^(src/(pnpm-lock\.yaml|package\.json|pnpm-workspace\.yaml)|src/ShipLean\.Mobile/.*|src/ShipLean\.Core\.Client/.*|design/tokens\.json|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+              echo "Skipping the mobile checks: this pull request changes nothing under src/ShipLean.Mobile, the core, the workspace files, design/tokens.json or ci.yml"
+              exit 0
+            fi
+          fi
+          # One command per line: under set -e a failure before the last command of an && list doesn't stop the script.
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
+          pnpm test
+          pnpm run test:screens
+          pnpm run bundle
       # A hand run (workflow_dispatch) has no base, so it runs the whole suite. package.json and
-      # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The lockfile and
-      # the token files do not: tokens.test.ts reads them with readFileSync, which the import graph misses.
+      # vite.config.ts already make Vitest do that (--changed forceRerunTriggers). The workspace files,
+      # the lockfile, the core package (outside the SPA's folder) and the token files do not:
+      # tokens.test.ts reads the token files with readFileSync, which the import graph misses.
       - name: Format, lint, typecheck, vitest, build
         working-directory: src/ShipLean.Client
         env:
@@ -98,12 +133,14 @@ jobs:
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
         run: |
           set -euo pipefail
-          pnpm run format:check && pnpm run lint && pnpm run typecheck
+          pnpm run format:check
+          pnpm run lint
+          pnpm run typecheck
           if [ "$EVENT_NAME" != "pull_request" ]; then
             pnpm test
           else
             changed=$(git diff --name-only "$BASE_SHA")
-            if printf '%s\n' "$changed" | grep -Eq '^(src/ShipLean.Client/(pnpm-lock\.yaml|tsconfig\.json|src/styles/tokens\.css)|design/tokens\.css)$'; then
+            if printf '%s\n' "$changed" | grep -Eq '^(src/(package\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml)|src/ShipLean\.Core\.Client/.*|src/ShipLean.Client/(tsconfig\.json|src/styles/tokens\.css)|design/tokens\.css)$'; then
               echo "Change is outside Vitest's import graph; running the full suite"
               pnpm test
             else
@@ -114,6 +151,69 @@ jobs:
             fi
           fi
           pnpm run build
+
+  # The phone app's Android debug build from prebuild, so a native module or config plugin that doesn't compile fails CI.
+  # On a pull request it runs only when the diff reaches the native side: the app's package.json, the lockfile, the
+  # workspace file (allowBuilds decides which native postinstalls run), app.json or app.config.ts, the app's local
+  # modules, or ci.yml. Otherwise it passes with a message. android/ is generated here and never committed.
+  # arm64-v8a is the phones; x86_64 is the emulator. Both are the ABIs llama.rn ships prebuilt.
+  mobile-android-build:
+    name: mobile android build
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: native
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            changed=$(git diff --name-only "$BASE_SHA")
+            if ! grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|react-native\.config\.js|modules/.*|assets/.*)|src/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml)$' <<<"$changed"; then
+              echo "Skipping the Android build: this pull request changes nothing native (the app's package.json, the lockfile, the workspace file, app.json, app.config.ts, modules/ or ci.yml)"
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          package_json_file: src/package.json
+      - uses: actions/setup-node@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: src/pnpm-lock.yaml
+      - uses: actions/setup-java@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/cache@v4
+        if: steps.native.outputs.run == 'true'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ github.job }}-${{ hashFiles('src/pnpm-lock.yaml', 'src/ShipLean.Mobile/app.json') }}
+          restore-keys: gradle-${{ github.job }}-
+      - run: pnpm install --frozen-lockfile
+        if: steps.native.outputs.run == 'true'
+        working-directory: src
+      - run: npx expo prebuild --platform android --no-install --clean
+        if: steps.native.outputs.run == 'true'
+        working-directory: src/ShipLean.Mobile
+      - run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
+        if: steps.native.outputs.run == 'true'
+        working-directory: src/ShipLean.Mobile/android
 
   unit:
     name: unit tests
@@ -148,6 +248,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
+      # pg_dump 18 for the backup tests (the server is Postgres 18). The runner has an older client, so 18's bin goes first on PATH.
+      - name: Install postgresql-client-18 (PGDG)
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
       # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
       - uses: actions/cache@v4
         with:
@@ -201,14 +311,17 @@ jobs:
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: src/ShipLean.Client/package.json
-      - run: pnpm install --frozen-lockfile
+          package_json_file: src/package.json
+      # Only the SPA and what it depends on (the core), not the phone app.
+      - run: pnpm install --frozen-lockfile --filter shiplean-client...
       # Playwright's default is half the visible CPUs (2 on a 4-vCPU runner). Pin it.
-      # --only-changed follows what a spec's components import. The harness (playwright/),
-      # global CSS, and the CT config wrap every mount and are not in that graph, so a
-      # change to them runs the whole suite. A pull request that does not touch the client
-      # skips the run: the flag would otherwise still build the component bundle to find
-      # nothing. A hand run has no base and runs everything.
+      # --only-changed follows what a spec's components import. That includes the core: Vite
+      # resolves the @shiplean/core workspace link to src/ShipLean.Core.Client, and Playwright
+      # drops only paths under node_modules, so a core change runs the specs that import it.
+      # The harness (playwright/), global CSS, and the CT config wrap every mount and are not
+      # in that graph, so a change to them runs the whole suite. A pull request that touches
+      # neither the client nor the core skips the run: the flag would otherwise still build
+      # the component bundle to find nothing. A hand run has no base and runs everything.
       - name: Playwright component tests
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -229,14 +342,14 @@ jobs:
             exit 0
           fi
           changed=$(git diff --name-only "$BASE_SHA")
-          if printf '%s\n' "$changed" | grep -Eq '^src/ShipLean.Client/(playwright-ct\.config\.ts|playwright/|tsconfig\.json|package\.json|pnpm-lock\.yaml|src/index\.css|src/styles/)'; then
+          if printf '%s\n' "$changed" | grep -Eq '^src/((package\.json|pnpm-workspace\.yaml|pnpm-lock\.yaml)$|ShipLean\.Core\.Client/package\.json$|ShipLean.Client/(playwright-ct\.config\.ts|playwright/|tsconfig\.json|package\.json|src/index\.css|src/styles/))'; then
             echo "Change is outside Playwright's component graph; running the full suite"
             pnpm run test-ct --workers=2
-          elif printf '%s\n' "$changed" | grep -q '^src/ShipLean.Client/'; then
+          elif printf '%s\n' "$changed" | grep -Eq '^src/ShipLean\.(Client|Core\.Client)/'; then
             echo "Playwright --only-changed ${BASE_SHA}"
             pnpm run test-ct --workers=2 --only-changed="$BASE_SHA"
           else
-            echo "No files under src/ShipLean.Client changed; skipping component tests"
+            echo "No files under src/ShipLean.Client or src/ShipLean.Core.Client changed; skipping component tests"
           fi
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -271,6 +384,17 @@ jobs:
         if: needs.changes.outputs.code != 'false'
         with:
           dotnet-version: 10.0.x
+      # pg_dump 18 for the backup tests (the server is Postgres 18). The runner has an older client, so 18's bin goes first on PATH.
+      - name: Install postgresql-client-18 (PGDG)
+        if: needs.changes.outputs.code != 'false'
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
       # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
       - uses: actions/cache@v4
         if: needs.changes.outputs.code != 'false'
@@ -281,15 +405,15 @@ jobs:
       - uses: pnpm/action-setup@v4
         if: needs.changes.outputs.code != 'false'
         with:
-          package_json_file: src/ShipLean.Client/package.json
+          package_json_file: src/package.json
       - uses: actions/setup-node@v4
         if: needs.changes.outputs.code != 'false'
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: src/ShipLean.Client/pnpm-lock.yaml
+          cache-dependency-path: src/pnpm-lock.yaml
       # The tests serve the real bundle, so it is built first (into ShipLean.WebApi/wwwroot).
-      - run: pnpm install --frozen-lockfile && pnpm run build
+      - run: pnpm install --frozen-lockfile --filter shiplean-client... && pnpm run build
         if: needs.changes.outputs.code != 'false'
         working-directory: src/ShipLean.Client
       - run: dotnet build src/ShipLean.AcceptanceTests --configuration Release
@@ -360,6 +484,16 @@ jobs:
       - name: Check the model is in the image
         # sha256sum runs as $APP_UID, so this also proves the files are readable by the app user.
         run: docker run --rm --entrypoint sha256sum shiplean:ci /app/models/multilingual-e5-small/model.onnx /app/models/multilingual-e5-small/sentencepiece.bpe.model /app/models/multilingual-e5-small/shiplean-model.json
+      # The backup CLI verbs answer before the web host is built (no arguments = usage, exit 2), and the image's pg_dump is 18.
+      - name: Check the backup CLI and pg_dump
+        run: |
+          set -u
+          status=0
+          docker run --rm shiplean:ci decrypt-backup || status=$?
+          [ "$status" -eq 2 ] || { echo "expected decrypt-backup to exit 2, got $status"; exit 1; }
+          version=$(docker run --rm --entrypoint pg_dump shiplean:ci --version)
+          echo "$version"
+          echo "$version" | grep -Eq '^pg_dump \(PostgreSQL\) 18\.' || { echo "expected pg_dump 18"; exit 1; }
       # Smoke: the image starts against a real Postgres and serves. Everything runs on one user-defined network and
       # the checks come from a curl container on it. The app migrates once at startup and exits if Postgres is not
       # ready yet, so the app restarts on failure (the restart loop plus curl's retries wait for Postgres; the health check on Postgres is for inspection).

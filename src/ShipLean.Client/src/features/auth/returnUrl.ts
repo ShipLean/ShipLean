@@ -3,7 +3,7 @@
 // percent-decoded in the path: browsers strip a tab, which turns "/<TAB>/host" into "//host"), the same origin once resolved, and
 // not the sign-in page itself. The checks run on the resolved URL too, because resolving removes dot segments:
 // "/.//host" resolves to "//host", which a navigation would read as another origin.
-import { isLoginPath } from '../../loginPath';
+import { isLoginPath } from '@shiplean/core/loginPath';
 
 const BASE = 'http://shiplean.invalid';
 

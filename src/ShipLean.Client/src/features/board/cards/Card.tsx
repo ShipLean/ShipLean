@@ -1,12 +1,13 @@
 import type { ComponentProps } from 'react';
 import { TypeIcon } from '../../../components/TypeIcon';
-import type { BoardViewDto, CardDto } from '../../../api/views';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { BoardViewDto, CardDto } from '@shiplean/core/api/views';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 import { DropLine } from './DropLine';
 import { CardAssignee } from './CardAssignee';
+import { HealthPill } from '../../feature/statusBand/HealthPill';
 import { CardExtraFields } from './CardExtraFields';
 import { CardOffer } from './CardOffer';
 import { CardParent } from './CardParent';
@@ -88,6 +89,9 @@ export function Card({
           <span data-testid={ids.cardKey} className="text-[length:var(--text-2xs)] text-ink-muted">
             {card.key}
           </span>
+        ) : null}
+        {card.type.id === 'feature' ? (
+          <HealthPill health={card.health} testId={ids.cardHealth} />
         ) : null}
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}

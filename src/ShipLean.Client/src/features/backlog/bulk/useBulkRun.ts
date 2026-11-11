@@ -1,14 +1,14 @@
 import { createContext, useContext, useState } from 'react';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import {
   BULK_MAX_ROWS,
   type BulkPlacement,
   type BulkWriteRequest,
   type BulkWriteResult,
-} from '../../../api/backlogWrites';
-import type { ConflictDto, WorkItemChanges, WriteResult } from '../../../api/workItems';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+} from '@shiplean/core/api/backlogWrites';
+import type { ConflictDto, WorkItemChanges, WriteResult } from '@shiplean/core/api/workItems';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { showToast } from '../../../components/toastStore';
 import { backlogRootKey } from '../../../queries/backlogKeys';
 

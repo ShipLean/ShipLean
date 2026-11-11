@@ -1,7 +1,7 @@
-import type { ProjectDto } from '../../../api/projects';
-import type { SprintDto } from '../../../api/sprints';
-import type { BacklogReviewDto } from '../../../api/backlogWrites';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import type { BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 
 export const PROJECT: ProjectDto = {
   id: 'p1',
@@ -44,6 +44,9 @@ export function itemRow(overrides: Partial<BacklogRowDto> & { key: string }): Ba
     tags: [],
     rollups: [],
     revision: 1,
+    health: null,
+    needsYou: null,
+    blockedBy: [],
     ...overrides,
   };
 }

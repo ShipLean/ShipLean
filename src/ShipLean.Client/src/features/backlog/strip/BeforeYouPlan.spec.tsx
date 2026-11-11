@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import type { BacklogViewDto } from '../../../api/views';
+import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { backlogView, itemRow, PROJECT, review } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
 import { ListMode } from '../list/ListMode';

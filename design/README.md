@@ -40,9 +40,11 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/retro-data.js`, `screens/retro.css` | Sample retrospectives, themes, mentions per sprint and action items for the three retro screens, and their styles. || `screens/signin.html` | **Sign in**: cookie sign-in with no side menu, plus the states after it. `?state=error\|change\|signed-out\|ended\|no-projects`. |
 | `screens/new-project.html` | **New project**: name, the permanent key (suggested, checked live, with free alternatives), start from defaults or another project's settings, members, working days and Sprint 1. |
 | `screens/instance.html` | **Instance settings** (instance admins only): General (name, base URL, who can create projects), Users (add, reset password, unlock, admin, disable) and Projects (every project, Join as admin). `?tab=general\|users\|projects\|integrations` (Integrations: the YouTube OAuth client, SHIP-303). |
+| `screens/instance-backups.html` | **Instance settings › Backups** (SHIP-743, mockup for approval, not built yet): every state stacked on one page, with numbered review labels between them: configured and healthy with the run history, not configured, the schedule helper (valid, invalid, too often), Amazon S3 and a custom http endpoint, the attachments toggle (off, on, disabled), health failing, overdue and never run, a run in progress, and a passphrase generation change. Content is the pinned `backup-*.json` shapes. It is taller than 900px, so its PNGs are shot full height (1440 wide, 2× scale, `?shot&theme=<light\|dark>`, Playwright `fullPage`); `screenshots.sh` would crop it. |
 | `screens/profile.html` | **Your profile**: display name, optional photo and avatar colour (`?photo` opens with a photo), theme and density, password, your projects (Leave), sessions and saved views. |
 | `mobile/` | **Touch shell** (SHIP-713): the frame under 900px (drawer, top bar, project picker sheet, full-screen quick search), its review page `mobile/index.html`, phone images in light and dark, and today's phone screenshots. Also the **work item page** on a phone (SHIP-714): `mobile/work-item.html`, built in `screens/item-touch.css` and `item-touch.js`. The **backlogs** on a phone (SHIP-716): `mobile/backlogs.html`. The **Feature board** on a phone (SHIP-722): `mobile/feature-board.html`, built in `screens/feature-board-touch.css` and `feature-board-touch.js`. See [Touch shell](#touch-shell-ship-713) and [`mobile/README.md`](mobile/README.md). |
 | `mobileapp/` | **Native phone app** (epic SHIP-905, Feature SHIP-916): voice-first mock-ups of the work item, backlog, Feature board, retro, and install and setup (choosing the voice models), 50 states in light and dark at 390 × 844. Throwaway HTML on a small kit (`app.css`, `app.js`) over `tokens.css`; review page `mobileapp/index.html`, decisions and voice actions per area in `mobileapp/<area>.md`. See [`mobileapp/README.md`](mobileapp/README.md). |
+| `ship-907-web-screens.md` | **Web screens the phone app adds** (SHIP-907, S5): the `/mobile/sign-in` confirm page for the app's browser handoff (`mobile/device-sign-in.html`), **Your profile › Signed-in devices** (`screens/profile.html`) and **Health** on Features (`screens/feature.html`, `features.html`, `features-board.html`). States, decisions C1–C6, V1–V6 and H1–H9 (Joel, 9 Nov 2026), CT baselines. See [Web screens for the phone app](#web-screens-for-the-phone-app-ship-907). |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
 
@@ -153,6 +155,7 @@ Open any screen and use the **Preview** panel (bottom left) to switch the theme.
 | Project settings · YouTube check refused | ![YouTube panel, check refused, light](screens/settings-demos-yt-refused.light.png) | ![YouTube panel, check refused, dark](screens/settings-demos-yt-refused.dark.png) |
 | Project settings · YouTube connected | ![YouTube panel, connected, light](screens/settings-demos-yt-connected.light.png) | ![YouTube panel, connected, dark](screens/settings-demos-yt-connected.dark.png) |
 | Instance settings · Integrations | ![Instance settings, Integrations, light](screens/instance-integrations.light.png) | ![Instance settings, Integrations, dark](screens/instance-integrations.dark.png) |
+| Instance settings · Backups (every state) | ![Instance settings, Backups, every state stacked, light](screens/instance-backups.light.png) | ![Instance settings, Backups, every state stacked, dark](screens/instance-backups.dark.png) |
 | Your profile | ![Your profile, light](screens/profile.light.png) | ![Your profile, dark](screens/profile.dark.png) |
 | Your profile · photo | ![Your profile with a photo, light](screens/profile-photo.light.png) | ![Your profile with a photo, dark](screens/profile-photo.dark.png) |
 | Taskboard settings · Styles | ![Taskboard settings, Styles, light](screens/taskboard-styles.light.png) | ![Taskboard settings, Styles, dark](screens/taskboard-styles.dark.png) |
@@ -492,6 +495,21 @@ Under 600px, Retrospectives › Features follows `screens/retro-features-touch.c
 - **Empty:** "Nothing left to decide." under To decide; a search with no match says "No Feature matches …" with Clear search.
 - **Tablets (600–900px):** the desktop toolbar and table, with 32px Show buttons, a 16px search box and 48px rows; the whole row opens the item. The category heads wrap onto two lines and the Feature cell wraps (key and title, then the chip). The Feature column is pinned; what doesn't fit (Actions and Last retro at 768px) scrolls sideways inside the table's box. The toolbar doesn't stick.
 - **Measuring:** per week on phones against desktop, the 4 weeks before and after release: the share of Features-page `screen.viewed` followed by an item retro page view.
+
+## Web screens for the phone app (SHIP-907)
+
+The phone app adds three things to the web app. Everything is in [`ship-907-web-screens.md`](ship-907-web-screens.md): the states, all 21 decisions (Joel, 9 Nov 2026) and the CT baselines.
+
+- **`/mobile/sign-in`** (`mobile/device-sign-in.html`): the app opens it in the phone's own browser sheet, so it is a phone page in the SHIP-736 sign-in family. It asks "Sign in to ShipLean on ‹device›?" and shows As / On / To. Three lines say what signing in allows, and a warning comes before Sign in and Cancel. `/login` gets one line when it comes from the app (`mobile/sign-in.html?for=device`).
+- **Your profile › Signed-in devices:** a panel before Connected agents, with rows like the agents' rows. Sign out asks first in the row. The Password and Sign out everywhere else copy now mention phones.
+- **Health** (Features only): a pill after the state in the status band, and a control in Edit status. Any change moves Verified at. There's a Health column on the Features backlog, a dot (with label on Full cards) on the Features board, and a Health filter. Epics, stories and tasks never have it. The unbuilt Blocked state on the reference form goes (H8).
+
+| Screen | Light | Dark |
+|---|---|---|
+| Confirm page (390) | ![Confirm page, light](mobile/images/device-sign-in-ios.light.png) | ![Confirm page, dark](mobile/images/device-sign-in-ios.dark.png) |
+| Signed-in devices · Sign out | ![Signed-in devices, light](screens/profile-devices-signout.light.png) | ![Signed-in devices, dark](screens/profile-devices-signout.dark.png) |
+| Feature form · Health menu | ![Health menu, light](screens/feature-health-menu.light.png) | ![Health menu, dark](screens/feature-health-menu.dark.png) |
+| Features board · Health | ![Features board with health, light](screens/features-board.light.png) | ![Features board with health, dark](screens/features-board.dark.png) |
 
 ## Your profile on a phone (SHIP-733)
 

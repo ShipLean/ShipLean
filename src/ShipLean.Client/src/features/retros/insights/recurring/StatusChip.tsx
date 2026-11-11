@@ -1,5 +1,5 @@
 import { Chip, type ChipTone } from '../../../../components/Chip';
-import type { RetroInsightsMode, RetroThemeStatus } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroThemeStatus } from '@shiplean/core/api/retros';
 import { retrosTestIds as ids } from '../../testIds';
 import { Tip } from '../tips/Tip';
 import { statusWording } from '../tips/tipWording';

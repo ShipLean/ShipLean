@@ -1,4 +1,4 @@
-import type { Swatch } from '../../../api/persisted';
+import type { Swatch } from '@shiplean/core/api/persisted';
 
 /** The names the pickers show for the swatches (the design's), not the token names. */
 export const SWATCH_NAMES: Record<Swatch, string> = {

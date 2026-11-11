@@ -1,6 +1,6 @@
-import type { CommentDto } from '../../../api/comments';
-import type { StateDto } from '../../../api/projects';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { CommentDto } from '@shiplean/core/api/comments';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import {
   feature as featureFixture,
   linkCards,
@@ -87,6 +87,7 @@ const logEntry = (
   editedLabel: null,
   agentName,
   superseded: null,
+  askTag: null,
 });
 
 // Newest first is the screen's job; the API lists oldest first.

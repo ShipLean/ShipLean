@@ -1,6 +1,6 @@
-import type { BacklogRowDto } from '../../../api/views';
-import type { WorkItemTypeId } from '../../../api/refs';
-import { isStoryLevel } from '../../../api/workItemTypes';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
 /** Open and closed items of the types under a row (a nested Feature's included); a missing roll-up entry means none. */
 export function countUnder(row: BacklogRowDto, ...types: WorkItemTypeId[]) {

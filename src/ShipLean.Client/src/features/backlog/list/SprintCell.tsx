@@ -1,4 +1,4 @@
-import type { SprintRef } from '../../../api/refs';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { Chip } from '../../../components/Chip';
 import { backlogTestIds as ids } from '../testIds';
 

@@ -1,4 +1,4 @@
-import type { UserStatus } from '../../../api/users';
+import type { UserStatus } from '@shiplean/core/api/users';
 import type { AdminUserDto } from './usersAdminApi';
 
 export const statusLabels: Record<UserStatus, string> = {

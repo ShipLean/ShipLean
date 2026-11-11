@@ -3,6 +3,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.WorkItemDetails.History;
 
 // A work item's field changes, newest first, from its revisions. Any member reads them. An agent's change shows the agent's name.
 [RegisterPerRequest]
-public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items, NpgsqlDataSource dataSource, TimeProvider clock)
+public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items, IAskHistory askHistory, NpgsqlDataSource dataSource, TimeProvider clock)
 {
     public async Task<HistoryDto> GetAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -30,6 +31,7 @@ public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items
             r.Origin,
             r.Changes,
             r.AgentName,
-            r.Webhook))]);
+            r.Webhook))],
+            await askHistory.ListAsync(workItemId, cancellationToken));
     }
 }

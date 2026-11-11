@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { workItemKey } from '../workItemApi';
 
 // Puts a revision the server sent into the item's cache unless the cache already holds that revision or a newer one (an

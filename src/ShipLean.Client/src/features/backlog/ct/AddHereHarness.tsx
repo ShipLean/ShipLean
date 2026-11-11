@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
-import type { ProjectDto } from '../../../api/projects';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { AddBelowProvider } from '../add/AddBelowProvider';
 import { AddBelowRow } from '../add/AddBelowRow';
 import { AddInButton, AddInSection } from '../add/AddInSection';

@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 const puts: unknown[] = [];
-vi.mock('../../api/client', async (original) => ({
-  ...(await original<typeof import('../../api/client')>()),
+vi.mock('@shiplean/core/api/client', async (original) => ({
+  ...(await original<typeof import('@shiplean/core/api/client')>()),
   api: {
     get: vi.fn(() => Promise.resolve(undefined)),
     put: vi.fn((_url: string, body: unknown) => {

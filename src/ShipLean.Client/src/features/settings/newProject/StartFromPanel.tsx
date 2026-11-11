@@ -1,4 +1,4 @@
-import type { ProjectSummaryDto } from '../../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { Panel } from '../draft/Panel';
 import { settingsTestIds as ids } from '../testIds';
 import type { FormProps } from './formProps';

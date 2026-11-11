@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { Panel } from '../draft/Panel';
 import { settingsTestIds as ids } from '../testIds';
 import { fetchIssueIntake, issueIntakeKey } from './api';

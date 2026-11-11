@@ -105,5 +105,20 @@
   },
   "slug": "checkout-v2",
   "startedOn": "2026-10-12",
-  "startedLabel": "12 Oct"
+  "startedLabel": "12 Oct",
+  "health": "onTrack",
+  "healthSet": {
+    "at": "2026-10-19T09:12:00+00:00",
+    "atLabel": "19 Oct",
+    "by": {
+      "id": "00000001-0000-4000-8000-000000000002",
+      "name": "Priya Shah",
+      "initials": "PS",
+      "avatarColour": "#2f7fd8",
+      "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+    },
+    "agent": null
+  },
+  "rollups": [],
+  "needsYou": null
 }

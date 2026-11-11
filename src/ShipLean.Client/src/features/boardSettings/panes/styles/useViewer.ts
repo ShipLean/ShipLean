@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../../../api/client';
-import type { MeDto } from '../../../../api/me';
+import { api } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 import type { Viewer } from './styleSamples';
 
 /** The signed-in user, as the sample cards need them (the shared `['me']` read). */

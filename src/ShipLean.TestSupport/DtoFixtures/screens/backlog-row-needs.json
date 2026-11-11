@@ -1,0 +1,70 @@
+{
+  "kind": "group",
+  "id": "00000005-0000-4000-8001-000000000101",
+  "key": "SHIP-101",
+  "type": {
+    "id": "feature",
+    "name": "Feature"
+  },
+  "title": "Checkout v2",
+  "state": {
+    "id": "00000003-0000-4000-8001-000000000202",
+    "name": "Active",
+    "category": "inProgress"
+  },
+  "assignee": {
+    "id": "00000001-0000-4000-8000-000000000002",
+    "name": "Priya Shah",
+    "initials": "PS",
+    "avatarColour": "#2f7fd8",
+    "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
+  },
+  "points": 20,
+  "childPoints": 31,
+  "sumWarn": true,
+  "sprint": null,
+  "parent": {
+    "id": "00000005-0000-4000-8001-000000000090",
+    "key": "SHIP-90",
+    "type": {
+      "id": "epic",
+      "name": "Epic"
+    },
+    "title": "Checkout conversion"
+  },
+  "depth": 1,
+  "rank": null,
+  "tags": [
+    {
+      "name": "Payments",
+      "colour": "accent"
+    }
+  ],
+  "rollups": [
+    {
+      "type": "story",
+      "open": 5,
+      "closed": 3,
+      "inCurrentSprint": 0,
+      "inOtherSprint": 0
+    },
+    {
+      "type": "bug",
+      "open": 1,
+      "closed": 1,
+      "inCurrentSprint": 0,
+      "inOtherSprint": 0
+    }
+  ],
+  "revision": 1,
+  "health": "blocked",
+  "needsYou": {
+    "questions": 0,
+    "decisions": 1,
+    "onChildren": true
+  },
+  "blockedBy": [
+    "SHIP-131",
+    "SHIP-140"
+  ]
+}

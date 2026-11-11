@@ -2,14 +2,15 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 // Capitalised bindings get their own import declarations: specs import this module's constants, and Playwright CT's
 // loader declares a capitalised binding twice when one declaration mixes it with others.
-import type { ProjectDto } from '../../../api/projects';
-import { ApiRequestError } from '../../../api/client';
-import { isApiError } from '../../../api/client';
-import { isStoryLevel } from '../../../api/workItemTypes';
-import { conflictOf, type ConflictDto, type WorkItemDto } from '../../../api/workItems';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import { isApiError } from '@shiplean/core/api/client';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
+import { conflictOf, type ConflictDto, type WorkItemDto } from '@shiplean/core/api/workItems';
 import { showToast } from '../../../components/toastStore';
 import { useRememberItem } from '../../quickSearch/start/recent/useRememberItem';
 import { AgentPanel } from '../../agentPanel/AgentPanel';
+import { DecisionsSection } from '../../asks/DecisionsSection';
 import { FeatureForm } from '../../feature/FeatureForm';
 import type { FeatureRegionProps } from '../../feature/FeatureRegionProps';
 import { WorkItemConflictBanner } from '../conflict/WorkItemConflictBanner';
@@ -278,6 +279,7 @@ export function WorkItemForm({
               {banners}
               <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4">
                 <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-6">
+                  <DecisionsSection item={{ ...item, projectKey }} />
                   {description}
                   {type === 'story' ? (
                     <CriteriaSection

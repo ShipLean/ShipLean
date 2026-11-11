@@ -1,5 +1,5 @@
-import type { StateCategory } from '../../../../api/refs';
-import type { WorkItemDto } from '../../../../api/workItems';
+import type { StateCategory } from '@shiplean/core/api/refs';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import type { SprintStory } from '../sprintStories';
 
 export interface ReadyItem {

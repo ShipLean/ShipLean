@@ -3,6 +3,7 @@ import { pagesTestIds } from '../features/pages/testIds';
 import { instanceSettingsTabs, type InstanceSettingsTab } from '../routes';
 import { InstanceAgentsSlot } from '../slots/InstanceAgentsSlot';
 import { InstanceAnalyticsSlot } from '../slots/InstanceAnalyticsSlot';
+import { InstanceBackupsSlot } from '../slots/InstanceBackupsSlot';
 import { InstanceGeneralSlot } from '../slots/InstanceGeneralSlot';
 import { InstanceIntegrationsSlot } from '../slots/InstanceIntegrationsSlot';
 import { InstanceProjectsSlot } from '../slots/InstanceProjectsSlot';
@@ -31,6 +32,7 @@ export function InstanceSettingsPage() {
       {slots.instanceIntegrations && <InstanceIntegrationsSlot {...slots.instanceIntegrations} />}
       {slots.instanceAnalytics && <InstanceAnalyticsSlot {...slots.instanceAnalytics} />}
       {slots.instanceAgents && <InstanceAgentsSlot {...slots.instanceAgents} />}
+      {slots.instanceBackups && <InstanceBackupsSlot {...slots.instanceBackups} />}
     </InstallScreen>
   );
 }

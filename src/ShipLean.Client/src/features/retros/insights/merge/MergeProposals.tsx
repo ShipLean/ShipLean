@@ -1,5 +1,5 @@
-import type { ProjectDto } from '../../../../api/projects';
-import type { RetroMergeProposalDto } from '../../../../api/retros';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroMergeProposalDto } from '@shiplean/core/api/retros';
 import { MergeProposalRow } from './MergeProposalRow';
 
 /** The proposals agents made to merge two themes, for a person to answer; nothing when there are none. */

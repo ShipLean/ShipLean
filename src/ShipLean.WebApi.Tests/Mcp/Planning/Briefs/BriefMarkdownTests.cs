@@ -1,5 +1,6 @@
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Plans;
+using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Refs;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Planning.Briefs;
@@ -83,5 +84,68 @@ public class BriefMarkdownTests
         var markdown = BriefMarkdown.ForStory(tree, tree.Stories[0]);
 
         markdown.ShouldContain("| SHIP-3 | Task | - | - | Proposed |");
+    }
+
+    private static readonly UserRef Joel = new(Guid.NewGuid(), "Joel", "J", "#000", null);
+
+    private static ItemAsksDto AsksOf(IReadOnlyList<DecisionDto> decisions, IReadOnlyList<QuestionDto> questions)
+        => new(Guid.NewGuid(), null, false, false, 0, 0, questions, decisions, []);
+
+    private static DecisionDto Decision(int number, DecisionState state, AnswerKind kind = AnswerKind.Recommended, int? index = null)
+        => new(Guid.NewGuid(), number, $"D{number}", $"Question {number}?", "Rec", ["Alt one", "Alt two"], kind == AnswerKind.Recommended ? "Rec" : "Alt two",
+            kind, index, state, Joel, null, DateTimeOffset.UnixEpoch, "", null, null, null, null, false, []);
+
+    private static QuestionDto Question(int number, QuestionState state, string? answer = null)
+        => new(Guid.NewGuid(), number, $"Q{number}", $"Ask {number}?", [], state, Joel, null, DateTimeOffset.UnixEpoch, "",
+            answer is null ? null : new QuestionAnswerDto(Guid.NewGuid(), answer, "<p/>", Joel, null, DateTimeOffset.UnixEpoch, ""), null, null);
+
+    [Test]
+    public void Asks_WhenNothingQualifies_ShouldBeNull()
+    {
+        var onlyWithdrawn = AsksOf([Decision(1, DecisionState.Withdrawn)], [Question(1, QuestionState.Withdrawn)]);
+
+        BriefMarkdown.Asks([("SHIP-1", AsksOf([], [])), ("SHIP-2", onlyWithdrawn)]).ShouldBeNull();
+    }
+
+    [Test]
+    public void Asks_ShouldListEachItemsLiveAsksInOrderAndSkipWithdrawn()
+    {
+        var task = AsksOf([Decision(1, DecisionState.Open), Decision(2, DecisionState.Changed, AnswerKind.Alternative, 1), Decision(3, DecisionState.Withdrawn)],
+            [Question(1, QuestionState.Open), Question(2, QuestionState.Answered, "Use\nmerchant.prod")]);
+        var feature = AsksOf([Decision(1, DecisionState.Confirmed)], []);
+
+        var markdown = BriefMarkdown.Asks([("SHIP-3", task), ("SHIP-2", AsksOf([], [])), ("SHIP-1", feature)])!;
+
+        markdown.ShouldBe(string.Join("\n",
+            "## Decisions and questions",
+            "",
+            "### SHIP-3",
+            "",
+            "- D1 (open, recommended): Question 1? → Rec",
+            "- D2 (changed, alternative 2): Question 2? → Alt two",
+            "- Q1 (open): Ask 1?",
+            "- Q2 (answered): Ask 2? →",
+            "    Use",
+            "    merchant.prod",
+            "",
+            "### SHIP-1",
+            "",
+            "- D1 (confirmed, recommended): Question 1? → Rec"));
+    }
+
+    [Test]
+    public void Asks_WhenAnswerIsOneLine_ShouldPutItOnTheBullet()
+    {
+        var markdown = BriefMarkdown.Asks([("SHIP-3", AsksOf([], [Question(1, QuestionState.Answered, "Use merchant.prod")]))])!;
+
+        markdown.ShouldEndWith("- Q1 (answered): Ask 1? → Use merchant.prod");
+    }
+
+    [Test]
+    public void Asks_WhenAnswerHasACodeFence_ShouldIndentEveryLineAndKeepTheFenceWhole()
+    {
+        var markdown = BriefMarkdown.Asks([("SHIP-3", AsksOf([], [Question(1, QuestionState.Answered, "Run:\n```sh\nmake it\n```")]))])!;
+
+        markdown.ShouldEndWith("- Q1 (answered): Ask 1? →\n    Run:\n    ```sh\n    make it\n    ```");
     }
 }

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import none from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-none.json' with { type: 'json' };
 import ready from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-ready.json' with { type: 'json' };
 import working from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-working.json' with { type: 'json' };
-import type { SprintDemoDto } from '../../api/demos';
+import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import { componentTestIds } from '../../components/testIds';
 import { DemoBandHarness } from './ct/DemoBandHarness';
 import { demosTestIds as ids } from './testIds';

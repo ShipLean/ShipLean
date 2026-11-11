@@ -189,4 +189,21 @@ public class GuideContentTests
             text.ShouldContain("`create_sprint_demo`");
         }
     }
+
+    [Test]
+    public void GuideContent_WhenWorkPart_ShouldTellAgentsToRecordDecisions()
+    {
+        Work.ShouldContain("`record_decisions`");
+        Work.ShouldContain("`ask`");
+        Work.ShouldNotContain("Key facts and decisions");
+    }
+
+    [Test]
+    public void GuideContent_WhenGuidePart_ShouldTellAgentsToAskOnTheItem()
+    {
+        Guide.ShouldContain("`ask`");
+        Guide.ShouldContain("`record_decisions`");
+        Guide.ShouldNotContain("the agent is waiting");
+        Guide.ShouldNotContain("reply to the agent");
+    }
 }

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { ListMode } from '../list/ListMode';
-import type { BacklogAddRequest } from '../../../api/backlogWrites';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { BacklogAddRequest } from '@shiplean/core/api/backlogWrites';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { ToastHost } from '../../../components/ToastHost';
 import { AddHereHarness } from '../ct/AddHereHarness';
 import { backlogView, itemRow, planningView, PROJECT } from '../ct/fixtures';

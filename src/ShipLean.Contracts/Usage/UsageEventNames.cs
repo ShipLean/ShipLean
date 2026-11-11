@@ -10,6 +10,8 @@ public static class UsageEventNames
     public const string AuthSignedOut = "auth.signed_out";
     public const string AuthPasswordChanged = "auth.password_changed";
     public const string AuthOtherSessionsSignedOut = "auth.other_sessions_signed_out";
+    public const string DeviceSessionCreated = "device_session.created";
+    public const string DeviceSessionEnded = "device_session.ended";
     public const string AgentConnected = "agent.connected";
     public const string AgentConsentDenied = "agent.consent_denied";
     public const string AgentRevoked = "agent.revoked";
@@ -57,6 +59,7 @@ public static class UsageEventNames
     public const string AttachmentAdded = "attachment.added";
     public const string AttachmentViewed = "attachment.viewed";
     public const string AttachmentArchived = "attachment.archived";
+    public const string PayloadUploadIssued = "payload_upload.issued";
     public const string LinkAdded = "link.added";
     public const string LinkStateReported = "link.state_reported";
     public const string LinkCardAdded = "link_card.added";
@@ -87,6 +90,27 @@ public static class UsageEventNames
     public const string RetroNotNeededUndone = "retro.not_needed_undone";
     public const string RetroMergeKeptApart = "retro.merge_kept_apart";
     public const string RetroActionsDecided = "retro.actions_decided";
+
+    // Decisions and questions on work items (SHIP-922). decision.answered is an MCP answer_decision; on the web a confirm or change
+    // is decision.confirmed or decision.changed (self-emitted with count and answer_kind), so an answer counts once.
+    public const string DecisionRecorded = "decision.recorded";
+    public const string DecisionAnswered = "decision.answered";
+    public const string DecisionConfirmed = "decision.confirmed";
+    public const string DecisionChanged = "decision.changed";
+    public const string DecisionWithdrawn = "decision.withdrawn";
+    public const string DecisionDiscussed = "decision.discussed";
+    public const string QuestionAsked = "question.asked";
+    public const string QuestionAnswered = "question.answered";
+    public const string QuestionWithdrawn = "question.withdrawn";
+
+    // The phone app's screens (SHIP-916 N3, SHIP-926 K5). Setting a Feature's health is a work item PATCH, tracked as
+    // work_item.updated, so it has no name here.
+    public const string RetroPointSupported = "retro.point_supported";
+    public const string RetroPointUnsupported = "retro.point_unsupported";
+    public const string FeatureDigestSeen = "feature.digest_seen";
+    public const string MentionSeen = "mention.seen";
+    public const string MentionReplied = "mention.replied";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";
@@ -110,6 +134,12 @@ public static class UsageEventNames
     public const string IssueIntakeSettingsChanged = "issue_intake.settings_changed";
     public const string ProjectDemoBrandChanged = "project_demo.brand_changed";
     public const string ProjectYouTubeChanged = "project_youtube.changed";
+    public const string BackupSettingsSaved = "backup.settings_saved";
+    public const string BackupConnectionTested = "backup.connection_tested";
+    public const string BackupRunStarted = "backup.run_started";
+
+    // System: the backup job emits it when a run ends, whatever started it.
+    public const string BackupRunFinished = "backup.run_finished";
 
     public static readonly IReadOnlySet<string> All = typeof(UsageEventNames)
         .GetFields(BindingFlags.Public | BindingFlags.Static)

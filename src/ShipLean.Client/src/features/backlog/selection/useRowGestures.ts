@@ -1,6 +1,6 @@
 import type { MouseEvent } from 'react';
 import type { HTMLAttributes } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useSelection } from './useSelection';
 
 /** What a row's `<tr>` takes from the gestures: handlers and `data-*` attributes. */

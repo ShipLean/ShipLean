@@ -143,6 +143,9 @@
     const q = new URLSearchParams(location.search);
     const theme = q.get('theme');
     if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+    // ?size=WxH draws the app at another size in points (store tablet screenshots, store/assets).
+    const size = /^(\d+)x(\d+)$/.exec(q.get('size') || '');
+    if (size) { document.documentElement.style.setProperty('--app-w', size[1] + 'px'); document.documentElement.style.setProperty('--app-h', size[2] + 'px'); }
     const mount0 = document.getElementById('app');
     if (q.has('meta')) { (mount0 || document.body).textContent = 'APPMETA' + JSON.stringify(window.APP_SCREEN) + 'ENDMETA'; return; }
     if (q.has('list')) { (mount0 || document.body).textContent = 'APPSTATES:' + window.APP_SCREEN.states.map((x) => x.id).join(',') + ':END'; return; }

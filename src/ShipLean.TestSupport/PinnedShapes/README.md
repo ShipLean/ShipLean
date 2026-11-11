@@ -13,6 +13,11 @@ These files are the contract between the database seed (`db/seed`, `SeedIds`) an
 | `me.json` | `MeDto` (Joel, as `GET /api/me` returns him), `UserDto` in every `UserStatus`, and the `user_preference` values `MeDto` reads | `app_user` + `user_preference` (read model, not stored as one document) |
 | `analytics-settings.json` | `AnalyticsSettingsDto` (`GET`/`PUT /api/instance/analytics`); provider wire values `none`, `umami`, `posthog` | `instance_settings.analytics_*` columns |
 | `analytics-test-result.json` | `AnalyticsTestResultDto` (`POST /api/instance/analytics/test`) | Not stored |
+| `backup-settings.json` | `BackupSettingsDto` (`GET`/`PUT /api/instance/backups`), examples `configured` and `notConfigured` | `backup_settings` (one row) + recent `backup_run` rows (read model) |
+| `backup-save.json` | `BackupSaveDto` (`PUT /api/instance/backups`), examples `first` and `keepSecrets` | `backup_settings` (secrets protected) |
+| `backup-run.json` | `BackupRunDto`, examples `running`, `succeeded`, `failed` and `abandoned` | `backup_run` |
+| `backup-cron-preview.json` | `CronPreviewDto` (`POST /api/instance/backups/cron-preview`, and `schedule` in the settings), examples `valid`, `invalid` and `tooOften` | Not stored |
+| `backup-test-result.json` | `BackupTestResultDto` (`POST /api/instance/backups/test`), examples `ok` and `failed` | Not stored |
 
 ## Conventions (every file)
 
@@ -248,6 +253,19 @@ Read-side DTO pieces (C# `Contracts/Refs`, TS `api/refs.ts`), never stored insid
 
 ---
 
+## `backup-*.json` — instance backups (SHIP-743)
+
+C# DTOs in `ShipLean.Contracts.Backups`, round-tripped per example by the C# DTO tests (S0c); TS types in the client's `features/settings/instance/backups/backupsApi.ts`, round-tripped by its vitest (S0d). Each file is an object whose keys are the example names; each value is one document of the typed shape. Labels are server strings (`DisplayDate.Relative` for `startedLabel`, `lastSuccessLabel`, `passphraseSetLabel`, `updatedLabel`; `DisplayDate.Format` for a next run's `label`), computed here against 2026-10-24T14:00:00Z. A `null` timestamp has a `null` label.
+
+- **Enums:** `provider` `s3`; `trigger` `scheduled` \| `manual`; `state` `running` \| `succeeded` \| `failed` (a `skipped` row is never returned as a run); `health` `ok` \| `running` \| `failing` \| `overdue` \| `neverRun` \| `notConfigured`; `attachmentStore.kind` `localDisk` \| `postgres` \| `s3`; test `step` `write` \| `read` \| `delete` \| `null`.
+- **Secrets never come back:** the settings carry `secretKeyLast4` (`null` when no secret key is saved) and no passphrase, only `passphraseGeneration` (0 = none set) and when it was set.
+- **`backup-save.json`:** `secretKey` `null` keeps the saved one and `""` clears it (then `accessKeyId` must be `null`); `passphrase` `null` keeps the saved one and is required when none is saved. `keepSecrets` is `configured` saved again without re-entering either.
+- **`runs`** are newest first, at most 20. `configured.runs` are the `succeeded`, `failed` and `abandoned` examples of `backup-run.json`.
+- **Abandoned** is not a state: it is `failed` with the error "Abandoned: the instance running it stopped.", `finishedAt` when another instance marked it, and `durationLabel` `null`.
+- **`backup-cron-preview.json`:** `invalid` doesn't parse, so it has no description or runs. `tooOften` parses but breaks the 1-hour rule, so it keeps its description and next runs to show why.
+
+---
+
 ## Open points
 
 1. **State references are state ids, not name + type.** Renaming a state then needs no JSON rewrite. The ids are pinned above and in `refs.json`, so the seed must use them.
@@ -258,7 +276,7 @@ Read-side DTO pieces (C# `Contracts/Refs`, TS `api/refs.ts`), never stored insid
 6. **Operators:** the design draws `=`, `≠` (stored `<>`), contains, not contains, `>`, `<` and All/Any. `in`, `isEmpty` and `isNotEmpty` were added because the brief asked for them, and the filters' Unassigned / Backlog choices need "empty". There's no `>=`/`<=` and no nesting.
 7. **Board filter bars aren't pinned as criteria.** The keyword spans title, key and tags, and no single field covers that. If the board stores them as criteria: people → `assignee in [..., null]`, Epic → `epic =`.
 8. **All string comparisons are case-insensitive.** The design doesn't say.
-9. **`blocked` isn't a field.** Blocked is a tag (and the `blockedBy` link type).
+9. **A Feature's health can be blocked; other items use the blocked tag and the blockedBy link.**
 10. **Added beyond the brief's kinds:** `markdown`, `checklist`, `links`. Added fields: `severity`, `description`, `acceptanceCriteria`, `reproSteps`, `links`, `createdBy`, `changedBy`, `epic` (derived, for the Features filter) and `originalUrl`. `id` is in the vocabulary, but no builder offers it.
 11. **History labels are stored snapshots** for user/state/sprint/work item and derived for everything else.
 12. **Revision 1 stores the initial values.** The design shows only "Created as …" for it.

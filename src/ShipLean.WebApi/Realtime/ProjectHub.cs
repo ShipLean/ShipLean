@@ -9,7 +9,7 @@ namespace ShipLean.WebApi.Realtime;
 // /hubs/project: the transport for IProjectEvents (events only; no co-editing), over WebSockets only. A client calls
 // JoinProject(projectId) and from then on receives that project's events as "projectEvent" messages carrying the
 // ProjectEvent JSON (the same "type"-discriminated shape as ShipLean.Contracts.Events and
-// src/ShipLean.Client/src/api/events.ts). It receives nothing for a project it has not joined. JoinScreen/LeaveScreen
+// src/ShipLean.Core.Client/src/api/events.ts). It receives nothing for a project it has not joined. JoinScreen/LeaveScreen
 // report which screen the caller is on, for presence.
 //
 // A failure is a HubException carrying "<code>: <message>"; SignalR wraps it for the client (docs/events.md). Access is

@@ -1,4 +1,4 @@
-import type { SprintDto } from '../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { Chip } from '../../components/Chip';
 
 export function SprintStatusChip({ status }: { status: SprintDto['status'] }) {

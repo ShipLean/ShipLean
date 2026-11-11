@@ -2,6 +2,8 @@ export const authTestIds = {
   instanceName: 'auth-instance-name',
   signInForm: 'auth-sign-in-form',
   note: 'auth-note',
+  appInfo: 'auth-app-info',
+  subtitle: 'auth-subtitle',
   failure: 'auth-failure',
   email: 'auth-email',
   password: 'auth-password',

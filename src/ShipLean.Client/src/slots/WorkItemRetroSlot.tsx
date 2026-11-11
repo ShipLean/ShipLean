@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { RetroActionDialogProvider } from '../features/retroShared/actionDialog/RetroActionDialogProvider';
 import { ActionWhy } from '../features/retros/actionItem/ActionWhy';
 import { WorkItemRetroSection } from '../features/retros/workItem/WorkItemRetroSection';

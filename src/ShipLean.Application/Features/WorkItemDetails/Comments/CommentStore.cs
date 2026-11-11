@@ -6,6 +6,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Inbox;
 
 namespace ShipLean.Application.Features.WorkItemDetails.Comments;
 
@@ -14,13 +15,15 @@ namespace ShipLean.Application.Features.WorkItemDetails.Comments;
 // updated_at = created_at, so "edited" (updated_at after created_at) is never true for an imported comment.
 // Add, edit, supersede and archive publish commentsChanged after the write; an import publishes nothing (it reports through importProgress),
 // and neither does an add on the caller's transaction (the caller publishes after it commits).
+// Every add and edit records the comment's @mentions through IMentionRecorder in the same transaction; an import records none.
 public sealed class CommentStore(
     NpgsqlDataSource dataSource,
     ICurrentUser currentUser,
     ICurrentAgent currentAgent,
     MarkdownRenderer renderer,
     TimeProvider clock,
-    IProjectEvents events) : ICommentStore
+    IProjectEvents events,
+    IMentionRecorder mentions) : ICommentStore
 {
     private static readonly string SelectLive = $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id AND c.archived_at IS NULL";
 
@@ -48,15 +51,24 @@ public sealed class CommentStore(
             ? throw new ArgumentException("An agent comment needs an agent name.", nameof(agentName))
             : AddOnAsync((NpgsqlConnection)transaction.Connection!, (NpgsqlTransaction)transaction, workItemId, create, agentName, authorId, cancellationToken);
 
+    public Task<CommentDto> AddInTransactionAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => AddOnAsync((NpgsqlConnection)transaction.Connection!, (NpgsqlTransaction)transaction, workItemId, create, agentName, authorId, cancellationToken);
+
     // Never starts a `prompted` webhook: only CommentEndpoints (a person's session) does that, so MCP tools, imports and agent writes never prompt.
     private async Task<CommentDto> AddStampedAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        return await AddOnAsync(connection, null, workItemId, create, agentName, authorId, cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        var added = await AddOnAsync(connection, transaction, workItemId, create, agentName, authorId, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await PublishChangedAsync(connection, workItemId, cancellationToken);
+        return added;
     }
 
+    // Writes the comment and its mentions on the transaction and publishes nothing: AddStampedAsync publishes after its own
+    // commit, and a caller's transaction is published by the caller after it commits (ICommentStore).
     private async Task<CommentDto> AddOnAsync(
-        NpgsqlConnection connection, NpgsqlTransaction? transaction, Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid workItemId, CommentCreate create, string? agentName, Guid authorId, CancellationToken cancellationToken)
     {
         var body = RequireBody(create?.Body);
         await RequireWorkItemAsync(connection, workItemId, cancellationToken, transaction);
@@ -70,31 +82,30 @@ public sealed class CommentStore(
             new { id, workItemId, authorId, body, now, agentName },
             transaction,
             cancellationToken: cancellationToken));
-        var added = await ReadAsync(connection, id, cancellationToken, transaction);
-        // On the caller's transaction nothing is published: the caller publishes after it commits (ICommentStore).
-        if (transaction is null)
-        {
-            await PublishChangedAsync(connection, workItemId, cancellationToken);
-        }
-        return added;
+        await mentions.RecordAsync(transaction, id, workItemId, body, authorId, agentName, cancellationToken);
+        return await ReadAsync(connection, id, cancellationToken, transaction);
     }
 
     public async Task<CommentDto> EditAsync(Guid id, CommentEdit edit, CancellationToken cancellationToken = default)
     {
         var body = RequireBody(edit?.Body);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         // The author check and the update are one statement, so a comment archived in between is simply not found.
-        var updated = await connection.ExecuteScalarAsync<Guid?>(new CommandDefinition(
-            "UPDATE comment SET body = @body, updated_at = @now WHERE id = @id AND archived_at IS NULL AND author_id = @me RETURNING id",
+        var updated = await connection.QuerySingleOrDefaultAsync<EditedComment>(new CommandDefinition(
+            """
+            UPDATE comment SET body = @body, updated_at = @now WHERE id = @id AND archived_at IS NULL AND author_id = @me
+            RETURNING work_item_id AS WorkItemId, author_id AS AuthorId, agent_name AS AgentName
+            """,
             new { id, body, now = clock.GetUtcNow(), me = currentUser.Id },
-            cancellationToken: cancellationToken));
-        if (updated is null)
-        {
-            await ThrowWhyNotEditedAsync(connection, id, cancellationToken);
-        }
+            transaction,
+            cancellationToken: cancellationToken))
+            ?? await ThrowWhyNotEditedAsync(connection, transaction, id, cancellationToken);
 
+        await mentions.ReconcileAsync(transaction, id, updated.WorkItemId, body, updated.AuthorId, updated.AgentName, cancellationToken);
         var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(
-            $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id", new { id }, cancellationToken: cancellationToken));
+            $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id", new { id }, transaction, cancellationToken: cancellationToken));
+        await transaction.CommitAsync(cancellationToken);
         var edited = row.ToDto(renderer, clock);
         await PublishChangedAsync(connection, edited.WorkItemId, cancellationToken);
         return edited;
@@ -159,10 +170,11 @@ public sealed class CommentStore(
             cancellationToken: cancellationToken));
     }
 
-    private static async Task ThrowWhyNotEditedAsync(NpgsqlConnection connection, Guid id, CancellationToken cancellationToken)
+    private static async Task<EditedComment> ThrowWhyNotEditedAsync(
+        NpgsqlConnection connection, NpgsqlTransaction transaction, Guid id, CancellationToken cancellationToken)
     {
         var live = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
-            "SELECT EXISTS (SELECT 1 FROM comment WHERE id = @id AND archived_at IS NULL)", new { id }, cancellationToken: cancellationToken));
+            "SELECT EXISTS (SELECT 1 FROM comment WHERE id = @id AND archived_at IS NULL)", new { id }, transaction, cancellationToken: cancellationToken));
         throw live ? ApiException.Forbidden("Only the author can edit a comment.") : ApiException.NotFound("That comment does not exist.");
     }
 
@@ -199,4 +211,6 @@ public sealed class CommentStore(
         var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(SelectLive, new { id }, transaction, cancellationToken: cancellationToken));
         return row.ToDto(renderer, clock);
     }
+
+    private sealed record EditedComment(Guid WorkItemId, Guid? AuthorId, string? AgentName);
 }

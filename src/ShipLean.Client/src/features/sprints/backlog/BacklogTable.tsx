@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { WorkItemDto } from '../../../api/workItems';
-import { conflictOf } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import { conflictOf } from '@shiplean/core/api/workItems';
 import { useProjectStates } from '../../workItem/workItemApi';
 import { useChangeItemState } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';

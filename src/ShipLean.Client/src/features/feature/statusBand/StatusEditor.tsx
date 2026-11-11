@@ -1,4 +1,4 @@
-import type { StateRef } from '../../../api/refs';
+import type { StateRef } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { StateMenu } from '../../../components/StateMenu';
 import { FieldMenu } from '../../workItem/form/FieldMenu';

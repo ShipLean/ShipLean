@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { AttachmentMarkdownDto } from '../../api/attachments';
+import type { AttachmentMarkdownDto } from '@shiplean/core/api/attachments';
 import { markdownView, stubFeature } from '../feature/ct/stubFeature';
 import { AttachmentHarness } from './ct/AttachmentHarness';
 import { harnessLocationTestId } from './ct/harnessIds';

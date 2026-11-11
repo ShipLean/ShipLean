@@ -1,4 +1,4 @@
-import type { BoardLevel } from '../../api/boards';
+import type { BoardLevel } from '@shiplean/core/api/boards';
 import { Dialog } from '../../components/Dialog';
 import { BoardSettingsView } from './BoardSettingsView';
 import { boardPaneGroupsFor, DEFAULT_BOARD_PANE } from './panes';

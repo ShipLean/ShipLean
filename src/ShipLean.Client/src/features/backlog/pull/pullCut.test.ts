@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { BULK_MAX_ROWS } from '../../../api/backlogWrites';
+import { BULK_MAX_ROWS } from '@shiplean/core/api/backlogWrites';
 import cases from '../../../../../ShipLean.TestSupport/DtoFixtures/backlog/pull-cut-cases.json';
 import { pullCut } from './pullCut';
 

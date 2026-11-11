@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { LinkCardDto } from '../../../../api/linkCards';
+import type { LinkCardDto } from '@shiplean/core/api/linkCards';
 import { inputClass } from '../../../workItem/form/inputClasses';
 import { featureTestIds as ids } from '../../testIds';
 

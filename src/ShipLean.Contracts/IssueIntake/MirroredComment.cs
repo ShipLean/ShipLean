@@ -10,4 +10,8 @@ public sealed record MirroredComment(
     string AuthorLogin,
     string Body,
     DateTimeOffset CreatedAt,
-    Guid RunAsUserId);
+    Guid RunAsUserId)
+{
+    // The agent name a mirrored comment is stamped with, before the GitHub login. Mentions are never recorded for such a comment.
+    public const string AgentNamePrefix = "GitHub @";
+}

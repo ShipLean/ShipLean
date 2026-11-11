@@ -1,4 +1,4 @@
-import { FIELD_IDS, type FieldDefinition, type FieldId } from '../api/persisted';
+import { FIELD_IDS, type FieldDefinition, type FieldId } from '@shiplean/core/api/persisted';
 
 /** The `@me` placeholder a user clause may hold; it stands for the signed-in user. */
 export const ME = '@me';

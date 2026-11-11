@@ -4,6 +4,8 @@ import { stubFeatureBoard } from './features/featureBoard/ct/stubFeatureBoard';
 import { AppRoutes } from './AppRoutes';
 import { meDto, stubInstance, stubJson } from './features/auth/authFixtures';
 import { agentsTestIds } from './features/agents/testIds';
+import { validQuery } from './features/mobileSignIn/fixtures';
+import { mobileSignInTestIds } from './features/mobileSignIn/testIds';
 import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
 import { settingsTestIds } from './features/settings/testIds';
 import { pagesTestIds } from './features/pages/testIds';
@@ -48,6 +50,7 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   profile: { path: '/profile', testId: pagesTestIds.profilePage },
   importStart: { path: '/import', testId: pagesTestIds.importPage },
   authorize: { path: '/authorize?request=r-1', testId: agentsTestIds.authorizePage },
+  mobileSignIn: { path: `/mobile/sign-in?${validQuery}`, testId: mobileSignInTestIds.page },
   storiesBacklog: { path: '/p/SHIP/backlogs/stories', testId: pagesTestIds.backlogPage },
   featuresBacklog: { path: '/p/SHIP/backlogs/features', testId: pagesTestIds.backlogPage },
   epicsBacklog: { path: '/p/SHIP/backlogs/epics', testId: pagesTestIds.backlogPage },
@@ -206,9 +209,11 @@ test('InstanceSettings_WhenOpened_ShouldLinkEveryTabAndMarkTheCurrentOne', async
     'Integrations',
     'Analytics',
     'Agents',
+    'Backups',
   ]);
   await expect(tabs.nth(4)).toHaveAttribute('href', '/instance/analytics');
   await expect(tabs.nth(5)).toHaveAttribute('href', '/instance/agents');
+  await expect(tabs.nth(6)).toHaveAttribute('href', '/instance/backups');
   await expect(tabs.nth(1)).toHaveAttribute('aria-current', 'page');
 });
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import { ToastHost } from '../../ToastHost';
 import { SettingsDialog } from '../SettingsDialog';
 import type { SaveOutcome } from '../types';

@@ -14,9 +14,12 @@ export function SessionsPanel() {
   const signOutOthers = useMutation({
     mutationFn: signOutOthersRequest,
     onSuccess: () =>
-      showToast('Signed out everywhere else and disconnected your connected agents', {
-        tone: 'ok',
-      }),
+      showToast(
+        'Signed out everywhere else, including your phones, and disconnected your connected agents',
+        {
+          tone: 'ok',
+        },
+      ),
   });
   const reset = useMutation({
     mutationFn: resetViews,
@@ -36,7 +39,7 @@ export function SessionsPanel() {
     <PanelFrame title="Sessions and saved views" testId={settingsTestIds.sessionsPanel}>
       <SessionAction
         title="Sign out everywhere else"
-        text="Ends every other session, such as a browser you forgot to sign out of, and disconnects your connected agents. This one stays signed in."
+        text="Ends every other session, such as a browser you forgot to sign out of, signs out your phones and disconnects your connected agents. This one stays signed in."
         label="Sign out others"
         testId={settingsTestIds.signOutOthers}
         pending={signOutOthers.isPending}

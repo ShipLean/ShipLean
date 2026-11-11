@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { showToast } from '../../../../components/toastStore';
-import type { WorkItemChanges } from '../../../../api/workItems';
+import type { WorkItemChanges } from '@shiplean/core/api/workItems';
 import { fetchWorkItem, patchWorkItem, workItemKey } from '../../../workItem/workItemApi';
 import { retrosRootKey } from '../../useRetroQueries';
 

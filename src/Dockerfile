@@ -7,11 +7,17 @@ FROM node:24-alpine AS frontend
 RUN corepack enable
 # The client may import design/tokens.css.
 COPY design/ /source/design/
+WORKDIR /source/src
+# The workspace is rooted at src/. pnpm-workspace.yaml holds allowBuilds; without it pnpm fails on the dependency
+# build scripts it hasn't been told about. Only the SPA and what it depends on are installed (the filter), so the
+# phone app's dependencies never enter this image.
+COPY src/package.json src/pnpm-workspace.yaml src/pnpm-lock.yaml ./
+COPY src/ShipLean.Client/package.json ./ShipLean.Client/
+COPY src/ShipLean.Core.Client/package.json ./ShipLean.Core.Client/
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile --filter shiplean-client...
+COPY src/ShipLean.Client/ ./ShipLean.Client/
+COPY src/ShipLean.Core.Client/ ./ShipLean.Core.Client/
 WORKDIR /source/src/ShipLean.Client
-# pnpm-workspace.yaml holds allowBuilds; without it pnpm fails on the dependency build scripts it hasn't been told about.
-COPY src/ShipLean.Client/package.json src/ShipLean.Client/pnpm-lock.yaml src/ShipLean.Client/pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
-COPY src/ShipLean.Client/ ./
 # Bundle only: CI's build job typechecks (tsc also covers tests).
 RUN pnpm exec vite build
 
@@ -59,9 +65,18 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 # Links the GHCR package to this repo when the image is published.
 LABEL org.opencontainers.image.source="https://github.com/ShipLean/ShipLean"
 # curl: the HEALTHCHECK below calls GET /health with it.
+# postgresql-client-18 from PGDG: backups run pg_dump, which must be at least the server's major version (Postgres 18).
+# The suite matches the base image's release (VERSION_CODENAME), and pg_dump --version fails the build if it's missing.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && . /etc/os-release \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-18 \
+    && rm -rf /var/lib/apt/lists/* \
+    && pg_dump --version
 
 WORKDIR /app
 # Before the app, so a code change doesn't invalidate this layer. World-readable, so $APP_UID can load it.

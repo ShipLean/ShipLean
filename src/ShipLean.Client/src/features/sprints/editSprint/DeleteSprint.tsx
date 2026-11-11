@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { SprintDto } from '../../../api/sprints';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { useDeleteSprint } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
 

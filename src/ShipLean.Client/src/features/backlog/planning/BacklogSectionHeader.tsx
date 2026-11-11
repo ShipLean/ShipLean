@@ -1,5 +1,5 @@
-import type { BacklogSectionDto } from '../../../api/views';
-import type { VelocityDto } from '../../../api/sprints';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
+import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionToggle } from './SectionToggle';
 import type { SectionCollapse } from './useSectionCollapse';

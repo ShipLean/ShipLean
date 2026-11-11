@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { componentTestIds } from '../../../components/testIds';
+import { asksTestIds } from '../../asks/testIds';
 import { workItemHarnessIds as harness } from '../ct/harnessIds';
 import { bug, mei, story } from '../ct/fixtures';
 import { stubApi } from '../ct/stubApi';
@@ -458,4 +459,16 @@ test('WorkItemForm_WhenTheReloadAfterSaveFails_ShouldShowTheErrorAndKeepTheDraft
     'Saved as revision 8, but reloading it failed',
   );
   await expect(screen.getByTestId(ids.points)).toHaveValue('8');
+});
+
+test('WorkItemForm_WhenStory_ShouldPlaceSectionFirst', async ({ mount, page }) => {
+  await stubApi(page, story);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));
+
+  const section = screen.getByTestId(asksTestIds.section);
+  await expect(section.getByRole('heading', { name: 'Decisions and questions' })).toBeVisible();
+  const first = await section.evaluate(
+    (element) => element.parentElement?.firstElementChild === element,
+  );
+  expect(first).toBe(true);
 });

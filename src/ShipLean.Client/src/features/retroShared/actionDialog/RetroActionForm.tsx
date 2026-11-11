@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { RetroActionDialogDto, RetroFixType } from '../../../api/retros';
+import type { RetroActionDialogDto, RetroFixType } from '@shiplean/core/api/retros';
 import { Dialog } from '../../../components/Dialog';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { retroSharedTestIds as ids } from '../testIds';

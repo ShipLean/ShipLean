@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { JiraConnectionDto, JiraKind, JiraTestResultDto } from '../../../api/import';
-import { ApiRequestError } from '../../../api/client';
+import type { JiraConnectionDto, JiraKind, JiraTestResultDto } from '@shiplean/core/api/import';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { useSaveConnection, useTestConnection } from '../importApi';
 import { importTestIds as ids } from '../testIds';
 import { ConnectionResult } from './ConnectionResult';

@@ -1,14 +1,14 @@
-import type { BoardSettingsDto } from '../../../api/boards';
-import type { BoardColumnJson } from '../../../api/persisted';
-import type { UserRef } from '../../../api/refs';
+import type { BoardSettingsDto } from '@shiplean/core/api/boards';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
+import type { UserRef } from '@shiplean/core/api/refs';
 import type {
   BoardCellDto,
   BoardColumnDto,
   BoardLaneDto,
   BoardViewDto,
   CardDto,
-} from '../../../api/views';
-import type { ChildSummaryDto } from '../../../api/workItems';
+} from '@shiplean/core/api/views';
+import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
 import { card, cell, column, lane, SETTINGS, BOARD_ID } from '../../../features/board/ct/fixtures';
 import {
   emptySettings,

@@ -1,5 +1,5 @@
-import type { UserRef } from '../../api/refs';
-import type { FeatureBoardViewDto } from '../../api/views';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
 import { TaskboardGrid } from '../taskboard/grid/TaskboardGrid';
 import type { TaskboardGrouping } from '../taskboard/taskboardApi';
 import type { TaskboardScope } from '../taskboard/taskboardScope';

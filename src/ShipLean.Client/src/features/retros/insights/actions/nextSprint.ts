@@ -1,4 +1,4 @@
-import type { SprintDto } from '../../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 
 /** The sprint an action item is pulled into: the earliest sprint that has not started, or undefined when there is none. */
 export const nextSprintOf = (sprints: readonly SprintDto[]): SprintDto | undefined =>

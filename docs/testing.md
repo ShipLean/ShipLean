@@ -9,7 +9,7 @@ container (`RedisServer`; each test class takes its own channel prefix, so they 
 ```bash
 shiplean-test src/ShipLean.UnitTest
 shiplean-test src/ShipLean.WebApi.Tests --filter "FullyQualifiedName~ShipLean.WebApi.Tests.Harness"
-(cd src/ShipLean.Client && pnpm install --frozen-lockfile && pnpm run build)   # acceptance tests serve this bundle
+(cd src && pnpm install --frozen-lockfile && cd ShipLean.Client && pnpm run build)   # acceptance tests serve this bundle
 shiplean-test src/ShipLean.AcceptanceTests --filter "FullyQualifiedName~ShipLean.AcceptanceTests.Harness."
 ```
 

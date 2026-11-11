@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { RETRO_CATEGORIES } from '../../../api/retros';
+import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { routePath } from '../../../routes';
 import { RetroQueryState } from '../RetroQueryState';
 import { CategoryHead } from '../features/CategoryHead';

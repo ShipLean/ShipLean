@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ApiRequestError } from '../../../api/client';
-import type { MeDto } from '../../../api/me';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { MeDto } from '@shiplean/core/api/me';
 import { routePath } from '../../../routes';
 import { useDebouncedValue } from '../../workItem/form/description/useDebouncedValue';
 import { settingsTestIds as ids } from '../testIds';

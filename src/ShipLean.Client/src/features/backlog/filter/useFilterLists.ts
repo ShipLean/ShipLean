@@ -1,6 +1,6 @@
-import type { StateDto } from '../../../api/projects';
-import type { StateRef } from '../../../api/refs';
-import { isStoryLevel, typeName } from '../../../api/workItemTypes';
+import type { StateDto } from '@shiplean/core/api/projects';
+import type { StateRef } from '@shiplean/core/api/refs';
+import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import type { PickLists } from '../../../criteria/valueOptions';
 import type { Level } from '../../../routes';
 import { useProjectMembers, useProjectSprints, useProjectStates } from '../../workItem/workItemApi';

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { CapacityBar } from '../../../components/CapacityBar';
 import { Chip } from '../../../components/Chip';
-import type { BacklogRowDto, BacklogSectionDto } from '../../../api/views';
+import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import { backlogTestIds as ids } from '../testIds';
 import type { PullLine } from './usePullLine';
 

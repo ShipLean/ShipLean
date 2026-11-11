@@ -6,9 +6,11 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Mcp.Payloads;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Writes;
@@ -23,23 +25,27 @@ internal sealed class FeatureTools(
 {
     private const string SetStatusVia = "set_status";
     private const string CreateFeatureVia = "create_feature";
+    private const string HealthDescription = "Feature health: onTrack, atRisk or blocked. Set explicitly; a status that says blocked doesn't set it.";
 
     [McpServerTool(Name = "set_status"), McpScope(McpScopes.Write)]
-    [Description("Write a Feature's one-line status (up to 500 characters) and stamp it verified now, by you and through this tool, even when the text is unchanged. Call this at the end of every session on a Feature, even when nothing changed, so it shows the Feature was checked. Optionally move the Feature to a state by name in the same write. Only a Feature has a status.")]
+    [Description("Write a Feature's one-line status (up to 500 characters) and stamp it verified now, by you and through this tool, even when the text is unchanged. Call this at the end of every session on a Feature, even when nothing changed, so it shows the Feature was checked. Optionally move the Feature to a state by name, and set its health (onTrack, atRisk or blocked), in the same write. Feature health: set explicitly; a status that says blocked doesn't set it. Only a Feature has a status.")]
     public async Task<CallToolResult> SetStatus(
         [Description("The Feature's key, such as SHIP-12.")] string feature,
         [Description("The status, one line.")] string status,
         [Description("Move the Feature to this state, by name, in the same write.")] string? state = null,
+        [Description(HealthDescription)] string? health = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await itemResolver.ResolveAsync(feature, ProjectRole.Member, field: "feature", cancellationToken: cancellationToken);
+        var parsedHealth = ParseHealth(health);
         var snapshot = await store.GetAsync(resolved.Id, cancellationToken);
         var target = string.IsNullOrWhiteSpace(state) ? null : await states.ResolveAsync(snapshot.ProjectId, snapshot.Type, state, cancellationToken: cancellationToken);
 
         var changes = new WorkItemChanges
         {
             StatusLine = new FieldSet<string>(status ?? string.Empty),
-            State = target is { } t && t.Id != snapshot.StateId ? new FieldSet<Guid>(t.Id) : null,
+            State = MovedTo(target?.Id, snapshot.StateId),
+            Health = parsedHealth is { } h ? new FieldSet<FeatureHealth?>(h) : null,
         };
         var written = await writes.PatchAsync(resolved.Id, resolved.Key, changes, snapshot.Revision, false, SetStatusVia, cancellationToken);
 
@@ -52,8 +58,8 @@ internal sealed class FeatureTools(
         return CaptureSupport.Reply(result, $"{resolved.Key} status is \"{result.Status}\", verified {result.Verified?.Label}, revision {result.Revision}.");
     }
 
-    [McpServerTool(Name = "create_feature"), McpScope(McpScopes.Write)]
-    [Description("Create a Feature when an idea first comes up, before any research: search first, then use this with a goal. Optionally set its one-line status, state, epic and slug. The slug is its short name in addresses; it defaults to one made from the title and can't be changed later. Name the project when the user is in more than one.")]
+    [McpServerTool(Name = "create_feature"), McpScope(McpScopes.Write), McpPayload]
+    [Description("Create a Feature when an idea first comes up, before any research: search first, then use this with a goal. Optionally set its one-line status, health (onTrack, atRisk or blocked), state, epic and slug. The slug is its short name in addresses; it defaults to one made from the title and can't be changed later. Name the project when the user is in more than one. When the arguments are already in a file or are over about 20 KB, upload them with create_payload_upload (curl -T) and pass payload.")]
     public async Task<CallToolResult> CreateFeature(
         [Description("The Feature's title.")] string title,
         [Description("The goal: what the Feature is for.")] string goal,
@@ -62,10 +68,13 @@ internal sealed class FeatureTools(
         [Description("Lower-case words joined by hyphens, at most 64 characters. Defaults to one made from the title.")] string? slug = null,
         [Description("The one-line status. Stamps it verified now, by you.")] string? status = null,
         [Description("Start the Feature in this state, by name.")] string? state = null,
+        [Description(HealthDescription)] string? health = null,
+        [Description(McpPayloadTargets.ArgumentDescription)] string? payload = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await projects.ResolveAsync(project, forWrite: true, cancellationToken);
         await access.RequireAsync(resolved.Id, ProjectRole.Member, cancellationToken);
+        var parsedHealth = ParseHealth(health);
         if (string.IsNullOrWhiteSpace(title))
         {
             throw ApiException.Validation("A Feature needs a title.", "title");
@@ -77,7 +86,7 @@ internal sealed class FeatureTools(
 
         var create = new WorkItemCreate(
             resolved.Id, WorkItemTypeId.Feature, title.Trim(), parent?.Id, null,
-            target is null ? null : new WorkItemChanges { State = new FieldSet<Guid>(target.Id) })
+            InitialChanges(target?.Id, parsedHealth))
         {
             Goal = goal ?? string.Empty,
             StatusLine = hasStatus ? status! : string.Empty,
@@ -92,6 +101,39 @@ internal sealed class FeatureTools(
             resolved.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), resolved.Key, written.Key), written.Key,
             after.Title, after.Slug, names.StateName, after.StatusLine, VerifiedLine.Of(after, ByName(names, after), clock), written.Revision);
         return CaptureSupport.Reply(result, $"Created Feature {written.Key} \"{result.Title}\" with slug {result.Slug}.");
+    }
+
+    private static FieldSet<Guid>? MovedTo(Guid? target, Guid current) => target is { } id && id != current ? new FieldSet<Guid>(id) : null;
+
+    private static WorkItemChanges? InitialChanges(Guid? stateId, FeatureHealth? health)
+    {
+        if (stateId is null && health is null)
+        {
+            return null;
+        }
+
+        return new WorkItemChanges
+        {
+            State = stateId is { } id ? new FieldSet<Guid>(id) : null,
+            Health = health is { } h ? new FieldSet<FeatureHealth?>(h) : null,
+        };
+    }
+
+    // Only the three names, case-insensitive (no numbers, no comma lists); anything else is a validation error on health. The rules about where health may be set are the store's.
+    private static FeatureHealth? ParseHealth(string? health)
+    {
+        if (string.IsNullOrWhiteSpace(health))
+        {
+            return null;
+        }
+
+        var trimmed = health.Trim();
+        if (Enum.GetNames<FeatureHealth>().Contains(trimmed, StringComparer.OrdinalIgnoreCase))
+        {
+            return Enum.Parse<FeatureHealth>(trimmed, ignoreCase: true);
+        }
+
+        throw ApiException.Validation("Health is onTrack, atRisk or blocked.", "health");
     }
 
     private static string? ByName(ItemNames names, WorkItemSnapshot after)

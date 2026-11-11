@@ -200,32 +200,32 @@ const answerSheet = `<div class="scrim"></div><div class="sheet preview answer">
   <div class="ans-list">
     <div class="ans-row"><div class="main"><div class="t">Shared-branch merge conflicts</div><div class="why">3 this sprint, up from 0 in S21 · no action item yet</div></div>${icon('chevron', 'sm')}</div>
     <div class="ans-row"><div class="main"><div class="t">Screenshot baselines need CI</div><div class="why">2 this sprint · SHIP-960 is still in New</div></div>${icon('chevron', 'sm')}</div></div>
-  <div class="go"><button class="btn">${icon('speaker', 'sm')}Read it out</button><button class="btn primary">Show themes</button></div>
+  <div class="go"><button class="btn">Done</button><button class="btn primary">Show themes</button></div>
   <div class="say-yes">Try “make an action for the first one”</div></div>`;
 
 App.screen({ title: 'Retro', states: [
   { id: 'retro', title: 'Sprint retro', note: 'Current sprint’s retro: one category, grouped by theme.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 5 }) }) },
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 15 }) }) },
   { id: 'dictate', title: 'Dictating a note', note: 'Dictating a point; no category said.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'live', inbox: 5 }),
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'live', inbox: 15 }),
       overlay: listening({ ctx: '<b>Sprint 25 retro</b> · your points', words: 'Retro note: we should profile the small model on the S22 before <span class="hot">SHIP&#8209;906</span>', partial: 'gets more voice actions', tries: ['plus one that', 'make that an action for…', 'what keeps going wrong?'] }) }) },
   { id: 'dictate-preview', title: 'Preview: new point', note: 'Word-for-word point; the model picked the category.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'busy', inbox: 5 }),
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { mic: 'busy', inbox: 15 }),
       overlay: withPicker(preview({ ctx: '<b>Your retro</b> · Sprint 25', heard: 'Retro note: we should profile the small model on the S22 before SHIP-906 gets more voice actions',
         acts: [{ kind: 'note', title: 'New point in Can be improved', detail: 'About SHIP-906 · ShipLean picks the theme', quote: 'We should profile the small model on the S22 before SHIP&#8209;906 gets more voice actions.' }] }), 'improve') }) },
   { id: 'agree', title: '+1 on a point', note: '+1 on a point, with undo.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly({ agreed: true }), bottom: tabBar('retro', { inbox: 5 }), overlay: toast('+1 added to lane C’s point', { bottom: 124 }) }) },
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly({ agreed: true }), bottom: tabBar('retro', { inbox: 15 }), overlay: toast('+1 added to lane C’s point', { bottom: 124 }) }) },
   { id: 'action-preview', title: 'Make that an action', note: '“Make that an action for Priya” on the touched point.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: canImprove({ skipTiles: true }), bottom: tabBar('retro', { mic: 'busy', inbox: 5 }),
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: canImprove({ skipTiles: true }), bottom: tabBar('retro', { mic: 'busy', inbox: 15 }),
       overlay: preview({ ctx: '<b>Point</b> by Claude Code', heard: 'Make that an action for Priya',
         acts: [{ kind: 'field', icon: 'plus', title: 'New action item', detail: 'Starts in New, no sprint', quote: 'Give each lane its own migration number range in the plan.' },
           { kind: 'field', icon: 'user', title: 'Owner: Priya' },
           { kind: 'approve', title: 'Point decided: actioned', detail: 'Linked to the new action item' }] }) }) },
   { id: 'decide', title: 'To decide', note: 'Agent retros waiting on a person.',
-    render: () => frame({ top: retroTop(), sub: seg('decide'), body: decideBody, bottom: tabBar('retro', { inbox: 5 }) }) },
+    render: () => frame({ top: retroTop(), sub: seg('decide'), body: decideBody, bottom: tabBar('retro', { inbox: 15 }) }) },
   { id: 'features', title: 'Features and recurring themes', note: 'Recurring themes over 6 sprints, then Features.',
-    render: () => frame({ top: retroTop(), sub: seg('features'), body: featuresBody, bottom: tabBar('retro', { inbox: 5 }) }) },
+    render: () => frame({ top: retroTop(), sub: seg('features'), body: featuresBody, bottom: tabBar('retro', { inbox: 15 }) }) },
   { id: 'answer', title: 'What keeps going wrong?', note: 'A question answered on screen.',
-    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 5 }), overlay: answerSheet }) },
+    render: () => frame({ top: retroTop(), sub: seg('notes'), body: wentBadly(), bottom: tabBar('retro', { inbox: 15 }), overlay: answerSheet }) },
 ]});
 </script></body></html>

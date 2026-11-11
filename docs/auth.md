@@ -106,7 +106,7 @@ Agents and webhooks have no browser session at the proxy. Tell the proxy not to 
 - `/oauth/register`
 - `/oauth/revoke`
 - `/.well-known/`
-- `/api/uploads/`. The one-time URL token an agent got from `attach_file` is the proof ([`mcp.md`](mcp.md#upload-urls)); it works with `curl -T` and no header, so `CrossSiteWriteGuard` lets it through. That includes `POST /api/uploads/demo?token=`, the sprint demo upload: a multipart `curl -F` carrying a 24-hour token, whose size can reach `SHIPLEAN_DEMO_MAX_BYTES` (200 MiB by default), so the proxy's request body limit must allow it on this path. A proxy's access log can hold that token in the query string ([`sprint-demos.md`](sprint-demos.md#the-upload)).
+- `/api/uploads/`. The one-time URL token an agent got from `attach_file` is the proof ([`mcp.md`](mcp.md#upload-urls)); `PUT /api/uploads/payloads/{token}` takes a `create_payload_upload` token the same way ([`mcp.md`](mcp.md#payload-uploads)); it works with `curl -T` and no header, so `CrossSiteWriteGuard` lets it through. That includes `POST /api/uploads/demo?token=`, the sprint demo upload: a multipart `curl -F` carrying a 24-hour token, whose size can reach `SHIPLEAN_DEMO_MAX_BYTES` (200 MiB by default), so the proxy's request body limit must allow it on this path. A proxy's access log can hold that token in the query string ([`sprint-demos.md`](sprint-demos.md#the-upload)).
 - `/api/downloads/`. The short-lived URL token an agent got from `read_attachment` is the proof ([`mcp.md`](mcp.md#download-urls)); it is a GET, so `CrossSiteWriteGuard` does not apply. That includes `GET /api/downloads/demo-logo?token=`, the project's demo logo for the agent making a demo.
 - `/api/webhooks/`, when webhooks are on. Each one proves the caller with its own shared secret ([`webhooks.md`](webhooks.md)). The sender must post JSON (for GitHub, set the content type to `application/json`), because proxy mode guards every write.
 
@@ -166,6 +166,48 @@ SHIPLEAN_TRUSTED_PROXIES=<the address your reverse proxy connects from>
 ```
 
 Warning: anyone who can reach ShipLean directly, without going through the reverse proxy, can send `Remote-Email: admin@example.com` and be that person. Don't publish ShipLean's port. Put it on a private network with the proxy only. Note that loopback trusts every process on the host. Make the reverse proxy overwrite `Remote-Email` and `Remote-Name` from Authelia's reply rather than pass a client's copy. The skipped paths are the risk: the proxy lets them through unchecked, so make sure it still strips `Remote-Email` and `Remote-Name` there. ShipLean reads them on `/.well-known/` and `/api/webhooks/`. If you can't close the network, use a proxy that sends a token.
+
+## Device sessions (mobile app)
+
+The ShipLean phone app signs in through the browser and then calls `/api` with a bearer secret instead of the cookie.
+
+### The scheme and where it is accepted
+
+- A device session is a bearer secret, `shl_dev_…`, sent as `Authorization: Bearer`. Only its hash is stored (`device_session`); codes live in `device_sign_in_code`.
+- It works in **password mode only**, on `/api` and `/hubs`. On `/hubs` the secret may also come as the `access_token` query parameter (a WebSocket can't send a header); on `/api` the query is ignored.
+- `/mcp` tokens never work on `/api`, and a device secret never works on `/mcp`.
+- A bearer can use every `/api` endpoint except minting codes: `POST /api/auth/device-sessions/codes` is cookie only and answers 403 to a device bearer (Joel, 9 Nov).
+- **Identity-proxy mode refuses it.** The server doesn't mint codes there (400), and the confirm page says the app can't sign in to this server yet.
+- The `access_token` query carries the device secret. Production logs at Warning and tracing nulls `url.query`, but in Development (`Microsoft.AspNetCore` at Information) the hosting "Request starting" line logs the full URL, and a reverse proxy's access log (Caddy, for one) records query strings. Operators should drop query strings for `/hubs` in proxy logs.
+
+### Lifetime and what ends a session
+
+- 90 days, sliding: use extends it (touched at most once a minute). A session that has expired is never revived by use.
+- A request with a revoked or expired secret, a disabled user, or a changed security stamp answers 401 `session_ended`. The stamp changes on a password change, "Sign out everywhere else", an admin's one-time password, an email change, disabling the user, and linking Google sign-in to the account.
+- The person revokes a phone from Your profile > Signed-in devices (`DELETE /api/auth/device-sessions/{id}`); the app signs itself out with `DELETE /api/auth/device-sessions/current`.
+- A revoked or expired session's open hub socket is dropped (SHIP-1054, fixed). The hub check used to compare only the stamp.
+
+### The handoff (PKCE)
+
+1. The app makes a random verifier and state, and opens `{origin}/mobile/sign-in?challenge=<S256(verifier)>&state=…&device=<name>` in the system browser.
+2. The confirm page (signed in with the cookie, or `/login` first, which names the device) shows As / On / To and a warning. Cancel mints nothing and redirects to the app with `error=cancelled`.
+3. Sign in calls `POST /api/auth/device-sessions/codes` (cookie only). The code is single use, lives 2 minutes, and stores the user's security stamp at that moment. The page then shows **Open the app**, a link to `shiplean://signed-in?code=…&state=…&iss=<origin>`.
+4. The app checks `state` and `iss`, then calls `POST /api/auth/device-sessions/exchange` (anonymous) with `{ code, verifier }`. The answer is 201 with `{ session, secret, me }` and `Cache-Control: no-store`. A wrong verifier, a used code and an expired code all answer 400 `Sign-in expired. Try again.`, and a wrong verifier still uses the code up.
+5. Other endpoints: `GET /api/auth/device-sessions` (list, `current` marks the caller's), `DELETE /api/auth/device-sessions/{id}`, `DELETE /api/auth/device-sessions/current`.
+
+**The issuer check.** The confirm page puts its own origin in `iss` (RFC 9207). The app refuses a redirect whose `iss` isn't the server origin the person typed, and makes no exchange. Without it, a malicious server A typed into the app could answer `/mobile/sign-in` with a redirect to the real server B; the person confirms on B's genuine page, and A would receive the app's code and verifier and replay them at B. A can't change what B's page emits, because the redirect goes from the browser straight to the app. Error redirects carry `iss` and are checked the same way.
+
+Accepted deviations in the app: its server check is a plain `fetch` to the typed origin (not `getHealth`), and it runs once when the Sign in screen opens as well as on blur.
+
+### Analytics
+
+Every tracked action made with a device bearer carries the `app` surface, decided from the authenticated principal's device-session claim (`UsageSurfaces.Of`), never from a header. `device_session.created` (tagged `app` explicitly at the exchange call site, since that request has no bearer yet) and `device_session.ended` (with a `reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`).
+
+### Accepted risks and behaviour
+
+- Logout with a bearer leaves the device session alive; the app signs out with `DELETE …/current`.
+- A password change or "Sign out everywhere else" from the phone also ends that phone's own session. They answer with a fresh cookie, which the app ignores (`credentials: 'omit'`).
+- Another app that registers the `shiplean://` scheme could receive a code for a flow it started itself. The confirm page's wording ("Only sign in if you just tapped Sign in in the ShipLean app") is the defence; PKCE protects against a code stolen from a flow the real app started.
 
 ## Access to a project
 

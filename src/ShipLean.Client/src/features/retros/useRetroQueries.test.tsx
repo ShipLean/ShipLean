@@ -12,7 +12,7 @@ vi.mock('../../realtime', () => ({
   },
 }));
 // A refetch that never ends keeps the query marked invalidated, so the mark can be read.
-vi.mock('../../api/retrosApi', () => {
+vi.mock('@shiplean/core/api/retrosApi', () => {
   const pending = () => new Promise(() => {});
   return {
     fetchSprintRetro: pending,

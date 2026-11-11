@@ -1,5 +1,5 @@
-import type { SprintRef } from '../../../api/refs';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 
 /** A read of Planning with the revision and sprint a write answered put on its row. */
 export function withWritten(

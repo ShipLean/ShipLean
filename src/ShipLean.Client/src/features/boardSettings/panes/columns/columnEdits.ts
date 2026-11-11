@@ -1,6 +1,6 @@
-import type { StateRef, WorkItemTypeId } from '../../../../api/refs';
-import type { BoardColumnJson } from '../../../../api/persisted';
-import type { BoardTypeStatesDto } from '../../../../api/boards';
+import type { StateRef, WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BoardColumnJson } from '@shiplean/core/api/persisted';
+import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 
 export const typeNames: Record<WorkItemTypeId, string> = {
   epic: 'Epic',

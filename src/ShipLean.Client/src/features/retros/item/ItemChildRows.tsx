@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { RETRO_CATEGORIES, type RetroCategory, type RetroItemDto } from '../../../api/retros';
+import { RETRO_CATEGORIES, type RetroCategory, type RetroItemDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';
 import { retroCategoryColours, retroCategoryLabels } from '../../retroShared/retroCategories';

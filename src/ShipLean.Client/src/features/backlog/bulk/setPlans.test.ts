@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import type { StateDto } from '../../../api/projects';
+import type { StateDto } from '@shiplean/core/api/projects';
 import { itemRow } from '../ct/fixtures';
 import { removePlan, setStatePlan, setTagPlan, stateNamesFor } from './setPlans';
 

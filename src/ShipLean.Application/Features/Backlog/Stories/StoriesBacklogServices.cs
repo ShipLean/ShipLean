@@ -13,6 +13,7 @@ public sealed class StoriesBacklogServices : IServiceModule
     {
         services.TryAddScoped<BacklogTriage>();
         services.AddScoped<BacklogPlanning>();
+        services.TryAddScoped<BacklogRowExtras>();
         services.AddScoped<IStoriesBacklogReads, StoriesBacklogReads>();
     }
 }

@@ -1,4 +1,4 @@
-import type { SprintCapacityDto, SprintDto, SprintMetricsDto } from '../../../api/sprints';
+import type { SprintCapacityDto, SprintDto, SprintMetricsDto } from '@shiplean/core/api/sprints';
 import { Link } from 'react-router-dom';
 import { routePath } from '../../../routes';
 import { sprintsTestIds as ids } from '../testIds';

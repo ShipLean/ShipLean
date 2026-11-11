@@ -8,7 +8,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { BoardViewDto } from '../../../api/views';
+import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { BoardContext } from '../grid/boardContext';
 import type { DropTarget } from './applyMove';
 import { BoardMovesContext, type BoardMoves } from './BoardMovesContext';

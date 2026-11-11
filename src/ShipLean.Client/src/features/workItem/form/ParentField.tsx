@@ -1,6 +1,6 @@
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '../../../api/refs';
-import { isStoryLevel } from '../../../api/workItemTypes';
-import type { ParentRefDto } from '../../../api/workItems';
+import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { workItemTestIds as ids } from '../testIds';
 import { ItemLink } from '../../itemPeek/ItemLink';

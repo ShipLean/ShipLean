@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog } from '../../../../components/Dialog';
-import type { ProjectDto } from '../../../../api/projects';
-import type { RetroThemeOptionDto } from '../../../../api/retros';
-import { mergeRetroThemes } from '../../../../api/retrosApi';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { RetroThemeOptionDto } from '@shiplean/core/api/retros';
+import { mergeRetroThemes } from '@shiplean/core/api/retrosApi';
 import { retrosTestIds as ids } from '../../testIds';
 import { retrosRootKey } from '../../useRetroQueries';
 

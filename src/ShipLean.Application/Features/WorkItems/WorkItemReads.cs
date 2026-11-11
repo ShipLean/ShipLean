@@ -10,6 +10,7 @@ using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -18,13 +19,14 @@ namespace ShipLean.Application.Features.WorkItems;
 // The work item read model by SQL: WorkItemDto with its refs, rendered markdown, children, links and labels. Callers check
 // IProjectAccess first. The store reuses it (inside its transaction) to build the conflict body.
 [RegisterPerRequest]
-public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time)
+public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, IWorkItemExtras extras)
 {
     public async Task<WorkItemDto> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await WorkItemQueries.RowsAsync(connection, null, $"{WorkItemRow.Select} WHERE w.id = @id", new { id }, cancellationToken);
-        return (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        var item = (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        return await extras.ApplyAsync(item, cancellationToken);
     }
 
     // The key is matched exactly (keys are stored upper case); an unknown key and another project's key are both not found.
@@ -32,7 +34,8 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await WorkItemQueries.RowsAsync(connection, null, $"{WorkItemRow.Select} WHERE w.project_id = @projectId AND w.key = @key", new { projectId, key = key.ToUpperInvariant() }, cancellationToken);
-        return (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        var item = (await BuildAsync(connection, null, rows, cancellationToken)).SingleOrDefault() ?? throw ApiException.NotFound("Work item not found.");
+        return await extras.ApplyAsync(item, cancellationToken);
     }
 
     // Backlog order; items in the Removed category are left out.
@@ -104,7 +107,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             .Select(a => a.ToDto(time)).Where(a => a.Kind == AttachmentKind.Image).ToList();
         var users = await UsersAsync(
             connection, transaction,
-            [.. rows.SelectMany(r => new[] { r.AssigneeId, r.CreatedBy, r.ChangedBy, r.StatusVerifiedBy }).Concat(children.Select(c => c.AssigneeId)).OfType<Guid>().Distinct()],
+            [.. rows.SelectMany(r => new[] { r.AssigneeId, r.CreatedBy, r.ChangedBy, r.StatusVerifiedBy, r.HealthSetBy }).Concat(children.Select(c => c.AssigneeId)).OfType<Guid>().Distinct()],
             cancellationToken);
         var states = (await connection.QueryAsync<StateRow>(new CommandDefinition(
             "SELECT id, name, category FROM state WHERE id = ANY(@ids)",
@@ -178,7 +181,12 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
                 : null,
             row.Slug,
             row.StartedOn,
-            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null);
+            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
+            row.HealthValue,
+            row.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), Lookup(users, row.HealthSetBy), row.HealthSetAgent) : null,
+            // TODO: roll up the children's counts and count open asks for NeedsYou.
+            [],
+            null);
     }
 
     private static UserRef? Lookup(IReadOnlyDictionary<Guid, UserRef> users, Guid? id) => id is { } value ? users.GetValueOrDefault(value) : null;

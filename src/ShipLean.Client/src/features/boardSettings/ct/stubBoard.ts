@@ -1,5 +1,5 @@
-import type { BoardSettingsDto, BoardSettingsPut } from '../../../api/boards';
-import type { StyleRuleJson } from '../../../api/persisted';
+import type { BoardSettingsDto, BoardSettingsPut } from '@shiplean/core/api/boards';
+import type { StyleRuleJson } from '@shiplean/core/api/persisted';
 import { BOARD_ID, PROJECT_ID } from './boardSettingsFixtures';
 
 interface StubbedRoute {

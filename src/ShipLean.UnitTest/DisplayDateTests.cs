@@ -1,4 +1,5 @@
 using ShipLean.Core;
+using ShipLean.TestSupport;
 
 namespace ShipLean.UnitTest;
 
@@ -10,6 +11,91 @@ public class DisplayDateTests
     public void WeekdayDay_WhenDate_ReturnsWeekdayDayMonth(string day, string expected)
     {
         DisplayDate.WeekdayDay(DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(expected);
+    }
+
+    // 20:00 UTC is 03:00 the next day at +07:00, so the weekday is the next day's.
+    [Test]
+    public void Weekday_WhenTheZoneIsOnTheNextDay_ShouldNameTheLocalWeekday()
+    {
+        var clock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(TestDates.Today);
+        clock.SetLocalTimeZone(TimeZoneInfo.CreateCustomTimeZone("Test+07", TimeSpan.FromHours(7), "Test+07", "Test+07"));
+        var value = TestDates.Today.AddHours(20);
+
+        DisplayDate.Weekday(value, clock).ShouldBe(TestDates.Today.AddDays(1).ToString("ddd", System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Test]
+    public void Age_WhenUnderAnHour_ShouldSayNow()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddMinutes(-59), now).ShouldBe("now");
+    }
+
+    [Test]
+    public void Age_WhenOneHour_ShouldSay1h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-1), now).ShouldBe("1h");
+    }
+
+    [Test]
+    public void Age_When23Hours_ShouldSay23h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-23).AddMinutes(-59), now).ShouldBe("23h");
+    }
+
+    [Test]
+    public void Age_WhenOneDay_ShouldSay1d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-1), now).ShouldBe("1d");
+    }
+
+    [Test]
+    public void Age_WhenSixDays_ShouldSay6d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-6).AddHours(-23), now).ShouldBe("6d");
+    }
+
+    [Test]
+    public void Age_WhenSevenDays_ShouldSay1w()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-7), now).ShouldBe("1w");
+        DisplayDate.Age(now.AddDays(-20), now).ShouldBe("2w");
+    }
+
+    // Off the boundary: a value just under the next unit rounds down, never up.
+    [Test]
+    public void Age_WhenOneHourFiftyNineMinutes_ShouldSay1h()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddHours(-1).AddMinutes(-59), now).ShouldBe("1h");
+    }
+
+    [Test]
+    public void Age_WhenOneDayTwentyThreeHours_ShouldSay1d()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-1).AddHours(-23), now).ShouldBe("1d");
+    }
+
+    [Test]
+    public void Age_WhenThirteenDays_ShouldSay1w()
+    {
+        var now = TestDates.Today.AddHours(12);
+
+        DisplayDate.Age(now.AddDays(-13), now).ShouldBe("1w");
     }
 
     [Test]

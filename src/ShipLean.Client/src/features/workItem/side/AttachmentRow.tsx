@@ -1,4 +1,4 @@
-import type { AttachmentDto } from '../../../api/attachments';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
 import { workItemTestIds as ids } from '../testIds';
 import { formatSize } from './fileSize';
 

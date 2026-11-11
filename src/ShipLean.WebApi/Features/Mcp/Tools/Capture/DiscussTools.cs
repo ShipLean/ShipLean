@@ -18,7 +18,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 internal sealed class DiscussTools(ItemResolver itemResolver, IWorkItemStore store, ICommentStore comments, StaleWrites writes, CaptureSupport support, ILinkCards linkCards, ICurrentAgent agent)
 {
     [McpServerTool(Name = "comment"), McpScope(McpScopes.Write)]
-    [Description("Add a comment to a work item. On a Feature this is its session log: add one at the end of every working session. Plain text only; @mentions do not notify anyone yet. It shows as the person's comment, via this agent.")]
+    [Description("Add a comment to a work item. On a Feature this is its session log: add one at the end of every working session. Plain text only. An @Full Name of a project member puts the comment in their Inbox. It shows as the person's comment, via this agent.")]
     public async Task<CallToolResult> Comment(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("The comment, in plain text.")] string text,

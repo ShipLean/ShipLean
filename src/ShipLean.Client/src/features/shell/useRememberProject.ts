@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import type { ProjectSummaryDto } from '../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { projectsKey } from '../../queries/shared';
 import { recentProjectsKey, saveRecentProjectIds, withRecent } from './shellApi';
 import { useRecentProjectIds } from './useShellQueries';

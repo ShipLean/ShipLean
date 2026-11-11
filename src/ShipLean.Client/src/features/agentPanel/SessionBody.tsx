@@ -1,4 +1,8 @@
-import type { AgentActivityDto, AgentPlanStatus, AgentSessionDto } from '../../api/agentSessions';
+import type {
+  AgentActivityDto,
+  AgentPlanStatus,
+  AgentSessionDto,
+} from '@shiplean/core/api/agentSessions';
 import { agentPanelTestIds as ids } from './testIds';
 
 const planGlyph: Record<AgentPlanStatus, { glyph: string; label: string }> = {

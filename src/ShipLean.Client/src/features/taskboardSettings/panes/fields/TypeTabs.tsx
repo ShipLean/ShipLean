@@ -1,4 +1,4 @@
-import type { WorkItemTypeId } from '../../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import { taskboardSettingsTestIds as ids } from '../../testIds';
 

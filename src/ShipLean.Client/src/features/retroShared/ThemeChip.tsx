@@ -1,5 +1,5 @@
 import { Chip } from '../../components/Chip';
-import type { RetroThemeRefDto } from '../../api/retros';
+import type { RetroThemeRefDto } from '@shiplean/core/api/retros';
 import { retroSharedTestIds as ids } from './testIds';
 
 /**

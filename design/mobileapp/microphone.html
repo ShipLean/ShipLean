@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Microphone refused on the phone app (SHIP-905, voice from SHIP-906): what happens when someone says no to the
+  microphone, at setup step 3 or later, on iPhone and Android, and how they turn it back on. Answers setup.md's open
+  question "If the microphone is refused, what does the mic do?". Builds on voice.md D4 (crossed-out mic + sheet).
+  Design notes and decisions: microphone.md. ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+.pad { padding: 0 var(--app-gutter); }
+h2.h { font-size: var(--app-text-lg); line-height: 1.25; font-weight: 650; letter-spacing: -.01em; margin: 6px 0 6px; }
+.lead { font-size: var(--app-text); color: var(--color-muted); margin: 0; }
+.setup .content, .setup .status { background: var(--color-surface); }
+.setup .topbar { border-bottom: 0; }
+.foot { flex: none; padding: 10px var(--app-gutter) calc(var(--app-home) - 2px); background: var(--color-surface); border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 4px; position: relative; z-index: 5; }
+.foot .small { text-align: center; font-size: var(--app-text-xs); color: var(--color-muted); padding-top: 4px; }
+.nw { white-space: nowrap; }
+.lead, .note-list li, .sheet p, .mic-card p, .coachmark p, .settings .row .t, .settings .row .m, .steps .r .k { overflow-wrap: anywhere; min-width: 0; }
+
+/* Setup step 3 (as setup.html `microphone`) */
+.tiny-dl { display: flex; align-items: center; gap: 8px; margin: 8px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.mic-intro { padding: 32px var(--app-gutter) 0; }
+.mic-big { width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); margin-bottom: 24px; }
+.mic-big svg.i { width: 40px; height: 40px; stroke-width: 1.8; }
+.mic-big.off { background: var(--color-surface-2); color: var(--color-muted); }
+.note-list { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.note-list li { display: flex; gap: 12px; align-items: flex-start; font-size: var(--app-text); }
+.note-list li > svg { color: var(--voice); margin-top: 2px; flex: none; }
+.note-list li span { color: var(--color-muted); font-size: var(--app-text-sm); display: block; }
+.os-next { margin-top: 22px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Download page (as setup.html `downloading`) */
+.dlpage { padding: 12px var(--app-gutter) 0; }
+.pct { font-size: 44px; font-weight: 700; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.bigbar { height: 10px; border-radius: 5px; background: var(--color-surface-2); overflow: hidden; margin: 14px 0 8px; }
+.bigbar i { display: block; height: 100%; background: var(--voice); border-radius: 5px; }
+.files { margin-top: 16px; border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; }
+.file-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-bottom: 1px solid var(--color-border); min-width: 0; }
+.file-row:last-child { border-bottom: 0; }
+.file-row .st { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--color-surface-2); color: var(--color-muted); }
+.file-row .st.done { background: color-mix(in srgb, var(--color-ok) 16%, transparent); color: var(--color-ok); }
+.file-row .st.go { background: var(--voice-soft); color: var(--voice); }
+.file-row .main { flex: 1; min-width: 0; }
+.file-row .n { display: flex; gap: 8px; font-weight: 600; }
+.file-row .n .size { margin-left: auto; font-weight: 500; font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; }
+.file-row .s { font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 2px; overflow-wrap: anywhere; }
+.file-row .progress { margin-top: 8px; }
+.file-row .progress i { background: var(--voice); }
+
+/* The mic-off card on the Downloading page */
+.mic-card { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; padding: 14px; border-radius: 14px; background: var(--color-surface-2); min-width: 0; }
+.mic-card .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--color-surface); color: var(--color-muted); }
+.mic-card .grow { flex: 1; min-width: 0; }
+.mic-card b { display: block; font-weight: 600; }
+.mic-card p { margin: 3px 0 10px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.mic-card .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.mic-card .row-btns .btn { background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-accent); }
+.mic-card.quiet { background: transparent; border: 1px dashed var(--color-border); }
+.mic-card.quiet p { margin-bottom: 0; }
+
+/* Backlog rows behind the app states (as setup.html) */
+.row { align-items: flex-start; }
+.row .rank { padding-top: 2px; }
+.row .m > * { min-width: 0; }
+.prog-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--app-text-xs); color: var(--color-muted); }
+.prog-line .progress { flex: 1; }
+.needs { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 11px; background: var(--ask-soft); color: var(--ask); font-size: var(--app-text-xs); font-weight: 700; white-space: nowrap; }
+.needs svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+
+/* The mic when the microphone is refused: crossed out, still tappable */
+.mic.blocked { background: var(--color-surface-2); color: var(--color-muted); box-shadow: 0 0 0 5px var(--color-surface); }
+.mic.blocked.dead { opacity: .55; }
+.mic-label.blocked { color: var(--color-text); }
+.mic.coach { box-shadow: 0 0 0 5px var(--color-surface), 0 0 0 10px color-mix(in srgb, var(--voice) 35%, transparent), 0 0 0 16px color-mix(in srgb, var(--voice) 15%, transparent); z-index: 8; }
+.mic.blocked.coach { box-shadow: 0 0 0 5px var(--color-surface), 0 0 0 10px color-mix(in srgb, var(--color-muted) 35%, transparent), 0 0 0 16px color-mix(in srgb, var(--color-muted) 15%, transparent); }
+
+/* Sheets */
+.sheet p { margin: 4px 0 12px; font-size: var(--app-text); color: var(--color-muted); }
+.sheet .prob { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 12px; }
+.sheet .prob .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; flex: none; background: var(--color-surface-2); color: var(--color-muted); }
+.sheet .prob .ic.on { background: var(--voice-soft); color: var(--voice); }
+.sheet .prob b { display: block; font-size: var(--app-text-md); font-weight: 600; line-height: 1.3; }
+.sheet .prob span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 3px; }
+.sheet .go { display: flex; gap: 10px; }
+.sheet .go .btn { flex: 1; min-width: 0; padding: 0 12px; }
+.sheet .sm-note { text-align: center; font-size: var(--app-text-sm); color: var(--color-muted); margin-top: 10px; }
+.sheet .note-list { margin: 0 0 16px; gap: 10px; }
+.sheet .note-list li { font-size: var(--app-text-sm); }
+
+/* "Where to tap": a small drawing of the phone's own settings rows */
+.steps { margin: 0 0 14px; border-radius: 14px; background: var(--color-surface-2); padding: 10px 12px 12px; }
+.steps .crumb { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; font-size: var(--app-text-xs); color: var(--color-muted); font-weight: 600; margin-bottom: 8px; }
+.steps .crumb b { color: var(--color-text); }
+.steps .crumb svg.i { width: 12px; height: 12px; }
+.steps .list2 { background: var(--color-surface); border-radius: 10px; overflow: hidden; }
+.steps .r { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text-sm); min-width: 0; }
+.steps .r:last-child { border-bottom: 0; }
+.steps .r .k { flex: 1; min-width: 0; }
+.steps .r .k small { display: block; color: var(--color-muted); font-size: var(--app-text-xs); }
+.steps .r.hl { outline: 2px solid var(--voice); outline-offset: -2px; border-radius: 10px; background: color-mix(in srgb, var(--voice-soft) 60%, var(--color-surface)); }
+.steps .r .num { width: 20px; height: 20px; border-radius: 50%; background: var(--voice); color: var(--color-accent-fg); font-size: 11px; font-weight: 700; display: grid; place-items: center; flex: none; }
+.steps .tile { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.steps .tile svg.i { width: 15px; height: 15px; }
+.steps .tile.mic-t { background: #f29b38; }
+.steps .tile.bell-t { background: #e5484d; }
+.steps .tile.app-t { background: transparent; }
+.steps .tile.app-t img { width: 26px; height: 26px; border-radius: 7px; display: block; }
+.mini-sw { width: 38px; height: 23px; border-radius: 12px; background: #d6d6db; position: relative; flex: none; }
+:root[data-theme="dark"] .mini-sw { background: #48484c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mini-sw { background: #48484c; } }
+.mini-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.mini-sw.on { background: #34c759; } .mini-sw.on::after { left: 17px; }
+.mini-rd { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-muted); flex: none; display: grid; place-items: center; }
+.mini-rd.on { border-color: var(--voice); } .mini-rd.on::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--voice); }
+.arrow-to { font-size: var(--app-text-xs); font-weight: 700; color: var(--voice); white-space: nowrap; }
+
+/* System dialogs: drawn to look like the phone's own, never the app's */
+.sys-dim { position: absolute; inset: 0; z-index: 20; background: rgba(0,0,0,.4); }
+.ios-alert { position: absolute; z-index: 21; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 270px; border-radius: 14px; overflow: hidden; background: rgba(242,242,247,.96); color: #000; text-align: center; font-family: -apple-system, "SF Pro Text", var(--font-sans); }
+.ios-alert .tx { padding: 19px 16px 15px; }
+.ios-alert b { display: block; font-size: 17px; font-weight: 600; line-height: 1.3; }
+.ios-alert p { margin: 4px 0 0; font-size: 13px; line-height: 1.35; }
+.ios-alert .bt { display: grid; grid-template-columns: 1fr 1fr; border-top: .5px solid rgba(60,60,67,.36); }
+.ios-alert .bt span { padding: 11px 0; font-size: 17px; color: #007aff; }
+.ios-alert .bt span + span { border-left: .5px solid rgba(60,60,67,.36); font-weight: 600; }
+.and-dlg { position: absolute; z-index: 21; left: 24px; right: 24px; top: 50%; transform: translateY(-50%); border-radius: 28px; background: #ece6f0; color: #1d1b20; padding: 24px 24px 18px; text-align: center; font-family: Roboto, var(--font-sans); }
+.and-dlg .ai { width: 24px; height: 24px; margin: 0 auto 16px; color: #65558f; }
+.and-dlg .ai svg.i { width: 24px; height: 24px; }
+.and-dlg b { display: block; font-size: 22px; font-weight: 400; line-height: 1.3; margin-bottom: 20px; }
+.and-dlg b em { font-style: normal; font-weight: 600; }
+.and-dlg p { margin: -8px 0 20px; font-size: 14px; line-height: 1.45; color: #49454f; text-align: left; }
+.and-dlg .bts { display: flex; flex-direction: column; gap: 6px; }
+.and-dlg .bts span { display: block; padding: 11px 0; border-radius: 20px; background: #d8cff0; color: #1d1b20; font-size: 14px; font-weight: 500; }
+.and-dlg .bts.row { flex-direction: row; justify-content: flex-end; gap: 8px; }
+.and-dlg .bts.row span { background: transparent; color: #65558f; padding: 10px 12px; }
+:root[data-theme="dark"] .ios-alert { background: rgba(44,44,46,.96); color: #fff; }
+:root[data-theme="dark"] .ios-alert .bt span { color: #0a84ff; }
+:root[data-theme="dark"] .ios-alert .bt, :root[data-theme="dark"] .ios-alert .bt span + span { border-color: rgba(84,84,88,.6); }
+:root[data-theme="dark"] .and-dlg { background: #2b2930; color: #e6e0e9; }
+:root[data-theme="dark"] .and-dlg p { color: #cac4d0; }
+:root[data-theme="dark"] .and-dlg .ai, :root[data-theme="dark"] .and-dlg .bts.row span { color: #d0bcff; }
+:root[data-theme="dark"] .and-dlg .bts span { background: #4a4458; color: #e6e0e9; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ios-alert { background: rgba(44,44,46,.96); color: #fff; }
+  :root:not([data-theme="light"]) .ios-alert .bt span { color: #0a84ff; }
+  :root:not([data-theme="light"]) .and-dlg { background: #2b2930; color: #e6e0e9; }
+  :root:not([data-theme="light"]) .and-dlg p { color: #cac4d0; }
+  :root:not([data-theme="light"]) .and-dlg .ai, :root:not([data-theme="light"]) .and-dlg .bts.row span { color: #d0bcff; }
+  :root:not([data-theme="light"]) .and-dlg .bts span { background: #4a4458; color: #e6e0e9; }
+}
+.sys-tag { position: absolute; z-index: 22; left: 50%; transform: translateX(-50%); top: 120px; font-size: var(--app-text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.55); padding: 4px 10px; border-radius: 10px; white-space: nowrap; }
+
+/* Coach mark (as setup.html `ready`) */
+.dim { position: absolute; left: 0; right: 0; top: 0; bottom: calc(var(--app-tabs) + var(--app-home)); background: var(--scrim); z-index: 6; }
+.coachmark { position: absolute; left: var(--app-gutter); right: var(--app-gutter); bottom: calc(var(--app-tabs) + var(--app-home) + 46px); z-index: 7; background: var(--color-surface); border-radius: 16px; padding: 16px; box-shadow: var(--shadow-dialog); }
+.coachmark::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; background: var(--color-surface); transform: translateX(-50%) rotate(45deg); }
+.coachmark .ok { display: flex; align-items: center; gap: 8px; font-size: var(--app-text-sm); font-weight: 600; color: var(--color-ok); }
+.coachmark h3 { margin: 8px 0 4px; font-size: var(--app-text-md); font-weight: 600; }
+.coachmark p { margin: 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.coachmark .acts2 { display: flex; gap: 10px; margin-top: 14px; }
+.coachmark .acts2 .btn { flex: 1; min-width: 0; padding: 0 10px; }
+
+/* Settings › Voice (as setup.html `settings`) */
+.settings .row { min-height: 52px; align-items: center; }
+.settings .row .val { font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; flex: none; }
+.settings .row .val b { color: var(--color-text); font-weight: 600; }
+.settings .row.dim-row { opacity: .5; }
+.settings .row.danger .t { color: var(--color-danger); }
+.settings .row.att { background: var(--ask-soft); }
+.settings .section-h { padding-top: 14px; }
+.pill-off { font-size: var(--app-text-xs); font-weight: 700; color: var(--ask); background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); border-radius: 10px; padding: 2px 8px; white-space: nowrap; flex: none; }
+.ready-card { display: flex; gap: 12px; align-items: center; margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); border: 1px solid color-mix(in srgb, var(--color-ok) 35%, transparent); }
+.ready-card > svg { color: var(--color-ok); flex: none; }
+.ready-card.part { background: var(--color-surface); border-color: var(--color-border); align-items: flex-start; }
+.ready-card.part > svg { color: var(--color-muted); }
+.ready-card .grow { flex: 1; min-width: 0; }
+.ready-card b { display: block; font-weight: 600; }
+.ready-card span { font-size: var(--app-text-sm); color: var(--color-muted); }
+.ready-card .btn { margin-top: 8px; }
+.later { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--color-muted); background: var(--color-surface-2); border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+.switch { width: 51px; height: 31px; border-radius: 16px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch.on { background: var(--voice); border-color: var(--voice); }
+.switch.on::after { left: 22px; }
+
+/* Alternatives: a ribbon so they can't be mistaken for the recommendation */
+.alt-ribbon { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 30; background: var(--color-text); color: var(--color-bg); font-size: var(--app-text-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; border-radius: 10px; white-space: nowrap; }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, iconBtn, tabBar, type, state, health, progress, icon } = App;
+
+/* ── Icons the kit doesn't have ─────────────────────────────────────── */
+const svg = (d, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+const micOff = (cls = '') => svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M3 3l18 18"/>', cls);
+const gear = (cls = '') => svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>', cls);
+const bell = (cls = '') => svg('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>', cls);
+const appIcon = () => `<span class="tile app-t"><img src="../logo/shiplean-mark-light.svg" alt=""></span>`;
+
+/* ── Phones ─────────────────────────────────────────────────────────── */
+// iPhone 15 (6 GB, Auto → 1.7B, 1.7 GB) for iOS; Galaxy S24 Ultra (12 GB, Auto → 4B, 3.1 GB) for Android. As setup.md.
+const IOS = { name: 'iPhone 15', settings: 'Settings', model: 'Qwen3 1.7B', total: '1.7', got: '0.7', pct: 41, cmdGot: '0.1', cmdPct: 9 };
+const AND = { name: 'Galaxy S24 Ultra', settings: 'App settings', model: 'Qwen3 4B', total: '3.1', got: '1.2', pct: 39, cmdGot: '0.6', cmdPct: 24 };
+
+/* ── Chrome ─────────────────────────────────────────────────────────── */
+const setupFrame = (o) => `<div class="setup">${frame(o)}</div>`;
+const stepBar = (title, step) => topBar({ title, sub: step ? `Step ${step} of 3` : '', back: true });
+const foot = (primary, secondary = '', small = '') => `<div class="foot"><button class="btn primary block">${primary}</button>${secondary ? `<button class="btn ghost block">${secondary}</button>` : ''}${small ? `<div class="small">${small}</div>` : ''}</div>`;
+const sw = (on) => `<span class="switch${on ? ' on' : ''}" role="switch" aria-checked="${on}"></span>`;
+const ribbon = (t) => `<div class="alt-ribbon">${t}</div>`;
+
+/* ── Backlog behind the app states (as setup.html) ──────────────────── */
+const F = [
+  ['SHIP-707', 'Mobile web: touch shell and phone layouts', 'Active', 'in-progress', '', { done: 64, cur: 22 }, '9 of 14', null],
+  ['SHIP-907', 'Mobile app foundations', 'Active', 'in-progress', 'risk', { done: 8, cur: 30, other: 12 }, '1 of 9', { n: 8, kind: 'check' }],
+  ['SHIP-892', 'Demo artifacts for the sprint demo agent', 'New', 'proposed', '', { other: 20 }, '0 of 4', { n: 1, kind: 'message' }],
+  ['SHIP-906', 'Voice commands on the mobile app with on-device models', 'New', 'proposed', 'risk', { done: 17, cur: 33 }, '1 of 6', { n: 3, kind: 'check' }],
+  ['SHIP-891', 'Features panel on the sprint page', 'New', 'proposed', '', {}, '0 of 4', null],
+  ['SHIP-246', 'Client notes on the work item page', 'New', 'proposed', '', {}, '0 of 6', null],
+];
+const needs = (x) => x ? `<span class="needs">${icon(x.kind)}${x.n}</span>` : '';
+const fRow = ([key, t, s, cat, h, p, st, ask], i) => `<div class="row${ask ? ' ask' : ''}"><span class="rank">${i + 1}</span><div class="main"><div class="t">${t}</div>
+  <div class="m">${type('feature')}<span class="key">${key}</span>${state(s, cat)}${h ? health(h) : ''}${needs(ask)}</div>
+  <div class="prog-line">${progress(p)}<span>${st}</span></div></div></div>`;
+const appBar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { label: 'Search' }) });
+const seg = () => `<div class="subbar"><div class="seg"><button>Epics</button><button class="on">Features</button><button>Stories</button></div></div>`;
+const backlog = (banner = '') => `${banner}<div class="section-h">7 open Features</div><div class="list">${F.map(fRow).join('')}</div>`;
+
+// tabs(mic): idle | blocked (crossed out, tappable, "Mic off") | dead (alternative: greyed, does nothing) | coach-blocked
+const tabs = (mic = 'idle') => {
+  const t = tabBar('backlog', { inbox: 15, mic: 'idle' });
+  if (mic === 'idle') return t;
+  if (mic === 'coach') return t.replace('class="mic "', 'class="mic coach"');
+  const cls = { blocked: 'blocked', dead: 'blocked dead', 'coach-blocked': 'blocked coach' }[mic];
+  const label = mic === 'dead' ? 'Microphone off' : 'Mic off';
+  return t.replace(/<button class="mic "[^>]*>[\s\S]*?<\/button><span class="mic-label">Hold to talk<\/span>/,
+    `<button class="mic ${cls}" aria-label="Microphone off. Tap to turn it on">${micOff()}</button><span class="mic-label blocked">${label}</span>`);
+};
+const app = ({ mic = 'blocked', overlay = '', banner = '' } = {}) => frame({ top: appBar(), sub: seg(), body: backlog(banner), bottom: tabs(mic), overlay });
+
+/* ── Setup pieces ───────────────────────────────────────────────────── */
+const micStep = (P, overlay = '') => setupFrame({ overlay, top: stepBar('Microphone', 3), body: `<div class="tiny-dl">${icon('download', 'sm')}Voice models downloading<span class="sep"></span>4%</div>
+  <div class="mic-intro"><div class="mic-big">${icon('mic')}</div><h2 class="h">Allow the microphone</h2>
+  <p class="lead">Voice needs it to hear your commands.</p>
+  <ul class="note-list">
+    <li>${icon('check', 'sm')}<div>Listens only while you hold the button<span>There’s no wake word and nothing listens in the background.</span></div></li>
+    <li>${icon('check', 'sm')}<div>Turned into text on this phone<span>The models run here, so commands work without a voice service.</span></div></li>
+    <li>${icon('check', 'sm')}<div>Voice notes keep their clip<span>A note you dictate keeps its audio for 30 days so your team can play it.</span></div></li>
+  </ul><div class="os-next">Next, your phone asks for permission. You can change it any time in ${P === AND ? 'the app’s settings' : 'Settings'}.</div></div>`,
+  bottom: foot('Continue', 'Not now') });
+
+const PURPOSE = 'Voice listens only while you hold the button. What you say is turned into text on this phone.';
+const iosPrompt = () => `<div class="sys-dim"></div><div class="sys-tag">iPhone’s own prompt</div><div class="ios-alert" role="alertdialog"><div class="tx">
+  <b>“ShipLean” Would Like to Access the Microphone</b><p>${PURPOSE}</p></div><div class="bt"><span>Don’t Allow</span><span>Allow</span></div></div>`;
+const andPrompt = () => `<div class="sys-dim"></div><div class="sys-tag">Android’s own prompt</div><div class="and-dlg" role="alertdialog"><div class="ai">${icon('mic')}</div>
+  <b>Allow <em>ShipLean</em> to record audio?</b><div class="bts"><span>While using the app</span><span>Only this time</span><span>Don’t allow</span></div></div>`;
+
+const fileRow = ({ st, name, size, s, pct }) => `<div class="file-row"><span class="st ${st}">${icon({ done: 'check', go: 'download' }[st], 'sm')}</span><div class="main">
+  <div class="n"><span class="nw">${name}</span><span class="size">${size}</span></div><div class="s">${s}</div>${pct != null ? progress({ done: pct }) : ''}</div></div>`;
+const dlPage = (P, card, { bottom } = {}) => setupFrame({ top: topBar({ title: 'Voice models', sub: `${P.name} · Wi-Fi` }), body: `<div class="dlpage">
+  <div class="pct">${P.pct}%</div><div class="bigbar"><i style="width:${P.pct}%"></i></div>
+  <div class="muted" style="font-size:var(--app-text-sm)">${P.got} of ${P.total} GB · about ${P === IOS ? 3 : 6} min on Wi-Fi</div>
+  ${card}
+  <div class="files">
+    ${fileRow({ st: 'done', name: 'Parakeet TDT 0.6B', size: '0.6 GB', s: 'Speech to text · downloaded and checked' })}
+    ${fileRow({ st: 'go', name: P.model, size: P === IOS ? '1.1 GB' : '2.5 GB', s: `Command model · ${P.cmdGot} of ${P === IOS ? '1.1' : '2.5'} GB`, pct: P.cmdPct })}
+  </div></div>`,
+  bottom: bottom ?? foot('Use ShipLean while this downloads', 'Pause download') });
+
+/* ── Sheets ─────────────────────────────────────────────────────────── */
+const sheet = (inner) => `<div class="scrim"></div><div class="sheet"><div class="grab"></div>${inner}</div>`;
+const typeInstead = () => `<button class="btn">${icon('keyboard', 'sm')}Type instead</button>`;
+const prob = (ic, title, sub, on = false) => `<div class="prob"><span class="ic${on ? ' on' : ''}">${ic}</span><div><b>${title}</b><span>${sub}</span></div></div>`;
+
+// Where to tap, drawn as the phone's own rows. iOS: Settings › ShipLean › Microphone. Android: App info › Permissions › Microphone.
+const iosSteps = () => `<div class="steps"><div class="crumb">Settings ${icon('chevron')} <b>ShipLean</b></div><div class="list2">
+  <div class="r">${appIcon()}<span class="k">ShipLean<small>Allow ShipLean to access</small></span></div>
+  <div class="r hl"><span class="tile mic-t">${icon('mic')}</span><span class="k">Microphone</span><span class="arrow-to">Turn on</span><span class="mini-sw"></span></div>
+  <div class="r"><span class="tile bell-t">${bell()}</span><span class="k">Notifications<small>Banners, Sounds, Badges</small></span>${icon('chevron', 'sm muted')}</div></div></div>`;
+const andSteps = () => `<div class="steps"><div class="crumb">ShipLean app info ${icon('chevron')} Permissions ${icon('chevron')} <b>Microphone</b></div><div class="list2">
+  <div class="r hl"><span class="k">Allow only while using the app</span><span class="arrow-to">Pick this</span><span class="mini-rd"></span></div>
+  <div class="r"><span class="k">Ask every time</span><span class="mini-rd"></span></div>
+  <div class="r"><span class="k">Don’t allow<small>Chosen now</small></span><span class="mini-rd on"></span></div></div></div>`;
+
+const allowSheet = () => sheet(`${prob(icon('mic'), 'Allow the microphone to talk to ShipLean', 'Your phone asks next. You can say no again and keep typing.', true)}
+  <ul class="note-list">
+    <li>${icon('check', 'sm')}<div>Listens only while you hold the button</div></li>
+    <li>${icon('check', 'sm')}<div>Turned into text on this phone</div></li>
+    <li>${icon('check', 'sm')}<div>Voice notes keep their clip for 30 days</div></li>
+  </ul>
+  <div class="go">${typeInstead()}<button class="btn primary">Allow microphone</button></div>`);
+
+/* ── Settings › Voice with the microphone off ───────────────────────── */
+const settingsBody = ({ P = IOS, readyCard = '' } = {}) => `${readyCard || `<div class="ready-card part">${micOff()}<div class="grow"><b>Voice is ready, but the microphone is off</b><span>${P.name} · ${P === IOS ? '6' : '12'} GB memory. Typed commands work.</span></div></div>`}
+  <div class="section-h">Models</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Command model</div><div class="m">Auto picks by memory</div></div><span class="val"><b>Auto</b> · ${P.model}</span>${icon('chevron', 'sm muted')}</div>
+    <div class="row"><div class="main"><div class="t">Speech to text</div><div class="m">Fixed in this version</div></div><span class="val">Parakeet TDT 0.6B</span></div>
+    <div class="row dim-row"><div class="main"><div class="t">Try other models</div><div class="m">Download and compare models on this phone</div></div><span class="later">Later</span></div></div>
+  <div class="section-h">Download and storage</div><div class="list">
+    <div class="row"><div class="main"><div class="t">Wi-Fi only</div><div class="m">Ask before using mobile data</div></div>${sw(true)}</div>
+    <div class="row danger"><div class="main"><div class="t">Delete models</div><div class="m">Frees ${P.total} GB. Voice turns off; your choices are kept.</div></div></div></div>
+  <div class="section-h">Privacy and licences</div><div class="list">
+    <div class="row att"><div class="main"><div class="t">Microphone</div><div class="m">Off in ${P === IOS ? 'iPhone Settings' : 'the app’s settings'}. Tap to turn it on</div></div><span class="pill-off">Off</span>${icon('chevron', 'sm muted')}</div>
+    <div class="row"><div class="main"><div class="t">Model licences</div><div class="m">Parakeet TDT 0.6B (CC-BY-4.0) · Qwen3 (Apache 2.0)</div></div>${icon('chevron', 'sm muted')}</div></div>`;
+const settingsBar = () => topBar({ title: 'Voice', sub: 'Settings', back: true });
+
+/* ── States ─────────────────────────────────────────────────────────── */
+App.screen({ title: 'Microphone refused', states: [
+  /* At setup, step 3 */
+  { id: 'prompt-ios', title: 'iPhone asks (setup step 3)', note: 'Continue on the explainer opens iPhone’s one-time prompt, with our purpose string. iPhone never shows it again after Don’t Allow.',
+    render: () => micStep(IOS, iosPrompt()) },
+  { id: 'prompt-android', title: 'Android asks (setup step 3)', note: 'Android’s prompt: While using the app, Only this time, Don’t allow. Android can ask once more after a first no.',
+    render: () => micStep(AND, andPrompt()) },
+  { id: 'refused-setup', title: 'Refused at setup', note: 'After Don’t Allow, setup carries on to Downloading. A card says voice will need the microphone and how to turn it on. The download keeps going.',
+    render: () => dlPage(IOS, `<div class="mic-card"><span class="ic">${micOff()}</span><div class="grow"><b>Microphone is off</b>
+      <p>Voice will be ready, but it can’t hear you until the microphone is on. Typed commands still work.</p>
+      <div class="row-btns"><button class="btn sm">${gear('sm')}Open Settings</button></div></div></div>`) },
+  { id: 'not-now', title: 'Not now at setup', note: '“Not now” skips the phone’s prompt, so it’s kept for later. A quiet line on Downloading says when it will ask.',
+    render: () => dlPage(IOS, `<div class="mic-card quiet"><span class="ic">${icon('mic')}</span><div class="grow"><b>Microphone: not asked yet</b>
+      <p>We’ll ask the first time you hold the mic.</p></div></div>`) },
+
+  /* In the app */
+  { id: 'mic-off', title: 'The mic, microphone refused', note: 'Voice is ready but the microphone is off. The mic is crossed out and reads “Mic off”. Tap or hold opens the sheet. No banner.',
+    render: () => app() },
+  { id: 'sheet-ios', title: 'Turn it on: iPhone', note: 'Tap the crossed-out mic. iPhone won’t ask again, so the sheet draws the exact row to switch on, and Open Settings goes straight to ShipLean’s page.',
+    render: () => app({ overlay: sheet(`${prob(micOff(), 'Turn on the microphone in Settings', 'iPhone won’t ask again, so it’s one switch in Settings.')}
+      ${iosSteps()}
+      <div class="go">${typeInstead()}<button class="btn primary">${gear('sm')}Open Settings</button></div>
+      <div class="sm-note">Everything else works without voice</div>`) }) },
+  { id: 'sheet-ask', title: 'Ask again: not asked yet, or Android’s first no', note: 'After Not now on either phone, or one Don’t allow on Android, the phone can still ask. Allow microphone opens its prompt.',
+    render: () => app({ overlay: allowSheet() }) },
+  { id: 'sheet-android', title: 'Turn it on: Android, after a second no', note: 'Android won’t ask a third time. App settings opens ShipLean’s app info; the sheet shows Permissions › Microphone › Allow only while using the app.',
+    render: () => app({ overlay: sheet(`${prob(micOff(), 'Turn on the microphone in app settings', 'Android won’t ask again. Pick the first option on the Microphone page.')}
+      ${andSteps()}
+      <div class="go">${typeInstead()}<button class="btn primary">${gear('sm')}App settings</button></div>
+      <div class="sm-note">Everything else works without voice</div>`) }) },
+  { id: 'android-switch', title: 'Android’s microphone switch is off', note: 'Permission is on, but the phone-wide switch in quick settings is off. Holding the mic brings up Android’s own Unblock prompt; the app adds nothing.',
+    render: () => app({ mic: 'idle', overlay: `<div class="sys-dim"></div><div class="sys-tag">Android’s own prompt</div><div class="and-dlg" role="alertdialog"><div class="ai">${micOff()}</div>
+      <b>Unblock device microphone?</b><p>This unblocks access for all apps and services that are allowed to use your microphone.</p>
+      <div class="bts row"><span>Cancel</span><span>Unblock</span></div></div>` }) },
+  { id: 'back-on', title: 'Back with the microphone on', note: 'Back from Settings with the switch on. The mic is back and a toast says so. iPhone may restart the app after a privacy change, so it reopens where you were.',
+    render: () => app({ mic: 'idle', overlay: `<div class="toast" style="bottom:118px">${icon('check', 'sm')}<span class="grow">Microphone on · hold to talk</span></div>` }) },
+  { id: 'ready-mic-off', title: 'Voice ready, microphone off', note: 'The models finish while the microphone is off. The ready coach mark says so instead of “What needs me?”. That one waits until the mic is on.',
+    render: () => app({ mic: 'coach-blocked', overlay: `<div class="dim"></div><div class="coachmark"><div class="ok">${icon('check', 'sm')}Voice is ready</div>
+      <h3>Turn on the microphone to use it</h3>
+      <p>It’s off in iPhone Settings, so voice can’t hear you yet. Typed commands work now.</p>
+      <div class="acts2"><button class="btn">Not now</button><button class="btn primary">${gear('sm')}Open Settings</button></div></div>` }) },
+  { id: 'settings-voice', title: 'Settings › Voice, microphone off', note: 'The top card says voice is ready but the mic is off. The Microphone row is marked Off and opens the same sheet. No dot on the avatar.',
+    render: () => `<div class="settings">${frame({ top: settingsBar(), body: settingsBody() })}</div>` },
+
+  /* Alternatives */
+  { id: 'alt-greyed', title: 'Alternative: greyed, no sheet', note: 'The open question’s other option. The mic is greyed and labelled; tapping does nothing. Turning it on is found in Settings › Voice only.',
+    render: () => app({ mic: 'dead', overlay: ribbon('Alternative to D1') }) },
+  { id: 'alt-setup-page', title: 'Alternative: a refusal page in setup', note: 'Don’t Allow stops on its own page in step 3, with Open Settings and Continue without voice, before Downloading.',
+    render: () => setupFrame({ top: stepBar('Microphone', 3), body: `<div class="tiny-dl">${icon('download', 'sm')}Voice models downloading<span class="sep"></span>9%</div>
+      <div class="mic-intro"><div class="mic-big off">${micOff()}</div><h2 class="h">The microphone is off</h2>
+      <p class="lead">Voice can’t hear you without it. iPhone won’t ask again, so it’s one switch in Settings.</p>
+      <div style="margin-top:20px">${iosSteps()}</div></div>`,
+      bottom: foot(`${gear('sm')}Open Settings`, 'Continue without the microphone'), overlay: ribbon('Alternative to D2') }) },
+]});
+</script></body></html>

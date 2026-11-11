@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import {
   crumbTrail,
+  instanceSettingsTabs,
   isInstanceLevel,
   matchRoute,
   newItemPath,
@@ -37,6 +38,12 @@ const samples: {
     query: { request: 'r-1' },
     path: '/authorize?request=r-1',
     crumbs: ['ShipLean', 'Connect an agent'],
+  },
+  mobileSignIn: {
+    params: {},
+    query: { challenge: 'c', state: 's', device: 'Pixel' },
+    path: '/mobile/sign-in?challenge=c&state=s&device=Pixel',
+    crumbs: ['ShipLean', 'Sign in to the app'],
   },
   storiesBacklog: {
     params: project,
@@ -190,6 +197,7 @@ test('routes_ShouldFlagInstanceLevelPages', () => {
     'importStart',
     'instanceSettings',
     'login',
+    'mobileSignIn',
     'newProject',
     'profile',
   ]);
@@ -213,6 +221,13 @@ test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
 
 test('routes_WhenInstanceTabIsAgents_ShouldMatchIt', () => {
   expect(matchRoute('/instance/agents')?.id).toBe('instanceSettings');
+});
+
+test('routes_WhenInstanceTabIsBackups_ShouldMatchItAfterAgents', () => {
+  expect(matchRoute('/instance/backups')?.id).toBe('instanceSettings');
+  expect(routePath('instanceSettings', { tab: 'backups' })).toBe('/instance/backups');
+  expect(instanceSettingsTabs.at(-1)).toBe('backups');
+  expect(instanceSettingsTabs.at(-2)).toBe('agents');
 });
 
 test('routes_WhenInstanceTabIsIntegrations_ShouldMatchIt', () => {

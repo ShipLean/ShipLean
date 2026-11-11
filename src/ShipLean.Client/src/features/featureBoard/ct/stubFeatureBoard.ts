@@ -1,4 +1,4 @@
-import type { FeatureBoardViewDto } from '../../../api/views';
+import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
 import type { TaskboardMoveRequest } from '../../taskboard/taskboardApi';
 import { stubTaskboard, type TaskboardServer } from '../../taskboard/ct/stubApi';
 

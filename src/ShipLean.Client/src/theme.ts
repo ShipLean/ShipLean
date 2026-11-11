@@ -1,4 +1,4 @@
-import type { Density, Theme as SavedTheme } from './api/me';
+import type { Density, Theme as SavedTheme } from '@shiplean/core/api/me';
 
 export type Theme = 'light' | 'dark';
 

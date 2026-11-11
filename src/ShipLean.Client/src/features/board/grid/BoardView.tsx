@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { Level } from '../../../routes';
 import { useBoardOfLevel } from '../../boardSettings/useBoardOfLevel';
 import { boardTestIds as ids } from '../testIds';

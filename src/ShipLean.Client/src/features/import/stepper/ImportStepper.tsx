@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { projectByKeyKey } from '../../../queries/shared';
 import { registerInvalidation } from '../../../realtime';
-import type { ImportMappingDto } from '../../../api/import';
-import { ApiRequestError } from '../../../api/client';
+import type { ImportMappingDto } from '@shiplean/core/api/import';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import { useJiraConnection, useJiraProjects, useSuggestedMapping } from '../importApi';
 import { MappingStep } from '../mapping/MappingStep';
 import { RunStep } from '../run/RunStep';

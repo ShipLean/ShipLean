@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
-import type { RetroPointDto } from '../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { parseRetroItemAddress, withRetroItemFilters } from './retroItemAddress';
 
 /** The item page's address and the ways to change it. `onAdded` clears the filter that would hide a point just added. */

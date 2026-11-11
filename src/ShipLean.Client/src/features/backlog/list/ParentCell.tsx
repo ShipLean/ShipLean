@@ -1,5 +1,5 @@
 import { TypeIcon } from '../../../components/TypeIcon';
-import type { ParentRefDto } from '../../../api/workItems';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import { backlogTestIds as ids } from '../testIds';
 
 export function ParentCell({ parent }: { parent: ParentRefDto | null }) {

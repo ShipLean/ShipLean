@@ -1,4 +1,4 @@
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { boardTestIds as ids } from '../testIds';
 import { NONE } from './filterQuery';
 

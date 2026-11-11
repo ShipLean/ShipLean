@@ -1,4 +1,4 @@
-import type { UserRef } from '../../../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../../../components/Avatar';
 import { taskboardTestIds as ids } from '../testIds';
 import { UNASSIGNED_FACE } from './faceFilter';

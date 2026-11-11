@@ -1,4 +1,4 @@
-import type { SprintDto } from '../../../api/sprints';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 
 /** The sprint that started last before this one, or undefined for the first. Dates are yyyy-MM-dd, so text order is date order. */
 export function previousSprint(sprints: SprintDto[], sprint: SprintDto): SprintDto | undefined {

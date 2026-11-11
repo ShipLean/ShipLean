@@ -21,7 +21,7 @@ import {
   type YouTubeCheckRequest,
   type YouTubeDisconnectDto,
   type YouTubeProjectDto,
-} from '../../api/demos';
+} from '@shiplean/core/api/demos';
 import { registerInvalidation } from '../../realtime';
 
 export const demosRootKey = (projectId: string) => ['projects', projectId, 'demos'] as const;

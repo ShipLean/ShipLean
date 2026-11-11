@@ -38,6 +38,12 @@ public class InMemoryCommentStoreContractTests : CommentStoreContract
         return _store;
     }
 
+    protected override async Task<CommentDto> AddInTransactionAndCommitAsync(ICommentStore store, Guid workItemId, CommentCreate create, string? agentName, Guid authorId)
+    {
+        await using var transaction = new NoOpDbTransaction();
+        return await store.AddInTransactionAsync(workItemId, create, agentName, authorId, transaction);
+    }
+
     protected override Task<Guid> ArrangeWorkItemAsync()
     {
         var id = Guid.NewGuid();

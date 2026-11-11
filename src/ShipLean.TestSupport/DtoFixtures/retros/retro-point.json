@@ -32,5 +32,7 @@
   },
   "canArchive": false,
   "decision": "actioned",
-  "notNeeded": null
+  "notNeeded": null,
+  "supporters": [],
+  "supportedByMe": false
 }

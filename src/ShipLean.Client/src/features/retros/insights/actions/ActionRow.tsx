@@ -1,8 +1,8 @@
 import { Avatar } from '../../../../components/Avatar';
 import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
-import type { RetroActionRowDto, RetroInsightsMode } from '../../../../api/retros';
-import type { SprintDto } from '../../../../api/sprints';
+import type { RetroActionRowDto, RetroInsightsMode } from '@shiplean/core/api/retros';
+import type { SprintDto } from '@shiplean/core/api/sprints';
 import { Chip } from '../../../../components/Chip';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';

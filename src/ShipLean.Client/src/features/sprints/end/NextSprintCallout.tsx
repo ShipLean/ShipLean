@@ -1,4 +1,4 @@
-import type { SprintRef } from '../../../api/refs';
+import type { SprintRef } from '@shiplean/core/api/refs';
 import { sprintsTestIds as ids } from '../testIds';
 import type { NextSprintFigures } from './rolloverChoices';
 

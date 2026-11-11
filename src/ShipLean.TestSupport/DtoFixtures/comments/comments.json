@@ -11,7 +11,8 @@
       "editedAt": null,
       "editedLabel": null,
       "agentName": null,
-      "superseded": null
+      "superseded": null,
+      "askTag": null
     },
     {
       "id": "00000008-0000-4000-8001-000000000002",
@@ -24,7 +25,8 @@
       "editedAt": "2026-10-23T16:10:00+00:00",
       "editedLabel": "23 Oct",
       "agentName": null,
-      "superseded": null
+      "superseded": null,
+      "askTag": { "kind": "about", "label": "D3" }
     },
     {
       "id": "00000008-0000-4000-8001-000000000003",
@@ -41,7 +43,8 @@
         "at": "2026-10-24T09:00:00+00:00",
         "atLabel": "24 Oct",
         "by": { "id": "00000001-0000-4000-8000-000000000003", "name": "Tom Okafor", "initials": "TO", "avatarColour": "#16a089", "photoUrl": null }
-      }
+      },
+      "askTag": null
     }
   ]
 }

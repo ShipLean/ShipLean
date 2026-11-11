@@ -59,6 +59,10 @@ public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRende
     public Task<CommentDto> AddAsAgentAsync(Guid workItemId, CommentCreate create, string agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
         => AddAsAgentAsync(workItemId, create, agentName, authorId, cancellationToken);
 
+    // In memory there is no transaction to join: the comment is added at once.
+    public Task<CommentDto> AddInTransactionAsync(Guid workItemId, CommentCreate create, string? agentName, Guid authorId, DbTransaction transaction, CancellationToken cancellationToken = default)
+        => Add(workItemId, create, agentName, authorId);
+
     private Task<CommentDto> Add(Guid workItemId, CommentCreate create, string? agentName, Guid authorId)
     {
         var body = RequireBody(create.Body);

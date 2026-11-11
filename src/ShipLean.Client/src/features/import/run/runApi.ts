@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import { api } from '../../../api/client';
+import { api } from '@shiplean/core/api/client';
 import type {
   ImportErrorDto,
   ImportJobDto,
   ImportLogLineDto,
   ImportMappingDto,
   ImportStartRequest,
-} from '../../../api/import';
+} from '@shiplean/core/api/import';
 import { registerInvalidation } from '../../../realtime';
 import {
   importJobsKey,

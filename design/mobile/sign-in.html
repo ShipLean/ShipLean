@@ -20,6 +20,8 @@
   Decisions D1–D8 (SHIP-736) settled by Joel on 7 Nov 2026: every recommendation kept. The ?alt= views below are
   the options he turned down, kept so the review page can show them.
   Alternatives the decisions weighed:
+  ?for=device             SHIP-907: arrived from the phone app's browser handoff (/login?returnUrl=/mobile/sign-in?…);
+                          one line says what happens after, and the title names the app (device-sign-in.html is next)
   ?alt=centred            the card centred on the screen, as today (D1)
   ?alt=flat               no card on a phone: the form sits on the page (D1)
   ?alt=side               labels beside the fields, as today (D2)
@@ -173,6 +175,9 @@ b { font-weight: var(--weight-semibold); }
   };
   const banner = s => banners[s] ? `<div class="alert ${banners[s][0]}" role="${banners[s][0] ? 'status' : 'alert'}">${banners[s][1]}</div>` : '';
   const email = state === 'error' ? 'ravi@larkspur.dev' : '';
+  // SHIP-907: the returnUrl is /mobile/sign-in, so say why the browser is asking. The device name comes from the returnUrl.
+  const forDevice = p.get('for') === 'device';
+  const deviceLine = forDevice ? `<div class="alert info" role="status">Sign in here to sign in the ShipLean app on <b>Priya’s Pixel 9</b>. You confirm it on the next page.</div>` : '';
 
   // Email field: the email keyboard, no capitals or autocorrect, "next" on the return key; Password: "go" (D6).
   const fields = `<div class="fields">
@@ -187,9 +192,9 @@ b { font-weight: var(--weight-semibold); }
     const gLast = google && alt.has('google-last');
     const inFooter = alt.has('footer');
     return `<form class="card" id="f" novalidate>
-      <h1>Sign in<small>to ${esc(instance)}</small></h1>
+      <h1>Sign in<small>to ${esc(instance)}${forDevice ? ', for the ShipLean app' : ''}</small></h1>
       <div class="body">
-        ${banner(state)}
+        ${banner(state)}${deviceLine}
         ${gFirst ? googleBtn + '<div class="or">or with your email</div>' : ''}
         ${fields}
         ${inFooter ? '' : signInBtn}

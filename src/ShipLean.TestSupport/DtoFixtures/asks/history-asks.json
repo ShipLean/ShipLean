@@ -1,0 +1,141 @@
+{
+  "revisions": [],
+  "asks": [
+    {
+      "kind": "withdrawn",
+      "badge": "D7",
+      "from": null,
+      "to": null,
+      "note": "Card management is out of scope for this Story.",
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "at": "2026-11-04T10:05:00+00:00",
+      "atLabel": "4 Nov"
+    },
+    {
+      "kind": "answered",
+      "badge": "Q2",
+      "from": null,
+      "to": null,
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": null,
+      "at": "2026-11-04T08:40:00+00:00",
+      "atLabel": "4 Nov"
+    },
+    {
+      "kind": "changed",
+      "badge": "D6",
+      "from": "No, brand and last four digits only",
+      "to": "Only when two cards share a brand",
+      "note": "Two Visa cards look the same otherwise.",
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": null,
+      "at": "2026-11-04T08:32:00+00:00",
+      "atLabel": "4 Nov"
+    },
+    {
+      "kind": "confirmed",
+      "badge": "D5",
+      "from": null,
+      "to": "Three",
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": null,
+      "at": "2026-11-04T08:30:00+00:00",
+      "atLabel": "4 Nov"
+    },
+    {
+      "kind": "edited",
+      "badge": "D2",
+      "from": "Greyed out",
+      "to": "Greyed out and not selectable",
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "at": "2026-11-03T09:40:00+00:00",
+      "atLabel": "3 Nov"
+    },
+    {
+      "kind": "asked",
+      "badge": "Q2",
+      "from": null,
+      "to": null,
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "at": "2026-11-03T09:16:00+00:00",
+      "atLabel": "3 Nov"
+    },
+    {
+      "kind": "asked",
+      "badge": "Q1",
+      "from": null,
+      "to": null,
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "at": "2026-11-03T09:15:00+00:00",
+      "atLabel": "3 Nov"
+    },
+    {
+      "kind": "raised",
+      "badge": "D1–D7",
+      "from": null,
+      "to": null,
+      "note": null,
+      "by": {
+        "id": "0199f000-0000-7000-8000-000000000001",
+        "name": "Joel Dickson",
+        "initials": "JD",
+        "avatarColour": "#5b6b8c",
+        "photoUrl": null
+      },
+      "agentName": "Claude Code (claude.ai)",
+      "at": "2026-11-03T09:12:00+00:00",
+      "atLabel": "3 Nov"
+    }
+  ]
+}

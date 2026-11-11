@@ -26,6 +26,18 @@ public static class UsageProps
     // How a work item was moved (MoveMethods) on work_item.moved, or how the user signed in (SignInMethods) on auth.signed_in.
     public const string Method = "method";
 
+    // What started a backup run, on backup.run_finished: "scheduled" or "manual".
+    public const string Trigger = "trigger";
+
+    // How a decision was answered, on decision.confirmed / decision.changed: recommended, alternative or own.
+    public const string AnswerKind = "answer_kind";
+
+    // How an opted-in MCP tool call got its arguments: "payload" (uploaded with create_payload_upload) or "inline".
+    public const string Input = "input";
+
+    // Why a device session ended, on device_session.ended: one of DeviceSessionEndReasons.
+    public const string Reason = "reason";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)

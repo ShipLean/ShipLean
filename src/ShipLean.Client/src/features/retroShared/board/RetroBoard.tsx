@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import type { RetroCategory, RetroCategoryColumnDto, RetroPointDto } from '../../../api/retros';
+import type {
+  RetroCategory,
+  RetroCategoryColumnDto,
+  RetroPointDto,
+} from '@shiplean/core/api/retros';
 import type { RetroActionScope } from '../actionDialog/RetroActionScope';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { AddTarget } from './AddTarget';

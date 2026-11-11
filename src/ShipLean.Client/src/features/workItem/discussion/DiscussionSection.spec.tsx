@@ -4,6 +4,7 @@ import { stubApi } from '../ct/stubApi';
 import { comment, stubComments } from '../ct/stubDetails';
 import { WorkItemDetailsHarness } from '../ct/WorkItemDetailsHarness';
 import { componentTestIds } from '../../../components/testIds';
+import { asksTestIds } from '../../asks/testIds';
 import { workItemTestIds as ids } from '../testIds';
 
 const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-141' } };
@@ -306,3 +307,77 @@ test('CommentItem_WhenSupersedeFails_ShouldShowErrorToast', async ({ mount, page
   );
   await expect(row.getByTestId(ids.commentSuperseded)).toHaveCount(0);
 });
+
+const tagged = (id: string, kind: 'answer' | 'changed' | 'about', label: string) => ({
+  ...comment(id, priya, `Posted for ${label}`),
+  askTag: { kind, label },
+});
+
+test('DiscussionSection_WhenCommentsHaveAskTags_ShouldShowEachChipLinkingToRow', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, story);
+  await stubComments(page, mei, [
+    tagged('c1', 'answer', 'Q1'),
+    tagged('c2', 'changed', 'D3'),
+    tagged('c3', 'about', 'D3'),
+    fromMei,
+  ]);
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  const rows = screen.getByTestId(ids.comment);
+  await expect(rows).toHaveCount(4);
+  const answer = rows.nth(0).getByTestId(asksTestIds.commentAskTag);
+  await expect(answer).toHaveText('Answer to Q1');
+  await expect(answer).toHaveAttribute('href', '#Q1');
+  await expect(answer).toHaveAttribute('title', "Posted from Q1's Reply");
+  await expect(answer.getByTestId(componentTestIds.chip)).toHaveAttribute('data-tone', 'ok');
+  const changed = rows.nth(1).getByTestId(asksTestIds.commentAskTag);
+  await expect(changed).toHaveText('D3 changed');
+  await expect(changed).toHaveAttribute('href', '#D3');
+  await expect(changed).toHaveAttribute('title', 'Posted when a settled decision changed');
+  await expect(changed.getByTestId(componentTestIds.chip)).toHaveAttribute('data-tone', 'accent');
+  const about = rows.nth(2).getByTestId(asksTestIds.commentAskTag);
+  await expect(about).toHaveText('On D3');
+  await expect(about).toHaveAttribute('href', '#D3');
+  await expect(about.getByTestId(componentTestIds.chip)).toHaveAttribute('data-tone', 'muted');
+  await expect(rows.nth(3).getByTestId(asksTestIds.commentAskTag)).toHaveCount(0);
+});
+
+test('DiscussionSection_WhenCommentListed_ShouldAnchorItByCommentId', async ({ mount, page }) => {
+  await stubApi(page, story);
+  await stubComments(page, mei, [fromPriya, fromMei]);
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  const rows = screen.getByTestId(ids.comment);
+  await expect(rows.nth(0)).toHaveAttribute('id', 'comment-c1');
+  await expect(rows.nth(1)).toHaveAttribute('id', 'comment-c2');
+});
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`DiscussionSection_WhenCommentsHaveAskTags_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubApi(page, story);
+    await stubComments(page, mei, [
+      tagged('c1', 'answer', 'Q1'),
+      tagged('c2', 'changed', 'D3'),
+      tagged('c3', 'about', 'D3'),
+    ]);
+    const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+    const rows = screen.getByTestId(ids.comment);
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toHaveScreenshot(`discussion-ask-chip-answer.${theme}.png`, {
+      animations: 'disabled',
+    });
+    await expect(rows.nth(1)).toHaveScreenshot(`discussion-ask-chip-changed.${theme}.png`, {
+      animations: 'disabled',
+    });
+    await expect(rows.nth(2)).toHaveScreenshot(`discussion-ask-chip-about.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}

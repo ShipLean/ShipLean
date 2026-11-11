@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Fake `bundle` for store/tests/test_push_listing.py: records how it was called, then exits
+# with $FAKE_BUNDLE_EXIT (default 0). The record, in $FAKE_BUNDLE_LOG, is:
+#   PWD=<working directory>
+#   BUNDLE_GEMFILE=<value>
+#   one line per argument
+# A `fastlane run` call (push_listing.sh's version code lookup) is recorded in
+# $FAKE_BUNDLE_LOG.run instead, prints $FAKE_FASTLANE_RUN_OUTPUT (default: version codes 7 and 5)
+# and exits with $FAKE_RUN_EXIT (default 0), so the main log keeps the upload call.
+set -euo pipefail
+
+if [ "${1:-}" = exec ] && [ "${2:-}" = fastlane ] && [ "${3:-}" = run ]; then
+  printf '%s\n' "$@" >"$FAKE_BUNDLE_LOG.run"
+  printf '%s\n' "${FAKE_FASTLANE_RUN_OUTPUT-[00:00:00]: Result: [7, 5]}"
+  exit "${FAKE_RUN_EXIT:-0}"
+fi
+
+{
+  printf 'PWD=%s\n' "$PWD"
+  printf 'BUNDLE_GEMFILE=%s\n' "${BUNDLE_GEMFILE:-}"
+  printf '%s\n' "$@"
+} >"$FAKE_BUNDLE_LOG"
+exit "${FAKE_BUNDLE_EXIT:-0}"

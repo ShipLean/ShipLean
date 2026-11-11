@@ -105,10 +105,44 @@ public static class ActionUsageMap
             "UsersAdmin.SetInstanceAdmin",
             "UsersAdmin.Unlock");
         Add(ActionUsage.Track(UsageEventNames.InstanceSearchReindexed), "SearchAdmin.Reindex");
+        Add(ActionUsage.Track(UsageEventNames.BackupSettingsSaved), "Backups.Put");
+        Add(ActionUsage.Track(UsageEventNames.BackupConnectionTested), "Backups.Test");
+        Add(ActionUsage.Track(UsageEventNames.BackupRunStarted), "Backups.Run");
+
+        // Asks: item read (R1)
+        Add(ActionUsage.Untracked(ScreenCounts), "WorkItemAsks.Get");
+
+        // Asks: decisions (SV-D2)
+        Add(ActionUsage.Track(UsageEventNames.DecisionWithdrawn), "WorkItemDecisions.Withdraw");
+        Add(ActionUsage.Track(UsageEventNames.DecisionDiscussed), "WorkItemDecisions.Discuss");
+        Add(ActionUsage.SelfEmitted, "WorkItemDecisions.Confirm", "WorkItemDecisions.Change");
+
+        // Asks: questions (SV-Q)
+        Add(ActionUsage.Track(UsageEventNames.QuestionAnswered), "WorkItemQuestions.Answer");
+        Add(ActionUsage.Track(UsageEventNames.QuestionWithdrawn), "WorkItemQuestions.Withdraw");
+
+        // Asks: history and waiting (SV-W)
+        Add(ActionUsage.Untracked(ScreenCounts), "Waiting.Get");
+
+        // Inbox (SHIP-926)
+        Add(ActionUsage.Untracked(ScreenCounts), "Inbox.Get", "Inbox.Answered");
+        Add(ActionUsage.Track(UsageEventNames.MentionSeen), "Mentions.Seen");
+        Add(ActionUsage.Track(UsageEventNames.MentionReplied), "Mentions.Reply");
+
+        // Phone screens (SHIP-916)
+        Add(ActionUsage.Untracked("A read: the phone's Features screen view already counts it."), "FeaturesOverview.Get", "FeatureDigest.Get");
+        Add(ActionUsage.Track(UsageEventNames.FeatureDigestSeen), "FeatureDigest.MarkSeen");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointSupported), "RetroSupport.Support");
+        Add(ActionUsage.Track(UsageEventNames.RetroPointUnsupported), "RetroSupport.Withdraw");
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
+
+        // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
+        Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");
+        Add(ActionUsage.SelfEmitted, "DeviceSignIn.Exchange", "DeviceSessions.Revoke", "DeviceSessions.Current");
+        Add(ActionUsage.Untracked(ScreenCounts), "DeviceSessions.List");
 
         Add(
             ActionUsage.Untracked(Helper),
@@ -120,7 +154,8 @@ public static class ActionUsageMap
             "ProjectCreation.KeyCheck",
             "FeatureSlug.Check",
             "BacklogWrites.Duplicates",
-            "Analytics.Test");
+            "Analytics.Test",
+            "Backups.CronPreview");
         Add(
             ActionUsage.Untracked(Noise),
             "Preferences.Get",
@@ -136,6 +171,7 @@ public static class ActionUsageMap
             "LinkCardImages.Favicon",
             "LinkCardImages.Image");
         Add(ActionUsage.Untracked("Anonymous, one-time upload token: the delivery that follows publishes SprintDemoChanged, and the demo's creation is counted by SprintDemo.Create."), "DemoUpload.Upload");
+        Add(ActionUsage.Untracked("Anonymous, one-time upload token: the upload URL's issue is counted by create_payload_upload, and the call that uses the payload by its own tool."), "PayloadUploads.Upload");
         Add(ActionUsage.Untracked("Only builds Google's consent address; nothing changes until the callback and the check, and the check is counted by YouTube.Check."), "YouTube.Start");
         Add(ActionUsage.Untracked("Anonymous browser redirect from Google with no session of its own; the connection it stores is counted by YouTube.Check when the person confirms it."), "YouTube.Callback");
         Add(ActionUsage.Untracked("Anonymous, token-authenticated download of the project's logo for the agent making a demo; the demo's creation is counted by SprintDemo.Create."), "DemoLogoDownload.Download");
@@ -147,6 +183,7 @@ public static class ActionUsageMap
             "AgentSession.Availability",
             "AgentSession.Sessions",
             "Analytics.Get",
+            "Backups.Get",
             "Auth.Instance",
             "GoogleSignIn.Start",
             "BoardSettings.Get",

@@ -12,7 +12,7 @@ namespace ShipLean.TestSupport.Fixtures;
 // plus a browser context per class from the run's shared Chromium and a fresh page per test. A trace is recorded per
 // test and kept under artifacts/playwright-traces/ only when the test fails.
 // The tests drive the shipped bundle, so build the client first:
-//   cd src/ShipLean.Client && pnpm install && pnpm run build     (emits into src/ShipLean.WebApi/wwwroot)
+//   cd src && pnpm install && cd ShipLean.Client && pnpm run build     (emits into src/ShipLean.WebApi/wwwroot)
 public abstract partial class AcceptanceFixture
 {
     private ClonedDatabase _database = null!;
@@ -89,7 +89,7 @@ public abstract partial class AcceptanceFixture
     {
         Assert.That(
             ShipLeanHost.HasClientBundle(),
-            "The SPA bundle is missing. Build the client first: cd src/ShipLean.Client && pnpm install && pnpm run build "
+            "The SPA bundle is missing. Build the client first: cd src && pnpm install && cd ShipLean.Client && pnpm run build "
             + "(it emits into src/ShipLean.WebApi/wwwroot).");
         _database = await CloneDatabaseAsync();
         DatabaseName = _database.Name;

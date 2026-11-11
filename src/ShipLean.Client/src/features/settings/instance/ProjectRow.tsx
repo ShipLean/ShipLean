@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { InstanceProjectDto } from '../../../api/projects';
+import type { InstanceProjectDto } from '@shiplean/core/api/projects';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';

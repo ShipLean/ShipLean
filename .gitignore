@@ -290,6 +290,8 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+# ...but not the backups feature's folders (Features/Backups, Contracts/Backups, Tests/Backups).
+!Backups/
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/

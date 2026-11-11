@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { boardTestIds as ids } from '../testIds';
 import type { OpenChildList } from './ChildList';
 

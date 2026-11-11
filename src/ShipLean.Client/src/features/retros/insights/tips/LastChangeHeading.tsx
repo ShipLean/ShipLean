@@ -1,4 +1,4 @@
-import type { RetroInsightsMode, RetroVerdict } from '../../../../api/retros';
+import type { RetroInsightsMode, RetroVerdict } from '@shiplean/core/api/retros';
 import { retrosTestIds as ids } from '../../testIds';
 import { DefinitionTip } from './DefinitionTip';
 import { Tip } from './Tip';

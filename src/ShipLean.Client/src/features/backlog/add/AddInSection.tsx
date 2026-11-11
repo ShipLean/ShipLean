@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { WorkItemTypeId } from '../../../api/refs';
-import type { BacklogSectionDto } from '../../../api/views';
-import type { ParentRefDto } from '../../../api/workItems';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { BacklogSectionDto } from '@shiplean/core/api/views';
+import type { ParentRefDto } from '@shiplean/core/api/workItems';
 import type { SectionCollapse } from '../planning/useSectionCollapse';
 import { backlogTestIds as ids } from '../testIds';
 import { AddRowFields } from './AddRowFields';

@@ -1,4 +1,4 @@
-import type { AgentConnectionOption, ProjectDto } from '../../../api/projects';
+import type { AgentConnectionOption, ProjectDto } from '@shiplean/core/api/projects';
 import { settingsTestIds } from '../testIds';
 import { HolidaysPanel } from './HolidaysPanel';
 import { FieldErrorText } from './FieldErrorText';

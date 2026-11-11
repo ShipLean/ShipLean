@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ProjectDto } from '../../../api/projects';
-import type { BacklogRowDto, BacklogViewDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { BACKLOG_COLUMNS, backlogKey, useBacklog, useBacklogView } from '../backlogApi';
 import { moveRowToSection, useReorder } from '../drag/useReorder';
 import { useTeammateChanges } from '../realtime/useTeammateChanges';

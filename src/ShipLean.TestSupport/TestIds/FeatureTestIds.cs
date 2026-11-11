@@ -31,6 +31,11 @@ public static class FeatureTestIds
     public const string StatusEditCancel = "feature-status-edit-cancel";
     public const string StatusError = "feature-status-error";
 
+    // SHIP-916 W1 health
+    public const string StatusHealth = "feature-status-health";
+    public const string StatusHealthSetBy = "feature-status-health-set-by";
+    public const string StatusHealthSelect = "feature-status-health-select";
+
     // F2 goal, Feature strip, stories and bugs
     public const string GoalView = "feature-goal-view";
     public const string GoalEdit = "feature-goal-edit";

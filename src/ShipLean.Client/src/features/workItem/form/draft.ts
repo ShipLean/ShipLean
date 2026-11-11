@@ -1,5 +1,6 @@
-import type { ChecklistItem, LinkType, LinkValue } from '../../../api/persisted';
-import type { SprintRef, StateRef, UserRef } from '../../../api/refs';
+import type { ChecklistItem, LinkType, LinkValue } from '@shiplean/core/api/persisted';
+import type { FeatureHealth } from '@shiplean/core/api/screens';
+import type { SprintRef, StateRef, UserRef } from '@shiplean/core/api/refs';
 import type {
   AutoLinkDto,
   LinkCardDto,
@@ -7,7 +8,7 @@ import type {
   ParentRefDto,
   WorkItemChanges,
   WorkItemDto,
-} from '../../../api/workItems';
+} from '@shiplean/core/api/workItems';
 
 /** A link in the draft. A saved link has its row id; one added in the form has `id: null` until a save. `uid` tells draft entries apart. */
 export interface DraftLink {
@@ -56,6 +57,8 @@ export interface Draft {
   /** Feature only, like statusLine: '' on every other type. */
   goal: string;
   statusLine: string;
+  /** Feature only, like statusLine: null on every other type. */
+  health: FeatureHealth | null;
   links: DraftLink[];
 }
 
@@ -72,6 +75,7 @@ export const draftFields: readonly DraftField[] = [
   'parent',
   'tags',
   'statusLine',
+  'health',
   'goal',
   'description',
   'acceptanceCriteria',
@@ -90,6 +94,7 @@ export const fieldLabels: Record<DraftField, string> = {
   parent: 'Parent',
   tags: 'Tags',
   statusLine: 'Status',
+  health: 'Health',
   goal: 'Goal',
   description: 'Description',
   acceptanceCriteria: 'Acceptance criteria',
@@ -114,6 +119,7 @@ export function draftOf(item: WorkItemDto): Draft {
     tags: item.tags,
     goal: item.goal,
     statusLine: item.statusLine,
+    health: item.health,
     links: item.links.map(draftLinkOf),
   };
 }
@@ -181,6 +187,7 @@ export function changesOf(base: Draft, draft: Draft): WorkItemChanges {
     tags: changed.has('tags') ? set(draft.tags) : null,
     goal: changed.has('goal') ? set(draft.goal) : null,
     statusLine: changed.has('statusLine') ? set(draft.statusLine) : null,
+    health: changed.has('health') ? set(draft.health) : null,
     addLinks: links.add,
     removeLinkIds: links.removeIds,
   };

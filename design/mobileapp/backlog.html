@@ -113,7 +113,7 @@ const bar = () => App.tabRoot({ title: 'Backlog', right: iconBtn('search', { lab
 const seg = (on) => `<div class="seg">${['Epics', 'Features', 'Stories'].map((x) => `<button class="${x === on ? 'on' : ''}">${x}</button>`).join('')}</div>`;
 const chips = (needsOn = false, level = 'Features') => `<div class="subbar chips"><span class="chip ask${needsOn ? ' on' : ''}">${icon('inbox', 'sm')}Needs me <span class="n">${level === 'Features' ? 3 : 1}</span></span><span class="chip">Open</span><span class="chip">All epics ${icon('down', 'sm')}</span></div>`;
 const sub = (level, needsOn) => `<div class="subbar">${seg(level)}</div>${chips(needsOn, level)}`;
-const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 4, mic });
+const tabs = (mic = 'idle') => tabBar('backlog', { inbox: 15, mic });
 
 const featuresBody = (order, o) => `<div class="hint">${icon('mic', 'sm')}Rank order. Hold the mic to move, or tap ${icon('rank', 'sm')}</div><div class="section-h">7 open Features</div>${featureList(order, o)}`;
 const storiesBody = (o = {}) => `<div class="section-h">12 open Stories</div><div class="list">${S.map((s, i) => storyRow(s, i + 1, o[i] || {})).join('')}</div>`;

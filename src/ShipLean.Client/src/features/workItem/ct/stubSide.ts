@@ -1,7 +1,8 @@
-import type { AttachmentDto } from '../../../api/attachments';
-import type { FieldChange } from '../../../api/persisted';
-import type { UserRef } from '../../../api/refs';
-import type { RevisionDto } from '../../../api/workItems';
+import type { AskHistoryLineDto } from '@shiplean/core/api/asks';
+import type { AttachmentDto } from '@shiplean/core/api/attachments';
+import type { FieldChange } from '@shiplean/core/api/persisted';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { HistoryDto, RevisionDto } from '@shiplean/core/api/workItems';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
 interface StubRoute {
@@ -75,6 +76,7 @@ export async function stubSide(
   me: UserRef,
   initial: AttachmentDto[],
   revisions: RevisionDto[],
+  asks: AskHistoryLineDto[] = [],
 ) {
   let attachments = [...initial];
   const uploaded: string[] = [];
@@ -102,7 +104,9 @@ export async function stubSide(
     attachments = attachments.filter((a) => a.id !== id);
     return route.fulfill({ status: 204 });
   });
-  await page.route('**/api/work-items/*/history', (route) => route.fulfill(json({ revisions })));
+  await page.route('**/api/work-items/*/history', (route) =>
+    route.fulfill(json({ revisions, asks } satisfies HistoryDto)),
+  );
   return {
     uploaded,
     archived,

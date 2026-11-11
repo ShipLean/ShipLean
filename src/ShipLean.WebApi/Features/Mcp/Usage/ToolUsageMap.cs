@@ -34,6 +34,7 @@ public static class ToolUsageMap
         ["attach_markdown"] = UsageEventNames.AttachmentAdded,
         ["attach_file"] = UsageEventNames.AttachmentAdded,
         ["read_attachment"] = UsageEventNames.AttachmentViewed,
+        ["create_payload_upload"] = UsageEventNames.PayloadUploadIssued,
         ["link"] = UsageEventNames.LinkAdded,
         ["report_link_state"] = UsageEventNames.LinkStateReported,
         ["create_sprint"] = UsageEventNames.SprintCreated,
@@ -45,5 +46,9 @@ public static class ToolUsageMap
         ["log_retrospective"] = UsageEventNames.RetroPointAdded,
         ["list_retrospectives"] = UsageEventNames.RetroListed,
         ["decide_retro_actions"] = UsageEventNames.RetroActionsDecided,
+        ["record_decisions"] = UsageEventNames.DecisionRecorded,
+        ["ask"] = UsageEventNames.QuestionAsked,
+        ["answer_decision"] = UsageEventNames.DecisionAnswered,
+        ["answer_question"] = UsageEventNames.QuestionAnswered,
     };
 }

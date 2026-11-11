@@ -50,12 +50,17 @@ public class BauToolCoverageTests
         ["capture_plan"] = Kind.ByKeyOnly,
         ["create_feature"] = Kind.ByKeyOnly,
         ["decide_retro_actions"] = Kind.ByKeyOnly,
+        ["record_decisions"] = Kind.ByKeyOnly,
+        ["ask"] = Kind.ByKeyOnly,
+        ["answer_decision"] = Kind.ByKeyOnly,
+        ["answer_question"] = Kind.ByKeyOnly,
         ["create_sprint"] = Kind.NoItems,
         ["create_sprint_demo"] = Kind.NoItems,
         ["list_projects"] = Kind.NoItems,
         ["planning_guide"] = Kind.NoItems,
         ["list_retrospectives"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,
+        ["create_payload_upload"] = Kind.NoItems,
     };
 
     private static IReadOnlyList<string> ToolNames()

@@ -147,23 +147,23 @@ public class PlanShapeRulesTests
     }
 
     [Test]
-    public void Rules_Over60Items_ShouldBeError()
+    public void Rules_Over150Items_ShouldBeError()
     {
         var plan = Fixture();
         var task = plan.Stories![0].Tasks![0];
-        // 6 stories + 23 tasks + 1 new feature = 30 items; 1 more story + 30 tasks = 61.
-        var extra = new CapturePlanStory { Title = "Big", Wave = "3", Tasks = [.. Enumerable.Repeat(task, 30)] };
+        // 6 stories + 23 tasks + 1 new feature = 30 items; 1 more story + 120 tasks = 151.
+        var extra = new CapturePlanStory { Title = "Big", Wave = "3", Tasks = [.. Enumerable.Repeat(task, 120)] };
         Only(plan with { Stories = [.. plan.Stories, extra] }, PlanFindingSeverity.Error).ShouldBe("stories");
     }
 
     [Test]
-    public void Rules_ExistingFeatureAtSixtyItems_ShouldPass()
+    public void Rules_ExistingFeatureAt150Items_ShouldPass()
     {
         var task = Fixture().Stories![0].Tasks![0];
         var plan = Fixture() with
         {
             Feature = new CapturePlanFeature { Key = "SHIP-1" },
-            Stories = [new CapturePlanStory { Title = "Big", Wave = "1", Tasks = [.. Enumerable.Repeat(task, 59)] }],
+            Stories = [new CapturePlanStory { Title = "Big", Wave = "1", Tasks = [.. Enumerable.Repeat(task, 149)] }],
         };
         Rules.Check(plan).ShouldBeEmpty();
     }

@@ -7,7 +7,8 @@ The code is the source of truth. `UsageEventNames`, `ActionUsageMap` and `ToolUs
 ## What is tracked
 
 - **Events count actions, not objects.** `work.captured` is one event even if it made five items. Object counts live in the database.
-- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp` or `system`).
+- **People and agents are tracked side by side.** The same action has the same event name whether a person did it in the web app or an agent did it over MCP. Every event says which kind of actor did it (`actor_kind`: `user`, `agent` or `system`) and on which surface (`surface`: `web`, `mcp`, `system` or `app`).
+- **`app` is the phone app.** Tracked actions (the action filter) and `device_session.*` events carry `app` when the request was made with a device bearer, told by the device-session claim on the authenticated principal, never by a header. `device_session.created` is tagged `app` at the anonymous exchange, which only the app calls, because that request has no bearer yet. Other self-emitted events (`project.created`, `project.joined`) and screen views stay `web` for now.
 - **Every event carries its project** (`project_id`, `project_key`) when the request touched exactly one project, and `project_count` says how many it touched.
 - **What is not tracked:** reads that a screen view already counts, helper calls, protocol noise and webhooks (counted as system events where handled). Each is listed in `ActionUsageMap` with a reason. Requests refused before the action runs (a 403 from the MCP gate, a web authorization failure, a model-binding failure) never reach a capture filter and are not tracked.
 
@@ -45,7 +46,7 @@ Every event carries these (a key is left out when its value is null). The consta
 
 | Property | Meaning |
 |---|---|
-| `surface`, `actor_kind` | `web` / `mcp` / `system`; `user` / `agent` / `system` |
+| `surface`, `actor_kind` | `web` / `mcp` / `system` / `app`; `user` / `agent` / `system` |
 | `user_id` | the user (for an agent, the user it acts for) |
 | `agent_id`, `agent_name`, `agent_host`, `agent_verified` | agent actors only; name and host are client-supplied and cut to 64 characters |
 | `project_id`, `project_key`, `project_count` | see above |
@@ -53,9 +54,9 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
 
-**Viewport.** The SPA's API client sends `X-ShipLean-Viewport` (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`) on every request, with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls (no header is sent): a Google or proxy sign-in made by navigation records `auth.signed_in` without a viewport, while a sign-in recorded on an API request (a password sign-in, or a proxy re-sign-in on an `/api` call after the cookie lapses) has one.
+**Viewport.** The SPA's platform host (`webPlatform.ts`) adds `X-ShipLean-Viewport` to every API request (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`), with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls (no header is sent): a Google or proxy sign-in made by navigation records `auth.signed_in` without a viewport, while a sign-in recorded on an API request (a password sign-in, or a proxy re-sign-in on an `/api` call after the cookie lapses) has one.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -147,6 +148,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `auth.signed_out` |  | `Auth.Logout` |
 | `auth.password_changed` |  | `Auth.ChangePassword` |
 | `auth.other_sessions_signed_out` |  | `Auth.SignOutOthers` |
+| `device_session.created` |  | self-emitted: DeviceSignIn.Exchange |
+| `device_session.ended` (`reason`: `app_sign_out`, `web_sign_out`, `expired`, `stamp_changed`, `user_disabled`) |  | self-emitted: DeviceSessions.Current (`app_sign_out`), DeviceSessions.Revoke (`web_sign_out`) |
 | `agent.connected` |  | self-emitted: Consent.Decide (allow) |
 | `agent.consent_denied` |  | self-emitted: Consent.Decide (deny) |
 | `agent.revoked` |  | `ConnectedAgents.Revoke` |
@@ -194,6 +197,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `attachment.added` | `attach_markdown`, `attach_file` | `WorkItemAttachments.Upload` |
 | `attachment.viewed` | `read_attachment` | `Attachments.Download`, `AttachmentMarkdown.View` |
 | `attachment.archived` |  | `Attachments.Archive` |
+| `payload_upload.issued` | `create_payload_upload` |  |
 | `link.added` | `link` | `WorkItemLinks.Add` |
 | `link.state_reported` | `report_link_state` |  |
 | `link_card.added` |  | `LinkCards.Add` |
@@ -230,6 +234,20 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.not_needed_undone` |  | `RetroDecisions.UndoNotNeeded` |
 | `retro.merge_kept_apart` |  | `RetroMergeProposals.KeepApart` |
 | `retro.actions_decided` | `decide_retro_actions` |  |
+| `decision.recorded` | `record_decisions` |  |
+| `decision.answered` | `answer_decision` |  |
+| `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count` only) |
+| `decision.changed` |  | self-emitted: `WorkItemDecisions.Change` (properties `answer_kind` and `count`, always 1) |
+| `decision.withdrawn` |  | `WorkItemDecisions.Withdraw` |
+| `decision.discussed` |  | `WorkItemDecisions.Discuss` |
+| `question.asked` | `ask` |  |
+| `question.answered` | `answer_question` | `WorkItemQuestions.Answer` |
+| `question.withdrawn` |  | `WorkItemQuestions.Withdraw` |
+| `retro.point_supported` |  | `RetroSupport.Support` |
+| `retro.point_unsupported` |  | `RetroSupport.Withdraw` |
+| `feature.digest_seen` |  | `FeatureDigest.MarkSeen` |
+| `mention.seen` |  | `Mentions.Seen` |
+| `mention.replied` |  | `Mentions.Reply` |
 | `import.started` |  | `ImportJobs.Start` |
 | `import.job_changed` |  | `ImportJobs.Rerun`, `ImportJobs.Retry`, `ImportJobs.Skip`, `ImportJobs.Stop` |
 | `import.jira_connected` |  | `Jira.Put` |
@@ -247,7 +265,11 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `instance.user_changed` |  | `UsersAdmin.ChangeEmail`, `UsersAdmin.IssueOneTimePassword`, `UsersAdmin.SetDisabled`, `UsersAdmin.SetInstanceAdmin`, `UsersAdmin.Unlock` |
 | `instance.search_reindexed` |  | `SearchAdmin.Reindex` |
 | `screen.viewed` |  | self-emitted: Usage.Screen |
+| `backup.settings_saved` |  | `Backups.Put` |
+| `backup.connection_tested` |  | `Backups.Test` |
+| `backup.run_started` |  | `Backups.Run` |
+| `backup.run_finished` |  | system: the backup job (properties `provider`, `trigger`: `scheduled` or `manual`) |
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 
-The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`).
+The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`). `PayloadUploads.Upload` is untracked for the same reason: the upload URL's issue is counted by `payload_upload.issued`, and the call that uses the payload by its own tool's event.

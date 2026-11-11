@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { ImportJobDto } from '../../../api/import';
+import type { ImportJobDto } from '@shiplean/core/api/import';
 import { connection, json, project, stubImport } from '../ct/fixtures';
 import { importTestIds as ids } from '../testIds';
 import { IntegrationsTab } from './IntegrationsTab';

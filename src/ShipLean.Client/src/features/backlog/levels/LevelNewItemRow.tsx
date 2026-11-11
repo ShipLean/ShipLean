@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { WorkItemTypeId } from '../../../api/refs';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';

@@ -1,5 +1,5 @@
-import type { StateChanges, StateDto, StateUpdate } from '../../../api/projects';
-import type { StateCategory, WorkItemTypeId } from '../../../api/refs';
+import type { StateChanges, StateDto, StateUpdate } from '@shiplean/core/api/projects';
+import type { StateCategory, WorkItemTypeId } from '@shiplean/core/api/refs';
 import { TYPE_LABELS } from './categories';
 
 /** One state of one type as the draft would leave it, in order. */

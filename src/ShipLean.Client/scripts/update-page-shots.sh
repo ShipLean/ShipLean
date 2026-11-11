@@ -15,8 +15,9 @@ STORE_VOLUME=shiplean-pnpm-store
 
 client_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 repo_root=$(cd "$client_dir/../.." && pwd)
-pnpm_version=$(sed -n 's/.*"packageManager": "pnpm@\([^"]*\)".*/\1/p' "$client_dir/package.json")
-[ -n "$pnpm_version" ] || { echo "no packageManager pnpm@… in package.json" >&2; exit 1; }
+# The pnpm workspace is rooted at src/: its package.json pins pnpm.
+pnpm_version=$(sed -n 's/.*"packageManager": "pnpm@\([^"]*\)".*/\1/p' "$repo_root/src/package.json")
+[ -n "$pnpm_version" ] || { echo "no packageManager pnpm@… in src/package.json" >&2; exit 1; }
 
 mode=update
 specs=()
@@ -45,7 +46,9 @@ docker run --rm \
   -e PW_ARGS="$pw_args --workers=${PAGE_SHOTS_WORKERS:-2}" \
   -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
   -v "$repo_root":/w \
+  -v /w/src/node_modules \
   -v /w/"$rel_client"/node_modules \
+  -v /w/src/ShipLean.Core.Client/node_modules \
   -v "$STORE_VOLUME":/pnpm-store \
   -w /w/"$rel_client" \
   "$IMAGE" bash -c '
@@ -53,7 +56,7 @@ docker run --rm \
     {
       npm install -g --silent "pnpm@$PNPM_VERSION" &&
       pnpm config set store-dir /pnpm-store --location=global &&
-      pnpm install --frozen-lockfile --prefer-offline &&
+      pnpm install --frozen-lockfile --prefer-offline --filter shiplean-client... &&
       pnpm exec playwright test -c playwright-ct.config.ts "$@" $PW_ARGS
     } || status=$?
     chown -R "$HOST_UID:$HOST_GID" playwright/.cache test-results playwright-report src 2>/dev/null || true

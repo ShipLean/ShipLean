@@ -1,4 +1,4 @@
-import type { ProjectDto } from '../../../api/projects';
+import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useDemoSettings } from '../../demos/demosApi';
 import { BrandPanel } from './BrandPanel';
 import { DemoSettingsForm } from './DemoSettingsForm';

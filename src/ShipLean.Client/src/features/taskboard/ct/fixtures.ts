@@ -1,7 +1,7 @@
-import type { ProjectDto } from '../../../api/projects';
-import type { StateRef, UserRef } from '../../../api/refs';
-import type { SprintDto } from '../../../api/sprints';
-import type { CardDto, TaskboardRowDto, TaskboardViewDto } from '../../../api/views';
+import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { StateRef, UserRef } from '@shiplean/core/api/refs';
+import type { SprintDto } from '@shiplean/core/api/sprints';
+import type { CardDto, TaskboardRowDto, TaskboardViewDto } from '@shiplean/core/api/views';
 
 export const PROJECT: ProjectDto = {
   id: 'p1',
@@ -61,6 +61,7 @@ export function task(key: string, state: StateRef, overrides: Partial<CardDto> =
     styleRuleId: null,
     extraFields: [],
     revision: 1,
+    health: null,
     ...overrides,
   };
 }

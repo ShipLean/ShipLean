@@ -10,8 +10,8 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import type { UserRef } from '../../../api/refs';
-import type { CardDto } from '../../../api/views';
+import type { UserRef } from '@shiplean/core/api/refs';
+import type { CardDto } from '@shiplean/core/api/views';
 import { TaskCardFace } from '../cards/TaskCardFace';
 import type { TaskboardGrouping } from '../taskboardApi';
 import type { TaskboardGridView } from '../taskboardGridView';

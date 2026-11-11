@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { RetroCardDto, RetroPointDto } from '../../../../../api/retros';
+import type { RetroCardDto, RetroPointDto } from '@shiplean/core/api/retros';
 import { routePath } from '../../../../../routes';
 import { Chip } from '../../../../../components/Chip';
 import { TypeIcon } from '../../../../../components/TypeIcon';

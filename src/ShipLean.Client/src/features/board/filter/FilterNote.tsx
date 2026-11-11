@@ -1,4 +1,4 @@
-import type { BoardColumnDto } from '../../../api/views';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import type { BoardFilterQuery } from '../boardApi';
 import { boardTestIds as ids } from '../testIds';
 import { filterCount, hiddenCards } from './filterQuery';

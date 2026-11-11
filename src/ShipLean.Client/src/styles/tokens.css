@@ -61,6 +61,7 @@
   --text-base: 13px; /* body */
   --text-md: 14px; /* section headings */
   --text-lg: 18px; /* page / screen titles */
+  --text-body15: 15px; /* phone body text (native sizes) */
   --leading: 1.45;
   --weight-regular: 400;
   --weight-medium: 500;

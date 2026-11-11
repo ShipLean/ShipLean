@@ -457,6 +457,48 @@ public static class SeedIds
         public static readonly Guid Ship101PageToArchive = new("00000005-0000-4000-8004-000000000102");
     }
 
+    // On SHIP-124, Tom's Story (db/seed/0012_asks.sql), all open: the access sweep's asks rows (D1 confirm, D2 change, D3 withdraw,
+    // D4 discuss, Q1 answer, Q2 withdraw). Item is a property, not a field: it is WorkItems.Ship124, and every field must be distinct.
+    public static class Asks
+    {
+        public static Guid Item => WorkItems.Ship124;
+        public static readonly Guid D1 = new("0000000b-0000-4000-8001-000000000001");
+        public static readonly Guid D2 = new("0000000b-0000-4000-8001-000000000002");
+        public static readonly Guid D3 = new("0000000b-0000-4000-8001-000000000003");
+        public static readonly Guid D4 = new("0000000b-0000-4000-8001-000000000004");
+        public static readonly Guid Q1 = new("0000000b-0000-4000-8002-000000000001");
+        public static readonly Guid Q2 = new("0000000b-0000-4000-8002-000000000002");
+    }
+
+    // Tom's Inbox (db/seed/0013_inbox.sql). The features are properties, not fields: they name existing work items again.
+    // StaleFeature (SHIP-103) is Tom's, with its status line verified 5 days before the start of today, so it is stale in his Inbox.
+    // FreshFeature (SHIP-104) is Tom's, with its status line verified at the start of today, so it is never in the Inbox. The two
+    // mentions are Priya's comments on SHIP-124 naming @Tom Okafor: one open, one seen.
+    public static class Inbox
+    {
+        public static Guid StaleFeature => WorkItems.Ship103;
+        public static Guid FreshFeature => WorkItems.Ship104;
+        public static readonly Guid OpenMention = new("0000000c-0000-4000-8001-000000000001");
+        public static readonly Guid OpenMentionComment = new("00000005-0000-4000-8002-000000001241");
+        public static readonly Guid SeenMention = new("0000000c-0000-4000-8001-000000000002");
+        public static readonly Guid SeenMentionComment = new("00000005-0000-4000-8002-000000001242");
+    }
+
+    // The phone app's screens (db/seed/0014_phone_screens.sql). The features, user and project are properties, not fields: they name
+    // existing rows again. AtRiskFeature (SHIP-102) and BlockedFeature (SHIP-108) are Tom's, their health set by Tom a day before
+    // today. Retro is Joel's person retro on Sprint 24 with one improve point, RetroPoint, that Priya supports (RetroSupport, live).
+    // Tom saw SHIP's Feature digest 2 days before today: feature_digest_seen is keyed (user_id, project_id), so it has no id of its own.
+    public static class Screens
+    {
+        public static Guid AtRiskFeature => WorkItems.Ship102;
+        public static Guid BlockedFeature => WorkItems.Ship108;
+        public static Guid DigestSeenUser => Users.Tom;
+        public static Guid DigestSeenProject => Projects.Ship;
+        public static readonly Guid Retro = new("0000000d-0000-4000-8001-000000000001");
+        public static readonly Guid RetroPoint = new("0000000d-0000-4000-8001-000000000002");
+        public static readonly Guid RetroSupport = new("0000000d-0000-4000-8001-000000000003");
+    }
+
     public static class ImportJobs
     {
         public static readonly Guid MobImport = new("00000006-0000-4000-8000-000000000001");

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { CardDto } from '../../../api/views';
+import type { CardDto } from '@shiplean/core/api/views';
 import { componentTestIds } from '../../../components/testIds';
 import { boardTestIds as ids } from '../testIds';
 import { Card } from './Card';
@@ -520,4 +520,39 @@ test('Card_WhenFeatureHasActionItems_ShouldCountThemInTheRollups', async ({ moun
     route,
   );
   await expect(page.getByTestId(ids.cardRollup)).toHaveText(['S1/2', 'A2/3']);
+});
+
+const mountCard = (
+  item: CardDto,
+  level: 'features' | 'stories',
+  mount: Parameters<Parameters<typeof test>[2]>[0]['mount'],
+) =>
+  mount(
+    <Card
+      card={item}
+      projectKey="SHIP"
+      level={level}
+      compact={false}
+      settings={withBugs}
+      inDone={false}
+    />,
+    route,
+  );
+
+test('Card_WhenFeatureAtRisk_ShouldShowHealthPill', async ({ mount, page }) => {
+  await mountCard(card({ ...feature, health: 'atRisk' }), 'features', mount);
+  await expect(page.getByTestId(ids.cardHealth)).toHaveText('At risk');
+  await expect(page.getByTestId(ids.cardHealth)).toHaveAttribute('data-health', 'atRisk');
+});
+
+test('Card_WhenFeatureOnTrack_ShouldShowNoHealthPill', async ({ mount, page }) => {
+  await mountCard(card({ ...feature, health: 'onTrack' }), 'features', mount);
+  await expect(page.getByTestId(ids.cardTitle)).toBeVisible();
+  await expect(page.getByTestId(ids.cardHealth)).toHaveCount(0);
+});
+
+test('Card_WhenStory_ShouldShowNoHealthPill', async ({ mount, page }) => {
+  await mountCard(card({ key: 'SHIP-158', health: 'blocked' }), 'stories', mount);
+  await expect(page.getByTestId(ids.cardTitle)).toBeVisible();
+  await expect(page.getByTestId(ids.cardHealth)).toHaveCount(0);
 });

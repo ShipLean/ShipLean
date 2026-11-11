@@ -1,4 +1,4 @@
-import type { WorkItemLinkRowDto } from '../../../../api/linkCards';
+import type { WorkItemLinkRowDto } from '@shiplean/core/api/linkCards';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { linkTypeLabels } from '../../../workItem/links/linkTypes';

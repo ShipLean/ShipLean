@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { ApiRequestError } from '../../../api/client';
-import type { SprintCreate } from '../../../api/sprints';
+import { ApiRequestError } from '@shiplean/core/api/client';
+import type { SprintCreate } from '@shiplean/core/api/sprints';
 import { useDebouncedValue } from '../../workItem/form/description/useDebouncedValue';
 import { useCreateSprint, useNextSprint, useSuggestedSprintName } from '../sprintsApi';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';

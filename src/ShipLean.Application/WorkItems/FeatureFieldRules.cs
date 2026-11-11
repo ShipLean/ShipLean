@@ -1,5 +1,6 @@
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Screens;
 using ShipLean.Core;
 
 namespace ShipLean.Application.WorkItems;
@@ -10,8 +11,8 @@ public static class FeatureFieldRules
     public const int GoalMaxLength = 1000;
     public const int StatusLineMaxLength = 500;
 
-    // Goal, status line and the verified stamp belong to a Feature; the status is one line.
-    public static void Check(WorkItemTypeId type, string goal, string statusLine, DateTimeOffset? statusVerifiedAt)
+    // Goal, status line, the verified stamp and health belong to a Feature; the status is one line.
+    public static void Check(WorkItemTypeId type, string goal, string statusLine, DateTimeOffset? statusVerifiedAt, FeatureHealth? health)
     {
         if (type != WorkItemTypeId.Feature)
         {
@@ -23,6 +24,11 @@ public static class FeatureFieldRules
             if (statusLine.Length > 0 || statusVerifiedAt is not null)
             {
                 throw ApiException.Validation("Only a Feature has a status.", "statusLine");
+            }
+
+            if (health is not null)
+            {
+                throw ApiException.Validation("Only a Feature has a health.", "health");
             }
 
             return;

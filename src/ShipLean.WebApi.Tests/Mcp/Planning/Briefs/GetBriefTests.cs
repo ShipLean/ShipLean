@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Contracts.Attachments;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Plans;
 using ShipLean.WebApi.Features.Mcp.Planning;
@@ -73,6 +74,46 @@ public class GetBriefTests : McpFixture
         order.ShouldBe(order.Order().ToList());
         markdown.IndexOf(PlanGuide.Read(PlanGuidePart.Report).Trim(), order[^1], StringComparison.Ordinal)
             .ShouldBeGreaterThan(order[^1]);
+    }
+
+    [Test]
+    public async Task GetBrief_WhenTaskParentHasChangedDecision_ShouldIncludeItInMarkdown()
+    {
+        var plan = PlanFixture.FeatureEditor;
+        var story = plan.Stories.Last(candidate => candidate.Tasks.Count > 0);
+        var task = story.Tasks[^1];
+        var storyKey = _keys.Stories[story.Title];
+        var taskKey = _keys.Tasks[task.Title];
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new DecisionBuilder(_keys.Ids[storyKey]).Number(1).Question("Which store?").Answer("alternative", "Postgres", 0)
+                .State("changed").AnsweredBy(SeedIds.Users.Joel, TestSupport.Asks.AskDefaults.Now()).Alternatives("Postgres").BuildAsync(connection);
+            await new DecisionBuilder(_keys.Ids[taskKey]).Number(1).Question("Which retry?").BuildAsync(connection);
+        }
+
+        var markdown = (await BriefAsync(taskKey)).GetProperty("markdown").GetString()!;
+
+        markdown.ShouldStartWith(BriefPlanContext.StateRule);
+        markdown.ShouldContain("- D1 (changed, alternative 1): Which store? → Postgres");
+        var block = markdown.IndexOf("## Decisions and questions", StringComparison.Ordinal);
+        var storyHead = markdown.IndexOf($"### {storyKey}", StringComparison.Ordinal);
+        var taskHead = markdown.IndexOf($"### {taskKey}", StringComparison.Ordinal);
+        storyHead.ShouldBeGreaterThan(taskHead);
+        taskHead.ShouldBeGreaterThan(block);
+        markdown.IndexOf("- D1 (changed, alternative 1)", StringComparison.Ordinal).ShouldBeGreaterThan(storyHead);
+        var comments = markdown.IndexOf("Comments since the plan was captured", StringComparison.Ordinal);
+        block.ShouldBeGreaterThan(comments >= 0 ? comments : BriefPlanContext.StateRule.Length - 1);
+        block.ShouldBeLessThan(markdown.IndexOf(plan.CommonBrief.Trim(), StringComparison.Ordinal));
+    }
+
+    [Test]
+    public async Task GetBrief_WhenNoAsks_ShouldOmitTheBlock()
+    {
+        var task = PlanFixture.FeatureEditor.Stories.First(candidate => candidate.Tasks.Count > 0).Tasks[0];
+
+        var markdown = (await BriefAsync(_keys.Tasks[task.Title])).GetProperty("markdown").GetString()!;
+
+        markdown.ShouldNotContain("## Decisions and questions");
     }
 
     [Test]
