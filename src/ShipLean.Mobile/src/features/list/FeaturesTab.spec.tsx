@@ -160,7 +160,7 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
   it('marks a stale status line in the warn colour and names the agent', async () => {
     const overview = designOverview();
     const first = overview.groups[0]!.rows[0]!;
-    first.statusVerified = { ...first.statusVerified!, by: null, agent: 'Claude Code' };
+    first.statusVerified = { ...first.statusVerified!, by: null, agent: 'Claude Code (claude.ai)' };
     await renderTab({ scheme, overview });
 
     const stale = await screen.findByTestId(featureWhoId('SHIP-743'));
@@ -240,7 +240,13 @@ describe.each(['light', 'dark'] as const)('Features tab (%s)', (scheme) => {
     expect(await screen.findByTestId(featuresIds.sinceBanner)).toHaveTextContent(
       /^No changes since yesterday/,
     );
-    expect(screen.queryByTestId(featuresIds.sinceBanner)).not.toHaveProp('onPress');
+    // Not a button: pressing it opens nothing.
+    expect(screen.getByTestId(featuresIds.sinceBanner)).not.toHaveProp(
+      'accessibilityRole',
+      'button',
+    );
+    await fireEvent.press(screen.getByTestId(featuresIds.sinceBanner));
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('renders the move-applied state: the moved row highlighted with its old rank', async () => {
