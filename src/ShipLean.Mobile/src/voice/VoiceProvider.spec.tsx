@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, renderHook, screen } from '@testing-library/react-native';
 import { useEffect } from 'react';
 import { AppState, Text, type AppStateStatus } from 'react-native';
 import { router } from 'expo-router';
@@ -11,9 +11,11 @@ import {
   FakeRecognizer,
 } from '../test-support/voice';
 import { renderWithVoice } from '../test-support/voiceUi';
+import { useComposerRequest } from './typed/composerRequest';
 import { ToastHost } from '../ui/Toast';
 import { primitiveIds } from '../ui/testIds';
 import type { ParsedCall, RecognitionSession, ScreenVoiceSpec, ViewIntent } from './contracts';
+import { requestTypeInstead } from './micTuning/returnIntent';
 import { onApplyFailed } from './flows/applyFailed';
 import { onConflict } from './flows/conflict';
 import { tooShortToast } from './failures/heardCopy';
@@ -36,9 +38,15 @@ import {
   type VoiceApi,
 } from './VoiceProvider';
 
+// The provider's screen is not inside a navigator here, so a test drives focus itself: focusScreen() runs the effect
+// the provider gave useFocusEffect, as a focus event would.
+let focusEffect: (() => void) | null = null;
 jest.mock('expo-router', () => ({
   ...jest.requireActual<object>('expo-router'),
   router: { push: jest.fn() },
+  useFocusEffect: (effect: () => void) => {
+    focusEffect = effect;
+  },
 }));
 jest.mock('./flows/fix', () => ({ startFix: jest.fn(), fixHeard: jest.fn(async () => {}) }));
 jest.mock('./flows/typed', () => ({ submitTyped: jest.fn(async () => {}) }));
@@ -179,6 +187,25 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('VoiceProvider', () => {
+  it('opens the composer in Command mode, once, when the page asked for Type instead and the screen regains focus', async () => {
+    await mount();
+    const composer = await renderHook(() => useComposerRequest());
+    expect(composer.result.current.request).toBeNull();
+
+    // No request from the Mic tuning page: a focus opens nothing.
+    await act(async () => focusEffect?.());
+    expect(composer.result.current.request).toBeNull();
+
+    requestTypeInstead();
+    await act(async () => focusEffect?.());
+    expect(composer.result.current.request).toMatchObject({ mode: 'command', text: '' });
+
+    // The dock took it; a later focus does not open it again.
+    await act(async () => composer.result.current.consume());
+    await act(async () => focusEffect?.());
+    expect(composer.result.current.request).toBeNull();
+  });
+
   it('hold, release and parse show the preview lines from resolveCommand', async () => {
     const { recognizer, model } = await mount();
     recognizer.script(['set this'], 'set this to Active and add a note: fine for v1');
