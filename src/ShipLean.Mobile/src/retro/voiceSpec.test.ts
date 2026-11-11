@@ -209,6 +209,31 @@ describe('retro voice spec', () => {
     expect(none.action).toMatchObject({ key: null, sprintId: retro.sprint.id });
   });
 
+  it('refuses a point about no item when no sprint is known, so no unsendable preview is shown', () => {
+    const failure = failed(
+      run(
+        context({ sprint: null }),
+        'Retro note: the queue grew',
+        [['add_point', { note: 'x', category: 'improve' }]],
+        'the queue grew',
+      ),
+    );
+    expect(failure).toEqual({
+      kind: 'noValidAction',
+      detail: { action: 'add_point', reason: 'invalidArgs' },
+    });
+    // A point that names an item is still sendable without a sprint.
+    const named = only(
+      run(
+        context({ sprint: null }),
+        'Retro note: profile SHIP-958 first',
+        [['add_point', { note: 'x', category: 'improve' }]],
+        'profile SHIP-958 first',
+      ),
+    );
+    expect(named.action).toMatchObject({ key: 'SHIP-958', sprintId: null });
+  });
+
   it('support gives a plus one on the named point', () => {
     const { action, line } = only(
       run(context(), 'Plus one on the build point', [['support', { point: 'the build point' }]]),
