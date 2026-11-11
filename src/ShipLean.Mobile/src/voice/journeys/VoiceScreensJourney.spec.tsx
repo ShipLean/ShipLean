@@ -180,7 +180,8 @@ describe('voice on each screen of the wired app', () => {
       await screen.findByTestId(s.loaded);
       // The ready coach mark shows on the first screen; Skip ends the guide for good, so no first-result sheet
       // takes over an answer on this or any later screen.
-      if (s === SCREENS[0]) await fireEvent.press(await screen.findByTestId(readyCoachMarkIds.skip));
+      if (s === SCREENS[0])
+        await fireEvent.press(await screen.findByTestId(readyCoachMarkIds.skip));
 
       recognizer.script([], s.row.utterance);
       model.respond(callsFor(s.row));
