@@ -44,6 +44,8 @@ So three silent holds could come from three different causes. The mic may give n
 
 ## Decisions
 
+**Decided 12 Nov 2026 (Joel, in the Lavish review): all ten recommended.** Also recorded on SHIP-1374.
+
 | # | Question | Recommended | Alternatives |
 |---|---|---|---|
 | D1 | What does the third silent hold in a row do? | Opens the Mic tuning page (full screen, pushed; Back returns) | Toast with a Tune mic action only; keep the Mic check sheet |
