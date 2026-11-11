@@ -1,0 +1,83 @@
+name: Mobile Android build
+description: >
+  Builds the phone app's Android debug APK from expo prebuild, for arm64-v8a (the phones) and x86_64 (the emulator),
+  the ABIs llama.rn ships prebuilt. Restores the Gradle and ccache caches; saves them only when save-caches is true.
+  A cache saved on a pull request is visible to that pull request alone, so only the CI caches workflow saves them,
+  from main, where every pull request can restore them.
+inputs:
+  save-caches:
+    description: "'true' to save the Gradle and ccache caches after a successful build."
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        package_json_file: src/package.json
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 24
+        cache: pnpm
+        cache-dependency-path: src/pnpm-lock.yaml
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+    # Most of a cold build is C++ (llama.rn, sherpa-onnx, worklets, expo-modules-core, the app's codegen), which
+    # Gradle's caches don't hold. CMake (3.17 and later) reads CMAKE_<LANG>_COMPILER_LAUNCHER from the environment.
+    - name: Install ccache
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq --no-install-recommends ccache
+    - id: gradle-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-android-${{ hashFiles('src/pnpm-lock.yaml', 'src/ShipLean.Mobile/app.json') }}
+        restore-keys: gradle-android-
+    - id: ccache-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.ccache
+        key: ccache-android-${{ hashFiles('src/pnpm-lock.yaml', 'src/ShipLean.Mobile/app.json', 'src/ShipLean.Mobile/modules/**') }}
+        restore-keys: ccache-android-
+    - shell: bash
+      working-directory: src
+      run: pnpm install --frozen-lockfile
+    - shell: bash
+      working-directory: src/ShipLean.Mobile
+      run: npx expo prebuild --platform android --no-install --clean
+    # React Native pins NDK 27.1, which the runner doesn't have: installing it took about 4 minutes. The runner image
+    # ships a newer 27.x, and Expo's root project plugin takes ndkVersion from a project property when one is set.
+    # If the image has no 27.x, the property is left off and Gradle installs the pinned one as before.
+    - name: Gradle assembleDebug
+      shell: bash
+      working-directory: src/ShipLean.Mobile/android
+      env:
+        CMAKE_C_COMPILER_LAUNCHER: ccache
+        CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        CCACHE_MAXSIZE: 2G
+      run: |
+        set -euo pipefail
+        export CCACHE_DIR="$HOME/.ccache"
+        ndk=$(ls "$ANDROID_HOME/ndk" 2>/dev/null | grep -E '^27\.' | sort -V | tail -n 1 || true)
+        echo "NDK: ${ndk:-the version React Native pins}"
+        ccache --zero-stats
+        ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64 ${ndk:+-PndkVersion=$ndk}
+        ccache --show-stats
+    - if: inputs.save-caches == 'true' && steps.gradle-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ steps.gradle-cache.outputs.cache-primary-key }}
+    - if: inputs.save-caches == 'true' && steps.ccache-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.ccache
+        key: ${{ steps.ccache-cache.outputs.cache-primary-key }}

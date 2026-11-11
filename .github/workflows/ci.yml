@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.diff.outputs.code }}
+      native: ${{ steps.diff.outputs.native }}
     steps:
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request'
@@ -40,11 +41,20 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" != "pull_request" ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "native=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git fetch --depth=1 origin "$BASE_SHA"
           changed=$(git diff --name-only "$BASE_SHA" HEAD)
           printf '%s\n' "$changed"
+          # What the phone app's Android build depends on: the app's package.json, app.json, app.config.ts,
+          # react-native.config.js, its local modules and assets, the lockfile, the workspace files (allowBuilds decides
+          # which native postinstalls run), ci.yml and the build action.
+          if grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|react-native\.config\.js|modules/.*|assets/.*)|src/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml|\.github/actions/mobile-android-build/.*)$' <<<"$changed"; then
+            echo "native=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "native=false" >> "$GITHUB_OUTPUT"
+          fi
           code_files=$(printf '%s\n' "$changed" | grep -Ev '^([^/]+\.md|docs/.*|store/.*|\.github/workflows/docker-publish\.yml)?$' || true)
           if [ -n "$code_files" ]; then
             echo "code=true" >> "$GITHUB_OUTPUT"
@@ -68,12 +78,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
-      - uses: actions/cache@v4
+      # Restore only. The CI caches workflow saves this cache from main (a restore of the whole solution), which every
+      # pull request can read. A cache saved here would be visible to this pull request alone and crowd the others out.
+      - uses: actions/cache/restore@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
-          restore-keys: nuget-${{ github.job }}-
+          key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: src/package.json
@@ -153,67 +164,19 @@ jobs:
           pnpm run build
 
   # The phone app's Android debug build from prebuild, so a native module or config plugin that doesn't compile fails CI.
-  # On a pull request it runs only when the diff reaches the native side: the app's package.json, the lockfile, the
-  # workspace file (allowBuilds decides which native postinstalls run), app.json or app.config.ts, the app's local
-  # modules, or ci.yml. Otherwise it passes with a message. android/ is generated here and never committed.
-  # arm64-v8a is the phones; x86_64 is the emulator. Both are the ABIs llama.rn ships prebuilt.
+  # On a pull request it runs only when the diff reaches the native side (native in the changes job); otherwise the
+  # job is skipped and never takes a runner. It is not a required check. android/ is generated and never committed.
+  # The steps live in the mobile-android-build action, which the CI caches workflow also runs on main to save the
+  # Gradle and ccache caches this job restores.
   mobile-android-build:
     name: mobile android build
     needs: changes
-    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' && needs.changes.outputs.native != 'false' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: native
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            changed=$(git diff --name-only "$BASE_SHA")
-            if ! grep -Eq '^(src/ShipLean\.Mobile/(package\.json|app\.json|app\.config\.ts|react-native\.config\.js|modules/.*|assets/.*)|src/(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml)|\.github/workflows/ci\.yml)$' <<<"$changed"; then
-              echo "Skipping the Android build: this pull request changes nothing native (the app's package.json, the lockfile, the workspace file, app.json, app.config.ts, modules/ or ci.yml)"
-              echo "run=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          fi
-          echo "run=true" >> "$GITHUB_OUTPUT"
-      - uses: pnpm/action-setup@v4
-        if: steps.native.outputs.run == 'true'
-        with:
-          package_json_file: src/package.json
-      - uses: actions/setup-node@v4
-        if: steps.native.outputs.run == 'true'
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: src/pnpm-lock.yaml
-      - uses: actions/setup-java@v4
-        if: steps.native.outputs.run == 'true'
-        with:
-          distribution: temurin
-          java-version: 17
-      - uses: actions/cache@v4
-        if: steps.native.outputs.run == 'true'
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ github.job }}-${{ hashFiles('src/pnpm-lock.yaml', 'src/ShipLean.Mobile/app.json') }}
-          restore-keys: gradle-${{ github.job }}-
-      - run: pnpm install --frozen-lockfile
-        if: steps.native.outputs.run == 'true'
-        working-directory: src
-      - run: npx expo prebuild --platform android --no-install --clean
-        if: steps.native.outputs.run == 'true'
-        working-directory: src/ShipLean.Mobile
-      - run: ./gradlew assembleDebug --no-daemon -PreactNativeArchitectures=arm64-v8a,x86_64
-        if: steps.native.outputs.run == 'true'
-        working-directory: src/ShipLean.Mobile/android
+      - uses: ./.github/actions/mobile-android-build
 
   unit:
     name: unit tests
@@ -225,12 +188,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
-      - uses: actions/cache@v4
+      # Restore only. The CI caches workflow saves this cache from main (a restore of the whole solution), which every
+      # pull request can read. A cache saved here would be visible to this pull request alone and crowd the others out.
+      - uses: actions/cache/restore@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
-          restore-keys: nuget-${{ github.job }}-
+          key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-
       - run: dotnet test src/ShipLean.UnitTest --configuration Release
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
@@ -258,12 +222,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends postgresql-client-18
           echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
-      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
-      - uses: actions/cache@v4
+      # Restore only. The CI caches workflow saves this cache from main (a restore of the whole solution), which every
+      # pull request can read. A cache saved here would be visible to this pull request alone and crowd the others out.
+      - uses: actions/cache/restore@v4
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
-          restore-keys: nuget-${{ github.job }}-
+          key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-
       # The search embedding model: cached on the fetch script, its manifest and the model's metadata (the script
       # checks every SHA-256 either way), then handed to the tests through the same variable the image sets.
       # The files are public on Hugging Face; no token.
@@ -395,13 +360,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends postgresql-client-18
           echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
-      # One cache per job: each restores different projects, so a shared key would keep whichever job finished first.
-      - uses: actions/cache@v4
+      # Restore only. The CI caches workflow saves this cache from main (a restore of the whole solution), which every
+      # pull request can read. A cache saved here would be visible to this pull request alone and crowd the others out.
+      - uses: actions/cache/restore@v4
         if: needs.changes.outputs.code != 'false'
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ github.job }}-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
-          restore-keys: nuget-${{ github.job }}-
+          key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          restore-keys: nuget-
       - uses: pnpm/action-setup@v4
         if: needs.changes.outputs.code != 'false'
         with:
@@ -480,7 +446,8 @@ jobs:
           sbom: false
           tags: shiplean:ci
           cache-from: type=gha,scope=app
-          cache-to: type=gha,scope=app,mode=max
+          # docker-publish writes this cache from main. A pull request only reads it: its writes would be visible to it alone.
+          cache-to: ${{ github.event_name == 'pull_request' && '' || 'type=gha,scope=app,mode=max' }}
       - name: Check the model is in the image
         # sha256sum runs as $APP_UID, so this also proves the files are readable by the app user.
         run: docker run --rm --entrypoint sha256sum shiplean:ci /app/models/multilingual-e5-small/model.onnx /app/models/multilingual-e5-small/sentencepiece.bpe.model /app/models/multilingual-e5-small/shiplean-model.json
