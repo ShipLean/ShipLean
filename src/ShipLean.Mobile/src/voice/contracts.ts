@@ -11,10 +11,52 @@ export interface Transcript {
   durationMs: number;
 }
 
+export const PHONE_INPUT_ID = 'phone';
+export type AudioInputKind = 'phone' | 'bluetooth' | 'wired';
+export interface AudioInput {
+  id: string;
+  kind: AudioInputKind;
+  name: string;
+  connected: boolean;
+}
+
+// The inputs this phone can record from. list() is a synchronous snapshot: the phone first (always there, always
+// connected), then Bluetooth, then wired. A wired or Bluetooth input that isn't connected may be listed with
+// connected: false.
+export interface AudioInputs {
+  list(): AudioInput[];
+  // An input connects or disconnects.
+  subscribe(cb: () => void): () => void;
+}
+
+// Per input, on this phone only. lineRms is the RMS of a 30 ms 16 kHz frame.
+export interface MicTuning {
+  inputId: string;
+  roomRms: number;
+  voiceRms: number;
+  lineRms: number;
+  // ISO 8601
+  testedAt: string;
+  automatic: boolean;
+  // 1..10 when automatic is false
+  manualStep: number | null;
+}
+
+export interface MicTuningStore {
+  // PHONE_INPUT_ID unless one was picked.
+  pickedInput(): string;
+  pick(inputId: string): void;
+  tuning(inputId: string): MicTuning | null;
+  save(t: MicTuning): void;
+  subscribe(cb: () => void): () => void;
+}
+
 export interface RecognitionSession {
   onPartial(cb: (text: string) => void): void;
   // 0..1, for the listening sheet's level meter.
   onLevel(cb: (level: number) => void): void;
+  // The RMS of each 30 ms frame of the 16 kHz mono PCM held so far. Still answers after stop() or cancel().
+  frames(): number[];
   stop(): Promise<Transcript>;
   cancel(): void;
 }
@@ -23,7 +65,11 @@ export interface SpeechRecognizer {
   ready(): boolean;
   // The microphone in use ("AirPods Pro"), or null when the phone doesn't say.
   inputName(): string | null;
-  start(opts: { hotwords: string[] }): Promise<RecognitionSession>;
+  // The input the last started stream really records from, or the one it asked for when the OS says nothing; null
+  // before any stream.
+  inputInUse(): AudioInput | null;
+  // With decodeAlways, stop() decodes even when no speech is present (the Mic tuning test's second step).
+  start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession>;
 }
 
 export interface VoiceActionSpec {
@@ -157,6 +203,8 @@ export interface VoiceEngines {
   model: CommandModel;
   models: ModelStore;
   mic: MicPermission;
+  inputs: AudioInputs;
+  tuning: MicTuningStore;
 }
 
 // One row of a screen's command test set (tools/voice-eval).

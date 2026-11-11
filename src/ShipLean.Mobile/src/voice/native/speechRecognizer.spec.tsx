@@ -5,13 +5,15 @@ import { createSTT } from 'react-native-sherpa-onnx/stt';
 import type { SttEngine, SttRecognitionResult } from 'react-native-sherpa-onnx/stt';
 import { FakeModelFiles } from '../../test-support/modelFiles';
 import { emitAudio, native } from '../../test-support/nativeMocks';
-import { FakeModelStore } from '../../test-support/voice';
+import { FakeModelStore, fakeAudioInputs, fakeTuningStore } from '../../test-support/voice';
+import type { AudioInput } from '../contracts';
 import { toHotwords } from '../speech/hotwords';
 import { createPartials } from '../speech/partials';
 import { createPcmBuffer } from '../speech/pcmBuffer';
 import { resample } from '../speech/resample';
 import { speechPresent } from '../speech/speechPresent';
 import { toWords } from '../speech/words';
+import { openMicStream } from './micStream';
 import { MAX_HOLD_MS, NativeSpeechRecognizer, PARTIAL_EVERY_MS } from './speechRecognizer';
 
 // VE1a's pure modules run for real behind spies, so the spec sees how the adapter calls them. createPartials is
@@ -36,6 +38,10 @@ jest.mock('../speech/speechPresent', () => {
 jest.mock('../speech/words', () => {
   const actual = jest.requireActual<typeof import('../speech/words')>('../speech/words');
   return { ...actual, toWords: jest.fn(actual.toWords) };
+});
+jest.mock('./micStream', () => {
+  const actual = jest.requireActual<typeof import('./micStream')>('./micStream');
+  return { ...actual, openMicStream: jest.fn(actual.openMicStream) };
 });
 jest.mock('../speech/partials', () => ({ createPartials: jest.fn() }));
 
@@ -76,11 +82,20 @@ async function engineOf(index = 0): Promise<jest.Mocked<SttEngine>> {
   return (await jest.mocked(createSTT).mock.results[index].value) as jest.Mocked<SttEngine>;
 }
 
-function setUp() {
+const pods: AudioInput = { id: 'bt-1', kind: 'bluetooth', name: 'AirPods Pro', connected: true };
+
+function setUp(list: AudioInput[] = []) {
   native.files.set(TOKENS_URI, TOKENS_TXT);
   const models = new FakeModelStore();
-  const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
-  return { recognizer, models };
+  const inputs = fakeAudioInputs(list);
+  const tuning = fakeTuningStore();
+  const recognizer = new NativeSpeechRecognizer({
+    files: new FakeModelFiles(),
+    models,
+    inputs,
+    tuning,
+  });
+  return { recognizer, models, inputs, tuning };
 }
 
 const writes = () =>
@@ -188,8 +203,8 @@ describe('speechAdapter', () => {
     expect(levels[0]).toBeCloseTo(2 / 3, 2);
     expect(levels[1]).toBe(0);
     expect(levels[2]).toBeCloseTo(1, 3);
-    // expo-audio's stream doesn't say which input it records from.
-    expect(recognizer.inputName()).toBeNull();
+    // expo-audio's stream doesn't say which input it records from, so it is the one asked for: the phone.
+    expect(recognizer.inputName()).toBe('Phone');
   });
 
   it('silence returns an empty transcript without a final decode', async () => {
@@ -201,10 +216,94 @@ describe('speechAdapter', () => {
 
     const transcript = await session.stop();
 
-    expect(jest.mocked(speechPresent)).toHaveBeenCalledWith(expect.any(Int16Array));
+    expect(jest.mocked(speechPresent)).toHaveBeenCalledWith(expect.any(Int16Array), undefined);
     expect(jest.mocked(speechPresent).mock.calls[0][0]).toHaveLength(16000);
     expect(transcript).toEqual({ text: '', words: [], durationMs: 1000 });
     expect(engine.transcribeSamples).not.toHaveBeenCalled();
+  });
+
+  it('opens the stream on the picked input when it is connected', async () => {
+    const { recognizer, tuning } = setUp([pods]);
+    tuning.pick('bt-1');
+
+    await recognizer.start({ hotwords: [] });
+
+    expect(jest.mocked(openMicStream)).toHaveBeenLastCalledWith({
+      sampleRate: 16000,
+      inputId: 'bt-1',
+    });
+  });
+
+  it('opens the stream on the phone when the picked input is disconnected', async () => {
+    const { recognizer, tuning, inputs } = setUp([pods]);
+    tuning.pick('bt-1');
+    inputs.disconnect('bt-1');
+
+    await recognizer.start({ hotwords: [] });
+
+    expect(jest.mocked(openMicStream)).toHaveBeenLastCalledWith({
+      sampleRate: 16000,
+      inputId: 'phone',
+    });
+  });
+
+  it('frames() returns one level per 480 samples', async () => {
+    const { recognizer } = setUp();
+    const session = await recognizer.start({ hotwords: [] });
+
+    emitAudio(tone(4800));
+
+    const frames = session.frames();
+    expect(frames).toHaveLength(10);
+    expect(frames[0]).toBeGreaterThan(5000);
+  });
+
+  it('decodeAlways decodes a silent hold', async () => {
+    const { recognizer } = setUp();
+    const session = await recognizer.start({ hotwords: [], decodeAlways: true });
+    const engine = await engineOf();
+    engine.transcribeSamples.mockResolvedValueOnce(result('hello'));
+    emitAudio(new Int16Array(8000));
+    emitAudio(new Int16Array(8000));
+
+    const transcript = await session.stop();
+
+    expect(engine.transcribeSamples).toHaveBeenCalledTimes(1);
+    expect(transcript.text).toBe('hello');
+  });
+
+  it('frames() still answers after stop() and after cancel()', async () => {
+    const { recognizer } = setUp();
+    const stopped = await recognizer.start({ hotwords: [] });
+    emitAudio(tone(4800));
+    await stopped.stop();
+    expect(stopped.frames()).toHaveLength(10);
+
+    const cancelled = await recognizer.start({ hotwords: [] });
+    emitAudio(tone(2400));
+    cancelled.cancel();
+    expect(cancelled.frames()).toHaveLength(5);
+  });
+
+  it('inputName() is the routed input when the stream says, else the requested one', async () => {
+    const { recognizer, tuning } = setUp([pods]);
+    expect(recognizer.inputInUse()).toBeNull();
+    expect(recognizer.inputName()).toBeNull();
+
+    // The OS routed somewhere else than asked.
+    const real = jest.requireActual<typeof import('./micStream')>('./micStream').openMicStream;
+    jest.mocked(openMicStream).mockImplementationOnce((o) => ({
+      ...real(o),
+      routedInputId: () => 'bt-1',
+    }));
+    await recognizer.start({ hotwords: [] });
+    expect(recognizer.inputInUse()).toEqual(pods);
+    expect(recognizer.inputName()).toBe('AirPods Pro');
+
+    // The OS says nothing: the requested input, the phone.
+    tuning.pick('phone');
+    await recognizer.start({ hotwords: [] });
+    expect(recognizer.inputName()).toBe('Phone');
   });
 
   it('cancel discards the buffer and resolves nothing', async () => {
@@ -293,7 +392,12 @@ describe('speechAdapter', () => {
     native.files.set(TOKENS_URI, TOKENS_TXT);
     const models = new FakeModelStore();
     models.set({ phase: 'downloading' });
-    const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
+    const recognizer = new NativeSpeechRecognizer({
+      files: new FakeModelFiles(),
+      models,
+      inputs: fakeAudioInputs(),
+      tuning: fakeTuningStore(),
+    });
     expect(recognizer.ready()).toBe(false);
     expect(jest.mocked(createSTT)).not.toHaveBeenCalled();
 
@@ -332,7 +436,12 @@ describe('speechAdapter', () => {
     native.files.set(TOKENS_URI, TOKENS_TXT);
     const models = new FakeModelStore();
     models.set({ phase: 'downloading' });
-    const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
+    const recognizer = new NativeSpeechRecognizer({
+      files: new FakeModelFiles(),
+      models,
+      inputs: fakeAudioInputs(),
+      tuning: fakeTuningStore(),
+    });
     jest.mocked(createSTT).mockRejectedValueOnce(new Error('out of memory'));
 
     await expect(recognizer.start({ hotwords: [] })).rejects.toThrow('out of memory');
@@ -347,7 +456,12 @@ describe('speechAdapter', () => {
     native.files.set(TOKENS_URI, TOKENS_TXT);
     const models = new FakeModelStore();
     models.set({ phase: 'downloading' });
-    const recognizer = new NativeSpeechRecognizer({ files: new FakeModelFiles(), models });
+    const recognizer = new NativeSpeechRecognizer({
+      files: new FakeModelFiles(),
+      models,
+      inputs: fakeAudioInputs(),
+      tuning: fakeTuningStore(),
+    });
     const engine = { destroy: jest.fn(async () => undefined) } as unknown as SttEngine;
     let finish: (engine: SttEngine) => void = () => undefined;
     jest

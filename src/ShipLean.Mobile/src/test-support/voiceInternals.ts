@@ -2,7 +2,14 @@
 import type { VoiceEngines, Transcript } from '../voice/contracts';
 import type { VoiceInternals, VoiceSource, VoiceUiState } from '../voice/internals';
 import { fakeRunner } from './actions';
-import { FakeCommandModel, FakeMicPermission, FakeModelStore, FakeRecognizer } from './voice';
+import {
+  FakeCommandModel,
+  FakeMicPermission,
+  FakeModelStore,
+  FakeRecognizer,
+  fakeAudioInputs,
+  fakeTuningStore,
+} from './voice';
 
 export interface FakeInternals extends VoiceInternals {
   // Every state set, in order; state() is the last one (idle with the mic granted before any).
@@ -18,6 +25,8 @@ function fakeEngines(): VoiceEngines {
     model: new FakeCommandModel(),
     models: new FakeModelStore(),
     mic: new FakeMicPermission(),
+    inputs: fakeAudioInputs(),
+    tuning: fakeTuningStore(),
   };
 }
 

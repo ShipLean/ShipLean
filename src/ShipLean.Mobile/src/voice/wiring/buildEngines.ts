@@ -4,6 +4,7 @@
 import type { KeyValueStore } from '@shiplean/core/platform';
 import { createModelStore } from '../../setup/modelStore';
 import type { VoiceEngines } from '../contracts';
+import { createMicTuningStore } from '../micTuning/store';
 import type { ModelFile } from '../manifest';
 import type { NativeAdapters } from '../native';
 
@@ -20,10 +21,15 @@ export function buildEngines(
 ): VoiceEngines {
   const { files, network, memoryBytes } = adapters;
   const models = createModelStore({ files, network, kv, memoryBytes, manifest, clock });
+  // TODO: the kv store behind the tuning store, once it persists.
+  const tuning = createMicTuningStore({ getItemSync: () => null, setItemSync: () => {} });
+  const { inputs } = adapters;
   return {
-    recognizer: adapters.recognizer({ files, models }),
+    recognizer: adapters.recognizer({ files, models, inputs, tuning }),
     model: adapters.model({ files, models }),
     models,
     mic: adapters.mic,
+    inputs,
+    tuning,
   };
 }

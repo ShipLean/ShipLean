@@ -137,6 +137,7 @@ const SET_STATE: ParsedCall[] = [{ action: 'setState', args: {} }];
 const brokenSession = (): RecognitionSession => ({
   onPartial: () => {},
   onLevel: () => {},
+  frames: () => [],
   stop: () => Promise.reject(new Error('The recognizer stopped.')),
   cancel: () => {},
 });

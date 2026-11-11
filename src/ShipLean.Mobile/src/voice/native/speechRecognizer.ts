@@ -2,18 +2,27 @@
 // No audio is kept: the PCM stays in memory for recognition only and is dropped when the session ends. The only files
 // written are text: the screen's hotwords (under the cache directory) and the bpe vocab sherpa needs to encode them
 // (next to the model files, once per load).
-import { AudioModule } from 'expo-audio';
-import type { AudioStreamBuffer } from 'expo-audio';
 import { File, Paths } from 'expo-file-system';
 import { createSTT } from 'react-native-sherpa-onnx/stt';
 import type { SttEngine } from 'react-native-sherpa-onnx/stt';
-import type { ModelStore, RecognitionSession, SpeechRecognizer, Transcript } from '../contracts';
+import type {
+  AudioInput,
+  AudioInputs,
+  MicTuningStore,
+  ModelStore,
+  RecognitionSession,
+  SpeechRecognizer,
+  Transcript,
+} from '../contracts';
+import { activeLine, frameLevels } from '../micTuning/line';
+import { resolveInput } from '../micTuning/route';
 import { toHotwords } from '../speech/hotwords';
 import { createPartials } from '../speech/partials';
 import { createPcmBuffer } from '../speech/pcmBuffer';
 import { resample, TARGET_RATE } from '../speech/resample';
 import { speechPresent } from '../speech/speechPresent';
 import { toWords } from '../speech/words';
+import { openMicStream } from './micStream';
 import type { ModelFiles } from './ports';
 
 // Parakeet's tokens file in the manifest. The model directory is the one it lands in.
@@ -28,6 +37,8 @@ export const HOTWORDS_FILE = 'voice-hotwords.txt';
 export interface SpeechRecognizerDeps {
   files: ModelFiles;
   models: ModelStore;
+  inputs: AudioInputs;
+  tuning: MicTuningStore;
 }
 
 const fileUri = (path: string) => (path.startsWith('file://') ? path : `file://${path}`);
@@ -58,13 +69,10 @@ function level(pcm: Int16Array): number {
 
 const toFloats = (pcm: Int16Array): number[] => Array.from(pcm, (s) => s / 32768);
 
-function samplesOf(buffer: AudioStreamBuffer): Int16Array {
-  return new Int16Array(buffer.data, 0, Math.floor(buffer.data.byteLength / 2));
-}
-
 export class NativeSpeechRecognizer implements SpeechRecognizer {
   private engine: SttEngine | null = null;
   private loading: Promise<SttEngine> | null = null;
+  private inUse: AudioInput | null = null;
 
   // Without deps (the wave 0 wiring in native/index.ts) the recognizer is never ready.
   constructor(private readonly deps?: SpeechRecognizerDeps) {
@@ -78,14 +86,27 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
   }
 
   inputName(): string | null {
-    // TODO: the microphone in use. expo-audio's stream doesn't say which input it records from; null until it does.
-    return null;
+    return this.inputInUse()?.name ?? null;
   }
 
-  async start(opts: { hotwords: string[] }): Promise<RecognitionSession> {
+  inputInUse(): AudioInput | null {
+    return this.inUse;
+  }
+
+  async start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession> {
     const engine = await this.load();
     await this.useHotwords(engine, opts.hotwords);
-    return startSession(engine);
+    const deps = this.deps;
+    if (deps === undefined) throw new Error('Speech recognition is not set up');
+    const input = resolveInput(deps.tuning.pickedInput(), deps.inputs.list());
+    return startSession(engine, {
+      input,
+      line: () => activeLine(deps.tuning.tuning(input.id)),
+      decodeAlways: opts.decodeAlways === true,
+      routed: (id) => {
+        this.inUse = id === null ? input : (deps.inputs.list().find((i) => i.id === id) ?? input);
+      },
+    });
   }
 
   // Loads Parakeet once the model files are checked, and frees it when the model store deletes them.
@@ -183,11 +204,21 @@ export class NativeSpeechRecognizer implements SpeechRecognizer {
   }
 }
 
-async function startSession(engine: SttEngine): Promise<RecognitionSession> {
+interface SessionOptions {
+  input: AudioInput;
+  line(): number | undefined;
+  decodeAlways: boolean;
+  // Called after the stream starts with the input the OS routed to, or null when it doesn't say.
+  routed(id: string | null): void;
+}
+
+async function startSession(engine: SttEngine, opts: SessionOptions): Promise<RecognitionSession> {
   let onPartial: (text: string) => void = () => undefined;
   let onLevel: (level: number) => void = () => undefined;
   let buffer: ReturnType<typeof createPcmBuffer> | null = createPcmBuffer(MAX_HOLD_MS);
   let ended = false;
+  // The levels of the last hold, kept after stop() and cancel() drop the buffer.
+  let kept: number[] = [];
 
   const decode = async (pcm: Int16Array) =>
     (await engine.transcribeSamples(toFloats(pcm), TARGET_RATE)).text;
@@ -197,14 +228,10 @@ async function startSession(engine: SttEngine): Promise<RecognitionSession> {
     onText: (t) => onPartial(t),
   });
 
-  const stream = new AudioModule.AudioStream({
-    sampleRate: TARGET_RATE,
-    channels: 1,
-    encoding: 'int16',
-  });
-  const listener = stream.addListener('audioStreamBuffer', (raw: AudioStreamBuffer) => {
+  const stream = openMicStream({ sampleRate: TARGET_RATE, inputId: opts.input.id });
+  const listener = stream.onBuffer((samples, sampleRate, channels) => {
     if (buffer === null) return;
-    const pcm = resample(samplesOf(raw), raw.sampleRate, raw.channels);
+    const pcm = resample(samples, sampleRate, channels);
     onLevel(level(pcm));
     const room = buffer.append(pcm);
     partials.push(buffer.pcm());
@@ -218,6 +245,7 @@ async function startSession(engine: SttEngine): Promise<RecognitionSession> {
   };
   try {
     await stream.start();
+    opts.routed(stream.routedInputId());
   } catch (error) {
     endStream();
     await partials.stop().catch(() => undefined);
@@ -231,16 +259,19 @@ async function startSession(engine: SttEngine): Promise<RecognitionSession> {
     onLevel(cb) {
       onLevel = cb;
     },
+    frames: () => (buffer === null ? kept : frameLevels(buffer.pcm())),
     async stop(): Promise<Transcript> {
       endStream();
       const held = buffer;
+      if (held !== null) kept = frameLevels(held.pcm());
       buffer = null;
       if (held === null) throw new Error('The recognition session was cancelled');
       // A failed partial only loses the partial text; the final decode below still runs.
       await partials.stop().catch(() => undefined);
       const pcm = held.pcm();
       const durationMs = held.ms();
-      if (!speechPresent(pcm)) return { text: '', words: [], durationMs };
+      if (!opts.decodeAlways && !speechPresent(pcm, opts.line()))
+        return { text: '', words: [], durationMs };
       const result = await engine.transcribeSamples(toFloats(pcm), TARGET_RATE);
       return {
         text: result.text.trim(),
@@ -250,6 +281,7 @@ async function startSession(engine: SttEngine): Promise<RecognitionSession> {
     },
     cancel() {
       endStream();
+      if (buffer !== null) kept = frameLevels(buffer.pcm());
       buffer = null;
       onPartial = () => undefined;
       void partials.stop().catch(() => undefined);
