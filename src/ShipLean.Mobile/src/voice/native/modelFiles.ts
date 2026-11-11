@@ -210,17 +210,20 @@ class ModelDownload implements DownloadTask {
     };
   }
 
-  // A new task, or the saved one after a restart. Without a saved pause, Android carries on from the part file with
-  // a Range request (its resume data is the byte offset); iOS starts again from zero.
+  // A new task, or the saved one after a restart. Android always carries on from the part file with a Range request
+  // (its resume data is the byte offset), never from a saved pause: a pause saved earlier names an offset behind the
+  // bytes written since, as after the store restarts a stuck transfer. iOS resumes its saved pause, else starts again
+  // from zero.
   private async start(): Promise<File | null> {
     await ensureDirs(this.entry);
     if (this.pauseWanted) return null;
     const part = partFile(this.entry);
     if (part.exists && this.entry.bytes > 0 && part.size === this.entry.bytes) return part;
-    const saved = readSaved(this.entry.id);
+    const android = Platform.OS === 'android';
+    const saved = android ? null : readSaved(this.entry.id);
     const state =
       saved?.state ??
-      (Platform.OS === 'android' && part.exists && part.size > 0
+      (android && part.exists && part.size > 0
         ? {
             url: this.entry.url,
             fileUri: part.uri,

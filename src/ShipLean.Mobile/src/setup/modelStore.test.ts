@@ -1,10 +1,10 @@
 import { memoryStore } from '@shiplean/core/platform';
 import type { KeyValueStore } from '@shiplean/core/platform';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeModelFiles, FakeNetwork, sizedManifest } from '../test-support/modelFiles';
 import type { ModelStatus } from '../voice/contracts';
 import { chooseModel, type ModelId } from '../voice/manifest';
-import { createModelStore } from './modelStore';
+import { createModelStore, RETRY_MS, STALL_MS } from './modelStore';
 
 const GIB = 1024 ** 3;
 const manifest = sizedManifest();
@@ -203,6 +203,78 @@ describe('modelStore', () => {
     expect(store.status()).toMatchObject({ phase: 'downloading', bytesDone: 250_000_000 });
     await complete(files, 'parakeet', 'qwen3-4b');
     expect(store.status().phase).toBe('ready');
+  });
+
+  describe('on a timer', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // Runs the store's awaits and moves the clock on.
+    const tick = (ms = 0) => vi.advanceTimersByTimeAsync(ms);
+
+    it('a connection dropped while still online tries again after RETRY_MS, without a network change', async () => {
+      const { store, files } = makeStore({ gb: 11.2 });
+      const [parakeet] = ids('parakeet');
+      store.download();
+      await tick();
+      files.task(parakeet).progress(250_000_000);
+      files.task(parakeet).fail('network');
+      await tick();
+      expect(store.status()).toMatchObject({ phase: 'paused', reason: 'network' });
+
+      await tick(RETRY_MS - 1);
+      expect(files.downloads).toHaveLength(1);
+      await tick(1);
+      expect(files.downloads).toHaveLength(2);
+      expect(files.task(parakeet).startBytes).toBe(250_000_000);
+      expect(store.status()).toMatchObject({ phase: 'downloading', bytesDone: 250_000_000 });
+    });
+
+    it('offline, a dropped connection waits for the network rather than retrying', async () => {
+      const network = new FakeNetwork('wifi');
+      const { store, files } = makeStore({ gb: 11.2, network });
+      store.download();
+      await tick();
+      network.set('none');
+      files.task().fail('network');
+      await tick(RETRY_MS * 3);
+      expect(files.downloads).toHaveLength(1);
+      expect(store.status()).toMatchObject({ phase: 'paused', reason: 'network' });
+    });
+
+    it('a download with no new bytes for STALL_MS is dropped and starts again from the bytes on disk', async () => {
+      const { store, files } = makeStore({ gb: 11.2 });
+      const [parakeet] = ids('parakeet');
+      store.download();
+      await tick();
+      const stuck = files.task(parakeet);
+      stuck.progress(100_000_000);
+      await tick(STALL_MS - 1);
+      stuck.progress(120_000_000);
+      // Progress restarts the watch.
+      await tick(STALL_MS - 1);
+      expect(files.downloads).toHaveLength(1);
+
+      await tick(1);
+      expect(stuck.paused).toBe(true);
+      expect(files.downloads).toHaveLength(2);
+      expect(files.task(parakeet).startBytes).toBe(120_000_000);
+      expect(store.status()).toMatchObject({ phase: 'downloading', bytesDone: 120_000_000 });
+    });
+
+    it('a paused download is never restarted by the stall watch or the retry', async () => {
+      const { store, files } = makeStore({ gb: 11.2 });
+      store.download();
+      await tick();
+      store.pause();
+      await tick(STALL_MS + RETRY_MS);
+      expect(files.downloads).toHaveLength(1);
+      expect(store.status().phase).toBe('paused');
+    });
   });
 
   it('not enough space pauses with reason space and keeps the downloaded files', async () => {
