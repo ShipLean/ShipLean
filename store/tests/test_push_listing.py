@@ -15,14 +15,14 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SCRIPT = os.path.join("store", "push_listing.sh")
 FAKES = os.path.join(REPO, "store", "tests", "fakes")
 OWN_VARS = ("ASC_KEY_PATH", "PLAY_KEY_PATH", "STAGED", "FAKE_BUNDLE_EXIT", "FAKE_BUNDLE_LOG",
-            "BUNDLE_GEMFILE", "TMPDIR")
+            "BUNDLE_GEMFILE", "TMPDIR", "APP_VERSION_PATCH")
 UPLOAD_OPTIONS = ("--screenshots_path", "--overwrite_screenshots", "--skip_binary_upload",
                   "--submit_for_review", "--automatic_release", "--app_rating_config_path")
 
 
-def app_version():
+def major_minor():
     with open(os.path.join(REPO, "src", "ShipLean.Mobile", "app.json")) as handle:
-        return json.load(handle)["expo"]["version"]
+        return ".".join(json.load(handle)["expo"]["version"].split(".")[:2])
 
 
 class PushListingTests(unittest.TestCase):
@@ -71,13 +71,14 @@ class PushListingTests(unittest.TestCase):
 
     # Mutation caught: drop --overwrite_screenshots.
     # Mutation caught: --metadata_path store/ios/metadata (the text without the en-AU mirror).
+    # Mutation caught: --app_version from app.json's patch instead of the run's (APP_VERSION_PATCH).
     def test_ios_push_passes_the_listing_options(self):
-        result = self.run_script("ios", "push", **self.keys())
+        result = self.run_script("ios", "push", APP_VERSION_PATCH="42", **self.keys())
 
         self.assert_fastlane(result, "deliver", [
             "--api_key_path", self.asc_key,
             "--app_identifier", "app.shiplean.mobile",
-            "--app_version", app_version(),
+            "--app_version", major_minor() + ".42",
             "--metadata_path", self.staged + "/ios/metadata",
             "--screenshots_path", self.staged + "/ios/screenshots",
             "--app_rating_config_path", os.path.join(REPO, "store", "ios", "age_rating.json"),
@@ -88,6 +89,18 @@ class PushListingTests(unittest.TestCase):
             "--force", "true",
             "--run_precheck_before_submit", "false",
         ], pwd=self.staged + "/ios", gemfile=os.path.join(REPO, "store", "Gemfile"))
+
+    # A listing-only run has no new build, so deliver must update the version that is editable
+    # now; --app_version would rename it away from the build already uploaded for it.
+    # Mutation caught: always pass --app_version.
+    def test_ios_push_without_a_build_leaves_the_version_alone(self):
+        result = self.run_script("ios", "push", **self.keys())
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, argv = self.bundle_call()
+        self.assertEqual(argv[3:7], ["--api_key_path", self.asc_key, "--app_identifier", "app.shiplean.mobile"])
+        self.assertEqual(argv[7], "--metadata_path")
+        self.assertNotIn("--app_version", argv)
 
     # Mutation caught: run deliver from the repo root, where it has no ./metadata and asks to set
     # itself up, which crashes a non-interactive run (the first Mobile release, 10 Nov 2026).
