@@ -21,6 +21,11 @@ export function applyGroup(p: Pending): ApplyGroup {
 // left to onConflict (D17): nothing was applied, and the preview comes back to be confirmed again.
 export function onApplyFailed(v: VoiceInternals, batchId: string, pendings: Pending[]): void {
   if (pendings.some((p) => p.failure === 'conflict')) return;
+  showApplyFailed(v, batchId, pendings);
+}
+
+// The sheet itself, for any refusal: onConflict shows it when the screen never comes to hold the server's item.
+export function showApplyFailed(v: VoiceInternals, batchId: string, pendings: Pending[]): void {
   const last = v.last();
   const shown = last !== null && last.result.ok ? lineOf(last.result) : () => undefined;
   const refused =
