@@ -81,6 +81,12 @@ import { resetNativeMocks, type AudioBufferEvent } from './nativeMocks';
 
 type NativeMocks = typeof import('./nativeMocks');
 
+// Crash reports (src/crashReports.ts, loaded by index.ts). The real package is ESM and native; specs never send.
+jest.mock('@sentry/react-native', () => ({
+  __esModule: true,
+  init: jest.fn(),
+}));
+
 jest.mock('llama.rn', () => {
   const { native } = jest.requireActual<NativeMocks>('./nativeMocks');
   return {

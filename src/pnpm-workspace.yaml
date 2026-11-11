@@ -9,3 +9,6 @@ allowBuilds:
   # The app's on-device command model: its postinstall downloads the prebuilt Android jniLibs and iOS xcframework
   # of the pinned release, which the native build links.
   llama.rn: true
+  # Crash reports' source map upload (@sentry/react-native). sentry-cli's binary ships as optional per-platform
+  # packages (@sentry/cli-linux-x64, -darwin, ...); its postinstall only downloads one when those are missing.
+  '@sentry/cli': false
