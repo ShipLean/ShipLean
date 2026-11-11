@@ -70,8 +70,6 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
   const quiet = phase.kind === 'quiet';
   useEffect(() => {
     if (!quiet) return undefined;
-    setLevel(0);
-    setRemaining(QUIET_SECONDS);
     let elapsed = 0;
     const started = open(engines().recognizer.start({ hotwords: [] }));
     started.then(
@@ -169,6 +167,8 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
 
   const begin = () => {
     setFailedStart(false);
+    setLevel(0);
+    setRemaining(QUIET_SECONDS);
     setPhase({ kind: 'quiet' });
   };
   const typeInstead = () => {
