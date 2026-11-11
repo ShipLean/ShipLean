@@ -57,3 +57,20 @@ describe('tab bar navigation', () => {
     },
   );
 });
+
+// The tab bar pays the home-indicator inset, so a tab scene adds none: its list meets the bar with no blank band.
+// Outside the tabs a Screen keeps the 34-point inset of the 390×844 test phone.
+describe('tab scene bottom edge', () => {
+  it.each([
+    { root: screenIds.inbox, url: '/p/SHIP/inbox', api: () => inboxApi(signedInApi(), opts) },
+    {
+      root: screenIds.backlog,
+      url: '/p/SHIP/backlog',
+      api: () => inboxApi(backlogApi({ [`GET ${project}/members`]: [] }, opts), opts),
+    },
+  ])('gives $root no bottom inset', async ({ root, url, api }) => {
+    await renderApp({ url, api: api() });
+
+    expect(await screen.findByTestId(root)).toHaveStyle({ paddingBottom: 0 });
+  });
+});
