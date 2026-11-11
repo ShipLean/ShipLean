@@ -51,6 +51,8 @@ It exits 1, naming the path, when `ios/metadata/en-US/` or `android/metadata/en-
 
 ## How a release pushes it
 
+The step-by-step release journeys, with the commands to paste, are in [`docs/mobile-release.md`](../docs/mobile-release.md).
+
 Run **Mobile release** (Actions) with `listing` on. After the build, it stages the listing and pushes it to the stores the run's `platform` names: on the App Store it replaces the screenshots and leaves the version unsubmitted; on Google Play it replaces the screenshots and images. A listing-only run (`listing` on, no build) pushes the listing alone.
 
 Apple accepts changes to the name, subtitle, keywords, categories and screenshots only while a version is editable (Prepare for Submission), so the App Store push belongs with a release. Play takes listing changes at any time once a build has been uploaded; on a published app they go through review.

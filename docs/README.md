@@ -19,6 +19,7 @@ Working documentation for ShipLean that is too long for `AGENTS.md`. One file pe
 | `analytics.md` | Usage analytics: the three capture seams, the event catalogue, the property rules, delivery to Umami or PostHog, and how a tracked action is added. |
 | `observability.md` | OpenTelemetry: turning it on, the spans, metrics and log fields emitted, what is deliberately left out, and the local Aspire dashboard profile. |
 | `backups.md` | Scheduled backups: what is and isn't backed up, the bucket layout, setup in Instance settings › Backups, S3 permissions, passphrase generations, the restore runbook and troubleshooting. |
+| `mobile-release.md` | Releasing the phone app: building for testers, grabbing the built files, changing the store listing, the Play closed test, going live, version bumps and failed runs, each with copy-paste `gh` commands. |
 | `backup-file-format.md` | The `SLBK1` encrypted file format, byte by byte, for anyone writing their own decrypter. |
 
 Elsewhere:
