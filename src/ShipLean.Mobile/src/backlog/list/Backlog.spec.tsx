@@ -16,6 +16,8 @@ import { apiError, fakeApi, type FakeApi } from '../../test-support/fakeApi';
 import { signedInApi } from '../../test-support/signedInApi';
 import { BacklogActionsProvider } from '../BacklogActions';
 import { renderWithVoice } from '../../test-support/voiceUi';
+import { themes } from '../../theme';
+import { tint } from '../../ui/layout';
 import { primitiveIds, countId, optionId, uiIds } from '../../ui/testIds';
 import {
   backlogAsksId,
@@ -33,6 +35,9 @@ import {
   moveSheetId,
 } from '../testIds';
 import { HIGHLIGHT_MS } from './useRankMoves';
+
+// Icons are hidden from screen readers, so the queries look at hidden elements too.
+const HIDDEN = { includeHiddenElements: true };
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
@@ -125,6 +130,52 @@ describe.each(['light', 'dark'] as const)('Backlog tab (%s)', (scheme) => {
     expect(screen.getByTestId(countId(backlogIds.chipNeedsMe))).toHaveTextContent('3');
     expect(screen.getAllByTestId(primitiveIds.needsPill)).toHaveLength(3);
     expect(screen.getByTestId(optionId(backlogIds.segment, 'features'))).toBeSelected();
+  });
+
+  it('shows the rank hint and the open-Features count above the rows', async () => {
+    makeApi();
+    await renderBacklog({ scheme });
+    await screen.findByTestId(backlogRowId('SHIP-707'));
+
+    expect(screen.getByTestId(backlogIds.hint)).toHaveTextContent(
+      'Rank order. Hold the mic to move, or tap',
+    );
+    expect(
+      within(screen.getByTestId(backlogIds.hint)).getByTestId('icon-mic', HIDDEN),
+    ).toBeOnTheScreen();
+    expect(
+      within(screen.getByTestId(backlogIds.hint)).getByTestId('icon-rank', HIDDEN),
+    ).toBeOnTheScreen();
+    expect(screen.getByTestId(backlogIds.count)).toHaveTextContent('7 open Features');
+  });
+
+  it('gives Needs me the inbox icon and the ask tone when something waits, and All epics a down arrow', async () => {
+    makeApi();
+    await renderBacklog({ scheme });
+    await screen.findByTestId(backlogRowId('SHIP-707'));
+
+    const chip = screen.getByTestId(backlogIds.chipNeedsMe);
+    expect(chip).toHaveStyle({ backgroundColor: tint(themes[scheme].colors.warn, 0.14) });
+    expect(within(chip).getByTestId('icon-inbox', HIDDEN)).toBeOnTheScreen();
+    expect(
+      within(screen.getByTestId(backlogIds.chipParent)).getByTestId('icon-down', HIDDEN),
+    ).toBeOnTheScreen();
+  });
+
+  it('shows a Feature progress bar from its story rollups', async () => {
+    makeApi({
+      features: [
+        aBacklogRow({
+          key: 'SHIP-707',
+          type: { id: 'feature', name: 'Feature' },
+          rollups: [{ type: 'story', open: 5, closed: 9, inCurrentSprint: 3, inOtherSprint: 0 }],
+        }),
+      ],
+    });
+    await renderBacklog({ scheme });
+
+    expect(await screen.findByTestId(backlogDoneId('SHIP-707'))).toHaveTextContent('9 of 14');
+    expect(screen.getByTestId(primitiveIds.progressBar)).toBeOnTheScreen();
   });
 
   it('renders the stories state: owner and Feature on each row', async () => {

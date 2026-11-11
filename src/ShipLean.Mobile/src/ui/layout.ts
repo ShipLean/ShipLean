@@ -5,6 +5,14 @@ export const layout = {
   tabBar: 56,
   // .tabs grid-template-columns: the middle column, where the mic sits.
   micSlot: 84,
+  // .mic (--app-mic): the raised hold-to-talk button, how far it rises above the bar (top: -26px), its ring
+  // (0 0 0 5px surface) and the gap above its label (.mic-label sits 4px above the bar's bottom edge).
+  mic: 64,
+  micRaise: 26,
+  micRing: 5,
+  micLabelGap: 3,
+  // .tab gap between its icon and label.
+  tabGap: 2,
   // .badge on a tab: minimum size, offset from the tab's centre and top, side padding.
   badge: 17,
   badgeTop: 4,

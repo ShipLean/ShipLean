@@ -24,6 +24,9 @@ export const backlogIds = {
   segment: 'backlog-segment',
   chipNeedsMe: 'backlog-chip-needs-me',
   chipOpen: 'backlog-chip-open',
+  // "Rank order. Hold the mic to move, or tap" and the "7 open Features" header above the rows.
+  hint: 'backlog-hint',
+  count: 'backlog-count',
   // The Epic chip at Features, the Feature chip at Stories.
   chipParent: 'backlog-chip-parent',
   picker: 'sheet-backlog-picker',

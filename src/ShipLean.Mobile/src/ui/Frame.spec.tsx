@@ -1,3 +1,4 @@
+import { BottomTabBarHeightContext } from 'expo-router/js-tabs';
 import { Text } from 'react-native';
 import { screen } from '@testing-library/react-native';
 import { themes } from '../theme';
@@ -49,5 +50,30 @@ describe.each(['light', 'dark'] as const)('Screen, TopBar and Sheet (%s)', (sche
 
     expect(screen.getByTestId('sheet')).toBeOnTheScreen();
     expect(screen.getByTestId('sheet-title')).toHaveTextContent('Account');
+  });
+});
+
+describe('Screen bottom inset', () => {
+  test('render_WhenOutsideTabs_ShouldKeepTheBottomInset', async () => {
+    await renderScreen(
+      <Screen testID="root">
+        <Text>Body</Text>
+      </Screen>,
+    );
+
+    // 34 is the notched test phone's home-indicator inset; setup's footer relies on it.
+    expect(screen.getByTestId('root')).toHaveStyle({ paddingBottom: 34 });
+  });
+
+  test('render_WhenInsideATabScene_ShouldAddNoBottomInsetAsTheTabBarPaysIt', async () => {
+    await renderScreen(
+      <BottomTabBarHeightContext.Provider value={56}>
+        <Screen testID="root">
+          <Text>Body</Text>
+        </Screen>
+      </BottomTabBarHeightContext.Provider>,
+    );
+
+    expect(screen.getByTestId('root')).toHaveStyle({ paddingBottom: 0 });
   });
 });

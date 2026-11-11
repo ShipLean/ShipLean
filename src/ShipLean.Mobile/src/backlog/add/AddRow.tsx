@@ -87,7 +87,8 @@ export function AddRow({ projectId, level, parent }: AddRowProps) {
       accessibilityLabel={parent === null ? 'Add' : `Add under ${parent.key}`}
       style={{
         gap: theme.space[2],
-        padding: theme.space[3],
+        paddingHorizontal: theme.space[4],
+        paddingVertical: theme.space[3],
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
       }}
@@ -140,10 +141,11 @@ export function AddRow({ projectId, level, parent }: AddRowProps) {
         style={{
           minHeight: theme.touch.control,
           paddingHorizontal: theme.space[3],
-          borderRadius: theme.radius.md,
+          // The kit's field look (app.css .field): a filled, borderless field, ringed only on an error.
+          borderRadius: theme.radius.lg,
           borderWidth: 1,
-          borderColor: error === null ? colors.border : colors.danger,
-          backgroundColor: colors.surface,
+          borderColor: error === null ? 'transparent' : colors.danger,
+          backgroundColor: colors.surface2,
           color: colors.text,
           fontSize: theme.font.size.input,
         }}

@@ -32,9 +32,19 @@ function object(entries, indent) {
 const str = (s) => `'${s}'`;
 
 export function render(tokens) {
+  // Work item type colours sit inside each scheme's colours, as colors.type.<id>.
   const colorSet = (scheme) =>
     object(
-      Object.entries(tokens.color[scheme]).map(([k, v]) => [camel(k), str(v)]),
+      [
+        ...Object.entries(tokens.color[scheme]).map(([k, v]) => [camel(k), str(v)]),
+        [
+          'type',
+          object(
+            Object.entries(tokens.type[scheme]).map(([k, v]) => [k, str(v)]),
+            3,
+          ),
+        ],
+      ],
       2,
     );
   const sizes = Object.entries(tokens.text).map(([k, v]) => [sizeKey(k), px(v)]);

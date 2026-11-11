@@ -36,6 +36,10 @@ export const primitiveIds = {
   dock: 'dock',
   dockField: 'dock-field',
   dockMic: 'dock-mic',
+  typeChip: 'type-chip',
+  avatar: 'avatar',
+  needsDecisions: 'needs-decisions',
+  needsQuestions: 'needs-questions',
 } as const;
 
 // TabBar: the same ids as the shell's simple tabs, so swapping TabBar in keeps the shell specs green.
@@ -47,3 +51,6 @@ export const optionCountId = (testID: string, value: string) => `${optionId(test
 // Chip's count; Banner's action button.
 export const countId = (testID: string) => `${testID}-count`;
 export const actionId = (testID: string) => `${testID}-action`;
+// Icon: one id per name. Chip's colour dot, and its trailing chevron is an Icon.
+export const iconId = (name: string) => `icon-${name}`;
+export const dotId = (testID: string) => `${testID}-dot`;

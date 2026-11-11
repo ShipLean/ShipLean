@@ -60,7 +60,8 @@ const KINDS: { title: string; body: string }[] = [
 export function InboxScreen({ projectKey }: InboxScreenProps) {
   const router = useRouter();
   const { project, isLoading, error } = useProject(projectKey);
-  if (project !== undefined) return <InboxBody projectKey={projectKey} projectId={project.id} />;
+  if (project !== undefined)
+    return <InboxBody projectKey={projectKey} projectId={project.id} projectName={project.name} />;
   return (
     <Screen testID={screenIds.inbox}>
       <TabRootBar
@@ -100,7 +101,15 @@ function useRefreshOnReturn(refresh: () => void) {
   }, [nav]);
 }
 
-function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: string }) {
+function InboxBody({
+  projectKey,
+  projectId,
+  projectName,
+}: {
+  projectKey: string;
+  projectId: string;
+  projectName: string;
+}) {
   const router = useRouter();
   const theme = useTheme();
   const { colors } = theme;
@@ -124,12 +133,13 @@ function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: s
   const data = inbox.data;
   const counts = data === undefined ? undefined : inboxCounts(data, pending);
   const visible = data === undefined ? [] : visibleItems(data.items, pending);
-  const subtitle =
+  const detail =
     segment === 'answered'
       ? ANSWERED_SUBTITLE
       : data === undefined || counts === undefined
         ? undefined
         : waitingSubtitle(counts, data.everWaited);
+  const subtitle = detail === undefined ? projectName : `${projectName} · ${detail}`;
 
   const waitingList = () => {
     if (data === undefined)
@@ -259,6 +269,7 @@ function InboxBody({ projectKey, projectId }: { projectKey: string; projectId: s
       <FromSetupTip projectKey={projectKey} />
       <ScrollView
         testID={inboxIds.list}
+        contentContainerStyle={{ paddingBottom: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={pulled && inbox.fetchStatus === 'fetching'}

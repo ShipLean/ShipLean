@@ -6,15 +6,21 @@ import { primitiveIds } from './testIds';
 
 export interface HealthPillProps {
   health: FeatureHealth | null;
+  // Show "On track" too (the Features board). Off by default: the Backlog shows health only when it is not on track.
+  showOnTrack?: boolean;
 }
 
-const LABELS = { atRisk: 'At risk', blocked: 'Blocked' } as const;
+const LABELS = { onTrack: 'On track', atRisk: 'At risk', blocked: 'Blocked' } as const;
 
-// A Feature's health (app.css .health). Only At risk and Blocked show, on every screen; on track shows nothing.
-export function HealthPill({ health }: HealthPillProps) {
+// A Feature's health (app.css .health). At risk and Blocked always show; on track only with showOnTrack.
+export function HealthPill({ health, showOnTrack = false }: HealthPillProps) {
   const theme = useTheme();
-  if (health === null || health === 'onTrack') return null;
-  const colour = health === 'blocked' ? theme.colors.danger : theme.colors.warn;
+  if (health === null || (health === 'onTrack' && !showOnTrack)) return null;
+  const colour = {
+    onTrack: theme.colors.ok,
+    atRisk: theme.colors.warn,
+    blocked: theme.colors.danger,
+  }[health];
   return (
     <View
       testID={primitiveIds.healthPill}
