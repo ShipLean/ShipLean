@@ -67,7 +67,7 @@ describe.each(['light', 'dark'] as const)('Chip extras (%s)', (scheme) => {
 
     expect(screen.getByTestId(dotId('c'))).toHaveStyle({ backgroundColor: '#123456' });
     expect(screen.getByTestId('icon-inbox', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId('icon-down', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('icon-chevron', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('draws none of them by default', async () => {
@@ -77,5 +77,16 @@ describe.each(['light', 'dark'] as const)('Chip extras (%s)', (scheme) => {
 
     expect(screen.queryByTestId(dotId('c'))).toBeNull();
     expect(screen.queryByTestId('icon-down', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('icon-chevron', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('trailing down draws the down arrow', async () => {
+    await renderScreen(
+      <Chip label="All epics" trailing="down" selected={false} onPress={() => {}} testID="c" />,
+      { scheme },
+    );
+
+    expect(screen.getByTestId('icon-down', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('icon-chevron', { includeHiddenElements: true })).toBeNull();
   });
 });

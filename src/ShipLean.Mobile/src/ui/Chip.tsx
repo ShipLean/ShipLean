@@ -10,10 +10,10 @@ export interface ChipProps {
   selected: boolean;
   onPress: () => void;
   testID: string;
-  // Leading icon, a leading colour dot, a trailing chevron (a menu chip), and the tan fill of an ask chip.
+  // Leading icon, a leading colour dot, a trailing chevron (right) or down arrow (a menu chip), and the tan fill of an ask chip.
   icon?: IconName;
   dot?: string;
-  trailing?: 'chevron';
+  trailing?: 'chevron' | 'down';
   tone?: 'ask';
 }
 
@@ -81,7 +81,7 @@ export function Chip({
           {count}
         </Text>
       )}
-      {trailing === 'chevron' ? <Icon name="down" size={16} color={colors.muted} /> : null}
+      {trailing === undefined ? null : <Icon name={trailing} size={16} color={colors.muted} />}
     </Pressable>
   );
 }
