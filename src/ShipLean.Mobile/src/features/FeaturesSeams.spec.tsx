@@ -1,10 +1,12 @@
-import { fireEvent, screen } from '@testing-library/react-native';
+import { featureBoardKeys } from '@shiplean/core/api/featureBoard';
+import { featuresKeys } from '@shiplean/core/api/featuresOverview';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { UNDO } from '../actions/undo';
 import { InboxActionsContext } from '../inbox/InboxActions';
 import { InboxSheetsContext } from '../inbox/InboxSheets';
-import { fakeRunner } from '../test-support/actions';
+import { aPending, fakeRunner } from '../test-support/actions';
 import { fakeInboxActions, fakeInboxSheets } from '../test-support/inbox';
 import { FeaturesProvider } from '../shell/providers/features';
 import { aFeatureGroup, aFeatureRow, anOverview, featuresApi } from '../test-support/features';
@@ -90,5 +92,55 @@ describe('Features seams', () => {
     await fireEvent.press(screen.getByTestId('bump'));
     expect(runner.registered).toHaveLength(1);
     expect(runner.registered[0].area).toBe('features');
+  });
+
+  it('reads the overview and the Feature board again, once, when a change is refused with a conflict', async () => {
+    const setState: FeaturesAction = {
+      area: 'features',
+      kind: 'setState',
+      projectId: 'p',
+      itemId: 'i1',
+      key: 'SHIP-1',
+      revision: 3,
+      stateId: 's2',
+      stateName: 'Done',
+      fromStateId: 's1',
+      fromStateName: 'Active',
+      closing: true,
+      openStories: 0,
+    };
+    const runner = fakeRunner();
+    const { queryClient } = await renderWithRunner(
+      <FeaturesActionsProvider>{null}</FeaturesActionsProvider>,
+      { runner },
+    );
+    const keys = [
+      featuresKeys.overview('p'),
+      featuresKeys.digest('p', null),
+      featureBoardKeys.board('p', 'SHIP-1'),
+      featureBoardKeys.board('p', 'SHIP-2'),
+      featuresKeys.overview('other'),
+    ];
+    const fill = () => {
+      for (const key of keys) queryClient.setQueryData(key, {});
+    };
+    const invalidated = () => keys.map((key) => queryClient.getQueryState(key)?.isInvalidated);
+    const as = (state: 'sending' | 'failed', failure: 'conflict' | 'server' | null = null) =>
+      act(() => {
+        runner.setPending([aPending({ id: 'a', action: setState, state, failure })]);
+      });
+    fill();
+
+    await as('sending');
+    await as('failed', 'server');
+    expect(invalidated()).toEqual([false, false, false, false, false]);
+
+    await as('sending');
+    await as('failed', 'conflict');
+    expect(invalidated()).toEqual([true, true, true, false, false]);
+
+    fill();
+    await as('failed', 'conflict');
+    expect(invalidated()).toEqual([false, false, false, false, false]);
   });
 });
