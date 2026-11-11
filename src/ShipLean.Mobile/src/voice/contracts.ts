@@ -1,7 +1,7 @@
 // N9: the voice, model and setup seams. Speak in, read out: voice is input only, and no audio is kept. Recorded PCM
 // stays in memory for recognition only; only the words the person approves are posted.
 import type { AppAction, PreviewLine } from '../actions/types';
-import type { Link } from '../links';
+import type { Link, WebPage } from '../links';
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -34,6 +34,8 @@ export interface VoiceActionSpec {
   noteArg?: string;
   // Where to do it instead, for an action the phone can't take.
   webOnly?: string;
+  // The web page that Open on the web goes to, for a webOnly action that isn't about the focused item.
+  webPage?: WebPage;
 }
 
 export interface ParsedCall {
@@ -66,7 +68,7 @@ export type VoiceFailure =
     }
   | { kind: 'misheardKey'; detail: { spoken: string; suggestion: string } }
   | { kind: 'noValidAction'; detail: { action: string | null; reason: NoValidActionReason } }
-  | { kind: 'webOnly'; detail: { action: string; where: string } }
+  | { kind: 'webOnly'; detail: { action: string; where: string; page?: WebPage } }
   | {
       kind: 'ambiguous';
       detail: {

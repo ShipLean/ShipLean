@@ -144,12 +144,15 @@ export const BACKLOG_ACTIONS: VoiceActionSpec[] = [
     description: 'Plan a sprint.',
     args: { properties: {} },
     webOnly: 'Sprint planning: the web Backlog’s Planning view',
+    webPage: { page: 'planning' },
   },
   {
     name: 'bulk_edit',
     description: 'Edit many items at once.',
     args: { properties: {} },
     webOnly: 'Bulk edit: the web Backlog',
+    // The web Backlog at the level the phone shows.
+    webPage: { page: 'backlog' },
   },
 ];
 
