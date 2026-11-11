@@ -12,6 +12,8 @@
 #                  its mirrored locales (ios push, android push and verify)
 #   PLAY_TRACK     android submit: the track to promote the internal release to, alpha (closed
 #                  testing) or production
+#   PLAY_RELEASE_STATUS  android submit: completed (sent to Google's review) or draft (for an app
+#                  Play still calls a draft app: send it for review in Play Console)
 #   APP_VERSION_PATCH  optional (ios push): set by a run that also builds; the push then targets
 #                  that build's version, from store/app_version.py
 #
@@ -75,13 +77,25 @@ if [ "$mode" = submit ]; then
         exit 1
         ;;
     esac
-    # Promotes the internal track's rolled-out release (what internal testers have) to PLAY_TRACK
-    # as a full release, which sends it to Google's review. No binary, listing or release notes.
+    # Until its first review Play calls the app a draft app and refuses anything but a draft
+    # release outside internal testing ("Only releases with status draft may be created on draft
+    # app"); the first send for review is then done once in Play Console.
+    case "${PLAY_RELEASE_STATUS:-}" in
+      completed | draft) ;;
+      *)
+        echo "push_listing.sh: PLAY_RELEASE_STATUS must be completed or draft, found '${PLAY_RELEASE_STATUS:-}'" >&2
+        exit 1
+        ;;
+    esac
+    # Promotes the internal track's rolled-out release (what internal testers have) to PLAY_TRACK.
+    # completed sends it to Google's review; draft leaves it on the track for Play Console. No
+    # binary, listing or release notes.
     bundle exec fastlane supply \
       --json_key "$PLAY_KEY_PATH" \
       --package_name "$app_id" \
       --track internal \
       --track_promote_to "$PLAY_TRACK" \
+      --track_promote_release_status "$PLAY_RELEASE_STATUS" \
       --skip_upload_aab true \
       --skip_upload_apk true \
       --skip_upload_metadata true \
