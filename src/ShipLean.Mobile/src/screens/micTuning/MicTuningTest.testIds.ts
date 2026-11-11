@@ -15,6 +15,7 @@ export const micTuningTestIds = {
   resultTooQuiet: 'mic-tuning-test-result-too-quiet',
   resultNoisy: 'mic-tuning-test-result-noisy',
   resultNoSignal: 'mic-tuning-test-result-no-signal',
+  wrongInput: 'mic-tuning-test-wrong-input',
   heard: 'mic-tuning-test-heard',
   sensitivity: 'mic-tuning-test-sensitivity',
   cause: (n: number) => `mic-tuning-test-cause-${n}`,

@@ -89,7 +89,7 @@ describe('MicTuningTest results', () => {
   );
 
   it.each<TuningResultKind>(['good', 'tooQuiet'])(
-    '%s saves the tuning for the input in use',
+    '%s saves under the input asked for and warns when the phone routed another',
     async (kind) => {
       jest.mocked(classify).mockReturnValue(answer(kind));
       const fakes = await toSpeak();
@@ -101,8 +101,8 @@ describe('MicTuningTest results', () => {
       });
       await holdAndRelease();
 
-      expect(fakes.tuning.tuning('bt-1')).toEqual({
-        inputId: 'bt-1',
+      expect(fakes.tuning.tuning(PHONE_INPUT_ID)).toEqual({
+        inputId: PHONE_INPUT_ID,
         roomRms: 40,
         voiceRms: 900,
         lineRms: 220,
@@ -110,8 +110,42 @@ describe('MicTuningTest results', () => {
         automatic: true,
         manualStep: null,
       });
+      expect(fakes.tuning.tuning('bt-1')).toBeNull();
+      expect(screen.getByTestId(ids.wrongInput)).toHaveTextContent(
+        'Wrong input: the test asked for Phone, but the phone recorded from Buds.',
+      );
     },
   );
+
+  it('shows no wrong-input line when the routed input is the one asked for', async () => {
+    jest.mocked(classify).mockReturnValue(answer('good'));
+    const fakes = await toSpeak();
+    fakes.recognizer.setInputInUse({
+      id: PHONE_INPUT_ID,
+      kind: 'phone',
+      name: 'Phone',
+      connected: true,
+    });
+    await holdAndRelease();
+    expect(screen.queryByTestId(ids.wrongInput)).toBeNull();
+  });
+
+  it('ends the test when the decode fails', async () => {
+    jest.mocked(classify).mockReturnValue(answer('good'));
+    const fakes = await toSpeak();
+    jest.spyOn(fakes.recognizer, 'start').mockResolvedValue({
+      onPartial: () => {},
+      onLevel: () => {},
+      frames: () => [],
+      stop: () => Promise.reject(new Error('decode failed')),
+      cancel: () => {},
+    });
+    await holdAndRelease();
+
+    expect(screen.queryByTestId(ids.stepSpeak)).toBeNull();
+    expect(screen.getByTestId(ids.notReady)).toBeOnTheScreen();
+    expect(fakes.tuning.tuning(PHONE_INPUT_ID)).toBeNull();
+  });
 
   it('saves for the phone when no input is reported', async () => {
     jest.mocked(classify).mockReturnValue(answer('good'));

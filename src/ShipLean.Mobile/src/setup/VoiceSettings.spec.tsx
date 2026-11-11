@@ -62,11 +62,13 @@ class DeletingStore extends FakeModelStore {
   }
 }
 
+const NOW = new Date('2030-01-10T12:00:00.000Z');
+
 async function render(set: Partial<ModelStatus>, models: FakeModelStore = new FakeModelStore()) {
   models.setMemory({ reportedGb: 11.2, soldGb: 12 });
   models.set(set);
   const engines = installFakeEngines({ models });
-  await renderScreen(<VoiceSettings />);
+  await renderScreen(<VoiceSettings now={() => NOW} />);
   // The microphone's state arrives from the phone after the first render.
   await waitFor(() =>
     expect(screen.getByTestId(voiceSettingsIds.microphoneValue)).toBeOnTheScreen(),
@@ -265,7 +267,7 @@ describe('VoiceSettings', () => {
         roomRms: 40,
         voiceRms: 900,
         lineRms: 190,
-        testedAt: new Date().toISOString(),
+        testedAt: NOW.toISOString(),
         automatic: true,
         manualStep: null,
       }),
@@ -286,6 +288,30 @@ describe('VoiceSettings', () => {
     });
   });
 
+  it('words the tested age from the injected clock', async () => {
+    const { tuning } = await render(ready());
+    await act(async () =>
+      tuning.save({
+        inputId: PHONE_INPUT_ID,
+        roomRms: 40,
+        voiceRms: 900,
+        lineRms: 190,
+        testedAt: '2030-01-08T12:00:00.000Z',
+        automatic: true,
+        manualStep: null,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId(voiceSettingsIds.micTuning)).toHaveTextContent(
+        'tested 2 days ago',
+        {
+          exact: false,
+        },
+      ),
+    );
+  });
+
   it('says Manual when the line is set by hand', async () => {
     const { tuning } = await render(ready());
     await act(async () =>
@@ -294,7 +320,7 @@ describe('VoiceSettings', () => {
         roomRms: 40,
         voiceRms: 900,
         lineRms: 190,
-        testedAt: new Date().toISOString(),
+        testedAt: NOW.toISOString(),
         automatic: false,
         manualStep: 4,
       }),

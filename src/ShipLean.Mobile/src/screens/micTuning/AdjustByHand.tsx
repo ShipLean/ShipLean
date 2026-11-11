@@ -41,6 +41,14 @@ function Panel({ inputId }: { inputId: string }) {
   const [step, setStep] = useState(
     tuning?.manualStep ?? lineToSlider(activeLine(tuning) ?? DEFAULT_FLOOR_RMS),
   );
+  // A test (or Settings) saving a new line replaces the draft: the panel shows what is stored.
+  const stored = `${tuning?.automatic}|${tuning?.manualStep}|${tuning?.testedAt}|${tuning?.lineRms}`;
+  const [seen, setSeen] = useState(stored);
+  if (seen !== stored) {
+    setSeen(stored);
+    setAutomatic(tuning?.automatic ?? true);
+    setStep(tuning?.manualStep ?? lineToSlider(activeLine(tuning) ?? DEFAULT_FLOOR_RMS));
+  }
   const { level, failed } = useLiveLevel(expanded);
   const store = engines().tuning;
 

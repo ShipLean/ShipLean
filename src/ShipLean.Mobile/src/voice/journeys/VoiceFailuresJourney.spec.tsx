@@ -169,7 +169,7 @@ describe('VoiceFailuresJourney', () => {
       );
       expect(screen.queryByTestId(screenIds.micTuning)).toBeNull();
       // Only the second silent hold offers Tune mic.
-      expect(screen.queryByText('Tune mic') === null).toBe(i === 0);
+      expect(screen.queryByTestId(primitiveIds.toastAction) === null).toBe(i === 0);
     }
 
     // The third silent hold in a row opens the Mic tuning page instead of another toast.
@@ -178,6 +178,8 @@ describe('VoiceFailuresJourney', () => {
     });
     await hold('tabBar');
     expect(await screen.findByTestId(screenIds.micTuning)).toBeOnTheScreen();
+    // Exactly one page was pushed.
+    expect(screen.getAllByTestId(screenIds.micTuning)).toHaveLength(1);
     expect(model.parsed).toHaveLength(0);
   });
 

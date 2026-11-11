@@ -136,12 +136,12 @@ describe('HeardFailure', () => {
     installFakeEngines();
     const first = await hold(silent());
     expect(screen.getByTestId(primitiveIds.toast)).toBeOnTheScreen();
-    expect(screen.queryByText('Tune mic')).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.toastAction)).toBeNull();
     await first.unmount();
 
     const second = await hold(silent());
     expect(mockPush).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByText('Tune mic'));
+    await fireEvent.press(screen.getByTestId(primitiveIds.toastAction));
     expect(mockPush).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith(links.micTuning('second_hold'));
     expect(mockPush.mock.calls[0][0]).toEqual({
@@ -152,7 +152,7 @@ describe('HeardFailure', () => {
 
     // The page opening reset the count: the next silent hold is a plain toast again.
     const next = await hold(silent());
-    expect(screen.queryByText('Tune mic')).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.toastAction)).toBeNull();
     await next.unmount();
   });
 
@@ -177,7 +177,7 @@ describe('HeardFailure', () => {
     // The count was reset by the push, so the next silent hold is a plain toast.
     const after = await hold(silent());
     expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Tune mic')).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.toastAction)).toBeNull();
     expect(screen.getByTestId(primitiveIds.toast)).toBeOnTheScreen();
     await after.unmount();
   });
@@ -207,7 +207,7 @@ describe('HeardFailure', () => {
     await (await hold(short())).unmount();
     const afterShort = await hold(silent());
     expect(mockPush).not.toHaveBeenCalled();
-    expect(screen.queryByText('Tune mic')).toBeNull();
+    expect(screen.queryByTestId(primitiveIds.toastAction)).toBeNull();
     await afterShort.unmount();
   });
 

@@ -66,6 +66,19 @@ describe('AdjustByHand', () => {
     expect(tuning.tuning(PHONE_INPUT_ID)).toEqual({ ...tested, automatic: true, manualStep: null });
   });
 
+  it('re-syncs when a test saves Automatic after a manual step was stored', async () => {
+    const tuning = await render({ ...tested, automatic: false, manualStep: 7 });
+    expect(screen.getByTestId(adjustAutomaticId).props.value).toBe(false);
+    expect(screen.getByTestId(adjustStepId(7)).props.accessibilityState.selected).toBe(true);
+
+    await act(async () =>
+      tuning.save({ ...tested, testedAt: '2026-11-12T09:00:00.000Z', lineRms: 400 }),
+    );
+
+    expect(screen.getByTestId(adjustAutomaticId).props.value).toBe(true);
+    expect(screen.queryByTestId(adjustStepId(7))).toBeNull();
+  });
+
   it('a manual save without a test uses the default floor for room and voice', async () => {
     const tuning = await render(null);
     await fireEvent(screen.getByTestId(adjustAutomaticId), 'valueChange', false);

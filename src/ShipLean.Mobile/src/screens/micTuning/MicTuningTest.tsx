@@ -5,12 +5,13 @@ import { systemNow } from '../../actions/clock';
 import type { MicTuningFrom } from '../../links';
 import { useTheme } from '../../theme';
 import { Button } from '../../ui/Button';
-import { PHONE_INPUT_ID, type RecognitionSession } from '../../voice/contracts';
+import type { AudioInput, RecognitionSession } from '../../voice/contracts';
 import { engines } from '../../voice/engines';
 import { micTuningResult } from '../../voice/micTuning/events';
 import { activeLine, classify, DEFAULT_FLOOR_RMS } from '../../voice/micTuning/line';
 import type { TuningResult } from '../../voice/micTuning/line';
 import { requestTypeInstead } from '../../voice/micTuning/returnIntent';
+import { resolveInput } from '../../voice/micTuning/route';
 import { LevelMeter } from './LevelMeter';
 import { copy, hotwordsFor, phraseFor, QUIET_SECONDS } from './micTuningCopy';
 import { micTuningTestId, micTuningTestIds as ids } from './MicTuningTest.testIds';
@@ -29,7 +30,14 @@ type Phase =
   | { kind: 'start' }
   | { kind: 'quiet' }
   | { kind: 'speak'; room: number[] }
-  | { kind: 'result'; result: TuningResult; heard: string; oldLine: number };
+  | {
+      kind: 'result';
+      result: TuningResult;
+      heard: string;
+      oldLine: number;
+      // Set when the phone recorded from another input than the one asked for.
+      wrongInput: { asked: AudioInput; routed: AudioInput } | null;
+    };
 
 // The two-step test: the room for 3 s, then the voice held on the big mic. The result sets the speech line, for
 // good and too quiet. The phrase is shown only; it is never parsed or applied.
@@ -101,9 +109,13 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
 
   const finish = useCallback(
     (room: number[], voice: number[], heard: string) => {
-      const { tuning, recognizer } = engines();
+      const { tuning, recognizer, inputs } = engines();
       const result = classify(room, voice);
-      const inputId = recognizer.inputInUse()?.id ?? PHONE_INPUT_ID;
+      // The line is saved under the input asked for: the key the recognizer reads (resolveInput), not the routed one.
+      const asked = resolveInput(tuning.pickedInput(), inputs.list());
+      const inputId = asked.id;
+      const routed = recognizer.inputInUse();
+      const wrongInput = routed !== null && routed.id !== asked.id ? { asked, routed } : null;
       const oldLine = activeLine(tuning.tuning(inputId)) ?? DEFAULT_FLOOR_RMS;
       if (result.kind === 'good' || result.kind === 'tooQuiet') {
         tuning.save({
@@ -117,7 +129,7 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
         });
       }
       micTuningResult(result.kind, Platform.OS);
-      setPhase({ kind: 'result', result, heard, oldLine });
+      setPhase({ kind: 'result', result, heard, oldLine, wrongInput });
     },
     [now],
   );
@@ -159,10 +171,21 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
     held.current = null;
     if (s === null) return;
     const room = phase.room;
-    s.stop().then((transcript) => {
-      close(s);
-      if (alive.current) finish(room, s.frames(), transcript.text);
-    });
+    s.stop().then(
+      (transcript) => {
+        close(s);
+        if (alive.current) finish(room, s.frames(), transcript.text);
+      },
+      () => {
+        // The decode failed: end the test, back at the start with voice not ready.
+        s.cancel();
+        close(s);
+        if (alive.current) {
+          setFailedStart(true);
+          setPhase({ kind: 'start' });
+        }
+      },
+    );
   };
 
   const begin = () => {
@@ -252,7 +275,12 @@ export function MicTuningTest({ from, itemKey, now = systemNow }: MicTuningTestP
     const failure = phase.result.kind === 'noSignal' || phase.result.kind === 'noisy';
     body = (
       <View style={{ gap: theme.space[3] }}>
-        <Result result={phase.result} heard={phase.heard} oldLine={phase.oldLine} />
+        <Result
+          result={phase.result}
+          heard={phase.heard}
+          oldLine={phase.oldLine}
+          wrongInput={phase.wrongInput}
+        />
         <Button
           testID={ids.tryAgain}
           label={copy.tryAgain}
