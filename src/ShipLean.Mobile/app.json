@@ -86,7 +86,7 @@
         "expo-build-properties",
         {
           "android": {
-            "extraProguardRules": "-keep class * extends androidx.room.RoomDatabase { <init>(); }"
+            "extraProguardRules": "-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class com.k2fsa.sherpa.onnx.** { *; }"
           }
         }
       ]
