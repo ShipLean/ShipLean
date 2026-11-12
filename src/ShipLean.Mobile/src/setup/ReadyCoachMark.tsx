@@ -78,7 +78,8 @@ export const ReadyCoachMark: FunctionComponent<ReadyCoachMarkProps> = ({ onTry, 
   }, [held]);
 
   const showing = variant !== null && away !== variant;
-  const bottom = insets.bottom + layout.tabBar + layout.toastGap;
+  // Above the raised mic and its ring, not just the bar, so the card never covers the button it points at.
+  const bottom = insets.bottom + layout.tabBar + layout.micRaise + layout.micRing + layout.toastGap;
   const card = {
     position: 'absolute',
     left: theme.space[4],

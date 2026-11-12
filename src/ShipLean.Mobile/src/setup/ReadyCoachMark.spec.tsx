@@ -9,6 +9,7 @@ import { FakeVoiceProvider, fakeVoice, installFakeEngines } from '../test-suppor
 import { FirstResultSheet } from './FirstResultSheet';
 import { firstResultSheetIds } from './FirstResultSheet.testIds';
 import type { VoiceUiState } from '../voice/internals';
+import { layout } from '../ui/layout';
 import { GUIDE_KEYS } from './guide';
 import { ReadyCoachMark } from './ReadyCoachMark';
 import { readyCoachMarkIds } from './ReadyCoachMark.testIds';
@@ -145,5 +146,14 @@ describe('ReadyCoachMark', () => {
     await renderScreen(<ReadyCoachMark onTry={jest.fn()} onSkip={jest.fn()} />);
 
     expect(screen.getByTestId(readyCoachMarkIds.root).children).toHaveLength(0);
+  });
+
+  it('sits above the raised mic and its ring, so the card never covers the button', async () => {
+    const { models } = setup({ phase: 'downloading' });
+    await renderScreen(<ReadyCoachMark onTry={jest.fn()} onSkip={jest.fn()} />);
+    await act(async () => models.set({ phase: 'ready' }));
+    const card = await screen.findByTestId(readyCoachMarkIds.card);
+    const { bottom } = card.props.style as { bottom: number };
+    expect(bottom).toBeGreaterThan(layout.tabBar + layout.micRaise + layout.micRing);
   });
 });
