@@ -1,5 +1,6 @@
 // The voice engines the provider uses. The app configures the native ones at start-up; tests configure fakes.
-import type { ModelStatus, VoiceEngines } from './contracts';
+import { PHONE_INPUT_ID, type ModelStatus, type VoiceEngines } from './contracts';
+import { createMicTuningStore } from './micTuning/store';
 
 const NO_MODELS: ModelStatus = {
   phase: 'none',
@@ -19,7 +20,12 @@ export function notReadyEngines(): VoiceEngines {
     recognizer: {
       ready: () => false,
       inputName: () => null,
+      inputInUse: () => null,
       start: () => Promise.reject(new Error('The speech recognizer is not configured.')),
+      watchLevel: (_onLevel, onFailed) => {
+        onFailed();
+        return () => {};
+      },
     },
     model: {
       ready: () => false,
@@ -44,6 +50,11 @@ export function notReadyEngines(): VoiceEngines {
       request: () => Promise.resolve(false),
       openSettings: () => {},
     },
+    inputs: {
+      list: () => [{ id: PHONE_INPUT_ID, kind: 'phone', name: 'Phone', connected: true }],
+      subscribe: () => () => {},
+    },
+    tuning: createMicTuningStore({ getItemSync: () => null, setItemSync: () => {} }),
   };
 }
 

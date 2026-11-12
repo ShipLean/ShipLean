@@ -1,7 +1,8 @@
+import { startDownloadService, stopDownloadService } from '../../../modules/model-files';
 import type { CommandModel, MicPermission, SpeechRecognizer } from '../contracts';
 import { FakeModelFiles } from '../../test-support/modelFiles';
 import { setTotalMemory } from '../../test-support/nativeMocks';
-import { FakeModelStore } from '../../test-support/voice';
+import { FakeModelStore, fakeTuningStore } from '../../test-support/voice';
 import { LlamaCommandModel } from './commandModel';
 import { deviceMemoryBytes } from './deviceMemory';
 import { nativeAdapters } from './index';
@@ -50,7 +51,12 @@ describe('native adapters', () => {
 
     const adapters = nativeAdapters();
 
-    const recognizer = adapters.recognizer({ files: new FakeModelFiles(), models });
+    const recognizer = adapters.recognizer({
+      files: new FakeModelFiles(),
+      models,
+      inputs: adapters.inputs,
+      tuning: fakeTuningStore(),
+    });
     const model = adapters.model({ files: new FakeModelFiles(), models });
     expect(recognizer).toBeInstanceOf(NativeSpeechRecognizer);
     expect(model).toBeInstanceOf(LlamaCommandModel);
@@ -61,8 +67,22 @@ describe('native adapters', () => {
     expect(adapters.files).toBeInstanceOf(ExpoModelFiles);
     expect(adapters.network).toBeInstanceOf(NetInfoNetworkKind);
     expect(adapters.memoryBytes).toBe(8 * 1024 ** 3);
+    // The keep-alive is the model-files module's download service.
+    expect(adapters.keepAlive.start(42)).toBe(true);
+    expect(startDownloadService).toHaveBeenCalledWith(42);
+    adapters.keepAlive.stop();
+    expect(stopDownloadService).toHaveBeenCalled();
     expect(Object.keys(adapters).sort()).toEqual(
-      ['files', 'memoryBytes', 'mic', 'model', 'network', 'recognizer'].sort(),
+      [
+        'files',
+        'inputs',
+        'keepAlive',
+        'memoryBytes',
+        'mic',
+        'model',
+        'network',
+        'recognizer',
+      ].sort(),
     );
   });
 });

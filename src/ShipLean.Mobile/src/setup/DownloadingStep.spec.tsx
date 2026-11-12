@@ -214,6 +214,30 @@ describe('DownloadingStep', () => {
     expect(screen.queryByTestId(downloadingStepIds.resume)).toBeNull();
   });
 
+  it('says Use ShipLean once every file is checked, and while this downloads during a model change', async () => {
+    const done = render({
+      ...downloading(sizeOf('qwen3-4b')),
+      phase: 'ready',
+      files: [...ids('parakeet'), ...ids('qwen3-4b')].map((id) => ({
+        id,
+        state: 'checked' as const,
+        bytes: MODEL_FILES.find((f) => f.id === id)?.bytes ?? 0,
+      })),
+    });
+    await done.done;
+    expect(screen.getByTestId(downloadingStepIds.useApp)).toHaveTextContent('Use ShipLean', {
+      exact: true,
+    });
+    await fireEvent.press(screen.getByTestId(downloadingStepIds.useApp));
+    expect(done.onUseApp).toHaveBeenCalled();
+    done.models.set({ ...downloading(600_000_000), phase: 'ready' });
+    await waitFor(() =>
+      expect(screen.getByTestId(downloadingStepIds.useApp)).toHaveTextContent(
+        'Use ShipLean while this downloads',
+      ),
+    );
+  });
+
   it('offers Resume on a pause that is not for space', async () => {
     const paused = render({ ...downloading(600_000_000), phase: 'paused', reason: 'wifi' });
     await paused.done;

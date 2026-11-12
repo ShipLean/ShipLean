@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { links } from '../../links';
 import { useTheme } from '../../theme';
 import { BottomSheet } from '../../ui/BottomSheet';
 import { Button } from '../../ui/Button';
 import { useToast } from '../../ui/Toast';
-import type { VoiceFailure } from '../contracts';
+import type { ScreenVoiceSpec, VoiceFailure } from '../contracts';
 import { engines } from '../engines';
 import type { RetryChange, VoiceSource } from '../internals';
 import { HeardQuote } from '../sheets/HeardQuote';
@@ -20,8 +22,12 @@ import {
   heardFailureWhatCanISayId,
 } from './HeardFailure.testIds';
 import { nothingHeardToast, tooShortToast, unclearCopy } from './heardCopy';
-import { MicCheck } from './MicCheck';
-import { resetSilentHolds, SILENT_HOLDS_FOR_MIC_CHECK } from './silentHolds';
+import { readSpecContext } from './specContext';
+import {
+  resetSilentHolds,
+  SILENT_HOLDS_FOR_TUNE_ACTION,
+  SILENT_HOLDS_FOR_MIC_TUNING,
+} from './silentHolds';
 import { useSilentHolds } from './useSilentHolds';
 
 export type HeardFailureKind = 'tooShort' | 'nothingHeard' | 'unclear';
@@ -30,6 +36,8 @@ export interface HeardFailureProps {
   failure: Extract<VoiceFailure, { kind: HeardFailureKind }>;
   heard: string | null;
   source: VoiceSource;
+  // The focused screen's spec: the Mic tuning page's Back label names its focused or first visible item.
+  spec: ScreenVoiceSpec | null;
   // { asNote: true } keeps an unclear sentence as a note.
   onRetry: (change: RetryChange) => void;
   onTypeInstead: () => void;
@@ -38,7 +46,7 @@ export interface HeardFailureProps {
 }
 
 // Too short, nothing heard, or heard but unclear: nothing was changed, and the words are kept. A tap or a silent hold
-// is a toast and no sheet (voice D1, D2); the third silent hold in a row opens the mic check (D3); unclear is a sheet
+// is a toast and no sheet (voice D1, D2); the second silent hold offers Tune mic and the third opens the Mic tuning page; unclear is a sheet
 // with the heard words and a way on (D9, typed D6). A failure over an open preview never reaches here: the provider
 // restores the preview without a message.
 export function HeardFailure(props: HeardFailureProps) {
@@ -53,37 +61,49 @@ export function HeardFailure(props: HeardFailureProps) {
   );
 }
 
-// A tap or silence: a toast and no sheet, or the mic check on the third silent hold in a row.
-function SilentFailure({ failure, onTypeInstead, onClose }: HeardFailureProps) {
+// A tap or silence: a toast and no sheet. The second silent hold in a row adds a Tune mic action; the third pushes the
+// Mic tuning page instead of another toast (voice D1, D2). The page is pushed, so Back restores the screen as it was.
+function SilentFailure({ failure, spec, onClose }: HeardFailureProps) {
   const toast = useToast();
+  const router = useRouter();
   const holds = useSilentHolds(failure);
-  const shown = useRef<VoiceFailure | null>(null);
-  const micCheck = failure.kind === 'nothingHeard' && holds >= SILENT_HOLDS_FOR_MIC_CHECK;
+  const handled = useRef<VoiceFailure | null>(null);
+  const silent = failure.kind === 'nothingHeard';
 
   useEffect(() => {
-    if (micCheck || shown.current === failure) return;
-    shown.current = failure;
-    toast.show(
+    if (handled.current === failure) return;
+    handled.current = failure;
+    // The page's Back label names an item: the focused one, else the first the screen shows.
+    const context = readSpecContext(spec);
+    const key = context.focusKey ?? context.rows[0]?.key;
+    if (silent && holds >= SILENT_HOLDS_FOR_MIC_TUNING) {
+      resetSilentHolds();
+      router.push(links.micTuning('third_hold', key));
+      onClose();
+      return;
+    }
+    const copy =
       failure.kind === 'tooShort'
         ? tooShortToast()
-        : nothingHeardToast(engines().recognizer.inputName()),
+        : nothingHeardToast(engines().recognizer.inputName());
+    toast.show(
+      silent && holds === SILENT_HOLDS_FOR_TUNE_ACTION
+        ? {
+            ...copy,
+            action: {
+              label: 'Tune mic',
+              onPress: () => {
+                resetSilentHolds();
+                router.push(links.micTuning('second_hold', key));
+              },
+            },
+          }
+        : copy,
     );
     onClose();
-  }, [micCheck, failure, toast, onClose]);
+  }, [silent, holds, failure, toast, router, spec, onClose]);
 
-  if (!micCheck) return null;
-  return (
-    <MicCheck
-      onTypeInstead={() => {
-        resetSilentHolds();
-        onTypeInstead();
-      }}
-      onClose={() => {
-        resetSilentHolds();
-        onClose();
-      }}
-    />
-  );
+  return null;
 }
 
 function UnclearSheet({

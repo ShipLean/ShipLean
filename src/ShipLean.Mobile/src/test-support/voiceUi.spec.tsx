@@ -3,7 +3,14 @@ import { Text } from 'react-native';
 import { configureEngines, engines } from '../voice/engines';
 import { requestComposer, useComposerRequest } from '../voice/typed/composerRequest';
 import { useVoice } from '../voice/VoiceProvider';
-import { FakeCommandModel, FakeMicPermission, FakeModelStore, FakeRecognizer } from './voice';
+import {
+  FakeCommandModel,
+  FakeMicPermission,
+  FakeModelStore,
+  FakeRecognizer,
+  fakeAudioInputs,
+  fakeTuningStore,
+} from './voice';
 import { fakeVoice, installFakeEngines, renderWithVoice } from './voiceUi';
 
 function Probe() {
@@ -62,6 +69,8 @@ describe('voiceUi', () => {
         model: new FakeCommandModel(),
         models: new FakeModelStore(),
         mic: new FakeMicPermission(),
+        inputs: fakeAudioInputs(),
+        tuning: fakeTuningStore(),
       });
       requestComposer({ mode: 'note', text: 'left over', reason: null, questionNumber: null });
     });

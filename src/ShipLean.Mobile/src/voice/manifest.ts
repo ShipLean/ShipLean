@@ -99,7 +99,8 @@ export const MODEL_FILES: ModelFile[] = [
 
 const SOLD_GB = [4, 6, 8, 12, 16, 24];
 
-// Phones report a little less memory than they are sold with (a 12 GB phone reports about 11.2): the size sold.
+// Phones report less memory than they are sold with, by how much the maker reserves: a 12 GB Galaxy S25 Ultra
+// reports 10.9 GiB, other 12 GB phones about 11.2. The size sold is the next size up.
 export function soldGb(reported: number): number {
   return SOLD_GB.find((gb) => gb >= reported) ?? Math.ceil(reported);
 }
@@ -110,11 +111,12 @@ export interface ModelAdvice {
   reason: 'lowMemory' | null;
 }
 
-// Auto: 11 GB reported or more gets 4B; the 8 GB class gets 1.7B and may pick 4B with a warning; 6 GB gets 1.7B
-// only; less gets no voice.
+// Auto, by the size sold: 12 GB or more gets 4B; the 8 GB class gets 1.7B and may pick 4B with a warning; 6 GB gets
+// 1.7B only; less gets no voice. Not by the reported figure: what makers reserve varies too much (10.9 to 11.2 GiB
+// on 12 GB phones).
 export function chooseModel(reportedGb: number): ModelAdvice {
-  if (reportedGb >= 11) return { auto: 'qwen3-4b', fourB: 'ok', reason: null };
   const sold = soldGb(reportedGb);
+  if (sold >= 12) return { auto: 'qwen3-4b', fourB: 'ok', reason: null };
   if (sold >= 8) return { auto: 'qwen3-1.7b', fourB: 'warn', reason: null };
   if (sold >= 6) return { auto: 'qwen3-1.7b', fourB: 'blocked', reason: null };
   return { auto: null, fourB: 'blocked', reason: 'lowMemory' };

@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390">
+<!--
+  Mic tuning on the phone app (SHIP-1374, under SHIP-905). Replaces the Mic check sheet (voice.html `mic-check`):
+  the third silent hold in a row opens this page. A two-step test (stay quiet, then say a phrase) tells no signal,
+  too quiet and too noisy apart, and sets the speech threshold for this phone and input. Voice starts on the phone's
+  own microphone and loudspeaker by default. Notes and decisions: mic-tuning.md.
+  ?state=<id>&theme=light|dark, ?list for ids.
+-->
+<link rel="stylesheet" href="app.css"><script src="app.js"></script>
+<style>
+/* Work item backdrop (a lighter copy of work-item.html) */
+.wi-head { padding: 14px var(--app-gutter) 4px; background: var(--color-surface); }
+.wi-head .k { display: flex; align-items: center; gap: 8px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.wi-head h1 { margin: 6px 0 8px; font-size: var(--app-text-lg); line-height: 1.25; font-weight: 600; }
+.wi-body { padding: 0 var(--app-gutter) 16px; background: var(--color-surface); color: var(--color-muted); font-size: var(--app-text); border-bottom: 1px solid var(--color-border); }
+
+/* Page blocks */
+.lead { padding: 18px var(--app-gutter) 4px; }
+.lead b { display: block; font-size: var(--app-text-lg); line-height: 1.25; font-weight: 600; }
+.lead span { display: block; margin-top: 6px; color: var(--color-muted); font-size: var(--app-text); }
+.why { display: flex; gap: 10px; align-items: flex-start; margin: 12px var(--app-gutter) 0; padding: 12px 14px; border-radius: 12px; background: var(--ask-soft); border: 1px solid color-mix(in srgb, var(--ask) 35%, transparent); font-size: var(--app-text-sm); }
+.why > svg { color: var(--ask); margin-top: 1px; }
+.why b { display: block; font-size: var(--app-text); font-weight: 600; }
+.why.bad { background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); border-color: color-mix(in srgb, var(--color-danger) 35%, transparent); }
+.why.bad > svg { color: var(--color-danger); }
+.why.good { background: color-mix(in srgb, var(--color-ok) 12%, var(--color-surface)); border-color: color-mix(in srgb, var(--color-ok) 35%, transparent); }
+.why.good > svg { color: var(--color-ok); }
+
+/* Input card: which microphone and speaker voice uses */
+.input { display: flex; align-items: center; gap: 12px; margin: 14px var(--app-gutter) 0; padding: 12px 14px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-border); }
+.input .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--voice-soft); color: var(--voice); flex: none; }
+.input .main { flex: 1; min-width: 0; }
+.input .main b { display: block; font-size: var(--app-text); font-weight: 600; }
+.input .main span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); }
+.input .chg { color: var(--color-accent); font-weight: 600; font-size: var(--app-text-sm); padding: 0 4px; height: 36px; }
+
+/* The level meter: a bar from silent to loud, a line where speech starts counting, marks for the room and the voice */
+.meter-card { margin: 14px var(--app-gutter) 0; padding: 14px; border-radius: 14px; background: var(--color-surface); border: 1px solid var(--color-border); }
+.meter-card .hd { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--app-text-sm); color: var(--color-muted); }
+.meter-card .hd b { color: var(--color-text); font-size: var(--app-text); font-weight: 600; }
+.meter { position: relative; height: 30px; margin: 30px 0 30px; border-radius: 8px; background: var(--color-surface-2); }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: var(--voice); }
+.meter .fill.room { background: color-mix(in srgb, var(--color-muted) 45%, transparent); }
+.meter .fill.dead { width: 0; }
+.meter .line { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--color-text); border-radius: 1px; }
+.meter .line span { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600; color: var(--color-text); }
+.meter .mark { position: absolute; top: 100%; transform: translateX(-50%); margin-top: 4px; white-space: nowrap; font-size: 11px; color: var(--color-muted); }
+.meter .mark::before { content: ""; position: absolute; bottom: 100%; left: 50%; width: 1px; height: 6px; background: var(--color-muted); }
+.meter .mark.v { color: var(--voice); font-weight: 600; }
+.meter .mark.v::before { background: var(--voice); }
+.meter .peak { position: absolute; top: 0; bottom: 0; width: 3px; border-radius: 2px; background: var(--voice); }
+.meter-card .say { font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Test steps */
+.steps { display: flex; gap: 6px; margin: 16px var(--app-gutter) 0; }
+.steps i { flex: 1; height: 4px; border-radius: 2px; background: var(--color-surface-2); }
+.steps i.on { background: var(--voice); }
+.phrase { margin: 14px var(--app-gutter) 0; padding: 16px; border-radius: 14px; background: var(--voice-soft); font-size: var(--app-text-voice); font-weight: 600; line-height: 1.3; text-align: center; }
+.phrase small { display: block; font-size: var(--app-text-sm); font-weight: 500; color: var(--color-muted); margin-bottom: 6px; }
+.heardline { margin: 12px var(--app-gutter) 0; font-size: var(--app-text-voice); line-height: 1.35; font-weight: 500; min-height: 54px; }
+.heardline .partial { color: var(--color-muted); }
+.heardline .hot { color: var(--voice); }
+.count { display: grid; place-items: center; margin: 22px auto 0; width: 112px; height: 112px; border-radius: 50%; border: 6px solid var(--color-surface-2); border-top-color: var(--voice); border-right-color: var(--voice); font-size: 40px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.count-cap { text-align: center; margin-top: 10px; font-size: var(--app-text-sm); color: var(--color-muted); }
+.holdbig { display: grid; place-items: center; margin: 18px auto 0; width: 88px; height: 88px; border-radius: 50%; background: var(--color-danger); color: #fff; box-shadow: 0 0 0 10px color-mix(in srgb, var(--color-danger) 22%, transparent), 0 0 0 22px color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.holdbig.idle { background: var(--voice); box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--voice) 60%, transparent); }
+.holdbig svg.i { width: 34px; height: 34px; stroke-width: 2; }
+.hold-cap { text-align: center; margin-top: 14px; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Results */
+.facts { margin: 12px var(--app-gutter) 0; border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; background: var(--color-surface); }
+.facts .r { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--app-text-sm); }
+.facts .r:last-child { border-bottom: 0; }
+.facts .r .n { width: 22px; height: 22px; border-radius: 50%; background: var(--color-surface-2); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.facts .r .t { flex: 1; min-width: 0; }
+.facts .r .t > b { display: block; font-size: var(--app-text); font-weight: 600; }
+.facts .r .t span { color: var(--color-muted); }
+.facts .r .btn { flex: none; }
+.quote { margin: 10px var(--app-gutter) 0; padding: 10px 12px; border-left: 3px solid var(--voice); background: var(--color-surface); border-radius: 0 10px 10px 0; font-size: var(--app-text); }
+.quote small { display: block; font-size: var(--app-text-xs); color: var(--color-muted); margin-bottom: 2px; }
+.sens { display: flex; align-items: center; gap: 10px; margin: 12px var(--app-gutter) 0; font-size: var(--app-text-sm); color: var(--color-muted); }
+.sens b { color: var(--color-text); }
+.go { display: flex; gap: 10px; padding: 18px var(--app-gutter) 0; }
+.go .btn { flex: 1; }
+.foot { text-align: center; margin: 12px var(--app-gutter) 0; font-size: var(--app-text-xs); color: var(--color-muted); }
+
+/* Adjust by hand */
+.slider { margin: 16px 0 6px; position: relative; height: 28px; }
+.slider .track { position: absolute; left: 0; right: 0; top: 12px; height: 4px; border-radius: 2px; background: var(--color-surface-2); }
+.slider .track i { display: block; height: 100%; border-radius: 2px; background: var(--voice); }
+.slider .knob { position: absolute; top: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); transform: translateX(-50%); }
+.slider-ends { display: flex; justify-content: space-between; font-size: var(--app-text-xs); color: var(--color-muted); }
+.switch { width: 51px; height: 31px; border-radius: 16px; background: var(--color-surface-2); border: 1px solid var(--color-border); position: relative; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch.on { background: var(--voice); border-color: var(--voice); }
+.switch.on::after { left: 22px; }
+.rowline { display: flex; align-items: center; gap: 12px; }
+.rowline .grow { flex: 1; min-width: 0; }
+.rowline .grow b { display: block; font-size: var(--app-text); font-weight: 600; }
+.rowline .grow span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); }
+
+/* Sheets */
+.sheet .opt { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 2px; border-bottom: 1px solid var(--color-border); }
+.sheet .opt:last-of-type { border-bottom: 0; }
+.sheet .opt .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--color-surface-2); color: var(--color-muted); flex: none; }
+.sheet .opt.on .ic { background: var(--voice-soft); color: var(--voice); }
+.sheet .opt .main { flex: 1; min-width: 0; }
+.sheet .opt .main b { display: block; font-size: var(--app-text); font-weight: 600; }
+.sheet .opt .main span { display: block; font-size: var(--app-text-sm); color: var(--color-muted); }
+.sheet .opt .rd { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--color-border); display: grid; place-items: center; flex: none; }
+.sheet .opt.on .rd { border-color: var(--voice); }
+.sheet .opt.on .rd::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--voice); }
+.sheet .opt.dis { opacity: .45; }
+.sheet .note { font-size: var(--app-text-sm); color: var(--color-muted); margin: 10px 0 14px; }
+
+/* Settings › Voice (lighter copy of settings.html) */
+.set .row { min-height: 56px; }
+.set .row .val { font-size: var(--app-text-sm); color: var(--color-muted); white-space: nowrap; }
+.tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; color: var(--voice); background: var(--voice-soft); }
+.tile svg.i { width: 18px; height: 18px; }
+.row .chev { color: var(--color-muted); }
+.row.hl { background: var(--voice-soft); }
+</style>
+</head>
+<body><div id="app"></div><script>
+const { frame, topBar, icon, toast, state, type, esc } = App;
+
+const P2 = {
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  buds: '<path d="M7 5a3 3 0 0 1 3 3v4H7a3 3 0 0 1 0-6zM7 12v7M17 5a3 3 0 0 0-3 3v4h3a3 3 0 0 0 0-6zM17 12v7"/>',
+  headset: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
+  tune: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  micoff: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 11.5 5.4M19 11c0 .7-.1 1.4-.3 2M12 18v3M4 4l16 16"/>',
+  wind: '<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/>',
+};
+const ic2 = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${P2[n]}</svg>`;
+
+const bar = () => topBar({ back: true, title: 'Mic tuning', sub: 'Voice on this phone' });
+const page = (body, overlay = '') => frame({ top: bar(), body, overlay });
+
+// meter({ fill, room, voice, line, live, dead, peaks }) in percent of the bar. line = where speech starts counting.
+const meter = ({ fill = 0, room = null, voice = null, line = 38, roomFill = false, dead = false, lineLabel = 'Speech counts from here' } = {}) =>
+  `<div class="meter">${dead ? '' : `<div class="fill${roomFill ? ' room' : ''}" style="width:${fill}%"></div>`}
+    <div class="line" style="left:${line}%"><span>${lineLabel}</span></div>
+    ${room !== null ? `<div class="mark" style="left:${room}%">Room</div>` : ''}
+    ${voice !== null ? `<div class="peak" style="left:calc(${voice}% - 1px)"></div><div class="mark v" style="left:${voice}%">You</div>` : ''}</div>`;
+
+const input = (name = 'Phone · speakerphone', detail = 'The phone’s own microphone and loudspeaker', ic = 'phone') =>
+  `<div class="input"><span class="ic">${ic2(ic)}</span><div class="main"><b>${name}</b><span>${detail}</span></div><button class="chg">Change</button></div>`;
+
+const why = (cls, ic, title, text) => `<div class="why ${cls}">${ic}<div><b>${title}</b>${text}</div></div>`;
+const steps = (n) => `<div class="steps"><i class="${n >= 1 ? 'on' : ''}"></i><i class="${n >= 2 ? 'on' : ''}"></i></div>`;
+
+// The screen voice was used on, behind the toast and before the page opens
+const workItem = ({ overlay = '' } = {}) => frame({
+  top: topBar({ back: true, title: 'SHIP-1234', sub: 'Story · Phone app sign-in' }),
+  body: `<div class="wi-head"><div class="k">${type('story')}SHIP-1234<span class="sep"></span>${state('Active', 'in-progress')}</div>
+    <h1>Remember the last project on the phone</h1></div>
+    <div class="wi-body">Open the app on the project you used last, not the first one in the list. Keep it per signed-in person.</div>`,
+  bottom: App.dock({}), overlay,
+});
+
+App.screen({
+  title: 'Mic tuning',
+  states: [
+    { id: 'second-silent', title: 'Second silent hold', note: 'The second hold in a row that hears nothing: the usual toast, now with a Tune mic action. Nothing was changed.',
+      render: () => workItem({ overlay: toast('Didn’t hear anything · nothing was changed', { bottom: 104, action: 'Tune mic' }) }) },
+
+    { id: 'start', title: 'Opened after three silent holds', note: 'The third silent hold opens this page instead of the Mic check sheet. Back returns to SHIP-1234 with nothing lost.',
+      render: () => page(`
+        <div class="lead"><b>Let’s get the mic hearing you</b><span>Three tries in a row came through silent. A 10-second test finds out why and sets the mic up for this phone.</span></div>
+        ${input()}
+        <div class="meter-card"><div class="hd"><b>Level now</b><span>Live</span></div>
+          ${meter({ fill: 4, line: 38 })}
+          <div class="say">Talk and watch the bar. If it doesn’t move at all, the test will say why.</div></div>
+        <div class="go"><button class="btn">${icon('keyboard', 'sm')}Type instead</button><button class="btn primary">Start the test</button></div>
+        <div class="foot">Sensitivity: Automatic · nothing is recorded or kept</div>`) },
+
+    { id: 'step-quiet', title: 'Step 1: stay quiet', note: 'Three seconds of quiet measures the room. The grey fill is the room’s noise.',
+      render: () => page(`${steps(1)}
+        <div class="lead"><b>Stay quiet for a moment</b><span>Step 1 of 2 · listening to the room</span></div>
+        <div class="count">2</div><div class="count-cap">seconds left</div>
+        <div class="meter-card"><div class="hd"><b>Room</b><span>Quiet room</span></div>
+          ${meter({ fill: 14, room: 14, roomFill: true, line: 38 })}</div>
+        <div class="go"><button class="btn">Cancel</button></div>`) },
+
+    { id: 'step-speak', title: 'Step 2: hold and say the phrase', note: 'Hold the big mic and read the phrase. The phrase uses a key from the screen you came from, so it tests what voice is really used for. Words appear as they’re heard.',
+      render: () => page(`${steps(2)}
+        <div class="lead"><b>Hold the mic and say</b><span>Step 2 of 2 · at your usual distance</span></div>
+        <div class="phrase"><small>Read this aloud</small>“Move SHIP-1234 to Done”</div>
+        <div class="heardline">Move <span class="hot">SHIP-1234</span> <span class="partial">to Do…</span></div>
+        <div class="meter-card" style="margin-top:6px"><div class="hd"><b>You</b><span>Hearing you</span></div>
+          ${meter({ fill: 66, room: 14, line: 38 })}</div>
+        <div class="holdbig">${icon('mic')}</div><div class="hold-cap">Release when you’ve finished</div>`) },
+
+    { id: 'good', title: 'Result: working', note: 'Heard the phrase. The line is set halfway between the room and the voice for this phone and input; voice uses it from now on.',
+      render: () => page(`
+        ${why('good', icon('check'), 'The mic is hearing you', 'Voice is set up for this phone and its own microphone.')}
+        <div class="quote"><small>Heard</small>“Move <b>SHIP-1234</b> to Done”</div>
+        <div class="meter-card"><div class="hd"><b>Room and you</b><span>Plenty of gap</span></div>
+          ${meter({ fill: 14, roomFill: true, room: 14, voice: 68, line: 34, lineLabel: 'Line set here' })}
+          <div class="say">Speech now counts from the line. It was set from your test.</div></div>
+        <div class="sens">${ic2('tune', 'sm')}<span>Sensitivity <b>Automatic</b> · 7 of 10</span></div>
+        <div class="go"><button class="btn">Test again</button><button class="btn primary">Back to SHIP-1234</button></div>
+        <div class="foot">Nothing was moved: the test phrase is never applied.</div>`) },
+
+    { id: 'no-signal', title: 'Result: no sound at all', note: 'The microphone gave pure silence, not even room noise. Sensitivity can’t fix that, so the page says where the sound is being stopped, in the order most likely on this phone.',
+      render: () => page(`
+        ${why('bad', ic2('micoff'), 'No sound is reaching ShipLean', 'Not even the room: something on the phone is stopping the microphone.')}
+        <div class="meter-card"><div class="hd"><b>Level</b><span>Flat the whole test</span></div>
+          ${meter({ dead: true, line: 38 })}</div>
+        <div class="section-h">Check these, then test again</div>
+        <div class="facts">
+          <div class="r"><span class="n">1</span><div class="t"><b>Microphone access is off</b><span>Swipe down from the top. In quick settings, turn on <b>Microphone access</b>.</span></div></div>
+          <div class="r"><span class="n">2</span><div class="t"><b>Another app has the microphone</b><span>A call, a voice recorder or a video app. Close it and try again.</span></div></div>
+          <div class="r"><span class="n">3</span><div class="t"><b>Something covers the mic</b><span>It’s the small hole at the bottom edge. A case or a finger can block it.</span></div></div>
+        </div>
+        <div class="go"><button class="btn">${icon('keyboard', 'sm')}Type instead</button><button class="btn primary">Test again</button></div>`) },
+
+    { id: 'too-quiet', title: 'Result: heard you, quietly', note: 'Speech came through but under the old line, which is why every hold said silent. The test moved the line down; the next hold should be heard.',
+      render: () => page(`
+        ${why('', icon('alert'), 'Your voice was coming through quietly', 'Too quiet for the old setting, so voice said it heard nothing. The line is lower now.')}
+        <div class="quote"><small>Heard</small>“Move <b>SHIP-1234</b> to Done”</div>
+        <div class="meter-card"><div class="hd"><b>Room and you</b><span>Line moved down</span></div>
+          ${meter({ fill: 9, roomFill: true, room: 9, voice: 30, line: 20, lineLabel: 'Was 38 · now here' })}
+          <div class="say">You peaked at 30. The old line was at 38.</div></div>
+        <div class="sens">${ic2('tune', 'sm')}<span>Sensitivity <b>Automatic</b> · raised to 9 of 10</span></div>
+        <div class="go"><button class="btn">Test again</button><button class="btn primary">Back to SHIP-1234</button></div>`) },
+
+    { id: 'noisy', title: 'Result: too noisy', note: 'The room is nearly as loud as the voice, so no line separates them. Sensitivity can’t help; distance and place can.',
+      render: () => page(`
+        ${why('', ic2('wind'), 'Too noisy to tell you from the room', 'The room is almost as loud as your voice.')}
+        <div class="meter-card"><div class="hd"><b>Room and you</b><span>Hardly any gap</span></div>
+          ${meter({ fill: 52, roomFill: true, room: 52, voice: 60, line: 56, lineLabel: 'No room for a line' })}</div>
+        <div class="section-h">Try one of these</div>
+        <div class="facts">
+          <div class="r"><span class="n">1</span><div class="t"><b>Hold the phone closer</b><span>About a hand’s width from your mouth.</span></div></div>
+          <div class="r"><span class="n">2</span><div class="t"><b>Move away from the noise</b><span>A fan, traffic or a TV.</span></div></div>
+        </div>
+        <div class="go"><button class="btn">${icon('keyboard', 'sm')}Type instead</button><button class="btn primary">Test again</button></div>`) },
+
+    { id: 'input-sheet', title: 'Change input', note: 'Change on the input card. Voice always starts on the phone’s own mic and loudspeaker, even with earbuds connected. A pick here is remembered on this phone.',
+      render: () => page(`<div class="lead"><b>Let’s get the mic hearing you</b></div>${input()}`,
+        `<div class="scrim"></div><div class="sheet"><div class="grab"></div><h3>Listen through</h3>
+          <div class="opt on"><span class="ic">${ic2('phone')}</span><div class="main"><b>Phone · speakerphone</b><span>Its own microphone and loudspeaker · default</span></div><span class="rd"></span></div>
+          <div class="opt"><span class="ic">${ic2('buds')}</span><div class="main"><b>Galaxy Buds2 Pro</b><span>Bluetooth · connected</span></div><span class="rd"></span></div>
+          <div class="opt dis"><span class="ic">${ic2('headset')}</span><div class="main"><b>Wired headset</b><span>Not connected</span></div><span class="rd"></span></div>
+          <div class="note">Each input keeps its own sensitivity. Run the test after you change it.</div>
+          <button class="btn primary block">Done</button></div>`) },
+
+    { id: 'adjust', title: 'Adjust by hand', note: 'Under the result, for when Automatic gets it wrong. Moving the slider moves the line on the live meter, so you see where speech will count.',
+      render: () => page(`
+        <div class="lead"><b>Adjust by hand</b><span>Talk and move the line until your voice clears it but the room doesn’t.</span></div>
+        <div class="meter-card"><div class="hd"><b>Level now</b><span>Live</span></div>
+          ${meter({ fill: 48, room: 12, line: 26 })}
+          <div class="rowline"><div class="grow"><b>Automatic</b><span>Set by the test</span></div><span class="switch"></span></div>
+          <div class="slider"><div class="track"><i style="width:74%"></i></div><div class="knob" style="left:74%"></div></div>
+          <div class="slider-ends"><span>Less sensitive</span><span>More sensitive</span></div></div>
+        <div class="go"><button class="btn">Run the test</button><button class="btn primary">Done</button></div>`) },
+
+    { id: 'settings', title: 'Settings › Voice', note: 'Mic tuning is also a row in Settings › Voice, showing the input and when it was last tested.',
+      render: () => frame({ top: topBar({ back: true, title: 'Voice', sub: 'Settings' }), body: `<div class="set">
+        <div class="section-h">Microphone</div>
+        <div class="list">
+          <div class="row hl"><span class="tile">${ic2('tune')}</span><div class="main"><div class="t">Mic tuning</div><div class="m">Phone · speakerphone · tested today</div></div><span class="val">Automatic</span>${icon('chevron', 'chev')}</div>
+          <div class="row"><span class="tile">${icon('mic')}</span><div class="main"><div class="t">Microphone access</div><div class="m">Allowed</div></div>${icon('chevron', 'chev')}</div>
+        </div>
+        <div class="section-h">Models</div>
+        <div class="list">
+          <div class="row"><span class="tile">${icon('download')}</span><div class="main"><div class="t">Voice models</div><div class="m">Parakeet + Qwen3 4B · 3.1 GB</div></div>${icon('chevron', 'chev')}</div>
+        </div></div>` }) },
+  ],
+});
+</script></body></html>

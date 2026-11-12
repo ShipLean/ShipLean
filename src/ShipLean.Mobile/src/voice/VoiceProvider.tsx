@@ -61,6 +61,7 @@ import { ApplyFailedSheet } from './sheets/ApplyFailedSheet';
 import { ListeningSheet } from './sheets/ListeningSheet';
 import { PreviewSheet } from './sheets/PreviewSheet';
 import { VoiceFailureSheet } from './sheets/VoiceFailureSheet';
+import { takeTypeInstead } from './micTuning/returnIntent';
 import { requestTypeInstead } from './typed/composerRequest';
 
 export type {
@@ -537,6 +538,17 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
       },
     };
   }, [state, store, e, internals, readMic, settle]);
+
+  // The Mic tuning page sits above this screen. When it asks for "Type instead" and goes back, the screen regains
+  // focus here and opens the composer (voice/micTuning/returnIntent). Outside a navigator there is no focus to follow.
+  const nav = useContext(NavigationContext);
+  const typeInstead = api.typeInstead;
+  useEffect(() => {
+    if (nav === undefined) return undefined;
+    return nav.addListener('focus', () => {
+      if (takeTypeInstead()) typeInstead();
+    });
+  }, [nav, typeInstead]);
 
   return (
     <EnginesContext.Provider value={e}>

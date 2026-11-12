@@ -9,3 +9,5 @@ expo-env.d.ts
 # Voice eval: the Python venv and its outputs.
 /tools/voice-eval/.venv/
 /tools/voice-eval/out/
+# Gradle output of the local Expo modules.
+/modules/*/android/build/

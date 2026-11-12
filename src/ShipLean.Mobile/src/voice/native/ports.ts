@@ -22,6 +22,13 @@ export interface ModelFiles {
   ): DownloadTask;
 }
 
+// What keeps the download going when the person leaves the app: Android's foreground service and its notification.
+// start() also updates the percentage (-1: not known yet) and returns false when the platform refused to start it.
+export interface DownloadKeepAlive {
+  start(percent: number): boolean;
+  stop(): void;
+}
+
 export interface NetworkKind {
   kind(): 'wifi' | 'cellular' | 'none';
   subscribe(cb: () => void): () => void;

@@ -19,6 +19,7 @@ export const screenIds = {
   digest: 'screen-digest',
   settingsVoice: 'screen-settings-voice',
   licences: 'screen-licences',
+  micTuning: 'screen-mic-tuning',
 } as const;
 
 export const screenSetup = (step: SetupStep) => `screen-setup-${step}`;

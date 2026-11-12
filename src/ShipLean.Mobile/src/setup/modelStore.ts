@@ -37,6 +37,13 @@ interface HeldTask {
 
 const GIB = 1024 ** 3;
 
+// No bytes for this long while downloading means the transfer is stuck (a connection that died without an error, as
+// after Android throttled the app in the background): it is dropped and started again from the bytes on disk.
+export const STALL_MS = 30_000;
+// After a dropped connection while the phone is still online, the download tries again this long after, and again
+// after each failure, rather than waiting for the network to change.
+export const RETRY_MS = 10_000;
+
 class LocalStore implements LocalModelStore {
   private readonly s: ModelSettings;
   private readonly listeners = new Set<() => void>();
@@ -51,6 +58,8 @@ class LocalStore implements LocalModelStore {
   private held: HeldTask | null = null;
   // Each start bumps it; a loop whose generation is gone stops at its next await.
   private gen = 0;
+  // The stall watch while a file downloads, or the retry after a dropped connection. One at a time.
+  private timer: ReturnType<typeof setTimeout> | null = null;
   private snapshot: ModelStatus;
 
   constructor(private readonly deps: ModelStoreDeps) {
@@ -221,6 +230,7 @@ class LocalStore implements LocalModelStore {
   }
 
   private start(): void {
+    this.clearTimer();
     this.pausedFor = null;
     const gen = ++this.gen;
     this.notify();
@@ -228,9 +238,35 @@ class LocalStore implements LocalModelStore {
   }
 
   private stopTask(): void {
+    this.clearTimer();
     this.gen += 1;
     const held = this.held;
     if (held !== null && !held.settled) held.task.pause();
+  }
+
+  private clearTimer(): void {
+    if (this.timer === null) return;
+    clearTimeout(this.timer);
+    this.timer = null;
+  }
+
+  private after(ms: number, fn: () => void): void {
+    this.clearTimer();
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      fn();
+    }, ms);
+  }
+
+  // (Re)starts the stall watch: called when a file's transfer starts and at each progress.
+  private watchStall(gen: number): void {
+    this.after(STALL_MS, () => {
+      if (gen !== this.gen || this.run !== 'downloading') return;
+      // Drop the stuck task rather than resume it: a new one carries on from the bytes on disk.
+      this.stopTask();
+      this.held = null;
+      this.start();
+    });
   }
 
   private async loop(gen: number): Promise<void> {
@@ -252,8 +288,11 @@ class LocalStore implements LocalModelStore {
         this.run = 'downloading';
         this.save();
         this.notify();
-        const outcome = await this.taskFor(file, net === 'cellular', live).done;
+        const task = this.taskFor(file, net === 'cellular', live, gen);
+        this.watchStall(gen);
+        const outcome = await task.done;
         if (!live()) return;
+        this.clearTimer();
         if (outcome === 'paused') return this.pauseFor('network');
         if (typeof outcome === 'object') return this.pauseFor(outcome.error);
 
@@ -278,7 +317,12 @@ class LocalStore implements LocalModelStore {
     await this.finish(gen);
   }
 
-  private taskFor(file: ModelFile, cellular: boolean, live: () => boolean): DownloadTask {
+  private taskFor(
+    file: ModelFile,
+    cellular: boolean,
+    live: () => boolean,
+    gen: number,
+  ): DownloadTask {
     const held = this.held;
     if (held !== null && held.fileId === file.id && !held.settled) {
       held.task.resume();
@@ -288,7 +332,9 @@ class LocalStore implements LocalModelStore {
       cellular,
       onProgress: (bytes) => {
         if (!live()) return;
+        const before = this.fileBytes.get(file.id);
         this.fileBytes.set(file.id, bytes);
+        if (bytes !== before) this.watchStall(gen);
         this.notify();
       },
     });
@@ -352,11 +398,19 @@ class LocalStore implements LocalModelStore {
   }
 
   private pauseFor(reason: PauseReason): void {
+    this.clearTimer();
     this.run = 'idle';
     this.pausedFor = reason;
     this.resetDownloadingFiles();
     this.save();
     this.notify();
+    // A connection that dropped while the phone stays online raises no network change, so try again on a timer.
+    // Offline, onNetwork starts it when the connection is back.
+    if (reason === 'network') {
+      this.after(RETRY_MS, () => {
+        if (this.pausedFor === 'network' && this.deps.network.kind() !== 'none') this.start();
+      });
+    }
   }
 
   private failChecksum(fileId: string): void {

@@ -2,8 +2,10 @@
 // model over it, so both load and free their models as the store's phase changes. Pure: no native imports, so it runs
 // under vitest with fake adapters. index.ts calls it once, before the first render.
 import type { KeyValueStore } from '@shiplean/core/platform';
+import { keepDownloadAlive } from '../../setup/downloadKeepAlive';
 import { createModelStore } from '../../setup/modelStore';
 import type { VoiceEngines } from '../contracts';
+import { createMicTuningStore } from '../micTuning/store';
 import type { ModelFile } from '../manifest';
 import type { NativeAdapters } from '../native';
 
@@ -20,10 +22,16 @@ export function buildEngines(
 ): VoiceEngines {
   const { files, network, memoryBytes } = adapters;
   const models = createModelStore({ files, network, kv, memoryBytes, manifest, clock });
+  // For the app's lifetime: the store lives as long as the app.
+  keepDownloadAlive(models, adapters.keepAlive);
+  const tuning = createMicTuningStore({ getItemSync: kv.getItem, setItemSync: kv.setItem });
+  const { inputs } = adapters;
   return {
-    recognizer: adapters.recognizer({ files, models }),
+    recognizer: adapters.recognizer({ files, models, inputs, tuning }),
     model: adapters.model({ files, models }),
     models,
     mic: adapters.mic,
+    inputs,
+    tuning,
   };
 }

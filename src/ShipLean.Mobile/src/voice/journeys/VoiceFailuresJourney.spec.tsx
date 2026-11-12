@@ -4,10 +4,12 @@ import type { SearchItemDto, SearchViewDto } from '@shiplean/core/api/search';
 import { platform } from '@shiplean/core/platform';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-native';
 import { openBrowserAsync } from 'expo-web-browser';
+import { Keyboard } from 'react-native';
 import { dockIds } from '../../dock/testIds';
 import { backlogRowId } from '../../backlog/testIds';
 import { inboxRowId } from '../../inbox/testIds';
 import { retroTileId } from '../../retro/testIds';
+import { micTuningBackId } from '../../screens/micTuning/MicTuningScreen.testIds';
 import { screenIds } from '../../screens/testIds';
 import { readyCoachMarkIds } from '../../setup/ReadyCoachMark.testIds';
 import { aProject } from '../../test-support/builders';
@@ -33,7 +35,6 @@ import {
   correctionFailureYesId,
 } from '../failures/CorrectionFailure.testIds';
 import { NOTHING_HEARD_MS } from '../failures/heardCopy';
-import { micCheckId } from '../failures/MicCheck.testIds';
 import { resetSilentHolds } from '../failures/silentHolds';
 import { micSlotId, type MicPlacement } from '../MicSlot.testIds';
 import { micPermissionIds, micPermissionSheetId } from '../sheets/MicPermissionSheet.testIds';
@@ -48,6 +49,13 @@ import {
   commandComposerId,
   commandComposerPreviewId,
 } from '../typed/CommandComposer.testIds';
+
+// The setup's Sentry mock has no addBreadcrumb, which the Mic tuning page calls when it opens.
+jest.mock('@sentry/react-native', () => ({
+  __esModule: true,
+  init: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
 
 const NOW = new Date('2030-01-01T09:00:00.000Z');
 const PROJECT = aProject().id;
@@ -135,7 +143,7 @@ afterEach(async () => {
 });
 
 describe('VoiceFailuresJourney', () => {
-  it('shows the hold hint for a tap and nothing was changed for silence, then the mic check on the third silent hold', async () => {
+  it('shows the hold hint for a tap and nothing was changed for silence, then the Mic tuning page on the third silent hold', async () => {
     const { model } = installFakeEngines();
     await renderApp({ url: '/p/SHIP/inbox', api: inboxApi({}, { inbox: designInbox() }) });
     await screen.findByTestId(inboxRowId('SHIP-743'));
@@ -146,10 +154,9 @@ describe('VoiceFailuresJourney', () => {
     expect(await screen.findByTestId(primitiveIds.toast)).toHaveTextContent(
       'Hold the mic while you speak',
     );
-    expect(screen.queryByTestId(micCheckId)).toBeNull();
     expect(screen.queryByTestId(previewSheetId)).toBeNull();
 
-    // Two silent holds: nothing was changed, each time, and still no mic check.
+    // Two silent holds: nothing was changed, each time, and the second offers Tune mic.
     for (let i = 0; i < 2; i += 1) {
       // The last toast has gone, so the one found below is this hold's own.
       await act(async () => {
@@ -158,15 +165,60 @@ describe('VoiceFailuresJourney', () => {
       expect(screen.queryByTestId(primitiveIds.toast)).toBeNull();
       await hold('tabBar');
       expect(await screen.findByTestId(primitiveIds.toast)).toHaveTextContent(
-        "Didn't hear anything · nothing was changed",
+        /^Didn't hear anything · nothing was changed/,
       );
-      expect(screen.queryByTestId(micCheckId)).toBeNull();
+      expect(screen.queryByTestId(screenIds.micTuning)).toBeNull();
+      // Only the second silent hold offers Tune mic.
+      expect(screen.queryByTestId(primitiveIds.toastAction) === null).toBe(i === 0);
     }
 
-    // The third silent hold in a row opens the mic check instead of another toast.
+    // The third silent hold in a row opens the Mic tuning page instead of another toast.
+    await act(async () => {
+      jest.advanceTimersByTime(NOTHING_HEARD_MS);
+    });
     await hold('tabBar');
-    expect(await screen.findByTestId(micCheckId)).toBeOnTheScreen();
+    expect(await screen.findByTestId(screenIds.micTuning)).toBeOnTheScreen();
+    // Exactly one page was pushed.
+    expect(screen.getAllByTestId(screenIds.micTuning)).toHaveLength(1);
     expect(model.parsed).toHaveLength(0);
+  });
+
+  it('keeps the draft and the dock when the third silent hold opens the page and Back returns', async () => {
+    installFakeEngines();
+    // The keyboard's hide listeners, kept so the test can close the composer the way the phone does.
+    const hideListeners: (() => void)[] = [];
+    jest.spyOn(Keyboard, 'addListener').mockImplementation((event, cb) => {
+      if (event === 'keyboardDidHide') hideListeners.push(cb as () => void);
+      return { remove: () => {} };
+    });
+    await renderApp({ url: ITEM_URL, api: workItem() });
+    await screen.findByTestId(workItemHeaderId);
+
+    // A draft in the dock, kept when the keyboard closes.
+    await fireEvent.press(screen.getByTestId(dockIds.open));
+    await fireEvent.changeText(screen.getByTestId(dockIds.noteField), 'the S22 runs warm');
+    await act(async () => {
+      hideListeners.forEach((cb) => cb());
+    });
+    expect(screen.getByTestId(dockIds.draftLabel)).toHaveTextContent('Note draft');
+
+    for (let i = 0; i < 3; i += 1) {
+      await act(async () => {
+        jest.advanceTimersByTime(NOTHING_HEARD_MS);
+      });
+      await hold('dock');
+    }
+    expect(await screen.findByTestId(screenIds.micTuning)).toBeOnTheScreen();
+    // The page names the item it came from.
+    expect(screen.getByTestId(micTuningBackId)).toHaveTextContent(`Back to ${ITEM.key}`);
+
+    await fireEvent.press(screen.getByTestId(micTuningBackId));
+    await screen.findByTestId(workItemHeaderId);
+    expect(screen.getByTestId(dockIds.draftLabel)).toHaveTextContent('Note draft');
+    await fireEvent.press(screen.getByTestId(dockIds.open));
+    expect(screen.getByTestId(dockIds.noteField).props.value).toBe('the S22 runs warm');
+    // The saved draft was not cleared on the way to the page either.
+    expect([...kvValues.values()].some((v) => v.includes('the S22 runs warm'))).toBe(true);
   });
 
   it('offers SHIP-906 for SHIP-960 on the Backlog and goes on to the rank preview', async () => {

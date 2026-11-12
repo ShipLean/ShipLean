@@ -31,6 +31,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings/voice" />
             <Stack.Screen name="settings/voice/licences" />
             <Stack.Screen name="setup/[step]" />
+            <Stack.Screen name="mic-tuning" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
             <Stack.Screen name="sign-in" />
