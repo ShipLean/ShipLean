@@ -7,6 +7,8 @@
 !/src/package.json
 !/src/pnpm-workspace.yaml
 !/src/pnpm-lock.yaml
+# pnpm patches (pnpm-workspace.yaml patchedDependencies): install fails with ERR_PNPM_PATCH_NOT_FOUND without them.
+!/src/patches
 !/src/ShipLean.Mobile
 !/src/ShipLean.Core.Client
 # ShipLean.Client is a workspace member: keep its package.json so pnpm's lockfile still matches.
