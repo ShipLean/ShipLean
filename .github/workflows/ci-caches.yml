@@ -1,0 +1,66 @@
+name: CI caches
+
+# CI runs on pull requests, and a cache a pull request saves is visible to that pull request alone: every pull request
+# started cold, and their copies (four 1 GB NuGet caches each) filled the repo's 10 GB and evicted the rest. This
+# workflow saves the shared caches from main, which every pull request can restore, and CI only restores them:
+# NuGet packages for the whole solution, and the Android build's Gradle and ccache caches.
+# It runs when what those caches hold can change, and weekly, because GitHub evicts a cache nobody used for 7 days.
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/**/*.csproj
+      - src/Directory.Build.props
+      - src/package.json
+      - src/pnpm-lock.yaml
+      - src/pnpm-workspace.yaml
+      - src/ShipLean.Mobile/package.json
+      - src/ShipLean.Mobile/app.json
+      - src/ShipLean.Mobile/app.config.ts
+      - src/ShipLean.Mobile/react-native.config.js
+      - src/ShipLean.Mobile/modules/**
+      - .github/actions/mobile-android-build/**
+      - .github/workflows/ci-caches.yml
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-caches
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  nuget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      # The same key CI restores. The whole solution, so it holds what every CI job restores.
+      - id: nuget
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
+          lookup-only: true
+      - if: steps.nuget.outputs.cache-hit != 'true'
+        run: dotnet restore src/ShipLean.slnx
+      - if: steps.nuget.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ steps.nuget.outputs.cache-primary-key }}
+
+  mobile-android-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/mobile-android-build
+        with:
+          save-caches: "true"
