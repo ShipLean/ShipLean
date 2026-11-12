@@ -177,8 +177,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/mobile-android-build
-        with:
-          save-caches: "true" # TEMP: measure a warm run on this PR; remove before merge
 
   unit:
     name: unit tests
