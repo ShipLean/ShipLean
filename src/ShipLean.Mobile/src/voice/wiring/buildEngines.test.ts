@@ -1,7 +1,12 @@
 import { memoryStore } from '@shiplean/core/platform';
 import { describe, expect, it } from 'vitest';
 import { FakeModelFiles, FakeNetwork, sizedManifest } from '../../test-support/modelFiles';
-import { FakeCommandModel, FakeMicPermission, FakeRecognizer } from '../../test-support/voice';
+import {
+  FakeCommandModel,
+  FakeMicPermission,
+  FakeRecognizer,
+  fakeAudioInputs,
+} from '../../test-support/voice';
 import type { CommandModelDeps } from '../native/commandModel';
 import type { NativeAdapters } from '../native';
 import type { SpeechRecognizerDeps } from '../native/speechRecognizer';
@@ -28,6 +33,7 @@ describe('buildEngines', () => {
         return model;
       },
       mic,
+      inputs: fakeAudioInputs(),
       files,
       network,
       memoryBytes: 7.4 * GIB,

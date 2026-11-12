@@ -50,6 +50,7 @@ export function VoiceFailureSheet({
         failure={failure}
         heard={heard}
         source={source}
+        spec={spec}
         onRetry={onRetry}
         onTypeInstead={onTypeInstead}
         onWhatCanISay={whatCanISay}

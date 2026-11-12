@@ -1,8 +1,11 @@
 // How many silent holds in a row, kept outside React so it survives the sheet closing between holds.
 import type { VoiceFailure } from '../contracts';
 
-// The third silent hold in a row opens the mic check (voice D3).
-export const SILENT_HOLDS_FOR_MIC_CHECK = 3;
+// The second silent hold in a row offers Tune mic in its toast (SHIP-1374 D2).
+export const SILENT_HOLDS_FOR_TUNE_ACTION = 2;
+
+// The third silent hold in a row opens the Mic tuning page (SHIP-1374 D1).
+export const SILENT_HOLDS_FOR_MIC_TUNING = 3;
 
 // A pause this long between silent holds starts the count again.
 export const SILENT_HOLDS_RESET_MS = 2 * 60 * 1000;
@@ -28,7 +31,7 @@ export function recordFailure(failure: VoiceFailure, now: number = Date.now()): 
 }
 
 // A hold that was understood (the voice provider calls this when a hold resolves to a preview or an answer), or the
-// person left the mic check.
+// Mic tuning page was opened.
 export function resetSilentHolds(): void {
   count = 0;
   lastAt = 0;

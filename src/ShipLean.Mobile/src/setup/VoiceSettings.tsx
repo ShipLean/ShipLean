@@ -2,7 +2,10 @@ import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Platform, ScrollView, Switch, Text, View } from 'react-native';
+import { systemNow } from '../actions/clock';
 import { links } from '../links';
+import { inputTitle, testedLabel } from '../screens/micTuning/input/inputLabels';
+import { useVoiceInputs } from '../screens/micTuning/input/useVoiceInputs';
 import { useTheme } from '../theme';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
@@ -53,13 +56,17 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function VoiceSettings() {
+// `now` is the clock for the 'tested' label; tests pass their own.
+export function VoiceSettings({ now = systemNow }: { now?: () => Date } = {}) {
   const router = useRouter();
   const theme = useTheme();
   const { colors } = theme;
   const store = engines().models;
   const status = useModelStatus();
   const { mic, refresh } = useMicStatus();
+  const { inUse, tuningOf } = useVoiceInputs();
+  const tuned = tuningOf(inUse.id);
+  const tested = tuned === null ? null : testedLabel(tuned.testedAt, now());
   const [changing, setChanging] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [micSheet, setMicSheet] = useState(false);
@@ -214,6 +221,17 @@ export function VoiceSettings() {
       </Group>
 
       <Group title="Privacy and licences">
+        <Row
+          testID={voiceSettingsIds.micTuning}
+          title="Mic tuning"
+          subtitle={`${inputTitle(inUse)} · ${tested === null ? 'not tested' : `tested ${tested}`}`}
+          right={
+            <Text testID={voiceSettingsIds.micTuningValue} style={small}>
+              {tuned !== null && !tuned.automatic ? 'Manual' : 'Automatic'}
+            </Text>
+          }
+          onPress={() => router.push(links.micTuning('settings'))}
+        />
         <Row
           testID={voiceSettingsIds.microphone}
           title="Microphone"

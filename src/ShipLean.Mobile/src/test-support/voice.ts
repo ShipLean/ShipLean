@@ -1,7 +1,10 @@
 // Scripted voice engines for tests. Pure (no React Native), so vitest and jest specs can both use them.
 import type {
+  AudioInput,
+  AudioInputs,
   CommandModel,
   MicPermission,
+  MicTuningStore,
   ModelChoice,
   ModelStatus,
   ModelStore,
@@ -12,6 +15,8 @@ import type {
   SpeechRecognizer,
   Transcript,
 } from '../voice/contracts';
+import { PHONE_INPUT_ID } from '../voice/contracts';
+import { createMicTuningStore } from '../voice/micTuning/store';
 
 // A transcript whose words are spread evenly over its duration (400 ms a word unless given).
 export function aTranscript({
@@ -39,6 +44,7 @@ interface RecognizerScript {
   partials: string[];
   final: Transcript;
   levels: number[];
+  frames: number[];
 }
 
 // Each started session delivers the scripted partials and levels as soon as a callback is set, and stop() resolves
@@ -48,14 +54,31 @@ export class FakeRecognizer implements SpeechRecognizer {
   cancelled = 0;
   private isReady = true;
   private input: string | null = null;
-  private next: RecognizerScript = { partials: [], final: aTranscript({ text: '' }), levels: [] };
+  private inUse: AudioInput | null = null;
+  private next: RecognizerScript = {
+    partials: [],
+    final: aTranscript({ text: '' }),
+    levels: [],
+    frames: [],
+  };
 
-  script(partials: string[], final: Transcript | string, levels: number[] = []): void {
+  // frames is what the session's frames() answers: the RMS of each 30 ms frame.
+  script(
+    partials: string[],
+    final: Transcript | string,
+    levels: number[] = [],
+    frames: number[] = [],
+  ): void {
     this.next = {
       partials,
       final: typeof final === 'string' ? aTranscript({ text: final }) : final,
       levels,
+      frames,
     };
+  }
+
+  setInputInUse(input: AudioInput | null): void {
+    this.inUse = input;
   }
 
   setReady(ready: boolean): void {
@@ -74,9 +97,32 @@ export class FakeRecognizer implements SpeechRecognizer {
     return this.input;
   }
 
-  async start(opts: { hotwords: string[] }): Promise<RecognitionSession> {
+  inputInUse(): AudioInput | null {
+    return this.inUse;
+  }
+
+  // The level watchers a test has open; emitLevel and failWatch drive them.
+  readonly watchers = new Set<{ onLevel(l: number): void; onFailed(): void }>();
+
+  watchLevel(onLevel: (level: number) => void, onFailed: () => void): () => void {
+    const watcher = { onLevel, onFailed };
+    this.watchers.add(watcher);
+    return () => {
+      this.watchers.delete(watcher);
+    };
+  }
+
+  emitLevel(level: number): void {
+    for (const w of [...this.watchers]) w.onLevel(level);
+  }
+
+  failWatch(): void {
+    for (const w of [...this.watchers]) w.onFailed();
+  }
+
+  async start(opts: { hotwords: string[]; decodeAlways?: boolean }): Promise<RecognitionSession> {
     this.starts.push(opts);
-    const { partials, final, levels } = this.next;
+    const { partials, final, levels, frames } = this.next;
     return {
       onPartial: (cb) => {
         for (const p of partials) cb(p);
@@ -84,12 +130,62 @@ export class FakeRecognizer implements SpeechRecognizer {
       onLevel: (cb) => {
         for (const l of levels) cb(l);
       },
+      frames: () => frames,
       stop: async () => final,
       cancel: () => {
         this.cancelled++;
       },
     };
   }
+}
+
+// The phone, plus whatever a test lists. connect and disconnect change an input's state and notify.
+export class FakeAudioInputs implements AudioInputs {
+  private inputs: AudioInput[];
+  private readonly listeners = new Set<() => void>();
+
+  constructor(list: AudioInput[] = []) {
+    this.inputs = [
+      { id: PHONE_INPUT_ID, kind: 'phone', name: 'Phone', connected: true },
+      ...list.filter((i) => i.id !== PHONE_INPUT_ID),
+    ];
+  }
+
+  list(): AudioInput[] {
+    return this.inputs;
+  }
+
+  subscribe(cb: () => void): () => void {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  }
+
+  connect(id: string): void {
+    this.inputs = this.inputs.map((i) => (i.id === id ? { ...i, connected: true } : i));
+    for (const cb of [...this.listeners]) cb();
+  }
+
+  disconnect(id: string): void {
+    this.inputs = this.inputs.map((i) => (i.id === id ? { ...i, connected: false } : i));
+    for (const cb of [...this.listeners]) cb();
+  }
+}
+
+export function fakeAudioInputs(list: AudioInput[] = []): FakeAudioInputs {
+  return new FakeAudioInputs(list);
+}
+
+// A tuning store over in-memory storage (nothing reaches the device's kv store).
+export function fakeTuningStore(): MicTuningStore {
+  const values = new Map<string, string>();
+  return createMicTuningStore({
+    getItemSync: (k) => values.get(k) ?? null,
+    setItemSync: (k, v) => {
+      values.set(k, v);
+    },
+  });
 }
 
 // parse() answers the calls given to respond(), until respond() is called again.

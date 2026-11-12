@@ -5,6 +5,7 @@ import type { KeyValueStore } from '@shiplean/core/platform';
 import { keepDownloadAlive } from '../../setup/downloadKeepAlive';
 import { createModelStore } from '../../setup/modelStore';
 import type { VoiceEngines } from '../contracts';
+import { createMicTuningStore } from '../micTuning/store';
 import type { ModelFile } from '../manifest';
 import type { NativeAdapters } from '../native';
 
@@ -23,10 +24,14 @@ export function buildEngines(
   const models = createModelStore({ files, network, kv, memoryBytes, manifest, clock });
   // For the app's lifetime: the store lives as long as the app.
   keepDownloadAlive(models, adapters.keepAlive);
+  const tuning = createMicTuningStore({ getItemSync: kv.getItem, setItemSync: kv.setItem });
+  const { inputs } = adapters;
   return {
-    recognizer: adapters.recognizer({ files, models }),
+    recognizer: adapters.recognizer({ files, models, inputs, tuning }),
     model: adapters.model({ files, models }),
     models,
     mic: adapters.mic,
+    inputs,
+    tuning,
   };
 }

@@ -20,33 +20,6 @@ export function nothingHeardToast(inputName: string | null): ToastCopy {
   return { text: inputName === null ? base : `${base} · ${inputName}`, ms: NOTHING_HEARD_MS };
 }
 
-export interface MicCheckCopy {
-  title: string;
-  lead: string;
-  detail: string;
-  levelQuiet: string;
-  levelHearing: string;
-  unavailable: string;
-  noInput: string;
-  inputDetail: string;
-  typeInstead: string;
-  done: string;
-}
-
-// The third silent hold in a row (voice D3).
-export const MIC_CHECK_COPY: MicCheckCopy = {
-  title: 'Mic check',
-  lead: 'Still not hearing you',
-  detail: 'Three tries in a row came through silent. Say something now to test.',
-  levelQuiet: 'Quiet',
-  levelHearing: 'Hearing you',
-  unavailable: "The microphone couldn't start, so there's no level to show.",
-  noInput: "The phone didn't say which microphone it's using.",
-  inputDetail: 'The phone listens through it',
-  typeInstead: 'Type instead',
-  done: 'Done',
-};
-
 export interface UnclearCopy {
   title: string;
   lead: string;

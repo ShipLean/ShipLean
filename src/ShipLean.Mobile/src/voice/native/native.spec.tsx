@@ -2,7 +2,7 @@ import { startDownloadService, stopDownloadService } from '../../../modules/mode
 import type { CommandModel, MicPermission, SpeechRecognizer } from '../contracts';
 import { FakeModelFiles } from '../../test-support/modelFiles';
 import { setTotalMemory } from '../../test-support/nativeMocks';
-import { FakeModelStore } from '../../test-support/voice';
+import { FakeModelStore, fakeTuningStore } from '../../test-support/voice';
 import { LlamaCommandModel } from './commandModel';
 import { deviceMemoryBytes } from './deviceMemory';
 import { nativeAdapters } from './index';
@@ -51,7 +51,12 @@ describe('native adapters', () => {
 
     const adapters = nativeAdapters();
 
-    const recognizer = adapters.recognizer({ files: new FakeModelFiles(), models });
+    const recognizer = adapters.recognizer({
+      files: new FakeModelFiles(),
+      models,
+      inputs: adapters.inputs,
+      tuning: fakeTuningStore(),
+    });
     const model = adapters.model({ files: new FakeModelFiles(), models });
     expect(recognizer).toBeInstanceOf(NativeSpeechRecognizer);
     expect(model).toBeInstanceOf(LlamaCommandModel);
@@ -68,7 +73,16 @@ describe('native adapters', () => {
     adapters.keepAlive.stop();
     expect(stopDownloadService).toHaveBeenCalled();
     expect(Object.keys(adapters).sort()).toEqual(
-      ['files', 'keepAlive', 'memoryBytes', 'mic', 'model', 'network', 'recognizer'].sort(),
+      [
+        'files',
+        'inputs',
+        'keepAlive',
+        'memoryBytes',
+        'mic',
+        'model',
+        'network',
+        'recognizer',
+      ].sort(),
     );
   });
 });

@@ -12,3 +12,5 @@ allowBuilds:
   # Crash reports' source map upload (@sentry/react-native). sentry-cli's binary ships as optional per-platform
   # packages (@sentry/cli-linux-x64, -darwin, ...); its postinstall only downloads one when those are missing.
   '@sentry/cli': false
+patchedDependencies:
+  expo-audio@58.0.11: patches/expo-audio@58.0.11.patch

@@ -65,6 +65,17 @@ describe('speechPresent', () => {
     ).toBe(false);
   });
 
+  it('a tuned line below the default floor lets a quiet voice through', () => {
+    // A voice at an RMS of 150 (a sine of peak 150 * sqrt(2)): under the default floor of 300, over a line of 100.
+    const quietVoice = new Float64Array(RATE).map(
+      (_, i) => 150 * Math.SQRT2 * Math.sin((2 * Math.PI * 200 * i) / RATE),
+    );
+    const held = pcm(new Float64Array(8000), quietVoice, new Float64Array(8000));
+
+    expect(speechPresent(held)).toBe(false);
+    expect(speechPresent(held, 100)).toBe(true);
+  });
+
   it('a phrase with no pause around it still counts', () => {
     expect(speechPresent(pcm(phrase(0.8, 4000)))).toBe(true);
   });

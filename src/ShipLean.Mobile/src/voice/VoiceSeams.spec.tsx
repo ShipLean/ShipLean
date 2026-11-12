@@ -172,6 +172,7 @@ describe('voice seams', () => {
           failure={failure}
           heard={null}
           source="voice"
+          spec={spec}
           onRetry={noop}
           onTypeInstead={noop}
           onWhatCanISay={noop}

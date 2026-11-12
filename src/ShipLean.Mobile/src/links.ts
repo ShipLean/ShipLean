@@ -6,6 +6,8 @@ export interface Link<P extends string> {
   params: Record<string, string>;
 }
 
+export type MicTuningFrom = 'second_hold' | 'third_hold' | 'settings';
+
 export const BACKLOG_LEVELS = ['epics', 'features', 'stories'] as const;
 export type BacklogLevelParam = (typeof BACKLOG_LEVELS)[number];
 
@@ -73,6 +75,11 @@ export const links = {
 
   // This phone's settings and the voice setup.
   settingsVoice: (): Link<'/settings/voice'> => ({ pathname: '/settings/voice', params: {} }),
+  // The Mic tuning page, pushed over everything. key is the item the person came from, for its Back label.
+  micTuning: (from: MicTuningFrom, key?: string): Link<'/mic-tuning'> => ({
+    pathname: '/mic-tuning',
+    params: params({ from, key }),
+  }),
   licences: (): Link<'/settings/voice/licences'> => ({
     pathname: '/settings/voice/licences',
     params: {},

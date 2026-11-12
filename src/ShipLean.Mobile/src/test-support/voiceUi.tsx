@@ -15,7 +15,15 @@ import { VoiceContext, VoiceProvider } from '../voice/VoiceProvider';
 import type { FakeRunner } from './actions';
 import { renderWithRunner } from './renderWithRunner';
 import { fakeInternals } from './voiceInternals';
-import { FakeCommandModel, FakeMicPermission, FakeModelStore, FakeRecognizer } from './voice';
+import {
+  FakeCommandModel,
+  FakeMicPermission,
+  FakeModelStore,
+  FakeRecognizer,
+  fakeAudioInputs,
+  fakeTuningStore,
+} from './voice';
+import type { AudioInputs, MicTuningStore } from '../voice/contracts';
 
 export interface FakeVoice {
   // The current api: state is the last set (idle with the mic granted unless given).
@@ -96,6 +104,8 @@ export interface FakeEngines {
   model: FakeCommandModel;
   models: FakeModelStore;
   mic: FakeMicPermission;
+  inputs: AudioInputs;
+  tuning: MicTuningStore;
 }
 
 // After every test the engines go back to not ready (also when a test called configureEngines itself) and no
@@ -113,6 +123,8 @@ export function installFakeEngines(overrides: Partial<FakeEngines> = {}): FakeEn
     model: new FakeCommandModel(),
     models: new FakeModelStore(),
     mic: new FakeMicPermission(),
+    inputs: fakeAudioInputs(),
+    tuning: fakeTuningStore(),
     ...overrides,
   };
   configureEngines(fakes);
