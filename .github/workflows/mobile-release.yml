@@ -99,10 +99,10 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       # --wait keeps the job until EAS has finished the builds (and, with submit, the submissions), so
-      # their files can be saved below. --json prints the finished builds on stdout, each with its
-      # file's URL (artifacts.buildUrl); progress goes to stderr. eas-cli prints the JSON before it
-      # exits non-zero for a failed build or submission, so the status is kept and the files saved
-      # first.
+      # their files can be saved below. --json prints the builds on stdout; progress goes to stderr.
+      # With --auto-submit that JSON is the builds as first created (status NEW, no file URL), so the
+      # next step looks each one up again by id. eas-cli prints the JSON before it exits non-zero for
+      # a failed build or submission, so the status is kept and the files saved first.
       - name: Build${{ inputs.submit && ' and submit' || '' }}
         id: eas
         working-directory: src/ShipLean.Mobile
@@ -119,14 +119,21 @@ jobs:
           echo "status=$status" >> "$GITHUB_OUTPUT"
       - name: Download the built files
         if: ${{ !cancelled() && steps.eas.outcome == 'success' }}
+        working-directory: src/ShipLean.Mobile
         run: |
           python3 -I - "$RUNNER_TEMP/builds.json" "$RUNNER_TEMP/app-builds" <<'PY'
-          import json, os, posixpath, sys, urllib.parse, urllib.request
+          import json, os, posixpath, subprocess, sys, urllib.parse, urllib.request
           source, out = sys.argv[1], sys.argv[2]
           text = open(source).read().strip()
           builds = json.loads(text) if text else []
           os.makedirs(out, exist_ok=True)
           for build in builds:
+              # Look the build up again: the JSON from `eas build --auto-submit` is the build as created.
+              view = subprocess.run(["eas", "build:view", build["id"], "--json"], capture_output=True, text=True)
+              if view.returncode == 0 and view.stdout.strip():
+                  build = json.loads(view.stdout)
+              else:
+                  print("Could not look up build {}: {}".format(build["id"], view.stderr.strip()[-500:]))
               url = (build.get("artifacts") or {}).get("buildUrl")
               if not url:
                   print("No file for build {} ({})".format(build.get("id"), build.get("status")))
