@@ -1,4 +1,4 @@
-import type { CardDto, TaskboardRowDto } from '../../../../api/views';
+import type { CardDto, TaskboardRowDto } from '@shiplean/core/api/views';
 import { passesFaces } from '../faceFilter';
 
 /** An open story (or the Unparented row) on one state's page: its tasks in that state that pass the filter. */

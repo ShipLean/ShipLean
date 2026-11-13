@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { RetroKpisDto } from '../../../api/retros';
+import type { RetroKpisDto } from '@shiplean/core/api/retros';
 import { retrosTestIds as ids } from '../testIds';
 import type { RailSheet } from './RetroRailSheets';
 

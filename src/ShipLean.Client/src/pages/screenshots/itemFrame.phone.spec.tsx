@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../../AppRoutes';
-import type { ConflictDto } from '../../api/workItems';
+import type { ConflictDto } from '@shiplean/core/api/workItems';
 import { mei, story } from '../../features/workItem/ct/fixtures';
 import { stubApi } from '../../features/workItem/ct/stubApi';
 import { stubSide } from '../../features/workItem/ct/stubSide';

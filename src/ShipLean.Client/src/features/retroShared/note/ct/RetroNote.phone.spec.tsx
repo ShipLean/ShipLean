@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Locator } from 'playwright';
-import type { RetroPointDto } from '../../../../api/retros';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../../touch/testIds';
 import { noteStates, retroThemes, sprintRetro, stubRetros } from '../../../retros/ct/retroFixtures';
 import type { AddTarget } from '../../board/AddTarget';

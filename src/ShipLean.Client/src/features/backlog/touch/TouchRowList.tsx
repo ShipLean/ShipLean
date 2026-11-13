@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { useTouchSelectMode } from './selectMode';

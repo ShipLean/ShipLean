@@ -1,5 +1,5 @@
-import type { StateRef } from '../../../../api/refs';
-import type { TaskboardCellDto } from '../../../../api/views';
+import type { StateRef } from '@shiplean/core/api/refs';
+import type { TaskboardCellDto } from '@shiplean/core/api/views';
 import type { TouchPagerPage } from '../../../../touch/TouchPager';
 import { passesFaces } from '../faceFilter';
 

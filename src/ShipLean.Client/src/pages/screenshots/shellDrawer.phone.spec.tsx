@@ -1,5 +1,5 @@
 import { expect } from '@playwright/experimental-ct-react';
-import type { ProjectSummaryDto } from '../../api/projects';
+import type { ProjectSummaryDto } from '@shiplean/core/api/projects';
 import { backlogView, ROWS } from '../../features/backlog/ct/fixtures';
 import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { backlogTestIds } from '../../features/backlog/testIds';

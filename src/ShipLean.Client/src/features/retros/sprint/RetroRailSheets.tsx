@@ -1,4 +1,4 @@
-import type { SprintRetroDto } from '../../../api/retros';
+import type { SprintRetroDto } from '@shiplean/core/api/retros';
 import { Sheet } from '../../../touch/Sheet';
 import { ActionItemsSection } from './rail/ActionItemsSection';
 import { CoverageSection } from './rail/CoverageSection';

@@ -1,6 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react';
-import type { SprintRef, UserRef } from '../../../../api/refs';
-import type { TaskboardRowDto } from '../../../../api/views';
+import type { SprintRef, UserRef } from '@shiplean/core/api/refs';
+import type { TaskboardRowDto } from '@shiplean/core/api/views';
 import { StateDot } from '../../../../components/StateDot';
 import { TouchPager } from '../../../../touch/TouchPager';
 import type { TaskboardGrouping } from '../../taskboardApi';

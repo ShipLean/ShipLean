@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../components/Avatar';
 import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';

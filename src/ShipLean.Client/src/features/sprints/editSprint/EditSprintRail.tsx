@@ -97,21 +97,21 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
 
   const body = (
     <>
-    <SprintForm
-      idPrefix={`edit-sprint-${sprint.id}`}
-      ids={EDIT_SPRINT_IDS}
-      values={form}
-      nameRef={nameRef}
-      onChange={change}
-      onSubmit={submit}
-      submitLabel="Save"
-      pending={update.isPending}
-      error={error}
-      datesLocked={ended}
-      datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
-      onCancel={onDone}
-    />
-    <DeleteSprint projectId={projectId} sprint={sprint} onDeleted={onDeleted} />
+      <SprintForm
+        idPrefix={`edit-sprint-${sprint.id}`}
+        ids={EDIT_SPRINT_IDS}
+        values={form}
+        nameRef={nameRef}
+        onChange={change}
+        onSubmit={submit}
+        submitLabel="Save"
+        pending={update.isPending}
+        error={error}
+        datesLocked={ended}
+        datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
+        onCancel={onDone}
+      />
+      <DeleteSprint projectId={projectId} sprint={sprint} onDeleted={onDeleted} />
     </>
   );
 

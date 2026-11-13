@@ -1,4 +1,8 @@
-import type { RetroCategory, RetroCategoryColumnDto, RetroPointDto } from '../../../api/retros';
+import type {
+  RetroCategory,
+  RetroCategoryColumnDto,
+  RetroPointDto,
+} from '@shiplean/core/api/retros';
 import { retroCategoryColours, retroCategoryLabels } from '../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../testIds';
 

@@ -1,4 +1,4 @@
-import { RETRO_CATEGORIES, type RetroCategory } from '../../../api/retros';
+import { RETRO_CATEGORIES, type RetroCategory } from '@shiplean/core/api/retros';
 import type { WrittenBy } from './views/byCategory/writtenBy';
 
 export type RetroView = 'category' | 'item';

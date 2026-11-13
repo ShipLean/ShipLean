@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { BacklogRowDto } from '../../../api/views';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { TouchSelectModeProvider, useTouchSelectMode } from '../touch/selectMode';
 import { TouchRowList } from '../touch/TouchRowList';

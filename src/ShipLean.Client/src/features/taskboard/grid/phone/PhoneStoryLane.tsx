@@ -1,5 +1,5 @@
-import type { SprintRef } from '../../../../api/refs';
-import type { TaskboardRowDto } from '../../../../api/views';
+import type { SprintRef } from '@shiplean/core/api/refs';
+import type { TaskboardRowDto } from '@shiplean/core/api/views';
 import { AddTaskBox } from '../../rows/AddTaskBox';
 import { ALL_FIELDS } from '../../rows/StoryRow';
 import { StoryRowHeader } from '../../rows/StoryRowHeader';

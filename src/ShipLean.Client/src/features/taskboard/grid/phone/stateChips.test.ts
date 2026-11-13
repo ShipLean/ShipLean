@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { StateRef } from '../../../../api/refs';
-import type { CardDto } from '../../../../api/views';
+import type { StateRef } from '@shiplean/core/api/refs';
+import type { CardDto } from '@shiplean/core/api/views';
 import { stateChips } from './stateChips';
 
 const NEW: StateRef = { id: 'new', name: 'New', category: 'proposed' };

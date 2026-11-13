@@ -1,4 +1,4 @@
-import type { UserRef } from '../api/refs';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../components/Avatar';
 import { realtimeTestIds as ids } from '../features/realtime/testIds';
 import { Sheet } from '../touch/Sheet';

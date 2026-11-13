@@ -1,4 +1,4 @@
-import type { CardDto, TaskboardPersonRowDto } from '../../../../api/views';
+import type { CardDto, TaskboardPersonRowDto } from '@shiplean/core/api/views';
 import { passesFaces, UNASSIGNED_FACE } from '../faceFilter';
 
 /** A person (or Unassigned) on one state's page: their tasks in that state that pass the filter. */

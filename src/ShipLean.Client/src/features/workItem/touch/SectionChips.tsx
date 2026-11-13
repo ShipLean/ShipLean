@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { WorkItemDto } from '../../../api/workItems';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { storiesAndBugsOf } from '../../feature/children/storiesAndBugs';
 import { featureTestIds } from '../../feature/testIds';
 import { retrosTestIds } from '../../retros/testIds';
