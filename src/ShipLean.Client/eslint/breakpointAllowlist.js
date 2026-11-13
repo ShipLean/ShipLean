@@ -3,10 +3,6 @@
 // its count: converting a use means lowering the count, and deleting the line once it reaches zero. Never add a line.
 export const breakpointAllowlist = [
   // SHIP-713 (L713b, wave 1): quick search
-  { file: 'features/quickSearch/QuickSearchDialog.tsx', count: 4, owner: 'SHIP-713' },
-  { file: 'features/quickSearch/QuickSearchFooter.tsx', count: 1, owner: 'SHIP-713' },
-  { file: 'features/quickSearch/rows/ItemRow.tsx', count: 3, owner: 'SHIP-713' },
-  { file: 'features/quickSearch/rows/SprintRow.tsx', count: 3, owner: 'SHIP-713' },
   // W01-O2: the settings field panes
   // SHIP-715: the attachment page
   { file: 'features/attachment/AttachmentScreen.tsx', count: 1, owner: 'SHIP-715' },

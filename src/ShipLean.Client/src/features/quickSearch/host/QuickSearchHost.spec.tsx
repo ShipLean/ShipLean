@@ -125,26 +125,6 @@ test('QuickSearch_WhenSearchButtonClicked_ShouldOpen', async ({ mount, page }) =
   await expect(page.getByTestId(ids.dialog)).toBeVisible();
 });
 
-test('QuickSearch_WhenNarrow_ShouldOfferTheIconButton', async ({ mount, page }) => {
-  await stubSearch(page);
-  await page.setViewportSize({ width: 800, height: 700 });
-  await mount(<ShellHarness />, at(board));
-  // Wait for the shell to load.
-  await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
-  await expect(page.getByTestId(shell.searchButton)).toBeHidden();
-  await page.getByTestId(shell.searchIconButton).click();
-  await expect(page.getByTestId(ids.dialog)).toBeVisible();
-});
-
-test('QuickSearch_WhenWide_ShouldHideTheIconButton', async ({ mount, page }) => {
-  await stubSearch(page);
-  await mount(<ShellHarness />, at(board));
-  // Wait for the shell to load.
-  await expect(page.getByTestId(shell.projectButton)).toContainText('Shipping');
-  // Fails on an icon button that shows at every width.
-  await expect(page.getByTestId(shell.searchIconButton)).toBeHidden();
-});
-
 test('OpenItem_WhenOnABoardOfTheSameProject_ShouldOpenTheModal', async ({ mount, page }) => {
   await mount(<OpenItemHarness />, at(board));
   await page.getByTestId(openItem.open).click();

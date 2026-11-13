@@ -38,7 +38,7 @@ export function LinksEditor({ project, itemKey }: { project: ProjectDto; itemKey
         <button
           type="button"
           data-testid={ids.linkAdd}
-          className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+          className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft touch:h-[var(--touch-target)]"
           onClick={() => setOpen(open === 'new' ? null : 'new')}
         >
           + Add link

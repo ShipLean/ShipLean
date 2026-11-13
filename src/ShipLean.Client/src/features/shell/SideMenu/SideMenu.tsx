@@ -4,6 +4,8 @@ import { useQuickSearch } from '../../quickSearch/host/useQuickSearch';
 import { useLocation } from 'react-router-dom';
 import { matchRoute, routePath } from '../../../routes';
 import { ProjectPicker } from '../ProjectPicker/ProjectPicker';
+import { ProjectPickerSheet } from '../ProjectPicker/ProjectPickerSheet';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { shellTestIds as ids } from '../testIds';
 import { UserMenu } from '../UserMenu/UserMenu';
 import { useShellProject } from '../useShellProject';
@@ -15,11 +17,13 @@ import { RetrosSubmenu } from './RetrosSubmenu';
 import { SprintsSubmenu } from './SprintsSubmenu';
 
 // The frame's left side: the ShipLean mark, the project button and its picker, the sections of the project and the
-// signed-in user. Under 900px it becomes a strip across the top.
+// signed-in user. At 900px and below it is the touch drawer's body: every section's sub-pages show whichever section you
+// are in, and the picker is a bottom sheet over the drawer.
 export function SideMenu() {
   const { pathname, search } = useLocation();
   const route = matchRoute(pathname, search);
   const { key, project } = useShellProject();
+  const { touch } = useTouchShell();
   const [picking, setPicking] = useState(false);
   const side = useRef<HTMLElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -32,14 +36,15 @@ export function SideMenu() {
     if (searching) setPicking(false);
   }
 
+  // The touch sheet sits outside the side menu and closes from its own scrim.
   useEffect(() => {
-    if (!picking) return;
+    if (!picking || touch) return;
     const close = (event: MouseEvent) => {
       if (!side.current?.contains(event.target as Node)) setPicking(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [picking]);
+  }, [picking, touch]);
 
   // The shortcut opens quick search in the same render that puts the picker away, and the dialog takes focus's way back
   // from whatever has it then. Moving focus to the project button first (capture runs ahead of the shortcut's own
@@ -61,6 +66,7 @@ export function SideMenu() {
   };
   const label = shortcutLabel();
   const is = (ids_: readonly string[]) => route !== undefined && ids_.includes(route.id);
+  const shows = (ids_: readonly string[]) => touch || is(ids_);
 
   return (
     <aside
@@ -103,7 +109,7 @@ export function SideMenu() {
           >
             Backlogs
           </NavItem>
-          {is(backlogsRoutes) ? (
+          {shows(backlogsRoutes) ? (
             <LevelsSubmenu section="backlogs" projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -114,7 +120,7 @@ export function SideMenu() {
           >
             Boards
           </NavItem>
-          {is(boardsRoutes) ? (
+          {shows(boardsRoutes) ? (
             <LevelsSubmenu section="boards" projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -125,7 +131,7 @@ export function SideMenu() {
           >
             Sprints
           </NavItem>
-          {project && is(sprintsRoutes) ? (
+          {project && shows(sprintsRoutes) ? (
             <SprintsSubmenu projectId={project.id} projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -136,8 +142,13 @@ export function SideMenu() {
           >
             Retrospectives
           </NavItem>
-          {project && is(retrosRoutes) ? (
-            <RetrosSubmenu projectId={project.id} projectKey={key} route={route} />
+          {project && shows(retrosRoutes) ? (
+            <RetrosSubmenu
+              projectId={project.id}
+              projectKey={key}
+              route={route}
+              counted={is(retrosRoutes)}
+            />
           ) : null}
           <NavItem
             icon="⇪"
@@ -158,7 +169,8 @@ export function SideMenu() {
         </>
       ) : null}
       <UserMenu />
-      {picking ? <ProjectPicker currentKey={key} onClose={closePicker} /> : null}
+      {picking && touch ? <ProjectPickerSheet currentKey={key} onClose={closePicker} /> : null}
+      {picking && !touch ? <ProjectPicker currentKey={key} onClose={closePicker} /> : null}
     </aside>
   );
 }

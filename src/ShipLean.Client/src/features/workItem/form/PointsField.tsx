@@ -24,7 +24,7 @@ export function PointsField({
         inputMode="numeric"
         placeholder="?"
         title={value === null ? 'Not estimated: counts as 0 in the forecast' : undefined}
-        className={`${inputClass} w-20`}
+        className={`${inputClass} w-20 touch:h-9 touch:w-full`}
         value={value ?? ''}
         onChange={(event) => {
           const text = event.target.value;

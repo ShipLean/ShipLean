@@ -23,7 +23,7 @@ public sealed class QuickSearchDialog(IPage page)
 
     public ILocator SearchButton => page.GetByTestId(ShellTestIds.SearchButton);
 
-    public ILocator SearchIconButton => page.GetByTestId(ShellTestIds.SearchIconButton);
+    public ILocator Cancel => page.GetByTestId(QuickSearchTestIds.Cancel);
 
     // A row is found by the exact text of its key (items, projects) or its label (sprints' names, actions' labels).
     public ILocator Item(string key) => ByText(QuickSearchTestIds.OptionKey, key);
@@ -43,12 +43,6 @@ public sealed class QuickSearchDialog(IPage page)
     public async Task OpenWithButtonAsync()
     {
         await SearchButton.ClickAsync();
-        await Input.WaitForAsync();
-    }
-
-    public async Task OpenWithIconButtonAsync()
-    {
-        await SearchIconButton.ClickAsync();
         await Input.WaitForAsync();
     }
 
