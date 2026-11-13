@@ -44,6 +44,10 @@ public static class TouchRoutes
         ["jiraImport"] = new(_ => Links.JiraImport(Project), [PagesTestIds.ImportPage]),
         ["projectSettings"] = new(_ => Links.ProjectSettings(Project, "general"), [SettingsTestIds.GeneralName]),
         ["authorize"] = new(_ => "/authorize", [AgentsTestIds.AuthorizePage]),
+        // A valid RFC 7636 challenge, so the confirm card renders (not the missing-link state).
+        ["mobileSignIn"] = new(
+            _ => "/mobile/sign-in?challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&state=touch-sweep&device=Sweep%20phone",
+            [MobileSignInTestIds.SignIn]),
     };
 
     // Opens a route and checks it against the touch rules: a route in TouchPendingRoutes must still break them (so a
