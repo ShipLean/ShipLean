@@ -17,7 +17,7 @@ export function QuestionList({ item, asks }: AsksRegionProps) {
         <span className="text-[length:var(--text-xs)] text-ink-muted tabular-nums">
           {questions.length}
         </span>
-        <span className="text-[length:var(--text-xs)] text-ink-muted max-[900px]:hidden">
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">
           · asked by agents with <code>ask</code>. Only a Reply answers one.
         </span>
       </div>

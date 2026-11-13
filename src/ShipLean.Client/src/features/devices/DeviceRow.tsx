@@ -30,7 +30,7 @@ export function DeviceRow({
   return (
     <li
       data-testid={ids.row}
-      className="flex items-center gap-3 border-b border-edge px-3 py-2.5 max-sm:flex-wrap"
+      className="flex items-center gap-3 border-b border-edge px-3 py-2.5 phone:flex-wrap"
     >
       <PhoneIcon />
       <div className="grid min-w-0 flex-1 gap-0.5 text-[length:var(--text-sm)]">

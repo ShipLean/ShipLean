@@ -22,7 +22,7 @@ export function DecisionsSection({ item }: { item: AsksItem }) {
     <section
       data-testid={ids.section}
       aria-label="Decisions and questions"
-      className={`grid min-w-0 gap-2 border-b border-l-[3px] border-b-edge/60 px-4 py-3 max-[900px]:px-3 ${
+      className={`grid min-w-0 gap-2 border-b border-l-[3px] border-b-edge/60 px-4 py-3 touch:px-3 ${
         waiting
           ? 'border-l-caution bg-[color-mix(in_srgb,var(--color-warn)_5%,var(--color-surface))]'
           : folded
@@ -37,7 +37,7 @@ export function DecisionsSection({ item }: { item: AsksItem }) {
             data-testid={ids.foldToggle}
             aria-expanded={!folded}
             aria-label={`${folded ? 'Show' : 'Fold'} decisions and questions`}
-            className="size-[22px] rounded-control text-[length:var(--text-xs)] text-ink-muted hover:bg-signal-soft max-[900px]:size-8"
+            className="size-[22px] rounded-control text-[length:var(--text-xs)] text-ink-muted hover:bg-signal-soft touch:size-8"
             onClick={() => setChosen(!folded)}
           >
             {folded ? '▸' : '▾'}

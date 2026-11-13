@@ -28,7 +28,7 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
     <li
       id={question.label}
       data-testid={ids.questionRow}
-      className="grid scroll-mt-2 grid-cols-[30px_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-0.5 border-t border-edge/60 p-2 first:border-t-0 max-[900px]:grid-cols-[30px_minmax(0,1fr)]"
+      className="grid scroll-mt-2 grid-cols-[30px_minmax(0,1fr)_auto] items-start gap-x-2 gap-y-0.5 border-t border-edge/60 p-2 first:border-t-0 touch:grid-cols-[30px_minmax(0,1fr)]"
     >
       <span
         data-testid={ids.questionLabel}
@@ -41,18 +41,18 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
         {question.label}
       </span>
       <span
-        className={`min-w-0 text-[length:var(--text-sm)] leading-[1.4] break-words max-[900px]:text-[length:var(--text-md)] ${
+        className={`min-w-0 text-[length:var(--text-sm)] leading-[1.4] break-words touch:text-[length:var(--text-md)] ${
           open ? 'font-semibold' : 'text-ink-muted'
         }`}
       >
         {question.text}
       </span>
       {open ? (
-        <span className="col-start-3 row-span-2 row-start-1 flex items-center gap-1 max-[900px]:col-start-2 max-[900px]:row-auto max-[900px]:mt-1 max-[900px]:flex-wrap">
+        <span className="col-start-3 row-span-2 row-start-1 flex items-center gap-1 touch:col-start-2 touch:row-auto touch:mt-1 touch:flex-wrap">
           <button
             type="button"
             data-testid={ids.questionReply}
-            className={`h-[22px] rounded-control px-[7px] text-[length:var(--text-xs)] font-semibold max-[900px]:h-8 max-[900px]:px-3 ${
+            className={`h-[22px] rounded-control px-[7px] text-[length:var(--text-xs)] font-semibold touch:h-8 touch:px-3 ${
               replying ? 'border border-edge bg-panel text-ink' : 'bg-signal text-signal-ink'
             }`}
             onClick={() => setReplying(true)}
@@ -103,7 +103,7 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
       {answer ? (
         <div
           data-testid={ids.questionAnswer}
-          className="col-span-2 col-start-2 mt-0.5 grid grid-cols-[20px_minmax(0,1fr)] gap-1.5 rounded-r-sm border-l-2 border-l-state-completed bg-canvas px-2 py-1.5 text-[length:var(--text-sm)] max-[900px]:col-span-1"
+          className="col-span-2 col-start-2 mt-0.5 grid grid-cols-[20px_minmax(0,1fr)] gap-1.5 rounded-r-sm border-l-2 border-l-state-completed bg-canvas px-2 py-1.5 text-[length:var(--text-sm)] touch:col-span-1"
         >
           {answer.by ? <Avatar {...answer.by} /> : <span />}
           <span className="min-w-0">
@@ -125,7 +125,7 @@ export function QuestionRow({ item, question }: { item: AsksItem; question: Ques
         <span
           data-testid={ids.questionWithdrawError}
           role="alert"
-          className="col-span-2 col-start-2 text-[length:var(--text-xs)] text-alert max-[900px]:col-span-1"
+          className="col-span-2 col-start-2 text-[length:var(--text-xs)] text-alert touch:col-span-1"
         >
           {writes.withdrawQuestion.error.message}
         </span>
