@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { StateRef } from '../../../../api/refs';
-import type { CardDto, TaskboardRowDto } from '../../../../api/views';
+import type { StateRef } from '@shiplean/core/api/refs';
+import type { CardDto, TaskboardRowDto } from '@shiplean/core/api/views';
 import { phoneLanes } from './phoneLanes';
 import { phonePeopleLanes } from './phonePeopleLanes';
 
@@ -19,7 +19,10 @@ const card = (key: string, state: StateRef, assignee: string | null = null): Car
   }) as unknown as CardDto;
 
 const row = (key: string, state: StateRef, tasks: CardDto[], closed = 0): TaskboardRowDto => ({
-  parent: { ...card(key, state), rollups: [{ type: 'task', open: tasks.length, closed }] },
+  parent: {
+    ...card(key, state),
+    rollups: [{ type: 'task', open: tasks.length, closed, inCurrentSprint: 0, inOtherSprint: 0 }],
+  },
   offerResolve: false,
   cells: [NEW, ACTIVE].map((s) => ({
     stateId: s.id,
