@@ -33,7 +33,6 @@ public static class TouchPendingRoutes
         // SHIP-726
         ["capacity"] = "SHIP-726",
         // SHIP-727
-        ["sprintRetro"] = "SHIP-727",
         // SHIP-730
         ["retros"] = "SHIP-730",
         // SHIP-728
@@ -43,6 +42,5 @@ public static class TouchPendingRoutes
         // SHIP-732
         ["projectSettings"] = "SHIP-732",
         // SHIP-889
-        ["sprintDemo"] = "SHIP-889",
     };
 }
