@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Lanes.WorkItem.Conflicts;
-using ShipLean.AcceptanceTests.Pages.Backlog;
+using ShipLean.AcceptanceTests.Pages.Backlog.Touch;
 using ShipLean.AcceptanceTests.Pages.ItemPeek;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
@@ -75,7 +75,6 @@ public class ItemSideTouchTests : SeededAcceptanceTest
     [Test]
     public async Task ItemModal_WhenOpenedOnPhone_ShouldFillScreenWithCloseAndOpenFullPage()
     {
-        var backlog = new StoriesBacklog(Page);
         var peek = new ItemPeekDialog(Page);
         await Page.GotoAsync($"{Links.Backlog("SHIP")}?item=SHIP-141");
         await peek.WaitOpenAsync("SHIP-141");
@@ -96,7 +95,8 @@ public class ItemSideTouchTests : SeededAcceptanceTest
 
         await peek.WaitClosedAsync();
         await Expect(Page).Not.ToHaveURLAsync(new Regex("item="));
-        await Expect(backlog.List).ToBeAttachedAsync();
+        // At 900px and below the Stories backlog lists touch rows, not the table (SHIP-716).
+        await Expect(new TouchRows(Page).List).ToBeAttachedAsync();
 
         await Page.GotoAsync($"{Links.Backlog("SHIP")}?item=SHIP-141");
         await peek.WaitOpenAsync("SHIP-141");
