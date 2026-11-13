@@ -74,6 +74,8 @@ public static class SprintsTestIds
     public const string GoalSave = "sprints-goal-save";
     public const string GoalCancel = "sprints-goal-cancel";
     public const string GoalError = "sprints-goal-error";
+    // L724a phone edits
+    public const string GoalHint = "sprints-goal-hint";
     public const string Capacity = "sprints-capacity";
     public const string CapacityLoadError = "sprints-capacity-load-error";
     public const string CapacityRow = "sprints-capacity-row";

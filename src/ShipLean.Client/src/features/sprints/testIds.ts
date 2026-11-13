@@ -71,6 +71,8 @@ export const sprintsTestIds = {
   goalSave: 'sprints-goal-save',
   goalCancel: 'sprints-goal-cancel',
   goalError: 'sprints-goal-error',
+  // L724a phone edits
+  goalHint: 'sprints-goal-hint',
   capacity: 'sprints-capacity',
   capacityLoadError: 'sprints-capacity-load-error',
   capacityRow: 'sprints-capacity-row',

@@ -13,6 +13,7 @@ export function GridHarness({
   scrollerHeight,
   retitle = {},
   peopleFeatureTitle,
+  extraColumns = 0,
 }: {
   rowIndexes: number[];
   /** Puts the grid in a scroller this tall, as the shell's main area is. */
@@ -21,8 +22,20 @@ export function GridHarness({
   retitle?: Record<string, string>;
   /** Groups by People and gives every card's story this Feature title, as the Feature board does. */
   peopleFeatureTitle?: string;
+  /** Empty task states added after VIEW's three, to make the grid wider than a desktop screen. */
+  extraColumns?: number;
 }) {
   const grouping = peopleFeatureTitle === undefined ? 'stories' : 'people';
+  const view: typeof VIEW = {
+    ...VIEW,
+    columns: [
+      ...VIEW.columns,
+      ...Array.from({ length: extraColumns }, (_, i) => ({
+        state: { id: `t-extra-${i}`, name: `Extra ${i + 1}`, category: 'inProgress' as const },
+        count: 0,
+      })),
+    ],
+  };
   const rows = rowIndexes
     .map((i) => (grouping === 'people' ? VIEW.peopleRows[i] : VIEW.rows[i]))
     .map((row) => ({
@@ -36,7 +49,7 @@ export function GridHarness({
     <TaskboardDnd
       projectId={PROJECT.id}
       scope={scope}
-      view={VIEW}
+      view={view}
       grouping={grouping}
       me={undefined}
       onLanded={() => undefined}
@@ -45,7 +58,7 @@ export function GridHarness({
         projectKey={PROJECT.key}
         projectId={PROJECT.id}
         scope={scope}
-        view={VIEW}
+        view={view}
         rows={rows}
         grouping={grouping}
         faces={NO_FACES}

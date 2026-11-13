@@ -16,7 +16,7 @@ export function RowToggle({
       data-testid={ids.rowToggle}
       aria-expanded={!collapsed}
       aria-label={`${collapsed ? 'Expand' : 'Collapse'} ${label}`}
-      className="text-ink-muted hover:text-ink"
+      className="text-ink-muted hover:text-ink touch:inline-grid touch:size-[var(--touch-target)] touch:flex-none touch:place-items-center touch:text-[length:var(--text-xs)]"
       onClick={onToggle}
     >
       {collapsed ? '▶' : '▼'}
