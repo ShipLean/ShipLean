@@ -10,6 +10,9 @@ public class UsagePropsTests
     public void All_ShouldBeTheExtraPropertyCatalogue()
     {
         UsageProps.All.Order(StringComparer.Ordinal).ShouldBe(
-            ["agent_name", "board", "count", "method", "provider", "screen", "viewport"]);
+            [
+                "agent_name", "answer_kind", "board", "column", "count", "direction", "input", "method", "mode",
+                "provider", "reason", "screen", "trigger", "viewport"
+            ]);
     }
 }
