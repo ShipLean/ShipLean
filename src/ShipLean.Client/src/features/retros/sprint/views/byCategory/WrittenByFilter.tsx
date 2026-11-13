@@ -24,7 +24,7 @@ export function WrittenByFilter({
             type="button"
             data-value={option.id}
             aria-pressed={value === option.id}
-            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold"
+            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold touch:min-h-[var(--touch-target)]"
             onClick={() => onChange(option.id)}
           >
             {option.label}

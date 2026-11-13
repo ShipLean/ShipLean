@@ -7,7 +7,7 @@ const modes: { id: ActionMode; label: string; testId: string }[] = [
   { id: 'existing', label: 'Add to existing', testId: ids.retroActionModeExisting },
 ];
 
-/** The segmented New / Add to existing switch in the dialog's header. */
+/** The segmented New / Add to existing switch: in the dialog's header, or full width under it at 900px and below. */
 export function ModeToggle({
   mode,
   onChange,
@@ -19,7 +19,7 @@ export function ModeToggle({
     <div
       role="group"
       aria-label="New or existing"
-      className="flex overflow-hidden rounded-control border border-edge"
+      className="flex overflow-hidden rounded-control border border-edge touch:w-full touch:overflow-visible"
     >
       {modes.map((m) => (
         <button
@@ -27,7 +27,7 @@ export function ModeToggle({
           type="button"
           data-testid={m.testId}
           aria-pressed={mode === m.id}
-          className={`cursor-pointer px-3 py-1 text-[length:var(--text-sm)] ${mode === m.id ? 'bg-signal-soft font-medium text-ink' : 'bg-panel text-ink-muted'}`}
+          className={`cursor-pointer px-3 py-1 text-[length:var(--text-sm)] touch:min-h-9 touch:flex-1 touch:first:rounded-l-control touch:last:rounded-r-control touch:text-[length:var(--text-base)] ${mode === m.id ? 'bg-signal-soft font-medium text-ink' : 'bg-panel text-ink-muted'}`}
           onClick={() => onChange(m.id)}
         >
           {m.label}

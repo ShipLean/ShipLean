@@ -35,7 +35,7 @@ public static class TouchRoutes
             _ => Links.SprintBacklog(Project, SeedIds.Sprints.Sprint24), [SprintsTestIds.StoryRow, SprintsTestIds.KpiCapacityEdit]),
         ["taskboard"] = new(_ => Links.Taskboard(Project, SeedIds.Sprints.Sprint24), [TaskboardTestIds.Card]),
         ["capacity"] = new(_ => Links.SprintCapacity(Project, SeedIds.Sprints.Sprint24), [SprintsTestIds.CapacityRow]),
-        ["sprintRetro"] = new(_ => Links.SprintRetro(Project, SeedIds.Sprints.Sprint23), [RetrosTestIds.RetroCoverageRow]),
+        ["sprintRetro"] = new(_ => Links.SprintRetro(Project, SeedIds.Sprints.Sprint23), [RetrosTestIds.RetroNumbers]),
         ["sprintDemo"] = new(_ => Links.SprintDemo(Project, SeedIds.Sprints.Sprint24), [DemosTestIds.DemoStatusMessage]),
         ["retros"] = new(_ => Links.Retros(Project), [RetrosTestIds.RetrosSearchPanel]),
         ["retroFeatures"] = new(_ => Links.RetroFeatures(Project), [RetrosTestIds.RetroFeaturesPanel]),
