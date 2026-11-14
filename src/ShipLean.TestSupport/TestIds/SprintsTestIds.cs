@@ -77,6 +77,18 @@ public static class SprintsTestIds
     public const string RailPerson = "sprints-backlog-rail-person";
     public const string RailPersonActive = "sprints-backlog-rail-person-active";
     public const string RailPoints = "sprints-backlog-rail-points";
+
+    // L724b phone figures
+    public const string Figures = "sprints-backlog-figures";
+    public const string KpiRow = "sprints-backlog-kpi-row";
+    public const string PointsBar = "sprints-backlog-points-bar";
+    public const string BurndownReadout = "sprints-backlog-burndown-readout";
+    public const string GlanceRows = "sprints-backlog-glance-rows";
+    public const string GlanceReady = "sprints-backlog-glance-ready";
+    public const string GlanceActive = "sprints-backlog-glance-active";
+    public const string GlanceReadyItem = "sprints-backlog-glance-ready-item";
+    public const string GlancePerson = "sprints-backlog-glance-person";
+    public const string GlancePersonItem = "sprints-backlog-glance-person-item";
     public const string ShowTasks = "sprints-backlog-show-tasks";
     public const string GoalInput = "sprints-goal-input";
     public const string GoalSave = "sprints-goal-save";
