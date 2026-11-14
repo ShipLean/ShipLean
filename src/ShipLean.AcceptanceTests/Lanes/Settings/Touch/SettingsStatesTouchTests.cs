@@ -14,21 +14,11 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
 
     private ILocator Panel => Page.GetByTestId(SettingsTestIds.StatesPanel);
 
-    // The settings frame still lays out a 200px tab column at this width (the frame is the tab row task's, not this
-    // one's), which leaves the panel 124px wide. Give the panel the whole row, as the frame will, so these checks see the
-    // States tab's own layout.
-    private async Task OpenAsync(SettingsStatesPage states)
-    {
-        await states.OpenAsync();
-        await Expect(Panel).ToBeVisibleAsync();
-        await Panel.EvaluateAsync("e => { e.closest('main').parentElement.style.gridTemplateColumns = 'minmax(0, 1fr)'; }");
-    }
-
     [Test]
     public async Task States_WhenOpenedOnAPhone_ShouldShowTwoLineRowsWithVisibleActions()
     {
         var states = new SettingsStatesPage(Page);
-        await OpenAsync(states);
+        await states.OpenAsync();
         var select = Page.GetByTestId(SettingsTestIds.StateTypeSelect);
         await Expect(select).ToBeVisibleAsync();
         await Expect(Page.GetByTestId(SettingsTestIds.StateTypeStory)).ToBeHiddenAsync();
@@ -67,7 +57,7 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
     public async Task States_WhenMovedUpOnAPhone_ShouldReorderTheDraft()
     {
         var states = new SettingsStatesPage(Page);
-        await OpenAsync(states);
+        await states.OpenAsync();
         await Expect(states.NameOf(0)).ToHaveValueAsync("New");
         await Expect(states.NameOf(1)).ToHaveValueAsync("Active");
 
@@ -82,7 +72,7 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
     public async Task States_WhenDeletingOneWithItems_ShouldStackTheMoveForm()
     {
         var states = new SettingsStatesPage(Page);
-        await OpenAsync(states);
+        await states.OpenAsync();
         await states.DeleteOf(1).TapAsync();
 
         await Expect(states.DeleteForm).ToBeVisibleAsync();

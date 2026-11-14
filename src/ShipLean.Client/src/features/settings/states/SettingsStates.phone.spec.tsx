@@ -119,12 +119,6 @@ for (const theme of THEMES) {
     });
     const panel = view.getByTestId(ids.statesPanel);
     await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
-    // The settings frame still lays out its 200px tab column here (the tab row is another task's); give the panel
-    // the whole row, as that frame will, so the shot is the States tab's own layout.
-    await panel.evaluate((e) => {
-      const grid = e.closest('main')?.parentElement;
-      if (grid) grid.style.gridTemplateColumns = 'minmax(0, 1fr)';
-    });
     return { view, panel };
   };
 
