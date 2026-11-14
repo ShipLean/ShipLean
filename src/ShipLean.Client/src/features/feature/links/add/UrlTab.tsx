@@ -73,7 +73,7 @@ export function UrlTab({
         <span className="text-[length:var(--text-xs)] text-ink-muted">Fetching the preview…</span>
       ) : null}
       {data ? <LinkPreview preview={data} /> : null}
-      <div className="grid gap-2 min-[901px]:grid-cols-2">
+      <div className="grid gap-2 grid-cols-2 touch:grid-cols-1">
         <label className="grid gap-1 text-[length:var(--text-xs)] text-ink-muted">
           Title
           <input

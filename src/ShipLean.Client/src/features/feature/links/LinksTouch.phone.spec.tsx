@@ -94,6 +94,17 @@ test('AddLinkForm_WhenTouch_ShouldStackFields', async ({ mount, page }) => {
   const type = (await root.getByTestId(ids.addLinkType).boundingBox())!;
   expect(type.y).toBeGreaterThanOrEqual(key.y + key.height - 1);
   expect(key.width).toBeGreaterThan(form.width - 40);
+  // At tablet width (still touch) the fields stack too; the old sm: step put them side by side from 640px.
+  await page.setViewportSize({ width: 800, height: 1024 });
+  await root.getByTestId(ids.addLinkTabUrl).tap();
+  const wideTitle = (await root.getByTestId(ids.addLinkTitle).boundingBox())!;
+  const wideNote = (await root.getByTestId(ids.addLinkNote).boundingBox())!;
+  expect(wideNote.y).toBeGreaterThanOrEqual(wideTitle.y + wideTitle.height - 1);
+  await root.getByTestId(ids.addLinkTabWorkItem).tap();
+  const wideKey = (await root.getByTestId(ids.addLinkKey).boundingBox())!;
+  const wideType = (await root.getByTestId(ids.addLinkType).boundingBox())!;
+  expect(wideType.y).toBeGreaterThanOrEqual(wideKey.y + wideKey.height - 1);
+  await page.setViewportSize({ width: 390, height: 844 });
   for (const id of [ids.addLinkSubmit, ids.addLinkCancel, ids.addLinkTabUrl]) {
     expect((await root.getByTestId(id).boundingBox())!.height).toBeGreaterThanOrEqual(32);
   }
@@ -115,6 +126,30 @@ test('FeatureDropZone_WhenTouch_ShouldNotShowOverlay', async ({ mount, page }) =
 
   await expect(zone).not.toHaveClass(/outline-dashed/);
   await expect(zone).toHaveCSS('outline-style', 'none');
+});
+
+test('FeatureDropZone_WhenTouchDrop_ShouldPreventBrowserNavigation', async ({ mount, page }) => {
+  await stubAll(page);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  const zone = screen.getByTestId(ids.dropZone);
+  await expect(zone).toBeVisible();
+
+  const prevented = await zone.evaluate((node) => {
+    const send = (type: string) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File(['x'], 'x.txt'));
+      const event = new DragEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      });
+      node.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    return { dragover: send('dragover'), drop: send('drop') };
+  });
+
+  expect(prevented).toEqual({ dragover: true, drop: true });
 });
 
 test('RailItem_WhenTouch_ShouldShowRemoveWithoutHover', async ({ mount, page }) => {

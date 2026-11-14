@@ -79,7 +79,6 @@ export function FeatureDropZone({ item, children }: FeatureRegionProps & { child
         !touch && dragging ? 'outline-2 -outline-offset-2 outline-signal outline-dashed' : undefined
       }
       onDragOver={(event) => {
-        if (touch) return;
         if (!carriesFiles(event)) return;
         event.preventDefault();
         setDragging(true);
@@ -88,7 +87,6 @@ export function FeatureDropZone({ item, children }: FeatureRegionProps & { child
         if (event.currentTarget === event.target) setDragging(false);
       }}
       onDrop={(event) => {
-        if (touch) return;
         if (!carriesFiles(event)) return;
         event.preventDefault();
         setDragging(false);
