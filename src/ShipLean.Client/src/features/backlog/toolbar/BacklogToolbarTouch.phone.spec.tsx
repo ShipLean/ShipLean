@@ -29,6 +29,7 @@ test('BacklogToolbar_WhenTouch_ShouldFitOneRow', async ({ mount, page }) => {
     expect(box!.y).toBeGreaterThanOrEqual(rowBox!.y);
     expect(box!.y + box!.height).toBeLessThanOrEqual(rowBox!.y + rowBox!.height + 0.5);
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    expect(box!.height).toBeGreaterThanOrEqual(32);
   }
   expect(rowBox!.height).toBeLessThan(60);
   await expect(page.getByTestId(ids.newItem)).toHaveText('+ New');

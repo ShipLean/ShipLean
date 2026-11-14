@@ -94,7 +94,7 @@ export function MoreSheet({
             <button
               type="button"
               data-testid={ids.moreSortClear}
-              className="btn-ghost flex-none"
+              className="btn-ghost flex-none touch:min-h-[var(--touch-target)]"
               onClick={() => {
                 sort.onClear();
                 close();

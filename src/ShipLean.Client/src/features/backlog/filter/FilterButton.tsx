@@ -40,7 +40,7 @@ export function FilterButton({
         data-testid={ids.filterButton}
         aria-pressed={open}
         aria-expanded={open}
-        className="btn-ghost aria-pressed:bg-signal-soft"
+        className="btn-ghost touch:min-h-[var(--touch-target)] aria-pressed:bg-signal-soft"
         onClick={onToggle}
       >
         {count > 0 ? `Filter (${count})` : 'Filter'}

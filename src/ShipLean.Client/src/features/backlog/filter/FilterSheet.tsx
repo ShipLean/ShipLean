@@ -37,7 +37,7 @@ export function FilterSheet({
           <button
             type="button"
             data-testid={ids.filterClear}
-            className="btn-ghost justify-self-start"
+            className="btn-ghost justify-self-start touch:min-h-[var(--touch-target)]"
             onClick={() => onChange({ ...criteria, clauses: [] })}
           >
             Clear

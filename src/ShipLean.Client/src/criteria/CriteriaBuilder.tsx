@@ -126,7 +126,7 @@ export function CriteriaBuilder({
         <button
           type="button"
           data-testid={criteriaTestIds.add}
-          className="btn-ghost"
+          className="btn-ghost touch:min-h-[var(--touch-target)]"
           onClick={() => {
             setRowIds([...ids, newRowId()]);
             onChange({

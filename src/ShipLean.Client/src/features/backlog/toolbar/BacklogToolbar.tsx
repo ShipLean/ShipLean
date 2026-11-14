@@ -77,7 +77,7 @@ export function BacklogToolbar({
           <button
             type="button"
             data-testid={ids.newItem}
-            className="btn-signal flex-none"
+            className="btn-signal flex-none touch:min-h-[var(--touch-target)]"
             onClick={onNewItem}
           >
             {newItemLabel ?? '+ New'}

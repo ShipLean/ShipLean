@@ -42,7 +42,9 @@ export function BacklogSearchBox({ search }: { search: BacklogSearch }) {
       }}
       data-testid={ids.searchBox}
       type="search"
-      className={closeTouchSearch ? 'field min-w-0 flex-1' : 'field w-56'}
+      className={
+        closeTouchSearch ? 'field min-w-0 flex-1 touch:min-h-[var(--touch-target)]' : 'field w-56'
+      }
       placeholder={closeTouchSearch ? 'Search this list' : 'Search this list  ( / )'}
       aria-label="Search this list"
       value={query}

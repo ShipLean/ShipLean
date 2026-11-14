@@ -68,7 +68,7 @@ export function ClauseRow({
         </span>
         <select
           data-testid={criteriaTestIds.field}
-          className="field"
+          className="field touch:min-h-[var(--touch-target)]"
           aria-label="Field"
           {...marksFor('unknownField')}
           value={clause.field}
@@ -85,7 +85,7 @@ export function ClauseRow({
         </select>
         <select
           data-testid={criteriaTestIds.op}
-          className="field touch:col-span-2"
+          className="field touch:col-span-2 touch:min-h-[var(--touch-target)]"
           aria-label="Operator"
           {...marksFor('operatorNotAllowed')}
           value={clause.op}
