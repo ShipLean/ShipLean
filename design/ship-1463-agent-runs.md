@@ -4,6 +4,8 @@ Mock-up, not built. Decisions D14–D22 settled by Joel, 14 Nov 2026. Screen: [`
 
 ShipLean reads runs from the team's ClickHouse or Tempo + Loki through `ITraceSource`. It never writes telemetry.
 
+Images: `screens/agent-runs*.png` (1440 × 900) in light and dark; the variants are in `screenshots.sh`. `screens/agent-runs-phone-*.png` (390 × 844) show the narrow-screen states, taken with headless Chrome at `--window-size=390,844` because `screenshots.sh` can't shoot that narrow.
+
 ## Task page: Agent runs section
 
 Under **Changes** (SHIP-1460), above Discussion. Newest run first. Shown only when the instance and the project have Inspection on.
@@ -53,3 +55,23 @@ Desktop only (D15): under 900px no section, and a run link shows one line and a 
 | D20 | Comments on spans in v1? | **Changed: later, not v1** (was: yes, SHIP-1460's comment model) |
 | D21 | Cost? | **Changed: no cost or price in v1** (was: what the agent reports) |
 | D22 | Measuring? | Section seen with runs, run opened, span selected, zoom, errors only, Open in Changes; weekly, against Task views of tasks with runs and next to Changes views |
+
+## Screens
+
+| State | Light | Dark |
+|---|---|---|
+| Task page · Agent runs (`?view=task`) | ![](screens/agent-runs-task.light.png) | ![](screens/agent-runs-task.dark.png) |
+| Task page · no runs (`&state=empty`) | ![](screens/agent-runs-empty.light.png) | ![](screens/agent-runs-empty.dark.png) |
+| Task page · store unreachable (`&state=down`) | ![](screens/agent-runs-down.light.png) | ![](screens/agent-runs-down.dark.png) |
+| Run page · failed test selected (`?view=run`) | ![](screens/agent-runs.light.png) | ![](screens/agent-runs.dark.png) |
+| Zoomed to Turn 1 (`&state=zoom`) | ![](screens/agent-runs-zoom.light.png) | ![](screens/agent-runs-zoom.dark.png) |
+| Errors only (`&state=errors`) | ![](screens/agent-runs-errors.light.png) | ![](screens/agent-runs-errors.dark.png) |
+| 21-minute permission wait (`&state=permission`) | ![](screens/agent-runs-permission.light.png) | ![](screens/agent-runs-permission.dark.png) |
+| Edit linked into Changes (`&state=edit`) | ![](screens/agent-runs-edit.light.png) | ![](screens/agent-runs-edit.dark.png) |
+| Content hidden (`&state=hidden`) | ![](screens/agent-runs-hidden.light.png) | ![](screens/agent-runs-hidden.dark.png) |
+| Codex CLI, log events (`&run=codex`) | ![](screens/agent-runs-codex.light.png) | ![](screens/agent-runs-codex.dark.png) |
+| Cursor, hook events (`&run=cursor`) | ![](screens/agent-runs-cursor.light.png) | ![](screens/agent-runs-cursor.dark.png) |
+| Trace truncated (`&state=truncated`) | ![](screens/agent-runs-truncated.light.png) | ![](screens/agent-runs-truncated.dark.png) |
+| Run no longer available (`&state=expired`) | ![](screens/agent-runs-expired.light.png) | ![](screens/agent-runs-expired.dark.png) |
+| Phone · Task page (390) | ![](screens/agent-runs-phone-task.light.png) | ![](screens/agent-runs-phone-task.dark.png) |
+| Phone · run link (390) | ![](screens/agent-runs-phone-run.light.png) | ![](screens/agent-runs-phone-run.dark.png) |
