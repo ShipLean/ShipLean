@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import type { SheetAction } from '../../../touch/ActionSheet';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { AddBelowProvider } from '../add/AddBelowProvider';
@@ -25,6 +27,9 @@ import { forecastMarks } from './forecastMarks';
 import type { PlanningDrop } from './planningTarget';
 import { PlanningDnd } from './PlanningDnd';
 import { PlanningSections } from './PlanningSections';
+import { PlanningTouch } from './touch/PlanningTouch';
+import { TouchVelocitySheet } from './touch/TouchVelocitySheet';
+import { useCreateNextSprint } from './useCreateNextSprint';
 import type { SectionCollapse } from './useSectionCollapse';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
 
@@ -54,6 +59,27 @@ export function PlanningScreen({
   onMove: (row: BacklogRowDto, drop: PlanningDrop) => void;
 }) {
   const [adding, setAdding] = useState(false);
+  // At 900px and below Planning is the touch layout, and Override velocity and Create sprint are in ⋯ More.
+  const { touch } = useTouchShell();
+  const [overriding, setOverriding] = useState(false);
+  const createSprint = useCreateNextSprint(project.id);
+  const moreActions: SheetAction[] = [
+    ...(forecast && view.velocity !== null
+      ? [
+          {
+            id: 'override-velocity',
+            label: 'Override velocity',
+            onSelect: () => setOverriding(true),
+          },
+        ]
+      : []),
+    {
+      id: 'create-sprint',
+      label: 'Create sprint',
+      disabled: createSprint.disabled,
+      onSelect: createSprint.create,
+    },
+  ];
   const queue = useCheckQueue();
   const search = useBacklogSearch();
   const queuedSections = useMemo(
@@ -102,6 +128,7 @@ export function PlanningScreen({
                 )}
                 search={() => <BacklogSearchBox search={search} />}
                 keys={() => <KeysButton />}
+                moreActions={moreActions}
               />
               <MovingOffBanner search={search} queue={queue} />
               {reorder.conflict ? (
@@ -115,37 +142,69 @@ export function PlanningScreen({
                 <BeforeYouPlan review={view.review} queue={queue} />
               </div>
               <BulkOutcomeHost projectId={project.id} />
-              <PlanningDnd
-                sections={sections}
-                filtering={filtering}
-                velocity={view.velocity}
-                onMove={onMove}
-              >
-                {({ tableRef, dropLine, onKeyMove }) => (
-                  <PlanningSections
-                    sections={sections}
-                    velocity={view.velocity}
-                    forecast={forecast}
-                    marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
-                    projectId={project.id}
-                    projectKey={project.key}
-                    adding={adding}
-                    onCloseAdd={() => setAdding(false)}
-                    flashing={flashing}
-                    collapse={searchCollapse}
-                    noMatch={
-                      search.active && !sections.some((s) => s.rows.length > 0)
-                        ? search.query.trim()
-                        : null
-                    }
-                    filtering={filtering}
-                    addingOff={search.active}
-                    tableRef={tableRef}
-                    dropLine={dropLine}
-                    onKeyMove={onKeyMove}
-                  />
-                )}
-              </PlanningDnd>
+              {touch ? (
+                <PlanningTouch
+                  sections={sections}
+                  velocity={view.velocity}
+                  forecast={forecast}
+                  marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
+                  projectId={project.id}
+                  projectKey={project.key}
+                  adding={adding}
+                  onCloseAdd={() => setAdding(false)}
+                  flashing={flashing}
+                  collapse={searchCollapse}
+                  noMatch={
+                    search.active && !sections.some((s) => s.rows.length > 0)
+                      ? search.query.trim()
+                      : null
+                  }
+                  filtering={filtering}
+                  addingOff={search.active}
+                  onMove={onMove}
+                />
+              ) : (
+                <PlanningDnd
+                  sections={sections}
+                  filtering={filtering}
+                  velocity={view.velocity}
+                  onMove={onMove}
+                >
+                  {({ tableRef, dropLine, onKeyMove }) => (
+                    <PlanningSections
+                      sections={sections}
+                      velocity={view.velocity}
+                      forecast={forecast}
+                      marks={forecast ? forecastMarks(view.forecast) : NO_MARKS}
+                      projectId={project.id}
+                      projectKey={project.key}
+                      adding={adding}
+                      onCloseAdd={() => setAdding(false)}
+                      flashing={flashing}
+                      collapse={searchCollapse}
+                      noMatch={
+                        search.active && !sections.some((s) => s.rows.length > 0)
+                          ? search.query.trim()
+                          : null
+                      }
+                      filtering={filtering}
+                      addingOff={search.active}
+                      tableRef={tableRef}
+                      dropLine={dropLine}
+                      onKeyMove={onKeyMove}
+                    />
+                  )}
+                </PlanningDnd>
+              )}
+              {touch && view.velocity !== null ? (
+                <TouchVelocitySheet
+                  open={overriding}
+                  onClose={() => setOverriding(false)}
+                  velocity={view.velocity}
+                  projectId={project.id}
+                  projectKey={project.key}
+                />
+              ) : null}
               <BulkBar
                 mode="planning"
                 projectId={project.id}

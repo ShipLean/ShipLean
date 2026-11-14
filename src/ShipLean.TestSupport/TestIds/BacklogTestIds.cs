@@ -86,6 +86,12 @@ public static class BacklogTestIds
     public const string PlanningOverrideClear = "backlog-planning-override-clear";
     public const string PlanningOverrideCancel = "backlog-planning-override-cancel";
     public const string PlanningOverrideError = "backlog-planning-override-error";
+    public const string PlanningTouch = "backlog-planning-touch";
+    public const string PlanningTouchRows = "backlog-planning-touch-rows";
+    public const string PlanningDropMessage = "backlog-planning-drop-message";
+    public const string PlanningOverrideSheet = "backlog-planning-override-sheet";
+    public const string PullUp = "backlog-pull-up";
+    public const string PullDown = "backlog-pull-down";
     public const string LevelProgress = "backlog-level-progress";
     public const string LevelProgressDone = "backlog-level-progress-done";
     public const string LevelProgressCurrent = "backlog-level-progress-current";
