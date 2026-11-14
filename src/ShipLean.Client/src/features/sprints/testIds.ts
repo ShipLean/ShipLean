@@ -121,6 +121,9 @@ export const sprintsTestIds = {
   capacityKpiVelocity: 'sprints-capacity-kpi-velocity',
   capacityRoom: 'sprints-capacity-room',
   capacityCallout: 'sprints-capacity-callout',
+  // L726a phone
+  capacityPhoneToolbar: 'sprints-capacity-phone-toolbar',
+  capacitySummary: 'sprints-capacity-summary',
   closeSprint: 'sprints-close-sprint',
   endRow: 'sprints-end-row',
   endDestination: 'sprints-end-destination',

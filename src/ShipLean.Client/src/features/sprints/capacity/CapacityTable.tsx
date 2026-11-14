@@ -28,15 +28,15 @@ export function CapacityTable({
   const empty = lines.length === 0;
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[560px] table-fixed border-collapse text-[length:var(--text-sm)]">
-        <colgroup>
+      <table className="w-full min-w-[560px] table-fixed border-collapse touch:block touch:min-w-0 text-[length:var(--text-sm)]">
+        <colgroup className="touch:hidden">
           <col className="w-36" />
           <col className="w-24" />
           <col className="w-20" />
           <col />
           <col className="w-10" />
         </colgroup>
-        <thead className="bg-sunken">
+        <thead className="bg-sunken touch:hidden">
           <tr>
             <th className={`${head} text-left`}>Member</th>
             <th className={`${head} text-right`}>Days available</th>
@@ -47,7 +47,7 @@ export function CapacityTable({
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="touch:block">
           {lines.map((line) => (
             <CapacityRow
               key={line.user.id}
@@ -59,19 +59,19 @@ export function CapacityTable({
             />
           ))}
         </tbody>
-        <tfoot className="border-t border-edge bg-sunken font-semibold">
-          <tr>
-            <td colSpan={2} className={cell}>
+        <tfoot className="border-t border-edge bg-sunken font-semibold touch:block">
+          <tr className="touch:flex touch:flex-wrap touch:items-baseline touch:gap-x-2 touch:px-3 touch:py-2">
+            <td colSpan={2} className={`${cell} touch:order-1`}>
               Team capacity
             </td>
-            <td className={`${cell} text-right tabular-nums`}>
+            <td className={`${cell} text-right tabular-nums touch:order-2`}>
               <span data-testid={ids.capacityTotal}>{empty ? '—' : total}</span>
               <span className="ml-1 font-normal text-ink-muted">pts</span>
             </td>
             <td
               colSpan={2}
               data-testid={empty ? ids.capacityEmpty : undefined}
-              className={`${cell} text-[length:var(--text-xs)] font-normal text-ink-muted`}
+              className={`${cell} text-[length:var(--text-xs)] font-normal text-ink-muted touch:order-3 touch:basis-full`}
             >
               {empty
                 ? `No capacity entered: planning uses velocity ${velocity}`

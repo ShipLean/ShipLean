@@ -20,7 +20,6 @@ public static class TouchPendingRoutes
         ["sprintBacklog"] = "SHIP-724",
         // SHIP-725
         // SHIP-726
-        ["capacity"] = "SHIP-726",
         // SHIP-727
         // SHIP-730
         // SHIP-728

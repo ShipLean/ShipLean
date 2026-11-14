@@ -20,6 +20,8 @@ import { CapacitySummary } from './CapacitySummary';
 import { CapacityTable } from './CapacityTable';
 import { CapacityToolbar } from './CapacityToolbar';
 import { showToast } from '../../../components/toastStore';
+import { SaveBar } from '../../../touch/SaveBar';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import {
   changedUnderneath,
   draftOf,
@@ -73,6 +75,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   const [touched, setTouched] = useState<TouchedRows>({});
   const [velocityTouched, setVelocityTouched] = useState<TouchedVelocity | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const { touch } = useTouchShell();
 
   const failed = members.isError || capacity.isError || metrics.isError || velocity.isError;
   if (failed) {
@@ -120,6 +123,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   const total = ended ? stored.teamTotal : pointsOnly ? pointsOnlyTotal : worked.total;
   const planned = velocity.data.override ?? velocity.data.average;
   const overridden = velocity.data.override !== null;
+  const dirty = rowsDiffer(server, draft) || velocityText !== serverVelocityText;
   const clashes = changedUnderneath(members.data, server, touched);
   const velocityClash = velocityChangedUnderneath(velocityTouched, serverVelocityText);
   const typeVelocity = (text: string) => {
@@ -140,6 +144,24 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     : (previousCapacity.data?.members.length ?? 0) === 0
       ? 'The sprint before has no capacity entered'
       : undefined;
+  const hasConflict = clashes.length > 0 || velocityClash;
+  const conflict = !hasConflict ? null : (
+    <p data-testid={ids.capacityConflict} role="status" className="m-0 text-caution">
+      {clashes.length === 0
+        ? 'A teammate changed the velocity while you were editing. Saving replaces it with yours.'
+        : `${clashes.map((m) => m.user.name).join(', ')} changed capacity${velocityClash ? ' and the velocity' : ''} while you were editing. Saving replaces their numbers with yours.`}
+    </p>
+  );
+  const errorLine = (
+    <p data-testid={ids.capacityError} role="alert" className="m-0 text-alert">
+      {problem}
+    </p>
+  );
+  const onDiscard = () => {
+    setTouched({});
+    setVelocityTouched(null);
+    setProblem(null);
+  };
   const onSave = () => {
     const result = toPut(members.data, draft, velocityText, shape);
     if ('error' in result) {
@@ -156,7 +178,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     });
   };
   return (
-    <div data-testid={ids.capacity} className="grid gap-3 p-4">
+    <div data-testid={ids.capacity} className="grid gap-3 p-4 touch:p-3">
       {ended ? (
         <p
           data-testid={ids.capacityEnded}
@@ -169,7 +191,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           addable={members.data.filter((m) => !inTable.includes(m)).map((m) => m.user)}
           previousName={previous?.name}
           copyBlocked={copyBlocked}
-          dirty={rowsDiffer(server, draft) || velocityText !== serverVelocityText}
+          dirty={dirty}
           saving={save.isPending}
           onAdd={(userId) => editRow(userId, { present: true, days: '', note: '' })}
           onCopy={() => {
@@ -187,17 +209,11 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           onSave={onSave}
         />
       )}
-      {clashes.length === 0 && !velocityClash ? null : (
-        <p data-testid={ids.capacityConflict} role="status" className="m-0 text-caution">
-          {clashes.length === 0
-            ? 'A teammate changed the velocity while you were editing. Saving replaces it with yours.'
-            : `${clashes.map((m) => m.user.name).join(', ')} changed capacity${velocityClash ? ' and the velocity' : ''} while you were editing. Saving replaces their numbers with yours.`}
-        </p>
-      )}
-      {problem === null ? null : (
-        <p data-testid={ids.capacityError} role="alert" className="m-0 text-alert">
-          {problem}
-        </p>
+      {touch ? null : (
+        <>
+          {conflict}
+          {problem === null ? null : errorLine}
+        </>
       )}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="panel min-w-0 overflow-hidden">
@@ -232,6 +248,18 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
           velocityWindow={velocity.data.window}
         />
       </div>
+      <SaveBar
+        dirty={dirty}
+        message={
+          <>
+            {conflict}
+            {problem === null ? null : errorLine}
+          </>
+        }
+        onDiscard={onDiscard}
+        onSave={onSave}
+        saving={save.isPending}
+      />
     </div>
   );
 }
