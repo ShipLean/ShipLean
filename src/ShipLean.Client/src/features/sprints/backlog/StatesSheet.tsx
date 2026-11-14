@@ -1,17 +1,10 @@
 import { useState } from 'react';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
-import { StateDot, type StateCategory } from '../../../components/StateDot';
+import { StateDot } from '../../../components/StateDot';
 import { Sheet } from '../../../touch/Sheet';
+import { CATEGORY_LABELS } from '../../settings/states/categories';
 import { sprintsTestIds as ids } from '../testIds';
 import type { StateChanger } from './RowStateMenu';
-
-const categoryLabels: Record<StateCategory, string> = {
-  proposed: 'Proposed',
-  inProgress: 'In progress',
-  resolved: 'Resolved',
-  completed: 'Completed',
-  removed: 'Removed',
-};
 
 /**
  * A row's state at touch (SHIP-724 D3): a 28px pill inside a 32px hit area that opens the States sheet. The sheet lists
@@ -44,15 +37,16 @@ export function StatesSheet({ item, changer }: { item: WorkItemDto; changer: Sta
         </span>
       </button>
       <Sheet open={open} title="States" onClose={() => setOpen(false)}>
-        <ul className="m-0 list-none p-0" role="listbox" aria-label={`States of ${item.key}`}>
+        <ul className="m-0 list-none p-0">
           {options.map((state) => {
             const current = state.id === item.state.id;
             return (
-              <li key={state.id} role="option" aria-selected={current}>
+              <li key={state.id}>
                 <button
                   type="button"
                   data-testid={ids.statesSheetOption}
                   data-category={state.category}
+                  aria-current={current}
                   className="flex min-h-12 w-full cursor-pointer items-center gap-3 border-0 border-b border-edge bg-transparent px-3 text-left text-[length:var(--text-base)] text-ink"
                   onClick={() => {
                     setOpen(false);
@@ -64,7 +58,7 @@ export function StatesSheet({ item, changer }: { item: WorkItemDto; changer: Sta
                     data-testid={ids.statesSheetCategory}
                     className="ml-auto text-[length:var(--text-sm)] text-ink-muted"
                   >
-                    {categoryLabels[state.category]}
+                    {CATEGORY_LABELS[state.category]}
                   </span>
                   <span aria-hidden="true" className="w-4 text-signal">
                     {current ? '✓' : ''}

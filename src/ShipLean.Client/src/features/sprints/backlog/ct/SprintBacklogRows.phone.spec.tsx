@@ -56,8 +56,12 @@ test('SprintBacklogRows_WhenOnPhone_ShouldRenderTwoLineRowsWithoutSidewaysScroll
 test('StatesSheet_WhenOpened_ShouldShowEachStatesCategory', async ({ mount, page }) => {
   await open(page, mount);
 
-  await page.getByTestId(ids.storyRow).first().getByTestId(ids.stateButton).tap();
+  const row = page.getByTestId(ids.taskRow).first();
+  const resting = await row.evaluate((e) => getComputedStyle(e).backgroundColor);
+  await row.getByTestId(ids.stateButton).tap();
 
+  // The row whose sheet is open takes the accent tint.
+  await expect(row).not.toHaveCSS('background-color', resting);
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('States');
   await expect(sheet.getByTestId(ids.statesSheetOption)).toHaveCount(4);
@@ -76,6 +80,10 @@ for (const theme of THEMES) {
   }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await open(page, mount);
+    // The sticky top bar would land mid-image in a list taller than the screen.
+    await page.addStyleTag({
+      content: `[data-testid="${touchTestIds.topBar}"] { display: none; }`,
+    });
 
     await expect(page.getByTestId(ids.table)).toHaveScreenshot(
       `sprint-backlog-rows-phone.${theme}.png`,

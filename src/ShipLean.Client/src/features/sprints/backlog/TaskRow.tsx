@@ -38,6 +38,9 @@ export function TaskRow({ task, changer }: { task: WorkItemDto; changer: StateCh
   );
 }
 
+// The row whose States sheet is open takes the accent tint (design .row.hit).
+const OPEN_ROW = 'has-[[aria-haspopup=dialog][aria-expanded=true]]:bg-signal-soft';
+
 /** A task as two lines at touch, indented under its story: title, then key and state pill, the assignee on the right. No points. */
 export function TouchTaskRow({ task, changer }: { task: WorkItemDto; changer: StateChanger }) {
   const flash = changer.flashing === task.key;
@@ -46,7 +49,7 @@ export function TouchTaskRow({ task, changer }: { task: WorkItemDto; changer: St
       data-testid={ids.taskRow}
       data-key={task.key}
       data-flash={flash}
-      className={`grid min-h-[50px] grid-cols-[32px_minmax(0,1fr)_40px] items-start gap-x-1 border-b border-edge bg-sunken/40 py-1.5 pr-2 pl-1 transition-colors duration-700 ${flash ? 'bg-caution/15' : ''}`}
+      className={`grid min-h-[50px] grid-cols-[32px_minmax(0,1fr)_40px] items-start gap-x-1 border-b border-edge py-1.5 pr-2 pl-1 transition-colors duration-700 ${OPEN_ROW} ${flash ? 'bg-caution/15' : 'bg-sunken/40'}`}
     >
       <span />
       <div className="grid min-w-0 gap-1 pl-3.5">

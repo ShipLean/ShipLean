@@ -67,7 +67,7 @@ export function TouchStoryRow({ entry, changer, open, onToggle }: StoryRowProps)
       data-testid={ids.storyRow}
       data-key={story.key}
       data-flash={changer.flashing === story.key}
-      className={`grid min-h-[58px] grid-cols-[32px_minmax(0,1fr)_40px] items-start gap-x-1 border-b border-edge py-2 pr-2 pl-1 transition-colors duration-700 ${changer.flashing === story.key ? 'bg-caution/15' : ''}`}
+      className={`grid min-h-[58px] grid-cols-[32px_minmax(0,1fr)_40px] items-start gap-x-1 border-b border-edge py-2 pr-2 pl-1 transition-colors duration-700 has-[[aria-haspopup=dialog][aria-expanded=true]]:bg-signal-soft ${changer.flashing === story.key ? 'bg-caution/15' : ''}`}
     >
       {total > 0 ? (
         <button

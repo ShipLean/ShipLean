@@ -61,12 +61,15 @@ public class SprintBacklogPhoneRowsTests : SeededAcceptanceTest
                 await route.FulfillAsync(new() { Response = response });
             });
         await SetStateAsync(Page, "SHIP-172", SeedIds.States.Ship.TaskNew);
+        var resting = await backlog.Row("SHIP-172").EvaluateAsync<string>("e => getComputedStyle(e).backgroundColor");
 
         var stale = await backlog.PickStateAsync("SHIP-172", "Closed");
 
         stale.Status.ShouldBe(409);
         await Expect(backlog.Toast).ToContainTextAsync("SHIP-172 was changed by someone else");
         await Expect(backlog.Row("SHIP-172")).ToHaveAttributeAsync("data-flash", "true");
+        // The flash has to be seen: a task row's own tint must not hide it.
+        await Expect(backlog.Row("SHIP-172")).Not.ToHaveCSSAsync("background-color", resting);
         await Expect(backlog.RowState("SHIP-172")).ToHaveTextAsync("New");
         await Expect(Page.GetByTestId(SprintsTestIds.StateNotice)).ToHaveCountAsync(0);
     }
