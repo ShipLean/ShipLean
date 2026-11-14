@@ -12,8 +12,8 @@ export interface FilesColumnProps extends ViewedProps {
 const STATUS_LETTER = { added: 'A', modified: 'M', deleted: 'D', renamed: 'R' } as const;
 const STATUS_COLOUR = {
   added: 'text-good',
-  modified: 'text-warn',
-  deleted: 'text-danger',
+  modified: 'text-caution',
+  deleted: 'text-alert',
   renamed: 'text-signal',
 } as const;
 
@@ -74,7 +74,7 @@ export function FilesColumn({ data, openFile, onOpenFile, viewed }: FilesColumnP
                 {file.openComments > 0 ? (
                   <span
                     title={`${file.openComments} open`}
-                    className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-warn px-1 text-[10px] font-bold text-black"
+                    className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-caution px-1 text-[10px] font-bold text-black"
                   >
                     {file.openComments}
                   </span>

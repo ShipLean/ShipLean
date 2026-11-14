@@ -81,7 +81,7 @@ export function CommitsSection({
                   <td className="px-2 text-right whitespace-nowrap">
                     <ChangeBars additions={commit.additions} deletions={commit.deletions} />{' '}
                     <span className="text-good">+{commit.additions}</span>{' '}
-                    <span className="text-danger">−{commit.deletions}</span>
+                    <span className="text-alert">−{commit.deletions}</span>
                   </td>
                 </tr>
               ))}
@@ -116,7 +116,7 @@ function ChangeBars({ additions, deletions }: { additions: number; deletions: nu
         <i
           key={i}
           data-kind={i < green ? 'add' : i < green + red ? 'del' : 'none'}
-          className={`size-1.5 rounded-[1px] ${i < green ? 'bg-good' : i < green + red ? 'bg-danger' : 'bg-edge'}`}
+          className={`size-1.5 rounded-[1px] ${i < green ? 'bg-good' : i < green + red ? 'bg-alert' : 'bg-edge'}`}
         />
       ))}
     </span>
@@ -153,7 +153,7 @@ function Header({
         >
           {totals.commits} commits · {totals.files} files ·{' '}
           <span className="text-good">+{totals.additions}</span>{' '}
-          <span className="text-danger">−{totals.deletions}</span>
+          <span className="text-alert">−{totals.deletions}</span>
         </span>
       )}
       {empty ? null : (
@@ -162,7 +162,7 @@ function Header({
           {section.openComments > 0 ? (
             <span
               data-testid={ids.sectionOpenComments}
-              className="rounded-control bg-warn/20 px-1.5 text-[length:var(--text-xs)]"
+              className="rounded-control bg-caution/20 px-1.5 text-[length:var(--text-xs)]"
             >
               {section.openComments} open comments
             </span>
