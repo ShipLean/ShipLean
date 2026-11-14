@@ -9,6 +9,8 @@ export const settingsTestIds = {
   tabDemos: 'settings-tab-demos',
   tabDirty: 'settings-tab-dirty',
   tabError: 'settings-tab-error',
+  // SHIP-732 frame touch
+  tabRow: 'settings-tab-row',
   changesList: 'settings-changes-list',
   changeItem: 'settings-change-item',
   readOnlyBanner: 'settings-read-only-banner',

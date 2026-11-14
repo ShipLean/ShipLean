@@ -6,7 +6,7 @@ import { Panel } from './Panel';
 import type { TabProps } from './tabProps';
 
 const select =
-  'h-7 w-fit max-w-full rounded-control border border-edge bg-panel px-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'h-7 w-fit max-w-full rounded-control border border-edge bg-panel px-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:min-h-[var(--touch-target)] touch:w-full';
 
 /** The country whose public holidays the project's sprints skip: None first, then every country the feed has listed. */
 export function HolidaysPanel({ draft, setDraft, readOnly, errors }: TabProps) {

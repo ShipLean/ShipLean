@@ -20,8 +20,8 @@ export function MembersTab({
     setDraft((d) => ({ ...d, members: d.members.filter((m) => m.email !== email) }));
   return (
     <Panel title="Members" testId={settingsTestIds.membersPanel}>
-      <table className="w-full text-left text-[length:var(--text-sm)]">
-        <thead>
+      <table className="w-full text-left text-[length:var(--text-sm)] touch:block">
+        <thead className="touch:hidden">
           <tr className="text-ink-muted">
             <th className="px-3 py-1 font-medium">Member</th>
             <th className="px-3 py-1 font-medium">Email</th>
@@ -29,7 +29,7 @@ export function MembersTab({
             <th />
           </tr>
         </thead>
-        <tbody>
+        <tbody className="touch:block">
           {draft.members.map((member) => (
             <MemberRow
               key={member.user.id}
