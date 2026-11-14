@@ -42,7 +42,10 @@ const agents: ConnectedAgentDto[] = [
   },
 ];
 
-const LINE = 'claude mcp add --transport http shiplean https://ship.example.test/mcp';
+const PANEL_IDS = [ids.myProjectsPanel, ids.sessionsPanel, agentIds.slotConnectedAgents];
+
+const MCP_URL = 'https://averylonghostnamewithnobreakpointsatall.internal.example.test/mcp';
+const LINE = `claude mcp add --transport http shiplean ${MCP_URL}`;
 
 interface Routable {
   route(
@@ -60,8 +63,7 @@ const stub = async (page: Routable, list: ConnectedAgentDto[] = agents) => {
     const path = new URL(request.url()).pathname;
     if (request.method() !== 'GET') return route.fulfill({ status: 204 });
     if (path === '/api/me/agents') return route.fulfill({ json: list });
-    if (path === '/api/agents/mcp-url')
-      return route.fulfill({ json: { mcpUrl: 'https://ship.example.test/mcp' } });
+    if (path === '/api/agents/mcp-url') return route.fulfill({ json: { mcpUrl: MCP_URL } });
     if (path === '/api/projects') return route.fulfill({ json: projects });
     return route.fulfill({ status: 404 });
   });
@@ -194,4 +196,16 @@ test('AccountPhone_WhenOpened_ShouldHaveNoSidewaysScroll', async ({ mount, page 
     document.documentElement.clientWidth,
   ]);
   expect(scroll).toBeLessThanOrEqual(client);
+  // The Claude Code line must wrap rather than scroll inside itself, so no element in the panels overflows its box.
+  const overflowing = await page.evaluate((panels) => {
+    const found: string[] = [];
+    for (const id of panels) {
+      document.querySelectorAll(`[data-testid="${id}"], [data-testid="${id}"] *`).forEach((el) => {
+        if (el.scrollWidth > el.clientWidth)
+          found.push(el.getAttribute('data-testid') ?? el.tagName);
+      });
+    }
+    return found;
+  }, PANEL_IDS);
+  expect(overflowing).toEqual([]);
 });

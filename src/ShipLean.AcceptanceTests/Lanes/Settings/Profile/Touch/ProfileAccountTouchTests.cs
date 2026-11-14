@@ -93,6 +93,12 @@ public class ProfileAccountTouchTests : SeededAcceptanceTest
         await Expect(SessionsPanel).ToBeVisibleAsync();
 
         (await Page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= document.documentElement.clientWidth")).ShouldBeTrue();
+        // The Claude Code line wraps rather than scrolling inside itself, so nothing in the three panels overflows its box.
+        var overflowing = await Page.EvaluateAsync<string[]>(
+            "ids => ids.flatMap(id => [...document.querySelectorAll(`[data-testid=\"${id}\"], [data-testid=\"${id}\"] *`)]" +
+            ".filter(el => el.scrollWidth > el.clientWidth).map(el => el.getAttribute('data-testid') ?? el.tagName))",
+            new[] { SettingsTestIds.MyProjectsPanel, SettingsTestIds.SessionsPanel, AgentsTestIds.SlotConnectedAgents });
+        overflowing.ShouldBeEmpty();
         (await TouchRules.ViolationsAsync(Page, SessionsPanel)).ShouldBeEmpty();
         (await TouchRules.ViolationsAsync(Page, AgentsPanel)).ShouldBeEmpty();
     }

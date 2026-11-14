@@ -9,7 +9,6 @@ public static class TouchPendingRoutes
         // SHIP-736
         ["login"] = "SHIP-736",
         // SHIP-733
-        ["profile"] = "SHIP-733",
         // SHIP-716
         ["storiesBacklog"] = "SHIP-716",
         // SHIP-722

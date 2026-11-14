@@ -99,7 +99,7 @@ export function ConnectedAgentsPanel() {
                     type="button"
                     data-testid={ids.connectedRevoke}
                     className="btn-ghost touch:h-[var(--touch-target)]"
-                    disabled={revokingId === agent.id}
+                    disabled={revokingId === agent.id || revoke.isPending}
                     aria-label={`Revoke ${agent.clientName}`}
                     onClick={() => setRevokingId(agent.id)}
                   >

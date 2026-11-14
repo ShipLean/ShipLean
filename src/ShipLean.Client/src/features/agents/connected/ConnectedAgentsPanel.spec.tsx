@@ -116,6 +116,30 @@ test('ConnectedAgentsPanel_WhenRevokeCancelled_ShouldKeepTheAgentAndDeleteNothin
   expect(deleted).toEqual([]);
 });
 
+test('ConnectedAgentsPanel_WhenARevokeIsPending_ShouldDisableEveryRowsRevoke', async ({
+  mount,
+  page,
+}) => {
+  await stubList(page, agents);
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/me/agents/*', async (route) => {
+    await held;
+    await route.fulfill({ status: 204 });
+  });
+  await mount(<ConnectedAgentsPanel />);
+
+  await page.getByTestId(ids.connectedRow).nth(1).getByTestId(ids.connectedRevoke).click();
+  await page.getByTestId(ids.connectedRevokeConfirm).click();
+
+  await expect(
+    page.getByTestId(ids.connectedRow).nth(0).getByTestId(ids.connectedRevoke),
+  ).toBeDisabled();
+  release();
+});
+
 for (const theme of ['light', 'dark'] as const) {
   test(`ConnectedAgentsPanel_WhenRevokeAsked_ShouldMatchItsScreenshot_connected-agents-revoke_${theme}`, async ({
     mount,
