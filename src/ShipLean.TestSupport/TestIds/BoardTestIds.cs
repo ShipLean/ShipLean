@@ -101,6 +101,8 @@ public static class BoardTestIds
     public const string ChildAddSubmit = "board-child-add-submit";
     public const string ChildAddCancel = "board-child-add-cancel";
     public const string ChildAddError = "board-child-add-error";
+    public const string AssignSheet = "board-assign-sheet";
+    public const string AssignOption = "board-assign-option";
     public const string LocationProbe = "board-location-probe";
 
     // SHIP-916 W1

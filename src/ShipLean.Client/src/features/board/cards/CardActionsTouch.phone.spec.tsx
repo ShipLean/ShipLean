@@ -44,7 +44,7 @@ test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount
 
   await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('SHIP-160 actions');
-  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(5);
+  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(6);
   await row(page, 'move-to').tap();
 
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to');

@@ -6,8 +6,8 @@ import type { BoardViewDto } from '@shiplean/core/api/views';
 export interface CardActions {
   /** Opens the card's actions sheet (the ⋯ button's sheet), for another trigger such as a long press. */
   open(cardId: string): void;
-  /** Opens a second sheet from the actions sheet: the columns, or the other lanes. */
-  pick(cardId: string, kind: 'column' | 'lane'): void;
+  /** Opens a second sheet from the actions sheet: the columns, the other lanes, or the people. */
+  pick(cardId: string, kind: 'column' | 'lane' | 'assign'): void;
   /** Opens the item in the modal (full screen on a phone). */
   openItem(itemKey: string): void;
   /** What is under the card, as its roll-up opens it (the board's `onRollupClick`); absent where the board has no list. */
