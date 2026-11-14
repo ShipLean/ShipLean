@@ -67,6 +67,7 @@ export const taskboardTestIds = {
   storySearch: 'taskboard-task-story-search',
   storyOption: 'taskboard-task-story-option',
   assigneeOption: 'taskboard-task-assignee-option',
+  address: 'taskboard-address',
   addTask: 'taskboard-add-task',
   taskBox: 'taskboard-task-box',
   taskTitle: 'taskboard-task-title',

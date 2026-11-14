@@ -12,12 +12,14 @@ export function TaskActionsSheet({
   rowId,
   open,
   onShow,
+  onClose,
   onOpenItem,
 }: {
   card: CardDto;
   rowId: string;
   open: boolean;
   onShow: (sheet: TaskSheet | null) => void;
+  onClose: () => void;
   onOpenItem: () => void;
 }) {
   const { view, drop } = useTaskboardMoves();
@@ -25,7 +27,7 @@ export function TaskActionsSheet({
     <ActionSheet
       open={open}
       title={`${card.key} ${card.title}`}
-      onClose={() => onShow(null)}
+      onClose={onClose}
       actions={[
         { id: 'story', label: 'Move to another story ›', onSelect: () => onShow('story') },
         {

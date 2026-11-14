@@ -49,6 +49,8 @@ export function TaskCard({
     openItem(card.key);
   }
   const close = () => setSheet(null);
+  // Picking a row of the actions sheet closes it after it chose the next sheet: only close it if it is still the one showing.
+  const closeActions = () => setSheet((now) => (now === 'actions' ? null : now));
   return (
     <>
       <TaskCardFace
@@ -56,7 +58,12 @@ export function TaskCard({
         view={view}
         showParent={showParent}
         articleRef={ref}
-        articleProps={{ ...drag.attributes, ...drag.listeners, onKeyDown, onClick }}
+        // A disabled draggable marks its card aria-disabled, which would disable the ⋯ button inside it.
+        articleProps={
+          touch
+            ? { onKeyDown, onClick }
+            : { ...drag.attributes, ...drag.listeners, onKeyDown, onClick }
+        }
         style={drag.style}
         pickUp={pickUp ? () => pickUp(card, rowId) : null}
         actions={
@@ -81,6 +88,7 @@ export function TaskCard({
             rowId={rowId}
             open={sheet === 'actions'}
             onShow={setSheet}
+            onClose={closeActions}
             onOpenItem={() => openItem(card.key)}
           />
           {sheet === 'story' ? (
