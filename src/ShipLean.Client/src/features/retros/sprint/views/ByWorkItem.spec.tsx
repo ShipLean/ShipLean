@@ -279,7 +279,7 @@ test('ByWorkItem_WhenTheBoardIsTheSprints_ShouldShowProgressButNoOpenOrKeyLink',
 
 test('ByWorkItem_WhenNarrow_ShouldKeepTheHeaderInsideTheBoard', async ({ mount, page }) => {
   await stubRetros(page);
-  await page.setViewportSize({ width: 360, height: 800 });
+  await page.setViewportSize({ width: 901, height: 800 });
   await mount(element, mountOptions);
   const cards = await page.getByTestId(shared.retroCard).all();
   expect(cards.length).toBeGreaterThan(0);

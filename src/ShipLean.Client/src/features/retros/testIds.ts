@@ -37,6 +37,12 @@ export const retrosTestIds = {
   retroCardKeyLink: 'retro-card-key-link',
   retroCardProgress: 'retro-card-progress',
   retroCardOpen: 'retro-card-open',
+  // L727c phone cards
+  retroCardToggle: 'retro-card-toggle',
+  retroCardCount: 'retro-card-count',
+  retroCardToDecide: 'retro-card-to-decide',
+  retroCardBody: 'retro-card-body',
+  retroCardRetroLink: 'retro-card-retro-link',
   retroRail: 'retro-rail',
   retroCoverage: 'retro-coverage',
   retroCoverageRow: 'retro-coverage-row',
