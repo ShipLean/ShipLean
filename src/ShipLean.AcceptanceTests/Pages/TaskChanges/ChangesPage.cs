@@ -108,7 +108,6 @@ public sealed class ChangesPage(IPage page)
 
     public async Task<IResponse> ApproveAsync(Guid itemId, string? note = null)
     {
-        await page.GetByTestId(TaskChangesTestIds.ReviewChanges).ClickAsync();
         await page.GetByTestId(TaskChangesTestIds.Approve).ClickAsync();
         if (note is not null)
         {
@@ -120,7 +119,6 @@ public sealed class ChangesPage(IPage page)
 
     public async Task<IResponse> RequestChangesAsync(Guid itemId, string? note = null, bool keepAssignee = false)
     {
-        await page.GetByTestId(TaskChangesTestIds.ReviewChanges).ClickAsync();
         await page.GetByTestId(TaskChangesTestIds.RequestChanges).ClickAsync();
         if (note is not null)
         {

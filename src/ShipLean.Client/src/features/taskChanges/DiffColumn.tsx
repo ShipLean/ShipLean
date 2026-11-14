@@ -6,6 +6,7 @@ import type { ChangesData, ComposerTarget, DiffLayout, ViewedProps } from './typ
 export interface DiffColumnProps extends ViewedProps {
   data: ChangesData;
   layout: DiffLayout;
+  /** A file key, `<repo>:<path>` (see `fileKey`). */
   openFile: string | null;
   markers: LineMarker[];
   /** The + on a line. */

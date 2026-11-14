@@ -25,3 +25,16 @@ export interface ViewedProps {
 }
 
 export type ChangesData = TaskChangesDto;
+
+/**
+ * The `file` query value and the `openFile` / `onOpenFile` value: `<repo>:<path>`, where repo is RepoRef.Name (a path such
+ * as `ShipLean/ShipLean`, never with a colon). Split at the first colon.
+ */
+export function fileKey(repo: string, path: string): string {
+  return `${repo}:${path}`;
+}
+
+export function parseFileKey(key: string): { repo: string; path: string } | null {
+  const at = key.indexOf(':');
+  return at <= 0 ? null : { repo: key.slice(0, at), path: key.slice(at + 1) };
+}

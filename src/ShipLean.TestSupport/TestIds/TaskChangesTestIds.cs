@@ -58,4 +58,12 @@ public static class TaskChangesTestIds
     public const string SectionAddSubmit = "task-changes-section-add-submit";
     public const string SectionAddError = "task-changes-section-add-error";
     public const string SectionEmpty = "task-changes-section-empty";
+    public const string ReviewBar = "task-changes-review-bar";
+    public const string SectionAddRepo = "task-changes-section-add-repo";
+    public const string DiffNoAccess = "task-changes-diff-no-access";
+    public const string DiffOpenOnHost = "task-changes-diff-open-on-host";
+    public const string CommentsTabOpen = "task-changes-comments-tab-open";
+    public const string CommentsTabAll = "task-changes-comments-tab-all";
+    public const string CommentOldLine = "task-changes-comment-old-line";
+    public const string CommentSentBack = "task-changes-comment-sent-back";
 }

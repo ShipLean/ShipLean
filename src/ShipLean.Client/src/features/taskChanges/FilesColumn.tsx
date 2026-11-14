@@ -3,8 +3,9 @@ import type { ChangesData, ViewedProps } from './types';
 
 export interface FilesColumnProps extends ViewedProps {
   data: ChangesData;
+  /** A file key, `<repo>:<path>` (see `fileKey`). */
   openFile: string | null;
-  onOpenFile(path: string): void;
+  onOpenFile(fileKey: string): void;
 }
 
 // Stub: the file list with its Viewed boxes replaces this.

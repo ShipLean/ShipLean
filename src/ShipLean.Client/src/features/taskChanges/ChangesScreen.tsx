@@ -9,6 +9,7 @@ import { DiffColumn } from './DiffColumn';
 import { FilesColumn } from './FilesColumn';
 import { deriveMarkers } from './markers';
 import { NarrowNotice } from './NarrowNotice';
+import { ReviewBar } from './ReviewBar';
 import {
   useAddCodeComment,
   useApproveChanges,
@@ -28,7 +29,7 @@ export interface ChangesScreenProps {
 }
 
 // The full-width Changes page. Under 900px it shows the notice and fetches nothing. The address is the source of truth for
-// the commit shown, the open file and the layout: ?commit=<commitId>&file=<path>&layout=split.
+// the commit shown, the open file and the layout: ?commit=<commitId>&file=<repo>:<path>&layout=split (see fileKey).
 export function ChangesScreen({ project, itemKey }: ChangesScreenProps) {
   const wide = useWideScreen();
   if (!wide) return <NarrowNotice projectKey={project.key} itemKey={itemKey} />;
@@ -118,20 +119,27 @@ function WideChanges({ project, itemKey }: ChangesScreenProps) {
   };
   return (
     <div data-testid={ids.screen} className="grid gap-3">
-      <ChangesToolbar
-        data={data}
-        layout={layout}
-        viewedCount={viewedCount}
-        fileTotal={files.length}
-        newCommit={newCommit}
-        onReload={reload}
-        onPickCommit={(next) => update('commit', next === 'all' ? null : next)}
-        onLayout={(next) => update('layout', next === 'split' ? 'split' : null)}
-        review={{
-          approve: (note) => approve.mutateAsync({ note, headCommitId: headCommitId ?? '' }),
-          requestChanges: (note, keepAssignee) => request.mutateAsync({ note, keepAssignee }),
-        }}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <ChangesToolbar
+          data={data}
+          layout={layout}
+          viewedCount={viewedCount}
+          fileTotal={files.length}
+          newCommit={newCommit}
+          onReload={reload}
+          onPickCommit={(next) => update('commit', next === 'all' ? null : next)}
+          onLayout={(next) => update('layout', next === 'split' ? 'split' : null)}
+        />
+        <ReviewBar
+          data={data}
+          projectKey={project.key}
+          itemKey={itemKey}
+          review={{
+            approve: (note) => approve.mutateAsync({ note, headCommitId: headCommitId ?? '' }),
+            requestChanges: (note, keepAssignee) => request.mutateAsync({ note, keepAssignee }),
+          }}
+        />
+      </div>
       <div className="grid grid-cols-[16rem_minmax(0,1fr)_20rem] gap-4">
         <FilesColumn
           data={data}

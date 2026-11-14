@@ -55,4 +55,12 @@ export const taskChangesTestIds = {
   sectionAddSubmit: 'task-changes-section-add-submit',
   sectionAddError: 'task-changes-section-add-error',
   sectionEmpty: 'task-changes-section-empty',
+  reviewBar: 'task-changes-review-bar',
+  sectionAddRepo: 'task-changes-section-add-repo',
+  diffNoAccess: 'task-changes-diff-no-access',
+  diffOpenOnHost: 'task-changes-diff-open-on-host',
+  commentsTabOpen: 'task-changes-comments-tab-open',
+  commentsTabAll: 'task-changes-comments-tab-all',
+  commentOldLine: 'task-changes-comment-old-line',
+  commentSentBack: 'task-changes-comment-sent-back',
 } as const;
