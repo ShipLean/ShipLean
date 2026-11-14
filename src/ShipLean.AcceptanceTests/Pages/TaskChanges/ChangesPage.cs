@@ -77,8 +77,13 @@ public sealed class ChangesPage(IPage page)
     {
         var type = newSide ? "change-addition" : "change-deletion";
         var file = DiffFiles.Nth(fileIndex);
+        // AG0046 is off for these two lines only: the library builds this DOM itself and can't take a test id. A custom gutter
+        // button (renderGutterUtility) could carry one, but the library refuses it alongside onGutterUtilityClick, which owns
+        // drag-to-select line ranges.
+#pragma warning disable AG0046
         await file.Locator($"[data-gutter] [data-line-type=\"{type}\"][data-column-number=\"{lineNumber}\"]").First.HoverAsync();
         await file.Locator("[data-utility-button]").ClickAsync();
+#pragma warning restore AG0046
         await Composer.WaitForAsync();
     }
 
