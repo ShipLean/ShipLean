@@ -33,6 +33,14 @@ export const attachmentTestIds = {
   loadFailed: 'attachment-load-failed',
   loadFailedDownload: 'attachment-load-failed-download',
   noHistory: 'attachment-no-history',
+
+  // SHIP-715 image viewer
+  viewerCounter: 'attachment-viewer-counter',
+  viewerStage: 'attachment-viewer-stage',
+  viewerPrev: 'attachment-viewer-prev',
+  viewerNext: 'attachment-viewer-next',
+  viewerThumbs: 'attachment-viewer-thumbs',
+  viewerThumb: 'attachment-viewer-thumb',
   replaceError: 'attachment-replace-error',
 
   // SHIP-198 edit

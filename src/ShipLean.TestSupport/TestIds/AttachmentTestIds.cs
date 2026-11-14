@@ -35,6 +35,14 @@ public static class AttachmentTestIds
     public const string LoadFailed = "attachment-load-failed";
     public const string LoadFailedDownload = "attachment-load-failed-download";
     public const string NoHistory = "attachment-no-history";
+
+    // SHIP-715 image viewer
+    public const string ViewerCounter = "attachment-viewer-counter";
+    public const string ViewerStage = "attachment-viewer-stage";
+    public const string ViewerPrev = "attachment-viewer-prev";
+    public const string ViewerNext = "attachment-viewer-next";
+    public const string ViewerThumbs = "attachment-viewer-thumbs";
+    public const string ViewerThumb = "attachment-viewer-thumb";
     public const string ReplaceError = "attachment-replace-error";
 
     // SHIP-198 edit
