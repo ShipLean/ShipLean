@@ -39,7 +39,7 @@ export function LinkCardEditor({
           type="button"
           data-testid={ids.linkCardSave}
           disabled={saving}
-          className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] text-white"
+          className="h-7 rounded-control bg-signal px-3 touch:h-10 text-[length:var(--text-sm)] text-white"
           onClick={() => onSave(title, note)}
         >
           Save
@@ -47,7 +47,7 @@ export function LinkCardEditor({
         <button
           type="button"
           data-testid={ids.linkCardCancel}
-          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:text-ink"
+          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:text-ink touch:h-10"
           onClick={onCancel}
         >
           Cancel

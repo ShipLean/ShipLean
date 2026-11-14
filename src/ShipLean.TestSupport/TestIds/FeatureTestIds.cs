@@ -69,6 +69,7 @@ public static class FeatureTestIds
     public const string RailItem = "feature-rail-item";
     public const string RailItemSize = "feature-rail-item-size";
     public const string RailItemRemove = "feature-rail-item-remove";
+    public const string LinkCardClose = "feature-link-card-close";
     public const string ImagePreview = "feature-image-preview";
     public const string ImagePreviewImage = "feature-image-preview-image";
     public const string ImagePreviewClose = "feature-image-preview-close";

@@ -22,7 +22,7 @@ export function WorkItemTab({
 }) {
   return (
     <>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 min-[901px]:grid-cols-2">
         <label className="grid gap-1 text-[length:var(--text-xs)] text-ink-muted">
           Work item key
           <input

@@ -67,6 +67,7 @@ export const featureTestIds = {
   railItem: 'feature-rail-item',
   railItemSize: 'feature-rail-item-size',
   railItemRemove: 'feature-rail-item-remove',
+  linkCardClose: 'feature-link-card-close',
   imagePreview: 'feature-image-preview',
   imagePreviewImage: 'feature-image-preview-image',
   imagePreviewClose: 'feature-image-preview-close',

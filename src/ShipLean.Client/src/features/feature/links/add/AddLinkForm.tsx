@@ -17,7 +17,7 @@ const fieldOf = (failure: Error | null): string | null =>
     : null;
 
 const tabClass = (active: boolean) =>
-  `h-7 border-b-2 px-3 text-[length:var(--text-sm)] font-medium ${
+  `h-7 border-b-2 px-3 touch:h-10 text-[length:var(--text-sm)] font-medium ${
     active ? 'border-signal text-ink' : 'border-transparent text-ink-muted hover:text-ink'
   }`;
 
@@ -135,24 +135,24 @@ export function AddLinkForm({
           {general}
         </span>
       ) : null}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 touch:flex-wrap">
         <button
           type="submit"
           data-testid={ids.addLinkSubmit}
           disabled={!ready || add.isPending}
-          className="h-7 rounded-control border border-signal bg-signal px-3 text-[length:var(--text-sm)] font-medium text-signal-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal disabled:opacity-50"
+          className="h-7 rounded-control border border-signal bg-signal px-3 text-[length:var(--text-sm)] font-medium text-signal-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal disabled:opacity-50 touch:h-10"
         >
           Add link
         </button>
         <button
           type="button"
           data-testid={ids.addLinkCancel}
-          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:text-ink"
+          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:text-ink touch:h-10"
           onClick={onClose}
         >
           Cancel
         </button>
-        <span className="ml-auto text-[length:var(--text-xs)] text-ink-muted">
+        <span className="ml-auto text-[length:var(--text-xs)] text-ink-muted touch:ml-0 touch:basis-full">
           Previews are fetched by the server: public addresses only, 5 s and 1 MB caps, no cookies.
         </span>
       </div>
