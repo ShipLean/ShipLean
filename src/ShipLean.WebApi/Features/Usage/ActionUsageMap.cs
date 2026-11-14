@@ -57,6 +57,13 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardEdited), "LinkCards.Edit");
         Add(ActionUsage.Track(UsageEventNames.LinkCardArchived), "LinkCards.Archive");
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesViewed), "TaskChanges.Page");
+        Add(ActionUsage.Track(UsageEventNames.TaskCommitsAdded), "TaskChanges.AddCommit");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentAdded), "TaskChanges.AddComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentReplied), "TaskChanges.ReplyToComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentResolved), "TaskChanges.ResolveComment");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesApproved), "TaskChanges.Approve");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesRequested), "TaskChanges.RequestChanges");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
         Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
@@ -235,6 +242,7 @@ public static class ActionUsageMap
             "SprintRetro.Get",
             "SprintRollover.Get",
             "StoriesBacklog.Get",
+            "TaskChanges.Section",
             "Taskboard.Get",
             "UserPhoto.Get",
             "Users.ByEmail",

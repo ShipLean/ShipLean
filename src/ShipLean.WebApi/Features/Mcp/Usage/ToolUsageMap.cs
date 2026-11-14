@@ -36,6 +36,7 @@ public static class ToolUsageMap
         ["read_attachment"] = UsageEventNames.AttachmentViewed,
         ["create_payload_upload"] = UsageEventNames.PayloadUploadIssued,
         ["link"] = UsageEventNames.LinkAdded,
+        ["add_commits"] = UsageEventNames.TaskCommitsAdded,
         ["report_link_state"] = UsageEventNames.LinkStateReported,
         ["create_sprint"] = UsageEventNames.SprintCreated,
         ["plan_sprint"] = UsageEventNames.SprintPlanned,
