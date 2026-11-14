@@ -90,7 +90,7 @@ Built once; reuse them. Never build your own sheet, scrim, Save bar or top bar, 
   it for free.
 - **Pager and drag** (`src/touch/`): `TouchPager` (sideways pages with a chip row), `useLongPressDrag` and
   `TouchDragGhost`. Layers: top bar 30, SaveBar 40, dialogs 50, drawer 60/61, sheets 65/70, drag ghost 80, image
-  viewer 90.
+  viewer 64 (below sheets 65/70 so its ⋯ sheet opens over it).
 - **Markdown and images:** `components/Markdown.tsx` (C7, C11) and `src/touch/imageViewer.ts` (`openImageViewer`).
 
 ## Test ids

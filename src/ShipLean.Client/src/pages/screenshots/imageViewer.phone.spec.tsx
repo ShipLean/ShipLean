@@ -1,4 +1,5 @@
 import { expect } from '@playwright/experimental-ct-react';
+import { featureTestIds } from '../../features/feature/testIds';
 import { attachmentTestIds as ids } from '../../features/attachment/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { attachments, checkoutV2, designView, stubFeaturePage } from './fixtures/feature';
@@ -39,39 +40,41 @@ const arrange = async (page: Page) => {
   );
 };
 
-// A tap before the item's images have loaded opens the viewer on the page's own images only, so tap again until the
-// full set is there.
-const opened = async (page: Page) => {
+// The page is reached from the item's Attachments rail, so the item's images are already loaded when the image is tapped.
+const itemRoute = '/p/SHIP/items/SHIP-100';
+const railReady = async (page: Page) => {
+  await expect(page.getByTestId(featureTestIds.railItem)).toHaveCount(6);
+};
+const openFromRail = async (page: Page) => {
+  await page
+    .getByTestId(featureTestIds.railItem)
+    .filter({ hasText: 'design-v0.2.md' })
+    .getByRole('link')
+    .tap();
   await expect(page.getByTestId(ids.body)).toBeVisible();
-  await expect(async () => {
-    const close = page.getByTestId(touchTestIds.imageViewerClose);
-    if (await close.isVisible()) await close.tap();
-    await page.locator('figure[data-md-image=attached] img').tap();
-    await expect(page.getByTestId(touchTestIds.imageViewer)).toBeVisible({ timeout: 1000 });
-    await expect(page.getByTestId(ids.viewerThumb)).toHaveCount(3, { timeout: 500 });
-  }).toPass();
-  await expect(page.getByTestId(touchTestIds.imageViewerImage)).toBeVisible();
+};
+const opened = async (page: Page) => {
+  await openFromRail(page);
+  await page.locator('figure[data-md-image=attached] img').tap();
+  await expect(page.getByTestId(touchTestIds.imageViewer)).toBeVisible();
+  await expect(page.getByTestId(ids.viewerThumb)).toHaveCount(3);
 };
 
 phonePageShots([
   {
     name: 'viewer',
-    route,
+    route: itemRoute,
     shell: true,
     arrange,
-    ready: async (page) => {
-      await expect(page.getByTestId(ids.name)).toHaveText('design-v0.2.md');
-    },
+    ready: railReady,
     act: opened,
   },
   {
     name: 'viewer-zoom',
-    route,
+    route: itemRoute,
     shell: true,
     arrange,
-    ready: async (page) => {
-      await expect(page.getByTestId(ids.name)).toHaveText('design-v0.2.md');
-    },
+    ready: railReady,
     act: async (page) => {
       await opened(page);
       await page.getByTestId(ids.viewerStage).dblclick({ position: { x: 100, y: 200 } });

@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import type { AttachmentMarkdownDto } from '@shiplean/core/api/attachments';
 import { Markdown } from '../../../components/Markdown';
+import { useProjectByKey } from '../../../realtime/useProjectByKey';
 import { useTouchShell } from '../../../touch/useTouchShell';
-import { fetchAttachments } from '../../workItem/workItemApi';
+import { fetchAttachments, workItemAttachmentsKey } from '../../workItem/workItemApi';
 import type { AttachmentView } from '../header/ViewToggle';
 import { attachmentTestIds as ids } from '../testIds';
 import { itemViewerImages } from '../viewer/itemViewerImages';
@@ -18,10 +20,13 @@ export function AttachmentBody({
   view: Exclude<AttachmentView, 'edit'>;
 }) {
   const { touch } = useTouchShell();
+  // The same list, under the same key, as the Feature rail and the item page: already cached when the page was reached
+  // from them, and kept fresh by their uploads and live events.
+  const projectId = useProjectByKey(useParams().key).data?.id;
   const attachments = useQuery({
-    queryKey: ['attachment-viewer-images', data.workItem.id],
+    queryKey: workItemAttachmentsKey(projectId ?? '', data.workItem.key),
     queryFn: () => fetchAttachments(data.workItem.id),
-    enabled: touch && view === 'rendered',
+    enabled: touch && view === 'rendered' && projectId !== undefined,
   });
   const viewerImages = useMemo(
     () => (attachments.data ? itemViewerImages(attachments.data) : undefined),

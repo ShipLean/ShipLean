@@ -57,12 +57,12 @@ public class ImageViewerTouchTests : SeededAcceptanceTest
         await WorkItemAttachments.UploadAsTomAsync(BaseUrl, SeedIds.WorkItems.Ship101, "md-two.png", Png);
         await WorkItemAttachments.UploadAsTomAsync(
             BaseUrl, SeedIds.WorkItems.Ship101, "gallery.md", Encoding.UTF8.GetBytes("# Gallery\n\n![two](md-two.png)\n"));
+        var rail = new AttachmentsRailPanel(Page);
         var images = await ImageNamesAsync(SeedIds.WorkItems.Ship101);
-        var galleryId = await FindAttachmentIdAsync(SeedIds.WorkItems.Ship101, "gallery.md");
-        // A tap before the item's images have loaded opens the viewer on the page's own images only, so wait for them.
-        await Page.RunAndWaitForResponseAsync(
-            () => attachment.OpenAsync("SHIP", "SHIP-101", galleryId),
-            response => response.Url.EndsWith($"/api/work-items/{SeedIds.WorkItems.Ship101}/attachments", StringComparison.Ordinal));
+        // The page is reached from the item's rail, as a phone user does, so the item's images are already loaded.
+        await new WorkItemScreen(Page).OpenAsync("SHIP", "SHIP-101");
+        await rail.Items.Filter(new LocatorFilterOptions { HasText = "gallery.md" }).First.TapAsync();
+        await attachment.NameButton.WaitForAsync();
         var body = Page.GetByTestId(AttachmentTestIds.Body);
         await Expect(body).ToContainTextAsync("Gallery");
 
@@ -100,15 +100,5 @@ public class ImageViewerTouchTests : SeededAcceptanceTest
             .Where(a => a.GetProperty("kind").GetString() == "image")
             .Select(a => a.GetProperty("name").GetString()!)
             .ToList();
-    }
-
-    private async Task<Guid> FindAttachmentIdAsync(Guid itemId, string name)
-    {
-        var response = await Page.Context.APIRequest.GetAsync($"{BaseUrl}/api/work-items/{itemId}/attachments");
-        response.Ok.ShouldBeTrue();
-        using var json = JsonDocument.Parse(await response.BodyAsync());
-        return json.RootElement.EnumerateArray()
-            .First(a => a.GetProperty("name").GetString() == name)
-            .GetProperty("id").GetGuid();
     }
 }
