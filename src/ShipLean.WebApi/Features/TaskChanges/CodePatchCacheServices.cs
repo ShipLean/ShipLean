@@ -46,7 +46,7 @@ public sealed class RedisCodePatchCache : ICodePatchCache, IAsyncDisposable
     public async Task<PatchRead?> GetAsync(string key, CancellationToken cancellationToken)
     {
         var value = await (await _connection.Value).GetDatabase().StringGetAsync(_prefix + key);
-        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<PatchRead>((string)value);
+        return value.IsNullOrEmpty ? null : JsonSerializer.Deserialize<PatchRead>(value.ToString());
     }
 
     public async Task SetAsync(string key, PatchRead value, TimeSpan lifetime, CancellationToken cancellationToken)

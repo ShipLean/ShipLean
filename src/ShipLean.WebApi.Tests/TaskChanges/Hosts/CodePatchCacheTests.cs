@@ -120,9 +120,13 @@ public class CodePatchCacheTests
 
     private static ServiceProvider InstanceOn(string? redis)
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(redis is null ? [] : [new(RealtimeServices.RedisConnectionKey, redis)])
-            .Build();
+        var settings = new Dictionary<string, string?>();
+        if (redis is not null)
+        {
+            settings[RealtimeServices.RedisConnectionKey] = redis;
+        }
+
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         new CodePatchCacheServices().AddServices(services, configuration);
