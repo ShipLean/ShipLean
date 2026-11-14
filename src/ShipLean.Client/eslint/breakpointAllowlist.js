@@ -6,9 +6,6 @@ export const breakpointAllowlist = [
   // W01-O2: the settings field panes
   // SHIP-715: the attachment page
   { file: 'features/attachment/AttachmentScreen.tsx', count: 1, owner: 'SHIP-715' },
-  // SHIP-714: the Feature page's link dialog
-  { file: 'features/feature/links/add/UrlTab.tsx', count: 1, owner: 'SHIP-714' },
-  { file: 'features/feature/links/add/WorkItemTab.tsx', count: 1, owner: 'SHIP-714' },
   // SHIP-726: sprint capacity
   { file: 'features/sprints/capacity/CapacityHeader.tsx', count: 1, owner: 'SHIP-726' },
   // SHIP-733 (L733a): the profile pages' max-sm:
