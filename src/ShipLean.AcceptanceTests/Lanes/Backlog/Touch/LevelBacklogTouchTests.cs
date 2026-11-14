@@ -46,7 +46,48 @@ public class LevelBacklogTouchTests : SeededAcceptanceTest
         await backlog.OpenAsync("SHIP", "epics");
 
         await Expect(backlog.FeatureCount("SHIP-92")).ToHaveTextAsync("2 Features");
-        await Expect(backlog.FeatureCount("SHIP-90")).ToHaveTextAsync("1 Features");
+        await Expect(backlog.FeatureCount("SHIP-90")).ToHaveTextAsync("1 Feature");
         (await TouchRules.ViolationsAsync(Page, Page.GetByTestId(BacklogTestIds.TouchRowList))).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Epics_WhenNewChosenOnPhone_ShouldShowAddRowThatPassesTouchRules()
+    {
+        var backlog = new LevelBacklog(Page);
+        await backlog.OpenAsync("SHIP", "epics");
+
+        await Page.GetByTestId(BacklogTestIds.NewItem).TapAsync();
+
+        var add = Page.GetByTestId(BacklogTestIds.AddRow);
+        await Expect(add).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, add)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Features_WhenNewChosenOnPhone_ShouldShowDialogControlsThatPassTouchRules()
+    {
+        var backlog = new LevelBacklog(Page);
+        var dialog = new NewFeatureDialog(Page);
+        await backlog.OpenAsync("SHIP", "features");
+
+        await dialog.NewButton.TapAsync();
+
+        await Expect(dialog.Create).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, dialog.Create)).ShouldBeEmpty();
+        (await TouchRules.ViolationsAsync(Page, Page.GetByTestId(BacklogTestIds.NewFeatureCancel))).ShouldBeEmpty();
+        (await TouchRules.ViolationsAsync(Page, Page.GetByTestId(BacklogTestIds.NewFeatureStart))).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Stories_WhenNewChosenInListOnPhone_ShouldShowAddRowThatPassesTouchRules()
+    {
+        var backlog = new StoriesBacklog(Page);
+        await backlog.OpenAsync("SHIP");
+
+        await backlog.NewItem.TapAsync();
+
+        var add = Page.GetByTestId(BacklogTestIds.AddRow);
+        await Expect(add).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, add)).ShouldBeEmpty();
     }
 }

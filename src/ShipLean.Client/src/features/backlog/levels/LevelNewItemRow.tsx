@@ -74,10 +74,20 @@ export function LevelNewItemRow({
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={onKeyDown}
       />
-      <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
+      <button
+        type="button"
+        data-testid={ids.addSubmit}
+        className="btn-signal touch:min-h-[var(--touch-target)]"
+        onClick={add}
+      >
         Add
       </button>
-      <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
+      <button
+        type="button"
+        data-testid={ids.addClose}
+        className="btn-ghost touch:min-h-[var(--touch-target)]"
+        onClick={onClose}
+      >
         Esc
       </button>
       {create.error ? (

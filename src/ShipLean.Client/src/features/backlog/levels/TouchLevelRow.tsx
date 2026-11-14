@@ -28,6 +28,7 @@ export function TouchLevelRow({
   level: LevelBacklogLevel;
 }) {
   const peek = useItemPeek();
+  const featureCount = countUnder(row, 'feature').total;
   const closed = row.state?.category === 'completed';
   const tap = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target instanceof Element && event.target.closest(inside) !== null) return;
@@ -69,7 +70,7 @@ export function TouchLevelRow({
         ) : null}
         {level === 'epics' ? (
           <span data-testid={ids.levelFeatureCount}>
-            {countUnder(row, 'feature').total} Features
+            {featureCount} {featureCount === 1 ? 'Feature' : 'Features'}
           </span>
         ) : null}
         {row.parent ? (

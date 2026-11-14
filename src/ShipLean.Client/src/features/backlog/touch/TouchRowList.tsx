@@ -36,6 +36,7 @@ export function TouchRowList({
   flashing,
   filtered,
   searched = '',
+  addRow,
 }: {
   rows: BacklogRowDto[];
   projectKey: string;
@@ -47,6 +48,8 @@ export function TouchRowList({
   filtered: boolean;
   // What the search typed, when one is on: an empty list names it.
   searched?: string;
+  // The inline new-item row, shown first while + New is open.
+  addRow?: ReactNode;
 }) {
   const { selecting } = useTouchSelectMode();
   const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
@@ -59,6 +62,7 @@ export function TouchRowList({
   if (searched === '') emptyText = filtered ? 'Nothing matches this filter' : 'Nothing to show';
   return (
     <div data-testid={ids.touchRowList} className="min-w-0 flex-1">
+      {addRow}
       {rows.map((row) => (
         <TouchRow
           key={row.id}

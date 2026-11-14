@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
 import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { usePasteIntake } from '../add/usePasteIntake';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
@@ -29,6 +30,7 @@ export function NewItemRow({
   // Counts the requests to open on a type; a new count applies initialType and refocuses, even when the type is the same.
   request?: number;
 }) {
+  const { touch } = useTouchShell();
   const [type, setType] = useState<WorkItemTypeId>(initialType);
   const [seenRequest, setSeenRequest] = useState(request);
   if (request !== seenRequest) {
@@ -60,53 +62,75 @@ export function NewItemRow({
     else if (event.key === 'Escape') onClose();
   }
 
+  const form = (
+    <div className="flex items-center gap-[var(--space-2)] touch:flex-wrap">
+      <select
+        data-testid={ids.addType}
+        aria-label="Type"
+        className="field"
+        value={type}
+        onChange={(event) => setType(event.target.value as WorkItemTypeId)}
+        onKeyDown={onKeyDown}
+      >
+        {types.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <input
+        ref={input}
+        data-testid={ids.addTitle}
+        aria-label="Title"
+        className="field min-w-0 flex-1"
+        placeholder="Title, then Enter to add at the top"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        onKeyDown={onKeyDown}
+        {...paste}
+      />
+      <button
+        type="button"
+        data-testid={ids.addSubmit}
+        className="btn-signal touch:min-h-[var(--touch-target)]"
+        onClick={add}
+      >
+        Add
+      </button>
+      <button
+        type="button"
+        data-testid={ids.addClose}
+        className="btn-ghost touch:min-h-[var(--touch-target)]"
+        onClick={onClose}
+      >
+        Esc
+      </button>
+      {create.error ? (
+        <span
+          data-testid={ids.addError}
+          role="alert"
+          className="text-[length:var(--text-sm)] text-alert"
+        >
+          {create.error instanceof ApiRequestError
+            ? create.error.message
+            : 'Could not add the item.'}
+        </span>
+      ) : null}
+    </div>
+  );
+
+  // The touch rows are divs, so the add row is one too.
+  if (touch) {
+    return (
+      <div data-testid={ids.addRow} className="border-b border-edge bg-signal-soft px-3 py-2">
+        {form}
+      </div>
+    );
+  }
   return (
     <tr data-testid={ids.addRow} className="h-11 bg-signal-soft">
       <td colSpan={columnCount} className="px-2">
-        <div className="flex items-center gap-[var(--space-2)]">
-          <select
-            data-testid={ids.addType}
-            aria-label="Type"
-            className="field"
-            value={type}
-            onChange={(event) => setType(event.target.value as WorkItemTypeId)}
-            onKeyDown={onKeyDown}
-          >
-            {types.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <input
-            ref={input}
-            data-testid={ids.addTitle}
-            aria-label="Title"
-            className="field flex-1"
-            placeholder="Title, then Enter to add at the top"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            onKeyDown={onKeyDown}
-            {...paste}
-          />
-          <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
-            Add
-          </button>
-          <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
-            Esc
-          </button>
-          {create.error ? (
-            <span
-              data-testid={ids.addError}
-              role="alert"
-              className="text-[length:var(--text-sm)] text-alert"
-            >
-              {create.error instanceof ApiRequestError
-                ? create.error.message
-                : 'Could not add the item.'}
-            </span>
-          ) : null}
-        </div>
+        {form}
       </td>
     </tr>
   );
