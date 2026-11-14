@@ -23,6 +23,12 @@ test('LevelTree_WhenTouch_ShouldRenderTouchRowsNotTable', async ({ mount, page }
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
   expect(sideways).toBe(false);
+  // A Feature with Features under it (SHIP-103, caret on the right) starts at the same left edge as the one under it.
+  const left = (key: string) =>
+    page
+      .locator(`[data-testid="${ids.row}"][data-key="${key}"]`)
+      .evaluate((el) => el.getBoundingClientRect().left);
+  expect(await left('SHIP-103')).toBe(await left('SHIP-108'));
   // The two Features with Features under them (SHIP-103) fold with a caret of their own, at least 32px.
   const caret = await page
     .locator('[data-testid="' + ids.treeCaret + '"][aria-label="Collapse Reporting"]')

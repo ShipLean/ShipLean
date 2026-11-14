@@ -72,7 +72,7 @@ export function LevelTree({
   );
   if (touch) {
     // At 900px and below: path headers for Epics, group Features and No parent, a TouchLevelRow per Feature, none indented.
-    // A Feature with rows under it gets a caret of its own beside the row.
+    // A Feature with rows under it gets a caret of its own at the right of the row, so every title starts at the same left edge.
     return (
       <div data-testid={ids.touchTree} className="min-w-0 flex-1">
         <div data-testid={ids.list}>
@@ -83,8 +83,8 @@ export function LevelTree({
               if (open === undefined) return <div key={row.id}>{rowEl}</div>;
               return (
                 <div key={row.id} className="flex items-stretch">
-                  <LevelTouchCaret row={row} open={open} onToggle={() => toggle(row.id)} />
                   <div className="min-w-0 flex-1">{rowEl}</div>
+                  <LevelTouchCaret row={row} open={open} onToggle={() => toggle(row.id)} />
                 </div>
               );
             }

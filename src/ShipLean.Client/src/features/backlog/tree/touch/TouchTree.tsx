@@ -4,6 +4,7 @@ import { StateDot } from '../../../../components/StateDot';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import { TouchHandle } from '../../touch/TouchHandle';
 import { TouchRow } from '../../touch/TouchRow';
+import { TouchRowGhost } from '../../touch/TouchRowGhost';
 import { backlogTestIds as ids } from '../../testIds';
 import { rollupText, visibleRows } from '../treeRows';
 import { treePath } from './treePath';
@@ -98,11 +99,7 @@ function TouchTreeItem({
               onOver={onOver}
               onDrop={onDrop}
               onLiftedChange={setLifted}
-              ghost={
-                <div className="w-[min(80vw,22rem)] truncate rounded-control border border-accent bg-panel px-3 py-3 text-[length:var(--text-sm)] font-medium shadow-lg">
-                  {row.key} {row.title}
-                </div>
-              }
+              ghost={<TouchRowGhost row={row} />}
             />
           ) : undefined
         }

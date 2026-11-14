@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { PROJECT, treeRows, treeView } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
+import { TreeSelectHarness } from '../ct/TreeSelectHarness';
 import { backlogTestIds as ids } from '../testIds';
 import { TreeMode } from './TreeMode';
 
@@ -124,4 +125,15 @@ test('TouchTree_WhenNotFiltering_ShouldRenderAHandlePerRow', async ({ mount, pag
   await mount(<TreeMode project={PROJECT} />, route);
 
   await expect(page.getByTestId(ids.touchHandle)).toHaveCount(6);
+});
+
+test('TouchTree_WhenSelecting_ShouldNotRenderHandles', async ({ mount, page }) => {
+  await stubBacklog(page, view);
+  await mount(<TreeSelectHarness project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.touchHandle)).toHaveCount(6);
+
+  await page.getByTestId('harness-select').tap();
+
+  await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
+  await expect(rowOf(page, 'SHIP-141').getByTestId(ids.rank)).toHaveText('1');
 });

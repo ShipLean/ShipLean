@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { TouchHandle } from '../../touch/TouchHandle';
 import { TouchRow } from '../../touch/TouchRow';
+import { TouchRowGhost } from '../../touch/TouchRowGhost';
 
 /**
  * One Planning row at touch: a TouchRow with its drag handle (unless a filter, search or check queue is on) and
@@ -44,11 +45,7 @@ export function TouchPlanningRow({
               onOver={(target) => onOver(row.id, target)}
               onDrop={(target) => onDrop(row.id, target)}
               onLiftedChange={setLifted}
-              ghost={
-                <div className="w-[min(80vw,22rem)] truncate rounded-control border border-accent bg-panel px-3 py-3 text-[length:var(--text-sm)] font-medium shadow-lg">
-                  {row.key} {row.title}
-                </div>
-              }
+              ghost={<TouchRowGhost row={row} />}
             />
           ) : undefined
         }
