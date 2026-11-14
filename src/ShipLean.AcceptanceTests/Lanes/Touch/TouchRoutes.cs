@@ -30,7 +30,7 @@ public static class TouchRoutes
         ["storiesBoard"] = new(_ => Links.Board(Project, "stories"), [BoardTestIds.Card]),
         ["featuresBoard"] = new(_ => Links.Board(Project, "features"), [BoardTestIds.Card]),
         ["epicsBoard"] = new(_ => Links.Board(Project, "epics"), [BoardTestIds.Card]),
-        ["sprints"] = new(_ => Links.Sprints(Project), [SprintsTestIds.ListRow, SprintsTestIds.NewSprintName]),
+        ["sprints"] = new(_ => Links.Sprints(Project), [SprintsTestIds.ListRow, SprintsTestIds.NewSprintOpen]),
         ["sprintBacklog"] = new(
             _ => Links.SprintBacklog(Project, SeedIds.Sprints.Sprint24), [SprintsTestIds.StoryRow, SprintsTestIds.KpiCapacityEdit]),
         ["taskboard"] = new(_ => Links.Taskboard(Project, SeedIds.Sprints.Sprint24), [TaskboardTestIds.Card]),

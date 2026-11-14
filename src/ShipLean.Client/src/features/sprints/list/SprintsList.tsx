@@ -3,6 +3,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { EditSprintRailSlot } from '../../../slots/EditSprintRailSlot';
 import { useSprintFigures, useSprintsRealtime, useVelocity } from '../sprintsApi';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { sprintsTestIds as ids } from '../testIds';
 import { orderSprints } from './orderSprints';
 import { SprintRow } from './SprintRow';
@@ -13,6 +14,7 @@ const NUMBER_HEADINGS = ['Team capacity', 'Committed', 'Completed'] as const;
 
 /** The All sprints body: the velocity chart, then every sprint (current, future, past) with its figures. */
 export function SprintsList({ project, sprints }: { project: ProjectDto; sprints: SprintDto[] }) {
+  const { touch } = useTouchShell();
   useSprintsRealtime(project.id);
   const figures = useSprintFigures(project.id, sprints);
   const velocity = useVelocity(project.id).data;
@@ -36,42 +38,63 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
           onDeleted={() => setEditingId(null)}
         />
       )}
-      <section className="overflow-x-auto rounded-md border border-edge bg-panel">
-        <table data-testid={ids.list} className="w-full border-collapse text-left">
-          <thead>
-            <tr className="bg-sunken text-[length:var(--text-xs)] text-ink-muted">
-              {HEADINGS.map((heading) => (
-                <th key={heading} className="px-3 py-2 font-semibold">
-                  {heading}
+      {touch ? (
+        <ul
+          data-testid={ids.listTouch}
+          className="m-0 list-none overflow-hidden rounded-md border border-edge bg-panel p-0"
+        >
+          {orderSprints(sprints).map((sprint) => (
+            <SprintRow
+              key={sprint.id}
+              projectKey={project.key}
+              sprint={sprint}
+              figures={figures.get(sprint.id)}
+              velocity={planningVelocity}
+              onEdit={(button) => {
+                trigger.current = button;
+                setEditingId(sprint.id);
+              }}
+            />
+          ))}
+        </ul>
+      ) : (
+        <section className="overflow-x-auto rounded-md border border-edge bg-panel">
+          <table data-testid={ids.list} className="w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-sunken text-[length:var(--text-xs)] text-ink-muted">
+                {HEADINGS.map((heading) => (
+                  <th key={heading} className="px-3 py-2 font-semibold">
+                    {heading}
+                  </th>
+                ))}
+                {NUMBER_HEADINGS.map((heading) => (
+                  <th key={heading} className="px-3 py-2 text-right font-semibold">
+                    {heading}
+                  </th>
+                ))}
+                <th className="px-3 py-2">
+                  <span className="sr-only">Actions</span>
                 </th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderSprints(sprints).map((sprint) => (
+                <SprintRow
+                  key={sprint.id}
+                  projectKey={project.key}
+                  sprint={sprint}
+                  figures={figures.get(sprint.id)}
+                  velocity={planningVelocity}
+                  onEdit={(button) => {
+                    trigger.current = button;
+                    setEditingId(sprint.id);
+                  }}
+                />
               ))}
-              {NUMBER_HEADINGS.map((heading) => (
-                <th key={heading} className="px-3 py-2 text-right font-semibold">
-                  {heading}
-                </th>
-              ))}
-              <th className="px-3 py-2">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {orderSprints(sprints).map((sprint) => (
-              <SprintRow
-                key={sprint.id}
-                projectKey={project.key}
-                sprint={sprint}
-                figures={figures.get(sprint.id)}
-                velocity={planningVelocity}
-                onEdit={(button) => {
-                  trigger.current = button;
-                  setEditingId(sprint.id);
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </tbody>
+          </table>
+        </section>
+      )}
     </div>
   );
 }
