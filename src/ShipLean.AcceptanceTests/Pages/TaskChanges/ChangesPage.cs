@@ -67,15 +67,18 @@ public sealed class ChangesPage(IPage page)
 
     public Task OpenFileAsync(int index) => FileRows.Nth(index).ClickAsync();
 
-    // The Viewed box of the file row at index.
-    public Task ToggleViewedAsync(int index) => FileRows.Nth(index).GetByTestId(TaskChangesTestIds.FileViewed).ClickAsync();
+    // The Viewed box in the header of the diff file at index (the files column only shows the tick).
+    public Task ToggleViewedAsync(int index) => DiffFiles.Nth(index).GetByTestId(TaskChangesTestIds.FileViewed).ClickAsync();
 
-    // Hovers the diff line of a file and clicks its +; the composer opens under that line.
-    public async Task AddLineCommentAsync(int fileIndex, int lineIndex)
+    // Hovers a changed line's number in the diff file at index and clicks its +; the composer opens under that line. The diff
+    // renders in @pierre/diffs' open shadow root, so the gutter line and the + are the library's own attributes, not test ids
+    // (Playwright CSS pierces open shadow roots). newSide picks an added line, otherwise a removed one.
+    public async Task AddLineCommentAsync(int fileIndex, int lineNumber, bool newSide = true)
     {
-        var line = DiffFiles.Nth(fileIndex).GetByTestId(TaskChangesTestIds.DiffAddLine).Nth(lineIndex);
-        await line.HoverAsync();
-        await line.ClickAsync();
+        var type = newSide ? "change-addition" : "change-deletion";
+        var file = DiffFiles.Nth(fileIndex);
+        await file.Locator($"[data-gutter] [data-line-type=\"{type}\"][data-column-number=\"{lineNumber}\"]").First.HoverAsync();
+        await file.Locator("[data-utility-button]").ClickAsync();
         await Composer.WaitForAsync();
     }
 
