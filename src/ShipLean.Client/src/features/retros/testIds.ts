@@ -77,6 +77,11 @@ export const retrosTestIds = {
   retrosRow: 'retros-row',
   retrosEmpty: 'retros-empty',
   retrosSelected: 'retros-selected',
+  // SHIP-730 open retro touch
+  retrosOpenRetro: 'retros-open-retro',
+  retrosOpenRetroPrevious: 'retros-open-retro-previous',
+  retrosOpenRetroNext: 'retros-open-retro-next',
+  retrosOpenRetroPosition: 'retros-open-retro-position',
   // Insights
   retroInsightsPanel: 'retro-insights-panel',
   retroInsightsTab: 'retro-insights-tab',

@@ -102,10 +102,7 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
               </div>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4 touch:grid-cols-[minmax(0,1fr)]">
                 <SearchRows {...props} />
-                {/* TODO: the full-screen open retro replaces this; until then the aside takes no column at touch. */}
-                <div className="touch:hidden">
-                  <SelectedRetro {...props} />
-                </div>
+                <SelectedRetro {...props} />
               </div>
             </div>
           );
