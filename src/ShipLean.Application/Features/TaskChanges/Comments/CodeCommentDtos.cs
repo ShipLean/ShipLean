@@ -13,7 +13,7 @@ public static class CodeCommentDtos
         comment.Repo,
         comment.Sha,
         comment.Path,
-        comment.Side is { } side ? (side == CodeSide.Old ? "old" : "new") : null,
+        SideName(comment.Side),
         comment.Line,
         comment.StartLine,
         comment.LineText,
@@ -25,4 +25,14 @@ public static class CodeCommentDtos
         comment.OutdatedAt is not null,
         comment.SentBackAt is not null,
         [.. comment.Replies.Select(r => From(r, time))]);
+
+    private static string? SideName(CodeSide? side)
+    {
+        if (side is null)
+        {
+            return null;
+        }
+
+        return side == CodeSide.Old ? "old" : "new";
+    }
 }

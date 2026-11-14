@@ -271,8 +271,18 @@ public sealed partial class CodeComments(
         Guid Id, Guid? ParentId, string? Repo, string? Sha, string? Path, string? Side, int? Line, int? StartLine, string? LineText,
         string Body, string BodyHtml, string By, bool ByAgent, DateTimeOffset CreatedAt, DateTimeOffset? ResolvedAt, DateTimeOffset? OutdatedAt, DateTimeOffset? SentBackAt)
     {
+        private static CodeSide? SideOf(string? side)
+        {
+            if (side is null)
+            {
+                return null;
+            }
+
+            return side == "old" ? CodeSide.Old : CodeSide.New;
+        }
+
         public CodeComment ToComment(IReadOnlyList<CodeComment> replies) => new(
-            Id, ParentId, Repo, Sha, Path, Side is null ? null : Side == "old" ? CodeSide.Old : CodeSide.New, Line, StartLine, LineText,
+            Id, ParentId, Repo, Sha, Path, SideOf(Side), Line, StartLine, LineText,
             Body, BodyHtml, By, ByAgent, CreatedAt, ResolvedAt, OutdatedAt, SentBackAt, replies);
     }
 }
