@@ -22,6 +22,8 @@ export const taskboardTestIds = {
   filterSheetClear: 'taskboard-filter-sheet-clear',
   columnHeader: 'taskboard-column-header',
   columnCount: 'taskboard-column-count',
+  // L725c people and pulse
+  phonePersonEmpty: 'taskboard-phone-person-empty',
   row: 'taskboard-row',
   rowHeader: 'taskboard-row-header',
   rowCard: 'taskboard-row-card',

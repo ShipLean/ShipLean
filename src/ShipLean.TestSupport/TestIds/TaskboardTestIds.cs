@@ -25,6 +25,8 @@ public static class TaskboardTestIds
     public const string FilterSheetClear = "taskboard-filter-sheet-clear";
     public const string ColumnHeader = "taskboard-column-header";
     public const string ColumnCount = "taskboard-column-count";
+    // L725c people and pulse
+    public const string PhonePersonEmpty = "taskboard-phone-person-empty";
     public const string Row = "taskboard-row";
     public const string RowHeader = "taskboard-row-header";
     public const string RowCard = "taskboard-row-card";
