@@ -102,6 +102,21 @@ public static class RetrosTestIds
     public const string RetroFeaturesFilterOption = "retro-features-filter-option";
     public const string RetroFeaturesLink = "retro-features-link";
     public const string RetroFeaturesLoose = "retro-features-loose";
+    // SHIP-728 touch
+    public const string RetroFeaturesTableBox = "retro-features-table-box";
+    public const string RetroFeaturesFeatureCell = "retro-features-feature-cell";
+    public const string RetroFeaturesNoFeatureChip = "retro-features-no-feature-chip";
+    public const string RetroFeaturesPhoneList = "retro-features-phone-list";
+    public const string RetroFeaturesListHead = "retro-features-list-head";
+    public const string RetroFeaturesCount = "retro-features-count";
+    public const string RetroFeaturesLegend = "retro-features-legend";
+    public const string RetroFeaturesLegendItem = "retro-features-legend-item";
+    public const string RetroFeaturesToDecide = "retro-features-to-decide";
+    public const string RetroFeaturesMeta = "retro-features-meta";
+    public const string RetroFeaturesSearchOpen = "retro-features-search-open";
+    public const string RetroFeaturesSearchCancel = "retro-features-search-cancel";
+    public const string RetroFeaturesEmpty = "retro-features-empty";
+    public const string RetroFeaturesClearSearch = "retro-features-clear-search";
     public const string RetroCategoryCount = "retro-category-count";
     public const string RetroItemPanel = "retro-item-panel";
     public const string RetroItemFilter = "retro-item-filter";
