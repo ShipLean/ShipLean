@@ -7,7 +7,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Backlog.Touch;
 
-// The Stories backlog's List mode on a phone (SHIP-716 D1), on the seeded SHIP backlog. Neither test changes data.
+// The Stories backlog's List mode on a phone (SHIP-716 D1), on the seeded SHIP backlog. The drag test changes the order, so it is the only one in this class that does.
 [TestFixture]
 public class StoriesListTouchTests : SeededAcceptanceTest
 {
@@ -45,5 +45,25 @@ public class StoriesListTouchTests : SeededAcceptanceTest
 
         await peek.WaitOpenAsync(key!);
         new Uri(Page.Url).Query.ShouldContain($"item={key}");
+    }
+
+    [Test]
+    public async Task Row_WhenDraggedByHandleOnPhone_ShouldReorderAndKeepAfterReload()
+    {
+        var touch = new TouchRows(Page);
+        await new StoriesBacklog(Page).OpenAsync("SHIP");
+        await Expect(touch.Handle((await touch.KeysAsync())[0])).ToBeVisibleAsync();
+        var before = (await touch.KeysAsync()).Take(4).ToList();
+
+        var response = await touch.DragByHandleAsync(before[0], before[2]);
+
+        response.Ok.ShouldBeTrue(await response.TextAsync());
+        var expected = new[] { before[1], before[0], before[2], before[3] };
+        await Expect(touch.Rows.Nth(1).GetByTestId(BacklogTestIds.Key)).ToHaveTextAsync(before[0]);
+
+        await Page.ReloadAsync();
+        await Expect(touch.Rows.First).ToBeVisibleAsync();
+        (await touch.KeysAsync()).Take(4).ToArray().ShouldBe(expected);
+        (await TouchRules.ViolationsAsync(Page, touch.List)).ShouldBeEmpty();
     }
 }
