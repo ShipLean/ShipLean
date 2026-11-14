@@ -226,6 +226,8 @@ public static class SettingsTestIds
     public const string MyProjectLeaveConfirm = "settings-my-project-leave-confirm";
     public const string MyProjectLeaveCancel = "settings-my-project-leave-cancel";
     public const string MyProjectLeaveError = "settings-my-project-leave-error";
+    // SHIP-733 projects touch
+    public const string MyProjectLeaveRow = "settings-my-project-leave-row";
     public const string MyProjectsList = "settings-my-projects-list";
     public const string SessionsPanel = "settings-sessions-panel";
     public const string SignOutOthers = "settings-sign-out-others";

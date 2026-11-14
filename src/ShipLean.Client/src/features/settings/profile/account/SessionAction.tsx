@@ -23,7 +23,7 @@ export function SessionAction({
       <button
         type="button"
         data-testid={testId}
-        className="btn-ghost disabled:opacity-50"
+        className="btn-ghost disabled:opacity-50 touch:h-[var(--touch-target)] touch:shrink-0"
         disabled={pending}
         onClick={onClick}
       >
