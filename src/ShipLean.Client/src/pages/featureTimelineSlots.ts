@@ -28,6 +28,7 @@ export function featureTimelineSlots(
       itemKey,
       options: optionsFromQuery(search),
       selected: selectedFromQuery(search),
+      from: params.get('from') === 'feature' ? 'feature' : 'link',
       onOptionsChange: (next) => rebuild(optionsToQuery(next), selectedFromQuery(search)),
       onSelect: (key) => rebuild(optionsToQuery(optionsFromQuery(search)), key),
     },

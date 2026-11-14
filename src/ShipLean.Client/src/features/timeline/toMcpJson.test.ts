@@ -7,11 +7,9 @@ import { toMcpJson } from './toMcpJson';
 
 describe('toMcpJson', () => {
   it('ShouldMatchTheMcpFixture', () => {
-    const {
-      project: _project,
-      open_url: _openUrl,
-      ...expected
-    } = mcpFixture as Record<string, unknown>;
+    const expected = structuredClone(mcpFixture) as Record<string, unknown>;
+    delete expected.project;
+    delete expected.open_url;
     expect(toMcpJson(FINISHED_TIMELINE)).toEqual(expected);
   });
 
