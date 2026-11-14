@@ -26,3 +26,22 @@ export function cachedRow(queryClient: QueryClient, id: string): CachedRow | nul
   }
   return found;
 }
+
+/**
+ * The backlog read the screen is showing that holds this row: only observed (active) reads count, so a List read
+ * left cached after switching to Planning, or the other way round, never decides what the row's actions do. Null when
+ * no mounted read holds the row.
+ */
+export function activeBacklogView(queryClient: QueryClient, id: string): BacklogViewDto | null {
+  const views = queryClient.getQueryCache().findAll({
+    type: 'active',
+    predicate: (query) => query.queryKey[0] === 'projects' && query.queryKey[2] === 'backlog',
+  });
+  for (const query of views) {
+    const view = query.state.data as BacklogViewDto | undefined;
+    if (!view) continue;
+    const rows = [...view.rows, ...view.sections.flatMap((section) => section.rows)];
+    if (rows.some((row) => row.id === id)) return view;
+  }
+  return null;
+}

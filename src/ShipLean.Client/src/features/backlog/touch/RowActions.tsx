@@ -10,7 +10,7 @@ import { useItemPeek } from '../../itemPeek/useItemPeek';
 import { moveToBacklogEdgePlan, moveToEdgePlan, moveToSprintPlan } from '../bulk/movePlan';
 import { setParentPlan } from '../bulk/setPlans';
 import { BulkRunContext, useBulkRunner } from '../bulk/useBulkRun';
-import { cachedRow } from '../estimate/cachedRow';
+import { activeBacklogView, cachedRow } from '../estimate/cachedRow';
 import { useEstimate } from '../estimate/useEstimate';
 import { SelectionContext, useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
@@ -74,7 +74,7 @@ function MoreActions({
   const selection = useSelection();
   const selectable = useContext(SelectionContext) !== null;
   // Planning's top and bottom also take a row out of its sprint, as its bar does; the read holding the row says which.
-  const planning = () => cachedRow(queryClient, row.id)?.view.mode === 'planning';
+  const planning = () => activeBacklogView(queryClient, row.id)?.mode === 'planning';
   const edge = (slot: 'first' | 'last') =>
     void runner.run(planning() ? moveToBacklogEdgePlan([row], slot) : moveToEdgePlan([row], slot));
   const actions: SheetAction[] = [
@@ -118,12 +118,11 @@ export function RowActions({ row, children }: { row: BacklogRowDto; children?: R
   const peek = useItemPeek();
   const estimate = useEstimate(row);
   const { selecting } = useTouchSelectMode();
-  const hasRunner = useContext(BulkRunContext) !== null;
   const [sub, setSub] = useState<Sub | null>(null);
   const projectId = cachedRow(queryClient, row.id)?.projectId ?? null;
+  const runner = useContext(BulkRunContext);
   const close = () => setSub(null);
   const pointsOpen = sub === 'points' || estimate.conflict !== null;
-  const runner = useContext(BulkRunContext);
   return (
     <>
       <Points
@@ -132,7 +131,7 @@ export function RowActions({ row, children }: { row: BacklogRowDto; children?: R
         onOpen={estimate.editable && !selecting ? () => setSub('points') : null}
       />
       {children}
-      {hasRunner && !selecting && projectId !== null ? (
+      {runner !== null && !selecting && projectId !== null ? (
         <MoreActions row={row} open={() => peek.open(row.key)} setSub={setSub} />
       ) : null}
       {estimate.editable ? (

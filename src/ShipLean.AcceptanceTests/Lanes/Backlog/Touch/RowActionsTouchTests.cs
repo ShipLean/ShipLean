@@ -3,6 +3,7 @@ using ShipLean.AcceptanceTests.Lanes.Backlog.Bulk;
 using ShipLean.AcceptanceTests.Lanes.Backlog.Interactions;
 using ShipLean.AcceptanceTests.Pages.Backlog;
 using ShipLean.AcceptanceTests.Pages.Backlog.Touch;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.TestIds;
 
@@ -68,5 +69,39 @@ public class RowActionsTouchTests : SeededAcceptanceTest
         await Expect(actions.Sheet).ToHaveCountAsync(0);
         await Expect(backlog.RowKeys.First).ToHaveTextAsync(moved);
         (await BulkReadBack.InOrderAsync(api, [.. keys]))[0].ShouldBe(moved);
+    }
+
+    [Test]
+    public async Task Parent_WhenSheetOpenedOnPhone_ShouldMeetTouchRules()
+    {
+        var backlog = new StoriesBacklog(Page);
+        var actions = new RowActions(Page);
+        await backlog.OpenAsync("SHIP");
+        await Expect(backlog.Rows.First).ToBeVisibleAsync();
+
+        await actions.OpenMoreAsync(backlog.Rows.First);
+        await actions.PickAsync("Parent");
+
+        await Expect(actions.ParentSheet).ToBeVisibleAsync();
+        await Expect(actions.ParentSheet.GetByTestId(WorkItemTestIds.ParentOption).Nth(1)).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, actions.Sheet)).ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Queue_WhenOpenedOnPhone_ShouldMeetTouchRulesAndSkipToNext()
+    {
+        var backlog = new StoriesBacklog(Page);
+        var actions = new RowActions(Page);
+        await RowActions.AddUnestimatedStoriesAsync(Page.Context.APIRequest, SeedIds.Projects.Ship, 3);
+        await backlog.OpenAsync("SHIP");
+        await Expect(backlog.Rows.First).ToBeVisibleAsync();
+
+        await actions.UnestimatedCheck.TapAsync();
+
+        await Expect(actions.QueueBanner).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, actions.QueueBanner)).ShouldBeEmpty();
+        var first = (await actions.QueueStepKey.InnerTextAsync()).Trim();
+        await actions.QueueSkip.TapAsync();
+        await Expect(actions.QueueStepKey).Not.ToHaveTextAsync(first);
     }
 }

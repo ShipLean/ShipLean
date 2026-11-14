@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { touchTestIds } from '../../../touch/testIds';
-import { backlogView, itemRow, PROJECT, review } from '../ct/fixtures';
+import { backlogView, itemRow, planningView, PROJECT, review } from '../ct/fixtures';
 import { RowActionsHarness } from '../ct/RowActionsHarness';
 import { rowActionsHarnessIds } from '../ct/rowActionsHarnessIds';
 import { stubBacklog } from '../ct/stubApi';
@@ -136,4 +136,54 @@ test('PointsSheet_WhenSaved_ShouldPatchPoints', async ({ mount, page }) => {
   await expect.poll(() => server.patches.length).toBe(1);
   expect(server.patches[0].url).toContain('/api/work-items/id-SHIP-2');
   expect(JSON.stringify(server.patches[0].body)).toContain('"points":{"value":8}');
+});
+
+// What switching List and Planning leaves in the cache: a read of the mode not shown, with the same revision of the row.
+const SPRINT_ROW = itemRow({
+  key: 'SHIP-160',
+  rank: 1,
+  sprint: { id: 'sp24', name: 'Sprint 24', status: 'current' },
+});
+const listWithSprintRow = () => backlogView([SPRINT_ROW]);
+const edgeBody = async (page: Page, server: { bulks: { items: unknown[] }[] }) => {
+  await openMore(page, 'SHIP-160');
+  await pick(page, 'top');
+  await expect.poll(() => server.bulks.length).toBe(1);
+  return server.bulks[0].items[0] as {
+    id: string;
+    changes: { sprint: { value: string | null } } | null;
+    placement: { slot: string };
+  };
+};
+
+test('RowActionsSheet_WhenMovedToTopOnPlanningWithListCached_ShouldLeaveItsSprint', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, planningView());
+  await mount(
+    <RowActionsHarness project={PROJECT} mode="planning" leftCached={listWithSprintRow()} />,
+    route,
+  );
+  await expect(rowOf(page, 'SHIP-160')).toBeVisible();
+
+  const item = await edgeBody(page, server);
+
+  expect(item.id).toBe('id-SHIP-160');
+  expect(item.placement.slot).toBe('first');
+  expect(item.changes?.sprint).toEqual({ value: null });
+});
+
+test('RowActionsSheet_WhenMovedToTopOnListWithPlanningCached_ShouldKeepItsSprint', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, listWithSprintRow());
+  await mount(<RowActionsHarness project={PROJECT} leftCached={planningView()} />, route);
+  await expect(rowOf(page, 'SHIP-160')).toBeVisible();
+
+  const item = await edgeBody(page, server);
+
+  expect(item.placement.slot).toBe('first');
+  expect(item.changes).toBeNull();
 });

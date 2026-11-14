@@ -60,7 +60,7 @@ export function ParentCandidates({
         data-testid={ids.parentOption}
         role="menuitemradio"
         aria-checked={value === null}
-        className="h-[30px] rounded-control px-2 text-left text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft"
+        className="h-[30px] touch:h-[var(--touch-target)] rounded-control px-2 text-left text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft"
         onClick={() => onPick(null)}
       >
         No parent
@@ -72,7 +72,7 @@ export function ParentCandidates({
           data-testid={ids.parentOption}
           role="menuitemradio"
           aria-checked={value?.id === item.id}
-          className="flex h-[30px] items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-sm)] text-ink hover:bg-signal-soft"
+          className="flex h-[30px] touch:h-[var(--touch-target)] items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-sm)] text-ink hover:bg-signal-soft"
           onClick={() => onPick({ id: item.id, key: item.key, type: item.type, title: item.title })}
         >
           <TypeIcon type={item.type.id} />

@@ -14,6 +14,36 @@ public sealed class RowActions(IPage page)
     public ILocator PointsSave => page.GetByTestId(BacklogTestIds.PointsSheetSave);
 
     // The rows that have no estimate: their points show a ? chip.
+    public ILocator ParentSheet => page.GetByTestId(BacklogTestIds.RowParentSheet);
+
+    public ILocator UnestimatedCheck => page.GetByTestId(BacklogTestIds.PlanCheck).Filter(new() { HasTextString = "not estimated" });
+
+    public ILocator QueueBanner => page.GetByTestId(BacklogTestIds.QueueBanner);
+
+    public ILocator QueueStepKey => page.GetByTestId(BacklogTestIds.QueueStepKey);
+
+    public ILocator QueueSkip => page.GetByTestId(BacklogTestIds.QueueSkip);
+
+    // Adds stories with no estimate at the top of the backlog (K2), so the queue has rows of this test's own.
+    public static async Task AddUnestimatedStoriesAsync(IAPIRequestContext request, Guid projectId, int count)
+    {
+        var items = Enumerable.Range(1, count).Select(n => new
+        {
+            type = "story",
+            title = $"Queue story {n:000}",
+            description = (string?)null,
+            points = (int?)null,
+            parentId = (Guid?)null,
+            tasks = Array.Empty<object>(),
+        }).ToList();
+        var response = await request.PostAsync($"/api/projects/{projectId}/backlog/items", new APIRequestContextOptions
+        {
+            Headers = new Dictionary<string, string> { ["X-ShipLean-Client"] = "row-actions-test" },
+            DataObject = new { items, sprintId = (Guid?)null, placement = (object?)null },
+        });
+        response.Ok.ShouldBeTrue(await response.TextAsync());
+    }
+
     public ILocator UnestimatedRows => page.GetByTestId(BacklogTestIds.Row)
         .Filter(new() { Has = page.GetByTestId(BacklogTestIds.Points).Filter(new() { HasTextString = "?" }) });
 

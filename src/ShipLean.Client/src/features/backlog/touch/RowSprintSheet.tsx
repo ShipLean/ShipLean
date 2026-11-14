@@ -4,7 +4,7 @@ import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views'
 import { Sheet } from '../../../touch/Sheet';
 import { actionSheetRowClass } from '../../../touch/ActionSheet';
 import { useProjectSprints } from '../../workItem/workItemApi';
-import { cachedRow } from '../estimate/cachedRow';
+import { activeBacklogView } from '../estimate/cachedRow';
 import { sprintSum } from '../bulk/sprintSum';
 import { backlogTestIds as ids } from '../testIds';
 
@@ -32,7 +32,7 @@ export function RowSprintSheet({
 }) {
   const queryClient = useQueryClient();
   const sprints = useProjectSprints(projectId).data ?? [];
-  const view = cachedRow(queryClient, row.id)?.view ?? null;
+  const view = activeBacklogView(queryClient, row.id);
   const sections = view?.sections ?? [];
   const options: Option[] = sprints
     .filter((sprint) => sprint.status !== 'past')
