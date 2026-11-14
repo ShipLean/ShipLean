@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act } from 'react';
+import { act, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ProjectDto } from '@shiplean/core/api/projects';
@@ -28,11 +28,14 @@ const { useTaskChanges } = await import('./taskChangesApi');
 
 const projectId = '0199a000-0000-7000-8000-000000000012';
 const workItemId = 'w142';
-let latest: ReturnType<typeof useTaskChanges>;
+const probe: { latest: ReturnType<typeof useTaskChanges> | undefined } = { latest: undefined };
 
 function Screen() {
   useProjectRealtime('SHIP');
-  latest = useTaskChanges(projectId, workItemId, 'all');
+  const value = useTaskChanges(projectId, workItemId, 'all');
+  useEffect(() => {
+    probe.latest = value;
+  });
   return null;
 }
 
@@ -67,27 +70,27 @@ async function deliver(event: Record<string, unknown>) {
 
 test('useTaskChanges_WhenCommitsChanged_ShouldSetNewCommitWithoutRefetching', async () => {
   expect(changeReads()).toEqual([`/api/work-items/${workItemId}/changes?commit=all`]);
-  expect(latest.newCommit).toBe(false);
+  expect(probe.latest!.newCommit).toBe(false);
 
   await deliver({ type: 'commitsChanged', workItemId });
 
-  expect(latest.newCommit).toBe(true);
+  expect(probe.latest!.newCommit).toBe(true);
   expect(changeReads()).toHaveLength(1);
 });
 
 test('useTaskChanges_WhenAnotherItemsCommitsChanged_ShouldIgnoreIt', async () => {
   await deliver({ type: 'commitsChanged', workItemId: 'other' });
 
-  expect(latest.newCommit).toBe(false);
+  expect(probe.latest!.newCommit).toBe(false);
 });
 
 test('useTaskChanges_WhenReloaded_ShouldRefetchAndClearNewCommit', async () => {
   await deliver({ type: 'commitsChanged', workItemId });
 
-  act(() => latest.reload());
+  act(() => probe.latest!.reload());
   await act(() => vi.advanceTimersByTimeAsync(0));
 
-  expect(latest.newCommit).toBe(false);
+  expect(probe.latest!.newCommit).toBe(false);
   expect(changeReads()).toHaveLength(2);
 });
 
