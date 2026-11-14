@@ -14,8 +14,8 @@ export type RailCategory = (typeof RAIL_CATEGORIES)[number];
 export interface RailSummary {
   /** Unassigned and not started, in backlog order: each story, then its tasks, then the tasks with no story. */
   ready: ReadyItem[];
-  /** The titles of what each person (by user id) has assigned in an In progress state. */
-  activeByUser: ReadonlyMap<string, string[]>;
+  /** What each person (by user id) has assigned in an In progress state, in backlog order. */
+  activeByUser: ReadonlyMap<string, WorkItemDto[]>;
   /** Story and bug points by state category (tasks carry none that count). */
   points: Record<RailCategory, number>;
 }
@@ -25,7 +25,7 @@ const isStarted = (category: StateCategory) => category !== 'proposed';
 /** The rail's three lists from the sprint's items, grouped by state category so custom states still roll up. */
 export function railSummary(stories: SprintStory[], unparented: WorkItemDto[]): RailSummary {
   const ready: ReadyItem[] = [];
-  const activeByUser = new Map<string, string[]>();
+  const activeByUser = new Map<string, WorkItemDto[]>();
   const points: Record<RailCategory, number> = {
     proposed: 0,
     inProgress: 0,
@@ -35,10 +35,7 @@ export function railSummary(stories: SprintStory[], unparented: WorkItemDto[]): 
   const visit = (item: WorkItemDto, sub: string) => {
     if (!item.assignee && !isStarted(item.state.category)) ready.push({ item, sub });
     if (item.assignee && item.state.category === 'inProgress') {
-      activeByUser.set(item.assignee.id, [
-        ...(activeByUser.get(item.assignee.id) ?? []),
-        item.title,
-      ]);
+      activeByUser.set(item.assignee.id, [...(activeByUser.get(item.assignee.id) ?? []), item]);
     }
   };
   for (const { story, tasks } of stories) {

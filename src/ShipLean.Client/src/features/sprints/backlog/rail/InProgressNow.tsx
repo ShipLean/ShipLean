@@ -1,4 +1,5 @@
 import type { MemberDto } from '@shiplean/core/api/projects';
+import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { Avatar } from '../../../../components/Avatar';
 import { sprintsTestIds as ids } from '../../testIds';
 
@@ -7,7 +8,7 @@ interface InProgressNowProps {
   /** The signed-in person's user id. */
   meId: string | undefined;
   /** What each user has in progress, by user id. */
-  activeByUser: ReadonlyMap<string, string[]>;
+  activeByUser: ReadonlyMap<string, WorkItemDto[]>;
 }
 
 /** Who is working on what right now: every member with how many items they have in progress. */
@@ -36,7 +37,7 @@ export function InProgressNow({ members, meId, activeByUser }: InProgressNowProp
             </span>
             <span
               data-testid={ids.railPersonActive}
-              title={active.join(', ')}
+              title={active.map((item) => item.title).join(', ')}
               className="ml-auto text-[length:var(--text-xs)] text-ink-muted"
             >
               {active.length > 0 ? `${active.length} active` : '—'}

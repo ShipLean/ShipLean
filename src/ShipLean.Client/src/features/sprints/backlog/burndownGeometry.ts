@@ -18,6 +18,11 @@ export interface BurndownDot {
   ideal: number;
 }
 
+export interface BurndownSize {
+  width: number;
+  height: number;
+}
+
 export interface BurndownShape {
   /** The scale's top: the most points on any line. */
   max: number;
@@ -36,11 +41,13 @@ export function burndownShape(
   points: BurndownPoint[],
   days: readonly string[],
   committed: number,
+  size: BurndownSize = { width: BURNDOWN_WIDTH, height: BURNDOWN_HEIGHT },
 ): BurndownShape {
+  const { width, height } = size;
   const max = Math.max(1, committed, ...points.map((p) => p.remaining));
   const x = (index: number) =>
-    days.length <= 1 ? LEFT : LEFT + (index * (BURNDOWN_WIDTH - LEFT - RIGHT)) / (days.length - 1);
-  const y = (value: number) => TOP + (1 - value / max) * (BURNDOWN_HEIGHT - TOP - BOTTOM);
+    days.length <= 1 ? LEFT : LEFT + (index * (width - LEFT - RIGHT)) / (days.length - 1);
+  const y = (value: number) => TOP + (1 - value / max) * (height - TOP - BOTTOM);
   const round = (n: number) => Math.round(n * 100) / 100;
   const idealOn = (index: number) =>
     days.length <= 1 ? 0 : (committed * (days.length - 1 - index)) / (days.length - 1);
@@ -60,7 +67,7 @@ export function burndownShape(
   });
   return {
     max,
-    baselineY: BURNDOWN_HEIGHT - BOTTOM,
+    baselineY: height - BOTTOM,
     dots,
     idealPoints: days.map((_, index) => `${round(x(index))},${round(y(idealOn(index)))}`).join(' '),
     actualPoints: dots.map((dot) => `${dot.x},${dot.y}`).join(' '),
