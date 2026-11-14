@@ -36,6 +36,8 @@ export const backlogTestIds = {
   treeGroup: 'backlog-tree-group',
   treeCaret: 'backlog-tree-caret',
   treeRollup: 'backlog-tree-rollup',
+  treeGroupPath: 'backlog-tree-group-path',
+  touchTree: 'backlog-touch-tree',
   loading: 'backlog-loading',
   loadFailed: 'backlog-load-failed',
   columnHeader: 'backlog-column-header',

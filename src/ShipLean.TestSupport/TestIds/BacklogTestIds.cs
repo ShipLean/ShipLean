@@ -37,6 +37,8 @@ public static class BacklogTestIds
     public const string TreeGroup = "backlog-tree-group";
     public const string TreeCaret = "backlog-tree-caret";
     public const string TreeRollup = "backlog-tree-rollup";
+    public const string TreeGroupPath = "backlog-tree-group-path";
+    public const string TouchTree = "backlog-touch-tree";
     public const string Loading = "backlog-loading";
     public const string LoadFailed = "backlog-load-failed";
     public const string ColumnHeader = "backlog-column-header";
