@@ -27,7 +27,7 @@ export function ModeSwitch({
       role="group"
       aria-label="Mode"
       data-testid={ids.modeSwitch}
-      className="inline-flex flex-none overflow-hidden rounded-control border border-edge"
+      className="inline-flex touch:flex-none overflow-hidden rounded-control border border-edge"
     >
       {modes.map((option) => (
         <button

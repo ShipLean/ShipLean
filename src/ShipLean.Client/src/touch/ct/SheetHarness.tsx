@@ -7,12 +7,15 @@ import { sheetHarnessIds } from './sheetHarnessIds';
 
 // CT harness for Sheet.phone.spec.tsx and ActionSheet.phone.spec.tsx. Each variant starts with its overlay open (except
 // `dialog` and `more`), shows whether it is open, and has a button to open it again.
-export type SheetHarnessVariant = 'basic' | 'search' | 'long' | 'dialog' | 'actions' | 'more';
+export type SheetHarnessVariant =
+  'basic' | 'search' | 'long' | 'dialog' | 'actions' | 'more' | 'moreSlot';
 
 const rows = ['Assign to me', 'Move to sprint', 'Copy link', 'Change state', 'Add a label'];
 
 export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
-  const [open, setOpen] = useState(variant !== 'dialog' && variant !== 'more');
+  const [open, setOpen] = useState(
+    variant !== 'dialog' && variant !== 'more' && variant !== 'moreSlot',
+  );
   const [lastAction, setLastAction] = useState('none');
   const [dialogOpen, setDialogOpen] = useState(true);
   const close = () => setOpen(false);
@@ -82,6 +85,15 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
         Open
       </button>
       {variant === 'more' ? <MoreButton actions={actions} label="Item actions" /> : null}
+      {variant === 'moreSlot' ? (
+        <MoreButton actions={actions} label="Item actions">
+          {(close) => (
+            <button type="button" data-testid={sheetHarnessIds.ctSheetSlot} onClick={close}>
+              Slot content
+            </button>
+          )}
+        </MoreButton>
+      ) : null}
       {variant === 'actions' ? (
         <ActionSheet open={open} title="Work item" actions={actions} onClose={close} />
       ) : null}

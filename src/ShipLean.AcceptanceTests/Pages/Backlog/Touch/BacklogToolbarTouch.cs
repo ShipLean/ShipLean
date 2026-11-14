@@ -25,7 +25,7 @@ public sealed class BacklogToolbarTouch(IPage page)
 
     public ILocator SearchBox => SearchRow.GetByTestId(BacklogTestIds.SearchBox);
 
-    public ILocator MoreSearch => page.GetByTestId(BacklogTestIds.MoreSearch);
+    public ILocator MoreSearch => Sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new() { HasTextString = "Search this list" });
 
     public ILocator AddClause => FilterSheet.GetByTestId(CriteriaTestIds.Add);
 

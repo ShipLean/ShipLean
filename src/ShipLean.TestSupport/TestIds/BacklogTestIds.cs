@@ -22,7 +22,6 @@ public static class BacklogTestIds
     public const string FilterSheet = "backlog-filter-sheet";
     public const string SearchRow = "backlog-search-row";
     public const string SearchCancel = "backlog-search-cancel";
-    public const string MoreSearch = "backlog-more-search";
     public const string MoreOptions = "backlog-more-options";
     public const string MoreSort = "backlog-more-sort";
     public const string MoreSortClear = "backlog-more-sort-clear";

@@ -59,11 +59,11 @@ test('MoreSheet_WhenMoreActionsGiven_ShouldListThemAfterOptions', async ({ mount
       return selectors.map(at);
     },
     [
-      `[data-testid="${ids.moreSearch}"]`,
+      actionRow('search'),
       `[data-testid="harness-option"]`,
+      `[data-testid="${ids.completedToggle}"]`,
       actionRow('select'),
       actionRow('estimate'),
-      `[data-testid="${ids.completedToggle}"]`,
     ],
   );
   expect(order.every((index) => index >= 0)).toBe(true);
@@ -88,7 +88,7 @@ test('MoreSheet_WhenSearchChosen_ShouldOpenTheFieldUnderTheToolbar', async ({ mo
   await mount(<ToolbarTouchHarness />, route);
   await expect(page.getByTestId(ids.searchBox)).toHaveCount(0);
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await page.getByTestId(ids.moreSearch).tap();
+  await page.locator(actionRow('search')).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
   const field = page.getByTestId(ids.searchBox);
   await expect(field).toBeVisible();
@@ -112,10 +112,19 @@ test('FilterSheet_WhenValueChanged_ShouldApplyWithoutButton', async ({ mount, pa
   await page.getByTestId(criteriaTestIds.add).tap();
   await expect(page.getByTestId(ids.filterButton)).toHaveText('Filter (1)');
   const value = page.getByTestId(criteriaTestIds.value);
-  await value.selectOption({ index: 1 });
+  const before = JSON.parse((await page.getByTestId('harness-criteria').textContent()) ?? '')
+    .clauses[0].value;
+  // An option other than the one the new clause started on.
+  const options = await value
+    .locator('option')
+    .evaluateAll((els) => els.map((el) => (el as HTMLOptionElement).value));
+  const picked = options.find((option) => option !== before && option !== '')!;
+  await value.selectOption(picked);
   // Applied on the change: the criteria hold the chosen value, and no Apply button is offered.
   const applied = JSON.parse((await page.getByTestId('harness-criteria').textContent()) ?? '');
   expect(applied.clauses).toHaveLength(1);
+  expect(applied.clauses[0].value).toBe(picked);
+  expect(applied.clauses[0].value).not.toBe(before);
   await expect(
     page.getByTestId(touchTestIds.sheetBody).getByRole('button', { name: /apply/i }),
   ).toHaveCount(0);
@@ -169,7 +178,7 @@ test('BacklogToolbar_WhenFeaturesLevel_ShouldOfferSearchAndShowCompleted', async
   await expect(page.getByTestId(ids.newItem)).toHaveText('+ New Feature');
   await expect(page.getByTestId(ids.modeOption)).toHaveText(['List', 'Tree']);
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.getByTestId(ids.moreSearch)).toBeVisible();
+  await expect(page.locator(actionRow('search'))).toBeVisible();
   const completed = page.getByTestId(ids.completedToggle);
   await expect(completed).toBeVisible();
   await completed.check();
@@ -181,7 +190,7 @@ test('MoreSheet_WhenSearchTypedInListMode_ShouldNarrowTheTouchRows', async ({ mo
   await mount(<ListMode project={PROJECT} />, route);
   await expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await page.getByTestId(ids.moreSearch).tap();
+  await page.locator(actionRow('search')).tap();
   await page.getByTestId(ids.searchBox).fill(ROWS[0].key);
   await expect(page.getByTestId(ids.row)).toHaveCount(1);
   await expect(page.getByTestId(ids.dragOffBanner)).toBeVisible();

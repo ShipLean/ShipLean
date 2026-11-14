@@ -20,7 +20,6 @@ export const backlogTestIds = {
   filterSheet: 'backlog-filter-sheet',
   searchRow: 'backlog-search-row',
   searchCancel: 'backlog-search-cancel',
-  moreSearch: 'backlog-more-search',
   moreOptions: 'backlog-more-options',
   moreSort: 'backlog-more-sort',
   moreSortClear: 'backlog-more-sort-clear',
