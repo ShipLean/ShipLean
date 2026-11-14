@@ -28,18 +28,38 @@ describe('pagesOf', () => {
 
   it('pagesOf_WhenLaneCollapsed_ShouldKeepHeader', () => {
     const view = storiesBoard({
-      columns: [column({ id: 'a' })],
+      columns: [column({ id: 'a' }), column({ id: 'b' })],
       lanes: [
         lane({
           id: 'one',
           kind: 'default',
-          cells: [cell('a', [card({ key: 'X-1' }), card({ key: 'X-2' })])],
+          cells: [cell('a', [card({ key: 'X-1' }), card({ key: 'X-2' })]), cell('b')],
+        }),
+        lane({ id: 'two', kind: 'criteria', cells: [cell('a'), cell('b')] }),
+      ],
+    });
+    const pages = pagesOf(view, new Set(['one', 'two']));
+    expect(pages[0]?.lanes[0]).toMatchObject({ collapsed: true, count: 2, cells: [] });
+    // Collapsed lanes keep their header in a column where they have no cards.
+    expect(pages[1]?.lanes.map((l) => l.lane.id)).toEqual(['one', 'two']);
+    expect(pages[1]?.lanes.every((l) => l.collapsed && l.cells.length === 0)).toBe(true);
+  });
+
+  it('pagesOf_WhenOneDefaultLane_ShouldHaveNoHeaderAndNeverLeaveItOut', () => {
+    const view = storiesBoard({
+      columns: [column({ id: 'a' }), column({ id: 'b' })],
+      lanes: [
+        lane({
+          id: 'one',
+          kind: 'default',
+          cells: [cell('a', [card({ key: 'X-1' })]), cell('b')],
         }),
       ],
     });
-    const [page] = pagesOf(view, new Set(['one']));
-    expect(page?.lanes).toHaveLength(1);
-    expect(page?.lanes[0]).toMatchObject({ collapsed: true, count: 2, cells: [] });
+    const pages = pagesOf(view, new Set(['one']));
+    expect(pages[1]?.lanes).toHaveLength(1);
+    expect(pages[1]?.lanes[0]).toMatchObject({ header: false, collapsed: false });
+    expect(pages[0]?.lanes[0]?.cells).toHaveLength(1);
   });
 
   it('pagesOf_WhenColumnSplit_ShouldStackDoingThenDone', () => {

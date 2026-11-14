@@ -38,16 +38,27 @@ test('BoardPages_WhenLaneToggled_ShouldCollapseInEveryColumn', async ({ mount, p
 
   await lanes.first().getByTestId(ids.columnLaneToggle).tap();
 
-  for (let i = 0; i < 3; i++) {
+  // A collapsed lane keeps its header in a column where it has no cards, so ▶ can expand it there.
+  await expect(lanes).toHaveCount(4);
+  for (let i = 0; i < 4; i++) {
     await expect(lanes.nth(i)).toHaveAttribute('data-collapsed', 'true');
     await expect(lanes.nth(i).getByTestId(ids.cell)).toHaveCount(0);
     await expect(lanes.nth(i).getByTestId(ids.columnLaneName)).toBeVisible();
   }
-  // A lane with no cards in a column is left out of it; the other lane is unaffected.
-  await expect(pageOf(page, 'col-prog').locator(`[data-lane="lane-default"]`)).toHaveCount(0);
+  await expect(
+    pageOf(page, 'col-prog').locator(`[data-lane="lane-default"]`).getByTestId(ids.columnLaneCount),
+  ).toHaveText('collapsed');
   await expect(
     pageOf(page, 'col-prog').locator(`[data-lane="lane-expedite"]`).getByTestId(ids.cell),
   ).toHaveCount(1);
+});
+
+test('BoardPages_WhenOneDefaultLane_ShouldShowNoLaneHeader', async ({ mount, page }) => {
+  await mount(<GridHarness view={featuresBoard()} level="features" />);
+
+  await expect(page.getByTestId(ids.columnLane)).toHaveCount(4);
+  await expect(page.getByTestId(ids.columnLaneHeader)).toHaveCount(0);
+  await expect(page.getByTestId(ids.columnLaneToggle)).toHaveCount(0);
 });
 
 test('BoardPages_WhenTablet_ShouldShowTwoAndABitColumns', async ({ mount, page }) => {
