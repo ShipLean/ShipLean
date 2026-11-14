@@ -1,0 +1,21 @@
+{
+  "readable": true,
+  "commits": [
+    {
+      "sha": "3129875341b21be51c23784314195d9fdb711823",
+      "parents": [],
+      "subject": "Add charge",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-06T09:00:00+00:00",
+      "additions": 1,
+      "deletions": 0,
+      "paths": [
+        "pay.ts"
+      ]
+    }
+  ],
+  "missing": [],
+  "chain": [
+    "3129875341b21be51c23784314195d9fdb711823"
+  ]
+}

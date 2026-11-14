@@ -1,0 +1,18 @@
+diff --git a/src/cart.ts b/src/cart.ts
+index 974ab382f37ccd4fad0b93e6fbdc6d49e8b36c70..32b5bb3e60b57caef19264a1ee56c236858b4921 100644
+--- a/src/cart.ts
++++ b/src/cart.ts
+@@ -1,2 +1,3 @@
+ export const price = 10;
+-export const tax = 1;
++export const tax = 2;
++export const total = price + tax;
+diff --git a/src/checkout.ts b/src/checkout.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..44f987599d4d2c296cb2260c868fabcf87db9016
+--- /dev/null
++++ b/src/checkout.ts
+@@ -0,0 +1,3 @@
++export function checkout() {
++  return 1;
++}

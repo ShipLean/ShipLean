@@ -1,0 +1,9 @@
+diff --git a/src/basket.ts b/src/basket.ts
+index 32b5bb3e60b57caef19264a1ee56c236858b4921..c539fd5bf8fc754cba98f4c92256efab09895b73 100644
+--- a/src/basket.ts
++++ b/src/basket.ts
+@@ -1,3 +1,4 @@
+ export const price = 10;
+ export const tax = 2;
+ export const total = price + tax;
++export const discount = 0;

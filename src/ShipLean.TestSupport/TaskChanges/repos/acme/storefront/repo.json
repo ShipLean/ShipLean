@@ -1,0 +1,85 @@
+{
+  "readable": true,
+  "commits": [
+    {
+      "sha": "06890a89ac17a7b73cb448c8e83013f87e59bac3",
+      "parents": [],
+      "subject": "Add cart module",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-01T09:00:00+00:00",
+      "additions": 3,
+      "deletions": 0,
+      "paths": [
+        "README.md",
+        "src/cart.ts"
+      ]
+    },
+    {
+      "sha": "1bbb25c5575ffa9f578572ef6aa5d5ee0dffdcb9",
+      "parents": [
+        "06890a89ac17a7b73cb448c8e83013f87e59bac3"
+      ],
+      "subject": "Add checkout and total",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-02T09:00:00+00:00",
+      "additions": 5,
+      "deletions": 1,
+      "paths": [
+        "src/cart.ts",
+        "src/checkout.ts"
+      ]
+    },
+    {
+      "sha": "c2d50ebab201ec2e1ce825df4379d628cf07f86f",
+      "parents": [
+        "1bbb25c5575ffa9f578572ef6aa5d5ee0dffdcb9"
+      ],
+      "subject": "Document contributing",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-03T09:00:00+00:00",
+      "additions": 2,
+      "deletions": 0,
+      "paths": [
+        "README.md"
+      ]
+    },
+    {
+      "sha": "7c8e48f216ae6325940ae385d3d249bd295bdad0",
+      "parents": [
+        "1bbb25c5575ffa9f578572ef6aa5d5ee0dffdcb9"
+      ],
+      "subject": "Rename cart to basket",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-04T09:00:00+00:00",
+      "additions": 1,
+      "deletions": 1,
+      "paths": [
+        "src/basket.ts",
+        "src/checkout.ts"
+      ]
+    },
+    {
+      "sha": "510331f554511bbb25a769c621bdac8b3b5490de",
+      "parents": [
+        "7c8e48f216ae6325940ae385d3d249bd295bdad0"
+      ],
+      "subject": "Add discount",
+      "author": "Ada Lovelace",
+      "authoredAt": "2026-11-05T09:00:00+00:00",
+      "additions": 1,
+      "deletions": 0,
+      "paths": [
+        "src/basket.ts"
+      ]
+    }
+  ],
+  "missing": [
+    "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+  ],
+  "chain": [
+    "06890a89ac17a7b73cb448c8e83013f87e59bac3",
+    "1bbb25c5575ffa9f578572ef6aa5d5ee0dffdcb9",
+    "7c8e48f216ae6325940ae385d3d249bd295bdad0",
+    "510331f554511bbb25a769c621bdac8b3b5490de"
+  ]
+}
