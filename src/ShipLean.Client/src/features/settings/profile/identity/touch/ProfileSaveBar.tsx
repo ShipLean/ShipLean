@@ -29,16 +29,14 @@ export function ProfileSaveBar({
   onDiscard(): void;
 }) {
   return (
-    // The bar is fixed; its in-flow spacer is clipped away here because the page reserves the room at its own end.
-    <div className="hidden h-0 overflow-hidden touch:block">
-      <SaveBar
-        dirty={dirty}
-        message={<Message canSave={canSave} error={error} />}
-        saveDisabled={!canSave}
-        saving={saving}
-        onSave={onSave}
-        onDiscard={onDiscard}
-      />
-    </div>
+    <SaveBar
+      dirty={dirty}
+      message={<Message canSave={canSave} error={error} />}
+      saveDisabled={!canSave}
+      saving={saving}
+      spacer={false}
+      onSave={onSave}
+      onDiscard={onDiscard}
+    />
   );
 }

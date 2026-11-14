@@ -65,6 +65,21 @@ test('SaveBar_WhenShown_ShouldLeaveRoomForThePageEnd', async ({ mount, page }) =
   expect(end.y + end.height).toBeLessThanOrEqual(bar.y);
 });
 
+test('SaveBar_WhenSpacerLeftToTheCaller_ShouldLeaveRoomOnlyThroughSaveBarSpacer', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SaveBarHarness ownSpacer />);
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const end = await page.getByTestId(harness.ctSaveBarPageEnd).boundingBox();
+  const bar = await page.getByTestId(ids.saveBar).boundingBox();
+  if (!end || !bar) throw new Error('the page end and the bar should render');
+  expect(end.y + end.height).toBeLessThanOrEqual(bar.y);
+  // Exactly one spacer: the bar did not add its own.
+  const spacers = await page.locator('div[aria-hidden="true"].shrink-0').count();
+  expect(spacers).toBe(1);
+});
+
 test('SaveBar_WhenMessageIsAButton_ShouldBeClickable', async ({ mount, page }) => {
   await mount(<SaveBarHarness messageIsButton />);
   const button = page.getByTestId(ids.saveBarMessage).getByTestId(harness.ctSaveBarMessageButton);

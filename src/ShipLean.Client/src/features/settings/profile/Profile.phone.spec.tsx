@@ -172,10 +172,14 @@ test('PasswordPhone_WhenCancelled_ShouldClearTheFieldsAndClose', async ({ mount,
   const view = await mount(<ProfilePanelsHarness />);
   await view.getByTestId(ids.passwordOpen).tap();
   await view.getByTestId(ids.passwordCurrent).fill('old-password-1');
+  await view.getByTestId(ids.passwordNew).fill('a-new-password');
+  await view.getByTestId(ids.passwordConfirm).fill('a-new-password');
   await view.getByTestId(ids.passwordCancel).tap();
   await expect(view.getByTestId(ids.passwordForm)).toHaveCount(0);
   await view.getByTestId(ids.passwordOpen).tap();
   await expect(view.getByTestId(ids.passwordCurrent)).toHaveValue('');
+  await expect(view.getByTestId(ids.passwordNew)).toHaveValue('');
+  await expect(view.getByTestId(ids.passwordConfirm)).toHaveValue('');
 });
 
 test('PasswordPhone_WhenChanged_ShouldCloseTheFormAndToast', async ({ mount, page }) => {

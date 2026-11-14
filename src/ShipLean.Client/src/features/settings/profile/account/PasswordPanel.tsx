@@ -183,7 +183,7 @@ export function PasswordPanel() {
             <button
               type="submit"
               data-testid={settingsTestIds.passwordSubmit}
-              className="btn-signal h-9 disabled:opacity-50 touch:flex-1 touch:justify-center"
+              className="btn-signal touch:h-9 disabled:opacity-50 touch:flex-1 touch:justify-center"
               disabled={!passwordReady(checks) || change.isPending}
             >
               Change password
