@@ -65,9 +65,6 @@ export function Card({
   const { touch } = useTouchShell();
   // Inside a board only: a card drawn as a preview has no actions and no tap to open.
   const actions = useOptionalCardActions();
-  const belowType: WorkItemTypeId | undefined = { epics: 'feature', features: 'story' }[
-    level as string
-  ] as WorkItemTypeId | undefined;
   const rule = settings.styleRules.find((candidate) => candidate.id === card.styleRuleId) ?? null;
   const showKey = fields?.showKey ?? true;
   const showAssignee = fields?.showAssignee ?? true;
@@ -113,9 +110,7 @@ export function Card({
         ) : null}
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}
-        {touch && actions ? (
-          <CardMore card={card} actions={actions} showBelow={onRollupClick} belowType={belowType} />
-        ) : null}
+        {touch && actions ? <CardMore card={card} actions={actions} /> : null}
       </div>
       {linkTitle ? (
         <ItemLink

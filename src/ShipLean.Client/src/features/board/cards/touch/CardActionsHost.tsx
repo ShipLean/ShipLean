@@ -8,7 +8,15 @@ import { CardMoveToSheet } from './CardMoveToSheet';
 type Picker = { cardId: string; kind: 'column' | 'lane' };
 
 /** Provides `useCardActions` and holds the sheets the actions open: the actions sheet, then Move to or Lane. */
-export function CardActionsHost({ view, children }: { view: BoardViewDto; children: ReactNode }) {
+export function CardActionsHost({
+  view,
+  onRollupClick,
+  children,
+}: {
+  view: BoardViewDto;
+  onRollupClick?: CardActions['showBelow'];
+  children: ReactNode;
+}) {
   const peek = useItemPeek();
   const [actionsFor, setActionsFor] = useState<string | null>(null);
   const [picker, setPicker] = useState<Picker | null>(null);
@@ -19,8 +27,9 @@ export function CardActionsHost({ view, children }: { view: BoardViewDto; childr
       pick: (cardId, kind) => setPicker({ cardId, kind }),
       openItem,
       view,
+      showBelow: onRollupClick,
     }),
-    [openItem, view],
+    [openItem, view, onRollupClick],
   );
   return (
     <CardActionsContext.Provider value={value}>

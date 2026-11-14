@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { storiesBoard } from '../../ct/fixtures';
+import { card, cell, storiesBoard } from '../../ct/fixtures';
 import {
   dropAtBottom,
   dropAtEnd,
@@ -49,5 +49,41 @@ describe('moveTargets', () => {
   it('moveTargets_WhenOnlyCardInCell_ShouldOfferNoTopOrBottom', () => {
     expect(dropAtTop(view, 'id-SHIP-160')).toBeNull();
     expect(dropAtBottom(view, 'id-SHIP-160')).toBeNull();
+  });
+});
+
+describe('moveTargets with several cards in a cell', () => {
+  const crowded = storiesBoard({
+    lanes: storiesBoard().lanes.map((candidate) =>
+      candidate.id !== 'lane-default'
+        ? candidate
+        : {
+            ...candidate,
+            cells: [
+              cell('col-new', [card({ key: 'A' }), card({ key: 'B' }), card({ key: 'C' })]),
+              ...candidate.cells.slice(1),
+            ],
+          },
+    ),
+  });
+
+  it('moveTargets_WhenMovedToTop_ShouldDropAboveTheFirstCard', () => {
+    expect(dropAtTop(crowded, 'id-C')).toEqual({
+      laneId: 'lane-default',
+      columnId: 'col-new',
+      done: false,
+      beforeItemId: 'id-A',
+    });
+    expect(dropAtTop(crowded, 'id-A')).toBeNull();
+  });
+
+  it('moveTargets_WhenMovedToBottom_ShouldDropAtTheEnd', () => {
+    expect(dropAtBottom(crowded, 'id-A')).toEqual({
+      laneId: 'lane-default',
+      columnId: 'col-new',
+      done: false,
+      beforeItemId: null,
+    });
+    expect(dropAtBottom(crowded, 'id-C')).toBeNull();
   });
 });

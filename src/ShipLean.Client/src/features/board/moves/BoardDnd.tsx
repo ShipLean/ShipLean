@@ -53,7 +53,7 @@ export function BoardDnd({
   children,
 }: {
   view: BoardViewDto;
-  context: Pick<BoardContext, 'projectId' | 'boardId' | 'level'>;
+  context: Pick<BoardContext, 'projectId' | 'boardId' | 'level' | 'onRollupClick'>;
   children: ReactNode;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -166,7 +166,9 @@ export function BoardDnd({
         }}
         onDragEnd={onDragEnd}
       >
-        <CardActionsHost view={view}>{children}</CardActionsHost>
+        <CardActionsHost view={view} onRollupClick={context.onRollupClick}>
+          {children}
+        </CardActionsHost>
       </DndContext>
       {asking ? (
         <DoneConfirm

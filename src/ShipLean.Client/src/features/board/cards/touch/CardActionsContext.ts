@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 
 /** What a card needs for its actions on a phone: provided by `BoardDnd`. */
@@ -9,6 +10,8 @@ export interface CardActions {
   pick(cardId: string, kind: 'column' | 'lane'): void;
   /** Opens the item in the modal (full screen on a phone). */
   openItem(itemKey: string): void;
+  /** What is under the card, as its roll-up opens it (the board's `onRollupClick`); absent where the board has no list. */
+  showBelow?: (cardId: string, cardKey: string, type: WorkItemTypeId) => void;
   /** The board as it stands now: the sheets list its columns and lanes. */
   view: BoardViewDto;
 }

@@ -3,7 +3,9 @@ import { componentTestIds as toastIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { BoardHarness } from '../ct/BoardHarness';
 import { LocationProbe } from '../ct/LocationProbe';
-import { featuresBoard, storiesBoard } from '../ct/fixtures';
+import type { BoardViewDto } from '@shiplean/core/api/views';
+import { CardActionsOpenHarness } from '../ct/CardActionsOpenHarness';
+import { card, cell, featuresBoard, lane, storiesBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';
 import { boardTestIds as ids } from '../testIds';
 
@@ -135,4 +137,69 @@ test('Card_WhenMoreTapped_ShouldNotOpenItemModal', async ({ mount, page }) => {
   await page.getByTestId(touchTestIds.sheetScrim).tap({ position: { x: 5, y: 5 } });
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByTestId(ids.locationProbe)).toHaveText('/p/SHIP/boards/stories');
+});
+
+function boardWithTwoNew(): BoardViewDto {
+  const base = storiesBoard();
+  return {
+    ...base,
+    lanes: base.lanes.map((candidate) =>
+      candidate.id !== 'lane-default'
+        ? candidate
+        : lane({
+            ...candidate,
+            cells: [
+              cell('col-new', [card({ key: 'SHIP-163' }), card({ key: 'SHIP-164' })]),
+              ...candidate.cells.slice(1),
+            ],
+          }),
+    ),
+  };
+}
+
+test('CardActionsSheet_WhenMoveToTopPicked_ShouldSendItAboveTheFirstCard', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBoard(page, boardWithTwoNew());
+  await mount(<BoardHarness />, route);
+
+  await cardKeyed(page, 'SHIP-164').getByTestId(touchTestIds.moreButton).tap();
+  await expect(row(page, 'bottom')).toBeDisabled();
+  await row(page, 'top').tap();
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({
+    itemId: 'id-SHIP-164',
+    columnId: 'col-new',
+    laneId: 'lane-default',
+    beforeItemId: 'id-SHIP-163',
+  });
+});
+
+test('CardActionsSheet_WhenMoveToBottomPicked_ShouldSendItToTheEnd', async ({ mount, page }) => {
+  const server = await stubBoard(page, boardWithTwoNew());
+  await mount(<BoardHarness />, route);
+
+  await cardKeyed(page, 'SHIP-163').getByTestId(touchTestIds.moreButton).tap();
+  await expect(row(page, 'top')).toBeDisabled();
+  await row(page, 'bottom').tap();
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({
+    itemId: 'id-SHIP-163',
+    columnId: 'col-new',
+    laneId: 'lane-default',
+    beforeItemId: null,
+  });
+});
+
+test('CardActionsSheet_WhenOpenedByHook_ShouldOfferWhatIsUnderIt', async ({ mount, page }) => {
+  await mount(<CardActionsOpenHarness view={featuresBoard()} cardId="id-SHIP-104" />, route);
+
+  await page.getByTestId('harness-open').tap();
+  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('SHIP-104 actions');
+  await row(page, 'below').tap();
+
+  await expect(page.getByTestId('harness-called')).toHaveText('id-SHIP-104 SHIP-104 story');
 });
