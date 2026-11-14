@@ -36,6 +36,8 @@ JSON objects, camelCase, enums as camelCase strings, nothing omitted. Every even
 | `asksChanged` | `workItemId` | a decision or question on the work item is raised, edited, answered, changed or withdrawn (published after commit; a write that also posts a comment publishes `commentsChanged` too) |
 | `attachmentsChanged` | `workItemId` | an attachment on the work item is added or archived |
 | `linksChanged` | `workItemId` | a link on the work item is added, edited or archived, or a link card's state or preview is refreshed |
+| `commitsChanged` | `workItemId` | commits are added to a Task or Bug (not by the one-off card migration). Open Changes sections refetch; an open Changes page offers a reload instead |
+| `codeCommentsChanged` | `workItemId` | a code comment on a Task or Bug is added, replied to, resolved, marked outdated or sent back. Open Changes pages refetch |
 | `retroChanged` | `sprintIds`, `workItemIds` | a retrospective point is logged, archived, moved to another theme, marked Not needed or un-marked (undo), added to an action item as one of its points, turned into an action item, or a theme is renamed or merged (empty lists, for a rename or merge, mean refetch every retro view) |
 | `agentSessionChanged` | `workItemId`, `sessionId` | an agent session on the work item opens, changes state or gets an activity, a link or a plan, or a prompt (a comment, Stop) is queued for it (`AgentSessionNotifier`; background writers publish with `clientId: null`) |
 | `sprintClosed` | `sprintId`, `closedBy` | a sprint's rollover is decided (Close sprint or the MCP `end_sprint`), after its `sprintChanged`. Starts the project's automatic demo when that setting is on |

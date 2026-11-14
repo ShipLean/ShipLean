@@ -27,6 +27,9 @@ export const apiErrorCodes = [
   'no_repo_url',
   'not_member',
   'intake_on',
+  'not_task_or_bug',
+  'repo_unreadable',
+  'bad_sha',
 ] as const;
 
 export type ApiErrorCode = (typeof apiErrorCodes)[number];

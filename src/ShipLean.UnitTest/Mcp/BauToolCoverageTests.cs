@@ -35,6 +35,7 @@ public class BauToolCoverageTests
         ["refine_work_item"] = Kind.ByKeyOnly,
         ["comment"] = Kind.ByKeyOnly,
         ["link"] = Kind.ByKeyOnly,
+        ["add_commits"] = Kind.ByKeyOnly,
         ["set_status"] = Kind.ByKeyOnly,
         ["pick_up"] = Kind.ByKeyOnly,
         ["update_progress"] = Kind.ByKeyOnly,

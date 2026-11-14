@@ -1,5 +1,6 @@
 import { expect } from '@playwright/experimental-ct-react';
 import { stubApi } from '../../features/workItem/ct/stubApi';
+import { SECTION } from '../../features/taskChanges/ct/fixtures';
 import { stubSide } from '../../features/workItem/ct/stubSide';
 import { workItemTestIds } from '../../features/workItem/testIds';
 import { projectSettings, storiesBoardSettings } from './fixtures/workItemSettings';
@@ -37,6 +38,7 @@ async function stubItem(page: Page, item: WorkItemDto, itemAttachments = attachm
   await page.route('**/api/projects/p1/members', (route) => route.fulfill({ json: SHELL_MEMBERS }));
   await page.route('**/api/projects/p1/sprints', (route) => route.fulfill({ json: SHELL_SPRINTS }));
   await page.route('**/api/work-items/*/comments', (route) => route.fulfill({ json: comments }));
+  await page.route('**/api/work-items/*/commits', (route) => route.fulfill({ json: SECTION }));
   await stubSide(page, PEOPLE.priya, itemAttachments, revisions);
 }
 
