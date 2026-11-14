@@ -65,6 +65,7 @@ export function PhoneStoryLane({
         />
       ) : (
         <UnparentedHeader
+          compact
           count={row.cells.reduce((n, c) => n + c.tasks.length, 0)}
           collapsed={collapsed}
           onToggle={onToggle}

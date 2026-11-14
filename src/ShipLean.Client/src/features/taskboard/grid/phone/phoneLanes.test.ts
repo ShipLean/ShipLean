@@ -39,7 +39,37 @@ const ROWS = [
 ];
 const keys = (lanes: { row: TaskboardRowDto }[]) => lanes.map((l) => l.row.parent?.key);
 
+const UNPARENTED = (tasks: CardDto[]): TaskboardRowDto => ({
+  parent: null,
+  offerResolve: false,
+  cells: [NEW, ACTIVE].map((s) => ({
+    stateId: s.id,
+    tasks: tasks.filter((t) => t.state.id === s.id),
+  })),
+});
+
 describe('phoneLanes', () => {
+  it('phoneLanes_WhenUnparentedRowIsNotLast_ShouldPutItLast', () => {
+    const rows = [ROWS[1], UNPARENTED([card('U1', NEW)]), ROWS[3]];
+    expect(keys(phoneLanes(rows, 'new', new Set()).lanes)).toEqual(['B', 'D', undefined]);
+    expect(phoneLanes(rows, 'new', new Set()).lanes.map((l) => l.rowId)).toEqual([
+      'B',
+      'D',
+      'unparented',
+    ]);
+  });
+
+  it('phoneLanes_WhenUnparentedRowHasNoTasks_ShouldKeepItAsALane', () => {
+    const lanes = phoneLanes([ROWS[1], UNPARENTED([])], 'active', new Set()).lanes;
+    expect(lanes.map((l) => l.rowId)).toEqual(['B', 'unparented']);
+    expect(lanes[1].tasks).toEqual([]);
+  });
+
+  it('phoneLanes_WhenNoUnparentedRow_ShouldNotAddOne', () => {
+    const lanes = phoneLanes(ROWS, 'new', new Set()).lanes;
+    expect(lanes.map((l) => l.rowId)).not.toContain('unparented');
+  });
+
   it('PhoneLanes_WhenAnyState_ShouldKeepOpenStoriesInBacklogOrderOnEveryPage', () => {
     expect(keys(phoneLanes(ROWS, 'new', new Set()).lanes)).toEqual(['B', 'D']);
     expect(keys(phoneLanes(ROWS, 'active', new Set()).lanes)).toEqual(['B', 'D']);
