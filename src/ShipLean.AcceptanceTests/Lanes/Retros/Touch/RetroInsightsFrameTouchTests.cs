@@ -97,7 +97,7 @@ public class RetroInsightsFrameTouchTests : SeededAcceptanceTest
         await ArrangeRecurringThemeAsync(theme);
         var (insights, touch) = await OpenAsync();
 
-        await insights.StatusOf(theme).TapAsync();
+        await new RetroThemesTouchPart(Page).CardOf(theme).GetByTestId(RetrosTestIds.RetroStatusChip).TapAsync();
         await Expect(touch.SheetTitle).ToHaveTextAsync("What these mean");
         (await touch.HighlightedCountAsync()).ShouldBe(1);
         await Expect(touch.DefsEntryOf("Recurring")).ToHaveAttributeAsync("data-highlighted", "true");

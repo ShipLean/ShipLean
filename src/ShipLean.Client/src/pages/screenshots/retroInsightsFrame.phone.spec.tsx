@@ -20,7 +20,7 @@ phonePageShots([
     arrange,
     ready: async (page) => {
       await expect(page.getByTestId(ids.retroInsightsToolbar)).toBeVisible();
-      await expect(page.getByTestId(ids.retroRecurringRow).first()).toBeVisible();
+      await expect(page.getByTestId(ids.retroThemeCard).first()).toBeVisible();
     },
   },
 ]);
