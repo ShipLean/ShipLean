@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalFocus } from '../../../components/useModalFocus';
 import { closeImageViewer, type ImageViewerState } from '../../../touch/imageViewer';
@@ -24,28 +24,32 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
   const [index, setIndex] = useState(() => Math.min(Math.max(viewer.start, 0), images.length - 1));
   const zoom = useZoom();
   const { reset } = zoom;
+  const count = images.length;
   const go = (to: number) => {
-    if (to < 0 || to >= images.length) return;
+    if (to < 0 || to >= count) return;
     reset();
     setIndex(to);
   };
-  const swipe = useSwipe(!zoom.zoomed, (direction) => go(index + direction));
-  const goRef = useRef(go);
-  goRef.current = go;
-  const indexRef = useRef(index);
-  indexRef.current = index;
+  const step = useCallback(
+    (by: number) => {
+      reset();
+      setIndex((current) => Math.min(Math.max(current + by, 0), count - 1));
+    },
+    [count, reset],
+  );
+  const swipe = useSwipe(!zoom.zoomed, step);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       // A sheet over the viewer handles its own Esc and marks it.
       if (event.defaultPrevented) return;
       if (event.key === 'Escape') closeImageViewer();
-      if (event.key === 'ArrowLeft') goRef.current(indexRef.current - 1);
-      if (event.key === 'ArrowRight') goRef.current(indexRef.current + 1);
+      if (event.key === 'ArrowLeft') step(-1);
+      if (event.key === 'ArrowRight') step(1);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, []);
+  }, [step]);
 
   const image = images[index];
   const many = images.length > 1;
@@ -79,7 +83,11 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
           {`${index + 1} of ${images.length}`}
           {context ? ` · ${context}` : ''}
         </span>
-        {image ? <ViewerMoreSheet image={image} /> : <span className="size-[var(--touch-target)]" />}
+        {image ? (
+          <ViewerMoreSheet image={image} />
+        ) : (
+          <span className="size-[var(--touch-target)]" />
+        )}
       </div>
       <div className="relative min-h-0 flex-1">
         <div

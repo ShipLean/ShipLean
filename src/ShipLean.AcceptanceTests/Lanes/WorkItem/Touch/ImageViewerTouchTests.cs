@@ -58,11 +58,18 @@ public class ImageViewerTouchTests : SeededAcceptanceTest
         await WorkItemAttachments.UploadAsTomAsync(
             BaseUrl, SeedIds.WorkItems.Ship101, "gallery.md", Encoding.UTF8.GetBytes("# Gallery\n\n![two](md-two.png)\n"));
         var images = await ImageNamesAsync(SeedIds.WorkItems.Ship101);
-        await attachment.OpenAsync("SHIP", "SHIP-101", await FindAttachmentIdAsync(SeedIds.WorkItems.Ship101, "gallery.md"));
-        var picture = Page.GetByTestId(AttachmentTestIds.Body).Locator("figure[data-md-image=attached] img");
-        await Expect(picture).ToBeVisibleAsync();
+        var galleryId = await FindAttachmentIdAsync(SeedIds.WorkItems.Ship101, "gallery.md");
+        // A tap before the item's images have loaded opens the viewer on the page's own images only, so wait for them.
+        await Page.RunAndWaitForResponseAsync(
+            () => attachment.OpenAsync("SHIP", "SHIP-101", galleryId),
+            response => response.Url.EndsWith($"/api/work-items/{SeedIds.WorkItems.Ship101}/attachments", StringComparison.Ordinal));
+        var body = Page.GetByTestId(AttachmentTestIds.Body);
+        await Expect(body).ToContainTextAsync("Gallery");
 
-        await picture.TapAsync();
+        // The rendered image has no test id of its own, so it is reached by its alt text through the body, and tapped.
+        var center = await body.EvaluateAsync<double[]>(
+            "(root) => { const r = root.querySelector('figure[data-md-image=attached] img[alt=two]').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }");
+        await Page.Touchscreen.TapAsync((float)center[0], (float)center[1]);
 
         var counter = Page.GetByTestId(AttachmentTestIds.ViewerCounter);
         await Expect(touch.ImageViewer).ToBeVisibleAsync();
@@ -84,7 +91,7 @@ public class ImageViewerTouchTests : SeededAcceptanceTest
     }
 
     // The item's image files in the order the server lists them, which is the order the viewer swipes through.
-    private async Task<IReadOnlyList<string>> ImageNamesAsync(Guid itemId)
+    private async Task<List<string>> ImageNamesAsync(Guid itemId)
     {
         var response = await Page.Context.APIRequest.GetAsync($"{BaseUrl}/api/work-items/{itemId}/attachments");
         response.Ok.ShouldBeTrue();
