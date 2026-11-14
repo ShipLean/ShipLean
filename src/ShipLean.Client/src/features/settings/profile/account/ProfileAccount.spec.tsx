@@ -399,3 +399,13 @@ test('Sessions_WhenProxyModeWithoutSignOutUrl_ShouldNotOfferSignOutOfThisBrowser
   await expect(view.getByTestId(ids.signOutOthers)).toBeVisible();
   await expect(view.getByTestId(ids.signOutBrowser)).toHaveCount(0);
 });
+
+test('Password_WhenOpenedOnADesktop_ShouldStayOpenAbove900px', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<ProfileAccount />);
+
+  await expect(view.getByTestId(ids.passwordForm)).toBeVisible();
+  await expect(view.getByTestId(ids.passwordCurrent)).toBeVisible();
+  await expect(view.getByTestId(ids.passwordOpen)).toHaveCount(0);
+  await expect(view.getByTestId(ids.passwordCancel)).toHaveCount(0);
+});

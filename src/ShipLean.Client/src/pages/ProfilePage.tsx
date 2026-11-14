@@ -9,10 +9,14 @@ import { InstallScreen } from './InstallScreen';
 export function ProfilePage() {
   return (
     <InstallScreen routeId={pageRouteIds.profile} testId={pagesTestIds.profilePage}>
-      <ProfileIdentitySlot />
-      <ProfileAccountSlot />
-      <ProfileDevicesSlot />
-      <ProfileConnectedAgentsSlot />
+      {/* InstallScreen pads 16px; the phone layout wants 12px gutters, and that file is shared. The bottom padding
+          leaves room for the Save bar. */}
+      <div className="touch:-mx-1 touch:-mt-1 touch:grid touch:gap-3 touch:pb-[calc(var(--touch-target)+1.5rem+env(safe-area-inset-bottom))]">
+        <ProfileIdentitySlot />
+        <ProfileAccountSlot />
+        <ProfileDevicesSlot />
+        <ProfileConnectedAgentsSlot />
+      </div>
     </InstallScreen>
   );
 }

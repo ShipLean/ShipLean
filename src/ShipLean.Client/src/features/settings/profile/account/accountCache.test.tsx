@@ -49,6 +49,12 @@ afterEach(() => {
 
 function mount(node: React.ReactNode, client = new QueryClient()) {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  // jsdom has no matchMedia, which the password panel reads (through useTouchShell) to know whether the form starts closed.
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
   act(() =>

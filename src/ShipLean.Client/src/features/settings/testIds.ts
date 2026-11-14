@@ -162,6 +162,10 @@ export const settingsTestIds = {
   profileSave: 'settings-profile-save',
   profileDiscard: 'settings-profile-discard',
   profileSaveError: 'settings-profile-save-error',
+  // SHIP-733 profile form touch
+  profileBarError: 'settings-profile-bar-error',
+  passwordOpen: 'settings-password-open',
+  passwordCancel: 'settings-password-cancel',
   instanceDenied: 'settings-instance-denied',
   instanceGeneralPanel: 'settings-instance-general-panel',
   instanceLoading: 'settings-instance-loading',

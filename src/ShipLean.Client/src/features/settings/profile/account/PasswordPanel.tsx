@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { showToast } from '../../../../components/toastStore';
 import { fetchMe, meKey } from '../../../../queries/shared';
 import { changePassword } from '../../settingsApi';
@@ -15,6 +16,10 @@ export function PasswordPanel() {
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
+  // At 900px and below the form starts closed, behind Change password; above it the form is always there.
+  const { touch } = useTouchShell();
+  const [open, setOpen] = useState(false);
+  const collapsed = touch && !open;
   const email = useQuery({ queryKey: meKey, queryFn: fetchMe }).data?.email ?? '';
   const checks = passwordChecks(current, next, confirm);
   // The mutation function closes over both passwords, so it must not outlive the attempt: gcTime 0 drops it
@@ -32,6 +37,7 @@ export function PasswordPanel() {
         'Password changed. Your other sessions and phones are signed out and your connected agents disconnected',
         { tone: 'ok' },
       );
+      setOpen(false);
       change.reset();
     },
     onError: (error) => {
@@ -40,6 +46,13 @@ export function PasswordPanel() {
       change.reset();
     },
   });
+  const cancel = () => {
+    setCurrent('');
+    setNext('');
+    setConfirm('');
+    setRefusal(null);
+    setOpen(false);
+  };
   const submit = () => {
     if (passwordReady(checks) && !change.isPending) change.mutate();
   };
@@ -58,7 +71,7 @@ export function PasswordPanel() {
       id={id}
       data-testid={testId}
       type="password"
-      className="field w-70 max-w-full"
+      className="field w-70 max-w-full touch:h-9 touch:w-full"
       value={value}
       autoComplete={auto}
       onChange={(e) => edit(set)(e.target.value)}
@@ -69,84 +82,115 @@ export function PasswordPanel() {
       title="Password"
       meta="Changing it signs out your other sessions and your phones, and disconnects your connected agents"
       testId={settingsTestIds.passwordPanel}
-    >
-      <form
-        data-testid={settingsTestIds.passwordForm}
-        onSubmit={(event) => {
-          event.preventDefault();
-          submit();
-        }}
-      >
-        <input
-          data-testid={settingsTestIds.passwordUsername}
-          type="text"
-          className="sr-only"
-          autoComplete="username"
-          value={email}
-          readOnly
-          tabIndex={-1}
-          aria-hidden="true"
-        />
-        <div className="grid grid-cols-[130px_minmax(0,1fr)] max-sm:grid-cols-1">
-          <FormRow label="Current" htmlFor="settings-password-current">
-            {field(
-              'settings-password-current',
-              settingsTestIds.passwordCurrent,
-              current,
-              setCurrent,
-              'current-password',
-            )}
-          </FormRow>
-          <FormRow label="New" htmlFor="settings-password-new">
-            {field(
-              'settings-password-new',
-              settingsTestIds.passwordNew,
-              next,
-              setNext,
-              'new-password',
-            )}
-          </FormRow>
-          <FormRow label="Confirm new" htmlFor="settings-password-confirm">
-            {field(
-              'settings-password-confirm',
-              settingsTestIds.passwordConfirm,
-              confirm,
-              setConfirm,
-              'new-password',
-            )}
-            <ul className="grid gap-0.5 text-[length:var(--text-sm)]">
-              {checks.map((check) => (
-                <li
-                  key={check.label}
-                  data-testid={settingsTestIds.passwordCheck}
-                  data-met={check.met}
-                  className={check.met ? 'text-ink' : 'text-ink-muted'}
-                >
-                  {check.met ? '✓' : '○'} {check.label}
-                </li>
-              ))}
-            </ul>
-          </FormRow>
-        </div>
-        <div className="flex items-center gap-2 rounded-b-panel border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">
-          {refusal !== null ? (
-            <span data-testid={settingsTestIds.passwordError} role="alert" className="text-alert">
-              {refusal}
-            </span>
-          ) : (
-            'Forgot it? Another instance admin can reset it.'
-          )}
-          <span className="flex-1" />
+      rule={!collapsed}
+      action={
+        collapsed ? (
           <button
-            type="submit"
-            data-testid={settingsTestIds.passwordSubmit}
-            className="btn-signal disabled:opacity-50"
-            disabled={!passwordReady(checks) || change.isPending}
+            type="button"
+            data-testid={settingsTestIds.passwordOpen}
+            className="btn-ghost h-9 touch:order-2 touch:ml-auto"
+            onClick={() => setOpen(true)}
           >
             Change password
           </button>
-        </div>
-      </form>
+        ) : null
+      }
+    >
+      {collapsed ? null : (
+        <form
+          data-testid={settingsTestIds.passwordForm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            submit();
+          }}
+        >
+          <input
+            data-testid={settingsTestIds.passwordUsername}
+            type="text"
+            className="sr-only"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+          <div className="grid grid-cols-[130px_minmax(0,1fr)] touch:grid-cols-1">
+            <FormRow label="Current" htmlFor="settings-password-current">
+              {field(
+                'settings-password-current',
+                settingsTestIds.passwordCurrent,
+                current,
+                setCurrent,
+                'current-password',
+              )}
+            </FormRow>
+            <FormRow label="New" htmlFor="settings-password-new">
+              {field(
+                'settings-password-new',
+                settingsTestIds.passwordNew,
+                next,
+                setNext,
+                'new-password',
+              )}
+            </FormRow>
+            <FormRow label="Confirm new" htmlFor="settings-password-confirm">
+              {field(
+                'settings-password-confirm',
+                settingsTestIds.passwordConfirm,
+                confirm,
+                setConfirm,
+                'new-password',
+              )}
+              <ul className="grid gap-0.5 text-[length:var(--text-sm)]">
+                {checks.map((check) => (
+                  <li
+                    key={check.label}
+                    data-testid={settingsTestIds.passwordCheck}
+                    data-met={check.met}
+                    className={check.met ? 'text-ink' : 'text-ink-muted'}
+                  >
+                    {check.met ? '✓' : '○'} {check.label}
+                  </li>
+                ))}
+              </ul>
+            </FormRow>
+          </div>
+          <div className="flex items-center gap-2 rounded-b-panel border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-xs)] text-ink-muted touch:flex-wrap touch:text-[length:var(--text-sm)]">
+            {refusal !== null ? (
+              <span
+                data-testid={settingsTestIds.passwordError}
+                role="alert"
+                className="text-alert touch:order-3 touch:basis-full"
+              >
+                {refusal}
+              </span>
+            ) : (
+              <span className="touch:order-3 touch:basis-full">
+                Forgot it? Another instance admin can reset it.
+              </span>
+            )}
+            <span className="flex-1 touch:hidden" />
+            {touch ? (
+              <button
+                type="button"
+                data-testid={settingsTestIds.passwordCancel}
+                className="btn-ghost h-9 flex-1 justify-center"
+                onClick={cancel}
+              >
+                Cancel
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              data-testid={settingsTestIds.passwordSubmit}
+              className="btn-signal h-9 disabled:opacity-50 touch:flex-1 touch:justify-center"
+              disabled={!passwordReady(checks) || change.isPending}
+            >
+              Change password
+            </button>
+          </div>
+        </form>
+      )}
     </PanelFrame>
   );
 }
