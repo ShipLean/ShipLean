@@ -36,7 +36,7 @@ const sizeOf = (cell: BoardCellDto | undefined) => (cell ? cell.cards.length + c
 
 /**
  * The phone board's pages, one per column. A lane with no cards in a column is left out of that page (the lane that
- * holds "+ New" stays in the first column, and so does a collapsed lane, which keeps its header in every column; a
+ * holds "+ New" stays in the first column; a collapsed lane stays in every column, keeping its header; a
  * board of one default lane has no header and is never left out), and a split column is one page with its
  * Doing cell, then its Done cell.
  */

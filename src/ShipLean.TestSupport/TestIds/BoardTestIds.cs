@@ -37,6 +37,7 @@ public static class BoardTestIds
     public const string Lane = "board-lane";
     public const string LaneHeader = "board-lane-header";
     public const string LaneToggle = "board-lane-toggle";
+    public const string CellEmpty = "board-cell-empty";
     public const string LaneName = "board-lane-name";
     public const string LaneCriteria = "board-lane-criteria";
     public const string LaneCount = "board-lane-count";

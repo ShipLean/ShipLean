@@ -34,6 +34,7 @@ export const boardTestIds = {
   lane: 'board-lane',
   laneHeader: 'board-lane-header',
   laneToggle: 'board-lane-toggle',
+  cellEmpty: 'board-cell-empty',
   laneName: 'board-lane-name',
   laneCriteria: 'board-lane-criteria',
   laneCount: 'board-lane-count',
