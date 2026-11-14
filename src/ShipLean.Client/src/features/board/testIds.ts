@@ -58,6 +58,7 @@ export const boardTestIds = {
   cardTag: 'board-card-tag',
   cardExtra: 'board-card-extra',
   dropLine: 'board-drop-line',
+  liftedCard: 'board-lifted-card',
   doneConfirm: 'board-done-confirm',
   doneConfirmChild: 'board-done-confirm-child',
   doneConfirmMore: 'board-done-confirm-more',

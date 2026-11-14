@@ -35,7 +35,7 @@ export function CardRollups({
           data-testid={ids.cardRollup}
           data-type={type}
           data-empty={true}
-          className="inline-flex items-center gap-1 text-[length:var(--text-2xs)] text-ink-muted"
+          className="inline-flex items-center gap-1 text-[length:var(--text-2xs)] text-ink-muted touch:min-h-[var(--touch-target)]"
         >
           {level === 'epics' ? 'No Features yet' : 'No stories yet'}
         </button>
@@ -58,7 +58,7 @@ export function CardRollups({
             data-type={rollup.type}
             data-complete={rollup.open === 0}
             title={`${rollup.type}: ${rollup.closed} of ${total} done`}
-            className={`inline-flex items-center gap-1 text-[length:var(--text-2xs)] tabular-nums ${
+            className={`inline-flex items-center gap-1 text-[length:var(--text-2xs)] tabular-nums touch:min-h-[var(--touch-target)] ${
               warn
                 ? 'font-semibold text-caution'
                 : rollup.open === 0

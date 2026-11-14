@@ -12,9 +12,6 @@ public static class TouchPendingRoutes
         ["storiesBacklog"] = "SHIP-716",
         // SHIP-722
         // SHIP-719
-        ["storiesBoard"] = "SHIP-719",
-        ["featuresBoard"] = "SHIP-719",
-        ["epicsBoard"] = "SHIP-719",
         // SHIP-723
         // SHIP-724
         // SHIP-725

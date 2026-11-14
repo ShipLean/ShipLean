@@ -61,6 +61,7 @@ public static class BoardTestIds
     public const string CardTag = "board-card-tag";
     public const string CardExtra = "board-card-extra";
     public const string DropLine = "board-drop-line";
+    public const string LiftedCard = "board-lifted-card";
     public const string DoneConfirm = "board-done-confirm";
     public const string DoneConfirmChild = "board-done-confirm-child";
     public const string DoneConfirmMore = "board-done-confirm-more";

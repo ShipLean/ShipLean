@@ -70,7 +70,7 @@ export function Card({
   const showAssignee = fields?.showAssignee ?? true;
   const showTags = fields?.showTags ?? true;
   const showPoints = fields?.showPoints ?? true;
-  const titleClass = `leading-[1.35] font-medium ${compact ? 'line-clamp-1' : 'line-clamp-2'} ${
+  const titleClass = `leading-[1.35] font-medium touch:min-h-[var(--touch-target)] ${compact ? 'line-clamp-1' : 'line-clamp-2'} ${
     inDone ? 'text-ink-muted' : 'text-ink'
   }`;
   return (
