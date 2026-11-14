@@ -121,7 +121,6 @@ declare -A variants=(
   [agent-runs-errors]="agent-runs.html?view=run&state=errors"
   [agent-runs-permission]="agent-runs.html?view=run&state=permission"
   [agent-runs-edit]="agent-runs.html?view=run&state=edit"
-  [agent-runs-comment]="agent-runs.html?view=run&state=comment"
   [agent-runs-hidden]="agent-runs.html?view=run&state=hidden"
   [agent-runs-codex]="agent-runs.html?view=run&run=codex"
   [agent-runs-cursor]="agent-runs.html?view=run&run=cursor"

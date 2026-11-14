@@ -11,7 +11,8 @@
   ?view=task     the Task page (SHIP-171) with its Agent runs section under Changes. &state=empty | down
   ?view=run      (default) the Run page, /p/SHIP/items/SHIP-171/runs/<run>.
                  &run=claude (default, a traced run: waterfall) | codex (log-only: event timeline) | cursor (hook events)
-                 &state= errors | hidden | permission | edit | comment | truncated | expired
+                 &state= zoom | errors | hidden | permission | edit | truncated | expired
+  Decisions D14–D22 settled by Joel, 14 Nov 2026: no cost or price in v1 (D21), no comments on spans in v1 (D20).
   Span and event names follow what each agent sends as far as we know on 14 Nov; lane 1c's recorded runs replace them.
   The Preview panel (bottom left) is a review aid; ?shot hides it, ?theme=light|dark forces a theme.
 -->
@@ -253,7 +254,7 @@ table.runs td.what { width: 100%; max-width: 0; }
   const claude = {
     id: 'cc-7f3e1a', agent: 'claude', base: 16 * 3600 + 12 * 60 + 4, day: 'Thu 22 Oct', end: 4346,
     who: 'Priya Shah', where: 'in her terminal', model: 'claude-opus-5-5', link: 'Tagged', linkWhy: 'shiplean.item = SHIP-171, set by shiplean telemetry env',
-    tokensIn: '2.31M', tokensOut: '41.2k', cost: '$5.86', spans: 61, outcome: 'report_task: done · 3 commits · PR #433', traced: true,
+    tokensIn: '2.31M', tokensOut: '41.2k', spans: 61, outcome: 'report_task: done · 3 commits · PR #433', traced: true,
     turns: [
       { n: 'Turn 1', prompt: 'Pick up SHIP-171 and do it. Use the brief; build before you stop.', s: 0, t: 416, kids: [
         M(0, 7.8), P('get_brief', 'SHIP-171', 8.1, 1.2), P('pick_up', 'SHIP-171', 9.6, 0.9), M(10.8, 6.2),
@@ -282,7 +283,7 @@ table.runs td.what { width: 100%; max-width: 0; }
   const codex = {
     id: 'cx-4b91d0', agent: 'codex', base: 15 * 3600 + 2 * 60 + 10, day: 'Wed 21 Oct', end: 640,
     who: 'agent-relay', where: 'on build-02', model: 'gpt-5-codex', link: 'From pick_up', linkWhy: 'a shiplean pick_up call named SHIP-171 (no shiplean.item on the run)',
-    tokensIn: '398k', tokensOut: '14.1k', cost: '—', spans: 0, events: 31, outcome: 'hand_back: blocked · vault answers 429 in the tests', traced: false,
+    tokensIn: '398k', tokensOut: '14.1k', spans: 0, events: 31, outcome: 'hand_back: blocked · vault answers 429 in the tests', traced: false,
     turns: [
       { n: 'Turn 1', prompt: 'You are working on SHIP-171 in acme/storefront. Read its brief with get_brief, pick it up, and do it.', s: 0, t: 640, kids: [
         ev('codex.conversation_starts', 'gpt-5-codex · sandbox workspace-write · approval never', 0),
@@ -313,7 +314,7 @@ table.runs td.what { width: 100%; max-width: 0; }
   const cursor = {
     id: 'cu-a20c57', agent: 'cursor', base: 18 * 3600 + 20 * 60 + 31, day: 'Thu 22 Oct', end: 371,
     who: 'Priya Shah', where: 'in Cursor', model: '—', link: '.shiplean file', linkWhy: 'the hook script read SHIP-171 from the worktree\'s .shiplean file',
-    tokensIn: '—', tokensOut: '—', cost: '—', spans: 0, events: 9, outcome: 'Read SHIP-171\'s brief · no edits', traced: false,
+    tokensIn: '—', tokensOut: '—', spans: 0, events: 9, outcome: 'Read SHIP-171\'s brief · no edits', traced: false,
     turns: [
       { n: 'Prompt 1', prompt: 'Why does the vault client retry only once on 429?', s: 0, t: 214, kids: [
         ev('beforeSubmitPrompt', 'prompt', 0),
@@ -340,7 +341,7 @@ table.runs td.what { width: 100%; max-width: 0; }
     walk(tu.kids, 1, tu);
   });
   const byId = Object.fromEntries(flat.map(s => [s.id, s]));
-  const selDefault = { claude: { '': 'test1', errors: 'test1', zoom: 'build1', hidden: 'test1', comment: 'test1', truncated: 'test1', edit: 'editVault', permission: 'commit2' }, codex: { '': 'cxt1' }, cursor: {} }[run.agent];
+  const selDefault = { claude: { '': 'test1', errors: 'test1', zoom: 'build1', hidden: 'test1', truncated: 'test1', edit: 'editVault', permission: 'commit2' }, codex: { '': 'cxt1' }, cursor: {} }[run.agent];
   const ui = { sel: (selDefault && (selDefault[state] || selDefault[''])) || flat[1].id, errorsOnly: state === 'errors', find: '', range: state === 'zoom' ? [0, 416] : null };
   if (run.agent === 'cursor') ui.sel = flat.find(s => s.k === 'mcp').id;
 
@@ -358,7 +359,7 @@ table.runs td.what { width: 100%; max-width: 0; }
      at CardLookupTests.ForCustomerAsync_WhenTheVaultAnswers429_ShouldRetryOnce() in CardLookupTests.cs:line 41</span>
 <span class="e">Failed!  - Failed: 1, Passed: 8, Skipped: 0, Total: 9, Duration: 1.9 s</span>`,
       attrs: [['tool_name', 'Bash'], ['decision', 'accept'], ['decision.source', 'config'], ['success', 'false'], ['exit_code', '1'], ['duration_ms', '48310'], ['session.id', '7f3e1a90-…-c2d4'], ['prompt.id', 'b81c…07'], ['span_id', '4f1a9c0d2e7b6a13'], ['shiplean.item', 'SHIP-171'], ['vcs.ref.head.name', 'ship-171-card-lookup']],
-      logs: [['16:41:16', 'INFO', 'claude_code.tool_decision', 'tool_name=Bash decision=accept source=config'], ['16:42:04', 'INFO', 'claude_code.tool_result', 'tool_name=Bash success=false duration_ms=48310'], ['16:42:05', 'INFO', 'claude_code.api_request', 'model=claude-opus-5-5 input_tokens=88412 output_tokens=391 cost_usd=0.19']],
+      logs: [['16:41:16', 'INFO', 'claude_code.tool_decision', 'tool_name=Bash decision=accept source=config'], ['16:42:04', 'INFO', 'claude_code.tool_result', 'tool_name=Bash success=false duration_ms=48310'], ['16:42:05', 'INFO', 'claude_code.api_request', 'model=claude-opus-5-5 input_tokens=88412 output_tokens=391']],
     },
     editVault: {
       input: `file_path: src/Storefront.Vault/VaultClient.cs
@@ -386,7 +387,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
   const genericDetail = sp => ({
     input: sp.d && sp.k !== 'model' ? sp.d : '',
     output: sp.k === 'model' ? '' : '',
-    attrs: sp.k === 'model' ? [['model', sp.d], ['input_tokens', String(Math.round(18000 + sp.t * 2100))], ['output_tokens', String(Math.round(120 + sp.t * 28))], ['cost_usd', (0.04 + sp.t * 0.006).toFixed(2)], ['duration_ms', String(Math.round(sp.t * 1000))]]
+    attrs: sp.k === 'model' ? [['model', sp.d], ['input_tokens', String(Math.round(18000 + sp.t * 2100))], ['output_tokens', String(Math.round(120 + sp.t * 28))], ['duration_ms', String(Math.round(sp.t * 1000))]]
       : !run.traced ? [['event.name', sp.n], [run.agent === 'cursor' ? 'conversation_id' : 'conversation.id', run.agent === 'cursor' ? 'a20c57e1-…-90bd' : '4b91d0e2-…-77aa'], ['shiplean.item', 'SHIP-171'], ...(sp.t ? [['duration_ms', String(Math.round(sp.t * 1000))]] : [])]
       : sp.k === 'turn' ? [['session.id', '7f3e1a90-…-c2d4'], ['prompt.id', 'b81c…0' + sp.id.slice(-1)], ['spans', String(sp.kids.length)]]
       : [['tool_name', sp.n], ['success', sp.err ? 'false' : 'true'], ['duration_ms', String(Math.round(sp.t * 1000))]],
@@ -434,20 +435,19 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
     return `
       <section class="sec runs-sec" data-testid="task-agent-runs">
         <div class="sec-h"><h2>Agent runs</h2>
-          <span class="sum">3 runs · 1 h 29 m · 2.7M tokens · $5.86 reported</span>
+          <span class="sum">3 runs · 1 h 29 m · 2.7M tokens</span>
           <span class="spacer"></span>
           <span class="pill danger">${errCount(claude) + errCount(codex) + errCount(cursor)} errors</span>
           <span class="pill warn" title="Time the agent sat waiting for someone to allow a tool">Waited 22 m for permission</span>
         </div>
         <div class="box"><table class="runs">
-          <thead><tr><th>Agent</th><th>What it did</th><th class="r">Took</th><th>Timeline</th><th class="r">Tokens</th><th class="r">Cost</th><th class="r">Errors</th><th></th></tr></thead>
+          <thead><tr><th>Agent</th><th>What it did</th><th class="r">Took</th><th>Timeline</th><th class="r">Tokens</th><th class="r">Errors</th><th></th></tr></thead>
           <tbody>${list.map(r => { const e = errCount(r); return `<tr class="run" data-open="${r.agent}">
             <td><span class="agentcell">${badge(r.agent)}<span class="n"><b>${AGENTS[r.agent]}</b><small>${r.who} · ${r.day}, ${clock(r.base, 0).slice(0, 5)}</small></span></span></td>
             <td class="what"><span class="o">${esc(r.outcome)}</span><span class="s"><span class="pill ${r.link === 'Tagged' ? 'ok' : 'info'}" title="Linked to SHIP-171 by ${esc(r.linkWhy)}">${r.link}</span> ${r.turns.length} ${r.agent === 'cursor' ? 'prompts' : 'turns'} · ${r.traced ? `${r.spans} spans` : `${r.events} events, no trace`}${r.model === '—' ? '' : ' · ' + r.model}</span></td>
             <td class="r num">${dur(r.end)}</td>
             <td>${mini(r)}</td>
             <td class="r num">${r.tokensIn === '—' ? '<span class="muted">—</span>' : r.tokensIn}</td>
-            <td class="r num">${r.cost === '—' ? '<span class="muted" title="This agent doesn\'t report cost">—</span>' : r.cost}</td>
             <td class="r num">${e ? `<span class="errs">${e}</span>` : '<span class="muted">0</span>'}</td>
             <td><a class="muted" style="text-decoration:none;font-size:16px" href="?view=run&run=${r.agent}${keep}" aria-label="Open the run">›</a></td></tr>`; }).join('')}</tbody></table></div>
         <div class="foot"><span>Read from ClickHouse · kept 30 days · prompts and tool output shown (project setting)</span><span class="spacer"></span><a href="#">Agent setup</a></div>
@@ -549,9 +549,8 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
       if (sp.wait) bars += b('wait', seg(sp.s, sp.wait), ` title="Waiting for permission ${dur(sp.wait)}"`);
       bars += b(cls, seg(sp.s + (sp.wait || 0), sp.t - (sp.wait || 0)));
     }
-    const c = state === 'comment' && sp.id === 'test1' ? '<span class="cbub" title="2 comments">2</span>' : '';
     return `<div class="wf-row${ui.sel === sp.id ? ' on' : ''}" data-sel="${sp.id}">
-      <div class="lab" style="--d:${sp.depth}">${twisty}<span class="kd ${sp.k}">${kindLetter[sp.k]}</span>${label(sp)}${sp.kids && !sp.open ? `<span class="pill">${subCount(sp)} spans</span>` : ''}${sp.wait ? `<span class="pill warn">waited ${dur(sp.wait)}</span>` : ''}${c}${sp.err ? '<span class="x" title="Error">✕</span>' : ''}</div>
+      <div class="lab" style="--d:${sp.depth}">${twisty}<span class="kd ${sp.k}">${kindLetter[sp.k]}</span>${label(sp)}${sp.kids && !sp.open ? `<span class="pill">${subCount(sp)} spans</span>` : ''}${sp.wait ? `<span class="pill warn">waited ${dur(sp.wait)}</span>` : ''}${sp.err ? '<span class="x" title="Error">✕</span>' : ''}</div>
       <div class="track" style="--grid:${gridCss}">${bars}</div>
       <div class="dur">${isPoint ? clock(run.base, sp.s) : dur(sp.t)}</div></div>`;
   }
@@ -565,7 +564,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
       <div class="t"><span class="kd ${sp.k}">${kindLetter[sp.k]}</span><span class="nm">${sp.k === 'turn' ? sp.n : esc(run.traced ? (sp.k === 'model' ? 'Model call' : sp.n) : sp.n)}${run.traced && sp.k === 'tool' && CONTENT ? ` <span class="muted" style="font-weight:400">· ${esc(sp.d.split(' ').slice(0, 2).join(' '))}</span>` : ''}</span><span class="spacer"></span>${sp.err ? `<span class="pill danger">${esc(sp.err)}</span>` : '<span class="pill ok">OK</span>'}</div>
       <div class="meta"><span>${kindName}</span>·<span>${run.day}, ${clock(run.base, start)}</span>·<span>${sp.t ? dur(sp.t) : 'point in time'}</span>·<span>${off(start)} into the run</span></div>
       ${sp.wait ? `<div class="meta"><span class="pill warn">Waited ${dur(sp.wait)} for permission</span><span>then ran for ${dur(sp.t - sp.wait)}</span></div>` : ''}
-      <div class="row" style="margin-top:2px"><button class="btn tiny" type="button" data-comment>Comment</button><button class="btn tiny" type="button" data-copy>Copy link</button><span class="spacer"></span><a class="btn ghost tiny" href="#">Open in Grafana ↗</a></div></div>`;
+      <div class="row" style="margin-top:2px"><button class="btn tiny" type="button" data-copy>Copy link</button><span class="spacer"></span><a class="btn ghost tiny" href="#">Open in Grafana ↗</a></div></div>`;
     const hidden = `<div class="hiddenbox">Prompts, responses and tool input and output are hidden in SHIP. A project admin can show them in Project settings › Inspection; the agent or the team's collector decides whether they're captured at all.</div>`;
     let body = '';
     if (sp.k === 'turn') body += `<div class="dp-sec"><span class="overline">Prompt</span>${CONTENT ? `<pre>${esc(sp.prompt)}</pre>` : hidden}</div>
@@ -576,11 +575,6 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
     if (sp.k === 'model' && sp.retry) body += `<div class="callout warn"><b>The API answered 529 (overloaded).</b>Claude Code retried after 2.1 s and the second attempt went through. Logged as <code>claude_code.api_error</code> with <code>attempt=1</code>.</div>`;
     body += `<div class="dp-sec"><span class="overline">Attributes</span><div class="kvbox"><table class="kv">${d.attrs.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('')}</table></div></div>`;
     if (d.logs.length) body += `<div class="dp-sec"><div class="hh"><span class="overline">Logs</span><span class="cnt">${d.logs.length}</span><span class="spacer"></span><span class="xs muted">joined by ${run.traced ? 'span id' : 'conversation and time'}</span></div><div class="logs">${d.logs.map(([t, s, n, b]) => `<div class="lr"><span class="tm">${t}</span><span class="sv ${s}">${s}</span><span class="bd">${n} <span>${esc(b)}</span></span></div>`).join('')}</div></div>`;
-    if (state === 'comment' && sp.id === 'test1') body = `<div class="dp-sec"><span class="overline">Comments on this span</span><div class="thread">
-      <div class="msg">${av('tom')}<div><div class="mh"><b>Tom Becker</b><span class="xs muted">Fri 23 Oct, 08:31</span></div><div>It only found the vault's one-retry rule after this test failed. That rule should be in SHIP-141's notes so the next brief has it.</div></div></div>
-      <div class="msg">${av('priya')}<div><div class="mh"><b>Priya Shah</b><span class="xs muted">Fri 23 Oct, 08:47</span></div><div>Added to SHIP-141. Leaving this open until the brief shows it.</div></div></div>
-      <div class="acts"><button class="btn tiny" type="button">Reply</button><button class="btn tiny" type="button">Resolve</button><span class="spacer"></span><span class="xs muted">on span 4f1a9c0d</span></div></div>
-      <span class="xs muted">Comments stay on SHIP-171 and show in its Discussion with a link to this span.</span></div>` + body;
     return head + `<div class="dp-b">${body}</div>`;
   }
 
@@ -625,7 +619,6 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
           <span class="stat"><b>${run.traced ? run.spans : run.events}</b><span>${run.traced ? 'Spans' : 'Events'}</span></span>
           <span class="stat"><b>${run.tokensIn}</b><span>Tokens in</span></span>
           <span class="stat"><b>${run.tokensOut}</b><span>Tokens out</span></span>
-          <span class="stat"><b>${run.cost}</b><span>Cost</span></span>
           <span class="stat"><b style="color:${e ? 'var(--color-danger)' : 'inherit'}">${e}</b><span>Errors</span></span>
           ${run.agent === 'claude' ? '<span class="stat"><b style="color:var(--color-warn)">22 m 49 s</b><span>Permission waits</span></span>' : ''}
           <span class="sep"></span>
@@ -635,7 +628,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
           ${run.model === '—' ? '' : `<span class="xs muted">${run.model}</span>`}
         </div>
       </section>
-      ${!run.traced ? `<div class="banner"><b>${AGENTS[run.agent]} sends ${run.agent === 'cursor' ? 'hook events' : 'log events'}, not traces.</b> ${run.agent === 'cursor' ? 'ShipLean\'s hook script sends prompts, shell commands, MCP calls and file reads and edits; there are no model calls, tokens or cost.' : 'This run is a timeline of its events grouped by turn: no nesting, and a bar is drawn back from the event by its <code>duration_ms</code>.'}<span class="spacer"></span><a href="#">What each agent sends ↗</a></div>` : ''}
+      ${!run.traced ? `<div class="banner"><b>${AGENTS[run.agent]} sends ${run.agent === 'cursor' ? 'hook events' : 'log events'}, not traces.</b> ${run.agent === 'cursor' ? 'ShipLean\'s hook script sends prompts, shell commands, MCP calls and file reads and edits; there are no model calls or tokens.' : 'This run is a timeline of its events grouped by turn: no nesting, and a bar is drawn back from the event by its <code>duration_ms</code>.'}<span class="spacer"></span><a href="#">What each agent sends ↗</a></div>` : ''}
       ${state === 'truncated' ? `<div class="banner warn"><b>Only part of this trace came back.</b> It's over Tempo's per-trace size limit, so 412 of about 1,900 spans are shown, earliest first.<span class="spacer"></span><a class="btn tiny" href="#">Open in Grafana ↗</a></div>` : ''}
       ${overviewHtml()}
       <div class="rv">
@@ -662,7 +655,6 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
     const er = t.closest('[data-err]'); if (er) { e.preventDefault(); ui.errorsOnly = er.dataset.err === '1'; render(); return; }
     const open = t.closest('tr[data-open]'); if (open && !t.closest('a')) { location.search = `?view=run&run=${open.dataset.open}${keep}`; return; }
     if (t.closest('[data-copy]')) { toast('Link to this span copied'); return; }
-    if (t.closest('[data-comment]')) { toast('Comment box opens under the span (as on Changes)'); return; }
   });
   document.addEventListener('input', e => { if (e.target.id === 'find') { ui.find = e.target.value; const pos = e.target.selectionStart; render(); const f = $('find'); f.focus(); f.setSelectionRange(pos, pos); } });
 
