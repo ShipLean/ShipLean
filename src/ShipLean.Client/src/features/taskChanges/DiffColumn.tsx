@@ -16,6 +16,8 @@ export interface DiffColumnProps extends ViewedProps {
   layout: DiffLayout;
   /** A file key, `<repo>:<path>` (see `fileKey`). */
   openFile: string | null;
+  /** Bump to scroll to `openFile` again, e.g. when its row is clicked while it is already open. */
+  scrollNonce?: number;
   markers: LineMarker[];
   /** The + on a line. */
   onAddLine(target: ComposerTarget): void;
@@ -32,7 +34,7 @@ const codeSide = (side: 'deletions' | 'additions'): CodeSide =>
 const shaOf = (part: DiffPartDto) => part.sha ?? part.headSha;
 
 export function DiffColumn(props: DiffColumnProps) {
-  const { data, openFile } = props;
+  const { data, openFile, scrollNonce } = props;
   const root = useRef<HTMLDivElement>(null);
 
   // Each diff renders after mount and grows the page, so scrolling once would land short: keep the file at the top while the
@@ -54,7 +56,7 @@ export function DiffColumn(props: DiffColumnProps) {
       observer.disconnect();
       for (const name of events) window.removeEventListener(name, stop);
     };
-  }, [openFile, data.headCommitId, data.selected]);
+  }, [openFile, scrollNonce, data.headCommitId, data.selected]);
 
   const noAccess = data.commits.filter((c) => c.access !== 'ok');
   return (
