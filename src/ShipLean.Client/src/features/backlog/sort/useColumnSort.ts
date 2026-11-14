@@ -17,12 +17,16 @@ export function useColumnSort(
   const [chosen, setChosen] = useState<ColumnSort>(null);
   const sort = chosen !== null && columns.includes(chosen.column) ? chosen : null;
   const sorted = useMemo(() => sortRows(rows, sort), [rows, sort]);
-  const onSort = (column: string) => {
-    const next = nextSort(sort, column);
+  const report = (column: string, next: ColumnSort) => {
     setChosen(next);
     postBacklogSort(projectId, { screen, column, direction: next?.direction ?? 'off' }).catch(
       () => undefined,
     );
   };
-  return { sort, onSort, rows: sorted, sorted: sort !== null };
+  const onSort = (column: string) => report(column, nextSort(sort, column));
+  // Back to rank order from wherever the sort is: what a phone, with no column headers, offers.
+  const clear = () => {
+    if (sort) report(sort.column, null);
+  };
+  return { sort, onSort, clear, rows: sorted, sorted: sort !== null };
 }

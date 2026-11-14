@@ -5,7 +5,7 @@ import { ReorderConflict } from '../drag/ReorderConflict';
 import type { useReorder } from '../drag/useReorder';
 import { EmptyBacklog } from '../list/EmptyBacklog';
 import { backlogTestIds as ids } from '../testIds';
-import { BacklogToolbar } from '../toolbar/BacklogToolbar';
+import { BacklogToolbar, type BacklogToolbarProps } from '../toolbar/BacklogToolbar';
 import { FilterButton } from './FilterButton';
 import { FilterPanel } from './FilterPanel';
 import type { BacklogFilterState } from './useBacklogFilter';
@@ -26,6 +26,8 @@ export function BacklogFrame({
   options,
   search,
   keys,
+  moreActions,
+  sort,
   children,
 }: {
   project: ProjectDto;
@@ -40,6 +42,9 @@ export function BacklogFrame({
   options?: () => ReactNode;
   search?: () => ReactNode;
   keys?: () => ReactNode;
+  // At 900px and below: the rows ⋯ More lists after the options, and the sort it shows with its clear.
+  moreActions?: BacklogToolbarProps['moreActions'];
+  sort?: BacklogToolbarProps['sort'];
   children: (columns: BacklogColumnId[]) => ReactNode;
 }) {
   const { backlog, view, refused, criteria, lists } = state;
@@ -52,6 +57,8 @@ export function BacklogFrame({
       options={options}
       search={search}
       keys={keys}
+      moreActions={moreActions}
+      sort={sort}
       triage={state.triage}
       onNewItem={() => state.setAdding(true)}
       includeCompleted={state.includeCompleted}
@@ -101,13 +108,14 @@ export function BacklogFrame({
           onChange={state.setCriteria}
           error={refused}
           lists={lists}
+          onClose={state.toggleFilter}
         />
       ) : null}
       {filtering ? (
         <div
           data-testid={ids.dragOffBanner}
           role="status"
-          className="flex-none border-b border-edge px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)]"
+          className="flex-none border-b border-edge px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)] touch:px-3"
           style={{ borderLeft: '3px solid var(--color-info)' }}
         >
           {movingOffText}

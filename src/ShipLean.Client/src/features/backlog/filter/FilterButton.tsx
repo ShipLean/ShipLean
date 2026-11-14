@@ -1,7 +1,11 @@
+import { useContext } from 'react';
+import { createPortal } from 'react-dom';
 import type { CriteriaJson } from '@shiplean/core/api/persisted';
 import { CriteriaChips } from '../../../criteria/CriteriaChips';
 import type { PickLists } from '../../../criteria/valueOptions';
+import { ToolbarChipsHost } from '../toolbar/touchSlots';
 import { backlogTestIds as ids } from '../testIds';
+import { FilterChips } from './FilterChips';
 
 // The toolbar's filter: the Filter button (with its clause count) and the active clauses as chips, each removable.
 export function FilterButton({
@@ -18,6 +22,17 @@ export function FilterButton({
   lists: PickLists;
 }) {
   const count = criteria.clauses.length;
+  // Under the touch toolbar the chips go to the row below the buttons, not into the one row.
+  const touchSlot = useContext(ToolbarChipsHost);
+  let chips = null;
+  if (count > 0) {
+    if (!touchSlot) chips = <CriteriaChips value={criteria} onRemove={onRemoveClause} {...lists} />;
+    else if (touchSlot.host)
+      chips = createPortal(
+        <FilterChips criteria={criteria} onRemoveClause={onRemoveClause} lists={lists} />,
+        touchSlot.host,
+      );
+  }
   return (
     <>
       <button
@@ -30,7 +45,7 @@ export function FilterButton({
       >
         {count > 0 ? `Filter (${count})` : 'Filter'}
       </button>
-      {count > 0 ? <CriteriaChips value={criteria} onRemove={onRemoveClause} {...lists} /> : null}
+      {chips}
     </>
   );
 }

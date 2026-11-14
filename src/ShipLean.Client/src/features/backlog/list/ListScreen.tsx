@@ -78,6 +78,14 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               options={() => <AddManyButton />}
               search={() => <BacklogSearchBox search={search} />}
               keys={() => <KeysButton />}
+              sort={
+                sort.sort
+                  ? {
+                      label: `${BACKLOG_COLUMNS.find((c) => c.id === sort.sort?.column)?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
+                      onClear: sort.clear,
+                    }
+                  : undefined
+              }
               movingOffText={
                 narrowed
                   ? "Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."

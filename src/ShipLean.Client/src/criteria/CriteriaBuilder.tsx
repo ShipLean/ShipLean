@@ -90,7 +90,7 @@ export function CriteriaBuilder({
                 type="button"
                 data-testid={option.testId}
                 aria-pressed={value.match === option.id}
-                className="px-2.5 py-0.5 aria-pressed:bg-signal-soft aria-pressed:font-medium aria-pressed:text-ink"
+                className="px-2.5 py-0.5 touch:min-h-[var(--touch-target)] touch:px-4 aria-pressed:bg-signal-soft aria-pressed:font-medium aria-pressed:text-ink"
                 onClick={() => onChange({ ...value, match: option.id })}
               >
                 {option.label}
