@@ -145,11 +145,15 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
       ? 'The sprint before has no capacity entered'
       : undefined;
   const hasConflict = clashes.length > 0 || velocityClash;
+  // The Save bar's message slot is two short lines at touch, so the wording there is short.
+  const conflictText = touch
+    ? `A teammate changed ${clashes.length === 0 ? 'the velocity' : 'capacity'}. Saving replaces it.`
+    : clashes.length === 0
+      ? 'A teammate changed the velocity while you were editing. Saving replaces it with yours.'
+      : `${clashes.map((m) => m.user.name).join(', ')} changed capacity${velocityClash ? ' and the velocity' : ''} while you were editing. Saving replaces their numbers with yours.`;
   const conflict = !hasConflict ? null : (
     <p data-testid={ids.capacityConflict} role="status" className="m-0 text-caution">
-      {clashes.length === 0
-        ? 'A teammate changed the velocity while you were editing. Saving replaces it with yours.'
-        : `${clashes.map((m) => m.user.name).join(', ')} changed capacity${velocityClash ? ' and the velocity' : ''} while you were editing. Saving replaces their numbers with yours.`}
+      {conflictText}
     </p>
   );
   const errorLine = (
@@ -251,10 +255,10 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
       <SaveBar
         dirty={dirty}
         message={
-          <>
+          <div className="text-[length:var(--text-xs)] leading-4 whitespace-normal">
             {conflict}
             {problem === null ? null : errorLine}
-          </>
+          </div>
         }
         onDiscard={onDiscard}
         onSave={onSave}

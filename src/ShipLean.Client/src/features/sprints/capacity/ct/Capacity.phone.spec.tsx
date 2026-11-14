@@ -11,6 +11,18 @@ import { sprintsTestIds as ids } from '../../testIds';
 
 // Sprint Capacity on a phone (SHIP-726, L726a). Runs in the CT phone project.
 
+const emptyCapacity = {
+  sprintId: '',
+  members: [],
+  teamTotal: 0,
+  velocity: null,
+  velocityDefault: 25,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
+};
 const route = `/p/SHIP/sprints/${SPRINT_24}/capacity`;
 
 const open = async (
@@ -48,6 +60,11 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
+  // And the table's own scroll box: rows, not a table that scrolls sideways inside its wrapper.
+  const wrapper = await page
+    .getByTestId(ids.capacityTable)
+    .evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(wrapper).toBeLessThanOrEqual(0);
   // The toolbar's own Save is not shown at touch.
   await expect(page.getByTestId(ids.capacitySave)).toHaveCount(0);
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
@@ -63,6 +80,52 @@ test('Capacity_WhenMoreTapped_ShouldOfferClear', async ({ mount, page }) => {
   await rows.first().tap();
   await expect(page.getByTestId(ids.capacityRow)).toHaveCount(0);
   await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
+});
+
+test('Capacity_WhenCopyIsBlockedOnPhone_ShouldSayWhyInVisibleText', async ({ mount, page }) => {
+  await stubShell(page, { sprints: sprintsWithGoals });
+  await stubCapacity(page);
+  await page.route('**/api/sprints/sprint-23/capacity', (r) =>
+    r.fulfill({ json: { ...emptyCapacity, sprintId: 'sprint-23' } }),
+  );
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(5);
+
+  await expect(page.getByTestId(ids.capacityCopy)).toBeDisabled();
+  await expect(page.getByTestId(ids.capacityCopyBlocked)).toBeVisible();
+  await expect(page.getByTestId(ids.capacityCopyBlocked)).toHaveText(
+    'The sprint before has no capacity entered',
+  );
+});
+
+test('Capacity_WhenATeammateChangedVelocityOnPhone_ShouldShowTheWholeConflictInTheSaveBar', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  await page.getByTestId(ids.capacityVelocity).fill('31');
+  await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
+  await expect(page.getByTestId(ids.capacityConflict)).toHaveCount(0);
+
+  const stored = await page.evaluate(() =>
+    fetch('/api/sprints/sprint-24/capacity').then((r) => r.json()),
+  );
+  await page.route('**/api/sprints/sprint-24/capacity', (r) =>
+    r.fulfill({ json: { ...stored, velocity: 28 } }),
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
+
+  const conflict = page.getByTestId(ids.capacityConflict);
+  await expect(conflict).toHaveText('A teammate changed the velocity. Saving replaces it.');
+  // Whole, not cut off: it wraps inside the bar and is not clipped by it.
+  const bar = (await page.getByTestId(touchTestIds.saveBar).boundingBox())!;
+  const text = (await conflict.boundingBox())!;
+  expect(text.y).toBeGreaterThanOrEqual(bar.y);
+  expect(text.y + text.height).toBeLessThanOrEqual(bar.y + bar.height);
+  const clipped = await page
+    .getByTestId(touchTestIds.saveBarMessage)
+    .evaluate((el) => el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight);
+  expect(clipped).toBe(false);
 });
 
 test('Capacity_WhenOnPhone_ShouldMatchItsScreenshot_capacity-phone', async ({ mount, page }) => {

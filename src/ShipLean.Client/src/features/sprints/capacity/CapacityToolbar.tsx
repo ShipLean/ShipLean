@@ -37,29 +37,40 @@ export function CapacityToolbar({
   if (touch) {
     // At 900px and below: Copy and ⋯ More in one row; Save is the SaveBar's.
     return (
-      <div data-testid={ids.capacityPhoneToolbar} className="flex items-center gap-2">
-        <button
-          type="button"
-          data-testid={ids.capacityCopy}
-          className="inline-flex h-[var(--touch-target)] min-w-0 flex-1 items-center justify-center rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] font-medium text-ink active:bg-signal-soft disabled:opacity-50"
-          disabled={copyBlocked !== undefined}
-          title={copyBlocked}
-          onClick={onCopy}
-        >
-          <span className="truncate">
-            {previousName === undefined ? 'Copy from previous sprint' : `Copy from ${previousName}`}
-          </span>
-        </button>
-        <MoreButton
-          actions={[
-            { id: 'clear', label: 'Clear', tone: 'danger', onSelect: onClear },
-            ...addable.map((user) => ({
-              id: `add-${user.id}`,
-              label: `Add ${user.name}`,
-              onSelect: () => onAdd(user.id),
-            })),
-          ]}
-        />
+      <div className="grid gap-1">
+        <div data-testid={ids.capacityPhoneToolbar} className="flex items-center gap-2">
+          <button
+            type="button"
+            data-testid={ids.capacityCopy}
+            className="inline-flex h-[var(--touch-target)] min-w-0 flex-1 items-center justify-center rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] font-medium text-ink active:bg-signal-soft disabled:opacity-50"
+            disabled={copyBlocked !== undefined}
+            onClick={onCopy}
+          >
+            <span className="truncate">
+              {previousName === undefined
+                ? 'Copy from previous sprint'
+                : `Copy from ${previousName}`}
+            </span>
+          </button>
+          <MoreButton
+            actions={[
+              { id: 'clear', label: 'Clear', tone: 'danger', onSelect: onClear },
+              ...addable.map((user) => ({
+                id: `add-${user.id}`,
+                label: `Add ${user.name}`,
+                onSelect: () => onAdd(user.id),
+              })),
+            ]}
+          />
+        </div>
+        {copyBlocked === undefined ? null : (
+          <p
+            data-testid={ids.capacityCopyBlocked}
+            className="m-0 text-[length:var(--text-xs)] text-ink-muted"
+          >
+            {copyBlocked}
+          </p>
+        )}
       </div>
     );
   }

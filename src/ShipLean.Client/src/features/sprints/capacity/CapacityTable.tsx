@@ -27,7 +27,7 @@ export function CapacityTable({
 }: CapacityTableProps) {
   const empty = lines.length === 0;
   return (
-    <div className="relative overflow-x-auto">
+    <div data-testid={ids.capacityTable} className="relative overflow-x-auto">
       <table className="w-full min-w-[560px] table-fixed border-collapse touch:block touch:min-w-0 text-[length:var(--text-sm)]">
         <colgroup className="touch:hidden">
           <col className="w-36" />
