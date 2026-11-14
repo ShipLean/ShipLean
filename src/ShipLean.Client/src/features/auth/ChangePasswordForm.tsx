@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import type { MeDto } from '@shiplean/core/api/me';
 import { ApiRequestError } from '@shiplean/core/api/client';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { changePassword } from './authApi';
 import { Banner } from './Banner';
 import { FormField } from './FormField';
@@ -20,6 +21,7 @@ export function ChangePasswordForm({
   oneTimePassword: string;
   onChanged: (me: MeDto) => void;
 }) {
+  const { touch } = useTouchShell();
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
   const save = useMutation({
@@ -39,14 +41,25 @@ export function ChangePasswordForm({
     if (ready && !save.isPending) save.mutate();
   };
 
+  const submitButton = (
+    <button
+      type="submit"
+      data-testid={authTestIds.changeSubmit}
+      className="btn-signal touch:h-10 touch:w-full"
+      disabled={!ready || save.isPending}
+    >
+      Save and continue
+    </button>
+  );
+
   return (
     <form
       data-testid={authTestIds.changeForm}
       onSubmit={submit}
       noValidate
-      className="flex w-[min(460px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel"
+      className="flex w-[min(460px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel touch:w-[min(440px,100%)]"
     >
-      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold">
+      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold touch:text-[length:var(--text-lg)]">
         Choose your own password
         <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted">
           Signed in as {email}
@@ -64,7 +77,7 @@ export function ChangePasswordForm({
               : "Couldn't reach ShipLean. Check your connection and try again."}
           </Banner>
         ) : null}
-        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3">
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3 touch:grid-cols-1">
           <FormField
             id="new-password"
             label="New password"
@@ -72,7 +85,7 @@ export function ChangePasswordForm({
             value={next}
             onChange={setNext}
             autoComplete="new-password"
-            autoFocus
+            autoFocus={!touch}
             testId={authTestIds.newPassword}
             revealTestId={authTestIds.revealPassword}
           />
@@ -84,10 +97,11 @@ export function ChangePasswordForm({
             onChange={setConfirm}
             autoComplete="new-password"
             testId={authTestIds.confirmPassword}
+            enterKeyHint="go"
           />
           <ul
             data-testid={authTestIds.passwordChecks}
-            className="col-start-2 m-0 grid list-none gap-0.5 p-0 text-[length:var(--text-sm)]"
+            className="col-start-2 touch:col-start-1 m-0 grid list-none gap-0.5 p-0 text-[length:var(--text-sm)]"
           >
             {rules.map(([met, text]) => (
               <li key={text} data-met={met} className={met ? '' : 'text-ink-muted'}>
@@ -103,22 +117,16 @@ export function ChangePasswordForm({
             ))}
           </ul>
         </div>
+        {touch ? submitButton : null}
       </div>
-      <footer className="flex items-center gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
-        <span className="flex-1">
+      <footer className="flex items-center gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3 touch:justify-center">
+        <span className="flex-1 touch:flex-none">
           <SignOutInstead
             label="Sign out instead"
-            className="text-[length:var(--text-xs)] text-signal underline"
+            className="text-[length:var(--text-xs)] text-signal underline touch:inline-flex touch:h-8 touch:items-center touch:text-[length:var(--text-sm)]"
           />
         </span>
-        <button
-          type="submit"
-          data-testid={authTestIds.changeSubmit}
-          className="btn-signal"
-          disabled={!ready || save.isPending}
-        >
-          Save and continue
-        </button>
+        {touch ? null : submitButton}
       </footer>
     </form>
   );

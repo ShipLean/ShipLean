@@ -6,6 +6,7 @@ import { CONFIRM_PATH, parseConfirmQuery } from '@shiplean/core/handoff';
 import { ToastHost } from '../../components/ToastHost';
 import { showToast } from '../../components/toastStore';
 import { appTestIds } from '../../testIds';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { fetchMe, meKey, projectsKey } from '../../queries/shared';
 import { fetchInstance, instanceKey } from './authApi';
 import { Banner } from './Banner';
@@ -45,6 +46,7 @@ export function LoginPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { viewport } = useTouchShell();
   const [pending, setPending] = useState<PendingChange | null>(null);
   const state = params.get('state');
   const returnUrl = localReturnUrl(params.get('returnUrl'));
@@ -159,7 +161,12 @@ export function LoginPage() {
   return (
     <div data-testid={appTestIds.loginPage} className="flex min-h-dvh flex-col">
       <LoginTopBar />
-      <main className="grid flex-1 place-items-center px-4 py-5">{card}</main>
+      <main
+        className="grid flex-1 place-items-center px-4 py-5 touch:flex touch:items-start touch:justify-center touch:pt-4 touch:pb-[max(16px,env(safe-area-inset-bottom))]"
+        style={viewport === 'tablet' ? { paddingTop: '10vh' } : undefined}
+      >
+        {card}
+      </main>
       <ToastHost />
     </div>
   );
