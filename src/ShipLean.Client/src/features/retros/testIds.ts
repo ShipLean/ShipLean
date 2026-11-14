@@ -86,6 +86,11 @@ export const retrosTestIds = {
   retroInsightsPanel: 'retro-insights-panel',
   retroInsightsTab: 'retro-insights-tab',
   retroInsightsRange: 'retro-insights-range',
+  // SHIP-731 frame touch
+  retroInsightsToolbar: 'retro-insights-toolbar',
+  retroInsightsRangeOption: 'retro-insights-range-option',
+  retroInsightsRangeGroup: 'retro-insights-range-group',
+  retroInsightsDefsEntry: 'retro-insights-defs-entry',
   // Insights: recurring and keeps working
   retroRecurringTable: 'retro-recurring-table',
   retroRecurringRow: 'retro-recurring-row',

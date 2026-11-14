@@ -7,18 +7,29 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { retrosTestIds } from '../../testIds';
+import { defsSheetValue, withSheet } from '../touch/insightsAddress';
+import type { DefsEntry } from './tipWording';
 
 const GAP = 6;
 const EDGE = 8;
 
-/** Wraps its children in a keyboard-reachable trigger; `tip` shows on hover and on focus, kept inside the window. */
+/**
+ * Wraps its children in a keyboard-reachable trigger; `tip` shows on hover and on focus, kept inside the window. At
+ * 900px and below there is no hover: a tip with an `entry` is a tap that opens What these mean at that entry
+ * (`sheet=defs:<entry>`), and the tap goes no further, so a card behind a chip doesn't open.
+ */
 export function Tip({
   tip,
+  entry,
   children,
   className,
   ...rest
-}: { tip: ReactNode } & HTMLAttributes<HTMLSpanElement>) {
+}: { tip: ReactNode; entry?: DefsEntry } & HTMLAttributes<HTMLSpanElement>) {
+  const { touch } = useTouchShell();
+  const [params, setParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLSpanElement>(null);
   const bubble = useRef<HTMLDivElement>(null);
@@ -38,6 +49,30 @@ export function Tip({
     bubble.current.style.top = `${top}px`;
     bubble.current.style.visibility = 'visible';
   }, [open]);
+
+  if (touch && entry !== undefined) {
+    return (
+      <span
+        {...rest}
+        role="button"
+        tabIndex={0}
+        aria-haspopup="dialog"
+        className={`inline-flex min-h-[var(--touch-target)] min-w-[var(--touch-target)] cursor-pointer items-center justify-center ${className ?? ''}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          setParams(withSheet(params, defsSheetValue(entry)), { replace: true });
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          event.stopPropagation();
+          setParams(withSheet(params, defsSheetValue(entry)), { replace: true });
+        }}
+      >
+        {children}
+      </span>
+    );
+  }
 
   return (
     <span

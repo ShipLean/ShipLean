@@ -25,6 +25,7 @@ export function StatusChip({
       data-testid={ids.retroStatusChip}
       data-status={status}
       data-mode={mode}
+      entry={status}
       tip={statusWording(status, mode)}
       className="no-underline"
     >
