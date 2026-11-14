@@ -1,0 +1,981 @@
+{
+  "feature": {
+    "id": "0b6f3c9e-99a0-4c1e-9d55-000000000099",
+    "key": "SHIP-99",
+    "title": "Coupons v2",
+    "state": "Done",
+    "stateCategory": "completed",
+    "epic": {
+      "key": "SHIP-80",
+      "title": "Checkout conversion"
+    }
+  },
+  "asOf": "2026-10-24T14:00:00+00:00",
+  "finished": true,
+  "keyDates": [
+    {
+      "point": "added",
+      "at": "2026-08-18T10:20:00+00:00",
+      "dayLabel": "Tue 18 Aug",
+      "by": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000005",
+        "name": "Ana Costa",
+        "agent": false
+      },
+      "source": "Feature created"
+    },
+    {
+      "point": "planned",
+      "at": "2026-10-01T16:45:00+00:00",
+      "dayLabel": "Thu 1 Oct",
+      "by": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "source": "Plan captured"
+    },
+    {
+      "point": "executionStarted",
+      "at": "2026-10-05T09:10:00+00:00",
+      "dayLabel": "Mon 5 Oct",
+      "by": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "source": "SHIP-191 moved to Active"
+    },
+    {
+      "point": "finished",
+      "at": "2026-10-21T10:05:00+00:00",
+      "dayLabel": "Wed 21 Oct",
+      "by": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "source": "Feature moved to Done"
+    }
+  ],
+  "gaps": [
+    {
+      "from": "added",
+      "to": "planned",
+      "days": 44.3,
+      "label": "44 days",
+      "soFar": false
+    },
+    {
+      "from": "planned",
+      "to": "executionStarted",
+      "days": 3.7,
+      "label": "3.7 days",
+      "soFar": false
+    },
+    {
+      "from": "executionStarted",
+      "to": "finished",
+      "days": 16,
+      "label": "16 days",
+      "soFar": false
+    }
+  ],
+  "execution": {
+    "start": "2026-10-05T09:10:00+00:00",
+    "end": "2026-10-21T10:05:00+00:00",
+    "calendarDays": 16
+  },
+  "scale": {
+    "start": "2026-10-05T00:00:00+00:00",
+    "endHours": 408,
+    "nowHours": null,
+    "days": [
+      {
+        "startHours": 0,
+        "label": "Mon 5 Oct",
+        "dayOfMonth": "5",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 24,
+        "label": "Tue 6 Oct",
+        "dayOfMonth": "6",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 48,
+        "label": "Wed 7 Oct",
+        "dayOfMonth": "7",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 72,
+        "label": "Thu 8 Oct",
+        "dayOfMonth": "8",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 96,
+        "label": "Fri 9 Oct",
+        "dayOfMonth": "9",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 120,
+        "label": "Sat 10 Oct",
+        "dayOfMonth": "10",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 144,
+        "label": "Sun 11 Oct",
+        "dayOfMonth": "11",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 168,
+        "label": "Mon 12 Oct",
+        "dayOfMonth": "12",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 192,
+        "label": "Tue 13 Oct",
+        "dayOfMonth": "13",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 216,
+        "label": "Wed 14 Oct",
+        "dayOfMonth": "14",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 240,
+        "label": "Thu 15 Oct",
+        "dayOfMonth": "15",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 264,
+        "label": "Fri 16 Oct",
+        "dayOfMonth": "16",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 288,
+        "label": "Sat 17 Oct",
+        "dayOfMonth": "17",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 312,
+        "label": "Sun 18 Oct",
+        "dayOfMonth": "18",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 336,
+        "label": "Mon 19 Oct",
+        "dayOfMonth": "19",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 360,
+        "label": "Tue 20 Oct",
+        "dayOfMonth": "20",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 384,
+        "label": "Wed 21 Oct",
+        "dayOfMonth": "21",
+        "weekend": false,
+        "monthStart": false
+      }
+    ],
+    "sprints": [
+      {
+        "name": "Sprint 41",
+        "startHours": 0,
+        "endHours": 168
+      },
+      {
+        "name": "Sprint 42",
+        "startHours": 168,
+        "endHours": 408
+      }
+    ]
+  },
+  "criticalPath": [
+    "SHIP-191",
+    "SHIP-192",
+    "SHIP-194",
+    "SHIP-195",
+    "SHIP-196",
+    "SHIP-199"
+  ],
+  "stories": [
+    {
+      "key": "SHIP-185",
+      "type": "story",
+      "title": "Coupon rules engine",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000002",
+        "name": "Tom Okafor",
+        "agent": false
+      },
+      "start": "2026-10-05T09:10:00+00:00",
+      "end": "2026-10-07T11:15:00+00:00",
+      "startHours": 9.2,
+      "endHours": 59.3,
+      "hours": 50.1,
+      "startLabel": "Mon 5 Oct, 09:10",
+      "endLabel": "Wed 7 Oct, 11:15",
+      "durationLabel": "2.1 days",
+      "tasks": [
+        "SHIP-191",
+        "SHIP-192",
+        "SHIP-193"
+      ]
+    },
+    {
+      "key": "SHIP-188",
+      "type": "story",
+      "title": "Coupon admin page",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000005",
+        "name": "Ana Costa",
+        "agent": false
+      },
+      "start": "2026-10-06T13:00:00+00:00",
+      "end": "2026-10-16T17:30:00+00:00",
+      "startHours": 37,
+      "endHours": 281.5,
+      "hours": 244.5,
+      "startLabel": "Tue 6 Oct, 13:00",
+      "endLabel": "Fri 16 Oct, 17:30",
+      "durationLabel": "10.2 days",
+      "tasks": [
+        "SHIP-197",
+        "SHIP-198"
+      ]
+    },
+    {
+      "key": "SHIP-186",
+      "type": "story",
+      "title": "Apply coupon at checkout",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "start": "2026-10-08T09:00:00+00:00",
+      "end": "2026-10-20T16:00:00+00:00",
+      "startHours": 81,
+      "endHours": 376,
+      "hours": 295,
+      "startLabel": "Thu 8 Oct, 09:00",
+      "endLabel": "Tue 20 Oct, 16:00",
+      "durationLabel": "12.3 days",
+      "tasks": [
+        "SHIP-194",
+        "SHIP-195",
+        "SHIP-196"
+      ]
+    },
+    {
+      "key": "SHIP-189",
+      "type": "bug",
+      "title": "Coupon applied twice on double-click",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000004",
+        "name": "Sam Rivera",
+        "agent": false
+      },
+      "start": "2026-10-20T09:00:00+00:00",
+      "end": "2026-10-20T10:20:00+00:00",
+      "startHours": 369,
+      "endHours": 370.3,
+      "hours": 1.3,
+      "startLabel": "Tue 20 Oct, 09:00",
+      "endLabel": "Tue 20 Oct, 10:20",
+      "durationLabel": "1.3 h",
+      "tasks": [
+        "SHIP-199"
+      ]
+    }
+  ],
+  "bars": [
+    {
+      "key": "SHIP-191",
+      "type": "task",
+      "title": "Rules schema and migration",
+      "parent": "SHIP-185",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-10-05T09:10:00+00:00",
+      "end": "2026-10-05T11:40:00+00:00",
+      "startHours": 9.2,
+      "endHours": 11.7,
+      "hours": 2.5,
+      "startLabel": "Mon 5 Oct, 09:10",
+      "endLabel": "Mon 5 Oct, 11:40",
+      "durationLabel": "2.5 h",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-05T09:10:00+00:00",
+          "to": "2026-10-05T11:40:00+00:00",
+          "fromLabel": "Mon 5 Oct, 09:10",
+          "hours": 2.5,
+          "durationLabel": "2.5 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-05T11:40:00+00:00",
+          "to": null,
+          "fromLabel": "Mon 5 Oct, 11:40",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-06T10:05:00+00:00",
+          "atHours": 34.1,
+          "atLabel": "Tue 6 Oct, 10:05",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-192",
+      "type": "task",
+      "title": "Stacking rules (percent + fixed)",
+      "parent": "SHIP-185",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-10-06T10:30:00+00:00",
+      "end": "2026-10-07T11:15:00+00:00",
+      "startHours": 34.5,
+      "endHours": 59.3,
+      "hours": 24.8,
+      "startLabel": "Tue 6 Oct, 10:30",
+      "endLabel": "Wed 7 Oct, 11:15",
+      "durationLabel": "1 day",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-06T10:30:00+00:00",
+          "to": "2026-10-06T14:00:00+00:00",
+          "fromLabel": "Tue 6 Oct, 10:30",
+          "hours": 3.5,
+          "durationLabel": "3.5 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-06T14:00:00+00:00",
+          "to": "2026-10-07T09:30:00+00:00",
+          "fromLabel": "Tue 6 Oct, 14:00",
+          "hours": 19.5,
+          "durationLabel": "19.5 h"
+        },
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-07T09:30:00+00:00",
+          "to": "2026-10-07T11:15:00+00:00",
+          "fromLabel": "Wed 7 Oct, 09:30",
+          "hours": 1.8,
+          "durationLabel": "1.8 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-07T11:15:00+00:00",
+          "to": null,
+          "fromLabel": "Wed 7 Oct, 11:15",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-07T09:30:00+00:00",
+          "atHours": 57.5,
+          "atLabel": "Wed 7 Oct, 09:30",
+          "verdict": "changesRequested",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": "Percent and fixed discounts apply in the wrong order when both match."
+        },
+        {
+          "at": "2026-10-07T16:20:00+00:00",
+          "atHours": 64.3,
+          "atLabel": "Wed 7 Oct, 16:20",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-193",
+      "type": "task",
+      "title": "Expiry and usage limits",
+      "parent": "SHIP-185",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-10-06T10:40:00+00:00",
+      "end": "2026-10-06T13:10:00+00:00",
+      "startHours": 34.7,
+      "endHours": 37.2,
+      "hours": 2.5,
+      "startLabel": "Tue 6 Oct, 10:40",
+      "endLabel": "Tue 6 Oct, 13:10",
+      "durationLabel": "2.5 h",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-06T10:40:00+00:00",
+          "to": "2026-10-06T13:10:00+00:00",
+          "fromLabel": "Tue 6 Oct, 10:40",
+          "hours": 2.5,
+          "durationLabel": "2.5 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-06T13:10:00+00:00",
+          "to": null,
+          "fromLabel": "Tue 6 Oct, 13:10",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-06T17:00:00+00:00",
+          "atHours": 41,
+          "atLabel": "Tue 6 Oct, 17:00",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-197",
+      "type": "task",
+      "title": "Admin list and create form",
+      "parent": "SHIP-188",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000005",
+        "name": "Ana Costa",
+        "agent": false
+      },
+      "state": "resolved",
+      "start": "2026-10-06T13:00:00+00:00",
+      "end": "2026-10-08T11:00:00+00:00",
+      "startHours": 37,
+      "endHours": 83,
+      "hours": 46,
+      "startLabel": "Tue 6 Oct, 13:00",
+      "endLabel": "Thu 8 Oct, 11:00",
+      "durationLabel": "1.9 days",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-06T13:00:00+00:00",
+          "to": "2026-10-08T11:00:00+00:00",
+          "fromLabel": "Tue 6 Oct, 13:00",
+          "hours": 46,
+          "durationLabel": "1.9 days"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-08T11:00:00+00:00",
+          "to": null,
+          "fromLabel": "Thu 8 Oct, 11:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-09T11:00:00+00:00",
+          "atHours": 107,
+          "atLabel": "Fri 9 Oct, 11:00",
+          "verdict": "approved",
+          "by": {
+            "userId": "6f1c2a10-0000-4000-8000-000000000002",
+            "name": "Tom Okafor",
+            "agent": false
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-198",
+      "type": "task",
+      "title": "Bulk code import",
+      "parent": "SHIP-188",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000005",
+        "name": "Ana Costa",
+        "agent": false
+      },
+      "state": "closed",
+      "start": null,
+      "end": "2026-10-16T17:30:00+00:00",
+      "startHours": null,
+      "endHours": 281.5,
+      "hours": null,
+      "startLabel": null,
+      "endLabel": "Fri 16 Oct, 17:30",
+      "durationLabel": null,
+      "inferred": true,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "closed",
+          "stateName": "Closed",
+          "from": "2026-10-16T17:30:00+00:00",
+          "to": null,
+          "fromLabel": "Fri 16 Oct, 17:30",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "key": "SHIP-194",
+      "type": "task",
+      "title": "API: validate and apply",
+      "parent": "SHIP-186",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "state": "resolved",
+      "start": "2026-10-08T09:00:00+00:00",
+      "end": "2026-10-12T16:00:00+00:00",
+      "startHours": 81,
+      "endHours": 184,
+      "hours": 103,
+      "startLabel": "Thu 8 Oct, 09:00",
+      "endLabel": "Mon 12 Oct, 16:00",
+      "durationLabel": "4.3 days",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-08T09:00:00+00:00",
+          "to": "2026-10-08T15:00:00+00:00",
+          "fromLabel": "Thu 8 Oct, 09:00",
+          "hours": 6,
+          "durationLabel": "6 h"
+        },
+        {
+          "state": "blocked",
+          "stateName": "Active",
+          "from": "2026-10-08T15:00:00+00:00",
+          "to": "2026-10-12T10:00:00+00:00",
+          "fromLabel": "Thu 8 Oct, 15:00",
+          "hours": 91,
+          "durationLabel": "3.8 days"
+        },
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-12T10:00:00+00:00",
+          "to": "2026-10-12T16:00:00+00:00",
+          "fromLabel": "Mon 12 Oct, 10:00",
+          "hours": 6,
+          "durationLabel": "6 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-12T16:00:00+00:00",
+          "to": null,
+          "fromLabel": "Mon 12 Oct, 16:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-14T11:30:00+00:00",
+          "atHours": 227.5,
+          "atLabel": "Wed 14 Oct, 11:30",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-195",
+      "type": "task",
+      "title": "UI: coupon field and errors",
+      "parent": "SHIP-186",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000003",
+        "name": "Mei Lin",
+        "agent": false
+      },
+      "state": "resolved",
+      "start": "2026-10-14T13:00:00+00:00",
+      "end": "2026-10-15T12:00:00+00:00",
+      "startHours": 229,
+      "endHours": 252,
+      "hours": 23,
+      "startLabel": "Wed 14 Oct, 13:00",
+      "endLabel": "Thu 15 Oct, 12:00",
+      "durationLabel": "23 h",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-14T13:00:00+00:00",
+          "to": "2026-10-15T12:00:00+00:00",
+          "fromLabel": "Wed 14 Oct, 13:00",
+          "hours": 23,
+          "durationLabel": "23 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-15T12:00:00+00:00",
+          "to": null,
+          "fromLabel": "Thu 15 Oct, 12:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-19T10:15:00+00:00",
+          "atHours": 346.3,
+          "atLabel": "Mon 19 Oct, 10:15",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-196",
+      "type": "task",
+      "title": "E2E: coupon checkout",
+      "parent": "SHIP-186",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-10-19T11:00:00+00:00",
+      "end": "2026-10-20T16:00:00+00:00",
+      "startHours": 347,
+      "endHours": 376,
+      "hours": 29,
+      "startLabel": "Mon 19 Oct, 11:00",
+      "endLabel": "Tue 20 Oct, 16:00",
+      "durationLabel": "1.2 days",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-19T11:00:00+00:00",
+          "to": "2026-10-19T13:30:00+00:00",
+          "fromLabel": "Mon 19 Oct, 11:00",
+          "hours": 2.5,
+          "durationLabel": "2.5 h"
+        },
+        {
+          "state": "blocked",
+          "stateName": "Active",
+          "from": "2026-10-19T13:30:00+00:00",
+          "to": "2026-10-20T14:40:00+00:00",
+          "fromLabel": "Mon 19 Oct, 13:30",
+          "hours": 25.2,
+          "durationLabel": "1 day"
+        },
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-20T14:40:00+00:00",
+          "to": "2026-10-20T16:00:00+00:00",
+          "fromLabel": "Tue 20 Oct, 14:40",
+          "hours": 1.3,
+          "durationLabel": "1.3 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-20T16:00:00+00:00",
+          "to": null,
+          "fromLabel": "Tue 20 Oct, 16:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-21T09:40:00+00:00",
+          "atHours": 393.7,
+          "atLabel": "Wed 21 Oct, 09:40",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-199",
+      "type": "task",
+      "title": "Debounce apply and make it idempotent",
+      "parent": "SHIP-189",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-10-20T09:00:00+00:00",
+      "end": "2026-10-20T10:20:00+00:00",
+      "startHours": 369,
+      "endHours": 370.3,
+      "hours": 1.3,
+      "startLabel": "Tue 20 Oct, 09:00",
+      "endLabel": "Tue 20 Oct, 10:20",
+      "durationLabel": "1.3 h",
+      "inferred": false,
+      "onCriticalPath": true,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-20T09:00:00+00:00",
+          "to": "2026-10-20T10:20:00+00:00",
+          "fromLabel": "Tue 20 Oct, 09:00",
+          "hours": 1.3,
+          "durationLabel": "1.3 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-20T10:20:00+00:00",
+          "to": null,
+          "fromLabel": "Tue 20 Oct, 10:20",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-10-20T14:30:00+00:00",
+          "atHours": 374.5,
+          "atLabel": "Tue 20 Oct, 14:30",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "SHIP-191",
+      "to": "SHIP-192",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 22.8,
+      "waitLabel": "22.8 h",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": true
+    },
+    {
+      "from": "SHIP-191",
+      "to": "SHIP-193",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 23,
+      "waitLabel": "23 h",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    },
+    {
+      "from": "SHIP-191",
+      "to": "SHIP-197",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 25.3,
+      "waitLabel": "1.1 days",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    },
+    {
+      "from": "SHIP-192",
+      "to": "SHIP-194",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 21.8,
+      "waitLabel": "21.8 h",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": true
+    },
+    {
+      "from": "SHIP-193",
+      "to": "SHIP-194",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 43.8,
+      "waitLabel": "1.8 days",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    },
+    {
+      "from": "SHIP-194",
+      "to": "SHIP-195",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 45,
+      "waitLabel": "1.9 days",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": true
+    },
+    {
+      "from": "SHIP-195",
+      "to": "SHIP-196",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 95,
+      "waitLabel": "4 days",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": true
+    },
+    {
+      "from": "SHIP-199",
+      "to": "SHIP-196",
+      "kind": "blocked",
+      "source": "link",
+      "waitHours": null,
+      "waitLabel": null,
+      "unblockedAt": "2026-10-20T14:40:00+00:00",
+      "unblockedHours": 374.7,
+      "onCriticalPath": true
+    },
+    {
+      "from": "SHIP-185",
+      "to": "SHIP-186",
+      "kind": "depends",
+      "source": "wave",
+      "waitHours": 21.8,
+      "waitLabel": "21.8 h",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    }
+  ],
+  "notStarted": [],
+  "links": {
+    "ui": "/p/SHIP/items/SHIP-99/timeline"
+  }
+}
