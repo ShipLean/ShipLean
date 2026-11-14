@@ -9,7 +9,7 @@ export function MovingOffBanner({ search, queue }: { search: BacklogSearch; queu
     <div
       data-testid={ids.dragOffBanner}
       role="status"
-      className="flex-none border-b border-edge px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)]"
+      className="flex-none border-b border-edge px-[var(--space-4)] py-1.5 text-[length:var(--text-sm)] touch:px-3"
       style={{ borderLeft: '3px solid var(--color-info)' }}
     >
       Dragging and the pull line are off while a search or check is on, because rank is relative to

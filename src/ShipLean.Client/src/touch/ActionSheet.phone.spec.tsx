@@ -93,3 +93,18 @@ for (const theme of THEMES) {
     await expect(page).toHaveScreenshot(`action-sheet.${theme}.png`, { animations: 'disabled' });
   });
 }
+
+test('MoreButton_WhenChildrenGiven_ShouldRenderThemBeforeTheActionRowsAndCloseOnRequest', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SheetHarness variant="moreSlot" />);
+  await page.getByTestId(touchTestIds.moreButton).tap();
+  const slot = page.getByTestId(sheetHarnessIds.ctSheetSlot);
+  await expect(slot).toBeVisible();
+  const slotBox = await slot.boundingBox();
+  const firstRow = await page.getByTestId(touchTestIds.actionSheetRow).first().boundingBox();
+  expect(slotBox!.y + slotBox!.height).toBeLessThanOrEqual(firstRow!.y);
+  await slot.tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+});

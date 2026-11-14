@@ -13,6 +13,16 @@ export const backlogTestIds = {
   filterPanel: 'backlog-filter-panel',
   filterClear: 'backlog-filter-clear',
   filterError: 'backlog-filter-error',
+  // The touch toolbar (900px and below, SHIP-716): its row, the chips and search under it, ⋯ More's rows, the Filter sheet and a chip.
+  toolbarRow: 'backlog-toolbar-row',
+  filterChips: 'backlog-filter-chips',
+  filterChip: 'backlog-filter-chip',
+  filterSheet: 'backlog-filter-sheet',
+  searchRow: 'backlog-search-row',
+  searchCancel: 'backlog-search-cancel',
+  moreOptions: 'backlog-more-options',
+  moreSort: 'backlog-more-sort',
+  moreSortClear: 'backlog-more-sort-clear',
   dragOffBanner: 'backlog-drag-off-banner',
   grip: 'backlog-grip',
   // The touch rows (900px and below, SHIP-716; each row is `row`): the list, handle slot, meta line, forecast, select box.

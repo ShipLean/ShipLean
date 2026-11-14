@@ -16,6 +16,15 @@ public static class BacklogTestIds
     public const string FilterPanel = "backlog-filter-panel";
     public const string FilterClear = "backlog-filter-clear";
     public const string FilterError = "backlog-filter-error";
+    public const string ToolbarRow = "backlog-toolbar-row";
+    public const string FilterChips = "backlog-filter-chips";
+    public const string FilterChip = "backlog-filter-chip";
+    public const string FilterSheet = "backlog-filter-sheet";
+    public const string SearchRow = "backlog-search-row";
+    public const string SearchCancel = "backlog-search-cancel";
+    public const string MoreOptions = "backlog-more-options";
+    public const string MoreSort = "backlog-more-sort";
+    public const string MoreSortClear = "backlog-more-sort-clear";
     public const string DragOffBanner = "backlog-drag-off-banner";
     public const string Grip = "backlog-grip";
     public const string TouchRowList = "backlog-touch-row-list";

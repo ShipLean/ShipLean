@@ -4,5 +4,6 @@ export const sheetHarnessIds = {
   ctSheetState: 'ct-sheet-state',
   ctSheetSearch: 'ct-sheet-search',
   ctSheetDialogOpen: 'ct-sheet-dialog-open',
+  ctSheetSlot: 'ct-sheet-slot',
   ctSheetLastAction: 'ct-sheet-last-action',
 } as const;
