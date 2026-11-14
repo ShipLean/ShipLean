@@ -138,14 +138,16 @@ public class GitHubCodeHostTests
         _clients.Requests[0].Headers.Accept.Single().MediaType.ShouldBe("application/vnd.github.diff");
     }
 
+    // The http stub, because HttpsStubServer's fallback route skips paths that end like a file name (aaa...bbb).
     [Test]
     public async Task GitHubCodeHost_WhenRangeRead_ShouldCompareBaseToHead()
     {
-        _server.Respond("/repos/acme/storefront/compare/aaa...bbb", "diff --git a/x b/x\n");
+        await using var http = await StubHttpServer.StartAsync();
+        http.Respond("/repos/acme/storefront/compare/aaa...bbb", "diff --git a/x b/x\n", "text/plain");
 
-        var patch = await HostOn(_server.BaseAddress).ReadRangePatchAsync(Repo, "aaa", "bbb");
+        var patch = await HostOn(http.BaseAddress).ReadRangePatchAsync(Repo, "aaa", "bbb");
 
-        _server.Requests.ShouldBe(["GET /repos/acme/storefront/compare/aaa...bbb"]);
+        http.Requests.ShouldBe(["GET /repos/acme/storefront/compare/aaa...bbb"]);
         patch.Status.ShouldBe(CommitReadStatus.Found);
     }
 }
