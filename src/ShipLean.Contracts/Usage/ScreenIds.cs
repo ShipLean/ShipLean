@@ -6,7 +6,7 @@ public static class ScreenIds
     public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
     {
         "login", "newProject", "instanceSettings", "profile", "importStart", "storiesBacklog", "featuresBacklog",
-        "epicsBacklog", "workItem", "workItemAttachment", "featureBoard", "storiesBoard", "featuresBoard", "epicsBoard",
+        "epicsBacklog", "workItem", "workItemAttachment", "featureBoard", "featureTimeline", "storiesBoard", "featuresBoard", "epicsBoard",
         "sprints", "sprintBacklog", "taskboard", "capacity", "sprintRetro", "sprintDemo", "retros", "retroFeatures", "retroItem", "retroInsights", "jiraImport",
         "projectSettings", "authorize", "mobileSignIn",
     };

@@ -12,6 +12,7 @@ public static class PagesTestIds
     public const string SprintBacklogPage = "page-sprint-backlog";
     public const string TaskboardPage = "page-taskboard";
     public const string FeatureBoardPage = "page-feature-board";
+    public const string FeatureTimelinePage = "page-feature-timeline";
     public const string CapacityPage = "page-capacity";
     public const string SprintRetroPage = "page-sprint-retro";
     public const string SprintDemoPage = "page-sprint-demo";
@@ -66,6 +67,7 @@ public static class PagesTestIds
     public const string SlotRetroSearchFilters = "slot-retroSearchFilters";
     public const string SlotRetroChangesImpact = "slot-retroChangesImpact";
     public const string SlotFeatureBoard = "slot-featureBoard";
+    public const string SlotFeatureTimeline = "slot-featureTimeline";
     public const string SlotTaskboard = "slot-taskboard";
     public const string SlotTaskboardSettings = "slot-taskboardSettings";
     public const string SlotTasks = "slot-tasks";

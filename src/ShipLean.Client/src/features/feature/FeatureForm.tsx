@@ -11,6 +11,7 @@ import { FeatureLog } from './log/FeatureLog';
 import { StatusBand } from './statusBand/StatusBand';
 import { FeatureFieldsStrip } from './strip/FeatureFieldsStrip';
 import { featureTestIds as ids } from './testIds';
+import { FeatureTimelineSection } from '../timeline/FeatureTimelineSection';
 
 // The Feature's layout (feature.html): the header, the field strip and the status band across the full width, then the
 // main column (Goal, Description, Links, Stories and bugs, Agent, Log) beside the rail (Attachments, History), all inside the
@@ -48,6 +49,7 @@ export function FeatureForm({
             {description}
             <FeatureLinksSection {...region} />
             <StoriesAndBugs {...region} />
+            <FeatureTimelineSection {...region} />
             {retro}
             {agent}
             <FeatureLog {...region} />

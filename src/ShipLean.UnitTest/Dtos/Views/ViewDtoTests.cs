@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views;
+using ShipLean.Contracts.Views.Timeline;
 using ShipLean.UnitTest.Dtos.Boards;
 
 namespace ShipLean.UnitTest.Dtos.Views;
@@ -100,5 +102,80 @@ public class ViewDtoTests
         board.Header.TasksTotal.ShouldBe(board.Columns.Sum(c => c.Count));
         board.Header.AnyInBacklog.ShouldBe(board.Rows.Any(r => r.Sprint is null));
         board.Rows.ShouldContain(r => r.OfferResolve);
+    }
+
+    [Test]
+    public void FeatureTimelineView_ShouldSurviveRoundTrip()
+    {
+        BoardDtoFixture.SurvivesRoundTrip<FeatureTimelineViewDto>(BoardDtoFixture.Read("views", "feature-timeline-view.json")).ShouldBeTrue();
+    }
+
+    [Test]
+    public void FeatureTimelineRunningView_ShouldSurviveRoundTrip()
+    {
+        BoardDtoFixture.SurvivesRoundTrip<FeatureTimelineViewDto>(BoardDtoFixture.Read("views", "feature-timeline-running-view.json")).ShouldBeTrue();
+    }
+
+    [Test]
+    public void FeatureTimelineView_ShouldSendEnumsAsCamelCase()
+    {
+        var finished = BoardDtoFixture.Read("views", "feature-timeline-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+        var running = BoardDtoFixture.Read("views", "feature-timeline-running-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        var finishedJson = JsonSerializer.SerializeToNode(finished, BoardDtoFixture.Options)!;
+        var runningJson = JsonSerializer.SerializeToNode(running, BoardDtoFixture.Options)!;
+
+        finishedJson["keyDates"]![2]!["point"]!.GetValue<string>().ShouldBe("executionStarted");
+        finishedJson["bars"]!.AsArray().SelectMany(b => b!["reviews"]!.AsArray()).Select(r => r!["verdict"]!.GetValue<string>()).ShouldContain("changesRequested");
+        finishedJson["bars"]!.AsArray().SelectMany(b => b!["history"]!.AsArray()).Select(h => h!["state"]!.GetValue<string>()).ShouldContain("blocked");
+        finishedJson["edges"]!.AsArray().Select(e => e!["source"]!.GetValue<string>()).ShouldContain("wave");
+        runningJson["feature"]!["stateCategory"]!.GetValue<string>().ShouldBe("inProgress");
+        runningJson["bars"]!.AsArray().Select(b => b!["state"]!.GetValue<string>()).ShouldContain("inFlight");
+    }
+
+    [Test]
+    public void FeatureTimelineView_WithMcpOptions_ShouldMatchMcpFixture()
+    {
+        var view = BoardDtoFixture.Read("views", "feature-timeline-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        var mcp = JsonSerializer.SerializeToNode(view, TimelineJson.McpOptions);
+
+        JsonNode.DeepEquals(mcp, BoardDtoFixture.Read("views", "feature-timeline-mcp.json")).ShouldBeTrue(mcp!.ToJsonString());
+    }
+
+    [Test]
+    public void FeatureTimelineFixtures_ShouldShowEveryCase()
+    {
+        var finished = BoardDtoFixture.Read("views", "feature-timeline-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+        var running = BoardDtoFixture.Read("views", "feature-timeline-running-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        finished.Finished.ShouldBeTrue();
+        finished.KeyDates.Select(k => k.Point).ShouldBe([KeyDatePoint.Added, KeyDatePoint.Planned, KeyDatePoint.ExecutionStarted, KeyDatePoint.Finished]);
+        finished.Gaps.Count.ShouldBe(3);
+        finished.Scale.NowHours.ShouldBeNull();
+        finished.Scale.Days.ShouldContain(d => d.Weekend);
+        finished.Scale.Sprints.ShouldNotBeEmpty();
+        finished.CriticalPath.ShouldNotBeEmpty();
+        finished.Bars.Where(b => b.OnCriticalPath).Select(b => b.Key).ShouldBe(finished.CriticalPath, ignoreOrder: true);
+        finished.Bars.Single(b => b.Key == "SHIP-194").History.ShouldContain(h => h.State == TimelinePeriodState.Blocked);
+        finished.Bars.Single(b => b.Key == "SHIP-192").Reviews.Select(r => r.Verdict).ShouldBe([ReviewVerdict.ChangesRequested, ReviewVerdict.Approved]);
+        var diamond = finished.Bars.Single(b => b.Key == "SHIP-198");
+        diamond.Inferred.ShouldBeTrue();
+        diamond.Start.ShouldBeNull();
+        diamond.End.ShouldNotBeNull();
+        var blocked = finished.Edges.Single(e => e.Kind == TimelineEdgeKind.Blocked);
+        (blocked.From, blocked.To).ShouldBe(("SHIP-199", "SHIP-196"));
+        blocked.UnblockedAt.ShouldNotBeNull();
+        finished.Edges.ShouldContain(e => e.Source == TimelineEdgeSource.Wave && e.Kind == TimelineEdgeKind.Depends);
+        finished.Edges.ShouldContain(e => e.WaitLabel != null);
+        finished.Edges.Where(e => e.WaitLabel != null).ShouldAllBe(e => e.WaitHours >= 12);
+
+        running.Finished.ShouldBeFalse();
+        running.Scale.NowHours.ShouldNotBeNull();
+        running.CriticalPath.ShouldBeEmpty();
+        running.KeyDates[3].At.ShouldBeNull();
+        running.Gaps[^1].SoFar.ShouldBeTrue();
+        running.Bars.ShouldContain(b => b.State == TimelineBarState.InFlight && b.End == null);
+        running.NotStarted.ShouldNotBeEmpty();
     }
 }

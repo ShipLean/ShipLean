@@ -54,7 +54,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `agent_name` on `agent.connected` and `agent.consent_denied`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`, `from` (`feature` or `link`) on `timeline.opened`, `item_type` (the item's type) on `get_work_item`'s event, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key.
 
 The distinct id of an actor is `user:<guid>`, `agent:<authorizationId>` (`agent:gw-<userId>` for the gateway) or `system`. Person properties (`kind`, `user_id`, `agent_*`) go to the provider as an identify (Umami) or `$set` (PostHog). `name` and `email` are added for users only when the instance's **Send people's names** toggle is on, which is off by default.
 
@@ -186,6 +186,10 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `backlog.bulk_written` |  | `BacklogWrites.Bulk` |
 | `backlog.items_added` |  | `BacklogWrites.Add` |
 | `backlog.sorted` |  | self-emitted: ProjectUsage.BacklogSort (a column title clicked in list mode; `screen`, `column`, `direction` asc/desc/off) |
+| `timeline.opened` |  | self-emitted: ProjectUsage.TimelineOpened (a Feature timeline opened; `from` feature/link) |
+| `timeline.bar_selected` |  | self-emitted: ProjectUsage.TimelineBarSelected (a bar selected on a Feature timeline) |
+| `feature.timeline_viewed` | `feature_timeline` |  |
+| `review.logged` | `log_review` |  |
 | `changes.viewed` | `whats_changed_since` |  |
 | `search.performed` | `search` | `Search.Get` |
 | `comment.added` | `comment` | `WorkItemComments.Add` |
@@ -269,5 +273,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `backup.run_finished` |  | system: the backup job (properties `provider`, `trigger`: `scheduled` or `manual`) |
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
+
+The Feature timeline's events (SHIP-1465 D14, D20) are read against a baseline, per week, never on their own: `timeline.opened` (split by `from`) and `timeline.bar_selected` against `screen.viewed` for the Feature page in the same weeks (all Features: no view event says whether a Feature is finished), and `feature.timeline_viewed` against `get_work_item` calls with `item_type` feature in the same weeks. The tool mappings (`feature_timeline`, `log_review`) and the `item_type` property arrive with the MCP tools.
 
 The demo's anonymous and token routes are untracked on purpose, each with its reason in `ActionUsageMap`: `DemoUpload.Upload` and `DemoLogoDownload.Download` (the demo's creation is counted by `sprint_demo.created`), and `YouTube.Start` and `YouTube.Callback` (the connection they lead to is counted when the person's check runs, by `project_youtube.changed`). `PayloadUploads.Upload` is untracked for the same reason: the upload URL's issue is counted by `payload_upload.issued`, and the call that uses the payload by its own tool's event.

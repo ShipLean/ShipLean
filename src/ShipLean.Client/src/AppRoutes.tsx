@@ -8,6 +8,7 @@ import { BacklogPage } from './pages/BacklogPage';
 import { BoardPage } from './pages/BoardPage';
 import { CapacityPage } from './pages/CapacityPage';
 import { FeatureBoardPage } from './pages/FeatureBoardPage';
+import { FeatureTimelinePage } from './pages/FeatureTimelinePage';
 import { ImportPage } from './pages/ImportPage';
 import { InstanceSettingsPage } from './pages/InstanceSettingsPage';
 import { NewProjectPage } from './pages/NewProjectPage';
@@ -46,6 +47,7 @@ export function AppRoutes() {
         <Route path={routePattern('workItem')} element={<WorkItemPage />} />
         <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
         <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
+        <Route path={routePattern('featureTimeline')} element={<FeatureTimelinePage />} />
         <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />
         <Route path={routePattern('featuresBoard')} element={<BoardPage level="features" />} />
         <Route path={routePattern('epicsBoard')} element={<BoardPage level="epics" />} />

@@ -2,6 +2,7 @@ import featureFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/work
 import linkCardsFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/links/link-cards.json' with { type: 'json' };
 import markdownViewFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/attachments/attachment-markdown.json' with { type: 'json' };
 import renderedFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/markdown/rendered-images.json' with { type: 'json' };
+import { stubFeatureTimeline } from '../../timeline/ct/stubFeatureTimeline';
 import type { ApiError } from '@shiplean/core/api/client';
 import type {
   AttachmentCheckDto,
@@ -111,6 +112,9 @@ export async function stubFeature(page: Page, options: FeatureStubOptions = {}) 
     new URL(route.request().url()).pathname.split('/').slice(-fromEnd)[0] as string;
 
   await page.route('**/api/projects/by-key/SHIP', (route) => route.fulfill(json(project)));
+  await stubFeatureTimeline(page as unknown as Parameters<typeof stubFeatureTimeline>[0], {
+    fixture: 'finished',
+  });
   await page.route('**/api/work-items/*/link-cards', (route) =>
     route.request().method() === 'GET'
       ? handle('linkCards', () => ({ status: 200, body: cards }))(route)

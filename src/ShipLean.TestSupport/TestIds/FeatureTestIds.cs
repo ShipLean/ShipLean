@@ -118,4 +118,6 @@ public static class FeatureTestIds
     public const string AddLinkCancel = "feature-add-link-cancel";
     public const string AddLinkError = "feature-add-link-error";
     public const string EpicOpen = "feature-epic-open";
+    public const string FeatureTimelineSection = "feature-timeline-section";
+    public const string FeatureTimelineOpen = "feature-timeline-open";
 }

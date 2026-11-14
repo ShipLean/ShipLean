@@ -17,6 +17,7 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `workItem` | `/p/:key/items/:itemKey` | |
 | Project | `workItemAttachment` | `/p/:key/items/:itemKey/attachments/:attachmentId` | |
 | Project | `featureBoard` | `/p/:key/items/:itemKey/board` | `?settings=` |
+| Project | `featureTimeline` | `/p/:key/items/:itemKey/timeline` | `group`, `zoom`, `deps`, `cp`, `select`, `view`, `from` |
 | Project | `storiesBoard`, `featuresBoard`, `epicsBoard` | `/p/:key/boards/{stories,features,epics}` | `settings` |
 | Project | `sprints` | `/p/:key/sprints` | |
 | Project | `sprintBacklog`, `capacity`, `sprintRetro`, `sprintDemo` | `/p/:key/sprints/:sprintId/{backlog,capacity,retro,demo}` | `sprintRetro` takes `decide` (open), `point`, `view` (category, item) and `writtenBy` (all, agents, people) |
@@ -67,6 +68,7 @@ The five work item slots read the item through the query key `['projects', proje
 | `taskboard` | Taskboard | `{ project, sprint, sprints }` |
 | `taskboardSettings` | Taskboard | `{ project, sprint, sprints, section, onSectionChange, onClose }` |
 | `featureBoard` | Feature board | `{ project, itemKey }` |
+| `featureTimeline` | Feature timeline | `{ project, itemKey, options, selected, onOptionsChange, onSelect }` |
 | `featureBoardSettings` | Feature board | `{ project, itemKey, section, onSectionChange, onClose }` (the Taskboard's dialog) |
 | `sprintsList`, `newSprintRail` | Sprints | `{ project, sprints }` |
 | `capacity` | Capacity | `{ project, sprint, sprints }` |

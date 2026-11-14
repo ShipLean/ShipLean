@@ -18,6 +18,7 @@ public sealed class FeatureLayout(IPage page)
         page.GetByTestId(WorkItemTestIds.Description),
         page.GetByTestId(FeatureTestIds.Links),
         page.GetByTestId(FeatureTestIds.StoriesAndBugs),
+        page.GetByTestId(FeatureTestIds.FeatureTimelineSection),
         page.GetByTestId(FeatureTestIds.Log),
     ];
 
