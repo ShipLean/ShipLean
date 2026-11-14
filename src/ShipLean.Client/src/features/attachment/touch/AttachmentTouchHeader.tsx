@@ -33,7 +33,10 @@ export function AttachmentTouchHeader({
   const { attachment } = data;
   const close = () => setSheet(null);
   return (
-    <header className="grid gap-0.5 border-b border-edge bg-surface px-3 pt-2 pb-2">
+    <header
+      data-testid={ids.header}
+      className="grid gap-0.5 border-b border-edge bg-surface px-3 pt-2 pb-2"
+    >
       <h1 className="m-0 flex min-w-0">
         <button
           type="button"

@@ -24,6 +24,7 @@ export const attachmentTestIds = {
   sibling: 'attachment-sibling',
 
   // SHIP-715 touch
+  header: 'attachment-header',
   nameButton: 'attachment-name-button',
   facts: 'attachment-facts',
   contentsPill: 'attachment-contents-pill',

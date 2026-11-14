@@ -26,6 +26,7 @@ public static class AttachmentTestIds
     public const string Sibling = "attachment-sibling";
 
     // SHIP-715 touch
+    public const string Header = "attachment-header";
     public const string NameButton = "attachment-name-button";
     public const string Facts = "attachment-facts";
     public const string ContentsPill = "attachment-contents-pill";
