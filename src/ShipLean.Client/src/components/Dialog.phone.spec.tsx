@@ -62,6 +62,23 @@ test('Dialog_WhenBodyIsLongOnAPhone_ShouldScrollTheBodyAndKeepTheHeader', async 
   expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 390, height: 844 });
 });
 
+test('Dialog_WhenContentTallerThanScreenWithAnOverflowChild_ShouldKeepTheChildsHeight', async ({
+  mount,
+  page,
+}) => {
+  await mount(<FullScreenDialogHarness rows={60} overflowChildHeight={200} />);
+  const child = page.getByTestId(harness.ctDialogOverflowChild);
+  const childBox = await child.boundingBox();
+  expect(childBox?.height).toBe(200);
+
+  const body = page.getByTestId(harness.ctDialogBodyEnd).locator('..');
+  const metrics = await body.evaluate((el) => ({
+    scrollHeight: el.scrollHeight,
+    clientHeight: el.clientHeight,
+  }));
+  expect(metrics.scrollHeight).toBeGreaterThan(metrics.clientHeight);
+});
+
 test('Dialog_WhenEscPressedOnAPhone_ShouldClose', async ({ mount, page }) => {
   await mount(<FullScreenDialogHarness />);
   await page.keyboard.press('Escape');
