@@ -63,4 +63,7 @@ export const taskChangesTestIds = {
   commentsTabAll: 'task-changes-comments-tab-all',
   commentOldLine: 'task-changes-comment-old-line',
   commentSentBack: 'task-changes-comment-sent-back',
+  sectionSentBy: 'task-changes-section-sent-by',
+  sectionBars: 'task-changes-section-bars',
+  sectionViewedFill: 'task-changes-section-viewed-fill',
 } as const;

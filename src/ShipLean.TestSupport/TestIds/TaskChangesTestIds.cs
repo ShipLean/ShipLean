@@ -66,4 +66,7 @@ public static class TaskChangesTestIds
     public const string CommentsTabAll = "task-changes-comments-tab-all";
     public const string CommentOldLine = "task-changes-comment-old-line";
     public const string CommentSentBack = "task-changes-comment-sent-back";
+    public const string SectionSentBy = "task-changes-section-sent-by";
+    public const string SectionBars = "task-changes-section-bars";
+    public const string SectionViewedFill = "task-changes-section-viewed-fill";
 }

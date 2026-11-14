@@ -91,7 +91,7 @@ export function CommitsSection({
       )}
       {agentNames.length > 0 ? (
         <div
-          data-testid="task-changes-section-sent-by"
+          data-testid={ids.sectionSentBy}
           className="text-[length:var(--text-xs)] text-ink-muted"
         >
           Sent by {agentNames.join(', ')} through <code>report_task</code>
@@ -108,7 +108,7 @@ function ChangeBars({ additions, deletions }: { additions: number; deletions: nu
   const red = Math.min(5 - green, Math.round((deletions / total) * 5));
   return (
     <span
-      data-testid="task-changes-section-bars"
+      data-testid={ids.sectionBars}
       aria-hidden="true"
       className="inline-flex gap-px align-middle"
     >
@@ -176,7 +176,7 @@ function Header({
               className="mr-1.5 inline-block h-1.5 w-[90px] overflow-hidden rounded-full bg-panel align-middle"
             >
               <i
-                data-testid="task-changes-section-viewed-fill"
+                data-testid={ids.sectionViewedFill}
                 className="block h-full bg-signal"
                 style={{ width: `${totals.files === 0 ? 0 : (viewedCount / totals.files) * 100}%` }}
               />

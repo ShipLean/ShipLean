@@ -50,7 +50,7 @@ test('CommitsSection_WhenARowHasAdditionsAndDeletions_ShouldDrawFiveBarsInPropor
   const commits = [{ ...base, additions: 3, deletions: 2 }];
   await mount(section({ section: { ...SECTION, commits } }), route);
   const kinds = await page
-    .getByTestId('task-changes-section-bars')
+    .getByTestId(ids.sectionBars)
     .first()
     .locator('i')
     .evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')));
@@ -64,7 +64,7 @@ test('CommitsSection_WhenACommitWasSentByAnAgent_ShouldShowTheSentByFooter', asy
   const base = SECTION.commits[0]!;
   const commits = [{ ...base, addedBy: 'Claude Code', addedByAgent: true }];
   await mount(section({ section: { ...SECTION, commits } }), route);
-  await expect(page.getByTestId('task-changes-section-sent-by')).toHaveText(
+  await expect(page.getByTestId(ids.sectionSentBy)).toHaveText(
     'Sent by Claude Code through report_task',
   );
 });
@@ -76,12 +76,12 @@ test('CommitsSection_WhenNoCommitIsFromAnAgent_ShouldHideTheSentByFooter', async
   const commits = SECTION.commits.map((c) => ({ ...c, addedByAgent: false }));
   await mount(section({ section: { ...SECTION, commits } }), route);
   await expect(page.getByTestId(ids.sectionRow).first()).toBeVisible();
-  await expect(page.getByTestId('task-changes-section-sent-by')).toHaveCount(0);
+  await expect(page.getByTestId(ids.sectionSentBy)).toHaveCount(0);
 });
 
 test('CommitsSection_WhenSomeFilesViewed_ShouldFillTheTrackToTheShare', async ({ mount, page }) => {
   await mount(section({ viewedCount: 1 }), route);
-  const fill = page.getByTestId('task-changes-section-viewed-fill');
+  const fill = page.getByTestId(ids.sectionViewedFill);
   const widths = await fill.evaluate((el) => [
     el.getBoundingClientRect().width,
     el.parentElement!.getBoundingClientRect().width,
