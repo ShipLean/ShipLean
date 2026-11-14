@@ -41,6 +41,8 @@ export const attachmentTestIds = {
   editorInput: 'attachment-editor-input',
   editorPasting: 'attachment-editor-pasting',
   editorPasteError: 'attachment-editor-paste-error',
+  // SHIP-715 phone edit: the top bar's pinned spot, under the editor's own toolbar
+  editorToolbarSlot: 'attachment-editor-toolbar-slot',
   save: 'attachment-save',
   cancel: 'attachment-cancel',
   saveError: 'attachment-save-error',
