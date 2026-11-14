@@ -83,8 +83,16 @@ test('WorkItemRetroPhone_WhenRendered_ShouldNotScrollSideways', async ({ mount, 
   await mount(<WorkItemRetroSection {...props} />, route);
   const section = page.getByTestId(ids.workItemRetroSection);
   await expect(section.getByTestId(ids.workItemRetroRow).first()).toBeVisible();
-  const fits = await section.evaluate((el) => el.scrollWidth <= el.clientWidth);
-  expect(fits).toBe(true);
+  const overflow = await section.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const wide = [el, ...el.querySelectorAll('*')].filter((e) => e.scrollWidth > e.clientWidth);
+    const rows = [...el.querySelectorAll('[data-testid="work-item-retro-row"]')];
+    const outside = rows.filter((row) => row.getBoundingClientRect().right > box.right + 0.5);
+    return { wide: wide.length, rows: rows.length, outside: outside.length };
+  });
+  expect(overflow.rows).toBe(3);
+  expect(overflow.wide).toBe(0);
+  expect(overflow.outside).toBe(0);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,

@@ -27,8 +27,8 @@ public class WorkItemRetroTouchTests : SeededAcceptanceTest
 
         var section = new WorkItemRetroSection(Page);
         await Expect(section.Rows).ToHaveCountAsync(2);
-        (await section.Section.EvaluateAsync<bool>("e => e.scrollWidth <= e.clientWidth")).ShouldBeTrue();
-        (await section.Section.EvaluateAsync<bool>("e => e.getBoundingClientRect().right <= document.documentElement.clientWidth")).ShouldBeTrue();
+        (await section.Section.EvaluateAsync<int>("e => [e, ...e.querySelectorAll('*')].filter(x => x.scrollWidth > x.clientWidth).length")).ShouldBe(0);
+        (await section.Section.EvaluateAsync<int>("e => [...e.querySelectorAll('[data-testid=\"work-item-retro-row\"]')].filter(r => r.getBoundingClientRect().right > e.getBoundingClientRect().right + 0.5).length")).ShouldBe(0);
         for (var i = 0; i < 2; i++)
         {
             var row = section.Rows.Nth(i);
