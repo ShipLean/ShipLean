@@ -1,5 +1,5 @@
 import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
-import { TOM } from '../ct/fixtures';
+import { TOM } from './fixtures';
 
 /** The project's members the Assign sheet lists (CT only). */
 export const assignMembers = [TOM, { ...TOM, id: 'u-ann', name: 'Ann Lee', initials: 'AL' }];

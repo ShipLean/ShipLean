@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { assignChildren, assignMembers } from '../../features/board/cards/assignTouchFixtures';
+import { assignChildren, assignMembers } from '../../features/board/ct/assignTouchFixtures';
 import { BoardHarness } from '../../features/board/ct/BoardHarness';
 import { rollupBoard, storiesBoard } from '../../features/board/ct/fixtures';
 import { stubBoard } from '../../features/board/ct/stubApi';

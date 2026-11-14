@@ -5,7 +5,7 @@ import { CardActionsOpenHarness } from '../ct/CardActionsOpenHarness';
 import { TOM, featuresBoard, rollupBoard, storiesBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';
 import { boardTestIds as ids } from '../testIds';
-import { assignChildren, assignMembers } from './assignTouchFixtures';
+import { assignChildren, assignMembers } from '../ct/assignTouchFixtures';
 
 // Assign / Owner and the children list on a phone (SHIP-719, L719e). Runs in the CT phone project.
 // Regenerate shots with scripts/update-page-shots.sh src/pages/screenshots/boardAssign.phone.spec.tsx.

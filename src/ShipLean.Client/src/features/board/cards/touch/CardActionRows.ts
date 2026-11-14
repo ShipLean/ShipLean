@@ -12,14 +12,19 @@ const BELOW: Partial<Record<WorkItemTypeId, WorkItemTypeId>> = {
 };
 
 /**
- * The rows of a card's actions sheet: Open, what is under it (Features and Epics), Move to, Lane (when another lane
- * takes drops), Assign (Owner on Features and Epics), Move to top and bottom. Moves go through `BoardMoves.moveTo`, the desktop drop's path.
+ * The rows of a card's actions sheet: Open, Assign (Owner on Features and Epics), what is under it (Features and Epics), Move to, Lane (when another lane
+ * takes drops), Move to top and bottom. Moves go through `BoardMoves.moveTo`, the desktop drop's path.
  */
 export function useCardActionRows(card: CardDto, actions: CardActions): SheetAction[] {
   const moves = useBoardMoves();
   const { view } = actions;
   const rows: SheetAction[] = [
     { id: 'open', label: 'Open', onSelect: () => actions.openItem(card.key) },
+    {
+      id: 'assign',
+      label: view.level === 'stories' ? 'Assign' : 'Owner',
+      onSelect: () => actions.pick(card.id, 'assign'),
+    },
   ];
   const belowType = BELOW[card.type.id];
   if (actions.showBelow && belowType)
@@ -31,11 +36,6 @@ export function useCardActionRows(card: CardDto, actions: CardActions): SheetAct
   rows.push({ id: 'move-to', label: 'Move to', onSelect: () => actions.pick(card.id, 'column') });
   if (otherLanes(view, card.id).length > 0)
     rows.push({ id: 'lane', label: 'Lane', onSelect: () => actions.pick(card.id, 'lane') });
-  rows.push({
-    id: 'assign',
-    label: view.level === 'stories' ? 'Assign' : 'Owner',
-    onSelect: () => actions.pick(card.id, 'assign'),
-  });
   const top = dropAtTop(view, card.id);
   const bottom = dropAtBottom(view, card.id);
   rows.push(
