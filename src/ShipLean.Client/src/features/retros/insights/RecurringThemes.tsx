@@ -63,16 +63,13 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
                 onOpen={(themeId) => write(withThemeSheet(params, themeId))}
               />
             ))}
-            {/* TODO: the wrapper only holds the table row UnthemedRow renders today; drop it when UnthemedRow renders its own card at touch. */}
-            <div className="min-w-0 overflow-hidden empty:hidden">
-              <UnthemedRow
-                projectKey={project.key}
-                unthemed={insights.unthemed}
-                columns={columns}
-                max={max}
-                mode={mode}
-              />
-            </div>
+            <UnthemedRow
+              projectKey={project.key}
+              unthemed={insights.unthemed}
+              columns={columns}
+              max={max}
+              mode={mode}
+            />
           </div>
           {sheetRow && !itemKey ? (
             <ThemeSheet

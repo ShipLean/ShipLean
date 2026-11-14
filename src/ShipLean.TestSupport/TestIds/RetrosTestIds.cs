@@ -132,6 +132,9 @@ public static class RetrosTestIds
     public const string RetroMergeTarget = "retro-merge-target";
     public const string RetroMergePreview = "retro-merge-preview";
     public const string RetroMergeSave = "retro-merge-save";
+
+    // SHIP-731 merge touch
+    public const string RetroKeepsWorkingLatest = "retro-keeps-working-latest";
     // Insights: action items and impact
     public const string RetroActionsTable = "retro-actions-table";
     public const string RetroActionRow = "retro-action-row";

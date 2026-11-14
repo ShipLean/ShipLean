@@ -122,9 +122,12 @@ test('InsightsFrame_WhenMoreIsUsed_ShouldWriteMergeAndDefsAndShowTheUnthemedCoun
   await expect(rows.nth(1)).toHaveText(/^Give unthemed points themes \(\d+\)$/);
   await rows.nth(0).tap();
   await expect(address(page)).toHaveText('?merge=');
+  // Merge themes is full screen now: closing it takes `merge` out of the address before ⋯ is reachable again.
+  await page.getByTestId(touchTestIds.dialogClose).tap();
+  await expect(address(page)).toHaveText('');
   await page.getByTestId(touchTestIds.moreButton).tap();
   await rows.nth(2).tap();
-  await expect(address(page)).toHaveText('?merge=&sheet=defs');
+  await expect(address(page)).toHaveText('?sheet=defs');
 });
 
 test('InsightsFrame_WhenOpened_ShouldHaveNothingSticky', async ({ mount, page }) => {

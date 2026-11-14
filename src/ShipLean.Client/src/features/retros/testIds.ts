@@ -129,6 +129,8 @@ export const retrosTestIds = {
   retroMergeTarget: 'retro-merge-target',
   retroMergePreview: 'retro-merge-preview',
   retroMergeSave: 'retro-merge-save',
+  // SHIP-731 merge touch
+  retroKeepsWorkingLatest: 'retro-keeps-working-latest',
   // Insights: action items and impact
   retroActionsTable: 'retro-actions-table',
   retroActionRow: 'retro-action-row',

@@ -10,8 +10,7 @@ import { defsSheetValue, withMerge, withSheet } from './insightsAddress';
 
 /**
  * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, then one row with Range ▾ and ⋯. Not sticky.
- * `merge` is the Merge themes button the desktop toolbar has, kept mounted because it opens the full-screen merge from
- * the address.
+ * `merge` is Merge themes, kept mounted because at touch it shows the full-screen merge the address names.
  */
 export function InsightsTouchToolbar({
   projectKey,
@@ -96,8 +95,7 @@ export function InsightsTouchToolbar({
           </span>
         </button>
         <span className="flex-1" />
-        {/* TODO: L731d replaces this hidden desktop button with the full-screen merge opened from `merge`. */}
-        <span hidden>{merge}</span>
+        {merge}
         <MoreButton label="Insights" actions={actions} />
       </div>
     </div>
