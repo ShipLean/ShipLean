@@ -62,6 +62,14 @@ public static class TaskboardTestIds
     public const string CardParent = "taskboard-card-parent";
     public const string CardParentFeature = "taskboard-card-parent-feature";
     public const string CardPickUp = "taskboard-card-pick-up";
+    // L722c task actions
+    public const string CardActions = "taskboard-card-actions";
+    public const string ActionState = "taskboard-task-action-state";
+    public const string ActionBack = "taskboard-task-action-back";
+    public const string StorySearch = "taskboard-task-story-search";
+    public const string StoryOption = "taskboard-task-story-option";
+    public const string AssigneeOption = "taskboard-task-assignee-option";
+    public const string Address = "taskboard-address";
     public const string AddTask = "taskboard-add-task";
     public const string TaskBox = "taskboard-task-box";
     public const string TaskTitle = "taskboard-task-title";
