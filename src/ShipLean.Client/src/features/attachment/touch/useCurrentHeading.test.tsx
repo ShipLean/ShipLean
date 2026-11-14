@@ -64,3 +64,11 @@ test('currentAnchor_WhenNoHeadingReachedTheLine_ShouldNameTheFirst', () => {
   ];
   expect(currentAnchor(tops, 96)).toBe('a');
 });
+
+test('useCurrentHeading_WhenNextHeadingIsBelowTheLine_ShouldKeepTheOneAbove', () => {
+  heading('intro', -500);
+  heading('tokens', 400);
+  mountProbe(['intro', 'tokens'], true);
+
+  expect(seen()).toBe('intro');
+});
