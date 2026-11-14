@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ShipLean · Task changes (SHIP-1460 mock-up)</title>
 <!--
-  SHIP-1460 mock-up: the code a Task's commits changed, inside ShipLean, with comments on lines. Desktop only, Tasks only.
+  SHIP-1460 mock-up: the code a Task's or Bug's commits changed, inside ShipLean, with comments on lines. Desktop only;
+  Tasks and Bugs only (D3). Commits from any repository the instance token can read (D4); diffs fetched on view and
+  cached a day (D6); Viewed kept in the browser (D12). Decisions D1–D16 settled by Joel, 14 Nov 2026.
   Not built. Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
   ?view=task       the Task page (SHIP-171) with its Changes section. &state=empty shows a Task with no commits and
-                   the Add commit form.
+                   the Add commit form. &item=bug shows a Bug (SHIP-153) with its own commits.
   ?view=review     (default) the Changes page, /p/SHIP/items/SHIP-171/changes. &state=
                    compose | commits | split | request | approve | outdated | noaccess
-  ?view=settings   Project settings › Repositories: which repositories commits can come from.
   Under 900px the Task page has no Changes section, and the Changes page shows one line saying it needs a wider screen.
   The Preview panel (bottom left) is a review aid; ?shot hides it, ?theme=light|dark forces a theme.
 -->
@@ -179,16 +180,6 @@ table.commits td.num { text-align: right; }
 .noaccess { max-width: 760px; }
 .narrow-note { display: none; }
 
-/* ---------- Settings › Repositories ---------- */
-.set-wrap { padding: var(--space-4); display: grid; gap: var(--space-3); max-width: 1040px; align-content: start; }
-.set-wrap h2 { margin: 0; font-size: var(--text-md); }
-table.repos { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-table.repos th { text-align: left; font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: .05em; color: var(--color-muted); padding: 6px var(--space-2); background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
-table.repos td { padding: 0 var(--space-2); height: 40px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); white-space: nowrap; }
-table.repos tr:last-child td { border-bottom: 0; }
-.addrepo { display: flex; gap: var(--space-2); align-items: center; }
-.addrepo .field { flex: 1; height: var(--control-height); }
-
 /* Desktop only: under the touch shell's breakpoint there is no Changes section and no Changes page. */
 @media (max-width: 900px) {
   .changes-sec { display: none !important; }
@@ -212,8 +203,9 @@ table.repos tr:last-child td { border-bottom: 0; }
   const params = new URLSearchParams(location.search);
   const view = params.get('view') || 'review';
   const state = params.get('state') || '';
-  const crumbs = view === 'settings' ? ['Settings', 'Repositories'] : view === 'task' ? ['Backlogs', 'SHIP-141', 'SHIP-171'] : ['Backlogs', 'SHIP-141', 'SHIP-171', 'Changes'];
-  $('appbar').outerHTML = SL.appBar(view === 'settings' ? 'settings' : 'backlogs')
+  const BUG = params.get('item') === 'bug';
+  const crumbs = view === 'task' ? (BUG ? ['Backlogs', 'SHIP-153'] : ['Backlogs', 'SHIP-141', 'SHIP-171']) : ['Backlogs', 'SHIP-141', 'SHIP-171', 'Changes'];
+  $('appbar').outerHTML = SL.appBar('backlogs')
     .replace(/<nav class="crumbs"[^]*?<\/nav>/, `<nav class="crumbs" aria-label="You are here"><span>SHIP</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>`);
 
   const agentAv = '<span class="agent" title="Claude Code (agent)">AI</span>';
@@ -402,15 +394,15 @@ table.repos tr:last-child td { border-bottom: 0; }
       <section class="sec changes-sec" data-testid="task-changes">
         <div class="sec-h"><h2>Changes</h2><span class="sum">No commits yet</span><span class="spacer"></span><button class="btn tiny" type="button" id="addCommitBtn">+ Add commit</button></div>
         <div class="empty-box">
-          <span>When an agent finishes this task it sends the commits it made, and they show here with their diff.</span>
-          <span>Agents send them with <code>report_task</code> (tasks of a plan) or <code>add_commits</code> (any task). People add one with <b>+ Add commit</b>.</span>
+          <span>When an agent finishes this task it sends the commits it made, and they show here with their diff. Tasks and Bugs take commits; Stories and Features don't.</span>
+          <span>Agents send them with <code>report_task</code> (tasks of a plan) or <code>add_commits</code> (any task or bug). People add one with <b>+ Add commit</b>.</span>
         </div>
         <form class="add-commit" id="addCommit" onsubmit="return false">
-          <label>Repository<select class="field"><option>github.com/${REPO}</option><option>gitlab.example.com/payments/vault</option></select></label>
+          <label>Repository<input class="field mono" value="github.com/${REPO}" aria-label="Repository"></label>
           <label>Commit sha or URL<input class="field mono" value="3f9c2a17e4b0d6c58a1f20e7b9d4c3a6f1e08b52" aria-label="Commit sha or URL"></label>
           <button class="btn primary" type="button">Add commit</button>
           <button class="btn ghost" type="button">Cancel</button>
-          <span class="hint">✓ <b>3f9c2a1</b> SHIP-171: Card lookup returns brand, last four and expiry · Claude Code · +105 −12. Only this project's repositories (Settings › Repositories).</span>
+          <span class="hint">✓ <b>3f9c2a1</b> SHIP-171: Card lookup returns brand, last four and expiry · Claude Code · +105 −12. Any repository the instance's GitHub or GitLab token can read.</span>
         </form>
       </section>` : `
       <section class="sec changes-sec" data-testid="task-changes">
@@ -423,7 +415,7 @@ table.repos tr:last-child td { border-bottom: 0; }
         </div>
         <div class="box"><table class="commits">${commits.map(c => `<tr>
           <td><a class="sha" href="#" title="${c.sha}">${c.sha.slice(0, 7)}</a></td>
-          <td class="subj" title="${esc(c.subj)}">${esc(c.subj)}</td>
+          <td class="subj" title="${esc(c.subj)}">${esc(BUG ? c.subj.replace('SHIP-171', 'SHIP-153') : c.subj)}</td>
           <td><span class="pill">${REPO}</span></td>
           <td><span class="who">${agentAv}Claude Code</span></td>
           <td class="muted sm">${c.when}</td>
@@ -433,21 +425,21 @@ table.repos tr:last-child td { border-bottom: 0; }
       </section>`;
     $('page').innerHTML = `
       <section class="wi-head" aria-label="Work item header">
-        <div class="wi-top"><a class="back" href="#">← Back to SHIP-141 Pay with saved card</a><span class="spacer"></span><span class="xs muted">Created by Priya Shah, Mon 19 Oct · Changed by Claude Code (agent), Thu 22 Oct, 17:24 · revision 5</span></div>
-        <div class="wi-title"><span class="ident">${tIcon('task')} Task <span class="mono">SHIP-171</span></span><h1>API: tokenised card lookup</h1><span class="xs muted">Saved · revision 5</span><button class="btn primary" type="button" disabled style="opacity:.45">Save</button></div>
+        <div class="wi-top"><a class="back" href="#">${BUG ? '← Back to Stories backlog' : '← Back to SHIP-141 Pay with saved card'}</a><span class="spacer"></span><span class="xs muted">Created by Priya Shah, Mon 19 Oct · Changed by Claude Code (agent), Thu 22 Oct, 17:24 · revision 5</span></div>
+        <div class="wi-title"><span class="ident">${BUG ? `${tIcon('bug')} Bug <span class="mono">SHIP-153</span>` : `${tIcon('task')} Task <span class="mono">SHIP-171</span>`}</span><h1>${BUG ? 'Card picker spins forever when the vault times out' : 'API: tokenised card lookup'}</h1><span class="xs muted">Saved · revision 5</span><button class="btn primary" type="button" disabled style="opacity:.45">Save</button></div>
       </section>
       <div class="fields">
         <div class="fcell"><span class="lbl">State</span><span class="fval">${st(empty ? 'Active' : 'In review')} <span class="muted xs">▾</span></span></div>
         <div class="fcell"><span class="lbl">Assignee</span><span class="fval">${av('priya')} Priya Shah</span></div>
         <div class="fcell"><span class="lbl">Sprint</span><span class="fval">Sprint 24 (current)</span></div>
-        <div class="fcell"><span class="lbl">Remaining</span><span class="fval">2 h</span></div>
-        <div class="fcell"><span class="lbl">Parent</span><span class="fval">${tIcon('story')} SHIP-141 Pay with saved card</span></div>
-        <div class="fcell"><span class="lbl">Tags</span><span class="fval"><span class="chip">wave:1</span><span class="chip">lane:api</span></span></div>
+        ${BUG ? '<div class="fcell"><span class="lbl">Severity</span><span class="fval">2 · High</span></div><div class="fcell"><span class="lbl">Parent</span><span class="fval">' + tIcon('feature') + ' Checkout v2</span></div>' : `<div class="fcell"><span class="lbl">Remaining</span><span class="fval">2 h</span></div>
+        <div class="fcell"><span class="lbl">Parent</span><span class="fval">${tIcon('story')} SHIP-141 Pay with saved card</span></div>`}
+        <div class="fcell"><span class="lbl">Tags</span><span class="fval">${BUG ? '<span class="chip">Checkout</span>' : '<span class="chip">wave:1</span><span class="chip">lane:api</span>'}</span></div>
       </div>
       <div class="split wi-split">
         <div class="scroll wi-main">
           <section class="sec"><div class="sec-h"><h2>Description</h2></div>
-            <div class="md"><p>Look up a customer's saved cards from the vault and return brand, last four and expiry from <code>GET /api/cards</code>. Answer 503 when the vault is down so the picker can fall back to the new-card form.</p></div></section>
+            <div class="md"><p>${BUG ? 'The saved-card picker shows its spinner forever when the vault takes more than 10 s. It should fall back to the new-card form. Fixed without tasks, so the commits sit on the bug.' : "Look up a customer's saved cards from the vault and return brand, last four and expiry from <code>GET /api/cards</code>. Answer 503 when the vault is down so the picker can fall back to the new-card form."}</p></div></section>
           ${changes}
           <section class="sec"><div class="sec-h"><h2>Discussion</h2><span class="cnt">1</span></div>
             <div class="cm">${agentAv}<div><div class="cm-h"><b>Claude Code</b><span class="xs muted">(agent) · Thu 22 Oct, 17:24</span></div>
@@ -517,7 +509,7 @@ table.repos tr:last-child td { border-bottom: 0; }
   function fileHtml(f, fi) {
     const dir = f.path.split('/').slice(0, -1).join('/') + '/', name = f.path.split('/').pop();
     const collapsed = f.viewed || !f.lines;
-    const body = collapsed ? `<div class="collapsed-note">${f.viewed ? 'Viewed. Collapsed until it changes again.' : ''}</div>`
+    const body = collapsed ? `<div class="collapsed-note">${f.viewed ? 'Viewed in this browser. Collapsed until it changes again.' : ''}</div>`
       : ui.mode === 'split' ? `<table class="dl sbs"><colgroup><col style="width:46px"><col style="width:calc(50% - 46px)"><col style="width:46px"><col style="width:calc(50% - 46px)"></colgroup>${splitRows(f, fi)}</table>`
       : `<table class="dl"><colgroup><col class="ln"><col class="ln"><col class="sg"><col></colgroup>${unifiedRows(f, fi)}</table>`;
     return `<section class="df${collapsed ? ' collapsed' : ''}" id="${f.id}" data-testid="diff-file">
@@ -563,7 +555,7 @@ table.repos tr:last-child td { border-bottom: 0; }
   function reviewPage() {
     const open = threads.filter(t => !t.resolved).length;
     const list = state === 'outdated' ? [...commits, newCommit] : commits;
-    const banner = state === 'outdated' ? `<div class="newbar"><b>1 new commit since you last looked</b> (e5b1c90, Fri 23 Oct, 09:12 by Claude Code). 1 file changed again, so it's no longer marked viewed; 1 comment is outdated.<span class="spacer"></span><button class="btn tiny" type="button">Show only what's new</button></div>` : '';
+    const banner = state === 'outdated' ? `<div class="newbar"><b>1 new commit since you last looked in this browser</b> (e5b1c90, Fri 23 Oct, 09:12 by Claude Code). 1 file changed again, so it's no longer marked viewed; 1 comment is outdated.<span class="spacer"></span><button class="btn tiny" type="button">Show only what's new</button></div>` : '';
     const noaccess = state === 'noaccess';
     $('page').innerHTML = `
       <div class="narrow-note"><b>Changes need a wider screen.</b><span class="muted">Open SHIP-171's changes on a computer. On a phone the task shows without them.</span><a href="?view=task">← Back to SHIP-171</a></div>
@@ -578,7 +570,7 @@ table.repos tr:last-child td { border-bottom: 0; }
           <span class="seg" role="group" aria-label="Layout"><button type="button" data-mode="unified" aria-pressed="${ui.mode === 'unified'}">Unified</button><button type="button" data-mode="split" aria-pressed="${ui.mode === 'split'}">Split</button></span>
           <label class="check"><input type="checkbox"> Hide whitespace</label>
           <span class="spacer"></span>
-          <span class="prog"><span class="track"><i style="width:${3 / 8 * 100}%"></i></span>3 / 8 viewed</span>
+          <span class="prog" title="Viewed is kept in this browser"><span class="track"><i style="width:${3 / 8 * 100}%"></i></span>3 / 8 viewed</span>
           <button class="btn" type="button" id="approve">Approve</button>
           <button class="btn primary" type="button" id="request" ${open ? '' : 'disabled'}>Request changes${open ? ` · ${open}` : ''}</button>
         </div>
@@ -586,7 +578,7 @@ table.repos tr:last-child td { border-bottom: 0; }
       ${banner}
       <div class="cv">
         <nav class="tree" aria-label="Changed files">${treeHtml()}</nav>
-        <div class="diffs" id="diffs">${noaccess ? `<div class="callout warn noaccess"><b>ShipLean can't read github.com/${REPO}.</b>The instance's GitHub token was refused (401) when these commits were sent, so there's no diff to show. An instance admin replaces the token in Instance settings › Integrations; the diffs load on the next visit. Each commit still opens on GitHub: ${commits.map(c => `<a class="sha" href="#">${c.sha.slice(0, 7)}</a>`).join(', ')}.</div>` : files.map(fileHtml).join('')}</div>
+        <div class="diffs" id="diffs">${noaccess ? `<div class="callout warn noaccess"><b>ShipLean can't read github.com/${REPO}.</b>The instance's GitHub token was refused (401) when this page asked for the diff, so there's none to show. An instance admin replaces the token in Instance settings › Integrations; the diff loads on the next visit. A commit that no longer exists (squashed or force-pushed away) shows the same way, as <i>no longer on GitHub</i>. Each commit still opens on GitHub: ${commits.map(c => `<a class="sha" href="#">${c.sha.slice(0, 7)}</a>`).join(', ')}.</div>` : files.map(fileHtml).join('')}</div>
         <aside class="cmts" aria-label="Comments">${railHtml()}</aside>
       </div>
       ${state === 'request' ? requestDialog() : ''}${state === 'approve' ? approveDialog() : ''}`;
@@ -611,25 +603,7 @@ table.repos tr:last-child td { border-bottom: 0; }
     </div></div>`;
   }
 
-  /* ---------------- Settings › Repositories ---------------- */
-  function settingsPage() {
-    const tabs = ['General', 'States', 'Members', 'Sprints & forecast', 'Integrations', 'Repositories', 'Demos'];
-    $('page').innerHTML = `
-      <div class="toolbar" style="flex:none;padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--color-border);background:var(--color-surface)"><div class="tabs">${tabs.map(t => `<a class="tab${t === 'Repositories' ? ' on' : ''}" href="#" ${t === 'Repositories' ? 'aria-current="page" style="background:var(--color-accent-soft);color:var(--color-text)"' : ''}>${t}</a>`).join('')}</div></div>
-      <div class="scroll"><div class="set-wrap">
-        <div><h2>Repositories</h2><p class="sm muted" style="margin:4px 0 0;max-width:760px">Tasks can show the changes from commits in these repositories, and only these. ShipLean reads them with the instance's GitHub or GitLab token (Instance settings › Integrations), so listing a repository here lets every member of SHIP read its diffs.</p></div>
-        <div class="box"><table class="repos"><thead><tr><th>Repository</th><th>Read with</th><th>Status</th><th>Commits on tasks</th><th>Added</th><th></th></tr></thead><tbody>
-          <tr><td><span class="prov">GH</span> <b>github.com/${REPO}</b></td><td class="sm">Instance GitHub token ····9f2c</td><td><span class="pill ok">✓ Readable</span></td><td class="sm">142 on 61 tasks</td><td class="sm muted">Priya Shah, Mon 19 Oct</td><td><button class="btn ghost tiny danger" type="button">Remove</button></td></tr>
-          <tr><td><span class="prov">GH</span> <b>github.com/acme/storefront-web</b></td><td class="sm">Instance GitHub token ····9f2c</td><td><span class="pill ok">✓ Readable</span></td><td class="sm">37 on 20 tasks</td><td class="sm muted">Priya Shah, Mon 19 Oct</td><td><button class="btn ghost tiny danger" type="button">Remove</button></td></tr>
-          <tr><td><span class="prov">GL</span> <b>gitlab.example.com/payments/vault</b></td><td class="sm">Instance GitLab token ····a71e</td><td><span class="pill warn">Can't read: 403</span></td><td class="sm">4 on 2 tasks</td><td class="sm muted">Tom Okafor, Wed 21 Oct</td><td><button class="btn ghost tiny danger" type="button">Remove</button></td></tr>
-        </tbody></table></div>
-        <div class="addrepo"><input class="field" placeholder="https://github.com/owner/name or gitlab.example.com/group/project" aria-label="Repository URL"><button class="btn primary" type="button">Add repository</button></div>
-        <div class="callout"><b>For agents</b>An agent names the repository the way <code>git remote get-url origin</code> prints it; ShipLean matches it to one of these. A commit from a repository that isn't listed is refused with this list in the error, so the agent can tell you which one to add.</div>
-        <p class="xs muted" style="margin:0">Removing a repository keeps its commits on tasks, but their diffs stop showing (each commit still opens on GitHub or GitLab).</p>
-      </div></div>`;
-  }
-
-  function render() { (view === 'task' ? taskPage : view === 'settings' ? settingsPage : reviewPage)(); }
+  function render() { (view === 'task' ? taskPage : reviewPage)(); }
   render();
 
   document.addEventListener('click', e => {
@@ -653,7 +627,7 @@ table.repos tr:last-child td { border-bottom: 0; }
   SL.preview([
     { label: 'Task page', run: () => { location.search = '?view=task'; } },
     { label: 'Changes', run: () => { location.search = '?view=review'; } },
-    { label: 'Repositories', run: () => { location.search = '?view=settings'; } },
+    { label: 'Bug page', run: () => { location.search = '?view=task&item=bug'; } },
   ]);
 })();
 </script>
