@@ -37,7 +37,7 @@ public class BoardTouchDragTests : SeededAcceptanceTest
         Recorder.Clear();
 
         await drag.LiftAsync(card);
-        (await TouchRules.ViolationsAsync(Page, CardActionsSheet.More(card))).ShouldBeEmpty();
+        (await TouchRules.ViolationsAsync(Page, card)).ShouldBeEmpty();
         (await TouchRules.ViolationsAsync(Page, drag.Ghost)).ShouldBeEmpty();
         var cell = board.CellOfTitled("Export sprint report to CSV");
         var moved = await drag.DragLiftedToColumnAsync(card, cell, "In progress");

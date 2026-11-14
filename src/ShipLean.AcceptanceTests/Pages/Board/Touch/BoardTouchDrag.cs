@@ -25,12 +25,15 @@ public sealed class BoardTouchDrag(IPage page)
     private ILocator Chip(string columnName) =>
         page.GetByTestId(TouchTestIds.PagerChip).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(columnName) + "(?![A-Za-z])") });
 
-    // Resolves once a cell of the column (in the lane, when given) lies inside the viewport: the smooth scroll has settled.
+    // Resolves once a cell of the column (in the lane, when given) lies inside the viewport and the pager has stopped
+    // moving (the same scroll position on two frames in a row): the smooth scroll has settled.
     private async Task CellInViewAsync(string columnId, string? lane) =>
         await page.WaitForFunctionAsync(
-            "([lane, column]) => [...document.querySelectorAll('[data-lane][data-column]')].some(c => c.dataset.column === column"
+            "([lane, column]) => { const track = document.querySelector('[data-testid=\"touch-pager\"]'); const at = track.scrollLeft;"
+            + " const still = window.__pagerAt === at; window.__pagerAt = at;"
+            + " return still && [...document.querySelectorAll('[data-lane][data-column]')].some(c => c.dataset.column === column"
             + " && (lane === null || c.dataset.lane === lane) && c.getBoundingClientRect().left >= 0"
-            + " && c.getBoundingClientRect().right <= window.innerWidth)",
+            + " && c.getBoundingClientRect().right <= window.innerWidth); }",
             new[] { lane, columnId });
 
     // Turns the pager to the column (its chip) and waits for the smooth scroll to settle, so its cards are on screen.
@@ -44,6 +47,7 @@ public sealed class BoardTouchDrag(IPage page)
     // Presses the card and waits for it to lift (the ghost shows).
     public async Task LiftAsync(ILocator card)
     {
+        await card.ScrollIntoViewIfNeededAsync();
         var (x, y) = CentreOf((await card.BoundingBoxAsync())!);
         await SendAsync("touchStart", x, y);
         await Assertions.Expect(Ghost).ToBeVisibleAsync();

@@ -1,4 +1,4 @@
-import { useCallback, type KeyboardEvent } from 'react';
+import { useCallback, type DragEvent, type KeyboardEvent } from 'react';
 import { TouchDragGhost } from '../../../touch/TouchDragGhost';
 import { useTouchCardDrag } from '../moves/touch/useTouchCardDrag';
 import { useTouchOver } from '../moves/touch/TouchOverContext';
@@ -55,6 +55,8 @@ export function DraggableCard({ place, ...props }: CardProps & { place: Place })
           role: 'group',
           'aria-label': `${card.title}, ${card.state.name}`,
           onKeyDown,
+          // A long press on the title link would start the browser's link drag and cancel the touch: the lift is ours.
+          onDragStart: enabled ? (event: DragEvent) => event.preventDefault() : undefined,
           ...dropTarget,
           style: {
             ...drag.style,
