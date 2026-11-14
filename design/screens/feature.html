@@ -129,14 +129,10 @@
 .sec-h .seg { height: 24px; }
 .sec-h .seg button { font-size: var(--text-xs); padding: 0 8px; }
 .cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
-/* Timeline summary (SHIP-1465): the key dates and a thumbnail of the execution; Open timeline goes full screen */
-.tl-sum { display: grid; gap: var(--space-3); max-width: 920px; padding: var(--space-3) var(--space-3) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); --kd-bg: var(--color-surface); cursor: pointer; text-decoration: none; color: var(--color-text); }
+/* Timeline summary (SHIP-1465): the key dates only (Joel, 14 Nov); click to open the full-screen timeline */
+.tl-sum { display: block; max-width: 920px; padding: var(--space-3) var(--space-3) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); --kd-bg: var(--color-surface); text-decoration: none; color: var(--color-text); }
 .tl-sum:hover { border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border)); }
 .tl-sum .kd { width: 100%; }
-.tl-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-3); align-items: center; }
-.tl-thumb { padding: 6px 8px; border-radius: var(--radius-sm); background: var(--color-bg); }
-.tl-top { display: grid; gap: 4px; font-size: var(--text-sm); }
-.tl-top .more { font-size: var(--text-xs); color: var(--color-accent); }
 .goal { padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
 .goal p { margin: 2px 0 0; max-width: 780px; font-size: var(--text-md); line-height: 1.5; }
 .md { max-width: 780px; font-size: var(--text-base); }
@@ -621,15 +617,10 @@ svg text { fill: currentColor; }
 
   /* Timeline summary (SHIP-1465) */
   function timelineHtml() {
-    const m = TL.build(KEY), top = m.findings[0];
+    const m = TL.build(KEY);
     return `<section class="sec" data-testid="timeline-section">
-        <div class="sec-h"><h2>Timeline</h2><span class="xs muted">How the work has run: key dates, then every task. Open it to see what waited on what.</span><span class="spacer"></span><a class="btn tiny" href="feature-timeline.html?key=${KEY}" title="Full-screen Gantt chart of this Feature's work">⤢ Open timeline</a></div>
-        <a class="tl-sum" href="feature-timeline.html?key=${KEY}" aria-label="Open the timeline">
-          ${TL.keyDatesHtml(m, true)}
-          <div class="tl-row"><div class="tl-thumb">${TL.miniHtml(m)}</div>
-            <div class="tl-top"><span class="lbl">Longest hold-up so far</span><span>${esc(top.summary)}</span><span class="more">${m.findings.length - 1} more findings · ${m.bars.filter(b => b.segments.length).length} tasks with history ›</span>
-            <span class="lg"><span><i class="sw active"></i>Active</span><span><i class="sw in_review"></i>In review</span><span><i class="sw blocked"></i>Blocked</span></span></div></div>
-        </a>
+        <div class="sec-h"><h2>Timeline</h2><span class="xs muted">The key dates. Open the timeline for every task and what waited on what.</span><span class="spacer"></span><a class="btn tiny" href="feature-timeline.html?key=${KEY}" title="Full-screen Gantt chart of this Feature's work">⤢ Open timeline</a></div>
+        <a class="tl-sum" href="feature-timeline.html?key=${KEY}" aria-label="Open the timeline">${TL.keyDatesHtml(m, true)}</a>
       </section>`;
   }
 
