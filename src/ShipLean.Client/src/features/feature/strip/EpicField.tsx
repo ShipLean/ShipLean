@@ -58,7 +58,7 @@ export function EpicField({
             testId={ids.epicOpen}
             itemKey={value.key}
             title="Open epic"
-            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline"
+            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)] touch:items-center touch:justify-center"
           >
             <span className="sr-only">Open epic </span>
             {value.key}

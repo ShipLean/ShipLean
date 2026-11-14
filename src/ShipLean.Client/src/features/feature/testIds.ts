@@ -43,6 +43,7 @@ export const featureTestIds = {
   stripSlug: 'feature-strip-slug',
   stripStarted: 'feature-strip-started',
   stripChildrenCount: 'feature-strip-children-count',
+  statusEditHint: 'feature-status-edit-hint',
   childrenCount: 'feature-children-count',
   childrenEmpty: 'feature-children-empty',
   childRow: 'feature-child-row',

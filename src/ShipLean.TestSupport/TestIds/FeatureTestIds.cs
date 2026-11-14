@@ -45,6 +45,7 @@ public static class FeatureTestIds
     public const string StripSlug = "feature-strip-slug";
     public const string StripStarted = "feature-strip-started";
     public const string StripChildrenCount = "feature-strip-children-count";
+    public const string StatusEditHint = "feature-status-edit-hint";
     public const string ChildrenCount = "feature-children-count";
     public const string ChildrenEmpty = "feature-children-empty";
     public const string ChildRow = "feature-child-row";
