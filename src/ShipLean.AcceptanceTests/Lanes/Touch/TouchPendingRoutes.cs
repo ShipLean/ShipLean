@@ -16,8 +16,6 @@ public static class TouchPendingRoutes
         ["epicsBacklog"] = "SHIP-716",
         // SHIP-714
         ["workItem"] = "SHIP-714",
-        // SHIP-715
-        ["workItemAttachment"] = "SHIP-715",
         // SHIP-722
         ["featureBoard"] = "SHIP-722",
         // SHIP-719

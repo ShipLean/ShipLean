@@ -18,7 +18,7 @@ export function ImagesPanel({ images, itemKey }: { images: MarkdownImageDto[]; i
             <li
               key={image.src}
               data-testid={ids.imageRow}
-              className="flex min-h-7.5 items-center gap-1.5 border-t border-edge/60 px-2 text-[length:var(--text-sm)] first:border-t-0"
+              className="flex min-h-7.5 touch:min-h-12 items-center gap-1.5 border-t border-edge/60 px-2 text-[length:var(--text-sm)] first:border-t-0"
             >
               <span
                 aria-hidden="true"
