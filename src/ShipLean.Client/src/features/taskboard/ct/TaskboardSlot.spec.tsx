@@ -29,7 +29,7 @@ test('Taskboard_WhenCardHasManyTags_ShouldStayInsideItsColumn', async ({ mount, 
   const view = structuredClone(VIEW);
   const card = view.rows[0].cells[0].tasks[0];
   card.tags = ['search', 'pr-a', 'lane-a'].map((name) => ({ name, colour: null }));
-  await page.setViewportSize({ width: 900, height: 720 });
+  await page.setViewportSize({ width: 901, height: 720 });
   await stubTaskboard(page, view);
   await mount(slot, route);
 

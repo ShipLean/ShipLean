@@ -11,11 +11,17 @@ export function SiblingsPanel({
   itemKey,
   current,
   siblings,
+  bare = false,
+  onNavigate,
 }: {
   projectKey: string;
   itemKey: string;
   current: AttachmentDto;
   siblings: AttachmentDto[];
+  /** In a sheet that already carries the title: no heading. */
+  bare?: boolean;
+  /** Called when another file is picked, so a sheet showing the list can close. */
+  onNavigate?: () => void;
 }) {
   return (
     <section
@@ -23,14 +29,14 @@ export function SiblingsPanel({
       aria-label={`Markdown on ${itemKey}`}
       className="grid gap-1"
     >
-      <PanelHeading>Markdown on {itemKey}</PanelHeading>
+      {bare ? null : <PanelHeading>Markdown on {itemKey}</PanelHeading>}
       <ul className="m-0 grid list-none overflow-hidden rounded-md border border-edge bg-surface p-0">
         {[current, ...siblings].map((file) => (
           <li
             key={file.id}
             data-testid={ids.sibling}
             aria-current={file.id === current.id ? 'page' : undefined}
-            className="flex min-h-7.5 items-center gap-1.5 border-t border-edge/60 px-2 text-[length:var(--text-sm)] first:border-t-0 aria-[current=page]:bg-signal-soft"
+            className="flex min-h-7.5 touch:min-h-12 items-center gap-1.5 border-t border-edge/60 px-2 text-[length:var(--text-sm)] first:border-t-0 aria-[current=page]:bg-signal-soft"
           >
             {file.id === current.id ? (
               <span className="min-w-0 flex-1 truncate">{file.name}</span>
@@ -41,7 +47,8 @@ export function SiblingsPanel({
                   itemKey,
                   attachmentId: file.id,
                 })}
-                className="min-w-0 flex-1 truncate text-ink no-underline hover:text-signal hover:underline"
+                onClick={onNavigate}
+                className="min-w-0 flex-1 truncate touch:flex touch:items-center touch:self-stretch text-ink no-underline hover:text-signal hover:underline"
               >
                 {file.name}
               </Link>

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { AskHistoryLineDto } from '@shiplean/core/api/asks';
 import type { RevisionDto } from '@shiplean/core/api/workItems';
 import { AskHistoryLine } from '../../asks/AskHistoryLine';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemTestIds as ids } from '../testIds';
 import { fetchHistory, useWorkItem, workItemHistoryKey } from '../workItemApi';
 import { RevisionItem } from './RevisionItem';
@@ -10,6 +12,8 @@ import { RevisionItem } from './RevisionItem';
 type RailEntry =
   | { kind: 'revision'; at: string; revision: RevisionDto }
   | { kind: 'ask'; at: string; line: AskHistoryLineDto };
+
+const RECENT_ON_TOUCH = 3;
 
 // Both lists come newest first with server UTC ISO times, so the strings compare as times. A revision wins a tie.
 function interleave(revisions: RevisionDto[], asks: AskHistoryLineDto[]): RailEntry[] {
@@ -37,9 +41,14 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
     queryFn: () => fetchHistory(item?.id ?? ''),
     enabled: item !== undefined,
   });
+  const { touch } = useTouchShell();
+  const [showAll, setShowAll] = useState(false);
   if (!item) return null;
   const revisions = history.data?.revisions ?? [];
   const rail = interleave(revisions, history.data?.asks ?? []);
+  // On a phone the newest three entries show, then one control for the rest (SHIP-714 D7).
+  const truncated = touch && !showAll && rail.length > RECENT_ON_TOUCH;
+  const shown = truncated ? rail.slice(0, RECENT_ON_TOUCH) : rail;
   return (
     <section
       data-testid={ids.history}
@@ -72,7 +81,7 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
         </p>
       ) : (
         <ol className="m-0 grid grid-cols-[minmax(0,1fr)] list-none p-0">
-          {rail.map((entry) =>
+          {shown.map((entry) =>
             entry.kind === 'revision' ? (
               <RevisionItem key={`rev-${entry.revision.rev}`} revision={entry.revision} />
             ) : (
@@ -84,6 +93,16 @@ export function HistorySection({ project, itemKey }: { project: ProjectDto; item
           )}
         </ol>
       )}
+      {truncated ? (
+        <button
+          type="button"
+          data-testid={ids.historyShowAll}
+          className="h-[var(--touch-target)] w-full rounded-control border border-dashed border-edge text-[length:var(--text-sm)] text-signal"
+          onClick={() => setShowAll(true)}
+        >
+          Show all {rail.length} {rail.length === revisions.length ? 'revisions' : 'entries'}
+        </button>
+      ) : null}
     </section>
   );
 }

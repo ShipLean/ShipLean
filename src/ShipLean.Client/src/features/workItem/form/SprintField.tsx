@@ -28,7 +28,7 @@ export function SprintField({
       <select
         id={selectId}
         data-testid={ids.sprint}
-        className={selectClass}
+        className={`${selectClass} touch:h-9 touch:w-full touch:min-w-0`}
         value={value?.id ?? BACKLOG}
         onChange={(event) =>
           onChange(options.find((sprint) => sprint.id === event.target.value) ?? null)

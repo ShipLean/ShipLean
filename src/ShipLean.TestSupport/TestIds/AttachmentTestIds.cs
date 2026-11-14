@@ -24,10 +24,25 @@ public static class AttachmentTestIds
     public const string ImageStatus = "attachment-image-status";
     public const string Siblings = "attachment-siblings";
     public const string Sibling = "attachment-sibling";
+
+    // SHIP-715 touch
+    public const string Header = "attachment-header";
+    public const string NameButton = "attachment-name-button";
+    public const string Facts = "attachment-facts";
+    public const string ContentsPill = "attachment-contents-pill";
+    public const string ContentsEntry = "attachment-contents-entry";
     public const string NotFound = "attachment-not-found";
     public const string LoadFailed = "attachment-load-failed";
     public const string LoadFailedDownload = "attachment-load-failed-download";
     public const string NoHistory = "attachment-no-history";
+
+    // SHIP-715 image viewer
+    public const string ViewerCounter = "attachment-viewer-counter";
+    public const string ViewerStage = "attachment-viewer-stage";
+    public const string ViewerPrev = "attachment-viewer-prev";
+    public const string ViewerNext = "attachment-viewer-next";
+    public const string ViewerThumbs = "attachment-viewer-thumbs";
+    public const string ViewerThumb = "attachment-viewer-thumb";
     public const string ReplaceError = "attachment-replace-error";
 
     // SHIP-198 edit
@@ -36,6 +51,9 @@ public static class AttachmentTestIds
     public const string EditorInput = "attachment-editor-input";
     public const string EditorPasting = "attachment-editor-pasting";
     public const string EditorPasteError = "attachment-editor-paste-error";
+
+    // SHIP-715 phone edit
+    public const string EditorToolbarSlot = "attachment-editor-toolbar-slot";
     public const string Save = "attachment-save";
     public const string Cancel = "attachment-cancel";
     public const string SaveError = "attachment-save-error";

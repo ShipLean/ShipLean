@@ -58,6 +58,7 @@ export function LoadedBoard({
       <BoardToolbar
         view={board}
         projectId={project.id}
+        projectKey={project.key}
         boardId={boardId}
         level={level}
         compact={compact}

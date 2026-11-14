@@ -1,5 +1,8 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.ProjectSettings.Api;
@@ -56,5 +59,28 @@ public class UsageScopeTests : ApiFixture
 
         result.ProjectCount.ShouldBe(0);
         result.ProjectId.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Viewport_WhenHeaderIsPhone_ShouldBePhone()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/test-usage/touch");
+        request.Headers.Add(ClientHeader.Name, ApiClient.ClientId);
+        request.Headers.Add(ViewportHeader.Name, UsageViewports.Phone);
+
+        using var response = await Client.SendAsync(request);
+
+        var result = (await response.Content.ReadFromJsonAsync<UsageProbeResult>(JsonSerializerOptions.Web))!;
+        result.Viewport.ShouldBe(UsageViewports.Phone);
+    }
+
+    [Test]
+    public async Task Properties_WhenAdded_ShouldBeReadBack()
+    {
+        var result = await Api.GetJsonAsync<UsageProbeResult>("api/test-usage/touch?count=7");
+
+        result.Properties.Keys.ShouldBe([UsageProps.Count]);
+        result.Properties[UsageProps.Count].ToString().ShouldBe("7");
+        result.Viewport.ShouldBeNull();
     }
 }

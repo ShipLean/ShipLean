@@ -11,9 +11,12 @@ const DEBOUNCE_MS = 300;
 export function SearchBox({
   value,
   onWrite,
+  touch = false,
 }: {
   value: string;
   onWrite: (q: string | undefined) => void;
+  /** At touch: full width, a Search key on the keyboard, and Enter closes the keyboard (results follow typing anyway). */
+  touch?: boolean;
 }) {
   const [text, setText] = useState(value);
   const settled = useDebouncedValue(text, DEBOUNCE_MS);
@@ -39,7 +42,11 @@ export function SearchBox({
     <input
       data-testid={ids.retrosSearchBox}
       type="search"
-      className="field max-w-[340px] min-w-[200px] flex-[1_1_280px]"
+      className={touch ? 'field h-10 w-full' : 'field max-w-[340px] min-w-[200px] flex-[1_1_280px]'}
+      enterKeyHint={touch ? 'search' : undefined}
+      onKeyDown={(event) => {
+        if (touch && event.key === 'Enter') event.currentTarget.blur();
+      }}
       placeholder="Search points, root causes and raw logs"
       aria-label="Search retrospectives"
       value={text}

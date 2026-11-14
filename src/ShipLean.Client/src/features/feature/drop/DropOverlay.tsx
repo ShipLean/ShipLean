@@ -1,4 +1,5 @@
 import type { AttachmentOutcome } from '@shiplean/core/api/attachments';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { Dialog } from '../../../components/Dialog';
 import { formatSize } from '../../workItem/side/fileSize';
 import { limitsNote } from '../attachments/attachmentGroups';
@@ -35,17 +36,18 @@ export function DropOverlay({
   onUpload: () => void;
   onCancel: () => void;
 }) {
+  const { touch } = useTouchShell();
   const allowed = entries.filter(isUploadable).length;
   return (
     <Dialog
-      title={`Drop to attach to ${itemKey}`}
+      title={touch ? `Attach to ${itemKey}` : `Drop to attach to ${itemKey}`}
       onClose={onCancel}
       footer={
         <>
           <button
             type="button"
             data-testid={ids.dropCancel}
-            className="ml-auto h-7 rounded-control border border-edge px-3 text-[length:var(--text-sm)] text-ink"
+            className="ml-auto h-7 touch:h-10 rounded-control border border-edge px-3 text-[length:var(--text-sm)] text-ink"
             onClick={onCancel}
           >
             Cancel
@@ -54,7 +56,7 @@ export function DropOverlay({
             type="button"
             data-testid={ids.dropUpload}
             disabled={allowed === 0 || uploading}
-            className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] text-white disabled:opacity-50"
+            className="h-7 touch:h-10 rounded-control bg-signal px-3 text-[length:var(--text-sm)] text-white disabled:opacity-50"
             onClick={onUpload}
           >
             {uploading ? 'Uploading…' : allowed === 1 ? 'Upload 1 file' : `Upload ${allowed} files`}

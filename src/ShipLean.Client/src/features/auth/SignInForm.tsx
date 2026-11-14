@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
+import { useTouchShell } from '../../touch/useTouchShell';
 import type { MeDto } from '@shiplean/core/api/me';
 import { login } from './authApi';
 import { Banner } from './Banner';
@@ -29,6 +30,7 @@ export function SignInForm({
   /** The sign-in is for the phone app (returnUrl is its confirm page): the subtitle says so. */
   forApp?: boolean;
 }) {
+  const { touch } = useTouchShell();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const emailField = useRef<HTMLInputElement>(null);
@@ -57,14 +59,36 @@ export function SignInForm({
         ? unreachable
         : null;
 
+  const submitButton = (
+    <button
+      type="submit"
+      data-testid={authTestIds.signInSubmit}
+      className="btn-signal touch:h-10 touch:w-full"
+      disabled={attempt.isPending}
+    >
+      Sign in
+    </button>
+  );
+  const google = googleHref ? <GoogleSignInLink href={googleHref} /> : null;
+  // On a phone Google comes first, then the email fields; the DOM order is the visual order.
+  const orWithEmail =
+    touch && google ? (
+      <div
+        data-testid={authTestIds.orWithEmail}
+        className="text-center text-[length:var(--text-sm)] text-ink-muted"
+      >
+        or with your email
+      </div>
+    ) : null;
+
   return (
     <form
       data-testid={authTestIds.signInForm}
       onSubmit={submit}
       noValidate
-      className="flex w-[min(380px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel"
+      className="flex w-[min(380px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel touch:w-[min(440px,100%)]"
     >
-      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold">
+      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold touch:text-[length:var(--text-lg)]">
         Sign in
         {instanceName || forApp ? (
           <small
@@ -86,7 +110,9 @@ export function SignInForm({
           note
         )}
         {appInfo}
-        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3">
+        {touch ? google : null}
+        {orWithEmail}
+        <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3 touch:grid-cols-1">
           <FormField
             id="sign-in-email"
             label="Email"
@@ -94,9 +120,10 @@ export function SignInForm({
             value={email}
             onChange={setEmail}
             autoComplete="username"
-            autoFocus
+            autoFocus={!touch}
             inputRef={emailField}
             testId={authTestIds.email}
+            enterKeyHint="next"
           />
           <FormField
             id="sign-in-password"
@@ -108,22 +135,16 @@ export function SignInForm({
             inputRef={passwordField}
             testId={authTestIds.password}
             revealTestId={authTestIds.revealPassword}
+            enterKeyHint="go"
           />
         </div>
-        {googleHref ? <GoogleSignInLink href={googleHref} /> : null}
+        {touch ? submitButton : google}
       </div>
       <footer className="flex items-center gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
         <span className="flex-1 text-[length:var(--text-xs)] text-ink-muted">
           No account, or forgot your password? Ask your ShipLean admin.
         </span>
-        <button
-          type="submit"
-          data-testid={authTestIds.signInSubmit}
-          className="btn-signal"
-          disabled={attempt.isPending}
-        >
-          Sign in
-        </button>
+        {touch ? null : submitButton}
       </footer>
     </form>
   );

@@ -17,7 +17,7 @@ namespace ShipLean.WebApi.Features.Auth.DeviceBearer;
 // on a one-time password is let through: PasswordChangeFilter answers 403 password_change_required for them.
 public sealed class DeviceBearerHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder,
-    IDeviceSessions sessions, UserSessions users, IUsageEvents events, TimeProvider time)
+    IDeviceSessions sessions, UserSessions users, IUsageEvents events, IUsageScope scope, TimeProvider time)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public new const string Scheme = "DeviceBearer";
@@ -48,7 +48,7 @@ public sealed class DeviceBearerHandler(
             if (await sessions.EndAsync(session.Id, now, ct))
             {
                 SelfEmittedUsage.TrackOk(
-                    events, time, started, UsageEventNames.DeviceSessionEnded, session.UserId, "auth:DeviceBearer",
+                    events, scope, time, started, UsageEventNames.DeviceSessionEnded, session.UserId, "auth:DeviceBearer",
                     properties: new Dictionary<string, object> { [UsageProps.Reason] = reason },
                     surface: UsageSurface.App);
             }

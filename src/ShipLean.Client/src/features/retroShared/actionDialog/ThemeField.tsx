@@ -29,7 +29,7 @@ export function ThemeField({
       <select
         data-testid={ids.retroActionTheme}
         value={value}
-        className="field w-full"
+        className="field w-full touch:h-10"
         onChange={(e) => onChoose(e.target.value)}
       >
         <option value="">No theme</option>

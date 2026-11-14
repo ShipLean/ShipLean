@@ -1,32 +1,24 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { showToast } from '../../../components/toastStore';
-import { useCreateSprint, useNextSprint } from '../../sprints/sprintsApi';
-import { backlogRootKey } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
+import { useCreateNextSprint } from './useCreateNextSprint';
 
 // "+ Create sprint": creates the sprint the server proposes (the next number, the last sprint's length) and the new
 // section appears.
-export function CreateSprint({ projectId }: { projectId: string }) {
-  const queryClient = useQueryClient();
-  const next = useNextSprint(projectId);
-  const create = useCreateSprint(projectId);
+export function CreateSprint({
+  projectId,
+  touch = false,
+}: {
+  projectId: string;
+  // At 900px and below the button is a full touch target.
+  touch?: boolean;
+}) {
+  const sprint = useCreateNextSprint(projectId);
   return (
     <button
       type="button"
       data-testid={ids.planningCreateSprint}
-      className="btn-ghost"
-      disabled={next.data === undefined || create.isPending}
-      onClick={() => {
-        if (next.data === undefined) return;
-        void create
-          .mutateAsync(next.data)
-          .then(() => queryClient.invalidateQueries({ queryKey: backlogRootKey(projectId) }))
-          .catch((error: unknown) =>
-            showToast(error instanceof Error ? error.message : 'Could not create the sprint', {
-              tone: 'danger',
-            }),
-          );
-      }}
+      className={touch ? 'btn-ghost min-h-[var(--touch-target)]' : 'btn-ghost'}
+      disabled={sprint.disabled}
+      onClick={sprint.create}
     >
       + Create sprint
     </button>

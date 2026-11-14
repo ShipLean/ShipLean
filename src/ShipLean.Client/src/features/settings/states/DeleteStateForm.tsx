@@ -22,7 +22,7 @@ export function DeleteStateForm({
   return (
     <div
       data-testid={settingsTestIds.stateDeleteForm}
-      className="flex flex-wrap items-center gap-2 border-t border-edge bg-panel-sunken px-3 py-2 text-[length:var(--text-sm)]"
+      className="flex flex-wrap items-center gap-2 touch:flex-col touch:items-stretch border-t border-edge bg-panel-sunken px-3 py-2 text-[length:var(--text-sm)]"
     >
       <span className="text-ink">
         Delete <b>{row.name}</b>? {items} work {items === 1 ? 'item moves' : 'items move'} to:
@@ -30,7 +30,7 @@ export function DeleteStateForm({
       <select
         data-testid={settingsTestIds.stateDeleteTarget}
         aria-label={`Move the items of ${row.name} to`}
-        className="h-7 rounded-control border border-edge bg-panel px-2 text-ink"
+        className="h-7 rounded-control border border-edge bg-panel px-2 text-ink touch:h-[var(--touch-target)] touch:w-full"
         value={target}
         onChange={(e) => setTarget(e.target.value)}
       >
@@ -41,23 +41,25 @@ export function DeleteStateForm({
           </option>
         ))}
       </select>
-      <button
-        type="button"
-        data-testid={settingsTestIds.stateDeleteConfirm}
-        disabled={target === ''}
-        className="h-7 rounded-control border border-alert px-2 text-alert disabled:opacity-60"
-        onClick={() => onConfirm(target)}
-      >
-        Delete state
-      </button>
-      <button
-        type="button"
-        data-testid={settingsTestIds.stateDeleteCancel}
-        className="h-7 px-2 text-ink-muted"
-        onClick={onCancel}
-      >
-        Cancel
-      </button>
+      <div className="contents touch:grid touch:grid-cols-2 touch:gap-2">
+        <button
+          type="button"
+          data-testid={settingsTestIds.stateDeleteConfirm}
+          disabled={target === ''}
+          className="h-7 rounded-control border border-alert px-2 text-alert disabled:opacity-60 touch:order-2 touch:h-[var(--touch-target)]"
+          onClick={() => onConfirm(target)}
+        >
+          Delete state
+        </button>
+        <button
+          type="button"
+          data-testid={settingsTestIds.stateDeleteCancel}
+          className="h-7 px-2 text-ink-muted touch:order-1 touch:h-[var(--touch-target)] touch:rounded-control touch:border touch:border-edge"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

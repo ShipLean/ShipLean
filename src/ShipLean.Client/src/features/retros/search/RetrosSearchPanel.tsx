@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { RetroDecision } from '@shiplean/core/api/retros';
 import type { RetroSearchQuery } from '@shiplean/core/api/retrosApi';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { RetroActionDialogProvider } from '../../retroShared/actionDialog/RetroActionDialogProvider';
 import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
@@ -11,6 +12,7 @@ import { useRetroSearch } from '../useRetroQueries';
 import { SearchFilters } from './SearchFilters';
 import { SearchRows } from './SearchRows';
 import { SelectedRetro } from './SelectedRetro';
+import { SearchTouchToolbar } from './touch/SearchTouchToolbar';
 
 const decisions: RetroDecision[] = ['undecided', 'actioned', 'notNeeded'];
 
@@ -56,6 +58,7 @@ function paramsOf(query: RetroSearchQuery, rest: URLSearchParams): URLSearchPara
 export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
   const [params, setParams] = useSearchParams();
   const query = queryOf(params);
+  const { touch } = useTouchShell();
   const result = useRetroSearch(project.id, query);
 
   // Two changes made before the screen re-renders (a router transition) both build on the address as the first one left it,
@@ -93,11 +96,11 @@ export function RetrosSearchPanel({ project }: { project: ProjectDto }) {
             <div data-testid={ids.retrosSearchPanel} className="grid gap-4">
               <div
                 data-testid={pagesTestIds.slotRetroSearchFilters}
-                className="sticky top-0 z-10 bg-canvas pb-2"
+                className="sticky top-0 z-10 bg-canvas pb-2 touch:static"
               >
-                <SearchFilters {...props} />
+                {touch ? <SearchTouchToolbar {...props} /> : <SearchFilters {...props} />}
               </div>
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,380px)] gap-4 touch:grid-cols-[minmax(0,1fr)]">
                 <SearchRows {...props} />
                 <SelectedRetro {...props} />
               </div>

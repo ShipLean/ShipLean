@@ -13,6 +13,8 @@ namespace ShipLean.WebApi.Features.Usage;
 // Tracks a web action once it has run, for the actions ActionUsageMap marks Track. The actor is read before the action runs
 // (Logout ends the session). The outcome is read from the exception or the result: the response status is not written yet.
 // An ApiException is left unhandled so ApiErrorServices still maps it. Anonymous requests have no actor and emit nothing.
+// Extra properties come from the map (board), the command (IUsageScope.AddProperty) and the request (viewport); never from
+// the route or the action's arguments.
 public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, TimeProvider time) : IAsyncActionFilter
 {
     private const int ErrorStatus = 400;
@@ -31,9 +33,7 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
         var started = time.GetTimestamp();
         var executed = await next();
         var (outcome, errorCode) = OutcomeOf(executed);
-        var properties = tracked.Board is { } board
-            ? new Dictionary<string, object> { [UsageProps.Board] = board }
-            : [];
+        var properties = PropertiesOf(tracked, scope);
         events.Track(new UsageEvent(
             tracked.EventName!,
             UsageSurfaces.Of(context.HttpContext.User),
@@ -46,6 +46,25 @@ public sealed class UsageActionFilter(IUsageEvents events, IUsageScope scope, Ti
             $"api:{key}",
             time.GetUtcNow(),
             properties));
+    }
+
+    // The board of a board move, then what the command added, then the request's viewport.
+    private static Dictionary<string, object> PropertiesOf(ActionUsage tracked, IUsageScope scope)
+    {
+        var properties = new Dictionary<string, object>(StringComparer.Ordinal);
+        if (tracked.Board is { } board)
+        {
+            properties[UsageProps.Board] = board;
+        }
+        foreach (var (key, value) in scope.Properties)
+        {
+            properties[key] = value;
+        }
+        if (scope.Viewport is { } viewport)
+        {
+            properties[UsageProps.Viewport] = viewport;
+        }
+        return properties;
     }
 
     private static string? KeyOf(ActionExecutingContext context)

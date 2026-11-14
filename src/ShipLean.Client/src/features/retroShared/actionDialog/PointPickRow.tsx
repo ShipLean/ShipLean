@@ -15,7 +15,7 @@ export function PointPickRow({
   return (
     <label
       data-testid={ids.retroActionPick}
-      className={`grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-1.5 rounded-[var(--radius-xs)] p-1 text-[length:var(--text-sm)] text-ink ${checked ? 'bg-signal-soft' : 'hover:bg-sunken'}`}
+      className={`grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-1.5 rounded-[var(--radius-xs)] p-1 text-[length:var(--text-sm)] text-ink touch:min-h-[var(--touch-target)] touch:py-1.5 touch:text-[length:var(--text-base)] ${checked ? 'bg-signal-soft' : 'hover:bg-sunken'}`}
     >
       <input
         type="checkbox"

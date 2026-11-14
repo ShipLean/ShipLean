@@ -53,7 +53,7 @@ export function ExtraFields({
         <div
           key={id}
           data-testid={ids.fieldsExtraRow}
-          className="flex h-[26px] items-center gap-1.5 text-[length:var(--text-sm)]"
+          className="flex h-[26px] items-center gap-1.5 text-[length:var(--text-sm)] touch:h-[var(--touch-target)]"
         >
           <span className="w-3 text-[length:var(--text-xs)] text-ink-muted">{index + 1}</span>
           <span>{fieldLabel(id)}</span>
@@ -63,7 +63,7 @@ export function ExtraFields({
             data-testid={ids.fieldsExtraUp}
             aria-label={`Move ${fieldLabel(id)} up`}
             disabled={readOnly || index === 0}
-            className={index === 0 ? 'invisible' : ''}
+            className={`touch:size-[var(--touch-target)] ${index === 0 ? 'invisible' : ''}`}
             onClick={() => onChange(moveExtraUp(setting, index))}
           >
             ↑
@@ -73,6 +73,7 @@ export function ExtraFields({
             data-testid={ids.fieldsExtraRemove}
             aria-label={`Remove ${fieldLabel(id)}`}
             disabled={readOnly}
+            className="touch:size-[var(--touch-target)]"
             onClick={() => onChange(removeExtra(setting, id))}
           >
             ✕
@@ -82,7 +83,7 @@ export function ExtraFields({
       <select
         data-testid={ids.fieldsAdd}
         aria-label="Add a field"
-        className="field mt-1 h-[26px] px-1 text-[length:var(--text-sm)]"
+        className="field mt-1 h-[26px] px-1 text-[length:var(--text-sm)] touch:h-[var(--touch-target)]"
         value=""
         disabled={readOnly || full || left.length === 0}
         onChange={(event) => onChange(addExtra(setting, event.target.value))}

@@ -2,7 +2,6 @@ export const shellTestIds = {
   sideMenu: 'shell-side-menu',
   projectButton: 'shell-project-button',
   searchButton: 'shell-search-button',
-  searchIconButton: 'shell-search-icon-button',
   navBacklogs: 'shell-nav-backlogs',
   navBoards: 'shell-nav-boards',
   navLevel: 'shell-nav-level',

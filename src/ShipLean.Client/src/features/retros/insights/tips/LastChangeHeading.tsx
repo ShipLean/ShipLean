@@ -21,6 +21,7 @@ export function LastChangeHeading({
   return (
     <th data-testid={ids.retroTipVerdictHead} data-mode={mode} className={className}>
       <Tip
+        entry="verdicts"
         tip={
           <DefinitionTip
             intro={verdictHeadIntro}

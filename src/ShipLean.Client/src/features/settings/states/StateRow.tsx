@@ -5,9 +5,9 @@ import { CATEGORIES, CATEGORY_LABELS, parseCategory } from './categories';
 import { itemsIn, type StateRowModel } from './stateModel';
 
 const field =
-  'h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:h-[var(--touch-target)] touch:min-w-0';
 const small =
-  'h-6 rounded-control border border-edge px-1.5 text-[length:var(--text-sm)] text-ink-muted disabled:opacity-40';
+  'h-6 rounded-control border border-edge px-1.5 text-[length:var(--text-sm)] text-ink-muted disabled:opacity-40 touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)] touch:px-3';
 
 export function StateRow({
   row,
@@ -44,9 +44,9 @@ export function StateRow({
     <tr
       data-testid={settingsTestIds.stateRow}
       data-state-id={row.id}
-      className="border-b border-edge last:border-b-0"
+      className="border-b border-edge last:border-b-0 touch:flex touch:flex-wrap touch:items-center touch:gap-x-2 touch:gap-y-2 touch:px-3 touch:py-3"
     >
-      <td className="w-16 px-3 py-2 whitespace-nowrap">
+      <td className="w-16 px-3 py-2 whitespace-nowrap touch:order-5 touch:w-auto touch:p-0">
         {readOnly ? (
           <span className="text-ink-muted">{position + 1}</span>
         ) : (
@@ -74,14 +74,14 @@ export function StateRow({
           </span>
         )}
       </td>
-      <td className="px-3 py-2">
-        <span className="flex items-center gap-2">
+      <td className="px-3 py-2 touch:order-1 touch:w-full touch:p-0">
+        <span className="flex items-center gap-2 touch:flex-wrap">
           <StateDot category={row.category} />
           <input
             data-testid={settingsTestIds.stateName}
             id={`settings-field-state-${row.id}`}
             aria-label="State name"
-            className={field}
+            className={`${field} touch:min-w-0 touch:flex-1`}
             value={row.name}
             maxLength={30}
             disabled={readOnly}
@@ -118,7 +118,7 @@ export function StateRow({
           </div>
         )}
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 touch:order-2 touch:p-0">
         <select
           data-testid={settingsTestIds.stateCategory}
           aria-label={`Category of ${row.name}`}
@@ -136,7 +136,7 @@ export function StateRow({
       </td>
       <td
         data-testid={settingsTestIds.stateItems}
-        className="px-3 py-2 text-right text-ink-muted"
+        className="px-3 py-2 text-right text-ink-muted touch:order-3 touch:p-0"
         title={
           row.incoming > 0
             ? `${row.itemCount} now, ${row.incoming} more moving here on save`
@@ -148,16 +148,19 @@ export function StateRow({
           <span className="text-[length:var(--text-xs)]"> +{row.incoming}</span>
         ) : null}
       </td>
-      <td data-testid={settingsTestIds.stateColumn} className="px-3 py-2 text-ink-muted">
+      <td
+        data-testid={settingsTestIds.stateColumn}
+        className="px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Board:_']"
+      >
         {column ?? 'Not mapped'}
       </td>
-      <td className="px-3 py-2 text-right">
+      <td className="px-3 py-2 text-right touch:contents">
         {readOnly ? null : (
-          <span className="flex items-center justify-end gap-2">
+          <span className="flex items-center justify-end gap-2 touch:contents">
             {blocked === undefined ? null : (
               <span
                 data-testid={settingsTestIds.stateDeleteBlock}
-                className="text-[length:var(--text-xs)] text-ink-muted"
+                className="text-[length:var(--text-xs)] text-ink-muted touch:order-7 touch:w-full"
               >
                 {blocked}
               </span>
@@ -168,7 +171,7 @@ export function StateRow({
               aria-label={`Delete ${row.name}`}
               disabled={blocked !== undefined}
               title={blocked}
-              className={small}
+              className={`${small} touch:order-6`}
               onClick={onDelete}
             >
               Delete

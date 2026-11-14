@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Taskboard;
+using ShipLean.Contracts.Usage;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 
@@ -16,11 +17,12 @@ namespace ShipLean.Application.Features.Taskboard;
 // The task, the row target and the prior state are read on a connection of their own, outside the store's transaction and lock, so
 // a concurrent change can make them stale. OfferResolve is a hint (the GET is the source of truth) and may be stale for the same reason.
 [RegisterPerRequest]
-public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore store, IWorkTreeReads tree, NpgsqlDataSource dataSource)
+public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore store, IWorkTreeReads tree, NpgsqlDataSource dataSource, IUsageScope scope)
 {
     public async Task<TaskboardMoveOutcome> MoveAsync(Guid sprintId, TaskboardMoveRequest request, CancellationToken cancellationToken)
     {
         var (projectId, _) = await access.RequireAsync(ProjectItem.Sprint, sprintId, ProjectRole.Member, cancellationToken);
+        MoveMethods.Record(scope, request.Method);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var task = await connection.QuerySingleOrDefaultAsync<TaskboardMoveRecord>(new CommandDefinition(
             """
@@ -44,6 +46,7 @@ public sealed class TaskboardCommands(IProjectAccess access, IWorkItemStore stor
     public async Task<TaskboardMoveOutcome> MoveInFeatureAsync(Guid featureId, TaskboardMoveRequest request, CancellationToken cancellationToken)
     {
         var (projectId, _) = await access.RequireAsync(ProjectItem.WorkItem, featureId, ProjectRole.Member, cancellationToken);
+        MoveMethods.Record(scope, request.Method);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var live = await connection.QuerySingleAsync<bool>(new CommandDefinition(
             "SELECT EXISTS (SELECT 1 FROM work_item w JOIN state s ON s.id = w.state_id WHERE w.id = @featureId AND w.type = 'feature' AND s.category <> 'removed')",

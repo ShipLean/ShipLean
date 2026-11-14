@@ -8,6 +8,18 @@ public static class RetrosTestIds
     public const string RetroKpiWithRetro = "retro-kpi-with-retro";
     public const string RetroKpiRecurring = "retro-kpi-recurring";
     public const string RetroKpiActions = "retro-kpi-actions";
+    // L727b phone
+    public const string RetroNumbers = "retro-numbers";
+    public const string RetroNumberRetros = "retro-number-retros";
+    public const string RetroNumberRecurring = "retro-number-recurring";
+    public const string RetroNumberToDecide = "retro-number-to-decide";
+    public const string RetroNumberActions = "retro-number-actions";
+    public const string RetroToolbar = "retro-toolbar";
+    public const string RetroFilterOpen = "retro-filter-open";
+    public const string RetroFilterClear = "retro-filter-clear";
+    public const string RetroFilterShow = "retro-filter-show";
+    public const string RetroCategoryTiles = "retro-category-tiles";
+    public const string RetroCategoryTile = "retro-category-tile";
     // Sprint tab: view toggle
     public const string RetroViewByCategory = "retro-view-by-category";
     public const string RetroViewByItem = "retro-view-by-item";
@@ -28,6 +40,12 @@ public static class RetrosTestIds
     public const string RetroCardKeyLink = "retro-card-key-link";
     public const string RetroCardProgress = "retro-card-progress";
     public const string RetroCardOpen = "retro-card-open";
+    // L727c phone cards
+    public const string RetroCardToggle = "retro-card-toggle";
+    public const string RetroCardCount = "retro-card-count";
+    public const string RetroCardToDecide = "retro-card-to-decide";
+    public const string RetroCardBody = "retro-card-body";
+    public const string RetroCardRetroLink = "retro-card-retro-link";
     public const string RetroRail = "retro-rail";
     public const string RetroCoverage = "retro-coverage";
     public const string RetroCoverageRow = "retro-coverage-row";
@@ -44,20 +62,69 @@ public static class RetrosTestIds
     public const string RetrosFilterRole = "retros-filter-role";
     public const string RetrosFilterRecurring = "retros-filter-recurring";
     public const string RetrosFilterClear = "retros-filter-clear";
+    // SHIP-730 search touch
+    public const string RetrosFilterOpen = "retros-filter-open";
+    public const string RetrosFilterShow = "retros-filter-show";
+    public const string RetrosFilterSheetClear = "retros-filter-sheet-clear";
+    public const string RetrosFilterChoice = "retros-filter-choice";
+    public const string RetrosCount = "retros-count";
+    public const string RetrosChips = "retros-chips";
+    public const string RetrosChip = "retros-chip";
+    public const string RetrosChipRemove = "retros-chip-remove";
+    public const string RetrosChipsClear = "retros-chips-clear";
+    public const string RetrosEmptyClear = "retros-empty-clear";
+    public const string RetrosRowRootCause = "retros-row-root-cause";
+    public const string RetrosRowLogMatch = "retros-row-log-match";
     // Search: results
     public const string RetrosRows = "retros-rows";
     public const string RetrosRow = "retros-row";
     public const string RetrosEmpty = "retros-empty";
     public const string RetrosSelected = "retros-selected";
+    // SHIP-730 open retro touch
+    public const string RetrosOpenRetro = "retros-open-retro";
+    public const string RetrosOpenRetroPrevious = "retros-open-retro-previous";
+    public const string RetrosOpenRetroNext = "retros-open-retro-next";
+    public const string RetrosOpenRetroPosition = "retros-open-retro-position";
     // Insights
     public const string RetroInsightsPanel = "retro-insights-panel";
     public const string RetroInsightsTab = "retro-insights-tab";
     public const string RetroInsightsRange = "retro-insights-range";
+    // SHIP-731 frame touch
+    public const string RetroInsightsToolbar = "retro-insights-toolbar";
+    public const string RetroInsightsRangeOption = "retro-insights-range-option";
+    public const string RetroInsightsRangeGroup = "retro-insights-range-group";
+    public const string RetroInsightsDefsEntry = "retro-insights-defs-entry";
     // Insights: recurring and keeps working
     public const string RetroRecurringTable = "retro-recurring-table";
     public const string RetroRecurringRow = "retro-recurring-row";
     public const string RetroThemeRename = "retro-theme-rename";
     public const string RetroKeepsWorking = "retro-keeps-working";
+    // SHIP-731 themes touch
+    public const string RetroThemeCards = "retro-theme-cards";
+    public const string RetroThemeAxis = "retro-theme-axis";
+    public const string RetroThemeCard = "retro-theme-card";
+    public const string RetroThemeCardOpen = "retro-theme-card-open";
+    public const string RetroHeatStrip = "retro-heat-strip";
+    public const string RetroHeatCell = "retro-heat-cell";
+    public const string RetroHeatTotal = "retro-heat-total";
+    public const string RetroHeatNoSprint = "retro-heat-no-sprint";
+    public const string RetroThemeSheet = "retro-theme-sheet";
+    public const string RetroThemeSheetStatus = "retro-theme-sheet-status";
+    public const string RetroThemeSheetCount = "retro-theme-sheet-count";
+    public const string RetroThemeSheetNoSprint = "retro-theme-sheet-no-sprint";
+    public const string RetroThemeSheetTotal = "retro-theme-sheet-total";
+    public const string RetroThemeSheetAction = "retro-theme-sheet-action";
+    public const string RetroThemeSheetAddAction = "retro-theme-sheet-add-action";
+    public const string RetroThemeSheetLastChange = "retro-theme-sheet-last-change";
+    public const string RetroThemeSheetSeeImpact = "retro-theme-sheet-see-impact";
+    public const string RetroThemeSheetMention = "retro-theme-sheet-mention";
+    public const string RetroThemeSheetAllInSearch = "retro-theme-sheet-all-in-search";
+    public const string RetroThemeSheetRename = "retro-theme-sheet-rename";
+    public const string RetroThemeSheetMerge = "retro-theme-sheet-merge";
+    public const string RetroThemeRenameField = "retro-theme-rename-field";
+    public const string RetroThemeRenameSave = "retro-theme-rename-save";
+    public const string RetroThemeRenameDiscard = "retro-theme-rename-discard";
+    public const string RetroThemeRenameError = "retro-theme-rename-error";
     // Insights: merge dialog
     public const string RetroMergeThemes = "retro-merge-themes";
     public const string RetroMergeDialog = "retro-merge-dialog";
@@ -65,10 +132,21 @@ public static class RetrosTestIds
     public const string RetroMergeTarget = "retro-merge-target";
     public const string RetroMergePreview = "retro-merge-preview";
     public const string RetroMergeSave = "retro-merge-save";
+
+    // SHIP-731 merge touch
+    public const string RetroKeepsWorkingLatest = "retro-keeps-working-latest";
     // Insights: action items and impact
     public const string RetroActionsTable = "retro-actions-table";
     public const string RetroActionRow = "retro-action-row";
     public const string RetroActionPull = "retro-action-pull";
+    // SHIP-731 actions and impact touch
+    public const string RetroActionCards = "retro-action-cards";
+    public const string RetroActionCard = "retro-action-card";
+    public const string RetroActionCardLink = "retro-action-card-link";
+    public const string RetroActionCardSprint = "retro-action-card-sprint";
+    public const string RetroImpactHowVerdicts = "retro-impact-how-verdicts";
+    public const string RetroImpactBar = "retro-impact-bar";
+    public const string RetroImpactReadout = "retro-impact-readout";
     public const string RetroActionsAdd = "retro-actions-add";
     public const string RetroImpactCard = "retro-impact-card";
     // Work item section
@@ -84,6 +162,21 @@ public static class RetrosTestIds
     public const string RetroFeaturesFilterOption = "retro-features-filter-option";
     public const string RetroFeaturesLink = "retro-features-link";
     public const string RetroFeaturesLoose = "retro-features-loose";
+    // SHIP-728 touch
+    public const string RetroFeaturesTableBox = "retro-features-table-box";
+    public const string RetroFeaturesFeatureCell = "retro-features-feature-cell";
+    public const string RetroFeaturesNoFeatureChip = "retro-features-no-feature-chip";
+    public const string RetroFeaturesPhoneList = "retro-features-phone-list";
+    public const string RetroFeaturesListHead = "retro-features-list-head";
+    public const string RetroFeaturesCount = "retro-features-count";
+    public const string RetroFeaturesLegend = "retro-features-legend";
+    public const string RetroFeaturesLegendItem = "retro-features-legend-item";
+    public const string RetroFeaturesToDecide = "retro-features-to-decide";
+    public const string RetroFeaturesMeta = "retro-features-meta";
+    public const string RetroFeaturesSearchOpen = "retro-features-search-open";
+    public const string RetroFeaturesSearchCancel = "retro-features-search-cancel";
+    public const string RetroFeaturesEmpty = "retro-features-empty";
+    public const string RetroFeaturesClearSearch = "retro-features-clear-search";
     public const string RetroCategoryCount = "retro-category-count";
     public const string RetroItemPanel = "retro-item-panel";
     public const string RetroItemFilter = "retro-item-filter";
@@ -95,6 +188,16 @@ public static class RetrosTestIds
     public const string RetroItemRailActions = "retro-item-rail-actions";
     public const string RetroItemRailCompiled = "retro-item-rail-compiled";
     public const string RetroItemRailWriters = "retro-item-rail-writers";
+    // SHIP-729 item page touch
+    public const string RetroItemKpiToDecide = "retro-item-kpi-to-decide";
+    public const string RetroItemKpiActions = "retro-item-kpi-actions";
+    public const string RetroItemKpiDecided = "retro-item-kpi-decided";
+    public const string RetroItemRetroSelect = "retro-item-retro-select";
+    public const string RetroItemSheetActions = "retro-item-sheet-actions";
+    public const string RetroItemSheetCompiled = "retro-item-sheet-compiled";
+    public const string RetroItemSheetWriters = "retro-item-sheet-writers";
+    public const string RetroItemOpenWorkItem = "retro-item-open-work-item";
+    public const string RetroItemPartOf = "retro-item-part-of";
     public const string WorkItemRetroRow = "work-item-retro-row";
     public const string RetroActionWhy = "retro-action-why";
     public const string RetroActionWhyAdd = "retro-action-why-add";

@@ -5,7 +5,7 @@ import { formatSize } from '../../workItem/side/fileSize';
 import { featureTestIds as ids } from '../testIds';
 
 const rowClass =
-  'flex min-h-7.5 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-[length:var(--text-sm)] text-ink first:border-t-0 hover:text-signal';
+  'flex min-h-7.5 touch:min-h-10 min-w-0 flex-1 items-center gap-1.5 px-2 text-left text-[length:var(--text-sm)] text-ink first:border-t-0 hover:text-signal';
 
 // One attachment, by what opening it does: Markdown goes to its page, an image to the preview, a file downloads.
 export function RailItem({
@@ -62,7 +62,7 @@ export function RailItem({
         type="button"
         data-testid={ids.railItemRemove}
         aria-label={`Remove ${attachment.name}`}
-        className="h-6 rounded-control px-1.5 text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal"
+        className="h-6 rounded-control px-1.5 text-ink-muted hover:bg-signal-soft touch:h-10 touch:min-w-10 focus-visible:outline-2 focus-visible:outline-signal"
         onClick={() => onRemove(attachment)}
       >
         ✕

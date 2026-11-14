@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
-// One link of the side menu: a section (with its icon) or a sub-item under Sprints.
+// One link of the side menu: a section (with its icon) or a sub-item under Sprints. At 900px and below (the touch drawer)
+// every link is a full touch target.
 export function NavItem({
   to,
   icon,
@@ -18,8 +19,8 @@ export function NavItem({
   children: ReactNode;
 }) {
   const shape = sub
-    ? 'h-[26px] pl-8 text-[length:var(--text-sm)] font-normal max-[900px]:hidden'
-    : 'h-[30px] font-medium';
+    ? 'h-[26px] pl-8 text-[length:var(--text-sm)] font-normal touch:h-(--touch-target)'
+    : 'h-[30px] font-medium touch:h-(--touch-target)';
   const state = active
     ? sub
       ? 'bg-signal-soft text-ink'

@@ -23,7 +23,8 @@ export interface Platform {
   onUnauthorized(reason: UnauthorizedReason): void;
   // Web '', mobile 'https://host[:port]' with no trailing slash.
   apiOrigin(): string;
-  // Web {}, mobile { Authorization: 'Bearer shl_dev_…' }.
+  // Headers the host adds to every request. Web { 'X-ShipLean-Viewport': 'phone' } (the cookie is its proof), mobile
+  // { Authorization: 'Bearer shl_dev_…' }.
   authHeaders(): Record<string, string>;
   // Web 'same-origin', mobile 'omit' (no cookie ever rides along).
   credentials(): 'same-origin' | 'omit';

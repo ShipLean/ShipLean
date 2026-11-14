@@ -17,4 +17,5 @@ export const settingsDialogTestIds = {
   closeGuard: 'settings-close-guard',
   closeGuardSave: 'settings-close-guard-save',
   closeGuardDiscard: 'settings-close-guard-discard',
+  touchStatus: 'settings-touch-status',
 } as const;

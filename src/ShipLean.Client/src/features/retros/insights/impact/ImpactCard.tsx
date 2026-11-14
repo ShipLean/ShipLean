@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type {
   RetroImpactDto,
   RetroInsightColumnDto,
@@ -6,7 +7,9 @@ import type {
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { retrosTestIds as ids } from '../../testIds';
 import { VerdictChip } from '../recurring/VerdictChip';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { ImpactChart } from './ImpactChart';
+import { shortColumnLabel } from './impactGeometry';
 import { ImpactNumbers } from './ImpactNumbers';
 import { LatestMentionCallout } from './LatestMentionCallout';
 
@@ -22,6 +25,8 @@ export function ImpactCard({
   raisedIn: string | undefined;
   mode: RetroInsightsMode;
 }) {
+  const { touch } = useTouchShell();
+  const [selected, setSelected] = useState<number | null>(null);
   const { action, theme, verdict } = impact;
   const unit = mode === 'week' ? 'week' : 'sprint';
   const closedIn = impact.closedAt >= 0 ? columns[impact.closedAt]?.label : undefined;
@@ -41,7 +46,7 @@ export function ImpactCard({
         </span>
       </div>
       <h3 className="m-0 text-[length:var(--text-md)] font-semibold">{action.title}</h3>
-      <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)]">
+      <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)] touch:[&>a]:min-h-[var(--touch-target)]">
         <ActionChip action={action} />
         <span className="text-ink-muted">for</span>
         <b>{theme.name}</b>
@@ -55,7 +60,18 @@ export function ImpactCard({
         beforeAvg={impact.beforeAvg}
         afterAvg={impact.afterAvg}
         unit={unit}
+        selected={touch ? selected : null}
+        onSelect={touch ? (i) => setSelected((now) => (now === i ? null : i)) : undefined}
       />
+      {touch && selected !== null ? (
+        <p
+          data-testid={ids.retroImpactReadout}
+          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+        >
+          {shortColumnLabel(columns[selected]?.label ?? '')}: {impact.counts[selected] ?? 0}{' '}
+          {impact.counts[selected] === 1 ? 'mention' : 'mentions'}
+        </p>
+      ) : null}
       <ImpactNumbers
         beforeAvg={impact.beforeAvg}
         afterAvg={impact.afterAvg}

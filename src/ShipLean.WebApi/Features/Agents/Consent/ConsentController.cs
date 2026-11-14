@@ -10,7 +10,7 @@ namespace ShipLean.WebApi.Features.Agents.Consent;
 // The consent page's two calls, for the signed-in user. The cookie only: a bearer is never accepted on /api. A request
 // that is unknown, expired or another user's is not_found.
 [Route("api/agents/consent")]
-public sealed class ConsentController(IAgentConsent consent, ICurrentUser currentUser, IUsageEvents events, TimeProvider time) : ApiControllerBase
+public sealed class ConsentController(IAgentConsent consent, ICurrentUser currentUser, IUsageEvents events, IUsageScope scope, TimeProvider time) : ApiControllerBase
 {
     private const int MaxClientNameLength = 64;
 
@@ -32,6 +32,7 @@ public sealed class ConsentController(IAgentConsent consent, ICurrentUser curren
         var clientName = request.ClientName.Length > MaxClientNameLength ? request.ClientName[..MaxClientNameLength] : request.ClientName;
         SelfEmittedUsage.TrackOk(
             events,
+            scope,
             time,
             started,
             decision.Allow ? UsageEventNames.AgentConnected : UsageEventNames.AgentConsentDenied,

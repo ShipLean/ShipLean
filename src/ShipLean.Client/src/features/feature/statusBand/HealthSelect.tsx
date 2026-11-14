@@ -21,7 +21,7 @@ export function HealthSelect({
       data-testid={ids.statusHealthSelect}
       aria-label="Health"
       value={health ?? ''}
-      className="h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink focus-visible:outline-2 focus-visible:outline-signal"
+      className="h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink focus-visible:outline-2 focus-visible:outline-signal touch:h-9"
       onChange={(event) => {
         const value = event.target.value;
         onChange(value === '' ? null : (value as FeatureHealth));

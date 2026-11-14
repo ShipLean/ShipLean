@@ -16,8 +16,22 @@ public static class BacklogTestIds
     public const string FilterPanel = "backlog-filter-panel";
     public const string FilterClear = "backlog-filter-clear";
     public const string FilterError = "backlog-filter-error";
+    public const string ToolbarRow = "backlog-toolbar-row";
+    public const string FilterChips = "backlog-filter-chips";
+    public const string FilterChip = "backlog-filter-chip";
+    public const string FilterSheet = "backlog-filter-sheet";
+    public const string SearchRow = "backlog-search-row";
+    public const string SearchCancel = "backlog-search-cancel";
+    public const string MoreOptions = "backlog-more-options";
+    public const string MoreSort = "backlog-more-sort";
+    public const string MoreSortClear = "backlog-more-sort-clear";
     public const string DragOffBanner = "backlog-drag-off-banner";
     public const string Grip = "backlog-grip";
+    public const string TouchRowList = "backlog-touch-row-list";
+    public const string TouchRowHandle = "backlog-touch-row-handle";
+    public const string TouchRowMeta = "backlog-touch-row-meta";
+    public const string TouchRowForecast = "backlog-touch-row-forecast";
+    public const string TouchRowSelect = "backlog-touch-row-select";
     public const string Conflict = "backlog-conflict";
     public const string List = "backlog-list";
     public const string TreeGroup = "backlog-tree-group";
@@ -29,6 +43,8 @@ public static class BacklogTestIds
     public const string ColumnSort = "backlog-column-sort";
     public const string Row = "backlog-row";
     public const string Rank = "backlog-rank";
+    public const string TouchHandle = "backlog-touch-handle";
+    public const string TouchHandleGhost = "backlog-touch-handle-ghost";
     public const string Key = "backlog-key";
     public const string Title = "backlog-title";
     public const string State = "backlog-state";
@@ -70,6 +86,12 @@ public static class BacklogTestIds
     public const string PlanningOverrideClear = "backlog-planning-override-clear";
     public const string PlanningOverrideCancel = "backlog-planning-override-cancel";
     public const string PlanningOverrideError = "backlog-planning-override-error";
+    public const string PlanningTouch = "backlog-planning-touch";
+    public const string PlanningTouchRows = "backlog-planning-touch-rows";
+    public const string PlanningDropMessage = "backlog-planning-drop-message";
+    public const string PlanningOverrideSheet = "backlog-planning-override-sheet";
+    public const string PullUp = "backlog-pull-up";
+    public const string PullDown = "backlog-pull-down";
     public const string LevelProgress = "backlog-level-progress";
     public const string LevelProgressDone = "backlog-level-progress-done";
     public const string LevelProgressCurrent = "backlog-level-progress-current";
@@ -79,6 +101,10 @@ public static class BacklogTestIds
     public const string LevelPointsSum = "backlog-level-points-sum";
     public const string LevelFeatureCount = "backlog-level-feature-count";
     public const string LevelNested = "backlog-level-nested";
+
+    // The touch Features and Epics rows (900px and below, SHIP-716)
+    public const string LevelTouchMeta = "backlog-level-touch-meta";
+    public const string LevelTouchProgress = "backlog-level-touch-progress";
 
     // F3 new Feature dialog
     public const string NewFeatureTitle = "backlog-new-feature-title";
@@ -119,6 +145,17 @@ public static class BacklogTestIds
     public const string DragBadge = "backlog-drag-badge";
     public const string SectionPreview = "backlog-section-preview";
     public const string PointsInput = "backlog-points-input";
+    public const string PointsSheet = "backlog-points-sheet";
+    public const string PointsSheetInput = "backlog-points-sheet-input";
+    public const string PointsSheetSave = "backlog-points-sheet-save";
+    public const string PointsSheetClear = "backlog-points-sheet-clear";
+    public const string RowSprintOption = "backlog-row-sprint-option";
+    public const string RowSprintSheet = "backlog-row-sprint-sheet";
+    public const string RowParentSheet = "backlog-row-parent-sheet";
+    public const string QueueBanner = "backlog-queue-banner";
+    public const string QueueStepKey = "backlog-queue-step-key";
+    public const string QueuePoints = "backlog-queue-points";
+    public const string QueueSkip = "backlog-queue-skip";
     public const string AddMany = "backlog-add-many";
     public const string PasteDialog = "backlog-paste-dialog";
     public const string PasteSource = "backlog-paste-source";

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dialog } from '../Dialog';
 import { showToast } from '../toastStore';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { settingsDialogTestIds as ids } from '../../features/settingsDialog/testIds';
 import { SettingsFooter } from './SettingsFooter';
 import { SettingsNav } from './SettingsNav';
@@ -56,6 +57,7 @@ export function SettingsDialog<TDoc extends object, TContext>({
       }),
     onFailed: (message) => showToast(`Could not save: ${message}`, { tone: 'danger' }),
   });
+  const { touch } = useTouchShell();
   const [askingToClose, setAskingToClose] = useState(false);
 
   const selectable = (id: string | undefined) =>
@@ -96,32 +98,27 @@ export function SettingsDialog<TDoc extends object, TContext>({
       onClose();
     } else setAskingToClose(false);
   };
+  const footer =
+    apply === 'onSave' || error !== undefined || warned.length > 0 ? (
+      <SettingsFooter
+        apply={apply}
+        dirtyLabels={dirtyPanes.map((pane) => pane.label)}
+        warnings={warned.map((pane) => ({ id: pane.id, message: warnings.get(pane.id) ?? '' }))}
+        error={error}
+        saving={saving}
+        askingToClose={askingToClose && dirtyPanes.length > 0}
+        onSave={() => void saveAndClose()}
+        onRetry={apply === 'onSave' ? () => void saveAndClose() : resend}
+        onCancel={cancel}
+        onSaveAndClose={() => void saveAndClose()}
+        onSelectPane={onSectionChange}
+      />
+    ) : undefined;
   const activeWarning = active === undefined ? undefined : warnings.get(active.id);
 
   return (
-    <Dialog
-      title={title}
-      width={width}
-      onClose={requestClose}
-      footer={
-        apply === 'onSave' || error !== undefined || warned.length > 0 ? (
-          <SettingsFooter
-            apply={apply}
-            dirtyLabels={dirtyPanes.map((pane) => pane.label)}
-            warnings={warned.map((pane) => ({ id: pane.id, message: warnings.get(pane.id) ?? '' }))}
-            error={error}
-            saving={saving}
-            askingToClose={askingToClose && dirtyPanes.length > 0}
-            onSave={() => void saveAndClose()}
-            onRetry={apply === 'onSave' ? () => void saveAndClose() : resend}
-            onCancel={cancel}
-            onSaveAndClose={() => void saveAndClose()}
-            onSelectPane={onSectionChange}
-          />
-        ) : undefined
-      }
-    >
-      <div className="grid min-h-[420px] grid-cols-[200px_minmax(0,1fr)] gap-4">
+    <Dialog title={title} width={width} onClose={requestClose} footer={touch ? undefined : footer}>
+      <div className="grid min-h-[420px] grid-cols-[200px_minmax(0,1fr)] gap-4 touch:min-h-0 touch:grid-cols-[minmax(0,1fr)]">
         <SettingsNav
           groups={groups}
           activeId={active?.id}
@@ -157,6 +154,7 @@ export function SettingsDialog<TDoc extends object, TContext>({
           )}
         </div>
       </div>
+      {touch ? footer : null}
     </Dialog>
   );
 }

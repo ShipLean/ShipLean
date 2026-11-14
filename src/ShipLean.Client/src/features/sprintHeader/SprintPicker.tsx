@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { routePath } from '../../routes';
+import { useTouchShell } from '../../touch/useTouchShell';
 import type { SprintTab } from './SprintHeader';
+import { SprintPickerSheet } from './SprintPickerSheet';
 import { sprintHeaderTestIds as ids } from './testIds';
 
 const tabRoute = {
@@ -17,7 +19,15 @@ const tabRoute = {
   'sprintBacklog' | 'taskboard' | 'capacity' | 'sprintRetro' | 'sprintDemo'
 >;
 
-// `Sprint 24 ▾` opening a listbox. The arrows only move the highlight; the route changes when a sprint is picked.
+const tabLabel: Record<SprintTab, string> = {
+  backlog: 'Backlog',
+  taskboard: 'Taskboard',
+  capacity: 'Capacity',
+  retro: 'Retro',
+  demo: 'Demo',
+};
+
+// `Sprint 24 ▾` opening a listbox (a sheet at 900px and below, SHIP-724 D6). The arrows only move the highlight; the route changes when a sprint is picked.
 export function SprintPicker({
   project,
   sprint,
@@ -30,6 +40,7 @@ export function SprintPicker({
   tab: SprintTab;
 }) {
   const navigate = useNavigate();
+  const { touch } = useTouchShell();
   const listId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -70,6 +81,35 @@ export function SprintPicker({
       event.preventDefault();
       close();
     }
+  }
+
+  if (touch) {
+    return (
+      <>
+        <button
+          ref={buttonRef}
+          type="button"
+          data-testid={ids.picker}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          title="Switch sprint"
+          className="-ml-1.5 inline-flex h-[var(--touch-target)] min-w-0 items-center gap-1.5 rounded-control border-0 bg-transparent px-1.5 text-[19px] font-semibold aria-expanded:bg-signal-soft"
+          onClick={() => setOpen(true)}
+        >
+          <span className="truncate">{sprint.name}</span>
+          <span className="text-[length:var(--text-xs)] text-ink-muted">▾</span>
+        </button>
+        <SprintPickerSheet
+          open={open}
+          project={project}
+          sprint={sprint}
+          sprints={sprints}
+          tabLabel={tabLabel[tab]}
+          onPick={pick}
+          onClose={close}
+        />
+      </>
+    );
   }
 
   return (

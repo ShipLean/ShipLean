@@ -10,6 +10,11 @@ export const workItemTestIds = {
   saveState: 'work-item-save-state',
   save: 'work-item-save',
   discard: 'work-item-discard',
+  // L714a: the item frame on touch (header, section chips, copy key).
+  header: 'work-item-header',
+  sectionChips: 'work-item-section-chips',
+  sectionChip: 'work-item-section-chip',
+  copyKey: 'work-item-copy-key',
   saveError: 'work-item-save-error',
   fields: 'work-item-fields',
   stateButton: 'work-item-state-button',
@@ -24,6 +29,8 @@ export const workItemTestIds = {
   tags: 'work-item-tags',
   tagInput: 'work-item-tag-input',
   menu: 'work-item-menu',
+  // L714b: a Bug's repro block (repro steps and severity), for its phone shot.
+  reproBlock: 'work-item-repro-block',
   description: 'work-item-description',
   descriptionEdit: 'work-item-description-edit',
   descriptionView: 'work-item-description-view',
@@ -128,6 +135,9 @@ export const workItemTestIds = {
   importedFromLink: 'work-item-imported-from-link',
   importedFromHost: 'work-item-imported-from-host',
   importedFromHint: 'work-item-imported-from-hint',
+
+  // History on a phone (SHIP-714): the newest three, then this
+  historyShowAll: 'work-item-history-show-all',
 
   // S0c save confirm (the before-save hook's prompt)
   saveConfirm: 'work-item-save-confirm',

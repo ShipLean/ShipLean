@@ -17,7 +17,7 @@ export function ExistingActionField({
       <select
         data-testid={ids.retroActionExisting}
         value={value}
-        className="field w-full"
+        className="field w-full touch:h-10"
         onChange={(e) => onChange(e.target.value)}
       >
         {actions.length === 0 ? <option value="">No open action items</option> : null}

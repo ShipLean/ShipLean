@@ -9,6 +9,8 @@ export const settingsTestIds = {
   tabDemos: 'settings-tab-demos',
   tabDirty: 'settings-tab-dirty',
   tabError: 'settings-tab-error',
+  // SHIP-732 frame touch
+  tabRow: 'settings-tab-row',
   changesList: 'settings-changes-list',
   changeItem: 'settings-change-item',
   readOnlyBanner: 'settings-read-only-banner',
@@ -80,6 +82,8 @@ export const settingsTestIds = {
   stateAddName: 'settings-state-add-name',
   stateAddCategory: 'settings-state-add-category',
   stateAdd: 'settings-state-add',
+  // SHIP-732 states touch
+  stateTypeSelect: 'settings-state-type-select',
   usersPanel: 'settings-users-panel',
   usersLoading: 'settings-users-loading',
   usersLoadFailed: 'settings-users-load-failed',
@@ -162,6 +166,10 @@ export const settingsTestIds = {
   profileSave: 'settings-profile-save',
   profileDiscard: 'settings-profile-discard',
   profileSaveError: 'settings-profile-save-error',
+  // SHIP-733 profile form touch
+  profileBarError: 'settings-profile-bar-error',
+  passwordOpen: 'settings-password-open',
+  passwordCancel: 'settings-password-cancel',
   instanceDenied: 'settings-instance-denied',
   instanceGeneralPanel: 'settings-instance-general-panel',
   instanceLoading: 'settings-instance-loading',
@@ -220,6 +228,8 @@ export const settingsTestIds = {
   myProjectLeaveConfirm: 'settings-my-project-leave-confirm',
   myProjectLeaveCancel: 'settings-my-project-leave-cancel',
   myProjectLeaveError: 'settings-my-project-leave-error',
+  // SHIP-733 projects touch
+  myProjectLeaveRow: 'settings-my-project-leave-row',
   sessionsPanel: 'settings-sessions-panel',
   signOutOthers: 'settings-sign-out-others',
   resetViews: 'settings-reset-views',

@@ -18,7 +18,7 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
       aria-label="Stories and bugs"
       className="grid grid-cols-[minmax(0,1fr)] gap-2"
     >
-      <header className="flex items-center gap-2">
+      <header className="flex items-center gap-2 touch:flex-wrap">
         <h2 className="text-[length:var(--text-md)] font-semibold">Stories and bugs</h2>
         <span data-testid={ids.childrenCount}>
           <Chip tone={total > 0 && closed === total ? 'ok' : 'muted'}>
@@ -32,7 +32,7 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
         <Link
           data-testid={ids.taskBoardLink}
           to={routePath('featureBoard', { key: projectKey, itemKey: item.key })}
-          className="text-[length:var(--text-sm)] hover:text-signal hover:underline"
+          className="text-[length:var(--text-sm)] hover:text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
         >
           Task board
         </Link>

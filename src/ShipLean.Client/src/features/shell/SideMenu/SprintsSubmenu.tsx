@@ -4,7 +4,8 @@ import { shellTestIds as ids } from '../testIds';
 import { useSprints } from '../useShellQueries';
 import { NavItem } from './NavItem';
 
-// Under Sprints while you are in Sprints: the current sprint (its backlog) and All sprints.
+// Under Sprints (while you are in Sprints, and always in the touch drawer): the current sprint (its backlog) and All
+// sprints.
 export function SprintsSubmenu({
   projectId,
   projectKey,

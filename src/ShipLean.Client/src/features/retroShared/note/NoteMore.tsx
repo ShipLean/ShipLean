@@ -1,10 +1,40 @@
 import { useState } from 'react';
+import { MoreButton } from '../../../touch/MoreButton';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 
-/** The ⋯ menu; it shows only where the server says the point can be archived. */
-export function NoteMore({ pointId, writes }: { pointId: string; writes: RetroNoteWrites }) {
+/**
+ * The ⋯ menu; it shows only where the server says the point can be archived. With `onMoveTheme` (the touch layout) it is
+ * K5's MoreButton (a 32px ⋯ opening an action sheet of Move to theme and Archive); without it, the desktop popover with Archive.
+ */
+export function NoteMore({
+  pointId,
+  writes,
+  onMoveTheme,
+}: {
+  pointId: string;
+  writes: RetroNoteWrites;
+  onMoveTheme?: () => void;
+}) {
   const [open, setOpen] = useState(false);
+  if (onMoveTheme) {
+    return (
+      <span className="absolute top-0.5 right-0.5">
+        <MoreButton
+          actions={[
+            { id: 'theme', label: 'Move to theme', onSelect: onMoveTheme },
+            {
+              id: 'archive',
+              label: 'Archive',
+              tone: 'danger',
+              disabled: writes.archive.isPending,
+              onSelect: () => writes.archive.mutate(pointId),
+            },
+          ]}
+        />
+      </span>
+    );
+  }
   return (
     <span className="absolute top-[3px] right-[3px]">
       <button

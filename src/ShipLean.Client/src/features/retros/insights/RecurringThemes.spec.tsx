@@ -83,6 +83,18 @@ test('RecurringThemes_WhenRenamed_ShouldPutTheNewName', async ({ mount, page }) 
   expect(write.body).toEqual({ name: 'Baselines come from CI' });
 });
 
+test('RecurringThemes_WhenRenameSaved_ShouldCloseTheEditField', async ({ mount, page }) => {
+  const stub = await stubRetros(page);
+  await mount(table(retroInsights), open);
+  const cell = page.getByTestId(ids.retroThemeRename).first();
+  await cell.locator('[data-action="edit"]').click();
+  await cell.locator('[data-field="name"]').fill('Baselines come from CI');
+  await cell.locator('[data-action="save"]').click();
+  await expect.poll(() => stub.writes().length).toBe(1);
+  await expect(cell.locator('[data-field="name"]')).toHaveCount(0);
+  await expect(cell.locator('[data-action="edit"]')).toBeVisible();
+});
+
 test('RecurringThemes_WhenRenameConflicts_ShouldSayTheNameIsTaken', async ({ mount, page }) => {
   await stubRetros(page);
   await page.route(

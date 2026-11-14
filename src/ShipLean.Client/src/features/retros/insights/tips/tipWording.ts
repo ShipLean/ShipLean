@@ -1,4 +1,5 @@
 import type { RetroInsightsMode, RetroThemeStatus, RetroVerdict } from '@shiplean/core/api/retros';
+import type { ChipTone } from '../../../../components/Chip';
 
 const unit = (mode: RetroInsightsMode) => (mode === 'week' ? 'week' : 'sprint');
 
@@ -37,3 +38,39 @@ export function statusHeadIntro(mode: RetroInsightsMode): string {
 }
 
 export const verdictHeadIntro = 'What happened to a theme after its last action item closed.';
+
+/** Every status with the label and tone its chip shows, in the order the What these mean sheet lists them. */
+export const STATUS_CHIPS: readonly { id: RetroThemeStatus; label: string; tone: ChipTone }[] = [
+  { id: 'recurring', label: 'Recurring', tone: 'warn' },
+  { id: 'beingAddressed', label: 'Being addressed', tone: 'accent' },
+  { id: 'resolved', label: 'Resolved', tone: 'ok' },
+  { id: 'quiet', label: 'Quiet', tone: 'muted' },
+];
+
+/** Every verdict with the label and tone its chip shows, in the order the What these mean sheet lists them. */
+export const VERDICT_CHIPS: readonly { id: RetroVerdict; label: string; tone: ChipTone }[] = [
+  { id: 'helped', label: 'Helped', tone: 'ok' },
+  { id: 'someEffect', label: 'Some effect', tone: 'warn' },
+  { id: 'noEffect', label: 'No effect', tone: 'danger' },
+  { id: 'tooEarly', label: 'Too early', tone: 'muted' },
+];
+
+/**
+ * The entries of the What these mean sheet, as `sheet=defs:<entry>` names them: a status or verdict id, `nosprint`,
+ * `unthemed`, or a group (`status`, `verdicts`) for a column heading, which scrolls to its group without highlighting a row.
+ */
+export const DEFS_ENTRIES: readonly string[] = [
+  ...STATUS_CHIPS.map((s) => s.id),
+  ...VERDICT_CHIPS.map((v) => v.id),
+  'nosprint',
+  'unthemed',
+  'status',
+  'verdicts',
+];
+export type DefsEntry = string;
+
+export const noSprintWording =
+  'Points on retros with no sprint. They count in Total, but not towards Recurring or a verdict, because they have no time order. Week mode places them by the day they were logged.';
+
+export const unthemedWording =
+  'Points with no theme, in every category except Went well. Give them one in Search, or run Decide what to do, which assigns themes as it goes.';

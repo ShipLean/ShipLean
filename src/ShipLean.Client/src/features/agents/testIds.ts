@@ -26,4 +26,8 @@ export const agentsTestIds = {
   connectedEmpty: 'agent-connected-empty',
   connectedAddLine: 'agent-connected-add-line',
   connectedFailed: 'agent-connected-failed',
+  connectedRevokeRow: 'agent-connected-revoke-row',
+  connectedRevokeCancel: 'agent-connected-revoke-cancel',
+  connectedRevokeConfirm: 'agent-connected-revoke-confirm',
+  connectedCopy: 'agent-connected-copy',
 } as const;

@@ -28,10 +28,9 @@ export function GroupBySwitch({
           data-testid={ids.groupOption}
           data-option={option.id}
           aria-pressed={value === option.id}
-          className={`px-3 text-[length:var(--text-sm)] ${
+          className={`h-[var(--control-height)] px-3 text-[length:var(--text-sm)] touch:h-[var(--touch-target)] ${
             value === option.id ? 'bg-signal-soft text-ink' : 'text-ink-muted'
           }`}
-          style={{ height: 'var(--control-height)' }}
           onClick={() => onChange(option.id)}
         >
           {option.label}

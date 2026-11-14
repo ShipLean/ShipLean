@@ -10,6 +10,7 @@ import { ReadOnlyBanner } from './ReadOnlyBanner';
 import { SettingsHeader } from './SettingsHeader';
 import { SprintsTab } from './SprintsTab';
 import { TabList } from './TabList';
+import { SettingsSaveBar } from './touch/SettingsSaveBar';
 import { useSettingsDraft } from './useSettingsDraft';
 import type { DraftField, DraftTab } from './model';
 import type { TabProps } from './tabProps';
@@ -95,7 +96,7 @@ export function LoadedSettings({
   const tabProps = { draft, setDraft, readOnly, errors };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col touch:h-auto">
       <SettingsHeader
         projectName={project.name}
         changes={changes}
@@ -106,9 +107,9 @@ export function LoadedSettings({
         onSave={() => void submit()}
         onDiscard={discard}
       />
-      <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)]">
+      <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)] touch:grid-cols-[minmax(0,1fr)]">
         <TabList projectKey={project.key} active={tab} dirty={dirty} errored={errored} />
-        <main className="min-h-0 overflow-auto p-4">
+        <main className="min-h-0 overflow-auto p-4 touch:overflow-visible touch:p-0">
           {readOnly ? <ReadOnlyBanner projectName={project.name} admins={admins} /> : null}
           {saveError === undefined ? null : (
             <div
@@ -141,6 +142,16 @@ export function LoadedSettings({
             {tab === 'integrations' && integrations}
             {tab === 'demos' && demos}
           </SettingsDraftContext.Provider>
+          {/* Demos has its own Save; the tab dots still show the draft is dirty. */}
+          {readOnly || tab === 'demos' ? null : (
+            <SettingsSaveBar
+              changes={changes}
+              saving={saving}
+              onJump={(change) => jumpTo(change.tab)}
+              onSave={() => void submit()}
+              onDiscard={discard}
+            />
+          )}
         </main>
       </div>
     </div>

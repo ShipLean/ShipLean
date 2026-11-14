@@ -15,10 +15,10 @@ export function DemoYouTubeNotice({ demo }: DemoProps) {
     return (
       <div
         data-testid={ids.demoYoutubeNotice}
-        className="flex flex-wrap items-center gap-3 rounded-control border border-edge border-l-[3px] border-l-notice bg-surface px-3 py-2 text-[length:var(--text-sm)]"
+        className="flex flex-wrap items-center gap-3 rounded-control border border-edge border-l-[3px] border-l-notice bg-surface px-3 py-2 text-[length:var(--text-sm)] touch:order-first touch:w-full touch:flex-col touch:items-start touch:gap-2"
       >
         <Chip tone="info">Sending to YouTube</Chip>
-        <span className="min-w-60 flex-1">
+        <span className="min-w-60 flex-1 touch:min-w-0">
           ShipLean is sending the file to YouTube. It plays here meanwhile.
         </span>
       </div>
@@ -28,10 +28,10 @@ export function DemoYouTubeNotice({ demo }: DemoProps) {
   return (
     <div
       data-testid={ids.demoYoutubeNotice}
-      className="flex flex-wrap items-center gap-3 rounded-control border border-edge border-l-[3px] border-l-alert bg-surface px-3 py-2 text-[length:var(--text-sm)]"
+      className="flex flex-wrap items-center gap-3 rounded-control border border-edge border-l-[3px] border-l-alert bg-surface px-3 py-2 text-[length:var(--text-sm)] touch:order-first touch:w-full touch:flex-col touch:items-start touch:gap-2"
     >
       <Chip tone="danger">YouTube upload failed</Chip>
-      <span className="min-w-60 flex-1">
+      <span className="min-w-60 flex-1 touch:min-w-0">
         {youTube.failureMessage} The file is safe here and plays above.
       </span>
       {actions.canRetryYouTube && (
@@ -44,7 +44,7 @@ export function DemoYouTubeNotice({ demo }: DemoProps) {
               onError: (failure) => showToast(failure.message, { tone: 'danger' }),
             })
           }
-          className="inline-flex h-7 items-center rounded-control border border-edge bg-surface px-3 font-medium hover:bg-sunken disabled:opacity-50"
+          className="inline-flex h-7 items-center rounded-control border border-edge bg-surface px-3 font-medium hover:bg-sunken disabled:opacity-50 touch:h-[var(--touch-target)] touch:w-full touch:justify-center"
         >
           Retry upload
         </button>

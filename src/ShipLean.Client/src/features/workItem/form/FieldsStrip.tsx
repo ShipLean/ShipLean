@@ -10,7 +10,8 @@ import { StateField } from './StateField';
 import { TagsField } from './TagsField';
 import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 
-// State, Assignee, Sprint, Story points, Priority, Parent and Tags across the full width.
+// State, Assignee, Sprint, Story points, Priority, Parent and Tags across the full width. At 900px and below they are
+// always open as a two-column grid of tiles (SHIP-714 D5); Priority, Parent and Tags take a whole row.
 export function FieldsStrip({
   item,
   draft,
@@ -27,7 +28,7 @@ export function FieldsStrip({
     <div
       data-testid={ids.fields}
       aria-label="Fields"
-      className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b border-edge bg-panel px-4 py-3"
+      className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b border-edge bg-panel px-4 py-3 touch:grid touch:grid-cols-2 touch:gap-px touch:bg-edge touch:p-0 touch:*:min-h-[60px] touch:*:max-w-none touch:*:min-w-0 touch:*:bg-panel touch:*:px-3 touch:*:py-2"
     >
       <StateField
         projectId={item.projectId}

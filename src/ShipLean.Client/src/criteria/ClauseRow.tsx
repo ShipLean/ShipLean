@@ -62,11 +62,13 @@ export function ClauseRow({
 
   return (
     <div data-testid={criteriaTestIds.clause} data-invalid={errors.length > 0}>
-      <div className="grid grid-cols-[3rem_10rem_8rem_minmax(0,1fr)_1.5rem] items-center gap-1.5">
-        <span className="text-[length:var(--text-xs)] font-medium text-ink-muted">{lead}</span>
+      <div className="grid grid-cols-[3rem_10rem_8rem_minmax(0,1fr)_1.5rem] items-center gap-1.5 touch:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_var(--touch-target)]">
+        <span className="text-[length:var(--text-xs)] font-medium text-ink-muted touch:col-span-3">
+          {lead}
+        </span>
         <select
           data-testid={criteriaTestIds.field}
-          className="field"
+          className="field touch:min-h-[var(--touch-target)]"
           aria-label="Field"
           {...marksFor('unknownField')}
           value={clause.field}
@@ -83,7 +85,7 @@ export function ClauseRow({
         </select>
         <select
           data-testid={criteriaTestIds.op}
-          className="field"
+          className="field touch:col-span-2 touch:min-h-[var(--touch-target)]"
           aria-label="Operator"
           {...marksFor('operatorNotAllowed')}
           value={clause.op}
@@ -98,7 +100,7 @@ export function ClauseRow({
             </option>
           ))}
         </select>
-        <div className="min-w-0">
+        <div className="min-w-0 touch:col-span-1">
           {field ? (
             <ClauseValue
               clause={clause}
@@ -116,7 +118,7 @@ export function ClauseRow({
           type="button"
           data-testid={criteriaTestIds.remove}
           aria-label={`Remove clause ${index + 1}: ${clauseText(clause, lists)}`}
-          className="h-6 w-6 rounded-sm text-ink-muted hover:bg-sunken hover:text-ink"
+          className="h-6 w-6 rounded-sm text-ink-muted hover:bg-sunken hover:text-ink touch:h-[var(--touch-target)] touch:w-[var(--touch-target)]"
           onClick={onRemove}
         >
           ✕
@@ -128,7 +130,7 @@ export function ClauseRow({
           id={errorIds[i]}
           role="alert"
           data-testid={criteriaTestIds.error}
-          className="mt-1 ml-[3.375rem] text-[length:var(--text-xs)] text-alert"
+          className="mt-1 ml-[3.375rem] touch:ml-0 text-[length:var(--text-xs)] text-alert"
         >
           {error.message}
         </p>

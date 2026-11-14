@@ -1,7 +1,14 @@
 // The web host of @shiplean/core's platform seam: the browser's storage and connectivity, the page's own origin and
-// cookie, and a lost session sends the page to the sign-in page.
+// cookie, the viewport header on every request, and a lost session sends the page to the sign-in page.
 import { isLoginPath, LOGIN_PATH } from '@shiplean/core/loginPath';
 import type { KeyValueStore, Platform, UnauthorizedReason } from '@shiplean/core/platform';
+import { viewportOf } from './touch/viewport';
+
+// The window's viewport class, phone|tablet|desktop (K2; C#: ViewportHeader.Name), which the server stamps as the
+// `viewport` property on the usage events a request causes. Read from window.innerWidth as each request is sent, never
+// cached: the window can be resized or rotated between two requests. The web sends no auth header (the cookie is the
+// proof), so this is the only header the web host adds.
+export const VIEWPORT_HEADER = 'X-ShipLean-Viewport';
 
 // Reads the storage global on each call: a browser that refuses storage throws on the access itself, and the
 // KeyValueStore contract lets that throw reach the caller.
@@ -56,6 +63,6 @@ export const webPlatform: Platform = {
     else sendToLogin();
   },
   apiOrigin: () => '',
-  authHeaders: () => ({}),
+  authHeaders: () => ({ [VIEWPORT_HEADER]: viewportOf(window.innerWidth) }),
   credentials: () => 'same-origin',
 };

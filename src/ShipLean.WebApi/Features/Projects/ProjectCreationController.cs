@@ -12,7 +12,7 @@ namespace ShipLean.WebApi.Features.Projects;
 // Not project-scoped: any signed-in user may ask, subject to the instance's project_creation rule (the factory) and, for a copy, membership of the source (the gate).
 [Route("api/projects")]
 public sealed class ProjectCreationController(IProjectFactory factory, ProjectCreationGate gate, FirstSprintDefaults firstSprint,
-    ICurrentUser currentUser, IUsageEvents events, TimeProvider time) : ApiControllerBase
+    ICurrentUser currentUser, IUsageEvents events, IUsageScope scope, TimeProvider time) : ApiControllerBase
 {
     [HttpPost]
     [ProducesResponseType<ProjectDto>(StatusCodes.Status200OK)]
@@ -25,7 +25,7 @@ public sealed class ProjectCreationController(IProjectFactory factory, ProjectCr
         var started = time.GetTimestamp();
         await gate.RequireAsync(create, cancellationToken);
         var project = await factory.CreateAsync(create, cancellationToken);
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.ProjectCreated, currentUser.Id, "api:ProjectCreation.Create", project.Id);
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.ProjectCreated, currentUser.Id, "api:ProjectCreation.Create", project.Id);
         return project;
     }
 

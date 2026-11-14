@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
+import { Dialog } from '../../../components/Dialog';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { SprintDto, SprintUpdate } from '@shiplean/core/api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { useUpdateSprint } from '../sprintsApi';
@@ -30,9 +32,10 @@ interface EditSprintRailProps {
  * The Edit sprint form: the sprint's name, dates and goal, prefilled. An ended sprint's dates are shown but locked (the
  * server refuses them). It sends only what changed, so a name edit never touches the dates. A refusal from the server
  * (overlap, name taken) shows beside Save. Delete sprint sits under the form. Mount it with `key={sprint.id}` so a
- * different sprint starts clean.
+ * different sprint starts clean. At 900px and below it opens in the full-screen Dialog (SHIP-724 D9), whose ✕ cancels.
  */
 export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSprintRailProps) {
+  const { touch } = useTouchShell();
   const update = useUpdateSprint(projectId, sprint.id);
   // Only what the person has typed: the rest follows the sprint, so a refetch under the open form is not lost.
   const [edited, setEdited] = useState<Partial<SprintFormValues>>({});
@@ -92,14 +95,8 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
         ? 'The sprint could not be saved.'
         : '';
 
-  return (
-    <aside
-      data-testid={ids.editSprint}
-      className="grid content-start gap-2 rounded-md border border-edge bg-panel p-4"
-    >
-      <div className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
-        Edit sprint
-      </div>
+  const body = (
+    <>
       <SprintForm
         idPrefix={`edit-sprint-${sprint.id}`}
         ids={EDIT_SPRINT_IDS}
@@ -115,6 +112,25 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
         onCancel={onDone}
       />
       <DeleteSprint projectId={projectId} sprint={sprint} onDeleted={onDeleted} />
+    </>
+  );
+
+  if (touch) {
+    return (
+      <Dialog title="Edit sprint" onClose={onDone}>
+        <div data-testid={ids.editSprint}>{body}</div>
+      </Dialog>
+    );
+  }
+  return (
+    <aside
+      data-testid={ids.editSprint}
+      className="grid content-start gap-2 rounded-md border border-edge bg-panel p-4"
+    >
+      <div className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
+        Edit sprint
+      </div>
+      {body}
     </aside>
   );
 }

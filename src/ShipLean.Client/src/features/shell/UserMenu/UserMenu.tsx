@@ -11,10 +11,11 @@ import { shellTestIds as ids } from '../testIds';
 import { useMe } from '../useShellQueries';
 
 const itemClass =
-  'flex h-[30px] items-center gap-2 rounded-control px-2 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:bg-signal-soft focus-visible:outline-0';
+  'flex h-[30px] touch:h-(--touch-target) items-center gap-2 rounded-control px-2 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:bg-signal-soft focus-visible:outline-0';
 
 // The signed-in user at the bottom of the side menu, and the menu it opens upwards: who you are, Your profile,
-// Instance settings (instance admins only) and Sign out.
+// Instance settings (instance admins only) and Sign out. In the touch drawer it opens upwards from the drawer's bottom too,
+// with 32px rows.
 export function UserMenu() {
   const meQuery = useMe();
   const me = meQuery.data;
@@ -46,7 +47,7 @@ export function UserMenu() {
       <button
         type="button"
         data-testid={ids.userRetry}
-        className="mt-auto flex w-full items-center gap-2 border-0 border-t border-edge bg-transparent p-2 text-left text-[length:var(--text-sm)] text-alert hover:bg-panel/60 max-[900px]:mt-0 max-[900px]:ml-auto max-[900px]:w-auto max-[900px]:border-t-0"
+        className="mt-auto flex w-full items-center gap-2 border-0 border-t border-edge bg-transparent p-2 text-left text-[length:var(--text-sm)] text-alert hover:bg-panel/60"
         onClick={() => void meQuery.refetch()}
       >
         Could not load your account. Retry
@@ -63,6 +64,8 @@ export function UserMenu() {
       const step = event.key === 'ArrowDown' ? 1 : -1;
       items[(at + step + items.length) % items.length]?.focus();
     } else if (event.key === 'Escape') {
+      // Handled here, so the touch drawer around the menu stays open.
+      event.preventDefault();
       setOpen(false);
       button.current?.focus();
     }
@@ -76,12 +79,12 @@ export function UserMenu() {
         data-testid={ids.userButton}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="mt-auto flex w-full items-center gap-2 border-0 border-t border-edge bg-transparent p-2 text-left text-[length:var(--text-sm)] hover:bg-panel/60 max-[900px]:mt-0 max-[900px]:ml-auto max-[900px]:w-auto max-[900px]:border-t-0"
+        className="mt-auto flex w-full items-center gap-2 border-0 border-t border-edge bg-transparent p-2 text-left text-[length:var(--text-sm)] hover:bg-panel/60"
         onClick={() => setOpen(!open)}
       >
         <Avatar {...me} />
-        <span className="min-w-0 flex-1 truncate max-[900px]:hidden">{me.name}</span>
-        <span className="text-ink-muted max-[900px]:hidden" aria-hidden="true">
+        <span className="min-w-0 flex-1 truncate">{me.name}</span>
+        <span className="text-ink-muted" aria-hidden="true">
           ▴
         </span>
       </button>
@@ -91,7 +94,7 @@ export function UserMenu() {
           role="menu"
           aria-label="Your account"
           data-testid={ids.userMenu}
-          className="absolute right-2 bottom-12 left-2 z-50 grid gap-px rounded-panel border border-edge bg-panel p-1 shadow-[0_12px_32px_rgb(0_0_0/0.18)] max-[900px]:top-[calc(100%-4px)] max-[900px]:right-2 max-[900px]:bottom-auto max-[900px]:left-auto max-[900px]:w-60"
+          className="absolute right-2 bottom-12 left-2 z-50 grid gap-px rounded-panel border border-edge bg-panel p-1 shadow-[0_12px_32px_rgb(0_0_0/0.18)]"
           onKeyDown={onKeyDown}
         >
           <div className="mb-0.5 flex items-center gap-2 border-b border-edge px-2 pt-1.5 pb-2">

@@ -9,7 +9,7 @@ export function GoogleSignInLink({ href }: { href: string }) {
     <a
       href={href}
       data-testid={authTestIds.googleSignIn}
-      className="flex items-center justify-center gap-2 h-8 rounded-sm border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink no-underline hover:bg-canvas"
+      className="flex items-center justify-center gap-2 h-8 touch:h-10 rounded-sm border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink no-underline hover:bg-canvas"
     >
       <svg aria-hidden="true" viewBox="0 0 18 18" className="size-4 shrink-0">
         <path

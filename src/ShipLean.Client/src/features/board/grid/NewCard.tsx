@@ -50,7 +50,7 @@ export function NewCard({
       <button
         type="button"
         data-testid={ids.newCardOpen}
-        className="btn-ghost h-[26px] justify-start border border-dashed border-edge bg-transparent px-1.5 text-[length:var(--text-xs)] text-ink-muted"
+        className="btn-ghost h-[26px] justify-start border border-dashed border-edge bg-transparent px-1.5 text-[length:var(--text-xs)] text-ink-muted touch:h-(--touch-target) touch:w-full touch:px-2.5 touch:text-[length:var(--text-sm)]"
         onClick={() => setOpen(true)}
       >
         + New {TYPE_NAME[level]}
@@ -63,17 +63,27 @@ export function NewCard({
         ref={input}
         data-testid={ids.newCardTitle}
         aria-label={`${TYPE_NAME[level]} title`}
-        className="field w-full"
+        className="field w-full touch:h-9"
         placeholder="Title, then Enter"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={onKeyDown}
       />
       <div className="flex items-center gap-1">
-        <button type="button" data-testid={ids.newCardSubmit} className="btn-signal" onClick={add}>
+        <button
+          type="button"
+          data-testid={ids.newCardSubmit}
+          className="btn-signal touch:h-(--touch-target)"
+          onClick={add}
+        >
           Add
         </button>
-        <button type="button" data-testid={ids.newCardCancel} className="btn-ghost" onClick={close}>
+        <button
+          type="button"
+          data-testid={ids.newCardCancel}
+          className="btn-ghost touch:h-(--touch-target)"
+          onClick={close}
+        >
           Cancel
         </button>
       </div>

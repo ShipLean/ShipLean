@@ -18,7 +18,7 @@ namespace ShipLean.WebApi.Features.DeviceSessions;
 // POST /api/auth/device-sessions/exchange ExchangeSignInCodeRequest -> 201 DeviceSignInDto (anonymous, rate limited)
 [Route("api/auth/device-sessions")]
 public sealed class DeviceSignInController(
-    IDeviceSessions sessions, ProxySignInSettings proxy, MeReader me, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)
+    IDeviceSessions sessions, ProxySignInSettings proxy, MeReader me, ICurrentUser currentUser, IUsageEvents events, IUsageScope scope, TimeProvider time)
     : ApiControllerBase
 {
     public const string ProxyRefusal = "The ShipLean app can't sign in to this server yet.";
@@ -66,7 +66,7 @@ public sealed class DeviceSignInController(
         var signIn = await sessions.ExchangeAsync(request.Code ?? string.Empty, request.Verifier ?? string.Empty, time.GetUtcNow(), ct)
                      ?? throw ApiException.Validation(Expired);
         var session = signIn.Session;
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.DeviceSessionCreated, session.UserId, "api:DeviceSignIn.Exchange",
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.DeviceSessionCreated, session.UserId, "api:DeviceSignIn.Exchange",
             surface: UsageSurface.App);
         var dto = new DeviceSignInDto(DeviceSessionDtos.From(session, current: false, time), signIn.Secret, await me.GetAsync(session.UserId, ct));
         // The response holds the secret: no cache keeps it (RFC 6749 §5.1).

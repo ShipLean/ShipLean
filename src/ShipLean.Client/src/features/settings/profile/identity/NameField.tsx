@@ -17,11 +17,11 @@ export function NameField({
         <output
           id="settings-profile-name-text"
           data-testid={settingsTestIds.profileNameReadOnly}
-          className="inline-flex h-7 items-center rounded-control border border-dashed border-edge bg-canvas px-2.5 text-[length:var(--text-sm)] text-ink-muted"
+          className="inline-flex h-7 items-center rounded-control border border-dashed border-edge bg-canvas px-2.5 text-[length:var(--text-sm)] text-ink-muted touch:block touch:h-9 touch:max-w-full touch:truncate touch:text-[length:var(--text-base)] touch:leading-[34px]"
         >
           {name}
         </output>
-        <span className="text-[length:var(--text-xs)] text-ink-muted">
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
           Your name comes from your sign-in provider.
         </span>
       </FormRow>
@@ -33,7 +33,7 @@ export function NameField({
       <input
         id="settings-profile-name"
         data-testid={settingsTestIds.profileName}
-        className="field w-70 max-w-full"
+        className="field w-70 max-w-full touch:h-9 touch:w-full"
         value={name}
         autoComplete="name"
         onChange={(e) => onChange(e.target.value)}
@@ -47,7 +47,7 @@ export function NameField({
           {problem}
         </span>
       )}
-      <span className="text-[length:var(--text-xs)] text-ink-muted">
+      <span className="text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
         Shown on cards, comments, history and @mentions. Your initials come from it.
       </span>
     </FormRow>

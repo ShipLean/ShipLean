@@ -20,8 +20,17 @@ export function TagsField({
     if (tag !== '' && !value.includes(tag)) onChange([...value, tag]);
   };
   return (
-    <FieldCell label="Tags" field="tags" changed={changed} htmlFor={inputId} className="grow">
-      <div data-testid={ids.tags} className="flex min-h-7 flex-wrap items-center gap-1">
+    <FieldCell
+      label="Tags"
+      field="tags"
+      changed={changed}
+      htmlFor={inputId}
+      className="grow touch:col-span-2"
+    >
+      <div
+        data-testid={ids.tags}
+        className="flex min-h-7 flex-wrap items-center gap-1 touch:gap-1.5 touch:gap-y-3 touch:[&>span]:h-7 touch:[&>span]:text-[length:var(--text-sm)]"
+      >
         {value.map((tag) => (
           <Chip key={tag} onRemove={() => onChange(value.filter((t) => t !== tag))}>
             {tag}
@@ -32,7 +41,7 @@ export function TagsField({
           data-testid={ids.tagInput}
           placeholder="+ Add tag"
           autoComplete="off"
-          className="h-7 w-24 bg-transparent px-1 text-[length:var(--text-sm)] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-signal"
+          className="h-7 w-24 touch:h-8 touch:w-32 bg-transparent px-1 text-[length:var(--text-sm)] text-ink placeholder:text-ink-muted focus-visible:outline-2 focus-visible:outline-signal"
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={(event) => {

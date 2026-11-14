@@ -40,7 +40,7 @@ export function WorkingDays({ draft, setDraft, readOnly, errors }: TabProps) {
               data-testid={testId}
               aria-pressed={on}
               disabled={readOnly}
-              className={`h-7 w-11 rounded-control border text-[length:var(--text-sm)] font-medium disabled:opacity-60 ${
+              className={`h-7 w-11 rounded-control border touch:h-[var(--touch-target)] touch:w-auto touch:min-w-0 touch:flex-1 text-[length:var(--text-sm)] font-medium disabled:opacity-60 ${
                 on ? 'border-signal bg-signal-soft text-ink' : 'border-edge bg-panel text-ink-muted'
               }`}
               onClick={() => toggle(day)}

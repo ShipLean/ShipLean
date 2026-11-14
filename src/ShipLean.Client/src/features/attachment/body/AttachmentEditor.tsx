@@ -1,10 +1,17 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { fullscreen } from '@uiw/react-md-editor/commands';
 import { PasteStatus } from '../../workItem/form/description/PasteStatus';
 import { usePasteImage } from '../../workItem/form/description/usePasteImage';
+import { SaveBar } from '../../../touch/SaveBar';
+import { useTopBar } from '../../../touch/TopBar';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemAttachmentsKey } from '../../workItem/workItemApi';
 import { attachmentTestIds as ids } from '../testIds';
 import '../../workItem/form/markdownEditor.css';
+import './attachmentEditor.css';
+
+// At 900px and below the editor fills the screen under the top bar (D3).
+const TOUCH_HEIGHT = 'calc(100dvh - var(--mobile-bar-height) - env(safe-area-inset-top))';
 
 // The same toolbar editor as a description, loaded when Edit is first opened.
 const MDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
@@ -42,20 +49,32 @@ export function AttachmentEditor({
     value,
     onChange,
   });
+  const { touch } = useTouchShell();
+  // Rule 12's one exception: while editing, the editor's toolbar takes the top bar's pinned spot. The slot holds a
+  // placeholder the bar's size, and attachmentEditor.css lays the editor's own toolbar over it.
+  const pinned = useMemo(
+    () => <div data-testid={ids.editorToolbarSlot} className="h-full w-full" />,
+    [],
+  );
+  useTopBar(touch ? { pinned } : {});
   return (
-    <div data-testid={ids.editor} className="grid content-start gap-2 px-5 py-4">
+    <div
+      data-testid={ids.editor}
+      className={touch ? 'grid content-start gap-2 pb-2' : 'grid content-start gap-2 px-5 py-4'}
+    >
       <Suspense
         fallback={
           <div className="h-[560px] rounded-control border border-edge bg-panel" aria-hidden />
         }
       >
         <MDEditor
-          className="work-item-markdown"
+          className={touch ? 'work-item-markdown attachment-editor-touch' : 'work-item-markdown'}
           value={value}
           preview="edit"
-          height={560}
+          height={touch ? TOUCH_HEIGHT : 560}
+          visibleDragbar={!touch}
           overflow={false}
-          extraCommands={[fullscreen]}
+          extraCommands={touch ? [] : [fullscreen]}
           textareaProps={{
             'aria-label': `${name} (markdown)`,
             onPaste: paste.onPaste,
@@ -79,26 +98,37 @@ export function AttachmentEditor({
           {error}
         </p>
       ) : null}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          data-testid={ids.save}
-          disabled={!changed || saving || paste.pasting}
-          className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
-          onClick={onSave}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </button>
-        <button
-          type="button"
-          data-testid={ids.cancel}
-          disabled={saving}
-          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] disabled:opacity-50"
-          onClick={onCancel}
-        >
-          Cancel
-        </button>
-      </div>
+      {touch ? (
+        <SaveBar
+          dirty={changed}
+          message="Saving replaces the file"
+          saving={saving}
+          saveDisabled={paste.pasting}
+          onDiscard={onCancel}
+          onSave={onSave}
+        />
+      ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            data-testid={ids.save}
+            disabled={!changed || saving || paste.pasting}
+            className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
+            onClick={onSave}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            type="button"
+            data-testid={ids.cancel}
+            disabled={saving}
+            className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] disabled:opacity-50"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

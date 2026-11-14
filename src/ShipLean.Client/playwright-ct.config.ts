@@ -26,4 +26,23 @@ export default defineConfig({
       plugins: [tailwindcss()],
     },
   },
+  // One template for both projects, without {-projectName}: desktop baselines keep their paths, and phone specs
+  // (*.phone.spec.tsx) get their own <spec>-snapshots folder because they are separate files.
+  snapshotPathTemplate:
+    '{snapshotDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-snapshotSuffix}{ext}',
+  // Both projects take the `use` above (the same ctViteConfig); phone overrides the device.
+  projects: [
+    { name: 'desktop', testIgnore: '**/*.phone.spec.tsx' },
+    {
+      // The touch layout on a phone (K8): 390×844 with touch, scale 1.
+      name: 'phone',
+      testMatch: '**/*.phone.spec.tsx',
+      use: {
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+        deviceScaleFactor: 1,
+      },
+    },
+  ],
 });

@@ -82,9 +82,10 @@ export const generatedTokens = {
   stateCategory: ${object(category, 1)},
   touch: ${object(
     [
-      ['bar', px(tokens.touch['mobile-bar-height'])],
-      ['control', px(tokens.touch['touch-target'])],
-      ['row', px(tokens.touch['touch-target'])],
+      // Native minimums (44pt targets, 52pt bar), not the web tokens: the web's touch-target is 32px (SHIP-805 rule 13).
+      ['bar', px('52px')],
+      ['control', px('44px')],
+      ['row', px('44px')],
     ],
     1,
   )},

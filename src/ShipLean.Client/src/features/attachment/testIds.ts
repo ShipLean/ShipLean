@@ -22,10 +22,25 @@ export const attachmentTestIds = {
   imageStatus: 'attachment-image-status',
   siblings: 'attachment-siblings',
   sibling: 'attachment-sibling',
+
+  // SHIP-715 touch
+  header: 'attachment-header',
+  nameButton: 'attachment-name-button',
+  facts: 'attachment-facts',
+  contentsPill: 'attachment-contents-pill',
+  contentsEntry: 'attachment-contents-entry',
   notFound: 'attachment-not-found',
   loadFailed: 'attachment-load-failed',
   loadFailedDownload: 'attachment-load-failed-download',
   noHistory: 'attachment-no-history',
+
+  // SHIP-715 image viewer
+  viewerCounter: 'attachment-viewer-counter',
+  viewerStage: 'attachment-viewer-stage',
+  viewerPrev: 'attachment-viewer-prev',
+  viewerNext: 'attachment-viewer-next',
+  viewerThumbs: 'attachment-viewer-thumbs',
+  viewerThumb: 'attachment-viewer-thumb',
   replaceError: 'attachment-replace-error',
 
   // SHIP-198 edit
@@ -34,6 +49,8 @@ export const attachmentTestIds = {
   editorInput: 'attachment-editor-input',
   editorPasting: 'attachment-editor-pasting',
   editorPasteError: 'attachment-editor-paste-error',
+  // SHIP-715 phone edit: the top bar's pinned spot, under the editor's own toolbar
+  editorToolbarSlot: 'attachment-editor-toolbar-slot',
   save: 'attachment-save',
   cancel: 'attachment-cancel',
   saveError: 'attachment-save-error',

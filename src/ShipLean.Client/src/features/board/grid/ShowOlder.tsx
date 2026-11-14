@@ -15,7 +15,7 @@ export function ShowOlder({
       type="button"
       data-testid={ids.showOlder}
       data-cursor={cursor}
-      className="btn-ghost h-6 justify-center text-[length:var(--text-xs)] text-ink-muted"
+      className="btn-ghost h-6 justify-center text-[length:var(--text-xs)] text-ink-muted touch:h-(--touch-target) touch:w-full touch:text-[length:var(--text-sm)]"
       onClick={() => onExpand(cursor)}
     >
       Show older ({count})

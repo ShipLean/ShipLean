@@ -19,7 +19,7 @@ export function AddLink({ item }: FeatureRegionProps) {
         <button
           type="button"
           data-testid={ids.addLinkOpen}
-          className="h-7 w-fit rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal"
+          className="h-7 w-fit rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal touch:h-10 touch:w-full"
           onClick={() => setOpen(true)}
         >
           + Add link
