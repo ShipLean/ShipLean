@@ -1,0 +1,35 @@
+/* The phone's edit toolbar (SHIP-715 D3, rule 12): MDEditor's own toolbar lies over the top bar's pinned spot as one
+   row that scrolls sideways. Touch rules only; above 900px the shared markdownEditor.css is all there is. */
+@media (max-width: 900px) {
+  .attachment-editor-touch.w-md-editor {
+    border-radius: 0;
+    border-inline: 0;
+  }
+
+  .attachment-editor-touch .w-md-editor-toolbar {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    z-index: 40;
+    box-sizing: border-box;
+    height: calc(var(--mobile-bar-height) + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 8px 0;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 0;
+    background-color: var(--color-surface);
+  }
+
+  .attachment-editor-touch .w-md-editor-toolbar ul {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .attachment-editor-touch .w-md-editor-toolbar li > button {
+    min-width: var(--touch-target);
+    height: var(--touch-target);
+  }
+}

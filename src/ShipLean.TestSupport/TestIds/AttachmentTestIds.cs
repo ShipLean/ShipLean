@@ -43,6 +43,9 @@ public static class AttachmentTestIds
     public const string EditorInput = "attachment-editor-input";
     public const string EditorPasting = "attachment-editor-pasting";
     public const string EditorPasteError = "attachment-editor-paste-error";
+
+    // SHIP-715 phone edit
+    public const string EditorToolbarSlot = "attachment-editor-toolbar-slot";
     public const string Save = "attachment-save";
     public const string Cancel = "attachment-cancel";
     public const string SaveError = "attachment-save-error";
