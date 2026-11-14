@@ -68,6 +68,23 @@ test('TouchHandle_WhenHeldAndDraggedOntoARow_ShouldReportThatRow', async ({ moun
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
+test('TouchHandle_WhenDraggedOverARow_ShouldReportItAsOver', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<TouchHandleHarness />);
+  const touch = await touchInput(page);
+  const from = await centre(handleOf(page, 'r3'));
+  const to = await centre(rowOf(page, 'r6'));
+
+  await touch.start(from);
+  await page.clock.runFor(450);
+  await touch.move(from, to);
+  await expect(page.getByTestId(harness.overLine).last()).toHaveText('r6');
+  await touch.end();
+
+  await expect(page.getByTestId(harness.overLine).last()).toHaveText('null');
+  expect(await page.getByTestId(harness.overLine).allTextContents()).toContain('r6');
+});
+
 test('TouchHandle_WhenRowSwipedOutsideTheHandle_ShouldScrollNotDrag', async ({ mount, page }) => {
   await arrange(page);
   await mount(<TouchHandleHarness />);

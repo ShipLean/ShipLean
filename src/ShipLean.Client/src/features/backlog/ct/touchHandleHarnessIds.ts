@@ -3,5 +3,7 @@ export const touchHandleHarnessIds = {
   topBar: 'ct-touch-handle-top-bar',
   row: 'ct-touch-handle-row',
   log: 'ct-touch-handle-log',
+  overLog: 'ct-touch-handle-over-log',
+  overLine: 'ct-touch-handle-over-line',
   logLine: 'ct-touch-handle-log-line',
 } as const;
