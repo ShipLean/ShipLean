@@ -55,6 +55,21 @@ test('AttachmentEditor_WhenTouch_ShouldPinToolbarAndHideFullscreen', async ({ mo
     clientWidth: el.clientWidth,
   }));
   expect(row.scrollWidth).toBeGreaterThan(row.clientWidth);
+  expect(await toolbar.evaluate((el) => getComputedStyle(el).overflowX)).toBe('auto');
+  // The commands past the screen edge are reachable: scrolling the bar to its end brings the last one into view.
+  const last = buttons.last();
+  const width = page.viewportSize()!.width;
+  expect((await last.boundingBox())!.x + (await last.boundingBox())!.width).toBeGreaterThan(width);
+  // A real wheel scroll, which overflow-x: hidden refuses (a script's scrollLeft would not tell).
+  const bar = (await toolbar.boundingBox())!;
+  await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
+  await page.mouse.wheel(2000, 0);
+  await expect
+    .poll(async () => {
+      const box = (await last.boundingBox())!;
+      return box.x >= 0 && box.x + box.width <= width;
+    })
+    .toBe(true);
   // The page scrolling leaves it where it is.
   await page.evaluate(() => window.scrollTo(0, 200));
   expect((await toolbar.boundingBox())!.y).toBe(0);
