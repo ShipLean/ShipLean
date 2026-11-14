@@ -25,7 +25,6 @@ public static class TouchPendingRoutes
         // SHIP-728
         // SHIP-729
         // SHIP-732
-        ["projectSettings"] = "SHIP-732",
         // SHIP-889
     };
 }

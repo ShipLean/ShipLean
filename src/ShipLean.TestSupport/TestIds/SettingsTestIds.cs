@@ -12,6 +12,8 @@ public static class SettingsTestIds
     public const string TabDemos = "settings-tab-demos";
     public const string TabDirty = "settings-tab-dirty";
     public const string TabError = "settings-tab-error";
+    // SHIP-732 frame touch
+    public const string TabRow = "settings-tab-row";
     public const string ChangesList = "settings-changes-list";
     public const string ChangeItem = "settings-change-item";
     public const string ReadOnlyBanner = "settings-read-only-banner";
