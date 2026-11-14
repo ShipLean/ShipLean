@@ -75,3 +75,13 @@ test('useTouchReorder_WhenDroppedOutsideARow_ShouldSendNothing', async () => {
   expect(post).not.toHaveBeenCalled();
   expect(order()).toEqual(['SHIP-1', 'SHIP-2', 'SHIP-3']);
 });
+
+test('useTouchReorder_ShouldReturnTheUseReorderItSends', async () => {
+  await dropOn('id-SHIP-3', 'id-SHIP-1');
+
+  // The screen's frame reads this object: a drop's write must go through it, and its conflict handlers must be it.
+  expect(typeof seen.reorder?.reorder.drop).toBe('function');
+  expect(seen.reorder?.conflict).toBe(seen.reorder?.reorder.conflict);
+  expect(seen.reorder?.useMine).toBe(seen.reorder?.reorder.useMine);
+  expect(seen.reorder?.keepTheirs).toBe(seen.reorder?.reorder.keepTheirs);
+});
