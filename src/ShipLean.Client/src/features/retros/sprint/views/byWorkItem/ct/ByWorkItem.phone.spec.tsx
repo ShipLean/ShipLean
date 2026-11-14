@@ -29,7 +29,7 @@ test('ByWorkItem_WhenOnPhone_ShouldShowCollapsedCardsWithCounts', async ({ mount
   const toggles = page.getByTestId(ids.retroCardToggle);
   await expect(toggles.first()).toHaveAttribute('aria-expanded', 'false');
 
-  // SHIP-141: one point in each of three categories, two still to decide (Went badly, Not in the plan).
+  // SHIP-141: one point in every category, two still to decide (Went badly, Not in the plan).
   const story = cards.filter({ hasText: 'SHIP-141' });
   const counts = story.getByTestId(ids.retroCardCount);
   await expect(counts).toHaveCount(4);
@@ -40,6 +40,13 @@ test('ByWorkItem_WhenOnPhone_ShouldShowCollapsedCardsWithCounts', async ({ mount
   );
   await expect(story.getByTestId(ids.retroCardToDecide)).toHaveText('2 to decide');
   await expect(story.getByTestId(ids.retroCardProgress)).toBeVisible();
+  // SHIP-129 has one Went badly point and none elsewhere, so every count is read, zeros included.
+  const sparse = cards.filter({ hasText: 'SHIP-129' }).getByTestId(ids.retroCardCount);
+  await expect(sparse).toHaveCount(4);
+  const labels = ['Went well 0', 'Went badly 1', 'Can be improved 0', 'Not in the plan 0'];
+  for (const label of labels) {
+    await expect(sparse.and(page.getByLabel(label, { exact: true }))).toHaveCount(1);
+  }
   const box = (await story.getByTestId(ids.retroCardToggle).boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(48);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
@@ -59,6 +66,8 @@ test('ByWorkItem_WhenCardOpened_ShouldHideEmptyCategories', async ({ mount, page
   await mount(element, mountOptions);
   // SHIP-129 has only Went badly points.
   const card = page.getByTestId(shared.retroCard).filter({ hasText: 'SHIP-129' });
+  await expect(card.getByLabel('Went badly 1', { exact: true })).toHaveCount(1);
+  await expect(card.getByLabel('Went well 0', { exact: true })).toHaveCount(1);
   await card.getByTestId(ids.retroCardToggle).click();
   await expect(card.getByTestId(ids.retroCardToggle)).toHaveAttribute('aria-expanded', 'true');
   const columns = card.getByTestId(shared.retroBoardColumn);
@@ -76,7 +85,7 @@ test('ByWorkItem_WhenCardOpened_ShouldHideEmptyCategories', async ({ mount, page
     '/p/SHIP/retros/items/SHIP-129',
   );
 
-  // A card with every category but Not in the plan shows three columns.
+  // A card with a point in every category shows all four columns.
   const story = page.getByTestId(shared.retroCard).filter({ hasText: 'SHIP-141' });
   await story.getByTestId(ids.retroCardToggle).click();
   await expect(story.getByTestId(shared.retroBoardColumn)).toHaveCount(4);

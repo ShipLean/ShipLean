@@ -47,7 +47,12 @@ public class SprintRetroPhoneItemsTests : SeededAcceptanceTest
         var card = retroPage.Cards.Filter(new() { HasText = key });
         var toggle = card.GetByTestId(RetrosTestIds.RetroCardToggle);
         await Expect(toggle).ToHaveAttributeAsync("aria-expanded", "false");
-        await Expect(card.GetByTestId(RetrosTestIds.RetroCardCount)).ToHaveCountAsync(4);
+        var counts = card.GetByTestId(RetrosTestIds.RetroCardCount);
+        await Expect(counts).ToHaveCountAsync(4);
+        await Expect(counts.Nth(0)).ToHaveAttributeAsync("aria-label", "Went well 1");
+        await Expect(counts.Nth(1)).ToHaveAttributeAsync("aria-label", "Not in the plan 0");
+        await Expect(counts.Nth(2)).ToHaveAttributeAsync("aria-label", "Went badly 1");
+        await Expect(counts.Nth(3)).ToHaveAttributeAsync("aria-label", "Can be improved 0");
         await Expect(card.GetByTestId(RetrosTestIds.RetroCardToDecide)).ToHaveTextAsync("1 to decide");
         await Expect(card.GetByTestId(RetroSharedTestIds.RetroNote)).ToHaveCountAsync(0);
         (await TouchRules.ViolationsAsync(Page, toggle)).ShouldBeEmpty();

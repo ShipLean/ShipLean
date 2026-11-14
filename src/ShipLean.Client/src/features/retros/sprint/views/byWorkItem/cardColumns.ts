@@ -29,7 +29,7 @@ export function cardAddTarget(card: RetroCardDto, sprintId: string): AddTarget {
   };
 }
 
-/** How many points a category has in an item's retros,. */
+/** How many points a category has in an item's retros. */
 export function categoryCounts(
   points: RetroPointDto[],
 ): { category: RetroCategory; count: number }[] {
