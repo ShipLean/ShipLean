@@ -40,7 +40,7 @@ public static class TouchRoutes
         ["retros"] = new(_ => Links.Retros(Project), [RetrosTestIds.RetrosSearchPanel]),
         ["retroFeatures"] = new(_ => Links.RetroFeatures(Project), [RetrosTestIds.RetroFeaturesPanel]),
         ["retroItem"] = new(_ => Links.RetroItem(Project, "SHIP-101"), [RetrosTestIds.RetroItemChildRow]),
-        ["retroInsights"] = new(_ => Links.RetroInsights(Project), [RetrosTestIds.RetroRecurringTable]),
+        ["retroInsights"] = new(_ => Links.RetroInsights(Project), [RetrosTestIds.RetroThemeCards]),
         ["jiraImport"] = new(_ => Links.JiraImport(Project), [PagesTestIds.ImportPage]),
         ["projectSettings"] = new(_ => Links.ProjectSettings(Project, "general"), [SettingsTestIds.GeneralName]),
         ["authorize"] = new(_ => "/authorize", [AgentsTestIds.AuthorizePage]),

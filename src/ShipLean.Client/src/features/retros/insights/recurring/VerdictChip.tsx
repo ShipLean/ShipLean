@@ -3,7 +3,7 @@ import type { RetroInsightsMode, RetroVerdict } from '@shiplean/core/api/retros'
 import { Tip } from '../tips/Tip';
 import { verdictWording } from '../tips/tipWording';
 
-const VERDICT: Record<RetroVerdict, { label: string; tone: ChipTone }> = {
+export const VERDICT: Record<RetroVerdict, { label: string; tone: ChipTone }> = {
   helped: { label: 'Helped', tone: 'ok' },
   someEffect: { label: 'Some effect', tone: 'warn' },
   noEffect: { label: 'No effect', tone: 'danger' },

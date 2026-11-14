@@ -94,6 +94,32 @@ public static class RetrosTestIds
     public const string RetroRecurringRow = "retro-recurring-row";
     public const string RetroThemeRename = "retro-theme-rename";
     public const string RetroKeepsWorking = "retro-keeps-working";
+    // SHIP-731 themes touch
+    public const string RetroThemeCards = "retro-theme-cards";
+    public const string RetroThemeAxis = "retro-theme-axis";
+    public const string RetroThemeCard = "retro-theme-card";
+    public const string RetroThemeCardOpen = "retro-theme-card-open";
+    public const string RetroHeatStrip = "retro-heat-strip";
+    public const string RetroHeatCell = "retro-heat-cell";
+    public const string RetroHeatTotal = "retro-heat-total";
+    public const string RetroHeatNoSprint = "retro-heat-no-sprint";
+    public const string RetroThemeSheet = "retro-theme-sheet";
+    public const string RetroThemeSheetStatus = "retro-theme-sheet-status";
+    public const string RetroThemeSheetCount = "retro-theme-sheet-count";
+    public const string RetroThemeSheetNoSprint = "retro-theme-sheet-no-sprint";
+    public const string RetroThemeSheetTotal = "retro-theme-sheet-total";
+    public const string RetroThemeSheetAction = "retro-theme-sheet-action";
+    public const string RetroThemeSheetAddAction = "retro-theme-sheet-add-action";
+    public const string RetroThemeSheetLastChange = "retro-theme-sheet-last-change";
+    public const string RetroThemeSheetSeeImpact = "retro-theme-sheet-see-impact";
+    public const string RetroThemeSheetMention = "retro-theme-sheet-mention";
+    public const string RetroThemeSheetAllInSearch = "retro-theme-sheet-all-in-search";
+    public const string RetroThemeSheetRename = "retro-theme-sheet-rename";
+    public const string RetroThemeSheetMerge = "retro-theme-sheet-merge";
+    public const string RetroThemeRenameField = "retro-theme-rename-field";
+    public const string RetroThemeRenameSave = "retro-theme-rename-save";
+    public const string RetroThemeRenameDiscard = "retro-theme-rename-discard";
+    public const string RetroThemeRenameError = "retro-theme-rename-error";
     // Insights: merge dialog
     public const string RetroMergeThemes = "retro-merge-themes";
     public const string RetroMergeDialog = "retro-merge-dialog";
