@@ -15,9 +15,9 @@ public sealed class ChangesPageEndpoints(IProjectAccess access)
 
         // TODO: return ITaskChangesPage.PageAsync(workItemId, commit ?? "all") instead of this made-up page.
         var row = new TaskCommitRowDto(
-            Guid.Parse("0000000c-0000-4000-8001-000000000001"), "acme/storefront", "https://github.com/acme/storefront", "github",
+            Guid.Parse("0000000c-0000-4000-8001-000000000001"), "acme/storefront", new UriBuilder(Uri.UriSchemeHttps, "github.com", -1, "acme/storefront").Uri.ToString(), "github",
             "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8", "a81d4e0", "Add the saved-card picker", "Priya Nair", "Today", "Claude Code", true,
-            1, 0, 1, "https://github.com/acme/storefront/commit/a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8", "ok");
+            1, 0, 1, new UriBuilder(Uri.UriSchemeHttps, "github.com", -1, "acme/storefront/commit/a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8").Uri.ToString(), "ok");
         const string Patch = "@@ -0,0 +1 @@\n+export const savedCards = [];\n";
         DiffFileDto file = new("src/checkout/SavedCards.ts", null, "added", 1, 0, Patch, "0000000000000000000000000000000000000000", 0);
         return new TaskChangesDto(

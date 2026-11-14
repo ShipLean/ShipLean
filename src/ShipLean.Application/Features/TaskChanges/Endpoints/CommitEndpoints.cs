@@ -15,9 +15,9 @@ public sealed class CommitEndpoints(IProjectAccess access)
 
         // TODO: add the commit through ITaskCommits.AddAsync (a commit URL when Repo is empty) and return the item's section.
         var commit = new TaskCommitRowDto(
-            Guid.Parse("0000000c-0000-4000-8001-000000000001"), request.Repo ?? "acme/storefront", "https://github.com/acme/storefront", "github",
+            Guid.Parse("0000000c-0000-4000-8001-000000000001"), request.Repo ?? "acme/storefront", new UriBuilder(Uri.UriSchemeHttps, "github.com", -1, "acme/storefront").Uri.ToString(), "github",
             "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8", "a81d4e0", "Add the saved-card picker", "Priya Nair", "Today", "Joel", false,
-            42, 7, 2, "https://github.com/acme/storefront/commit/a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8", "ok");
+            42, 7, 2, new UriBuilder(Uri.UriSchemeHttps, "github.com", -1, "acme/storefront/commit/a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8").Uri.ToString(), "ok");
         return new TaskCommitsSectionDto(
             workItemId, [commit], new TaskCommitTotalsDto(1, 2, 42, 7),
             [new TaskChangeFilePathDto("acme/storefront", "src/checkout/SavedCards.tsx"), new TaskChangeFilePathDto("acme/storefront", "src/checkout/index.ts")],
