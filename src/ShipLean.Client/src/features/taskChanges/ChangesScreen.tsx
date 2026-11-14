@@ -51,6 +51,8 @@ function WideChanges({ project, itemKey }: ChangesScreenProps) {
   const openFile = params.get('file');
   const layout: DiffLayout = params.get('layout') === 'split' ? 'split' : 'unified';
   const { query, newCommit, reload } = useTaskChanges(project.id, workItemId, commit);
+  // Bumped on every click of a file row, so a click on the file that is already open scrolls to it again.
+  const [scrollNonce, setScrollNonce] = useState(0);
   const [composerTarget, setComposerTarget] = useState<ComposerTarget | null>(null);
   // The marks after the reviewer's last toggle; before one, the marks in storage.
   const [toggled, setToggled] = useState<ViewedState | null>(null);
@@ -149,13 +151,17 @@ function WideChanges({ project, itemKey }: ChangesScreenProps) {
         <FilesColumn
           data={data}
           openFile={openFile}
-          onOpenFile={(path) => update('file', path)}
+          onOpenFile={(path) => {
+            update('file', path);
+            setScrollNonce((n) => n + 1);
+          }}
           {...viewedProps}
         />
         <DiffColumn
           data={data}
           layout={layout}
           openFile={openFile}
+          scrollNonce={scrollNonce}
           markers={markers}
           onAddLine={setComposerTarget}
           composerTarget={composerTarget}

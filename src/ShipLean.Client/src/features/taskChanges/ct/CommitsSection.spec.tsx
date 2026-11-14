@@ -42,6 +42,53 @@ test('CommitsSection_WhenCommitsExist_ShouldShowEachRowAndTheTotals', async ({ m
   await expect(page.getByTestId(ids.sectionOpenComments)).toHaveText('1 open comments');
 });
 
+test('CommitsSection_WhenARowHasAdditionsAndDeletions_ShouldDrawFiveBarsInProportion', async ({
+  mount,
+  page,
+}) => {
+  const base = SECTION.commits[0]!;
+  const commits = [{ ...base, additions: 3, deletions: 2 }];
+  await mount(section({ section: { ...SECTION, commits } }), route);
+  const kinds = await page
+    .getByTestId('task-changes-section-bars')
+    .first()
+    .locator('i')
+    .evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')));
+  expect(kinds).toEqual(['add', 'add', 'add', 'del', 'del']);
+});
+
+test('CommitsSection_WhenACommitWasSentByAnAgent_ShouldShowTheSentByFooter', async ({
+  mount,
+  page,
+}) => {
+  const base = SECTION.commits[0]!;
+  const commits = [{ ...base, addedBy: 'Claude Code', addedByAgent: true }];
+  await mount(section({ section: { ...SECTION, commits } }), route);
+  await expect(page.getByTestId('task-changes-section-sent-by')).toHaveText(
+    'Sent by Claude Code through report_task',
+  );
+});
+
+test('CommitsSection_WhenNoCommitIsFromAnAgent_ShouldHideTheSentByFooter', async ({
+  mount,
+  page,
+}) => {
+  const commits = SECTION.commits.map((c) => ({ ...c, addedByAgent: false }));
+  await mount(section({ section: { ...SECTION, commits } }), route);
+  await expect(page.getByTestId(ids.sectionRow).first()).toBeVisible();
+  await expect(page.getByTestId('task-changes-section-sent-by')).toHaveCount(0);
+});
+
+test('CommitsSection_WhenSomeFilesViewed_ShouldFillTheTrackToTheShare', async ({ mount, page }) => {
+  await mount(section({ viewedCount: 1 }), route);
+  const fill = page.getByTestId('task-changes-section-viewed-fill');
+  const widths = await fill.evaluate((el) => [
+    el.getBoundingClientRect().width,
+    el.parentElement!.getBoundingClientRect().width,
+  ]);
+  expect(widths[0] / widths[1]).toBeCloseTo(1 / 3, 1);
+});
+
 test('ChangesSlot_WhenSomeFilesViewedAtTheHead_ShouldCountOnlyThose', async ({ mount, page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await stubChanges(page, TASK, CHANGES, SECTION);

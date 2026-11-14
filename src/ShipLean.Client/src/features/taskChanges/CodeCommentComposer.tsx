@@ -30,7 +30,7 @@ export function CodeCommentComposer({ target, onPost, onCancel }: CodeCommentCom
   return (
     <div
       data-testid={ids.composer}
-      className="grid w-[460px] max-w-full gap-1.5 rounded-control border border-signal bg-surface p-2"
+      className="grid w-[460px] max-w-full gap-1.5 rounded-control border border-signal bg-panel p-2"
     >
       <span className="text-[length:var(--text-xs)] text-ink-muted">
         Comment on {file} line {target.line} ({target.side}) · {target.sha.slice(0, 7)}

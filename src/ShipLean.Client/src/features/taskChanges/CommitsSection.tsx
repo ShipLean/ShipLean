@@ -30,6 +30,7 @@ export function CommitsSection({
 }: CommitsSectionProps) {
   const { commits, totals } = section;
   const empty = commits.length === 0;
+  const agentNames = [...new Set(commits.filter((c) => c.addedByAgent).map((c) => c.addedBy))];
   return (
     <section
       data-testid={ids.section}
@@ -78,8 +79,9 @@ export function CommitsSection({
                     {commit.authoredAtLabel}
                   </td>
                   <td className="px-2 text-right whitespace-nowrap">
+                    <ChangeBars additions={commit.additions} deletions={commit.deletions} />{' '}
                     <span className="text-good">+{commit.additions}</span>{' '}
-                    <span className="text-danger">−{commit.deletions}</span>
+                    <span className="text-alert">−{commit.deletions}</span>
                   </td>
                 </tr>
               ))}
@@ -87,7 +89,37 @@ export function CommitsSection({
           </table>
         </div>
       )}
+      {agentNames.length > 0 ? (
+        <div
+          data-testid="task-changes-section-sent-by"
+          className="text-[length:var(--text-xs)] text-ink-muted"
+        >
+          Sent by {agentNames.join(', ')} through <code>report_task</code>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+// Five squares sized by the additions to deletions ratio, as in the mock.
+function ChangeBars({ additions, deletions }: { additions: number; deletions: number }) {
+  const total = additions + deletions || 1;
+  const green = Math.round((additions / total) * 5);
+  const red = Math.min(5 - green, Math.round((deletions / total) * 5));
+  return (
+    <span
+      data-testid="task-changes-section-bars"
+      aria-hidden="true"
+      className="inline-flex gap-px align-middle"
+    >
+      {[0, 1, 2, 3, 4].map((i) => (
+        <i
+          key={i}
+          data-kind={i < green ? 'add' : i < green + red ? 'del' : 'none'}
+          className={`size-1.5 rounded-[1px] ${i < green ? 'bg-good' : i < green + red ? 'bg-alert' : 'bg-edge'}`}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -121,7 +153,7 @@ function Header({
         >
           {totals.commits} commits · {totals.files} files ·{' '}
           <span className="text-good">+{totals.additions}</span>{' '}
-          <span className="text-danger">−{totals.deletions}</span>
+          <span className="text-alert">−{totals.deletions}</span>
         </span>
       )}
       {empty ? null : (
@@ -130,7 +162,7 @@ function Header({
           {section.openComments > 0 ? (
             <span
               data-testid={ids.sectionOpenComments}
-              className="rounded-control bg-warn/20 px-1.5 text-[length:var(--text-xs)]"
+              className="rounded-control bg-caution/20 px-1.5 text-[length:var(--text-xs)]"
             >
               {section.openComments} open comments
             </span>
@@ -139,6 +171,16 @@ function Header({
             data-testid={ids.sectionViewed}
             className="text-[length:var(--text-xs)] text-ink-muted"
           >
+            <span
+              aria-hidden="true"
+              className="mr-1.5 inline-block h-1.5 w-[90px] overflow-hidden rounded-full bg-panel align-middle"
+            >
+              <i
+                data-testid="task-changes-section-viewed-fill"
+                className="block h-full bg-signal"
+                style={{ width: `${totals.files === 0 ? 0 : (viewedCount / totals.files) * 100}%` }}
+              />
+            </span>
             {viewedCount} / {totals.files} files viewed
           </span>
           <Link

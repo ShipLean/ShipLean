@@ -108,7 +108,7 @@ export function ChangesToolbar({
                   </span>
                   <span>
                     <span className="text-good">+{commit.additions}</span>{' '}
-                    <span className="text-danger">−{commit.deletions}</span>
+                    <span className="text-alert">−{commit.deletions}</span>
                   </span>
                 </button>
               ))}
@@ -125,7 +125,7 @@ export function ChangesToolbar({
         ))}
         <span className="text-[length:var(--text-sm)] text-ink-muted">
           {fileTotal} files · <span className="text-good">+{additions}</span>{' '}
-          <span className="text-danger">−{deletions}</span>
+          <span className="text-alert">−{deletions}</span>
         </span>
         <span className="h-[18px] w-px bg-edge" />
         <span

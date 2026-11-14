@@ -53,7 +53,7 @@ function Thread({
   return (
     <div
       data-testid={ids.thread}
-      className="grid gap-1.5 rounded-control border border-edge bg-surface px-3 py-2 text-[length:var(--text-sm)]"
+      className="grid gap-1.5 rounded-control border border-edge bg-panel px-3 py-2 text-[length:var(--text-sm)]"
     >
       <div className="flex min-w-0 items-center gap-1.5 font-[family-name:var(--font-mono)] text-[length:var(--text-2xs)] text-ink-muted">
         <span className="truncate">
