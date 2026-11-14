@@ -224,6 +224,8 @@ export const settingsTestIds = {
   myProjectLeaveConfirm: 'settings-my-project-leave-confirm',
   myProjectLeaveCancel: 'settings-my-project-leave-cancel',
   myProjectLeaveError: 'settings-my-project-leave-error',
+  // SHIP-733 projects touch
+  myProjectLeaveRow: 'settings-my-project-leave-row',
   sessionsPanel: 'settings-sessions-panel',
   signOutOthers: 'settings-sign-out-others',
   resetViews: 'settings-reset-views',
