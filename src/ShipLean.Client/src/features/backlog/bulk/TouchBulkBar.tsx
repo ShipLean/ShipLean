@@ -79,7 +79,7 @@ export function TouchBulkBar(props: TouchBulkBarProps) {
         data-testid={ids.bulkBar}
         role="toolbar"
         aria-label="Actions for the selected rows"
-        className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-1.5 border-t-2 border-signal bg-panel px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-6px_18px_rgb(0_0_0/0.08)]"
+        className="fixed inset-x-0 bottom-0 z-[45] flex items-center gap-1.5 border-t-2 border-signal bg-panel px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-6px_18px_rgb(0_0_0/0.08)]"
       >
         <div className="grid min-w-0 flex-1 leading-tight">
           <b data-testid={ids.bulkCount} className="truncate text-[length:var(--text-base)]">

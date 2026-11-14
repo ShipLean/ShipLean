@@ -13,7 +13,10 @@ export function useSelectMoreActions(
   review: BacklogReviewDto | null,
 ): SheetAction[] {
   const { selecting, start } = useTouchSelectMode();
-  const unestimated = review?.checks.find((check) => check.id === 'unestimated')?.itemIds ?? [];
+  const unestimated = useMemo(
+    () => review?.checks.find((check) => check.id === 'unestimated')?.itemIds ?? [],
+    [review],
+  );
   const count = unestimated.length;
   return useMemo(
     () => [
@@ -28,8 +31,6 @@ export function useSelectMoreActions(
             },
           ]),
     ],
-    // `unestimated` is a fresh array only when the review is.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selecting, start, queue, count, review],
+    [selecting, start, queue, count, unestimated],
   );
 }
