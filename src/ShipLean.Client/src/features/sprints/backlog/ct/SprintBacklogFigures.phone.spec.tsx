@@ -58,10 +58,14 @@ test('Burndown_WhenDraggedOnPhone_ShouldFollowTheFinger', async ({ mount, page }
 test('SprintBacklog_WhenCommittedTileTapped_ShouldLinkToCapacity', async ({ mount, page }) => {
   await open(page, mount);
   await stubCapacity(page);
-  const tile = page.getByTestId(ids.kpiCapacityEdit);
-  await expect(tile).toHaveAttribute('href', `/p/SHIP/sprints/${SPRINT_24}/capacity`);
+  // The figure itself sits inside the link: the whole tile is the link, not a small label link.
+  const figure = page.getByTestId(ids.kpiCommitted);
+  await expect(figure.locator('xpath=ancestor::a')).toHaveAttribute(
+    'href',
+    `/p/SHIP/sprints/${SPRINT_24}/capacity`,
+  );
 
-  await tile.tap();
+  await figure.tap();
 
   await expect(page.getByTestId(ids.capacity)).toBeVisible();
   await expect(page.getByTestId(ids.backlog)).toHaveCount(0);
