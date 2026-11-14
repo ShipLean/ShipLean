@@ -12,7 +12,7 @@ const BELOW: Partial<Record<WorkItemTypeId, WorkItemTypeId>> = {
 };
 
 /**
- * The rows of a card's actions sheet: Open, what is under it (Features and Epics), Move to, Lane (when another lane
+ * The rows of a card's actions sheet: Open, Assign (Owner on Features and Epics), what is under it (Features and Epics), Move to, Lane (when another lane
  * takes drops), Move to top and bottom. Moves go through `BoardMoves.moveTo`, the desktop drop's path.
  */
 export function useCardActionRows(card: CardDto, actions: CardActions): SheetAction[] {
@@ -20,6 +20,11 @@ export function useCardActionRows(card: CardDto, actions: CardActions): SheetAct
   const { view } = actions;
   const rows: SheetAction[] = [
     { id: 'open', label: 'Open', onSelect: () => actions.openItem(card.key) },
+    {
+      id: 'assign',
+      label: view.level === 'stories' ? 'Assign' : 'Owner',
+      onSelect: () => actions.pick(card.id, 'assign'),
+    },
   ];
   const belowType = BELOW[card.type.id];
   if (actions.showBelow && belowType)
