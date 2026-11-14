@@ -38,5 +38,6 @@ public class RevisionNotesTests : ApiFixture
         note.Changes.Count.ShouldBe(1);
         note.Changes[0].Field.ShouldBe("commits");
         note.Changes[0].ToLabel.ShouldBe("Commits +3 (acme/storefront)");
+        note.Changes[0].FromLabel.ShouldBeNull();
     }
 }
