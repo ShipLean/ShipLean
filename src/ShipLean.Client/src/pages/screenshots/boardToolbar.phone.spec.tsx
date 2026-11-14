@@ -96,7 +96,7 @@ for (const theme of THEMES) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await stubBoard(page, storiesBoard());
     await mount(<BoardHarness />, route);
-    await page.getByTestId(touchTestIds.moreButton).tap();
+    await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(ids.moreSheet)).toBeVisible();
 

@@ -127,7 +127,7 @@ test('Cell_WhenItOffersNewOrHasOlderCards_ShouldNotShowNoCards', async ({ mount,
   ).not.toContainText('No cards');
 });
 
-test('ColumnHeader_WhenInfoOpenedAtTouch_ShouldKeepThePopoverButtonItsNaturalSize', async ({
+test('ColumnHeader_WhenInfoOpenedAtTouch_ShouldGiveTheEditButtonATouchTarget', async ({
   mount,
   page,
 }) => {
@@ -135,7 +135,7 @@ test('ColumnHeader_WhenInfoOpenedAtTouch_ShouldKeepThePopoverButtonItsNaturalSiz
   await page.getByTestId(ids.dodOpen).tap();
 
   const edit = await box(page, ids.dodSettings);
-  expect(edit.height).toBeLessThan(TOUCH);
+  expect(edit.height).toBeGreaterThanOrEqual(TOUCH);
 });
 
 test('ShowOlder_WhenTouch_ShouldBeAFullWidth32pxRow', async ({ mount, page }) => {

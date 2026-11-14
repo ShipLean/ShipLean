@@ -33,7 +33,7 @@ test('BoardToolbar_WhenTouch_ShouldFitOneRowWithMetaLine', async ({ mount, page 
   const parts = [
     page.getByTestId(ids.levelSwitch),
     page.getByTestId(ids.filterToggle),
-    page.getByTestId(touchTestIds.moreButton),
+    page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton),
   ];
   const boxes = [];
   for (const part of parts) boxes.push((await part.boundingBox())!);
@@ -59,7 +59,7 @@ test('BoardMoreSheet_WhenCompactPicked_ShouldSwitchCards', async ({ mount, page 
   await mount(<BoardHarness />, stories);
   await expect(page.getByTestId(ids.card).first()).toHaveAttribute('data-compact', 'false');
 
-  await page.getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet.getByTestId(ids.cardsOption)).toHaveCount(2);
   await expect(sheet.getByTestId(ids.cardsOption).first()).toHaveAttribute('aria-pressed', 'true');
@@ -78,7 +78,7 @@ test('BoardMoreSheet_WhenFeaturesBoard_ShouldOfferLanesAndPickClosesIt', async (
   const server = await stubBoard(page, featuresBoard(), { level: 'features' });
   await mount(<BoardHarness level="features" />, features);
 
-  await page.getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet.getByTestId(ids.lanesOption)).toHaveText(['None', 'Swimlanes✓', 'By Epic']);
   await sheet.getByTestId(ids.lanesOption).filter({ hasText: 'By Epic' }).tap();
@@ -100,7 +100,7 @@ test('BoardMoreSheet_WhenBoardSettingsPicked_ShouldAskForTheColumnsPane', async 
     stories,
   );
 
-  await page.getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   await page.getByTestId(touchTestIds.actionSheetRow).filter({ hasText: 'Board settings' }).tap();
 
   await expect(page.getByTestId(ids.locationProbe)).toHaveText(
