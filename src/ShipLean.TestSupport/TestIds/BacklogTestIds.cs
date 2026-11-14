@@ -44,7 +44,7 @@ public static class BacklogTestIds
     public const string Row = "backlog-row";
     public const string Rank = "backlog-rank";
     public const string TouchHandle = "backlog-touch-handle";
-    public const string TouchHandleGrip = "backlog-touch-handle-grip";
+    public const string TouchHandleGhost = "backlog-touch-handle-ghost";
     public const string Key = "backlog-key";
     public const string Title = "backlog-title";
     public const string State = "backlog-state";

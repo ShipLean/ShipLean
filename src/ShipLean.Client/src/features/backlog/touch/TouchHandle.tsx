@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { TouchDragGhost } from '../../../touch/TouchDragGhost';
 import { useLongPressDrag } from '../../../touch/useLongPressDrag';
 import { backlogTestIds as ids } from '../testIds';
@@ -15,6 +15,9 @@ import { backlogTestIds as ids } from '../testIds';
  *   normally under the finger.
  * - `onDrop(targetId)`: the finger let go after a lift and a move. `targetId` is the `data-drop-target` of the element
  *   under it (TouchRow sets it to the row's id), or null off any target. Pass it to `useTouchReorder().drop`.
+ * - `onOver?(targetId)`: called as the finger moves while lifted (and when the page scrolls under it) with the
+ *   `data-drop-target` of the element under it, or null off any target, and with null when the drag ends. A lane lights
+ *   its drop target with it (Planning's sprint header).
  * - `ghost?`: what follows the finger while lifted (a copy of the row); left out, a chip with the rank.
  * - `onLiftedChange?(lifted)`: called when the lift starts and ends, so the row can fade where it was.
  *
@@ -26,6 +29,7 @@ export function TouchHandle({
   rank,
   disabled = false,
   onDrop,
+  onOver,
   ghost,
   onLiftedChange,
 }: {
@@ -33,14 +37,22 @@ export function TouchHandle({
   rank: number | string;
   disabled?: boolean;
   onDrop: (targetId: string | null) => void;
+  onOver?: (targetId: string | null) => void;
   ghost?: ReactNode;
   onLiftedChange?: (lifted: boolean) => void;
 }) {
   const drag = useLongPressDrag({
     handle: true,
+    onMove: (target) => onOver?.(target?.dataset.dropTarget ?? null),
     onDrop: (target) => onDrop(target?.dataset.dropTarget ?? null),
   });
   useEffect(() => onLiftedChange?.(drag.lifted), [drag.lifted, onLiftedChange]);
+  // The drag ended (drop, tap or cancel): nothing is over any more.
+  const wasLifted = useRef(false);
+  useEffect(() => {
+    if (wasLifted.current && !drag.lifted) onOver?.(null);
+    wasLifted.current = drag.lifted;
+  }, [drag.lifted, onOver]);
   const face = (
     <>
       <span data-testid={ids.rank} className="text-[length:var(--text-xs)] tabular-nums">
@@ -68,7 +80,7 @@ export function TouchHandle({
         <TouchDragGhost x={drag.x} y={drag.y}>
           {ghost ?? (
             <div
-              data-testid={ids.touchHandleGrip}
+              data-testid={ids.touchHandleGhost}
               className="flex min-h-14 min-w-[var(--touch-target)] flex-col items-center justify-center px-3"
             >
               {face}

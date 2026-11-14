@@ -43,7 +43,7 @@ export const backlogTestIds = {
   row: 'backlog-row',
   rank: 'backlog-rank',
   touchHandle: 'backlog-touch-handle',
-  touchHandleGrip: 'backlog-touch-handle-grip',
+  touchHandleGhost: 'backlog-touch-handle-ghost',
   key: 'backlog-key',
   title: 'backlog-title',
   state: 'backlog-state',

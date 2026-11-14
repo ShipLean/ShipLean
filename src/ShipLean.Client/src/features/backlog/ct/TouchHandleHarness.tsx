@@ -12,11 +12,13 @@ function HarnessRow({
   rank,
   disabled,
   log,
+  over,
 }: {
   id: string;
   rank: number;
   disabled: boolean;
   log: (line: string) => void;
+  over: (target: string | null) => void;
 }) {
   const [lifted, setLifted] = useState(false);
   const body = <span className="flex-1 py-3 pr-3 text-sm font-medium">Row {id}</span>;
@@ -33,6 +35,7 @@ function HarnessRow({
           rank={rank}
           disabled={disabled}
           onDrop={(target) => log(`drop ${id} on ${target ?? 'nothing'}`)}
+          onOver={over}
           onLiftedChange={setLifted}
           ghost={<div className="flex min-h-14 w-80 items-stretch">{body}</div>}
         />
@@ -44,7 +47,12 @@ function HarnessRow({
 
 export function TouchHandleHarness({ disabled = false }: { disabled?: boolean }) {
   const [lines, setLines] = useState<string[]>([]);
+  const [overs, setOvers] = useState<string[]>([]);
   const log = (line: string) => setLines((previous) => [...previous, line]);
+  const over = (target: string | null) =>
+    setOvers((previous) =>
+      previous.at(-1) === String(target) ? previous : [...previous, String(target)],
+    );
   return (
     <div className="min-h-screen bg-canvas text-ink">
       <header
@@ -56,9 +64,23 @@ export function TouchHandleHarness({ disabled = false }: { disabled?: boolean })
       <main className="pt-[var(--mobile-bar-height)] pb-8">
         <ul>
           {IDS.map((id, index) => (
-            <HarnessRow key={id} id={id} rank={index + 1} disabled={disabled} log={log} />
+            <HarnessRow
+              key={id}
+              id={id}
+              rank={index + 1}
+              disabled={disabled}
+              log={log}
+              over={over}
+            />
           ))}
         </ul>
+        <ol data-testid={touchHandleHarnessIds.overLog} className="sr-only">
+          {overs.map((target, index) => (
+            <li key={index} data-testid={touchHandleHarnessIds.overLine}>
+              {target}
+            </li>
+          ))}
+        </ol>
         <ol data-testid={touchHandleHarnessIds.log} className="px-4 pt-4 text-xs text-ink-muted">
           {lines.map((line, index) => (
             <li key={index} data-testid={touchHandleHarnessIds.logLine}>
