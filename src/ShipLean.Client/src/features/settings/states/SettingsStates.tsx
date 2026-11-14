@@ -24,6 +24,7 @@ import {
   type StateRowModel,
 } from './stateModel';
 import { TypeSegment, typeLabel } from './TypeSegment';
+import { TypeSelect } from './touch/TypeSelect';
 import { useStateColumns } from './useStateColumns';
 
 const BOARD_OF: Record<Exclude<WorkItemTypeId, 'task' | 'bau'>, string> = {
@@ -132,6 +133,15 @@ export function SettingsStates({ projectId }: { projectId: string }) {
           setType(next);
         }}
       />
+      <TypeSelect
+        active={type}
+        counts={countsOf(saved, changes)}
+        errored={erroredTypes}
+        onPick={(next) => {
+          setDeleting(undefined);
+          setType(next);
+        }}
+      />
       <div className="text-[length:var(--text-sm)] text-ink-muted">
         <b className="text-ink">{typeLabel(type)}</b> · {rows.length} states. The order is the order
         in state menus. New items start in the first Proposed state.
@@ -145,8 +155,8 @@ export function SettingsStates({ projectId }: { projectId: string }) {
           {typeError}
         </div>
       )}
-      <table className="w-full text-[length:var(--text-sm)]">
-        <thead>
+      <table className="w-full text-[length:var(--text-sm)] touch:block">
+        <thead className="touch:hidden">
           <tr className="text-left text-ink-muted">
             <th className="px-3 py-1 font-normal">Order</th>
             <th className="px-3 py-1 font-normal">State</th>
@@ -156,7 +166,7 @@ export function SettingsStates({ projectId }: { projectId: string }) {
             <th />
           </tr>
         </thead>
-        <tbody>
+        <tbody className="touch:block">
           {rows.map((row, position) => (
             <Fragment key={row.id}>
               <StateRow
@@ -174,8 +184,8 @@ export function SettingsStates({ projectId }: { projectId: string }) {
                 onDelete={() => startDelete(row.id)}
               />
               {deleting === row.id ? (
-                <tr>
-                  <td colSpan={6} className="p-0">
+                <tr className="touch:block">
+                  <td colSpan={6} className="p-0 touch:block">
                     <DeleteStateForm
                       row={row}
                       targets={rows.filter((r) => r.id !== row.id)}

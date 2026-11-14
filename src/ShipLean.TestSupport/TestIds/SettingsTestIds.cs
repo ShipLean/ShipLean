@@ -86,6 +86,9 @@ public static class SettingsTestIds
     public const string StateAddCategory = "settings-state-add-category";
     public const string StateAdd = "settings-state-add";
 
+    // SHIP-732 states touch
+    public const string StateTypeSelect = "settings-state-type-select";
+
     public const string UsersPanel = "settings-users-panel";
     public const string UsersLoading = "settings-users-loading";
     public const string UsersLoadFailed = "settings-users-load-failed";
