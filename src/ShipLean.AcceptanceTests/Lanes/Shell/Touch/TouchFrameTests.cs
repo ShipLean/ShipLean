@@ -49,7 +49,7 @@ public class TouchFrameTests : SeededAcceptanceTest
 
         await touch.Drawer.GetByTestId(ShellTestIds.NavSprints).TapAsync();
 
-        await Expect(new AllSprints(Page).List).ToBeVisibleAsync();
+        await Expect(new AllSprints(Page).Rows.First).ToBeVisibleAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/sprints$"));
         await Expect(touch.Drawer).ToHaveCountAsync(0);
         await Expect(touch.DrawerScrim).ToHaveCountAsync(0);
