@@ -1,7 +1,13 @@
-import { useCallback, type KeyboardEvent } from 'react';
+import { useCallback, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { useCardDrag } from '../moves/useCardDrag';
 import { useTaskboardMoves } from '../moves/TaskboardMovesContext';
+import { useItemPeek } from '../../itemPeek/useItemPeek';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { taskboardTestIds as ids } from '../testIds';
+import { AssigneeSheet } from './AssigneeSheet';
+import { MoveToStorySheet } from './MoveToStorySheet';
+import { TaskActionsSheet, type TaskSheet } from './TaskActionsSheet';
 import { TaskCardFace } from './TaskCardFace';
 
 /** One task card: dragged by the pointer, moved with Alt + arrow keys, picked up with its button (unassigned cards in a Proposed state). */
@@ -17,6 +23,10 @@ export function TaskCard({
   showParent: boolean;
 }) {
   const moves = useTaskboardMoves();
+  const { touch } = useTouchShell();
+  const { open: openItem } = useItemPeek();
+  // The task ⋯ sheet, or one of its pickers; set it to 'actions' to open the sheet from elsewhere.
+  const [sheet, setSheet] = useState<TaskSheet | null>(null);
   const drag = useCardDrag(card, rowId);
   // A card a keyboard move just put down is a new element: it takes the focus back.
   const { ref: dragRef } = drag;
@@ -32,15 +42,65 @@ export function TaskCard({
   function onKeyDown(event: KeyboardEvent) {
     if (event.altKey && moves.keyMove(card, rowId, event.key)) event.preventDefault();
   }
+  // A tap on the card (not on its link or buttons) opens the item at touch widths.
+  function onClick(event: MouseEvent) {
+    if (!touch || event.defaultPrevented) return;
+    if ((event.target as HTMLElement).closest('a, button')) return;
+    openItem(card.key);
+  }
+  const close = () => setSheet(null);
   return (
-    <TaskCardFace
-      card={card}
-      view={view}
-      showParent={showParent}
-      articleRef={ref}
-      articleProps={{ ...drag.attributes, ...drag.listeners, onKeyDown }}
-      style={drag.style}
-      pickUp={pickUp ? () => pickUp(card, rowId) : null}
-    />
+    <>
+      <TaskCardFace
+        card={card}
+        view={view}
+        showParent={showParent}
+        articleRef={ref}
+        articleProps={{ ...drag.attributes, ...drag.listeners, onKeyDown, onClick }}
+        style={drag.style}
+        pickUp={pickUp ? () => pickUp(card, rowId) : null}
+        actions={
+          touch ? (
+            <button
+              type="button"
+              data-testid={ids.cardActions}
+              aria-label={`Actions for ${card.key}`}
+              aria-haspopup="dialog"
+              className="inline-grid size-[var(--touch-target)] flex-none place-items-center rounded-control text-[length:var(--text-md)] leading-none text-ink-muted active:bg-signal-soft"
+              onClick={() => setSheet('actions')}
+            >
+              ⋯
+            </button>
+          ) : null
+        }
+      />
+      {touch ? (
+        <>
+          <TaskActionsSheet
+            card={card}
+            rowId={rowId}
+            open={sheet === 'actions'}
+            onShow={setSheet}
+            onOpenItem={() => openItem(card.key)}
+          />
+          {sheet === 'story' ? (
+            <MoveToStorySheet
+              card={card}
+              rowId={rowId}
+              onClose={close}
+              onBack={() => setSheet('actions')}
+            />
+          ) : null}
+          {sheet === 'assignee' ? (
+            <AssigneeSheet
+              card={card}
+              rowId={rowId}
+              onClose={close}
+              onBack={() => setSheet('actions')}
+            />
+          ) : null}
+        </>
+      ) : null}
+    </>
   );
 }
