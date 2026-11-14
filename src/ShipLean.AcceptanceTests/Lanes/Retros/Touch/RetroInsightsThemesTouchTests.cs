@@ -85,6 +85,12 @@ public class RetroInsightsThemesTouchTests : SeededAcceptanceTest
         var counts = await themes.SheetCounts.EvaluateAllAsync<int[]>("cells => cells.map(c => Number(c.getAttribute('data-count')))");
         counts.Count(count => count == 2).ShouldBe(4);
         counts.Where(count => count != 2).ShouldAllBe(count => count == 0);
+        var pairs = await themes.SheetCountPairsAsync();
+        foreach (var sprint in Mentioned)
+        {
+            pairs.ShouldContain($"{sprint}=2");
+        }
+
         await Expect(themes.SheetNoSprint).ToContainTextAsync("No sprint 0");
         await Expect(themes.SheetTotal).ToContainTextAsync("Total 8");
         await Expect(themes.SheetActions).ToHaveCountAsync(1);
@@ -168,7 +174,7 @@ public class RetroInsightsThemesTouchTests : SeededAcceptanceTest
         await themes.MergeInto.TapAsync();
 
         // The merge view is the next task's; this one writes the address and leaves the sheet.
-        await Expect(Page).ToHaveURLAsync(new Regex($"[?&]merge={themeId}"));
+        await Expect(Page).ToHaveURLAsync(new Regex($"[?&]merge={themeId}($|&)"));
         Page.Url.ShouldNotContain("sheet=");
         await Expect(themes.Sheet).ToHaveCountAsync(0);
     }

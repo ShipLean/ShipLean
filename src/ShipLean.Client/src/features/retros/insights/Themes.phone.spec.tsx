@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../touch/testIds';
-import { insightsWeeks, retroInsights, retroSearch, stubRetros } from '../ct/retroFixtures';
+import {
+  actionDialog,
+  insightsWeeks,
+  retroInsights,
+  retroSearch,
+  stubRetros,
+} from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 import { ThemesAddressHarness } from './ct/ThemesAddressHarness';
 
@@ -66,13 +72,19 @@ for (const colour of THEMES) {
     mount,
     page,
   }) => {
+    // 85dvh of 840 is a whole number of pixels, so the sheet's text lands on the same pixels every run.
+    await page.setViewportSize({ width: 390, height: 840 });
     await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
     await stubRetros(page);
     await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
     const sheet = page.getByTestId(touchTestIds.sheet);
-    await expect(page.getByTestId(ids.retroThemeSheetMention).first()).toBeVisible();
+    // Everything the sheet loads is in before the shot: the bottom-anchored sheet grows as it arrives.
+    await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+    await expect(page.getByTestId(ids.retroThemeSheetAddAction)).toContainText('open point');
+    // The long sheet has lines on fractional heights that settle a pixel apart from run to run (about 1000 pixels of text edges).
     await expect(sheet).toHaveScreenshot(`retro-insights-theme.${colour}.png`, {
       animations: 'disabled',
+      maxDiffPixels: 1500,
     });
   });
 
@@ -80,11 +92,14 @@ for (const colour of THEMES) {
     mount,
     page,
   }) => {
+    // 85dvh of 840 is a whole number of pixels, so the sheet's text lands on the same pixels every run.
+    await page.setViewportSize({ width: 390, height: 840 });
     await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
     await stubRetros(page);
     await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
     await page.getByTestId(ids.retroThemeSheetRename).tap();
     await page.getByTestId(ids.retroThemeRenameField).fill('Handoff contracts missing');
+    await expect(page.getByTestId(ids.retroThemeRenameField)).toBeFocused();
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet).toHaveScreenshot(`retro-insights-rename.${colour}.png`, {
       animations: 'disabled',
@@ -202,7 +217,11 @@ test('ThemeSheet_WhenOpened_ShouldShowEverythingAboutTheTheme', async ({ mount, 
   const actions = body.getByTestId(ids.retroThemeSheetAction);
   await expect(actions).toHaveCount(helped.actionItems.length);
   await expect(actions.first()).toContainText(helped.actionItems[0].title);
-  await expect(body.getByTestId(ids.retroThemeSheetAddAction)).toContainText('+ Action item on');
+  // The dialog's own count of the theme's undecided points, not the longer list it offers beyond them.
+  expect(actionDialog.selected.length).not.toBe(actionDialog.offered.length);
+  await expect(body.getByTestId(ids.retroThemeSheetAddAction)).toHaveText(
+    `+ Action item on ${actionDialog.selected.length} open point`,
+  );
   const change = body.getByTestId(ids.retroThemeSheetLastChange);
   await expect(change).toContainText('Helped');
   await expect(change).toContainText('at most half of what they were before');

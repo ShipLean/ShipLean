@@ -30,6 +30,10 @@ public sealed class RetroThemesTouchPart(IPage page)
 
     public ILocator SheetCounts => Sheet.GetByTestId(RetrosTestIds.RetroThemeSheetCount);
 
+    // Each shown column's count as "<column key>=<count>" (a sprint's key is its id), in column order.
+    public async Task<string[]> SheetCountPairsAsync() =>
+        await SheetCounts.EvaluateAllAsync<string[]>("cells => cells.map(c => c.getAttribute('data-column-key') + '=' + c.getAttribute('data-count'))");
+
     public ILocator SheetNoSprint => Sheet.GetByTestId(RetrosTestIds.RetroThemeSheetNoSprint);
 
     public ILocator SheetTotal => Sheet.GetByTestId(RetrosTestIds.RetroThemeSheetTotal);
