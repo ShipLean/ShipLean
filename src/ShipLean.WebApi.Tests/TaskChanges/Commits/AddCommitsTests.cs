@@ -8,6 +8,7 @@ using ShipLean.Contracts.TaskChanges;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.TaskChanges;
 using static ShipLean.TestSupport.TaskChanges.FakeCodeHost;
 
@@ -131,7 +132,7 @@ public class AddCommitsTests : ApiFixture
         var item = await NewItemAsync("task");
         var before = await RevisionsAsync(item);
         var events = new List<ProjectEvent>();
-        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e => { events.Add(e); return Task.CompletedTask; });
+        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e => Record(events, e));
 
         var outcome = await AddAsync(item, CommitSource.ReportTask, new CommitRef(Storefront, Shas.First), new CommitRef(PaymentsUrl, Shas.PaymentsOnly));
 
@@ -148,7 +149,7 @@ public class AddCommitsTests : ApiFixture
         var item = await NewItemAsync("task");
         var before = await RevisionsAsync(item);
         var events = new List<ProjectEvent>();
-        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e => { events.Add(e); return Task.CompletedTask; });
+        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e => Record(events, e));
 
         await AddAsync(item, CommitSource.Migration, new CommitRef(Storefront, Shas.First));
 
@@ -207,6 +208,12 @@ public class AddCommitsTests : ApiFixture
         (await CountRowsAsync(item)).ShouldBe(0);
     }
 
+    private static Task Record(List<ProjectEvent> events, ProjectEvent projectEvent)
+    {
+        events.Add(projectEvent);
+        return Task.CompletedTask;
+    }
+
     private async Task<AddCommitsOutcome> AddAsync(Guid item, CommitSource via, params CommitRef[] commits)
     {
         await using var scope = Host.Services.CreateAsyncScope();
@@ -246,7 +253,7 @@ public class AddCommitsTests : ApiFixture
 
     private sealed class RecordingCodeComments : ICodeComments
     {
-        public List<IReadOnlyList<TaskCommit>> Marked { get; } = [];
+        public IList<IReadOnlyList<TaskCommit>> Marked { get; } = [];
 
         public Task MarkOutdatedAsync(Guid workItemId, IReadOnlyList<TaskCommit> added, CancellationToken cancellationToken = default)
         {
