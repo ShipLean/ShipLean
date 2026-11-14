@@ -18,6 +18,7 @@ export function InsightsTouchToolbar({
   views,
   view,
   range,
+  loaded,
   unthemedTotal,
   onView,
   merge,
@@ -26,6 +27,8 @@ export function InsightsTouchToolbar({
   views: readonly { id: string; short: string }[];
   view: string;
   range: RetroRange;
+  // Whether the insights have loaded, for a test to wait on.
+  loaded: boolean;
   unthemedTotal: number;
   onView: (view: string) => void;
   merge: ReactNode;
@@ -58,7 +61,7 @@ export function InsightsTouchToolbar({
     },
   ];
   return (
-    <div data-testid={ids.retroInsightsToolbar} className="grid gap-2">
+    <div data-testid={ids.retroInsightsToolbar} data-loaded={loaded} className="grid gap-2">
       <div
         role="group"
         aria-label="Insight"

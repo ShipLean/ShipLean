@@ -25,8 +25,8 @@ public class RetroInsightsFrameTouchTests : SeededAcceptanceTest
     public async Task Tabs_WhenOpenedAt320_ShouldFitAndKeepTheViewInTheAddress()
     {
         await Page.SetViewportSizeAsync(320, 700);
-        var (insights, touch) = await OpenAsync();
-        await Expect(insights.RecurringRows.First).ToBeVisibleAsync();
+        var (_, touch) = await OpenAsync();
+        await Expect(touch.Toolbar).ToHaveAttributeAsync("data-loaded", "true");
 
         await Expect(touch.Tabs).ToHaveTextAsync(["Themes", "Action items", "Impact"]);
         var last = (await touch.Tabs.Nth(2).BoundingBoxAsync())!;
@@ -114,8 +114,8 @@ public class RetroInsightsFrameTouchTests : SeededAcceptanceTest
     {
         await ArrangeRecurringThemeAsync($"Phone scroll theme {Guid.NewGuid():N}"[..40]);
         await Page.SetViewportSizeAsync(390, 300);
-        var (insights, touch) = await OpenAsync();
-        await Expect(insights.RecurringRows.First).ToBeVisibleAsync();
+        var (_, touch) = await OpenAsync();
+        await Expect(touch.Toolbar).ToHaveAttributeAsync("data-loaded", "true");
 
         var pinnedBottom = (await Page.GetByTestId(TouchTestIds.TopBar).BoundingBoxAsync())!.Y + (await Page.GetByTestId(TouchTestIds.TopBar).BoundingBoxAsync())!.Height;
         var before = (await touch.Toolbar.BoundingBoxAsync())!;

@@ -78,6 +78,7 @@ export function RetroInsightsPanel({ project }: { project: ProjectDto }) {
             views={VIEWS}
             view={view}
             range={range}
+            loaded={query.data !== undefined}
             unthemedTotal={query.data?.unthemed.total ?? 0}
             onView={(next) => set('view', next)}
             merge={merge}
