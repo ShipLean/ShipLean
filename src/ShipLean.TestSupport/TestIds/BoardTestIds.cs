@@ -14,6 +14,14 @@ public static class BoardTestIds
     public const string ColumnName = "board-column-name";
     public const string ColumnHidden = "board-column-hidden";
     public const string ColumnCount = "board-column-count";
+    public const string PagerGrid = "board-pager-grid";
+    public const string ColumnLane = "board-column-lane";
+    public const string ColumnLaneHeader = "board-column-lane-header";
+    public const string ColumnLaneToggle = "board-column-lane-toggle";
+    public const string ColumnLaneName = "board-column-lane-name";
+    public const string ColumnLaneCount = "board-column-lane-count";
+    public const string ColumnLaneSub = "board-column-lane-sub";
+    public const string ColumnEmpty = "board-column-empty";
     public const string ColumnMap = "board-column-map";
     public const string SubDoing = "board-sub-doing";
     public const string SubDone = "board-sub-done";
