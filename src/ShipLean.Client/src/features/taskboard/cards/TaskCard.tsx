@@ -1,8 +1,10 @@
-import { useCallback, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useCallback, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { useCardDrag } from '../moves/useCardDrag';
+import { useTouchCardDrag } from '../moves/useTouchCardDrag';
 import { useTaskboardMoves } from '../moves/TaskboardMovesContext';
 import { useItemPeek } from '../../itemPeek/useItemPeek';
+import { TouchDragGhost } from '../../../touch/TouchDragGhost';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { taskboardTestIds as ids } from '../testIds';
 import { AssigneeSheet } from './AssigneeSheet';
@@ -28,15 +30,25 @@ export function TaskCard({
   // The task ⋯ sheet, or one of its pickers; set it to 'actions' to open the sheet from elsewhere.
   const [sheet, setSheet] = useState<TaskSheet | null>(null);
   const drag = useCardDrag(card, rowId);
+  // On the phone grid a long press lifts the card; held without moving it opens the actions.
+  const { enabled: touchDragOn, drag: touchDrag } = useTouchCardDrag(card, rowId, () =>
+    setSheet('actions'),
+  );
   // A card a keyboard move just put down is a new element: it takes the focus back.
   const { ref: dragRef } = drag;
+  const { ref: touchRef } = touchDrag.props;
   const ref = useCallback(
     (node: HTMLElement | null) => {
       dragRef(node);
+      const stopTouch = node && touchDragOn ? touchRef(node) : undefined;
       // The old element is still focused when the board re-renders: only the one that replaces it takes the focus.
       if (node && node !== document.activeElement && moves.takeFocus(card.key)) node.focus();
+      return () => {
+        stopTouch?.();
+        dragRef(null);
+      };
     },
-    [dragRef, moves, card.key],
+    [dragRef, touchRef, touchDragOn, moves, card.key],
   );
   const pickUp = card.assignee === null && card.state.category === 'proposed' ? moves.pickUp : null;
   function onKeyDown(event: KeyboardEvent) {
@@ -61,10 +73,19 @@ export function TaskCard({
         // A disabled draggable marks its card aria-disabled, which would disable the ⋯ button inside it.
         articleProps={
           touch
-            ? { onKeyDown, onClick }
+            ? {
+                onKeyDown,
+                onClick,
+                // A long press on the title link would start the browser's link drag and cancel the touch: the lift is ours.
+                onDragStart: touchDragOn ? (event: DragEvent) => event.preventDefault() : undefined,
+              }
             : { ...drag.attributes, ...drag.listeners, onKeyDown, onClick }
         }
-        style={drag.style}
+        style={{
+          ...drag.style,
+          ...(touchDragOn ? touchDrag.props.style : undefined),
+          opacity: touchDrag.lifted ? 0.4 : drag.style.opacity,
+        }}
         pickUp={pickUp ? () => pickUp(card, rowId) : null}
         actions={
           touch ? (
@@ -81,6 +102,11 @@ export function TaskCard({
           ) : null
         }
       />
+      {touchDrag.lifted ? (
+        <TouchDragGhost x={touchDrag.x} y={touchDrag.y}>
+          <TaskCardFace card={card} view={view} showParent={showParent} preview />
+        </TouchDragGhost>
+      ) : null}
       {touch ? (
         <>
           <TaskActionsSheet
