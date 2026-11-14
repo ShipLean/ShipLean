@@ -328,6 +328,11 @@ test('Taskboard_WhenSameCardMovedTwice_ShouldNameTheRevisionTheFirstMoveWrote', 
 
   await card(page, 'SHIP-173').focus();
   await page.keyboard.press('Alt+ArrowRight');
+  // The card was focused before the first press, so focus alone proves nothing: wait for the move to be
+  // drawn, or the second press reads the card still in its old column and asks for the same state again.
+  await expect(
+    cell(page, 0, 1).getByTestId(ids.cardKey).filter({ hasText: 'SHIP-173' }),
+  ).toHaveCount(1);
   await expect(card(page, 'SHIP-173')).toBeFocused();
   await page.keyboard.press('Alt+ArrowRight');
 
@@ -351,6 +356,11 @@ test('Taskboard_WhenMoveSettlesWhileNextIsQueued_ShouldRefetchOnlyAfterTheLast',
 
   await card(page, 'SHIP-173').focus();
   await page.keyboard.press('Alt+ArrowRight');
+  // The card was focused before the first press, so focus alone proves nothing: wait for the move to be
+  // drawn, or the second press reads the card still in its old column and asks for the same state again.
+  await expect(
+    cell(page, 0, 1).getByTestId(ids.cardKey).filter({ hasText: 'SHIP-173' }),
+  ).toHaveCount(1);
   await expect(card(page, 'SHIP-173')).toBeFocused();
   await page.keyboard.press('Alt+ArrowRight');
   server.releaseMove();
