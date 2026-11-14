@@ -1,7 +1,7 @@
 import { retrosTestIds as ids } from '../testIds';
 import type { RetroFeaturesAddress, RetroFeaturesShow } from './retroFeaturesAddress';
 
-const SHOWS: { id: RetroFeaturesShow; label: string }[] = [
+export const SHOWS: { id: RetroFeaturesShow; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'To decide' },
   { id: 'waiting', label: 'No Feature retro yet' },

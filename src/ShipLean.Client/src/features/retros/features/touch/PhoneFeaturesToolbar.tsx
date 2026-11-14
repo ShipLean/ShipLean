@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { retrosTestIds as ids } from '../../testIds';
+import { SHOWS } from '../FeaturesToolbar';
 import type { RetroFeaturesAddress, RetroFeaturesShow } from '../retroFeaturesAddress';
-
-const SHOWS: { id: RetroFeaturesShow; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'open', label: 'To decide' },
-  { id: 'waiting', label: 'No Feature retro yet' },
-];
 
 /** One row: the Show filter and a Search button. Search turns the row into a field with Cancel, and Cancel clears it. */
 export function PhoneFeaturesToolbar({

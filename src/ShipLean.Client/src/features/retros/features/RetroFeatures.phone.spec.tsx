@@ -91,7 +91,7 @@ test('RetroFeaturesPhone_WhenOpened_ShouldShowRowLinksAndTheLegendInOrder', asyn
 }) => {
   await serve(page, sampleFeatures);
   await mount(<RetroFeaturesPanel project={project} />, route());
-  await expect(page.locator('table')).toHaveCount(0);
+  await expect(page.getByTestId(ids.retroFeaturesTableBox)).toHaveCount(0);
   await expect(page.getByTestId(ids.retroFeaturesCount)).toHaveText('3 Features with retros');
   await expect(page.getByTestId(ids.retroFeaturesLegendItem)).toHaveText([
     'Went well',

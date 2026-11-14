@@ -49,6 +49,7 @@ export function FeatureRow({ projectKey, row }: { projectKey: string; row: Retro
           {row.noFeatureRetro ? (
             <span
               data-testid={ids.retroFeaturesNoFeatureChip}
+              title={touch ? undefined : 'Only its stories and bugs have retros so far.'}
               className="rounded-full bg-sunken px-2 text-[length:var(--text-xs)] whitespace-nowrap"
             >
               No Feature retro yet
