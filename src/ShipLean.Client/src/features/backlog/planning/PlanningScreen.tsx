@@ -21,6 +21,8 @@ import { SelectionProvider } from '../selection/SelectionProvider';
 import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
+import { SelectBar } from '../touch/SelectBar';
+import { useSelectMoreActions } from '../touch/selectMoreActions';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import { ForecastToggle } from './ForecastToggle';
 import { forecastMarks } from './forecastMarks';
@@ -81,6 +83,7 @@ export function PlanningScreen({
     },
   ];
   const queue = useCheckQueue();
+  const selectActions = useSelectMoreActions(queue, view.review);
   const search = useBacklogSearch();
   const queuedSections = useMemo(
     () => view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
@@ -128,7 +131,7 @@ export function PlanningScreen({
                 )}
                 search={() => <BacklogSearchBox search={search} />}
                 keys={() => <KeysButton />}
-                moreActions={moreActions}
+                moreActions={[...selectActions, ...moreActions]}
               />
               <MovingOffBanner search={search} queue={queue} />
               {reorder.conflict ? (
@@ -142,6 +145,7 @@ export function PlanningScreen({
                 <BeforeYouPlan review={view.review} queue={queue} />
               </div>
               <BulkOutcomeHost projectId={project.id} />
+              <SelectBar />
               {touch ? (
                 <PlanningTouch
                   sections={sections}
