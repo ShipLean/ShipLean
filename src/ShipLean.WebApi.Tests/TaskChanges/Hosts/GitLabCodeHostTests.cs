@@ -84,7 +84,11 @@ public class GitLabCodeHostTests
 
     [Test]
     public async Task GitLabCodeHost_When404OnProject_ShouldReturnUnreadable()
-        => (await Host().ReadCommitAsync(Repo, Sha)).Status.ShouldBe(CommitReadStatus.Unreadable);
+    {
+        var read = await Host().ReadCommitAsync(Repo, Sha);
+
+        read.Status.ShouldBe(CommitReadStatus.Unreadable);
+    }
 
     [Test]
     public async Task GitLabCodeHost_When404OnCommitInAReadableProject_ShouldReturnMissing()

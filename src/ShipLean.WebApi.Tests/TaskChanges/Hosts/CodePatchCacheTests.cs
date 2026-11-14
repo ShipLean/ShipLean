@@ -130,7 +130,7 @@ public class CodePatchCacheTests
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         new CodePatchCacheServices().AddServices(services, configuration);
-        return services.BuildServiceProvider();
+        return (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
     }
 
     private sealed class CountingHost : ICodeHost
