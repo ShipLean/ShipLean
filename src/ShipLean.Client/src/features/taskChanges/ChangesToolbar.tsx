@@ -153,6 +153,7 @@ export function ChangesToolbar({
         >
           <span className="h-1.5 w-[90px] overflow-hidden rounded-full bg-panel-2">
             <i
+              data-testid={ids.filesViewedFill}
               className="block h-full bg-signal"
               style={{ width: `${fileTotal === 0 ? 0 : (viewedCount / fileTotal) * 100}%` }}
             />

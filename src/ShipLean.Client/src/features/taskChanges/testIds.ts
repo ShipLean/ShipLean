@@ -65,5 +65,9 @@ export const taskChangesTestIds = {
   commentSentBack: 'task-changes-comment-sent-back',
   sectionSentBy: 'task-changes-section-sent-by',
   sectionBars: 'task-changes-section-bars',
+  fileDir: 'task-changes-file-dir',
+  diffFileHostLink: 'task-changes-diff-file-host-link',
+  diffFileCollapse: 'task-changes-diff-file-collapse',
+  filesViewedFill: 'task-changes-files-viewed-fill',
   sectionViewedFill: 'task-changes-section-viewed-fill',
 } as const;

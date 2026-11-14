@@ -45,3 +45,14 @@ test('FilesColumn_WhenTwoRepositories_ShouldGroupByRepository', async ({ mount, 
   await expect(page.getByTestId(ids.files)).toContainText('acme/api');
   await expect(page.getByTestId(ids.fileRow)).toHaveCount(4);
 });
+
+test('FilesColumn_WhenFilesShareAFolder_ShouldShowOneFolderRowAboveThem', async ({
+  mount,
+  page,
+}) => {
+  await mount(column());
+  const dirs = page.getByTestId(ids.fileDir);
+  await expect(dirs).toHaveCount(1);
+  await expect(dirs).toHaveText('▾ src/checkout');
+  await expect(page.getByTestId(ids.fileRow)).toHaveCount(2);
+});

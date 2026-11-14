@@ -68,5 +68,9 @@ public static class TaskChangesTestIds
     public const string CommentSentBack = "task-changes-comment-sent-back";
     public const string SectionSentBy = "task-changes-section-sent-by";
     public const string SectionBars = "task-changes-section-bars";
+    public const string FileDir = "task-changes-file-dir";
+    public const string DiffFileHostLink = "task-changes-diff-file-host-link";
+    public const string DiffFileCollapse = "task-changes-diff-file-collapse";
+    public const string FilesViewedFill = "task-changes-files-viewed-fill";
     public const string SectionViewedFill = "task-changes-section-viewed-fill";
 }

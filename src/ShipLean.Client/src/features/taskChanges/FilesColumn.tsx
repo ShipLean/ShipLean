@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { taskChangesTestIds as ids } from './testIds';
 import { fileKey, type ChangesData, type ViewedProps } from './types';
 import { isViewed } from './viewedStore';
@@ -48,46 +49,65 @@ export function FilesColumn({ data, openFile, onOpenFile, viewed }: FilesColumnP
               ▾ {part.repo}
             </div>
           )}
-          {part.files.map((file) => {
+          {part.files.map((file, i) => {
+            const slash0 = file.path.lastIndexOf('/');
+            const dir = slash0 < 0 ? '' : file.path.slice(0, slash0);
+            const prev = i === 0 ? null : part.files[i - 1].path;
+            const prevSlash = prev === null ? -1 : prev.lastIndexOf('/');
+            const prevDir = prev === null || prevSlash < 0 ? '' : prev.slice(0, prevSlash);
+            const showDir = dir !== '' && (i === 0 || dir !== prevDir);
+            const depth = (grouped ? 1 : 0) + (dir === '' ? 0 : 1);
             const key = fileKey(part.repo, file.path);
             const done = isViewed(viewed, part.repo, file.path, file.patchId);
             const slash = file.path.lastIndexOf('/');
             return (
-              <button
-                key={key}
-                type="button"
-                data-testid={ids.fileRow}
-                data-file={key}
-                aria-current={openFile === key}
-                title={file.path}
-                className="grid h-[26px] w-full grid-cols-[14px_minmax(0,1fr)_auto_auto] items-center gap-1.5 rounded-control px-1.5 text-left hover:bg-panel aria-current:bg-signal-soft"
-                onClick={() => onOpenFile(key)}
-              >
-                <span
-                  className={`text-center font-[family-name:var(--font-mono)] text-[9px] font-bold ${STATUS_COLOUR[file.status]}`}
-                >
-                  {STATUS_LETTER[file.status]}
-                </span>
-                <span className={`truncate ${done ? 'text-ink-muted' : ''}`}>
-                  {file.path.slice(slash + 1)}
-                </span>
-                {file.openComments > 0 ? (
-                  <span
-                    title={`${file.openComments} open`}
-                    className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-caution px-1 text-[10px] font-bold text-black"
+              <Fragment key={key}>
+                {showDir && (
+                  <div
+                    data-testid={ids.fileDir}
+                    title={dir}
+                    className="flex h-6 items-center gap-1 truncate text-ink-muted"
+                    style={{ paddingLeft: grouped ? 18 : 6 }}
                   >
-                    {file.openComments}
-                  </span>
-                ) : (
-                  <span />
+                    ▾ {dir}
+                  </div>
                 )}
-                <span
-                  data-testid={ids.fileViewed}
-                  className="w-3 text-center text-[length:var(--text-xs)] text-good"
+                <button
+                  type="button"
+                  data-testid={ids.fileRow}
+                  data-file={key}
+                  aria-current={openFile === key}
+                  title={file.path}
+                  style={{ paddingLeft: depth * 12 + 6 }}
+                  className="grid h-[26px] w-full grid-cols-[14px_minmax(0,1fr)_auto_auto] items-center gap-1.5 rounded-control pr-1.5 text-left hover:bg-panel aria-current:bg-signal-soft"
+                  onClick={() => onOpenFile(key)}
                 >
-                  {done ? '✓' : ''}
-                </span>
-              </button>
+                  <span
+                    className={`text-center font-[family-name:var(--font-mono)] text-[9px] font-bold ${STATUS_COLOUR[file.status]}`}
+                  >
+                    {STATUS_LETTER[file.status]}
+                  </span>
+                  <span className={`truncate ${done ? 'text-ink-muted' : ''}`}>
+                    {file.path.slice(slash + 1)}
+                  </span>
+                  {file.openComments > 0 ? (
+                    <span
+                      title={`${file.openComments} open`}
+                      className="inline-grid h-4 min-w-4 place-items-center rounded-full bg-caution px-1 text-[10px] font-bold text-black"
+                    >
+                      {file.openComments}
+                    </span>
+                  ) : (
+                    <span />
+                  )}
+                  <span
+                    data-testid={ids.fileViewed}
+                    className="w-3 text-center text-[length:var(--text-xs)] text-good"
+                  >
+                    {done ? '✓' : ''}
+                  </span>
+                </button>
+              </Fragment>
             );
           })}
         </div>
