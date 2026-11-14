@@ -113,6 +113,20 @@ declare -A variants=(
   [task-changes-approve]="task-changes.html?view=review&state=approve"
   [task-changes-outdated]="task-changes.html?view=review&state=outdated"
   [task-changes-noaccess]="task-changes.html?view=review&state=noaccess"
+  # SHIP-1463: Agent runs (traces and logs of the agents that did a Task; desktop only)
+  [agent-runs-task]="agent-runs.html?view=task"
+  [agent-runs-empty]="agent-runs.html?view=task&state=empty"
+  [agent-runs-down]="agent-runs.html?view=task&state=down"
+  [agent-runs-zoom]="agent-runs.html?view=run&state=zoom"
+  [agent-runs-errors]="agent-runs.html?view=run&state=errors"
+  [agent-runs-permission]="agent-runs.html?view=run&state=permission"
+  [agent-runs-edit]="agent-runs.html?view=run&state=edit"
+  [agent-runs-comment]="agent-runs.html?view=run&state=comment"
+  [agent-runs-hidden]="agent-runs.html?view=run&state=hidden"
+  [agent-runs-codex]="agent-runs.html?view=run&run=codex"
+  [agent-runs-cursor]="agent-runs.html?view=run&run=cursor"
+  [agent-runs-truncated]="agent-runs.html?view=run&state=truncated"
+  [agent-runs-expired]="agent-runs.html?view=run&state=expired"
 )
 
 names=("$@")

@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Agent runs (SHIP-1463 mock-up)</title>
+<!--
+  SHIP-1463 mock-up: how an agent did a Task, drawn from the team's own trace and log stores (ClickHouse, or Tempo + Loki).
+  ShipLean only reads. Desktop only (proposed D15). Not built. Open directly in a browser. Uses ../tokens.css,
+  shiplean.css and shared.js only; no build step.
+  ?view=task     the Task page (SHIP-171) with its Agent runs section under Changes. &state=empty | down
+  ?view=run      (default) the Run page, /p/SHIP/items/SHIP-171/runs/<run>.
+                 &run=claude (default, a traced run: waterfall) | codex (log-only: event timeline) | cursor (hook events)
+                 &state= errors | hidden | permission | edit | comment | truncated | expired
+  Span and event names follow what each agent sends as far as we know on 14 Nov; lane 1c's recorded runs replace them.
+  The Preview panel (bottom left) is a review aid; ?shot hides it, ?theme=light|dark forces a theme.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.btn.tiny { height: 22px; padding: 0 7px; font-size: var(--text-xs); }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 999px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); background: var(--color-surface-2); color: var(--color-muted); white-space: nowrap; }
+.pill.warn { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-text); }
+.pill.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-text); }
+.pill.info { background: color-mix(in srgb, var(--color-info) 18%, transparent); color: var(--color-text); }
+.pill.danger { background: color-mix(in srgb, var(--color-danger) 16%, transparent); color: var(--color-danger); }
+.plus { color: var(--color-ok); font-family: var(--font-mono); font-size: var(--text-xs); }
+.minus { color: var(--color-danger); font-family: var(--font-mono); font-size: var(--text-xs); }
+.sha { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent); text-decoration: none; }
+.num { font-variant-numeric: tabular-nums; }
+.agent { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--color-surface-2); border: 1px solid var(--color-border); font: 700 9px/1 var(--font-sans); color: var(--color-muted); flex: none; }
+.abadge { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: var(--radius-sm); font: 700 9px/1 var(--font-sans); flex: none; color: #fff; }
+.abadge.claude { background: #c46a4a; } .abadge.codex { background: #3d4a5c; } .abadge.cursor { background: #2a2a2a; }
+:root[data-theme="dark"] .abadge.cursor { background: #555; }
+.who { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
+
+/* ---------- Task page (as task-changes.html) ---------- */
+.wi-head { flex: none; display: grid; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.wi-top { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.wi-title { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+.ident { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: var(--text-sm); }
+.wi-title h1 { margin: 0 0 0 8px; font-size: var(--text-lg); font-weight: var(--weight-semibold); flex: 1; min-width: 0; }
+.fields { flex: none; display: flex; padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fcell { flex: none; display: grid; align-content: center; gap: 2px; min-height: 54px; padding: 6px var(--space-3) 6px var(--space-2); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.fcell:last-child { border-right: 0; flex: 1; }
+.lbl { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.fval { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); }
+.sec { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.sec:last-child { border-bottom: 0; }
+.sec-h { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; flex-wrap: wrap; }
+.sec-h h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sec-h .sum { font-size: var(--text-sm); color: var(--color-muted); }
+.md { max-width: 780px; } .md p { margin: 0 0 6px; } .md code { padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-size: var(--text-xs); }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+table.commits { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.commits td { height: 30px; padding: 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); white-space: nowrap; }
+table.commits tr:first-child td { border-top: 0; }
+table.commits td.subj { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.prog { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
+.prog .track { width: 90px; height: 6px; border-radius: 3px; background: var(--color-surface-2); overflow: hidden; }
+.prog .track i { display: block; height: 100%; background: var(--color-accent); }
+.foot { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-muted); flex-wrap: wrap; }
+.foot a { color: var(--color-accent); }
+.cm { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); max-width: 780px; font-size: var(--text-sm); }
+.cm-h { display: flex; align-items: baseline; gap: var(--space-2); }
+.cm pre { margin: 4px 0 0; padding: var(--space-2); background: var(--color-bg); border-radius: var(--radius-sm); font: var(--text-xs)/1.5 var(--font-mono); white-space: pre-wrap; }
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.lcard { display: grid; gap: 2px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); }
+.lcard .t { display: flex; align-items: center; gap: 6px; }
+.prov { display: inline-grid; place-items: center; width: 18px; height: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); font: 700 8px/1 var(--font-sans); color: var(--color-muted); flex: none; }
+.hist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); font-size: var(--text-sm); }
+.hist li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: var(--space-2); }
+.hist .rev { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); font-size: var(--text-2xs); color: var(--color-muted); }
+.hist .ch { color: var(--color-muted); }
+.hist .ch b { color: var(--color-text); font-weight: var(--weight-semibold); }
+
+/* Agent runs section */
+table.runs { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.runs th { height: 26px; padding: 0 var(--space-2); text-align: left; font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; background: var(--color-bg); white-space: nowrap; }
+table.runs th.r, table.runs td.r { text-align: right; }
+table.runs td { height: 44px; padding: 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); white-space: nowrap; }
+table.runs tr.run { cursor: pointer; }
+table.runs tr.run:hover td { background: color-mix(in srgb, var(--color-accent) 5%, transparent); }
+table.runs td.what { width: 100%; max-width: 0; }
+.what .o { display: block; overflow: hidden; text-overflow: ellipsis; }
+.what .s { display: block; font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; }
+.agentcell { display: inline-flex; align-items: center; gap: 8px; }
+.agentcell .n { display: grid; line-height: 1.25; }
+.agentcell .n small { font-size: var(--text-xs); color: var(--color-muted); }
+.mini { position: relative; display: block; width: 100px; height: 14px; border-radius: 3px; background: var(--color-surface-2); overflow: hidden; }
+.mini i { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; background: color-mix(in srgb, var(--color-accent) 70%, transparent); }
+.mini i.w { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-warn) 75%, transparent) 0 3px, transparent 3px 5px); }
+.mini i.e { top: 0; bottom: 0; width: 2px !important; background: var(--color-danger); }
+.mini i.p { top: 5px; bottom: 5px; width: 3px !important; border-radius: 50%; background: var(--color-info); }
+.errs { color: var(--color-danger); font-weight: var(--weight-semibold); }
+.empty-box { display: grid; gap: 8px; padding: var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-muted); }
+.empty-box .agents3 { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.empty-box .agents3 a { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); text-decoration: none; }
+.empty-box .agents3 a:hover { border-color: var(--color-accent); }
+
+/* ---------- Run page ---------- */
+.rv-head { flex: none; display: grid; gap: 6px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.rv-title { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.rv-title h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.rv-bar .sep { width: 1px; height: 18px; background: var(--color-border); }
+.stat { display: inline-grid; line-height: 1.15; padding-right: var(--space-2); }
+.stat b { font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.stat span { font-size: var(--text-2xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: var(--weight-semibold); }
+.find { width: 180px; }
+.banner { flex: none; display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-4); background: color-mix(in srgb, var(--color-info) 9%, var(--color-surface)); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--color-info); font-size: var(--text-sm); }
+.banner.warn { background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface)); border-left-color: var(--color-warn); }
+.rv { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: minmax(0, 1fr); }
+.rv > * { min-height: 0; overflow: auto; }
+.wf { background: var(--color-surface); position: relative; }
+.wf-row { display: grid; grid-template-columns: 360px minmax(0, 1fr) 76px; align-items: center; min-height: 26px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent); font-size: var(--text-sm); cursor: pointer; }
+.wf-row:hover { background: color-mix(in srgb, var(--color-accent) 5%, transparent); }
+.wf-row.on { background: var(--color-accent-soft); box-shadow: inset 3px 0 0 var(--color-accent); }
+.wf-row.dim { opacity: .45; }
+.wf-head { position: sticky; top: 0; z-index: 3; min-height: 30px; cursor: default; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.wf-head:hover { background: var(--color-surface); }
+.wf-head .lab { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.axis { position: relative; height: 30px; }
+.axis span { position: absolute; top: 8px; white-space: nowrap; transform: translateX(-50%); font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.axis span:first-child { transform: none; }
+.lab { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0 var(--space-2) 0 calc(var(--d, 0) * 16px + 8px); white-space: nowrap; }
+.lab .tw { width: 12px; flex: none; color: var(--color-muted); font-size: 10px; text-align: center; }
+.lab .nm { flex: none; max-width: 55%; overflow: hidden; text-overflow: ellipsis; }
+.lab .dt { color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); font-size: var(--text-xs); min-width: 0; }
+.lab .x { color: var(--color-danger); font-weight: 700; flex: none; }
+.lab .cbub { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--color-warn); color: #1d1d1d; font-size: 10px; font-weight: 700; flex: none; }
+.kd { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; font: 700 9px/1 var(--font-sans); color: #fff; flex: none; }
+.kd.model { background: var(--color-purple); } .kd.tool { background: var(--color-info); } .kd.mcp { background: var(--color-accent); color: var(--color-accent-fg); }
+.kd.sub { background: var(--color-ok); } .kd.wait { background: var(--color-warn); color: #1d1d1d; } .kd.ev { background: var(--color-muted); }
+.kd.turn { background: var(--color-text); color: var(--color-surface); }
+.track { position: relative; height: 26px; background-image: var(--grid); }
+.bar { position: absolute; top: 8px; height: 10px; min-width: 2px; border-radius: 2px; }
+.bar.model { background: var(--color-purple); } .bar.tool { background: var(--color-info); } .bar.mcp { background: var(--color-accent); } .bar.sub { background: var(--color-ok); }
+.bar.ev { background: var(--color-muted); }
+.bar.wait { background: repeating-linear-gradient(135deg, var(--color-warn) 0 4px, color-mix(in srgb, var(--color-warn) 35%, transparent) 4px 7px); }
+.bar.turn { top: 11px; height: 4px; background: color-mix(in srgb, var(--color-text) 30%, transparent); }
+.bar.err { background: var(--color-danger); }
+.bar.retry { background: repeating-linear-gradient(90deg, var(--color-danger) 0 3px, transparent 3px 5px); }
+.pt { position: absolute; top: 8px; width: 10px; height: 10px; transform: translateX(-5px) rotate(45deg); border-radius: 2px; background: var(--color-muted); }
+.pt.mcp { background: var(--color-accent); } .pt.tool { background: var(--color-info); } .pt.err { background: var(--color-danger); } .pt.turn { background: var(--color-text); }
+.dur { padding-right: var(--space-3); text-align: right; font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wf-turn { background: var(--color-bg); min-height: 32px; border-top: 1px solid var(--color-border); }
+.wf-turn .nm { font-weight: var(--weight-semibold); }
+.wf-turn .pr { color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; font-style: italic; min-width: 0; }
+.wf-turn .track { height: 32px; }
+.legend { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; padding: var(--space-2) var(--space-3); font-size: var(--text-xs); color: var(--color-muted); border-top: 1px solid var(--color-border); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { display: inline-block; width: 14px; height: 8px; border-radius: 2px; }
+.overview { flex: none; position: relative; height: 34px; margin: 0; background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+.overview .ovt { position: absolute; top: 7px; height: 20px; border-radius: 3px; background: color-mix(in srgb, var(--color-accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent); font-size: var(--text-2xs); color: var(--color-text); padding: 2px 6px; overflow: hidden; white-space: nowrap; }
+.overview .ovw { position: absolute; top: 7px; height: 20px; border-radius: 3px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color-warn) 60%, transparent) 0 4px, transparent 4px 7px); }
+.overview .ovt { cursor: pointer; } .overview .ovt:hover, .overview .ovt.on { background: color-mix(in srgb, var(--color-accent) 40%, transparent); border-color: var(--color-accent); }
+.overview .ovwin { position: absolute; top: 2px; bottom: 2px; border: 2px solid var(--color-accent); border-radius: 4px; pointer-events: none; }
+.overview .ove { position: absolute; top: 4px; bottom: 4px; width: 2px; background: var(--color-danger); }
+.overview .idle { position: absolute; top: 16px; height: 2px; background: var(--color-border); }
+.ovwrap { flex: none; display: grid; grid-template-columns: 360px minmax(0, 1fr) 76px; align-items: center; background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
+.ovwrap .l { padding: 0 var(--space-3); font-size: var(--text-xs); color: var(--color-muted); }
+
+/* Detail panel */
+.dp { background: var(--color-bg); border-left: 1px solid var(--color-border); display: flex; flex-direction: column; }
+.dp-h { position: sticky; top: 0; z-index: 2; display: grid; gap: 4px; padding: var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.dp-h .t { display: flex; align-items: center; gap: 6px; font-weight: var(--weight-semibold); }
+.dp-h .t .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-h .meta { font-size: var(--text-xs); color: var(--color-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dp-b { display: grid; gap: var(--space-3); padding: var(--space-3); }
+.dp-sec { display: grid; gap: 6px; }
+.dp-sec .hh { display: flex; align-items: center; gap: 6px; }
+.dp pre { margin: 0; padding: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font: var(--text-xs)/1.55 var(--font-mono); white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto; }
+.dp pre .e { color: var(--color-danger); } .dp pre .g { color: var(--color-ok); } .dp pre .m { color: var(--color-muted); }
+.kv { width: 100%; border-collapse: collapse; font-size: var(--text-xs); table-layout: fixed; }
+.kv td { padding: 3px 6px; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); vertical-align: top; word-break: break-word; }
+.kv tr:first-child td { border-top: 0; }
+.kv td:first-child { width: 42%; font-family: var(--font-mono); color: var(--color-muted); }
+.kv td:last-child { font-family: var(--font-mono); }
+.kvbox { border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); }
+.logs { display: grid; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-xs); }
+.logs .lr { display: grid; grid-template-columns: 58px 40px minmax(0, 1fr); gap: 6px; padding: 5px 8px; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.logs .lr:first-child { border-top: 0; }
+.logs .tm { font-family: var(--font-mono); color: var(--color-muted); }
+.logs .sv { font-weight: 700; font-size: 10px; } .logs .sv.INFO { color: var(--color-info); } .logs .sv.ERROR { color: var(--color-danger); }
+.logs .bd { font-family: var(--font-mono); word-break: break-word; }
+.logs .bd span { color: var(--color-muted); }
+.hiddenbox { padding: var(--space-2) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); font-size: var(--text-xs); color: var(--color-muted); }
+.linkrow { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--color-accent); border-radius: var(--radius-sm); background: var(--color-accent-soft); font-size: var(--text-sm); }
+.linkrow .path { font-family: var(--font-mono); font-size: var(--text-xs); }
+.thread { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.thread .msg { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.thread .msg:first-child { border-top: 0; }
+.thread .mh { display: flex; align-items: baseline; gap: var(--space-2); }
+.thread .acts { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-3); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.expired { max-width: 640px; margin: var(--space-6, 48px) auto; display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); }
+.expired h2 { margin: 0; font-size: var(--text-md); }
+.narrow-note { display: none; }
+@media (max-width: 900px) {
+  .runs-sec { display: none !important; }
+  .rv-head, .rv, .banner, .ovwrap, .expired { display: none !important; }
+  .narrow-note { display: grid; gap: var(--space-2); padding: var(--space-4); font-size: var(--text-base); }
+  .wi-split { grid-template-columns: minmax(0, 1fr); }
+  .wi-side { display: none; }
+  .fields { flex-wrap: wrap; }
+  .wi-title { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div id="page" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+
+<script>
+(() => {
+  const { esc, av, tIcon, st, toast, people } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view') || 'run';
+  const state = params.get('state') || '';
+  const RUN = params.get('run') || 'claude';
+  const keep = params.has('theme') ? '&theme=' + params.get('theme') : '';
+  const crumbs = view === 'task' ? ['Backlogs', 'SHIP-141', 'SHIP-171'] : ['Backlogs', 'SHIP-141', 'SHIP-171', 'Agent runs'];
+  $('appbar').outerHTML = SL.appBar('backlogs')
+    .replace(/<nav class="crumbs"[^]*?<\/nav>/, `<nav class="crumbs" aria-label="You are here"><span>SHIP</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>`);
+  const agentAv = '<span class="agent" title="Claude Code (agent)">AI</span>';
+  const badge = a => `<span class="abadge ${a}" title="${AGENTS[a]}">${{ claude: 'CC', codex: 'CX', cursor: 'CU' }[a]}</span>`;
+  const AGENTS = { claude: 'Claude Code', codex: 'Codex CLI', cursor: 'Cursor' };
+  const CONTENT = state !== 'hidden'; // project setting: show prompts, responses and tool input/output (D4)
+
+  /* ---------------- Time helpers ---------------- */
+  const pad = n => String(n).padStart(2, '0');
+  const clock = (base, s) => { const t = Math.round(base + s); return `${pad(Math.floor(t / 3600) % 24)}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`; };
+  const dur = s => s < 1 ? `${Math.round(s * 1000)} ms` : s < 60 ? `${s.toFixed(s < 10 ? 1 : 0)} s` : s < 3600 ? `${Math.floor(s / 60)} m ${pad(Math.round(s % 60))} s` : `${Math.floor(s / 3600)} h ${pad(Math.round(s % 3600 / 60))} m`;
+  const off = s => `+${Math.floor(s / 60)}:${pad(Math.round(s % 60))}`;
+
+  /* ---------------- Sample runs ----------------
+     A span: { id, k: kind, n: name, d: detail (tool input = content), s: start (s from run start), t: duration (s),
+               err, wait (s of permission wait before it ran), kids, attrs, logs, input, output }
+     Kinds: turn (interaction), model, tool, mcp (shiplean MCP tool), sub (subagent), ev (a log-only event). */
+  const M = (s, t, o = {}) => ({ k: 'model', n: 'Model call', d: o.d || 'claude-opus-5-5', s, t, ...o });
+  const T = (n, d, s, t, o = {}) => ({ k: 'tool', n, d, s, t, ...o });
+  const P = (n, d, s, t, o = {}) => ({ k: 'mcp', n, d, s, t, ...o });
+
+  const claude = {
+    id: 'cc-7f3e1a', agent: 'claude', base: 16 * 3600 + 12 * 60 + 4, day: 'Thu 22 Oct', end: 4346,
+    who: 'Priya Shah', where: 'in her terminal', model: 'claude-opus-5-5', link: 'Tagged', linkWhy: 'shiplean.item = SHIP-171, set by shiplean telemetry env',
+    tokensIn: '2.31M', tokensOut: '41.2k', cost: '$5.86', spans: 61, outcome: 'report_task: done · 3 commits · PR #433', traced: true,
+    turns: [
+      { n: 'Turn 1', prompt: 'Pick up SHIP-171 and do it. Use the brief; build before you stop.', s: 0, t: 416, kids: [
+        M(0, 7.8), P('get_brief', 'SHIP-171', 8.1, 1.2), P('pick_up', 'SHIP-171', 9.6, 0.9), M(10.8, 6.2),
+        T('Read', 'docs/vault.md', 17.3, 0.2),
+        { k: 'sub', n: 'Subagent: Explore', d: 'Find the vault client and how cards are listed', s: 18, t: 196, kids: [
+          M(18, 5.2, { d: 'claude-haiku-5-5' }), T('Grep', 'IVaultClient', 23.4, 0.6), T('Read', 'src/Storefront.Vault/VaultClient.cs', 24.2, 0.2), T('Read', 'src/Storefront.Api/Cards/CardsController.cs', 24.6, 0.2),
+          M(25, 9.4, { d: 'claude-haiku-5-5' }), T('Glob', '**/Cards/*.cs', 34.6, 0.3), T('Read', 'src/Storefront.Api/Cards/CardsModule.cs', 35.1, 0.2),
+          M(36, 12.1, { d: 'claude-haiku-5-5' }), T('Grep', 'CardSummary|Last4', 48.4, 0.7), M(49.5, 61, { d: 'claude-haiku-5-5' }), T('Read', 'docs/vault-api.md', 111, 0.2), M(112, 68, { d: 'claude-haiku-5-5' }), M(180, 34, { d: 'claude-haiku-5-5' }) ] },
+        M(215, 31), T('Write', 'src/Storefront.Vault/CardLookup.cs', 247, 0.4, { edit: true }), T('Write', 'src/Storefront.Vault/CardSummary.cs', 262, 0.3, { edit: true }),
+        T('Edit', 'src/Storefront.Api/Cards/CardsController.cs', 281, 0.3, { edit: true }), T('Edit', 'src/Storefront.Api/Cards/CardsModule.cs', 296, 0.2, { edit: true }), M(297, 14),
+        T('Bash', 'dotnet build -c Release', 312, 41.2, { err: 'exit 1', id: 'build1' }), M(354, 11),
+        T('Write', 'src/Storefront.Vault/ICardLookup.cs', 366, 0.2, { edit: true }), T('Bash', 'dotnet build -c Release', 367, 39), M(407, 9) ] },
+      { n: 'Turn 2', prompt: 'Commit that, then run the CardLookup tests.', s: 1680, t: 1510, kids: [
+        M(1680, 6.4), T('Bash', 'git add -A && git commit -m "SHIP-171: Card lookup returns brand, last four and expiry"', 1687, 1.1),
+        M(1689, 5.2), T('Bash', 'dotnet test tests/Storefront.Vault.Tests --filter CardLookup', 1752, 48.3, { err: 'exit 1 · 1 failed', id: 'test1' }),
+        M(1801, 8.1, { err: 'api_error 529 overloaded · retried', retry: true, id: 'm529' }), M(1811, 19), T('Read', 'src/Storefront.Vault/VaultClient.cs', 1831, 0.2),
+        T('Edit', 'src/Storefront.Vault/VaultClient.cs', 1840, 0.3, { edit: true, id: 'editVault' }), T('Bash', 'dotnet test tests/Storefront.Vault.Tests --filter CardLookup', 1846, 50.1), M(1897, 13),
+        T('Bash', 'git commit -am "SHIP-171: 503 when the vault is down; retry once on 429"', 1915, 1261, { wait: 1259, id: 'commit2' }), M(3177, 13) ] },
+      { n: 'Turn 3', prompt: 'Add the client types and the vault notes, then push and open a PR. Report when done.', s: 4000, t: 346, kids: [
+        M(4000, 9.6), T('Edit', 'web/src/api/cards.ts', 4010, 0.3, { edit: true }), T('Edit', 'docs/vault.md', 4052, 0.4, { edit: true }), M(4053, 141),
+        T('Bash', 'git commit -am "SHIP-171: Client types and the vault notes"', 4195, 1.0), T('Bash', 'git push -u origin ship-171-card-lookup', 4200, 116, { wait: 110 }),
+        T('Bash', 'gh pr create --fill', 4318, 5.6), P('report_task', 'SHIP-171 · done · 3 commits', 4330, 1.4), M(4332, 14) ] },
+    ],
+  };
+  const ev = (n, d, s, o = {}) => ({ k: o.k || 'ev', n, d, s, t: o.t || 0, ...o });
+  const codex = {
+    id: 'cx-4b91d0', agent: 'codex', base: 15 * 3600 + 2 * 60 + 10, day: 'Wed 21 Oct', end: 640,
+    who: 'agent-relay', where: 'on build-02', model: 'gpt-5-codex', link: 'From pick_up', linkWhy: 'a shiplean pick_up call named SHIP-171 (no shiplean.item on the run)',
+    tokensIn: '398k', tokensOut: '14.1k', cost: '—', spans: 0, events: 31, outcome: 'hand_back: blocked · vault answers 429 in the tests', traced: false,
+    turns: [
+      { n: 'Turn 1', prompt: 'You are working on SHIP-171 in acme/storefront. Read its brief with get_brief, pick it up, and do it.', s: 0, t: 640, kids: [
+        ev('codex.conversation_starts', 'gpt-5-codex · sandbox workspace-write · approval never', 0),
+        ev('codex.user_prompt', 'prompt_length 412', 0.1),
+        ev('codex.api_request', '200 · 5.8 s', 6.3, { t: 5.8, k: 'model' }),
+        ev('codex.tool_result', 'shiplean__get_brief', 7.5, { t: 1.1, k: 'mcp' }),
+        ev('codex.tool_result', 'shiplean__pick_up', 8.4, { t: 0.8, k: 'mcp' }),
+        ev('codex.api_request', '200 · 12.0 s', 21, { t: 12, k: 'model' }),
+        ev('codex.tool_decision', 'shell · approved · config', 21.2),
+        ev('codex.tool_result', 'shell · rg -n IVaultClient', 21.7, { t: 0.4, k: 'tool' }),
+        ev('codex.api_request', '200 · 48.2 s', 70, { t: 48.2, k: 'model' }),
+        ev('codex.tool_result', 'apply_patch · 4 files', 70.6, { t: 0.5, k: 'tool' }),
+        ev('codex.tool_result', 'shell · dotnet build -c Release', 140, { t: 52, k: 'tool' }),
+        ev('codex.api_request', '200 · 9.1 s', 150, { t: 9.1, k: 'model' }),
+        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 214, { t: 61, k: 'tool', err: 'success false', id: 'cxt1' }),
+        ev('codex.api_request', '200 · 31.4 s', 247, { t: 31.4, k: 'model' }),
+        ev('codex.tool_result', 'apply_patch · VaultClient.cs', 248, { t: 0.3, k: 'tool' }),
+        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 310, { t: 58, k: 'tool', err: 'success false' }),
+        ev('codex.api_request', '200 · 22.0 s', 334, { t: 22, k: 'model' }),
+        ev('codex.tool_result', 'shell · curl -s $VAULT_URL/health', 336, { t: 1.2, k: 'tool' }),
+        ev('codex.api_request', '200 · 41.0 s', 380, { t: 41, k: 'model' }),
+        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 446, { t: 59, k: 'tool', err: 'success false' }),
+        ev('codex.api_request', '200 · 166 s', 615, { t: 166, k: 'model' }),
+        ev('codex.tool_result', 'shiplean__hand_back · blocked', 628, { t: 1.4, k: 'mcp' }),
+        ev('codex.api_request', '200 · 4.2 s', 640, { t: 4.2, k: 'model' }) ] },
+    ],
+  };
+  const cursor = {
+    id: 'cu-a20c57', agent: 'cursor', base: 18 * 3600 + 20 * 60 + 31, day: 'Thu 22 Oct', end: 371,
+    who: 'Priya Shah', where: 'in Cursor', model: '—', link: '.shiplean file', linkWhy: 'the hook script read SHIP-171 from the worktree\'s .shiplean file',
+    tokensIn: '—', tokensOut: '—', cost: '—', spans: 0, events: 9, outcome: 'Read SHIP-171\'s brief · no edits', traced: false,
+    turns: [
+      { n: 'Prompt 1', prompt: 'Why does the vault client retry only once on 429?', s: 0, t: 214, kids: [
+        ev('beforeSubmitPrompt', 'prompt', 0),
+        ev('beforeMCPExecution', 'shiplean · get_brief SHIP-171', 4.2, { k: 'mcp' }),
+        ev('beforeReadFile', 'src/Storefront.Vault/VaultClient.cs', 9.8),
+        ev('beforeReadFile', 'docs/vault.md', 10.4),
+        ev('beforeShellExecution', 'git log -3 --stat -- src/Storefront.Vault', 31, { k: 'tool', t: 0.6 }),
+        ev('stop', 'status completed', 214) ] },
+      { n: 'Prompt 2', prompt: 'Add that to the comment above SendWithRetryAsync. Actually, leave it.', s: 340, t: 31, kids: [
+        ev('beforeSubmitPrompt', 'prompt', 340),
+        ev('beforeReadFile', 'src/Storefront.Vault/VaultClient.cs', 346),
+        ev('stop', 'status aborted', 371) ] },
+    ],
+  };
+  const RUNS = { claude, codex, cursor };
+  const run = RUNS[RUN] || claude;
+
+  // Number every span and give it a depth; subagents are collapsed by default (D18) unless state says otherwise.
+  const flat = [];
+  let seq = 0;
+  run.turns.forEach((tu, ti) => {
+    tu.id = 'turn' + ti; tu.k = 'turn'; tu.depth = 0; flat.push(tu);
+    const walk = (list, depth, parent) => list.forEach(sp => { sp.id = sp.id || 's' + seq++; sp.depth = depth; sp.parent = parent; flat.push(sp); if (sp.kids) { sp.open = false; walk(sp.kids, depth + 1, sp); } });
+    walk(tu.kids, 1, tu);
+  });
+  const byId = Object.fromEntries(flat.map(s => [s.id, s]));
+  const selDefault = { claude: { '': 'test1', errors: 'test1', zoom: 'build1', hidden: 'test1', comment: 'test1', truncated: 'test1', edit: 'editVault', permission: 'commit2' }, codex: { '': 'cxt1' }, cursor: {} }[run.agent];
+  const ui = { sel: (selDefault && (selDefault[state] || selDefault[''])) || flat[1].id, errorsOnly: state === 'errors', find: '', range: state === 'zoom' ? [0, 416] : null };
+  if (run.agent === 'cursor') ui.sel = flat.find(s => s.k === 'mcp').id;
+
+  /* ---------------- Detail content for the spans the states select ---------------- */
+  const details = {
+    test1: {
+      input: 'dotnet test tests/Storefront.Vault.Tests --filter CardLookup',
+      output: `  Determining projects to restore...
+  Storefront.Vault.Tests -> bin/Release/net10.0/Storefront.Vault.Tests.dll
+<span class="e">[xUnit.net 00:00:01.84]     CardLookupTests.ForCustomerAsync_WhenTheVaultAnswers429_ShouldRetryOnce [FAIL]</span>
+<span class="e">  Assert.Equal() Failure: Values differ
+  Expected: 2
+  Actual:   1</span>
+<span class="m">  Stack trace:
+     at CardLookupTests.ForCustomerAsync_WhenTheVaultAnswers429_ShouldRetryOnce() in CardLookupTests.cs:line 41</span>
+<span class="e">Failed!  - Failed: 1, Passed: 8, Skipped: 0, Total: 9, Duration: 1.9 s</span>`,
+      attrs: [['tool_name', 'Bash'], ['decision', 'accept'], ['decision.source', 'config'], ['success', 'false'], ['exit_code', '1'], ['duration_ms', '48310'], ['session.id', '7f3e1a90-…-c2d4'], ['prompt.id', 'b81c…07'], ['span_id', '4f1a9c0d2e7b6a13'], ['shiplean.item', 'SHIP-171'], ['vcs.ref.head.name', 'ship-171-card-lookup']],
+      logs: [['16:41:16', 'INFO', 'claude_code.tool_decision', 'tool_name=Bash decision=accept source=config'], ['16:42:04', 'INFO', 'claude_code.tool_result', 'tool_name=Bash success=false duration_ms=48310'], ['16:42:05', 'INFO', 'claude_code.api_request', 'model=claude-opus-5-5 input_tokens=88412 output_tokens=391 cost_usd=0.19']],
+    },
+    editVault: {
+      input: `file_path: src/Storefront.Vault/VaultClient.cs
+old_string: var response = await http.GetAsync($"customers/{customer}/cards", ct);
+new_string: using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Get, $"customers/{customer}/cards"), ct);
+            if (response.StatusCode is HttpStatusCode.ServiceUnavailable) throw new VaultUnavailableException();`,
+      output: 'The file src/Storefront.Vault/VaultClient.cs has been updated.',
+      attrs: [['tool_name', 'Edit'], ['decision', 'accept'], ['decision.source', 'config'], ['success', 'true'], ['duration_ms', '284'], ['file_path', 'src/Storefront.Vault/VaultClient.cs']],
+      logs: [['16:42:44', 'INFO', 'claude_code.tool_result', 'tool_name=Edit success=true duration_ms=284']],
+      diff: { path: 'src/Storefront.Vault/VaultClient.cs', lines: 'lines 20–33', sha: 'a81d4e0' },
+    },
+    commit2: {
+      input: 'git commit -am "SHIP-171: 503 when the vault is down; retry once on 429"',
+      output: '[ship-171-card-lookup a81d4e0] SHIP-171: 503 when the vault is down; retry once on 429\n 4 files changed, 46 insertions(+), 8 deletions(-)',
+      attrs: [['tool_name', 'Bash'], ['decision', 'accept'], ['decision.source', 'user_temporary'], ['permission_wait_ms', '1259000'], ['success', 'true'], ['exit_code', '0'], ['duration_ms', '1104']],
+      logs: [['16:44:00', 'INFO', 'claude_code.tool_decision', 'tool_name=Bash decision=accept source=user_temporary'], ['17:05:00', 'INFO', 'claude_code.tool_result', 'tool_name=Bash success=true duration_ms=1104']],
+    },
+    cxt1: {
+      input: 'shell: dotnet test tests/Storefront.Vault.Tests --filter CardLookup',
+      output: '<span class="e">Failed!  - Failed: 2, Passed: 7, Skipped: 0, Total: 9, Duration: 2.1 s</span>\n<span class="m">  CardLookupTests.ForCustomerAsync_WhenTheVaultAnswers429_ShouldRetryOnce\n  CardLookupTests.ForCustomerAsync_WhenTheVaultIsDown_ShouldReturnVaultDown</span>',
+      attrs: [['event.name', 'codex.tool_result'], ['tool_name', 'shell'], ['success', 'false'], ['duration_ms', '61022'], ['conversation.id', '4b91d0e2-…-77aa'], ['model', 'gpt-5-codex']],
+      logs: [['15:05:44', 'INFO', 'codex.tool_decision', 'tool_name=shell decision=approved source=config'], ['15:05:44', 'ERROR', 'codex.tool_result', 'tool_name=shell success=false duration_ms=61022']],
+    },
+  };
+  const genericDetail = sp => ({
+    input: sp.d && sp.k !== 'model' ? sp.d : '',
+    output: sp.k === 'model' ? '' : '',
+    attrs: sp.k === 'model' ? [['model', sp.d], ['input_tokens', String(Math.round(18000 + sp.t * 2100))], ['output_tokens', String(Math.round(120 + sp.t * 28))], ['cost_usd', (0.04 + sp.t * 0.006).toFixed(2)], ['duration_ms', String(Math.round(sp.t * 1000))]]
+      : !run.traced ? [['event.name', sp.n], [run.agent === 'cursor' ? 'conversation_id' : 'conversation.id', run.agent === 'cursor' ? 'a20c57e1-…-90bd' : '4b91d0e2-…-77aa'], ['shiplean.item', 'SHIP-171'], ...(sp.t ? [['duration_ms', String(Math.round(sp.t * 1000))]] : [])]
+      : sp.k === 'turn' ? [['session.id', '7f3e1a90-…-c2d4'], ['prompt.id', 'b81c…0' + sp.id.slice(-1)], ['spans', String(sp.kids.length)]]
+      : [['tool_name', sp.n], ['success', sp.err ? 'false' : 'true'], ['duration_ms', String(Math.round(sp.t * 1000))]],
+    logs: [],
+  });
+
+  /* ---------------- Task page ---------------- */
+  const REPO = 'acme/storefront';
+  const commits = [
+    ['3f9c2a1', 'SHIP-171: Card lookup returns brand, last four and expiry', 'Thu 22 Oct, 16:41', 105, 12],
+    ['a81d4e0', 'SHIP-171: 503 when the vault is down; retry once on 429', 'Thu 22 Oct, 17:05', 46, 8],
+    ['c27e8b5', 'SHIP-171: Client types and the vault notes', 'Thu 22 Oct, 17:22', 63, 41],
+  ];
+  const mini = r => {
+    const w = s => (s / r.end * 100).toFixed(2) + '%';
+    const parts = [];
+    r.turns.forEach(tu => {
+      parts.push(`<i style="left:${w(tu.s)};width:${w(Math.max(tu.t, r.end / 80))}"></i>`);
+      const all = []; const walk = l => l.forEach(x => { all.push(x); x.kids && walk(x.kids); }); walk(tu.kids);
+      all.filter(x => x.wait).forEach(x => parts.push(`<i class="w" style="left:${w(x.s)};width:${w(x.wait)}"></i>`));
+      all.filter(x => x.err).forEach(x => parts.push(`<i class="e" style="left:${w(x.s)}"></i>`));
+      all.filter(x => x.k === 'mcp').forEach(x => parts.push(`<i class="p" style="left:${w(x.s)}"></i>`));
+    });
+    return `<span class="mini" aria-hidden="true">${parts.join('')}</span>`;
+  };
+  const errCount = r => { let n = 0; const walk = l => l.forEach(x => { if (x.err) n++; x.kids && walk(x.kids); }); r.turns.forEach(t => walk(t.kids)); return n; };
+
+  function runsSection() {
+    if (state === 'empty') return `
+      <section class="sec runs-sec" data-testid="task-agent-runs">
+        <div class="sec-h"><h2>Agent runs</h2><span class="sum">None found</span></div>
+        <div class="empty-box">
+          <span>No agent runs for SHIP-171 in the last 30 days. A run shows here when the agent's telemetry is tagged with <code>shiplean.item = SHIP-171</code>, or when it calls ShipLean's tools about SHIP-171 (<code>get_brief</code>, <code>pick_up</code>, <code>report_task</code> …).</span>
+          <span>Set up the agent that works on this task:</span>
+          <span class="agents3">${['claude', 'codex', 'cursor'].map(a => `<a href="#">${badge(a)} ${AGENTS[a]}</a>`).join('')}<a href="#" style="padding-left:10px">All agent setup ↗</a></span>
+          <span class="xs">Project settings › Inspection › Agent setup has copy-ready config with SHIP's collector filled in. Or run <code>shiplean telemetry env SHIP-171 --agent claude-code</code>.</span>
+        </div>
+      </section>`;
+    if (state === 'down') return `
+      <section class="sec runs-sec" data-testid="task-agent-runs">
+        <div class="sec-h"><h2>Agent runs</h2><span class="spacer"></span><button class="btn tiny" type="button">Try again</button></div>
+        <div class="callout warn"><b>Can't reach the trace store right now.</b>Tempo at tempo.larkspur.internal didn't answer within 10 s, so runs can't be listed. The rest of SHIP-171 works as usual. Instance admins can see the store's status in Admin › Instance health.</div>
+      </section>`;
+    const list = [cursor, claude, codex];
+    return `
+      <section class="sec runs-sec" data-testid="task-agent-runs">
+        <div class="sec-h"><h2>Agent runs</h2>
+          <span class="sum">3 runs · 1 h 29 m · 2.7M tokens · $5.86 reported</span>
+          <span class="spacer"></span>
+          <span class="pill danger">${errCount(claude) + errCount(codex) + errCount(cursor)} errors</span>
+          <span class="pill warn" title="Time the agent sat waiting for someone to allow a tool">Waited 22 m for permission</span>
+        </div>
+        <div class="box"><table class="runs">
+          <thead><tr><th>Agent</th><th>What it did</th><th class="r">Took</th><th>Timeline</th><th class="r">Tokens</th><th class="r">Cost</th><th class="r">Errors</th><th></th></tr></thead>
+          <tbody>${list.map(r => { const e = errCount(r); return `<tr class="run" data-open="${r.agent}">
+            <td><span class="agentcell">${badge(r.agent)}<span class="n"><b>${AGENTS[r.agent]}</b><small>${r.who} · ${r.day}, ${clock(r.base, 0).slice(0, 5)}</small></span></span></td>
+            <td class="what"><span class="o">${esc(r.outcome)}</span><span class="s"><span class="pill ${r.link === 'Tagged' ? 'ok' : 'info'}" title="Linked to SHIP-171 by ${esc(r.linkWhy)}">${r.link}</span> ${r.turns.length} ${r.agent === 'cursor' ? 'prompts' : 'turns'} · ${r.traced ? `${r.spans} spans` : `${r.events} events, no trace`}${r.model === '—' ? '' : ' · ' + r.model}</span></td>
+            <td class="r num">${dur(r.end)}</td>
+            <td>${mini(r)}</td>
+            <td class="r num">${r.tokensIn === '—' ? '<span class="muted">—</span>' : r.tokensIn}</td>
+            <td class="r num">${r.cost === '—' ? '<span class="muted" title="This agent doesn\'t report cost">—</span>' : r.cost}</td>
+            <td class="r num">${e ? `<span class="errs">${e}</span>` : '<span class="muted">0</span>'}</td>
+            <td><a class="muted" style="text-decoration:none;font-size:16px" href="?view=run&run=${r.agent}${keep}" aria-label="Open the run">›</a></td></tr>`; }).join('')}</tbody></table></div>
+        <div class="foot"><span>Read from ClickHouse · kept 30 days · prompts and tool output shown (project setting)</span><span class="spacer"></span><a href="#">Agent setup</a></div>
+      </section>`;
+  }
+
+  function taskPage() {
+    $('page').innerHTML = `
+      <section class="wi-head" aria-label="Work item header">
+        <div class="wi-top"><a class="back" href="#">← Back to SHIP-141 Pay with saved card</a><span class="spacer"></span><span class="xs muted">Created by Priya Shah, Mon 19 Oct · Changed by Claude Code (agent), Thu 22 Oct, 17:24 · revision 5</span></div>
+        <div class="wi-title"><span class="ident">${tIcon('task')} Task <span class="mono">SHIP-171</span></span><h1>API: tokenised card lookup</h1><span class="xs muted">Saved · revision 5</span><button class="btn primary" type="button" disabled style="opacity:.45">Save</button></div>
+      </section>
+      <div class="fields">
+        <div class="fcell"><span class="lbl">State</span><span class="fval">${st('In review')} <span class="muted xs">▾</span></span></div>
+        <div class="fcell"><span class="lbl">Assignee</span><span class="fval">${av('priya')} Priya Shah</span></div>
+        <div class="fcell"><span class="lbl">Sprint</span><span class="fval">Sprint 24 (current)</span></div>
+        <div class="fcell"><span class="lbl">Remaining</span><span class="fval">2 h</span></div>
+        <div class="fcell"><span class="lbl">Parent</span><span class="fval">${tIcon('story')} SHIP-141 Pay with saved card</span></div>
+        <div class="fcell"><span class="lbl">Tags</span><span class="fval"><span class="chip">wave:1</span><span class="chip">lane:api</span></span></div>
+      </div>
+      <div class="split wi-split">
+        <div class="scroll wi-main">
+          <section class="sec"><div class="sec-h"><h2>Description</h2></div>
+            <div class="md"><p>Look up a customer's saved cards from the vault and return brand, last four and expiry from <code>GET /api/cards</code>. Answer 503 when the vault is down so the picker can fall back to the new-card form.</p></div></section>
+          <section class="sec">
+            <div class="sec-h"><h2>Changes</h2><span class="sum">3 commits · 8 files · <span class="plus">+214</span> <span class="minus">−61</span></span><span class="spacer"></span><span class="pill warn">2 open comments</span><span class="prog"><span class="track"><i style="width:37.5%"></i></span>3 / 8 files viewed</span><a class="btn" href="task-changes.html?view=review${keep}">Review changes</a></div>
+            <div class="box"><table class="commits">${commits.map(c => `<tr><td><a class="sha" href="#">${c[0]}</a></td><td class="subj">${esc(c[1])}</td><td><span class="who">${agentAv}Claude Code</span></td><td class="muted sm">${c[2]}</td><td class="num"><span class="plus">+${c[3]}</span> <span class="minus">−${c[4]}</span></td></tr>`).join('')}</table></div>
+          </section>
+          ${runsSection()}
+          <section class="sec"><div class="sec-h"><h2>Discussion</h2><span class="cnt">1</span></div>
+            <div class="cm">${agentAv}<div><div class="cm-h"><b>Claude Code</b><span class="xs muted">(agent) · Thu 22 Oct, 17:24</span></div>
+              <pre>Report: done\nCommits: 3f9c2a1, a81d4e0, c27e8b5\nTests: dotnet test --filter CardLookup · 9 passed, 0 failed · 14 s\nPull request: https://github.com/acme/storefront/pull/433</pre></div></div>
+          </section>
+        </div>
+        <aside class="rail wi-side" aria-label="Links, attachments and history">
+          <section><div class="sec-h2"><span class="overline">Links</span><span class="cnt">1</span><span class="spacer"></span><button class="btn ghost tiny" type="button">+ Add link</button></div>
+            <div class="lcard"><div class="t"><span class="prov">GH</span><b>#433</b> Tokenised card lookup<span class="spacer"></span><span class="pill info">Open</span></div><span class="xs muted">${REPO} · Claude Code · <span style="color:var(--color-ok)">●</span> live</span></div>
+          </section>
+          <section><div class="sec-h2"><span class="overline">Attachments</span><span class="cnt">0</span><span class="spacer"></span><button class="btn ghost tiny" type="button">+ Attach</button></div></section>
+          <section><div class="sec-h2"><span class="overline">History</span><span class="cnt">5 revisions</span></div>
+            <ul class="hist" style="margin-top:8px">
+              <li><span class="rev">5</span><div>${agentAv} <b>Claude Code</b> <span class="xs muted">Thu 22 Oct, 17:24</span><div class="ch">State Active → <b>In review</b></div><div class="ch">Commits <b>+3</b> (acme/storefront)</div></div></li>
+              <li><span class="rev">4</span><div>${av('priya')} <b>Priya Shah</b> <span class="xs muted">Thu 22 Oct, 16:12</span><div class="ch">State New → <b>Active</b></div></div></li>
+              <li><span class="rev">3</span><div>${agentAv} <b>Codex CLI</b> <span class="xs muted">Wed 21 Oct, 15:12</span><div class="ch">Handed back: <b>blocked</b></div></div></li>
+            </ul></section>
+        </aside>
+      </div>`;
+  }
+
+  /* ---------------- Run page ---------------- */
+  // The time axis shows the whole run, or one turn after a click on it in the overview strip (D19).
+  const fullPct = s => (s / run.end * 100).toFixed(3) + '%';
+  let R0 = 0, R1 = run.end, pct = fullPct, ticks = [], gridCss = '';
+  function setRange() {
+    [R0, R1] = ui.range || [0, run.end];
+    const span = R1 - R0;
+    pct = s => ((s - R0) / span * 100).toFixed(3) + '%';
+    const step = [5, 10, 15, 30, 60, 120, 300, 600, 900, 1800].find(x => x >= span / 8) || 3600;
+    ticks = []; for (let t = Math.ceil(R0 / step) * step; t <= R1 - span * 0.04; t += step) ticks.push(t);
+    gridCss = `linear-gradient(90deg, ${ticks.filter(t => t > R0).map(t => `transparent calc(${pct(t)} - 1px), color-mix(in srgb, var(--color-border) 45%, transparent) calc(${pct(t)} - 1px), color-mix(in srgb, var(--color-border) 45%, transparent) ${pct(t)}, transparent ${pct(t)}`).join(', ') || 'transparent, transparent'})`;
+  }
+  const tickLabel = t => t === 0 ? '0' : t % 60 === 0 ? `+${t / 60} m` : off(t);
+  // A bar clipped to the visible range; '' when it's outside.
+  const seg = (s, t) => { const a = Math.max(s, R0), b = Math.min(s + t, R1); return b < a || (b === a && t) ? '' : `left:${pct(a)};width:${pct(b - a)}`; };
+
+  const visible = () => {
+    const out = [];
+    const hasErr = sp => sp.err || (sp.kids || []).some(hasErr);
+    flat.forEach(sp => {
+      for (let p = sp.parent; p; p = p.parent) if (p.k === 'sub' && !p.open) return;
+      if (ui.errorsOnly && sp.k !== 'turn' && !hasErr(sp)) return;
+      if (ui.find && sp.k !== 'turn' && !(`${sp.n} ${CONTENT ? sp.d : ''}`.toLowerCase().includes(ui.find.toLowerCase()))) return;
+      out.push(sp);
+    });
+    return out;
+  };
+  const subCount = sp => { let n = 0; const w = l => l.forEach(x => { n++; x.kids && w(x.kids); }); w(sp.kids); return n; };
+  const kindLetter = { model: 'M', tool: 'T', mcp: 'SL', sub: 'S', ev: '•', turn: '›' };
+  const label = sp => {
+    if (!run.traced && sp.k !== 'turn') return `<span class="nm mono xs">${esc(sp.n.replace(/^codex\./, ''))}</span><span class="dt">${esc(sp.d === 'prompt' && !CONTENT ? 'prompt hidden' : sp.d)}</span>`;
+    if (sp.k === 'model') return `<span class="nm">Model call</span><span class="dt">${esc(sp.d)}</span>`;
+    if (sp.k === 'mcp') return `<span class="nm">${esc(sp.n)}</span><span class="dt">${esc(sp.d)}</span>`;
+    if (sp.k === 'sub') return `<span class="nm">${esc(sp.n)}</span><span class="dt">${CONTENT ? esc(sp.d) : ''}</span>`;
+    return `<span class="nm">${esc(sp.n)}</span><span class="dt">${CONTENT ? esc(sp.d) : ''}</span>`;
+  };
+  function rowHtml(sp) {
+    if (sp.k === 'turn') return `<div class="wf-row wf-turn${ui.sel === sp.id ? ' on' : ''}" data-sel="${sp.id}">
+      <div class="lab" style="--d:0"><span class="kd turn">›</span><span class="nm">${sp.n}</span><span class="pr">${CONTENT ? '“' + esc(sp.prompt) + '”' : 'prompt hidden'}</span></div>
+      <div class="track" style="--grid:${gridCss}">${seg(sp.s, sp.t) ? `<span class="bar turn" style="${seg(sp.s, sp.t)}"></span>` : ''}</div>
+      <div class="dur">${clock(run.base, sp.s).slice(0, 5)}</div></div>`;
+    const twisty = sp.kids ? `<button class="tw btn ghost" style="height:16px;padding:0;width:14px;border:0" type="button" data-tog="${sp.id}" aria-label="${sp.open ? 'Collapse' : 'Expand'}">${sp.open ? '▾' : '▸'}</button>` : '<span class="tw"></span>';
+    const isPoint = !sp.t;
+    const cls = sp.retry ? 'retry' : sp.err ? 'err' : sp.k;
+    let bars = '';
+    const b = (c, st, extra = '') => st ? `<span class="bar ${c}" style="${st}"${extra}></span>` : '';
+    if (isPoint) bars = sp.s >= R0 && sp.s <= R1 ? `<span class="pt ${sp.err ? 'err' : sp.k}" style="left:${pct(sp.s)}"></span>` : '';
+    else if (!run.traced) bars = b(cls, seg(sp.s - sp.t, sp.t));
+    else {
+      if (sp.wait) bars += b('wait', seg(sp.s, sp.wait), ` title="Waiting for permission ${dur(sp.wait)}"`);
+      bars += b(cls, seg(sp.s + (sp.wait || 0), sp.t - (sp.wait || 0)));
+    }
+    const c = state === 'comment' && sp.id === 'test1' ? '<span class="cbub" title="2 comments">2</span>' : '';
+    return `<div class="wf-row${ui.sel === sp.id ? ' on' : ''}" data-sel="${sp.id}">
+      <div class="lab" style="--d:${sp.depth}">${twisty}<span class="kd ${sp.k}">${kindLetter[sp.k]}</span>${label(sp)}${sp.kids && !sp.open ? `<span class="pill">${subCount(sp)} spans</span>` : ''}${sp.wait ? `<span class="pill warn">waited ${dur(sp.wait)}</span>` : ''}${c}${sp.err ? '<span class="x" title="Error">✕</span>' : ''}</div>
+      <div class="track" style="--grid:${gridCss}">${bars}</div>
+      <div class="dur">${isPoint ? clock(run.base, sp.s) : dur(sp.t)}</div></div>`;
+  }
+
+  function panelHtml() {
+    const sp = byId[ui.sel];
+    const d = details[sp.id] || genericDetail(sp);
+    const kindName = { model: 'Model call', tool: 'Tool', mcp: 'ShipLean tool', sub: 'Subagent', ev: 'Event', turn: run.agent === 'cursor' ? 'Prompt' : 'Turn' }[sp.k];
+    const start = run.traced || sp.k === 'turn' ? sp.s : sp.s - sp.t;
+    const head = `<div class="dp-h">
+      <div class="t"><span class="kd ${sp.k}">${kindLetter[sp.k]}</span><span class="nm">${sp.k === 'turn' ? sp.n : esc(run.traced ? (sp.k === 'model' ? 'Model call' : sp.n) : sp.n)}${run.traced && sp.k === 'tool' && CONTENT ? ` <span class="muted" style="font-weight:400">· ${esc(sp.d.split(' ').slice(0, 2).join(' '))}</span>` : ''}</span><span class="spacer"></span>${sp.err ? `<span class="pill danger">${esc(sp.err)}</span>` : '<span class="pill ok">OK</span>'}</div>
+      <div class="meta"><span>${kindName}</span>·<span>${run.day}, ${clock(run.base, start)}</span>·<span>${sp.t ? dur(sp.t) : 'point in time'}</span>·<span>${off(start)} into the run</span></div>
+      ${sp.wait ? `<div class="meta"><span class="pill warn">Waited ${dur(sp.wait)} for permission</span><span>then ran for ${dur(sp.t - sp.wait)}</span></div>` : ''}
+      <div class="row" style="margin-top:2px"><button class="btn tiny" type="button" data-comment>Comment</button><button class="btn tiny" type="button" data-copy>Copy link</button><span class="spacer"></span><a class="btn ghost tiny" href="#">Open in Grafana ↗</a></div></div>`;
+    const hidden = `<div class="hiddenbox">Prompts, responses and tool input and output are hidden in SHIP. A project admin can show them in Project settings › Inspection; the agent or the team's collector decides whether they're captured at all.</div>`;
+    let body = '';
+    if (sp.k === 'turn') body += `<div class="dp-sec"><span class="overline">Prompt</span>${CONTENT ? `<pre>${esc(sp.prompt)}</pre>` : hidden}</div>
+      <div class="dp-sec"><span class="overline">In this ${run.agent === 'cursor' ? 'prompt' : 'turn'}</span><div class="kvbox"><table class="kv"><tr><td>${run.traced ? 'spans' : 'events'}</td><td>${subCount(sp)}</td></tr><tr><td>took</td><td>${dur(sp.t)}</td></tr><tr><td>errors</td><td>${(() => { let n = 0; const w = l => l.forEach(x => { if (x.err) n++; x.kids && w(x.kids); }); w(sp.kids); return n; })()}</td></tr></table></div></div>`;
+    if (d.diff) body += `<div class="dp-sec"><span class="overline">In the changes</span><a class="linkrow" href="task-changes.html?view=review${keep}"><span>Open in Changes:</span><span class="path">VaultClient.cs ${d.lines || d.diff.lines}</span><span class="spacer"></span><span class="sha">${d.diff.sha}</span> →</a><span class="xs muted">This edit is in commit a81d4e0, which SHIP-171's Changes show. The file in the diff links back to this span.</span></div>`;
+    if (sp.k !== 'turn' && sp.k !== 'model' && d.input) body += `<div class="dp-sec"><span class="overline">Input</span>${CONTENT ? `<pre>${esc(d.input)}</pre>` : hidden}</div>`;
+    if (sp.k !== 'turn' && d.output && CONTENT) body += `<div class="dp-sec"><div class="hh"><span class="overline">Output</span><span class="spacer"></span>${CONTENT ? '<span class="xs muted">first 40 lines</span>' : ''}</div>${CONTENT ? `<pre>${d.output}</pre>` : ''}</div>`;
+    if (sp.k === 'model' && sp.retry) body += `<div class="callout warn"><b>The API answered 529 (overloaded).</b>Claude Code retried after 2.1 s and the second attempt went through. Logged as <code>claude_code.api_error</code> with <code>attempt=1</code>.</div>`;
+    body += `<div class="dp-sec"><span class="overline">Attributes</span><div class="kvbox"><table class="kv">${d.attrs.map(([k, v]) => `<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('')}</table></div></div>`;
+    if (d.logs.length) body += `<div class="dp-sec"><div class="hh"><span class="overline">Logs</span><span class="cnt">${d.logs.length}</span><span class="spacer"></span><span class="xs muted">joined by ${run.traced ? 'span id' : 'conversation and time'}</span></div><div class="logs">${d.logs.map(([t, s, n, b]) => `<div class="lr"><span class="tm">${t}</span><span class="sv ${s}">${s}</span><span class="bd">${n} <span>${esc(b)}</span></span></div>`).join('')}</div></div>`;
+    if (state === 'comment' && sp.id === 'test1') body = `<div class="dp-sec"><span class="overline">Comments on this span</span><div class="thread">
+      <div class="msg">${av('tom')}<div><div class="mh"><b>Tom Becker</b><span class="xs muted">Fri 23 Oct, 08:31</span></div><div>It only found the vault's one-retry rule after this test failed. That rule should be in SHIP-141's notes so the next brief has it.</div></div></div>
+      <div class="msg">${av('priya')}<div><div class="mh"><b>Priya Shah</b><span class="xs muted">Fri 23 Oct, 08:47</span></div><div>Added to SHIP-141. Leaving this open until the brief shows it.</div></div></div>
+      <div class="acts"><button class="btn tiny" type="button">Reply</button><button class="btn tiny" type="button">Resolve</button><span class="spacer"></span><span class="xs muted">on span 4f1a9c0d</span></div></div>
+      <span class="xs muted">Comments stay on SHIP-171 and show in its Discussion with a link to this span.</span></div>` + body;
+    return head + `<div class="dp-b">${body}</div>`;
+  }
+
+  function overviewHtml() {
+    const pct = fullPct;
+    const parts = run.turns.map((tu, i) => {
+      const all = []; const w = l => l.forEach(x => { all.push(x); x.kids && w(x.kids); }); w(tu.kids);
+      return `<span class="ovt${ui.range && ui.range[0] === tu.s ? ' on' : ''}" data-zoom="${i}" style="left:${pct(tu.s)};width:${pct(Math.max(tu.t, run.end / 60))}" title="Zoom to ${tu.n}">${tu.t > run.end / 12 ? tu.n : i + 1}</span>`
+        + all.filter(x => x.wait).map(x => `<span class="ovw" style="left:${pct(x.s)};width:${pct(x.wait)}" title="Waited ${dur(x.wait)} for permission"></span>`).join('')
+        + all.filter(x => x.err).map(x => `<span class="ove" style="left:${pct(x.s)}" title="${esc(x.err)}"></span>`).join('');
+    });
+    const idle = [];
+    for (let i = 0; i < run.turns.length - 1; i++) { const a = run.turns[i], b = run.turns[i + 1]; idle.push(`<span class="idle" style="left:${pct(a.s + a.t)};width:${pct(b.s - a.s - a.t)}" title="Idle ${dur(b.s - a.s - a.t)}"></span>`); }
+    const win = ui.range ? `<span class="ovwin" style="left:${pct(ui.range[0])};width:${pct(ui.range[1] - ui.range[0])}"></span>` : '';
+    return `<div class="ovwrap"><span class="l">${ui.range ? `Zoomed to ${run.turns.find(t => t.s === ui.range[0])?.n || 'a part'} · <a href="#" data-zoom="all">Whole run</a>` : `Whole run · click a ${run.agent === 'cursor' ? 'prompt' : 'turn'} to zoom to it`}</span><div class="overview">${idle.join('')}${win}${parts.join('')}</div><span></span></div>`;
+  }
+
+  function runPage() {
+    if (state === 'expired') {
+      $('page').innerHTML = `
+        <section class="rv-head"><div class="wi-top"><a class="back" href="?view=task${keep}">← Back to SHIP-171</a></div>
+          <div class="rv-title">${badge('claude')}<h1>Claude Code run · Thu 8 Oct, 11:04</h1></div></section>
+        <div class="expired"><h2>This run is no longer available</h2>
+          <span class="muted">The store keeps traces and logs for 30 days (the ClickHouse exporter's <code>ttl</code>), and this run was 37 days ago. ShipLean never copies spans or logs, so nothing of it is left to show.</span>
+          <span class="muted">The link came from a retrospective on SHIP-141 that cited run <code>cc-19ab4e</code>. The retrospective's own notes and failure log are still there.</span>
+          <span><a class="btn" href="?view=task${keep}">Back to SHIP-171's runs</a></span></div>`;
+      return;
+    }
+    setRange();
+    const e = errCount(run);
+    const rows = visible();
+    $('page').innerHTML = `
+      <div class="narrow-note"><b>Agent runs need a wider screen.</b><span class="muted">Open SHIP-171's runs on a computer. On a phone the task shows without them.</span><a href="?view=task${keep}">← Back to SHIP-171</a></div>
+      <section class="rv-head">
+        <div class="wi-top"><a class="back" href="?view=task${keep}">← Back to SHIP-171</a><span class="spacer"></span><span class="xs muted">Task ${tIcon('task')} SHIP-171 API: tokenised card lookup · ${st('In review')}</span></div>
+        <div class="rv-title">${badge(run.agent)}<h1>${AGENTS[run.agent]} run · ${run.day}, ${clock(run.base, 0).slice(0, 5)}</h1><span class="xs muted">${run.who} ${run.where}</span>
+          <span class="pill ${run.link === 'Tagged' ? 'ok' : 'info'}" title="${esc(run.linkWhy)}">Linked: ${run.link}</span><span class="spacer"></span>
+          ${(() => { const order = ['codex', 'claude', 'cursor'], i = order.indexOf(run.agent); return `<span class="row" style="gap:4px"><a class="btn tiny" ${i > 0 ? `href="?view=run&run=${order[i - 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>‹ Older</a><span class="xs muted" style="padding:0 4px">Run ${i + 1} of 3 on SHIP-171</span><a class="btn tiny" ${i < 2 ? `href="?view=run&run=${order[i + 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>Newer ›</a></span>`; })()}</div>
+        <div class="rv-bar">
+          <span class="stat"><b>${dur(run.end)}</b><span>Took</span></span>
+          <span class="stat"><b>${run.turns.length}</b><span>${run.agent === 'cursor' ? 'Prompts' : 'Turns'}</span></span>
+          <span class="stat"><b>${run.traced ? run.spans : run.events}</b><span>${run.traced ? 'Spans' : 'Events'}</span></span>
+          <span class="stat"><b>${run.tokensIn}</b><span>Tokens in</span></span>
+          <span class="stat"><b>${run.tokensOut}</b><span>Tokens out</span></span>
+          <span class="stat"><b>${run.cost}</b><span>Cost</span></span>
+          <span class="stat"><b style="color:${e ? 'var(--color-danger)' : 'inherit'}">${e}</b><span>Errors</span></span>
+          ${run.agent === 'claude' ? '<span class="stat"><b style="color:var(--color-warn)">22 m 49 s</b><span>Permission waits</span></span>' : ''}
+          <span class="sep"></span>
+          <span class="seg" role="group" aria-label="Show"><button type="button" data-err="0" aria-pressed="${!ui.errorsOnly}">All</button><button type="button" data-err="1" aria-pressed="${ui.errorsOnly}">Errors only · ${e}</button></span>
+          <input class="field find" id="find" placeholder="Find a span or tool" value="${esc(ui.find)}" aria-label="Find">
+          <span class="spacer"></span>
+          ${run.model === '—' ? '' : `<span class="xs muted">${run.model}</span>`}
+        </div>
+      </section>
+      ${!run.traced ? `<div class="banner"><b>${AGENTS[run.agent]} sends ${run.agent === 'cursor' ? 'hook events' : 'log events'}, not traces.</b> ${run.agent === 'cursor' ? 'ShipLean\'s hook script sends prompts, shell commands, MCP calls and file reads and edits; there are no model calls, tokens or cost.' : 'This run is a timeline of its events grouped by turn: no nesting, and a bar is drawn back from the event by its <code>duration_ms</code>.'}<span class="spacer"></span><a href="#">What each agent sends ↗</a></div>` : ''}
+      ${state === 'truncated' ? `<div class="banner warn"><b>Only part of this trace came back.</b> It's over Tempo's per-trace size limit, so 412 of about 1,900 spans are shown, earliest first.<span class="spacer"></span><a class="btn tiny" href="#">Open in Grafana ↗</a></div>` : ''}
+      ${overviewHtml()}
+      <div class="rv">
+        <div class="wf" id="wf">
+          <div class="wf-row wf-head"><div class="lab"><span class="lab">${run.traced ? 'Span' : 'Event'}</span></div><div class="axis">${ticks.map(t => `<span style="left:${pct(t)}">${tickLabel(t)}</span>`).join('')}</div><div class="dur lab" style="padding-right:12px">${run.traced ? 'Took' : 'Took · at'}</div></div>
+          ${rows.map(rowHtml).join('')}
+          ${ui.errorsOnly ? `<div class="legend">Showing the ${e} errors with the turns they're in. <a href="#" data-err="0">Show all</a></div>` : ''}
+          <div class="legend"><span><i style="background:var(--color-purple)"></i>Model call</span><span><i style="background:var(--color-info)"></i>Tool</span><span><i style="background:var(--color-accent)"></i>ShipLean tool</span><span><i style="background:var(--color-ok)"></i>Subagent</span><span><i style="background:repeating-linear-gradient(135deg,var(--color-warn) 0 4px,transparent 4px 7px)"></i>Waiting for permission</span><span><i style="background:var(--color-danger)"></i>Error</span>${run.traced ? '' : '<span><i style="width:9px;height:9px;transform:rotate(45deg);background:var(--color-muted)"></i>Event with no duration</span>'}</div>
+        </div>
+        <aside class="dp" aria-label="Span details">${panelHtml()}</aside>
+      </div>`;
+    const wf = $('wf'), on = wf.querySelector('.wf-row.on:not(.wf-turn)');
+    if (on) requestAnimationFrame(() => { if (on.offsetTop > wf.clientHeight - 60) wf.scrollTop = on.offsetTop - wf.clientHeight / 2; });
+  }
+
+  function render() { (view === 'task' ? taskPage : runPage)(); }
+  render();
+
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const tog = t.closest('[data-tog]'); if (tog) { const sp = byId[tog.dataset.tog]; sp.open = !sp.open; render(); return; }
+    const sel = t.closest('[data-sel]'); if (sel) { ui.sel = sel.dataset.sel; render(); return; }
+    const z = t.closest('[data-zoom]'); if (z) { e.preventDefault(); const tu = run.turns[z.dataset.zoom]; ui.range = tu ? [tu.s, tu.s + Math.max(tu.t, 30)] : null; render(); return; }
+    const er = t.closest('[data-err]'); if (er) { e.preventDefault(); ui.errorsOnly = er.dataset.err === '1'; render(); return; }
+    const open = t.closest('tr[data-open]'); if (open && !t.closest('a')) { location.search = `?view=run&run=${open.dataset.open}${keep}`; return; }
+    if (t.closest('[data-copy]')) { toast('Link to this span copied'); return; }
+    if (t.closest('[data-comment]')) { toast('Comment box opens under the span (as on Changes)'); return; }
+  });
+  document.addEventListener('input', e => { if (e.target.id === 'find') { ui.find = e.target.value; const pos = e.target.selectionStart; render(); const f = $('find'); f.focus(); f.setSelectionRange(pos, pos); } });
+
+  SL.preview([
+    { label: 'Task page', run: () => { location.search = '?view=task'; } },
+    { label: 'Claude Code run', run: () => { location.search = '?view=run'; } },
+    { label: 'Codex CLI run', run: () => { location.search = '?view=run&run=codex'; } },
+    { label: 'Cursor run', run: () => { location.search = '?view=run&run=cursor'; } },
+  ]);
+})();
+</script>
+</body>
+</html>
