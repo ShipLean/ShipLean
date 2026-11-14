@@ -60,9 +60,6 @@ export const taskboardTestIds = {
   // L722c task actions
   cardActions: 'taskboard-card-actions',
   actionState: 'taskboard-task-action-state',
-  actionStory: 'taskboard-task-action-story',
-  actionAssignee: 'taskboard-task-action-assignee',
-  actionOpen: 'taskboard-task-action-open',
   actionBack: 'taskboard-task-action-back',
   storySearch: 'taskboard-task-story-search',
   storyOption: 'taskboard-task-story-option',

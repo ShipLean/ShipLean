@@ -69,6 +69,7 @@ public static class TaskboardTestIds
     public const string StorySearch = "taskboard-task-story-search";
     public const string StoryOption = "taskboard-task-story-option";
     public const string AssigneeOption = "taskboard-task-assignee-option";
+    public const string Address = "taskboard-address";
     public const string AddTask = "taskboard-add-task";
     public const string TaskBox = "taskboard-task-box";
     public const string TaskTitle = "taskboard-task-title";
