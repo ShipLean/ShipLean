@@ -16,11 +16,12 @@ import { retroCategoryLabels } from '../../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../../testIds';
 import { useRetroActionDialogData, useRetroSearch } from '../../useRetroQueries';
 import { heatShade } from '../recurring/heatShade';
+import { STATUS } from '../recurring/StatusChip';
+import { VERDICT } from '../recurring/VerdictChip';
 import { useRenameTheme } from '../recurring/useRenameTheme';
 import { statusWording, verdictWording } from '../tips/tipWording';
 import { ACTION_CHIPS_AT_TOUCH } from './actionChips';
 import { RenameThemeForm } from './RenameThemeForm';
-import { statusLabels, verdictLabels } from './themeLabels';
 
 const MENTIONS_SHOWN = 3;
 const GROUP =
@@ -138,7 +139,7 @@ export function ThemeSheet({
 }
 
 function StatusPart({ row, mode }: { row: RetroThemeInsightDto; mode: RetroInsightsMode }) {
-  const { label, tone } = statusLabels[row.status];
+  const { label, tone } = STATUS[row.status];
   return (
     <section
       data-testid={ids.retroThemeSheetStatus}
@@ -289,7 +290,7 @@ function LastChangePart({
       ) : (
         <>
           <div className="flex items-start gap-2 text-[length:var(--text-sm)]">
-            <Chip tone={verdictLabels[verdict].tone}>{verdictLabels[verdict].label}</Chip>
+            <Chip tone={VERDICT[verdict].tone}>{VERDICT[verdict].label}</Chip>
             <span className="min-w-0 text-ink-muted">{verdictWording(verdict, mode)}</span>
           </div>
           {change ? (
