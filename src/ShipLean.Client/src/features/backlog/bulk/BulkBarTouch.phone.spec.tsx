@@ -19,8 +19,6 @@ import { backlogTestIds as ids } from '../testIds';
 
 const planning = { hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' } };
 const list = { hooksConfig: { route: '/p/SHIP/backlogs/stories' } };
-const rowBox = (page: Page, key: string) =>
-  page.locator(`[data-testid="${ids.row}"][data-key="${key}"]`).getByTestId(ids.touchRowSelect);
 const pickMore = async (page: Page, action: string) => {
   await page.getByTestId(touchTestIds.moreButton).first().tap();
   await page
