@@ -28,6 +28,35 @@ public class GuideContentTests
     }
 
     [Test]
+    public void CodeReviewer_ShouldTellReviewerToLogReview()
+    {
+        var reviewer = PlanGuide.Read(PlanGuidePart.CodeReviewer);
+
+        reviewer.ShouldContain("call `log_review` on the task");
+        reviewer.ShouldContain("`changes_requested`");
+        reviewer.ShouldContain("starting with \"Review · \"");
+    }
+
+    [Test]
+    public void Guide_Step7_ShouldNameLogReview()
+    {
+        var step7 = Guide[Guide.IndexOf("## Step 7", StringComparison.Ordinal)..Guide.IndexOf("## Step 9", StringComparison.Ordinal)];
+
+        step7.ShouldContain("`log_review`");
+        var start = Guide.IndexOf("## Where state lives", StringComparison.Ordinal);
+        Guide[start..Guide.IndexOf("\n## ", start + 1, StringComparison.Ordinal)].ShouldContain("`log_review`");
+    }
+
+    [Test]
+    public void Guide_Step9_ShouldNameFeatureTimeline()
+    {
+        Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..].ShouldContain("`feature_timeline`");
+    }
+
+    [Test]
+    public void Lead_ShouldNameLogReview() => PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_review`");
+
+    [Test]
     public void GuideContent_ShouldMapModesToStories()
     {
         Guide.ShouldContain("| Direct |");

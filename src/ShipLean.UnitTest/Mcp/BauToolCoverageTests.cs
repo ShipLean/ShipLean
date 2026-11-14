@@ -29,6 +29,8 @@ public class BauToolCoverageTests
         ["sprint_review"] = Kind.ListsItems,
         ["feature_progress"] = Kind.ListsItems,
         ["get_work_item"] = Kind.ByKeyOnly,
+        ["feature_timeline"] = Kind.ByKeyOnly,
+        ["log_review"] = Kind.ByKeyOnly,
         ["read_attachment"] = Kind.ByKeyOnly,
         ["get_brief"] = Kind.ByKeyOnly,
         ["plan_status"] = Kind.ByKeyOnly,

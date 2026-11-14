@@ -27,6 +27,8 @@ public static class ToolUsageMap
         ["plan_status"] = UsageEventNames.PlanStatusViewed,
         ["planning_guide"] = UsageEventNames.PlanningGuideViewed,
         ["feature_progress"] = UsageEventNames.FeatureProgressViewed,
+        ["feature_timeline"] = UsageEventNames.FeatureTimelineViewed,
+        ["log_review"] = UsageEventNames.ReviewLogged,
         ["review_backlog"] = UsageEventNames.BacklogReviewed,
         ["whats_changed_since"] = UsageEventNames.ChangesViewed,
         ["search"] = UsageEventNames.SearchPerformed,
