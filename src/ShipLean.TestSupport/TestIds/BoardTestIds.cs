@@ -79,6 +79,13 @@ public static class BoardTestIds
     public const string FilterEpic = "board-filter-epic";
     public const string FilterClear = "board-filter-clear";
     public const string FilterNote = "board-filter-note";
+    public const string LevelSwitch = "board-level-switch";
+    public const string LevelOption = "board-level-option";
+    public const string Meta = "board-meta";
+    public const string FilterSheet = "board-filter-sheet";
+    public const string FilterShow = "board-filter-show";
+    public const string MoreSheet = "board-more-sheet";
+    public const string DodSheet = "board-dod-sheet";
     public const string ChildList = "board-child-list";
     public const string ChildLoading = "board-child-loading";
     public const string ChildFailed = "board-child-failed";
