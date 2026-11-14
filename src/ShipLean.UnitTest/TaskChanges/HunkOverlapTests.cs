@@ -53,18 +53,24 @@ public class HunkOverlapTests
     [TestCase(CodeSide.New, 19, false)]
     [TestCase(CodeSide.New, 24, false)]
     public void HunkOverlap_WhenLineOnASide_ShouldMatchThatSidesNumbers(CodeSide side, int line, bool expected)
-        => HunkOverlap.Touches(Edit, "src/a.ts", side, line, null).ShouldBe(expected);
+    {
+        HunkOverlap.Touches(Edit, "src/a.ts", side, line, null).ShouldBe(expected);
+    }
 
     [TestCase(CodeSide.Old, 5, 10, true)]
     [TestCase(CodeSide.Old, 1, 9, false)]
     [TestCase(CodeSide.Old, 14, 30, true)]
     [TestCase(CodeSide.Old, 15, 30, false)]
     public void HunkOverlap_WhenRange_ShouldTouchWhenAnyLineIsInTheHunk(CodeSide side, int start, int end, bool expected)
-        => HunkOverlap.Touches(Edit, "src/a.ts", side, end, start).ShouldBe(expected);
+    {
+        HunkOverlap.Touches(Edit, "src/a.ts", side, end, start).ShouldBe(expected);
+    }
 
     [Test]
     public void HunkOverlap_WhenOtherPath_ShouldNotTouch()
-        => HunkOverlap.Touches(Edit, "src/b.ts", CodeSide.New, 21, null).ShouldBeFalse();
+    {
+        HunkOverlap.Touches(Edit, "src/b.ts", CodeSide.New, 21, null).ShouldBeFalse();
+    }
 
     [Test]
     public void HunkOverlap_WhenDeletedFile_ShouldTouchOldSideOnly()
