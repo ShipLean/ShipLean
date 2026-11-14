@@ -46,7 +46,7 @@ export function ImpactCard({
         </span>
       </div>
       <h3 className="m-0 text-[length:var(--text-md)] font-semibold">{action.title}</h3>
-      <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)] touch:[&_a]:min-h-[var(--touch-target)]">
+      <div className="flex flex-wrap items-center gap-1.5 text-[length:var(--text-sm)] touch:[&>a]:min-h-[var(--touch-target)]">
         <ActionChip action={action} />
         <span className="text-ink-muted">for</span>
         <b>{theme.name}</b>

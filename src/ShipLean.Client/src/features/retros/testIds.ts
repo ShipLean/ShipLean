@@ -137,6 +137,7 @@ export const retrosTestIds = {
   retroActionCards: 'retro-action-cards',
   retroActionCard: 'retro-action-card',
   retroActionCardLink: 'retro-action-card-link',
+  retroActionCardSprint: 'retro-action-card-sprint',
   retroImpactHowVerdicts: 'retro-impact-how-verdicts',
   retroImpactBar: 'retro-impact-bar',
   retroImpactReadout: 'retro-impact-readout',

@@ -16,6 +16,8 @@ public sealed class RetroActionsTouchPart(IPage page)
 
     public static ILocator PullOf(ILocator card) => card.GetByTestId(RetrosTestIds.RetroActionPull);
 
+    public static ILocator SprintOf(ILocator card) => card.GetByTestId(RetrosTestIds.RetroActionCardSprint);
+
     public ILocator HowVerdicts => page.GetByTestId(RetrosTestIds.RetroImpactHowVerdicts);
 
     public static ILocator BarsOf(ILocator impactCard) => impactCard.GetByTestId(RetrosTestIds.RetroImpactBar);

@@ -74,7 +74,9 @@ export function ActionItemCard({
       <div className="text-[length:var(--text-xs)] text-ink-muted">{details.join(' · ')}</div>
       <div className="flex min-h-[var(--touch-target)] flex-wrap items-center gap-x-3 gap-y-1">
         {action.sprint ? (
-          <span data-cell="sprint">{action.sprint.name}</span>
+          <span data-testid={ids.retroActionCardSprint} data-cell="sprint">
+            {action.sprint.name}
+          </span>
         ) : open && next ? (
           <PullButton projectId={projectId} itemKey={action.key} sprint={next} touch />
         ) : null}

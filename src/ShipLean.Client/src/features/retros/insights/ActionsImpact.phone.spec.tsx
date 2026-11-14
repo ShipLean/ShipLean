@@ -109,7 +109,7 @@ test('ImpactPhone_WhenABarIsTapped_ShouldOutlineItAndReadOutItsColumnAndCount', 
   const first = retroInsights.impact[0];
   const card = page.getByTestId(ids.retroImpactCard).first();
   await expect(card.getByTestId(ids.retroImpactReadout)).toHaveCount(0);
-  const index = first.counts.findIndex((c) => c > 1);
+  const index = first.counts.findIndex((c, i) => i > 0 && c > 1);
   expect(index).toBeGreaterThanOrEqual(0);
   await card.getByTestId(ids.retroImpactBar).nth(index).tap();
   const label = retroInsights.columns[index].label.replace(/^Sprint\s+/, 'S');

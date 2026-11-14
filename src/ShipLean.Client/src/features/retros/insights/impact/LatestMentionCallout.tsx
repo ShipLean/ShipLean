@@ -12,7 +12,7 @@ export function LatestMentionCallout({ mention }: { mention: RetroPointDto }) {
       Agents still hit it: &ldquo;{mention.text}&rdquo;.
       {mention.action ? (
         <span
-          className="mt-1 flex flex-wrap items-center gap-1.5 touch:[&_a]:min-h-[var(--touch-target)]"
+          className="mt-1 flex flex-wrap items-center gap-1.5 touch:[&>a]:min-h-[var(--touch-target)]"
           data-follow-up=""
         >
           Follow-up <ActionChip action={mention.action} />

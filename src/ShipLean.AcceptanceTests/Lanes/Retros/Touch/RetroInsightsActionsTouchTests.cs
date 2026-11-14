@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Dapper;
 using Npgsql;
@@ -58,9 +59,11 @@ public class RetroInsightsActionsTouchTests : SeededAcceptanceTest
         (await pull.BoundingBoxAsync())!.Height.ShouldBeGreaterThanOrEqualTo(32);
         (await Page.EvaluateAsync<bool>("document.documentElement.scrollWidth <= document.documentElement.clientWidth")).ShouldBeTrue();
 
+        var nextSprint = await NextSprintNameAsync();
+        await Expect(RetroActionsTouchPart.SprintOf(open)).ToHaveCountAsync(0);
         await pull.TapAsync();
         await Expect(RetroActionsTouchPart.PullOf(open)).ToHaveCountAsync(0);
-        await Expect(open).ToContainTextAsync("Sprint");
+        await Expect(RetroActionsTouchPart.SprintOf(open)).ToHaveTextAsync(nextSprint);
     }
 
     [Test]
@@ -69,7 +72,11 @@ public class RetroInsightsActionsTouchTests : SeededAcceptanceTest
         var arranged = await ArrangeAsync();
         var (_, touch) = await OpenAsync("actions");
 
-        await RetroActionsTouchPart.LinkOf(touch.CardOf(arranged.DoneTitle)).TapAsync();
+        // Away from the title link: the stretched link is what makes the whole card the target. The card's bottom-left corner
+        // is its padding below the owner row.
+        var card = touch.CardOf(arranged.DoneTitle);
+        var box = (await card.BoundingBoxAsync())!;
+        await card.TapAsync(new() { Position = new() { X = 6, Y = box.Height - 4 } });
 
         var peek = new ItemPeekDialog(Page);
         await peek.WaitOpenAsync(arranged.DoneKey);
@@ -87,14 +94,20 @@ public class RetroInsightsActionsTouchTests : SeededAcceptanceTest
         (await TouchRules.ViolationsAsync(Page, insights.ImpactCards.First)).ShouldBeEmpty();
         await Expect(RetroActionsTouchPart.ReadoutOf(card)).ToHaveCountAsync(0);
 
-        // The third column's bar: its count is two mentions a sprint at most.
+        // The card's columns are Sprints 19-24 (SeedIds), two mentions a sprint in 20-23: each tapped bar reads out its own column.
         var bars = RetroActionsTouchPart.BarsOf(card);
-        var sprint22 = bars.Nth(2);
+        var readout = RetroActionsTouchPart.ReadoutOf(card);
+        var sprint22 = bars.Nth(3);
         await sprint22.TapAsync();
-        await Expect(RetroActionsTouchPart.ReadoutOf(card)).ToHaveTextAsync(new Regex(@"^S\d+: \d+ mentions?$"));
+        await Expect(readout).ToHaveTextAsync("S22: 2 mentions");
         await Expect(sprint22).ToHaveAttributeAsync("data-selected", string.Empty);
-        await sprint22.TapAsync();
-        await Expect(RetroActionsTouchPart.ReadoutOf(card)).ToHaveCountAsync(0);
+        await bars.Nth(5).TapAsync();
+        await Expect(readout).ToHaveTextAsync("S24: 0 mentions");
+        await Expect(sprint22).Not.ToHaveAttributeAsync("data-selected", string.Empty);
+        await bars.Nth(1).TapAsync();
+        await Expect(readout).ToHaveTextAsync("S20: 2 mentions");
+        await bars.Nth(1).TapAsync();
+        await Expect(readout).ToHaveCountAsync(0);
     }
 
     [Test]
@@ -145,6 +158,18 @@ public class RetroInsightsActionsTouchTests : SeededAcceptanceTest
         var open = await RetroHistory.CreateAsync(connection, new WorkItemBuilder(SeedIds.Projects.Ship).WithType("action").WithTitle(openTitle));
         await seed.ActionAsync(new RetroSeedAction(open, theme, RaisedSprintId: SeedIds.Sprints.Sprint21));
         return new Arranged(themeName, openTitle, await KeyOfAsync(connection, open), doneTitle, await KeyOfAsync(connection, done));
+    }
+
+    // The earliest sprint that has not started, as the Pull button picks it.
+    private async Task<string> NextSprintNameAsync()
+    {
+        var response = await Page.Context.APIRequest.GetAsync($"/api/projects/{SeedIds.Projects.Ship}/sprints");
+        response.Ok.ShouldBeTrue(await response.TextAsync());
+        using var sprints = JsonDocument.Parse(await response.TextAsync());
+        return sprints.RootElement.EnumerateArray()
+            .Where(sprint => sprint.GetProperty("status").GetString() == "future")
+            .OrderBy(sprint => sprint.GetProperty("startDate").GetString(), StringComparer.Ordinal)
+            .First().GetProperty("name").GetString()!;
     }
 
     private static async Task<string> KeyOfAsync(NpgsqlConnection connection, Guid id) =>

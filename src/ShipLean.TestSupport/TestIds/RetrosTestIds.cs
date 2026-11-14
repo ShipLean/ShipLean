@@ -140,6 +140,7 @@ public static class RetrosTestIds
     public const string RetroActionCards = "retro-action-cards";
     public const string RetroActionCard = "retro-action-card";
     public const string RetroActionCardLink = "retro-action-card-link";
+    public const string RetroActionCardSprint = "retro-action-card-sprint";
     public const string RetroImpactHowVerdicts = "retro-impact-how-verdicts";
     public const string RetroImpactBar = "retro-impact-bar";
     public const string RetroImpactReadout = "retro-impact-readout";
