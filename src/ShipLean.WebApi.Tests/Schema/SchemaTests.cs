@@ -22,10 +22,10 @@ public class SchemaTests
     {
         string[] expected =
         [
-            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
+            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "code_comment", "code_commit", "code_repository", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
             "import_mapping", "instance_settings", "issue_job", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
             "oauth_request", "oauth_token", "project", "project_demo_settings", "project_issue_intake", "project_member", "project_youtube_channel", "public_holiday", "question", "retro_action", "retro_action_point", "retro_failure_log", "retro_point", "retro_point_support", "retro_theme", "retro_theme_merge_proposal", "retrospective", "retrospective_source", "revision", "search_doc", "sprint",
-            "sprint_capacity", "state", "tool_payload", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_link",
+            "sprint_capacity", "state", "tool_payload", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_commit", "work_item_link",
         ];
         await using var connection = await _database.OpenAsync();
 
