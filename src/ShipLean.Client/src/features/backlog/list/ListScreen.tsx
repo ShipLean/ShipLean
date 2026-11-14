@@ -24,7 +24,9 @@ import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
 import { useNewItemFromLink } from '../useNewItemFromLink';
+import { SelectBar } from '../touch/SelectBar';
 import { useTouchSelectMode } from '../touch/selectMode';
+import { useSelectMoreActions } from '../touch/selectMoreActions';
 import { NewItemRow } from './NewItemRow';
 import { TouchRowList } from '../touch/TouchRowList';
 import { useTouchReorder } from '../touch/useTouchReorder';
@@ -60,6 +62,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
   const { touch } = useTouchShell();
   const { selecting } = useTouchSelectMode();
+  const selectActions = useSelectMoreActions(queue, state.backlog.data?.review ?? null);
   useReconnectSummary(state.queryKey);
   useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
@@ -80,6 +83,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               options={() => <AddManyButton />}
               search={() => <BacklogSearchBox search={search} />}
               keys={() => <KeysButton />}
+              moreActions={selectActions}
               sort={
                 sort.sort
                   ? {
@@ -100,6 +104,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                     <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
                   </div>
                   <BulkOutcomeHost projectId={project.id} />
+                  <SelectBar />
                   {touch ? (
                     <TouchRowList
                       rows={rows}

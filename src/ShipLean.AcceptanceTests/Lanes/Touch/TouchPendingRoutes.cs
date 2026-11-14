@@ -9,7 +9,6 @@ public static class TouchPendingRoutes
         // SHIP-736
         // SHIP-733
         // SHIP-716
-        ["storiesBacklog"] = "SHIP-716",
         // SHIP-722
         // SHIP-719
         // SHIP-723
