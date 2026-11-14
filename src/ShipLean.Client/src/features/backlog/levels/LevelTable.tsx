@@ -1,11 +1,13 @@
 import type { BacklogRowDto } from '@shiplean/core/api/views';
 import type { ColumnSpec } from '../backlogApi';
 import type { ColumnSort } from '../sort/columnSort';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { SortableHeader } from '../sort/SortableHeader';
 import { backlogTestIds as ids } from '../testIds';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelNewItemRow } from './LevelNewItemRow';
 import { LevelRow } from './LevelRow';
+import { TouchLevelRow } from './TouchLevelRow';
 
 const numeric: readonly LevelColumnId[] = ['rank', 'points', 'features'];
 const widths: Partial<Record<LevelColumnId, string>> = {
@@ -46,6 +48,36 @@ export function LevelTable({
   sort: ColumnSort;
   onSort: (column: string) => void;
 }) {
+  const { touch } = useTouchShell();
+  if (touch) {
+    // At 900px and below the level is a list of rows, not a table (SHIP-716 D1, D8).
+    return (
+      <div data-testid={ids.list} className="flex-1 overflow-auto">
+        <div data-testid={ids.touchRowList} className="min-w-0">
+          {adding ? (
+            <LevelNewItemRow
+              level={level}
+              projectId={projectId}
+              projectKey={projectKey}
+              columnCount={columns.length}
+              onClose={onCloseAdd}
+            />
+          ) : null}
+          {rows.map((row) => (
+            <TouchLevelRow key={row.id} row={row} projectKey={projectKey} level={level} />
+          ))}
+          {rows.length === 0 ? (
+            <div
+              data-testid={ids.noRows}
+              className="flex h-16 items-center justify-center text-[length:var(--text-sm)] text-ink-muted"
+            >
+              {filtered ? 'Nothing matches this filter' : 'Nothing to show'}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
   return (
     <div data-testid={ids.list} className="flex-1 overflow-auto">
       <table className="w-full border-collapse">

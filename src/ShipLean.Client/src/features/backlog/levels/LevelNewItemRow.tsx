@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
@@ -28,6 +29,7 @@ export function LevelNewItemRow({
   onClose: () => void;
 }) {
   const type = typeOf[level];
+  const { touch } = useTouchShell();
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateWorkItem(projectId, projectKey);
@@ -52,46 +54,58 @@ export function LevelNewItemRow({
     else if (event.key === 'Escape') onClose();
   }
 
+  const form = (
+    <div className="flex items-center gap-[var(--space-2)] touch:flex-wrap">
+      <span
+        data-testid={ids.addType}
+        data-type={type.id}
+        className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)]"
+      >
+        <TypeIcon type={type.id} />
+        {type.label}
+      </span>
+      <input
+        ref={input}
+        data-testid={ids.addTitle}
+        aria-label="Title"
+        className="field min-w-0 flex-1"
+        placeholder="Title, then Enter to add at the top"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        onKeyDown={onKeyDown}
+      />
+      <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
+        Add
+      </button>
+      <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
+        Esc
+      </button>
+      {create.error ? (
+        <span
+          data-testid={ids.addError}
+          role="alert"
+          className="text-[length:var(--text-sm)] text-alert"
+        >
+          {create.error instanceof ApiRequestError
+            ? create.error.message
+            : 'Could not add the item.'}
+        </span>
+      ) : null}
+    </div>
+  );
+
+  // The rows are divs at touch, so the add row is one too.
+  if (touch) {
+    return (
+      <div data-testid={ids.addRow} className="border-b border-edge bg-signal-soft px-3 py-2">
+        {form}
+      </div>
+    );
+  }
   return (
     <tr data-testid={ids.addRow} className="h-11 bg-signal-soft">
       <td colSpan={columnCount} className="px-2">
-        <div className="flex items-center gap-[var(--space-2)]">
-          <span
-            data-testid={ids.addType}
-            data-type={type.id}
-            className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)]"
-          >
-            <TypeIcon type={type.id} />
-            {type.label}
-          </span>
-          <input
-            ref={input}
-            data-testid={ids.addTitle}
-            aria-label="Title"
-            className="field flex-1"
-            placeholder="Title, then Enter to add at the top"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
-            Add
-          </button>
-          <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
-            Esc
-          </button>
-          {create.error ? (
-            <span
-              data-testid={ids.addError}
-              role="alert"
-              className="text-[length:var(--text-sm)] text-alert"
-            >
-              {create.error instanceof ApiRequestError
-                ? create.error.message
-                : 'Could not add the item.'}
-            </span>
-          ) : null}
-        </div>
+        {form}
       </td>
     </tr>
   );
