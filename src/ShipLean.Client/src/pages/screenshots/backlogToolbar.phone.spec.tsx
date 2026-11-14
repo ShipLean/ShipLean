@@ -27,7 +27,7 @@ phonePageShots([
     arrange,
     ready,
     act: async (page) => {
-      await page.getByTestId(touchTestIds.moreButton).tap();
+      await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
       await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
     },
   },
@@ -49,7 +49,7 @@ phonePageShots([
     arrange,
     ready,
     act: async (page) => {
-      await page.getByTestId(touchTestIds.moreButton).tap();
+      await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
       await page
         .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="search"]`)
         .tap();

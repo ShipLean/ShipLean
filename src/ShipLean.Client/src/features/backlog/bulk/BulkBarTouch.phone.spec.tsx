@@ -25,13 +25,12 @@ const pickMore = async (page: Page, action: string) => {
     .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${action}"]`)
     .tap();
 };
-// Planning's rows keep their handle while selecting and have no box yet, so a tap on the row selects it.
 const rowOf = (page: Page, key: string) =>
   page.locator(`[data-testid="${ids.row}"][data-key="${key}"]`);
 const selectTwo = async (page: Page) => {
   await pickMore(page, 'select');
   for (const key of ['SHIP-180', 'SHIP-181']) {
-    await rowOf(page, key).tap({ position: { x: 150, y: 10 } });
+    await rowOf(page, key).getByTestId(ids.touchRowSelect).tap();
     await expect(rowOf(page, key)).toHaveAttribute('data-selected', 'true');
   }
 };
@@ -186,4 +185,38 @@ test('MoreSheet_WhenNothingUnestimated_ShouldNotOfferEstimate', async ({ mount, 
       `[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="estimate-unpointed"]`,
     ),
   ).toHaveCount(0);
+});
+
+test('PlanningRows_WhenSelecting_ShouldShowBoxesInPlaceOfHandles', async ({ mount, page }) => {
+  await stubBacklog(page, planningManyView(), { sprints: planningSprints() });
+  await mount(
+    <SelectModeHarness>
+      <PlanningMode project={PROJECT} />
+    </SelectModeHarness>,
+    planning,
+  );
+  await expect(page.getByTestId(ids.row)).toHaveCount(12);
+  await expect(page.getByTestId(ids.touchHandle)).toHaveCount(12);
+
+  await pickMore(page, 'select');
+
+  await expect(page.getByTestId(ids.touchRowSelect)).toHaveCount(12);
+  await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
+});
+
+test('BeforeYouPlan_WhenTouch_ShouldMakeEachCheckATouchTarget', async ({ mount, page }) => {
+  const rows = [1, 2].map((n) => itemRow({ key: `SHIP-${n}`, rank: n, points: null }));
+  await stubBacklog(page, { ...backlogView(rows), review: review({ unestimated: [rows[0].id] }) });
+  await mount(
+    <SelectModeHarness>
+      <ListMode project={PROJECT} />
+    </SelectModeHarness>,
+    list,
+  );
+  await expect(page.getByTestId(ids.row)).toHaveCount(2);
+
+  for (const chip of await page.getByTestId(ids.planCheck).all()) {
+    const box = await chip.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(32);
+  }
 });
