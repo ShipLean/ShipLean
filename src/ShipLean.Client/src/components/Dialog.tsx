@@ -114,7 +114,7 @@ export function Dialog({
               </div>
             ) : null}
           </header>
-          <div className="grid min-h-0 flex-1 content-start gap-3 overflow-auto px-4 py-3">
+          <div className="grid min-h-0 flex-1 auto-rows-max content-start gap-3 overflow-auto px-4 py-3">
             {children}
           </div>
           {footer ? (

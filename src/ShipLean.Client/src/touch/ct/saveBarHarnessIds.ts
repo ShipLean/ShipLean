@@ -8,5 +8,6 @@ export const saveBarHarnessIds = {
   ctDialogOpener: 'ct-full-screen-dialog-opener',
   ctDialogPrimaryButton: 'ct-full-screen-dialog-primary-button',
   ctDialogBodyEnd: 'ct-full-screen-dialog-body-end',
+  ctDialogOverflowChild: 'ct-full-screen-dialog-overflow-child',
   ctDialogState: 'ct-full-screen-dialog-state',
 } as const;

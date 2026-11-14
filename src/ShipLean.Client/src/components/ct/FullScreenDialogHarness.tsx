@@ -6,7 +6,13 @@ import { Dialog } from '../Dialog';
  * CT-only: an opener and a dialog with a primary action, a footer and a body as long as `rows`. Its width is narrower
  * than a phone, so a desktop inline width leaking onto the touch panel shows up as a box under the screen's width.
  */
-export function FullScreenDialogHarness({ rows = 3 }: { rows?: number }) {
+export function FullScreenDialogHarness({
+  rows = 3,
+  overflowChildHeight,
+}: {
+  rows?: number;
+  overflowChildHeight?: number;
+}) {
   const [open, setOpen] = useState(true);
   return (
     <>
@@ -31,6 +37,11 @@ export function FullScreenDialogHarness({ rows = 3 }: { rows?: number }) {
               Field {row + 1}
             </p>
           ))}
+          {overflowChildHeight ? (
+            <div data-testid={ids.ctDialogOverflowChild} className="overflow-hidden">
+              <div style={{ height: overflowChildHeight }}>Overflow child content</div>
+            </div>
+          ) : null}
           <p data-testid={ids.ctDialogBodyEnd} className="m-0">
             Body end
           </p>
