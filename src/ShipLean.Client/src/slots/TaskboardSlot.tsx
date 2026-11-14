@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { fetchMe, meKey } from '../queries/shared';
 import type { SheetAction } from '../touch/ActionSheet';
 import { collapseAllMap } from '../features/taskboard/grid/boardRowIds';
+import { useOpenCardSettings } from '../features/taskboard/grid/useOpenCardSettings';
 import { faceCounts } from '../features/taskboard/grid/faceFilter';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardGrid } from '../features/taskboard/grid/TaskboardGrid';
@@ -35,7 +35,7 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
     [sprint.id],
   );
   const setState = useSetParentState(project.id, scope);
-  const [params, setParams] = useSearchParams();
+  const openCardSettings = useOpenCardSettings();
   const meDto = useQuery({ queryKey: meKey, queryFn: fetchMe }).data;
   const me: UserRef | undefined = meDto && {
     id: meDto.id,
@@ -80,11 +80,7 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
     {
       id: 'taskboard-settings',
       label: 'Taskboard settings',
-      onSelect: () => {
-        const next = new URLSearchParams(params);
-        next.set('settings', 'fields');
-        setParams(next);
-      },
+      onSelect: openCardSettings,
     },
   ];
   const isCollapsed = (rowId: string, completed: boolean) => toggled.get(rowId) ?? completed;

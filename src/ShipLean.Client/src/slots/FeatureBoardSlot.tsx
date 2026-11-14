@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
@@ -14,6 +14,7 @@ import { CardFeatureContext } from '../features/taskboard/cards/CardFeatureConte
 import type { SheetAction } from '../touch/ActionSheet';
 import { routePath } from '../routes';
 import { collapseAllMap } from '../features/taskboard/grid/boardRowIds';
+import { useOpenCardSettings } from '../features/taskboard/grid/useOpenCardSettings';
 import { faceCounts } from '../features/taskboard/grid/faceFilter';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardToolbar } from '../features/taskboard/grid/TaskboardToolbar';
@@ -56,7 +57,7 @@ function LoadedBoard({
   const { loaded, grouping, setGrouping } = useTaskboardGrouping();
   const setState = useSetParentState(project.id, scope);
   const navigate = useNavigate();
-  const [params, setParams] = useSearchParams();
+  const openCardSettings = useOpenCardSettings();
   const meDto = useQuery({ queryKey: meKey, queryFn: fetchMe }).data;
   const me: UserRef | undefined = meDto && {
     id: meDto.id,
@@ -106,11 +107,7 @@ function LoadedBoard({
     {
       id: 'card-settings',
       label: 'Card settings',
-      onSelect: () => {
-        const next = new URLSearchParams(params);
-        next.set('settings', 'fields');
-        setParams(next);
-      },
+      onSelect: openCardSettings,
     },
     {
       id: 'open-feature',

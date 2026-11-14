@@ -43,7 +43,10 @@ export function AddStoryBox({
   }
 
   return (
-    <div data-testid={ids.addStoryBox} className="flex flex-wrap items-center gap-2 px-4 py-2">
+    <div
+      data-testid={ids.addStoryBox}
+      className="flex items-center gap-2 px-4 py-2 touch:flex-wrap"
+    >
       <select
         data-testid={ids.addStoryType}
         aria-label="Type"
@@ -63,7 +66,7 @@ export function AddStoryBox({
         autoFocus
         data-testid={ids.addStoryTitle}
         aria-label="Title"
-        className="field min-w-0 flex-1 touch:basis-full"
+        className="field flex-1 touch:min-w-0 touch:basis-full"
         placeholder={
           scope.kind === 'sprint'
             ? 'Title, then Enter to add to this sprint'

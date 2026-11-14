@@ -1,10 +1,13 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { componentTestIds } from '../../../components/testIds';
 import { FeatureBoardSlot } from '../../../slots/FeatureBoardSlot';
 import { touchTestIds } from '../../../touch/testIds';
+import { TaskboardSlot } from '../../../slots/TaskboardSlot';
 import { FEATURE_KEY, FEATURE_VIEW } from '../../featureBoard/ct/fixtures';
 import { stubFeatureBoard } from '../../featureBoard/ct/stubFeatureBoard';
 import { taskboardTestIds as ids } from '../testIds';
-import { PROJECT } from './fixtures';
+import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
+import { stubTaskboard } from './stubApi';
 
 // The shared Taskboard toolbar on a phone (SHIP-722 D5, D6): one row, the Filter sheet and ⋯ More. Runs in the CT phone
 // project, through the Feature board's slot.
@@ -32,9 +35,9 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
   const assignees = () =>
     page
       .getByTestId(ids.card)
-      .evaluateAll((cards) =>
-        cards.map((card) => card.querySelector('[data-variant]')?.getAttribute('title')),
-      );
+      .getByTestId(ids.cardAssignee)
+      .getByTestId(componentTestIds.avatar)
+      .evaluateAll((avatars) => avatars.map((avatar) => avatar.getAttribute('title')));
   await expect.poll(async () => (await assignees()).length).toBeGreaterThan(0);
   expect(new Set(await assignees())).toEqual(new Set(['Tom Okafor']));
 
@@ -61,6 +64,30 @@ test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async (
     'Open the Feature',
   ]);
   const lanes = page.getByTestId(ids.lane);
+  await page.locator('[data-action-id="collapse-all"]').tap();
+  await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
+  await page.getByTestId(touchTestIds.moreButton).tap();
+  await page.locator('[data-action-id="expand-all"]').tap();
+  await expect(lanes.first()).toHaveAttribute('data-collapsed', 'false');
+});
+
+test('PhoneToolbar_WhenMoreOpenedOnTheTaskboard_ShouldOfferCollapseExpandAndTaskboardSettings', async ({
+  mount,
+  page,
+}) => {
+  await stubTaskboard(page, VIEW);
+  await mount(<TaskboardSlot project={PROJECT} sprint={SPRINT} sprints={SPRINTS} />, {
+    hooksConfig: { route: '/p/SHIP/sprints/s24/taskboard' },
+  });
+  const lanes = page.getByTestId(ids.lane);
+  await expect(lanes.first()).toBeVisible();
+  await page.getByTestId(touchTestIds.moreButton).tap();
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
+    'Collapse all',
+    'Expand all',
+    'Taskboard settings',
+  ]);
+
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
   await page.getByTestId(touchTestIds.moreButton).tap();

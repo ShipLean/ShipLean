@@ -3,14 +3,14 @@ import { PRIYA, TOM, VIEW } from '../ct/fixtures';
 import { UNASSIGNED_FACE, faceCounts } from './faceFilter';
 
 describe('faceCounts', () => {
-  it('CountsTasksPerPersonAndUnassigned_WhenGroupedByStories', () => {
+  it('FaceCounts_WhenGroupedByStories_ShouldCountTasksPerPersonAndUnassigned', () => {
     const counts = faceCounts(VIEW, 'stories');
     expect(counts.get(PRIYA.id)).toBe(1);
     expect(counts.get(TOM.id)).toBe(2);
     expect(counts.get(UNASSIGNED_FACE)).toBe(2);
   });
 
-  it('UsesThePeopleRowsCounts_WhenGroupedByPeople', () => {
+  it('FaceCounts_WhenGroupedByPeople_ShouldUseThePeopleRowsCounts', () => {
     const view = {
       rows: [],
       peopleRows: [

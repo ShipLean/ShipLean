@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { SheetAction } from '../../../touch/ActionSheet';
 import { MoreButton } from '../../../touch/MoreButton';
@@ -8,6 +7,7 @@ import { taskboardTestIds as ids } from '../testIds';
 import { FaceFilter } from './FaceFilter';
 import { FilterSheet } from './FilterSheet';
 import { GroupBySwitch } from './GroupBySwitch';
+import { useOpenCardSettings } from './useOpenCardSettings';
 
 /**
  * Group by, the face filter, Settings (opens the settings dialog on its Fields pane) and "+ Add story or bug". At 900px
@@ -37,13 +37,8 @@ export function TaskboardToolbar({
   more: readonly SheetAction[];
   onAddStory: () => void;
 }) {
-  const [params, setParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
-  const openSettings = () => {
-    const next = new URLSearchParams(params);
-    next.set('settings', 'fields');
-    setParams(next);
-  };
+  const openSettings = useOpenCardSettings();
   return (
     <div
       data-testid={ids.toolbar}
