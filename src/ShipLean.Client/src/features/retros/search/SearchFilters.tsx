@@ -5,18 +5,18 @@ import { retrosTestIds as ids } from '../testIds';
 import { SearchBox } from './parts/SearchBox';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
-const roles = [
+export const roles = [
   { value: 'conductor', label: 'Conductors' },
   { value: 'subAgent', label: 'Sub-agents' },
   { value: 'person', label: 'People' },
 ] as const;
 
-const levels = [
+export const levels = [
   { value: 'stories', label: 'Stories and bugs' },
   { value: 'features', label: 'Features' },
 ] as const;
 
-const decisions: { value: RetroDecision; label: string }[] = [
+export const decisions: { value: RetroDecision; label: string }[] = [
   { value: 'undecided', label: 'Undecided' },
   { value: 'actioned', label: 'Actioned' },
   { value: 'notNeeded', label: 'Not needed' },

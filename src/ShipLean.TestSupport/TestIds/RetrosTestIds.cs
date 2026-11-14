@@ -62,6 +62,18 @@ public static class RetrosTestIds
     public const string RetrosFilterRole = "retros-filter-role";
     public const string RetrosFilterRecurring = "retros-filter-recurring";
     public const string RetrosFilterClear = "retros-filter-clear";
+    // SHIP-730 search touch
+    public const string RetrosFilterOpen = "retros-filter-open";
+    public const string RetrosFilterShow = "retros-filter-show";
+    public const string RetrosFilterChoice = "retros-filter-choice";
+    public const string RetrosCount = "retros-count";
+    public const string RetrosChips = "retros-chips";
+    public const string RetrosChip = "retros-chip";
+    public const string RetrosChipRemove = "retros-chip-remove";
+    public const string RetrosChipsClear = "retros-chips-clear";
+    public const string RetrosEmptyClear = "retros-empty-clear";
+    public const string RetrosRowRootCause = "retros-row-root-cause";
+    public const string RetrosRowLogMatch = "retros-row-log-match";
     // Search: results
     public const string RetrosRows = "retros-rows";
     public const string RetrosRow = "retros-row";

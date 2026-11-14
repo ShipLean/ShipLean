@@ -59,6 +59,18 @@ export const retrosTestIds = {
   retrosFilterRole: 'retros-filter-role',
   retrosFilterRecurring: 'retros-filter-recurring',
   retrosFilterClear: 'retros-filter-clear',
+  // SHIP-730 search touch
+  retrosFilterOpen: 'retros-filter-open',
+  retrosFilterShow: 'retros-filter-show',
+  retrosFilterChoice: 'retros-filter-choice',
+  retrosCount: 'retros-count',
+  retrosChips: 'retros-chips',
+  retrosChip: 'retros-chip',
+  retrosChipRemove: 'retros-chip-remove',
+  retrosChipsClear: 'retros-chips-clear',
+  retrosEmptyClear: 'retros-empty-clear',
+  retrosRowRootCause: 'retros-row-root-cause',
+  retrosRowLogMatch: 'retros-row-log-match',
   // Search: results
   retrosRows: 'retros-rows',
   retrosRow: 'retros-row',
