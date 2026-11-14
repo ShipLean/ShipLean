@@ -9,9 +9,42 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
 {
     public sealed record ItemRow(Guid ProjectId, string Type);
 
-    private sealed record CommitQueryRow(
-        Guid Id, string Provider, string Host, string Path, string Sha, int Position, string Subject, string AuthorName, DateTimeOffset AuthoredAt,
-        int Additions, int Deletions, string[] Paths, string[] ParentShas, string AddedVia, string? AddedByName, string? AddedByAgent, DateTimeOffset AddedAt);
+    private sealed class CommitQueryRow
+    {
+        public Guid Id { get; set; }
+
+        public string Provider { get; set; } = string.Empty;
+
+        public string Host { get; set; } = string.Empty;
+
+        public string Path { get; set; } = string.Empty;
+
+        public string Sha { get; set; } = string.Empty;
+
+        public int Position { get; set; }
+
+        public string Subject { get; set; } = string.Empty;
+
+        public string AuthorName { get; set; } = string.Empty;
+
+        public DateTime AuthoredAt { get; set; }
+
+        public int Additions { get; set; }
+
+        public int Deletions { get; set; }
+
+        public string[] Paths { get; set; } = [];
+
+        public string[] ParentShas { get; set; } = [];
+
+        public string AddedVia { get; set; } = string.Empty;
+
+        public string? AddedByName { get; set; }
+
+        public string? AddedByAgent { get; set; }
+
+        public DateTime AddedAt { get; set; }
+    }
 
     public async Task<ItemRow?> FindItemAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -106,8 +139,10 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
     }
 
     private static TaskCommit ToCommit(CommitQueryRow r) => new(
-        r.Id, new RepoRef(Enum.Parse<CodeProvider>(r.Provider, ignoreCase: true), r.Host, r.Path), r.Sha, r.Position, r.Subject, r.AuthorName, r.AuthoredAt,
-        r.Additions, r.Deletions, r.Paths, r.ParentShas, ViaOf(r.AddedVia), r.AddedByAgent ?? r.AddedByName ?? string.Empty, r.AddedByAgent is not null, r.AddedAt);
+        r.Id, new RepoRef(Enum.Parse<CodeProvider>(r.Provider, ignoreCase: true), r.Host, r.Path), r.Sha, r.Position, r.Subject, r.AuthorName, Utc(r.AuthoredAt),
+        r.Additions, r.Deletions, r.Paths, r.ParentShas, ViaOf(r.AddedVia), r.AddedByAgent ?? r.AddedByName ?? string.Empty, r.AddedByAgent is not null, Utc(r.AddedAt));
+
+    private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
     private static string Via(CommitSource source) => source switch
     {
