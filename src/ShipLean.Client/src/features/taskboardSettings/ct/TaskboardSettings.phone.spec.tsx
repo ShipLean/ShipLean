@@ -86,6 +86,45 @@ test('TaskboardSettings_WhenDiscardTapped_ShouldRevertChanges', async ({ mount, 
   expect(puts).toHaveLength(0);
 });
 
+test('TaskboardSettings_WhenSaveFailedOnPhone_ShouldOfferSaveAndDiscardInTheSaveBar', async ({
+  mount,
+  page,
+}) => {
+  const puts = await stubSettings(page, taskboardBoard({ cardFields: [task] }));
+  let attempts = 0;
+  await page.route('**/api/boards/*/settings', (route) => {
+    if (route.request().method() !== 'PUT') return route.fallback();
+    attempts += 1;
+    return attempts === 1
+      ? route.fulfill({ status: 500, json: { error: 'Boom', code: 'internal_error' } })
+      : route.fallback();
+  });
+  await mount(dialog('fields'));
+  await page.getByTestId(ids.fieldsShowKey).setChecked(false);
+  const bar = page.getByTestId(touchTestIds.saveBar);
+  await expect(bar).toBeVisible();
+  await expect(bar.getByTestId(touchTestIds.saveBarDiscard)).toBeVisible();
+
+  await bar.getByTestId(touchTestIds.saveBarSave).tap();
+
+  await expect.poll(() => puts.length).toBe(1);
+  expect(puts[0]?.settings.cardFields[0]?.showKey).toBe(false);
+  await expect(bar).toHaveCount(0);
+  await expect(page.getByTestId(dialogIds.footerError)).toHaveCount(0);
+});
+
+test('TagColours_WhenOnPhone_ShouldShow32pxSwatches', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({}), ['Blocked']);
+  await mount(dialog('tags'));
+  const swatches = page.getByTestId(ids.tagSwatch);
+  await expect(swatches).toHaveCount(7);
+  for (const swatch of await swatches.all()) {
+    const box = await swatch.boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(32);
+    expect(box?.height).toBeGreaterThanOrEqual(32);
+  }
+});
+
 test('StyleRule_WhenOnPhone_ShouldStackItsClauses', async ({ mount, page }) => {
   await stubSettings(page, taskboardBoard({ styleRules: [blocked] }), ['Blocked']);
   await mount(dialog('styles'));

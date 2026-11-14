@@ -8,7 +8,7 @@ import { stubBoard } from './stubBoard';
 
 // The shared settings frame on a phone (SHIP-725), through the Board settings harness: section chips and the K5 SaveBar.
 
-test('BoardSettings_WhenOpenedOnPhone_ShouldShowSectionChipsAndTheSaveBar', async ({
+test('BoardSettings_WhenChangedOnPhone_ShouldShowSectionChipsAndSaveFromTheSaveBar', async ({
   mount,
   page,
 }) => {

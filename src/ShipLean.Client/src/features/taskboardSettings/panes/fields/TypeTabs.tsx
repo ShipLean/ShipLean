@@ -27,7 +27,7 @@ export function TypeTabs({
       <div
         role="group"
         aria-label="Work item type"
-        className="inline-flex max-w-full overflow-x-auto rounded-control border border-edge"
+        className="inline-flex overflow-hidden rounded-control border border-edge touch:max-w-full touch:overflow-x-auto"
       >
         {types.map((type) => (
           <button
@@ -36,7 +36,7 @@ export function TypeTabs({
             data-testid={ids.fieldsTypeTab}
             data-type={type}
             aria-pressed={type === current}
-            className="inline-flex shrink-0 items-center gap-1.5 px-2 py-1 text-[length:var(--text-sm)] aria-pressed:bg-accent-soft touch:min-h-[var(--touch-target)]"
+            className="inline-flex items-center gap-1.5 px-2 py-1 text-[length:var(--text-sm)] aria-pressed:bg-accent-soft touch:min-h-[var(--touch-target)] touch:shrink-0"
             onClick={() => onSelect(type)}
           >
             <TypeIcon type={type} />
