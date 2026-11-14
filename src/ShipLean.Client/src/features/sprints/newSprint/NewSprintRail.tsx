@@ -110,6 +110,7 @@ export function NewSprintRail({
         submitLabel="Create sprint"
         pending={create.isPending || nameStale}
         error={error}
+        hideSubmit={touch && onClose !== undefined}
       />
     );
   const note = (
@@ -120,7 +121,7 @@ export function NewSprintRail({
   );
 
   if (touch && onClose !== undefined) {
-    // Create is the Dialog's top right action, so the form's own submit button (Enter still submits) is hidden.
+    // Create is the Dialog's top right action, so the form leaves out its own submit button (Enter still submits).
     return (
       <Dialog
         title="New sprint"
@@ -137,7 +138,7 @@ export function NewSprintRail({
           </button>
         }
       >
-        <div data-testid={ids.newSprint} className="grid gap-2 [&_button[type=submit]]:hidden">
+        <div data-testid={ids.newSprint} className="grid gap-2">
           {formBody}
           {note}
         </div>

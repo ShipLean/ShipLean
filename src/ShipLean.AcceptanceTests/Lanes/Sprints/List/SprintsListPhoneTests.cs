@@ -1,8 +1,10 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Sprints;
 using ShipLean.AcceptanceTests.Pages.Touch;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Sprints.List;
 
@@ -55,5 +57,17 @@ public class SprintsListPhoneTests : SeededAcceptanceTest
         created.Ok.ShouldBeTrue();
         await Expect(sprints.Dialog).ToHaveCountAsync(0);
         await Expect(sprints.RowOf("Sprint 27")).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task Sprints_WhenOpenTappedOnPhone_ShouldShowThatSprintsBacklog()
+    {
+        var sprints = new AllSprintsPhone(Page);
+        await sprints.OpenAsync("SHIP");
+
+        await sprints.RowOf("Sprint 24").GetByTestId(TouchTestIds.MoreButton).TapAsync();
+        await new TouchShell(Page).ActionRow("Open").TapAsync();
+
+        await Expect(Page).ToHaveURLAsync(new Regex(Regex.Escape(Links.SprintBacklog("SHIP", SeedIds.Sprints.Sprint24)) + "$"));
     }
 }

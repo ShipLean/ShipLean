@@ -4,6 +4,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
 import { touchTestIds } from '../../../../touch/testIds';
 import { sprintsTestIds as ids } from '../../testIds';
+import { NewSprintRail } from '../../newSprint/NewSprintRail';
 import { SprintsList } from '../SprintsList';
 
 // All sprints on a phone (SHIP-723, L723a): rows with a ⋯ sheet, capacity notes as text and the full-width velocity chart.
@@ -120,6 +121,54 @@ test('SprintsList_WhenCapacityHasNotes_ShouldShowThemWithoutHover', async ({ mou
   await expect(row.getByTestId(ids.rowNotes)).toHaveText('Priya: Away Friday');
   await expect(rowOf(page, 'Sprint 23').getByTestId(ids.rowNotes)).toHaveCount(0);
   await expect(page.getByTestId(ids.list)).toHaveCount(0);
+});
+
+test('SprintsList_WhenVelocityDrawn_ShouldShowEveryBarsValueAsText', async ({ mount, page }) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  // Two sprints ended: the older one's bars are valued by velocityValue, the latest's by velocityLatest.
+  await expect(page.getByTestId(ids.velocityValue)).toHaveText(['18', '16']);
+  await expect(page.getByTestId(ids.velocityLatest)).toHaveText(['20', '21']);
+});
+
+test('SprintsList_WhenEditSprintClosed_ShouldReturnFocusToTheRowMore', async ({ mount, page }) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  const more = rowOf(page, 'Sprint 24').getByTestId(touchTestIds.moreButton);
+  await more.tap();
+  await page
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="edit-sprint"]`)
+    .tap();
+  await expect(page.getByTestId(ids.editSprint)).toBeVisible();
+  await page.getByTestId(touchTestIds.dialogClose).tap();
+
+  await expect(page.getByTestId(ids.editSprint)).toHaveCount(0);
+  await expect(more).toBeFocused();
+});
+
+test('NewSprintRail_WhenOpenedOnPhone_ShouldHaveCreateInTheHeaderAndNoFormSubmit', async ({
+  mount,
+  page,
+}) => {
+  await page.route('**/api/projects/p1/sprints/next', (route) =>
+    route.fulfill({
+      json: { name: 'Sprint 27', startDate: '2026-11-30', endDate: '2026-12-11', goal: '' },
+    }),
+  );
+  await mount(<NewSprintRail projectId="p1" onClose={() => {}} />);
+
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 27');
+  await expect(
+    page.getByTestId(touchTestIds.dialogPrimary).getByTestId(ids.newSprintCreate),
+  ).toBeVisible();
+  await expect(page.getByTestId(ids.newSprintSubmit)).toHaveCount(0);
+  // The form ends with its error line: no empty button row under it.
+  await expect(page.locator('form > :last-child')).toHaveAttribute(
+    'data-testid',
+    ids.newSprintError,
+  );
 });
 
 for (const theme of THEMES) {

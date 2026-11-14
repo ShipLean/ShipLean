@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
 import { Chip } from '../../../components/Chip';
@@ -133,6 +134,8 @@ function capacityText(
 /** At 900px and below (SHIP-723, the SHIP-724 D2 row): name and status over the points, dates and capacity, the goal and any notes under. */
 function SprintTouchRow({ projectKey, sprint, figures, velocity, onEdit }: SprintRowProps) {
   const navigate = useNavigate();
+  // The ⋯ button lives in the shared MoreButton, so focus goes back to it through its wrapper when Edit sprint closes.
+  const more = useRef<HTMLSpanElement>(null);
   const chip = STATUS_CHIP[sprint.status];
   const metrics = figures?.metrics;
   const capacity = figures?.capacity;
@@ -173,13 +176,19 @@ function SprintTouchRow({ projectKey, sprint, figures, velocity, onEdit }: Sprin
           <b data-testid={ids.rowCompleted}>{completed}</b>
           <span className="text-ink-muted"> done</span>
         </span>
-        <MoreButton
-          label={sprint.name}
-          actions={[
-            { id: 'open', label: 'Open', onSelect: () => void navigate(backlog) },
-            { id: 'edit-sprint', label: 'Edit sprint', onSelect: () => onEdit(null) },
-          ]}
-        />
+        <span ref={more} className="flex-none">
+          <MoreButton
+            label={sprint.name}
+            actions={[
+              { id: 'open', label: 'Open', onSelect: () => void navigate(backlog) },
+              {
+                id: 'edit-sprint',
+                label: 'Edit sprint',
+                onSelect: () => onEdit(more.current?.querySelector('button') ?? null),
+              },
+            ]}
+          />
+        </span>
       </div>
       <div className="pr-2 text-[length:var(--text-sm)] text-ink-muted">
         {sprint.datesLabel} ·{' '}
