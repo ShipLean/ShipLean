@@ -43,7 +43,7 @@ export function AddStoryBox({
   }
 
   return (
-    <div data-testid={ids.addStoryBox} className="flex items-center gap-2 px-4 py-2">
+    <div data-testid={ids.addStoryBox} className="flex flex-wrap items-center gap-2 px-4 py-2">
       <select
         data-testid={ids.addStoryType}
         aria-label="Type"
@@ -63,7 +63,7 @@ export function AddStoryBox({
         autoFocus
         data-testid={ids.addStoryTitle}
         aria-label="Title"
-        className="field flex-1"
+        className="field min-w-0 flex-1 touch:basis-full"
         placeholder={
           scope.kind === 'sprint'
             ? 'Title, then Enter to add to this sprint'
@@ -73,10 +73,20 @@ export function AddStoryBox({
         onChange={(event) => setTitle(event.target.value)}
         onKeyDown={onKeyDown}
       />
-      <button type="button" data-testid={ids.addStorySubmit} className="btn-signal" onClick={add}>
+      <button
+        type="button"
+        data-testid={ids.addStorySubmit}
+        className="btn-signal touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+        onClick={add}
+      >
         Add
       </button>
-      <button type="button" data-testid={ids.addStoryClose} className="btn-ghost" onClick={onClose}>
+      <button
+        type="button"
+        data-testid={ids.addStoryClose}
+        className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+        onClick={onClose}
+      >
         Esc
       </button>
       {create.error ? (
