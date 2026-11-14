@@ -5,13 +5,21 @@ namespace ShipLean.AcceptanceTests.Pages.Backlog.Touch;
 // touch/TouchHandle.phone.spec.tsx (touchInput, centre).
 public static class TouchDrag
 {
-    private const int HoldMs = 600;
+    // K6's long press: a handle lifts its row after 450ms held still (LIFT_MS in touch/longPress.ts).
+    private const int LongPressLiftMs = 450;
+
+    // Past the lift, so the move that follows drags the lifted row instead of scrolling. The lift is a timer in the page on
+    // the real clock and the page shows nothing a locator could wait for before it fires, so the drag waits it out.
+    private const int HoldMs = LongPressLiftMs + 150;
+
     private const double StepPixels = 20;
 
     public static async Task ByHandleAsync(IPage page, ILocator handle, ILocator target)
     {
-        // Only the handle is scrolled into view: the target must already be on screen with it, or the scroll would move it.
+        // The handle, then the target, scrolled into view; both are measured after the last scroll. They have to fit on one
+        // screen: the drag does not scroll the page itself.
         await handle.ScrollIntoViewIfNeededAsync();
+        await target.ScrollIntoViewIfNeededAsync();
         var from = await CentreAsync(handle);
         var to = await CentreAsync(target);
         var cdp = await page.Context.NewCDPSessionAsync(page);

@@ -7,6 +7,7 @@ import { MoreButton } from '../../../../touch/MoreButton';
 import type { SheetAction } from '../../../../touch/ActionSheet';
 import { useOpenSection } from '../../add/useAddChain';
 import { backlogTestIds as ids } from '../../testIds';
+import { capacityLoad } from '../capacityLoad';
 import { sectionDropId } from '../planningTarget';
 import { SectionToggle } from '../SectionToggle';
 import type { SectionCollapse } from '../useSectionCollapse';
@@ -41,7 +42,11 @@ export function TouchSprintBlock({
   const sprint = section.sprint;
   if (sprint === null) return null;
   const current = sprint.status === 'current';
-  const limit = section.capacity ?? velocity;
+  const { limit, fromVelocity, over, free } = capacityLoad(
+    section.points,
+    section.capacity,
+    velocity,
+  );
   const sum = lit?.sum ?? null;
   const used = sum?.after ?? section.points;
   const actions: SheetAction[] = [
@@ -110,7 +115,7 @@ export function TouchSprintBlock({
             <CapacityBar
               used={used}
               capacity={limit}
-              variant={section.capacity === null ? 'velocity' : 'capacity'}
+              variant={fromVelocity ? 'velocity' : 'capacity'}
             />
           </span>
         )}
@@ -128,25 +133,23 @@ export function TouchSprintBlock({
             {sum.text} pts
           </span>
         )}
-        {section.capacity === null && limit !== null ? (
+        {fromVelocity && limit !== null ? (
           <span data-testid={ids.planningVelocityChip} title="Nobody has entered capacity yet">
             <Chip tone="warn">velocity</Chip>
           </span>
         ) : null}
-        {limit !== null && lit === null ? (
-          section.points > limit ? (
-            <span
-              data-testid={ids.planningOver}
-              className="font-semibold whitespace-nowrap text-alert"
-            >
-              +{section.points - limit} over
-            </span>
-          ) : (
-            <span data-testid={ids.planningFree} className="whitespace-nowrap text-ink-muted">
-              {limit - section.points} free
-            </span>
-          )
-        ) : null}
+        {lit !== null || limit === null ? null : over === null ? (
+          <span data-testid={ids.planningFree} className="whitespace-nowrap text-ink-muted">
+            {free} free
+          </span>
+        ) : (
+          <span
+            data-testid={ids.planningOver}
+            className="font-semibold whitespace-nowrap text-alert"
+          >
+            +{over} over
+          </span>
+        )}
       </div>
       {lit === null ? null : (
         <p

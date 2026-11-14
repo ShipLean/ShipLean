@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { Sheet } from '../../../../touch/Sheet';
 import { backlogTestIds as ids } from '../../testIds';
-import { useVelocityOverride } from '../planningApi';
+import { useVelocityDraft } from '../useVelocityDraft';
 
 function VelocityForm({
   velocity,
@@ -16,12 +15,11 @@ function VelocityForm({
   projectKey: string;
   onDone: () => void;
 }) {
-  const planned = velocity.override ?? velocity.average;
-  const [text, setText] = useState(String(planned));
-  const save = useVelocityOverride(projectId, projectKey);
-  const parsed = Number(text);
-  const valid = text.trim() !== '' && Number.isFinite(parsed) && parsed >= 0;
-  const submit = (value: number | null) => save.mutate(value, { onSuccess: onDone });
+  const { planned, text, setText, save, parsed, valid, submit } = useVelocityDraft(
+    velocity,
+    projectId,
+    projectKey,
+  );
   return (
     <div data-testid={ids.planningOverrideSheet} className="flex flex-col gap-3 px-2 pb-2">
       <p className="text-[length:var(--text-sm)] text-ink-muted">
@@ -48,7 +46,7 @@ function VelocityForm({
           data-testid={ids.planningOverrideSave}
           className="btn-signal min-h-[var(--touch-target)]"
           disabled={!valid || save.isPending}
-          onClick={() => submit(parsed)}
+          onClick={() => submit(parsed, onDone)}
         >
           Save
         </button>
@@ -58,7 +56,7 @@ function VelocityForm({
             data-testid={ids.planningOverrideClear}
             className="btn-ghost min-h-[var(--touch-target)]"
             disabled={save.isPending}
-            onClick={() => submit(null)}
+            onClick={() => submit(null, onDone)}
           >
             Use average
           </button>

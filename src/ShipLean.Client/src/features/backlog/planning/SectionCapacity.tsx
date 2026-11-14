@@ -2,6 +2,7 @@ import { CapacityBar } from '../../../components/CapacityBar';
 import { Chip } from '../../../components/Chip';
 import type { SprintSum } from '../bulk/sprintSum';
 import { backlogTestIds as ids } from '../testIds';
+import { capacityLoad } from './capacityLoad';
 
 // A sprint section's load: committed against the team's capacity, with the points free or over (a warning, never a
 // block). With no capacity entered the muted bar is drawn against the velocity the forecast plans at, beside a
@@ -15,7 +16,7 @@ function Capacity({
   capacity: number | null;
   velocity: number | null;
 }) {
-  const limit = capacity ?? velocity;
+  const { limit, fromVelocity, over, free } = capacityLoad(committed, capacity, velocity);
   const chip = (
     <span
       data-testid={ids.planningVelocityChip}
@@ -40,20 +41,20 @@ function Capacity({
         <CapacityBar
           used={committed}
           capacity={limit}
-          variant={capacity === null ? 'velocity' : 'capacity'}
+          variant={fromVelocity ? 'velocity' : 'capacity'}
         />
       </span>
       <span data-testid={ids.planningCommitted}>
         <b>{committed}</b> / {limit} pts
       </span>
-      {capacity === null ? chip : null}
-      {committed > limit ? (
-        <span data-testid={ids.planningOver} className="font-semibold text-alert">
-          +{committed - limit} over
+      {fromVelocity ? chip : null}
+      {over === null ? (
+        <span data-testid={ids.planningFree} className="text-ink-muted">
+          {free} free
         </span>
       ) : (
-        <span data-testid={ids.planningFree} className="text-ink-muted">
-          {limit - committed} free
+        <span data-testid={ids.planningOver} className="font-semibold text-alert">
+          +{over} over
         </span>
       )}
     </span>

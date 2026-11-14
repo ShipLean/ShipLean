@@ -81,7 +81,7 @@ for (const theme of THEMES) {
     await send('touchStart', x, y);
     await page.clock.runFor(500);
     for (let i = 1; i <= 10; i++) {
-      await send('touchMove', x + 150, Math.round(y + ((target.y + 30 - y) * i) / 10));
+      await send('touchMove', x + 150, Math.round(y + ((target.y + 6 - y) * i) / 10));
     }
     await expect(header).toHaveAttribute('data-over', 'true');
 
