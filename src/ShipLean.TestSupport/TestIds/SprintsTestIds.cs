@@ -40,6 +40,14 @@ public static class SprintsTestIds
     public const string DeleteSprintCancel = "sprints-delete-sprint-cancel";
     public const string DeleteSprintError = "sprints-delete-sprint-error";
     public const string RowEdit = "sprints-list-row-edit";
+    // L723a phone
+    public const string ListTouch = "sprints-list-touch";
+    public const string RowNotes = "sprints-list-row-notes";
+    public const string NewSprintOpen = "sprints-new-sprint-open";
+    public const string NewSprintCreate = "sprints-new-sprint-create";
+    public const string NewSprintToolbar = "sprints-new-sprint-toolbar";
+    public const string VelocityLabel = "sprints-velocity-label";
+    public const string VelocityValue = "sprints-velocity-value";
     public const string Backlog = "sprints-backlog";
     public const string BacklogLoadError = "sprints-backlog-load-error";
     public const string KpiCommitted = "sprints-backlog-kpi-committed";
