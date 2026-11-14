@@ -40,6 +40,12 @@ public static class RetrosTestIds
     public const string RetroCardKeyLink = "retro-card-key-link";
     public const string RetroCardProgress = "retro-card-progress";
     public const string RetroCardOpen = "retro-card-open";
+    // L727c phone cards
+    public const string RetroCardToggle = "retro-card-toggle";
+    public const string RetroCardCount = "retro-card-count";
+    public const string RetroCardToDecide = "retro-card-to-decide";
+    public const string RetroCardBody = "retro-card-body";
+    public const string RetroCardRetroLink = "retro-card-retro-link";
     public const string RetroRail = "retro-rail";
     public const string RetroCoverage = "retro-coverage";
     public const string RetroCoverageRow = "retro-coverage-row";
