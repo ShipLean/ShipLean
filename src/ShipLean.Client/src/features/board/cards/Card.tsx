@@ -3,6 +3,9 @@ import { TypeIcon } from '../../../components/TypeIcon';
 import type { BoardViewDto, CardDto } from '@shiplean/core/api/views';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { useOptionalCardActions } from './touch/CardActionsContext';
+import { CardMore } from './touch/CardMore';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 import { DropLine } from './DropLine';
@@ -59,6 +62,12 @@ export function Card({
   onRollupClick,
 }: CardProps) {
   const fields = settings.cardFields.find((setting) => setting.type === card.type.id);
+  const { touch } = useTouchShell();
+  // Inside a board only: a card drawn as a preview has no actions and no tap to open.
+  const actions = useOptionalCardActions();
+  const belowType: WorkItemTypeId | undefined = { epics: 'feature', features: 'story' }[
+    level as string
+  ] as WorkItemTypeId | undefined;
   const rule = settings.styleRules.find((candidate) => candidate.id === card.styleRuleId) ?? null;
   const showKey = fields?.showKey ?? true;
   const showAssignee = fields?.showAssignee ?? true;
@@ -81,6 +90,15 @@ export function Card({
         card.type.id === 'bug' ? 'paper-bug' : ''
       } ${flashing ? 'board-card-flash' : ''}`}
       style={{ ...ruleCardStyle(rule), ...frame?.style }}
+      onClick={(event) => {
+        frame?.onClick?.(event);
+        // At touch widths a tap on the card (not on a link, a button or the actions) opens the item.
+        if (!touch || !actions || event.defaultPrevented) return;
+        // A sheet opened from the card is a portal: its clicks bubble here through React but are not on the card.
+        if (!event.currentTarget.contains(event.target as Node)) return;
+        if ((event.target as HTMLElement).closest('a, button, input, select, textarea')) return;
+        actions.openItem(card.key);
+      }}
     >
       {dropBefore ? <DropLine above /> : null}
       <div className="flex min-w-0 items-center gap-1.5">
@@ -95,6 +113,9 @@ export function Card({
         ) : null}
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}
+        {touch && actions ? (
+          <CardMore card={card} actions={actions} showBelow={onRollupClick} belowType={belowType} />
+        ) : null}
       </div>
       {linkTitle ? (
         <ItemLink

@@ -68,6 +68,7 @@ public static class BoardTestIds
     public const string DoneConfirmMove = "board-done-confirm-move";
     public const string CardOffer = "board-card-offer";
     public const string CardMoveToDone = "board-card-move-to-done";
+    public const string CardMore = "board-card-more";
     public const string SettingsOpen = "board-settings-open";
     public const string LanesToggle = "board-lanes-toggle";
     public const string LanesOption = "board-lanes-option";

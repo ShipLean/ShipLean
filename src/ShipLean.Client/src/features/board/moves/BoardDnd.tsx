@@ -18,6 +18,7 @@ import { bodyOf, keyboardTarget, staysPut } from './moveRequests';
 import { applyMove, locate } from './applyMove';
 import { tracksOf } from '../grid/layout';
 import { useBoardMove, type Sent } from './useBoardMove';
+import { CardActionsHost } from '../cards/touch/CardActionsHost';
 
 // A card under the pointer wins over the cell around it: dropping on a card puts the dragged one above it.
 const cardFirst: CollisionDetection = (args) => {
@@ -110,6 +111,7 @@ export function BoardDnd({
     const keyOf = (itemId: string) => locateKey(shown.current, itemId);
     return {
       drop: (itemId, to) => drop(itemId, to, keyOf(itemId), false),
+      moveTo: (itemId, to) => drop(itemId, to, keyOf(itemId), false),
       keyMove: (itemId, cardKey, key) => {
         const to = keyboardTarget(shown.current, itemId, key);
         if (!to) return key.startsWith('Arrow');
@@ -164,7 +166,7 @@ export function BoardDnd({
         }}
         onDragEnd={onDragEnd}
       >
-        {children}
+        <CardActionsHost view={view}>{children}</CardActionsHost>
       </DndContext>
       {asking ? (
         <DoneConfirm
