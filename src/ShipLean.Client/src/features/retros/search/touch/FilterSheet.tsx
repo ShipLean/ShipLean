@@ -101,7 +101,7 @@ export function FilterSheet({
           <button
             type="button"
             data-testid={ids.retrosFilterClear}
-            className="btn-ghost"
+            className="btn-ghost min-h-[var(--touch-target)]"
             onClick={() => change(CLEAR_FILTERS)}
           >
             Clear
@@ -110,7 +110,7 @@ export function FilterSheet({
           <button
             type="button"
             data-testid={ids.retrosFilterShow}
-            className="btn-signal"
+            className="btn-signal min-h-[var(--touch-target)]"
             onClick={onClose}
           >
             Show {search.total} point{search.total === 1 ? '' : 's'}

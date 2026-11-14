@@ -16,7 +16,7 @@ export function SearchTouchToolbar(props: RetrosSearchSlotProps) {
   const count = activeFilters(query, search).length;
   const retros = new Set(search.rows.map((row) => row.retroId)).size;
   return (
-    <div className="grid gap-2 px-3 pt-2">
+    <div className="grid gap-2 pt-2">
       <SearchBox touch value={query.q ?? ''} onWrite={(q) => change({ q })} />
       <div className="flex min-w-0 items-center gap-2">
         <button

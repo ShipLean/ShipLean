@@ -30,7 +30,6 @@ public static class TouchPendingRoutes
         ["capacity"] = "SHIP-726",
         // SHIP-727
         // SHIP-730
-        ["retros"] = "SHIP-730",
         // SHIP-728
         // SHIP-729
         // SHIP-732
