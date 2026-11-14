@@ -35,13 +35,26 @@ export function DiffColumn(props: DiffColumnProps) {
   const { data, openFile } = props;
   const root = useRef<HTMLDivElement>(null);
 
+  // Each diff renders after mount and grows the page, so scrolling once would land short: keep the file at the top while the
+  // page grows, until the reader scrolls or presses something.
   useEffect(() => {
-    if (openFile === null) return;
-    const el = [...(root.current?.querySelectorAll<HTMLElement>('[data-file-key]') ?? [])].find(
-      (e) => e.dataset.fileKey === openFile,
-    );
-    el?.scrollIntoView({ block: 'start' });
-  }, [openFile, data]);
+    const column = root.current;
+    if (openFile === null || !column) return;
+    const scroll = () =>
+      [...column.querySelectorAll<HTMLElement>('[data-file-key]')]
+        .find((e) => e.dataset.fileKey === openFile)
+        ?.scrollIntoView({ block: 'start' });
+    scroll();
+    const observer = new ResizeObserver(scroll);
+    observer.observe(column);
+    const stop = () => observer.disconnect();
+    const events = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
+    for (const name of events) window.addEventListener(name, stop, { once: true });
+    return () => {
+      observer.disconnect();
+      for (const name of events) window.removeEventListener(name, stop);
+    };
+  }, [openFile, data.headCommitId, data.selected]);
 
   const noAccess = data.commits.filter((c) => c.access !== 'ok');
   return (

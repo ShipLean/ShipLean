@@ -197,5 +197,7 @@ test('DiffColumn_WhenOpenFileIsSet_ShouldScrollToThatFile', async ({ mount, page
     </div>,
   );
   const target = page.locator(`[data-file-key="${fileKey(part.repo, second.path)}"]`);
+  // The first file renders 80 lines after mount; the scroll must still end on the second file.
+  await expect(page.locator('[data-gutter] [data-column-number="80"]')).toBeVisible();
   await expect(target).toBeInViewport();
 });
