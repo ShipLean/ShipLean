@@ -109,4 +109,47 @@ public static class DisplayDate
         var format = day.Year == TimeZoneInfo.ConvertTime(now, zone).Year ? "d MMM" : "d MMM yyyy";
         return day.ToString(format, CultureInfo.InvariantCulture);
     }
+
+    // An instant as a day label in the viewer's zone ("Mon 5 Oct"), for the timeline's days and key dates.
+    public static string DayLabel(DateTimeOffset value, TimeZoneInfo zone) => WeekdayDay(DayOf(value, zone));
+
+    // An instant as a day and time in the viewer's zone ("Mon 5 Oct, 09:10"), for the timeline's starts, ends and periods.
+    public static string DayTime(DateTimeOffset value, TimeZoneInfo zone) =>
+        $"{DayLabel(value, zone)}, {TimeZoneInfo.ConvertTime(value, zone).ToString("HH:mm", CultureInfo.InvariantCulture)}";
+
+    // How long a stretch of work took ("45 min", "3.5 h", "23 h", "1 day", "2.3 days"): minutes under an hour, hours under a day
+    // and days after that, one decimal with a trailing .0 dropped.
+    public static string Duration(double hours)
+    {
+        if (hours < 1)
+        {
+            return $"{Math.Round(hours * 60, 0, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture)} min";
+        }
+        if (hours < 24)
+        {
+            return $"{OneDecimal(hours)} h";
+        }
+        return Days(hours / 24);
+    }
+
+    // The wait between two key dates ("6 hours", "3.7 days", "44 days"): whole hours under a day, one decimal under ten days and
+    // whole days from ten.
+    public static string Gap(double days)
+    {
+        if (days < 1)
+        {
+            var hours = (int)Math.Round(days * 24, 0, MidpointRounding.AwayFromZero);
+            return hours == 1 ? "1 hour" : $"{hours.ToString(CultureInfo.InvariantCulture)} hours";
+        }
+        return days >= 10 ? $"{Math.Round(days, 0, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture)} days" : Days(days);
+    }
+
+    private static string Days(double days)
+    {
+        var text = OneDecimal(days);
+        return text == "1" ? "1 day" : $"{text} days";
+    }
+
+    private static string OneDecimal(double value) =>
+        Math.Round(value, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);
 }
