@@ -28,7 +28,7 @@ export function StylesPane({
           type="button"
           data-testid={ids.stylesAdd}
           disabled={readOnly}
-          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50"
+          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50 touch:h-[var(--touch-target)]"
           onClick={() => setRules([...draft.styleRules, blankRule(lists)])}
         >
           + Add styling rule
