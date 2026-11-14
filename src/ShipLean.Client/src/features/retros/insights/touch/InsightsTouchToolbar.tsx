@@ -93,7 +93,8 @@ export function InsightsTouchToolbar({
           </span>
         </button>
         <span className="flex-1" />
-        {merge}
+        {/* TODO: L731d replaces this hidden desktop button with the full-screen merge opened from `merge`. */}
+        <span hidden>{merge}</span>
         <MoreButton label="Insights" actions={actions} />
       </div>
     </div>

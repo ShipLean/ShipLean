@@ -25,7 +25,8 @@ public class RetroInsightsFrameTouchTests : SeededAcceptanceTest
     public async Task Tabs_WhenOpenedAt320_ShouldFitAndKeepTheViewInTheAddress()
     {
         await Page.SetViewportSizeAsync(320, 700);
-        var (_, touch) = await OpenAsync();
+        var (insights, touch) = await OpenAsync();
+        await Expect(insights.RecurringRows.First).ToBeVisibleAsync();
 
         await Expect(touch.Tabs).ToHaveTextAsync(["Themes", "Action items", "Impact"]);
         var last = (await touch.Tabs.Nth(2).BoundingBoxAsync())!;

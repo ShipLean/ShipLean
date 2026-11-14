@@ -57,7 +57,7 @@ export function Tip({
         role="button"
         tabIndex={0}
         aria-haspopup="dialog"
-        className={`cursor-pointer ${className ?? ''}`}
+        className={`inline-flex min-h-[var(--touch-target)] min-w-[var(--touch-target)] cursor-pointer items-center justify-center ${className ?? ''}`}
         onClick={(event) => {
           event.stopPropagation();
           setParams(withSheet(params, defsSheetValue(entry)), { replace: true });
