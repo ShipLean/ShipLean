@@ -1,0 +1,15 @@
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..68b4bf197857b14dfee6ca62684de0f56d062672
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1 @@
++# Storefront
+diff --git a/src/cart.ts b/src/cart.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..974ab382f37ccd4fad0b93e6fbdc6d49e8b36c70
+--- /dev/null
++++ b/src/cart.ts
+@@ -0,0 +1,2 @@
++export const price = 10;
++export const tax = 1;
