@@ -4,8 +4,6 @@
 export const breakpointAllowlist = [
   // SHIP-713 (L713b, wave 1): quick search
   // W01-O2: the settings field panes
-  // SHIP-715: the attachment page
-  { file: 'features/attachment/AttachmentScreen.tsx', count: 1, owner: 'SHIP-715' },
   // SHIP-726: sprint capacity
   { file: 'features/sprints/capacity/CapacityHeader.tsx', count: 1, owner: 'SHIP-726' },
   // SHIP-733 (L733a): the profile pages' max-sm:

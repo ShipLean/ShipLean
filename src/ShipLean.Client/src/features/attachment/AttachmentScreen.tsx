@@ -5,16 +5,30 @@ import { useAttachmentMarkdown } from '../feature/featureApi';
 import { AttachmentUnavailable } from './AttachmentUnavailable';
 import { AttachmentBody } from './body/AttachmentBody';
 import { AttachmentEditor } from './body/AttachmentEditor';
+import { routePath } from '../../routes';
+import { useTopBar } from '../../touch/TopBar';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { AttachmentHeader } from './header/AttachmentHeader';
 import type { AttachmentView } from './header/ViewToggle';
 import { useReplaceAttachment } from './header/useReplaceAttachment';
 import { AttachmentSidePanel } from './side/AttachmentSidePanel';
 import { attachmentTestIds as ids } from './testIds';
+import { AttachmentTouchHeader } from './touch/AttachmentTouchHeader';
+import { ContentsPill } from './touch/ContentsPill';
 
 // One Markdown attachment on its own page (attachment.html): header and toolbar, the body rendered, as source or in the
 // editor, and the side panel. One request fills it; a teammate's change reads it again, and a replace or a save moves
 // to the new copy. The draft outlives switching views; Cancel or Save drops it.
 export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentSlotProps) {
+  const { touch } = useTouchShell();
+  // The phone's header is a different layout, not a squeezed desktop one.
+  const Header = touch ? AttachmentTouchHeader : AttachmentHeader;
+  // ‹ back to the item is in the top bar on a phone (C13); the in-page ← goes.
+  useTopBar(
+    touch
+      ? { back: { to: routePath('workItem', { key: project.key, itemKey }), label: itemKey } }
+      : {},
+  );
   const [view, setView] = useState<AttachmentView>('rendered');
   const [draft, setDraft] = useState<string | null>(null);
   const query = useAttachmentMarkdown(project.id, attachmentId);
@@ -34,7 +48,7 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
   if (data) {
     content = (
       <>
-        <AttachmentHeader
+        <Header
           projectKey={project.key}
           itemKey={itemKey}
           data={data}
@@ -44,7 +58,7 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
           replaceError={savedText ? null : uploadError}
           onReplace={(file) => upload.mutate({ file, currentName: data.attachment.name })}
         />
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17rem] overflow-auto max-[900px]:grid-cols-1">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_17rem] overflow-auto touch:grid-cols-1 touch:overflow-visible">
           {view === 'edit' ? (
             <AttachmentEditor
               projectId={project.id}
@@ -78,8 +92,11 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
           ) : (
             <AttachmentBody data={data} view={view} />
           )}
-          <AttachmentSidePanel projectKey={project.key} itemKey={itemKey} data={data} />
+          {touch ? null : (
+            <AttachmentSidePanel projectKey={project.key} itemKey={itemKey} data={data} />
+          )}
         </div>
+        {touch && view === 'rendered' ? <ContentsPill outline={data.outline} /> : null}
       </>
     );
   } else if (query.error) {
@@ -105,7 +122,7 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
     <section
       data-testid={ids.screen}
       aria-label="Attachment"
-      className="flex min-h-0 flex-1 flex-col"
+      className="flex min-h-0 flex-1 flex-col touch:block"
     >
       {content}
     </section>

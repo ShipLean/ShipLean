@@ -22,6 +22,12 @@ export const attachmentTestIds = {
   imageStatus: 'attachment-image-status',
   siblings: 'attachment-siblings',
   sibling: 'attachment-sibling',
+
+  // SHIP-715 touch
+  nameButton: 'attachment-name-button',
+  facts: 'attachment-facts',
+  contentsPill: 'attachment-contents-pill',
+  contentsEntry: 'attachment-contents-entry',
   notFound: 'attachment-not-found',
   loadFailed: 'attachment-load-failed',
   loadFailedDownload: 'attachment-load-failed-download',

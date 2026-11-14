@@ -24,6 +24,12 @@ public static class AttachmentTestIds
     public const string ImageStatus = "attachment-image-status";
     public const string Siblings = "attachment-siblings";
     public const string Sibling = "attachment-sibling";
+
+    // SHIP-715 touch
+    public const string NameButton = "attachment-name-button";
+    public const string Facts = "attachment-facts";
+    public const string ContentsPill = "attachment-contents-pill";
+    public const string ContentsEntry = "attachment-contents-entry";
     public const string NotFound = "attachment-not-found";
     public const string LoadFailed = "attachment-load-failed";
     public const string LoadFailedDownload = "attachment-load-failed-download";
