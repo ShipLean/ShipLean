@@ -79,10 +79,7 @@ test('TaskActions_WhenTaskAlreadyAssigned_ShouldNotListPickUp', async ({ mount, 
   await expect(sheet(page).getByTestId(ids.actionPickUp)).toHaveCount(0);
 });
 
-test('MoveToStory_WhenOnSprintBoard_ShouldOfferNoParentFirstAndSendNullTarget', async ({
-  mount,
-  page,
-}) => {
+test('MoveToStory_WhenOnTheSprintTaskboard_ShouldOfferNoParentFirst', async ({ mount, page }) => {
   const server = await stubTaskboard(page, VIEW, { holdLaterReads: true });
   await mount(sprintSlot, sprintRoute);
 
@@ -102,7 +99,7 @@ test('MoveToStory_WhenOnSprintBoard_ShouldOfferNoParentFirstAndSendNullTarget', 
   });
 });
 
-test('MoveToStory_WhenOnFeatureBoard_ShouldNotOfferNoParent', async ({ mount, page }) => {
+test('MoveToStory_WhenOnAFeatureBoard_ShouldNotOfferNoParent', async ({ mount, page }) => {
   await mount(<PhoneGridHarness board="parent" />, featureRoute);
 
   await card(page, 'SHIP-173').getByTestId(ids.cardActions).tap();

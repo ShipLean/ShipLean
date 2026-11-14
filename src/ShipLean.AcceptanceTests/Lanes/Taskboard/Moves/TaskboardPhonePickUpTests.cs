@@ -68,6 +68,7 @@ public class TaskboardPhonePickUpTests : SeededAcceptanceTest
         var moved = await WaitForMoveAsync(() => noParent.TapAsync());
 
         moved.Ok.ShouldBeTrue(await moved.TextAsync());
+        JsonDocument.Parse(moved.Request.PostData!).RootElement.GetProperty("method").GetString().ShouldBe(MoveMethods.Sheet);
         var after = await ItemAsync("SHIP-179");
         after.TryGetProperty("parent", out var parent).ShouldBeTrue();
         parent.ValueKind.ShouldBe(JsonValueKind.Null);

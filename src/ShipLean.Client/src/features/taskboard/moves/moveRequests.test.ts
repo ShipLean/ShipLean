@@ -162,6 +162,12 @@ describe('pickUpRequest', () => {
   });
 });
 
+describe('pickUpRequest method', () => {
+  it('pickUpRequest_WhenBuilt_ShouldCarryMethodPickUp', () => {
+    expect(pickUpRequest(card, 't-active', 'u-priya').method).toBe('pick-up');
+  });
+});
+
 describe('keyboardTarget', () => {
   it('keyboardTarget_WhenArrowKeys_ShouldStepOneColumnOrRow', () => {
     expect(keyboardTarget(VIEW, 'stories', card, 'id-SHIP-141', 'ArrowRight')).toEqual({
