@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CardDto } from '@shiplean/core/api/views';
 import { useLongPressDrag, type LongPressDrag } from '../../../touch/useLongPressDrag';
 import { useTouchShell } from '../../../touch/useTouchShell';
@@ -21,12 +21,12 @@ interface RowsOf {
 /** The card a dropped card goes above: only Stories cells keep an order, and a card dropped on itself goes above nothing. */
 export function beforeItemIdAt(
   grouping: TaskboardGrouping,
-  view: { rows: RowsOf[]; peopleRows: RowsOf[] },
+  view: { rows: RowsOf[] },
   cardKey: string | null,
   ownId: string,
 ): string | null {
   if (grouping !== 'stories' || cardKey === null) return null;
-  const cells = [...view.rows, ...view.peopleRows].flatMap((row) => row.cells);
+  const cells = view.rows.flatMap((row) => row.cells);
   const over = cells.flatMap((cell) => cell.tasks).find((task) => task.key === cardKey);
   return over && over.id !== ownId ? over.id : null;
 }
@@ -81,5 +81,12 @@ export function useTouchCardDrag(
       pager?.turn(pagerStep(dir));
     },
   });
+  // A cancelled touch (or the card going away) lets go without a drop: the lane must not stay highlighted.
+  const { lifted } = drag;
+  useEffect(() => {
+    if (lifted) return;
+    active.current?.removeAttribute('data-drop-active');
+    active.current = null;
+  }, [lifted]);
   return { enabled: touch && pager !== null, drag };
 }

@@ -19,7 +19,7 @@ interface Point {
 
 async function touchInput(page: Page) {
   const cdp = await page.context().newCDPSession(page);
-  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: Point) =>
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd' | 'touchCancel', point?: Point) =>
     cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
   return {
     start: (point: Point) => send('touchStart', point),
@@ -33,6 +33,7 @@ async function touchInput(page: Page) {
       }
     },
     end: () => send('touchEnd'),
+    cancel: () => send('touchCancel'),
   };
 }
 
@@ -114,4 +115,26 @@ test('TaskCard_WhenDraggedOverALane_ShouldMarkItDropActive', async ({ mount, pag
     row: { grouping: 'stories', target: 'id-SHIP-150' },
     method: 'touch-drag',
   });
+});
+
+test('TaskCard_WhenLiftedTouchIsCancelled_ShouldClearTheDropActiveMark', async ({
+  mount,
+  page,
+}) => {
+  await arrange(page);
+  const sent = await captureMoves(page);
+  await mount(<PhoneGridHarness board="parent" />, route);
+  const touch = await touchInput(page);
+  const from = await centreOf(card(page, 'SHIP-173').getByTestId(ids.cardKey));
+  const lane = laneTasks(page, 'id-SHIP-150');
+
+  await touch.start(from);
+  await page.clock.runFor(450);
+  await touch.move(from, await centreOf(lane));
+  await expect(lane).toHaveAttribute('data-drop-active', '');
+  await touch.cancel();
+
+  await expect(page.getByTestId(touchTestIds.dragGhost)).toHaveCount(0);
+  await expect(lane).not.toHaveAttribute('data-drop-active', '');
+  expect(sent).toHaveLength(0);
 });

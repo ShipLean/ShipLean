@@ -4,12 +4,11 @@ import { beforeItemIdAt, dropTargetOf, pagerStep } from './useTouchCardDrag';
 const task = (key: string) => ({ id: `id-${key}`, key });
 const view = {
   rows: [{ cells: [{ stateId: 's1', tasks: [task('SHIP-1'), task('SHIP-2')] }] }],
-  peopleRows: [{ cells: [{ stateId: 's1', tasks: [task('SHIP-3')] }] }],
 };
 
 describe('useTouchCardDrag', () => {
   it('beforeItemIdAt_WhenGroupedByPeople_ShouldBeNull', () => {
-    expect(beforeItemIdAt('people', view, 'SHIP-3', 'id-SHIP-1')).toBeNull();
+    expect(beforeItemIdAt('people', view, 'SHIP-2', 'id-SHIP-1')).toBeNull();
   });
 
   it('beforeItemIdAt_WhenOverACardInStories_ShouldBeThatCardsId', () => {
