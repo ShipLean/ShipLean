@@ -1,0 +1,166 @@
+{
+  "changesPerCommit": {
+    "workItemId": "00000005-0000-4000-8001-000000000142",
+    "itemKey": "SHIP-142",
+    "itemTitle": "Saved-card picker",
+    "itemType": "task",
+    "stateCategory": "inProgress",
+    "commits": [
+      {
+        "id": "0000000c-0000-4000-8001-000000000001",
+        "repo": "acme/storefront",
+        "repoUrl": "https://github.com/acme/storefront",
+        "provider": "github",
+        "sha": "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+        "shortSha": "a81d4e0",
+        "subject": "Add the saved-card picker",
+        "authorName": "Priya Nair",
+        "authoredAtLabel": "Today",
+        "addedBy": "Claude Code",
+        "addedByAgent": true,
+        "additions": 18,
+        "deletions": 2,
+        "filesChanged": 2,
+        "commitUrl": "https://github.com/acme/storefront/commit/a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+        "access": "ok"
+      },
+      {
+        "id": "0000000c-0000-4000-8001-000000000002",
+        "repo": "acme/storefront",
+        "repoUrl": "https://github.com/acme/storefront",
+        "provider": "github",
+        "sha": "3c9f2b1d7e4a8c06b5f19d3e2a7c4b80e6d1f95a",
+        "shortSha": "3c9f2b1",
+        "subject": "Show the saved cards at checkout",
+        "authorName": "Priya Nair",
+        "authoredAtLabel": "Today",
+        "addedBy": "Claude Code",
+        "addedByAgent": true,
+        "additions": 9,
+        "deletions": 1,
+        "filesChanged": 1,
+        "commitUrl": "https://github.com/acme/storefront/commit/3c9f2b1d7e4a8c06b5f19d3e2a7c4b80e6d1f95a",
+        "access": "ok"
+      },
+      {
+        "id": "0000000c-0000-4000-8001-000000000003",
+        "repo": "acme/payments",
+        "repoUrl": "https://github.com/acme/payments",
+        "provider": "github",
+        "sha": "b44c01e8a7d92f3560c1e7b9d4a8f2036e5b1c97",
+        "shortSha": "b44c01e",
+        "subject": "Tokenise a saved card",
+        "authorName": "Marta Kowalski",
+        "authoredAtLabel": "Today",
+        "addedBy": "Joel",
+        "addedByAgent": false,
+        "additions": 24,
+        "deletions": 0,
+        "filesChanged": 1,
+        "commitUrl": "https://github.com/acme/payments/commit/b44c01e8a7d92f3560c1e7b9d4a8f2036e5b1c97",
+        "access": "ok"
+      }
+    ],
+    "selected": "all",
+    "mode": "perCommit",
+    "headCommitId": "0000000c-0000-4000-8001-000000000003",
+    "parts": [
+      {
+        "repo": "acme/storefront",
+        "sha": "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+        "baseSha": null,
+        "headSha": "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+        "files": [
+          {
+            "path": "src/checkout/SavedCards.tsx",
+            "oldPath": null,
+            "status": "added",
+            "additions": 2,
+            "deletions": 0,
+            "patch": "@@ -0,0 +1,2 @@\n+export function SavedCards() {\n+  return null;\n",
+            "patchId": "23fb3401b89e0e70f88774cad4e7ca76e2265920",
+            "openComments": 1
+          }
+        ]
+      },
+      {
+        "repo": "acme/storefront",
+        "sha": "3c9f2b1d7e4a8c06b5f19d3e2a7c4b80e6d1f95a",
+        "baseSha": null,
+        "headSha": "3c9f2b1d7e4a8c06b5f19d3e2a7c4b80e6d1f95a",
+        "files": [
+          {
+            "path": "src/checkout/Checkout.tsx",
+            "oldPath": "src/checkout/Cart.tsx",
+            "status": "renamed",
+            "additions": 1,
+            "deletions": 1,
+            "patch": "@@ -4,2 +4,3 @@\n   return (\n-    <Pay />\n+    <Pay card={card} />\n",
+            "patchId": "8671da8242a1a7ade492c82fbee962a097e5319c",
+            "openComments": 0
+          }
+        ]
+      },
+      {
+        "repo": "acme/payments",
+        "sha": "b44c01e8a7d92f3560c1e7b9d4a8f2036e5b1c97",
+        "baseSha": null,
+        "headSha": "b44c01e8a7d92f3560c1e7b9d4a8f2036e5b1c97",
+        "files": [
+          {
+            "path": "src/tokens.ts",
+            "oldPath": null,
+            "status": "added",
+            "additions": 2,
+            "deletions": 0,
+            "patch": "@@ -0,0 +1,2 @@\n+export const tokenise = (card: string) => card;\n+\n",
+            "patchId": "ae139916b4cb3d5a7c4654d19b042f1c09cc51bf",
+            "openComments": 0
+          }
+        ]
+      }
+    ],
+    "comments": [
+      {
+        "id": "0000000d-0000-4000-8001-000000000001",
+        "parentId": null,
+        "repo": "acme/storefront",
+        "sha": "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+        "path": "src/checkout/SavedCards.tsx",
+        "side": "new",
+        "line": 2,
+        "startLine": null,
+        "lineText": "  return null;",
+        "bodyHtml": "<p>This should render the saved cards.</p>",
+        "by": "Joel",
+        "byAgent": false,
+        "createdAtLabel": "Today",
+        "resolved": false,
+        "outdated": false,
+        "sentBack": false,
+        "replies": [
+          {
+            "id": "0000000d-0000-4000-8001-000000000002",
+            "parentId": "0000000d-0000-4000-8001-000000000001",
+            "repo": null,
+            "sha": null,
+            "path": null,
+            "side": null,
+            "line": null,
+            "startLine": null,
+            "lineText": null,
+            "bodyHtml": "<p>Done in the next commit.</p>",
+            "by": "Claude Code",
+            "byAgent": true,
+            "createdAtLabel": "Today",
+            "resolved": false,
+            "outdated": false,
+            "sentBack": false,
+            "replies": []
+          }
+        ]
+      }
+    ],
+    "openComments": 1
+  }
+}

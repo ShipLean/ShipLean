@@ -1,0 +1,41 @@
+{
+  "comment": {
+    "id": "0000000d-0000-4000-8001-000000000001",
+    "parentId": null,
+    "repo": "acme/storefront",
+    "sha": "a81d4e0c3f5b79d2e6a1c8b04f7d93e5a2b6c1d8",
+    "path": "src/checkout/SavedCards.tsx",
+    "side": "new",
+    "line": 2,
+    "startLine": null,
+    "lineText": "  return null;",
+    "bodyHtml": "<p>This should render the saved cards.</p>",
+    "by": "Joel",
+    "byAgent": false,
+    "createdAtLabel": "Today",
+    "resolved": false,
+    "outdated": false,
+    "sentBack": false,
+    "replies": [
+      {
+        "id": "0000000d-0000-4000-8001-000000000002",
+        "parentId": "0000000d-0000-4000-8001-000000000001",
+        "repo": null,
+        "sha": null,
+        "path": null,
+        "side": null,
+        "line": null,
+        "startLine": null,
+        "lineText": null,
+        "bodyHtml": "<p>Done in the next commit.</p>",
+        "by": "Claude Code",
+        "byAgent": true,
+        "createdAtLabel": "Today",
+        "resolved": false,
+        "outdated": false,
+        "sentBack": false,
+        "replies": []
+      }
+    ]
+  }
+}
