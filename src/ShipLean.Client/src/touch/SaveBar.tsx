@@ -5,10 +5,24 @@ import { useTouchShell } from './useTouchShell';
 // One line of controls plus the bottom safe area; the spacer takes the same height so nothing ends up under the bar.
 const BAR_HEIGHT = 'h-[calc(var(--touch-target)+1rem+env(safe-area-inset-bottom))]';
 
+/** The room the bar covers at the end of the page: one line of controls plus the bottom safe area. */
+export function SaveBarSpacer() {
+  const { touch } = useTouchShell();
+  if (!touch) return null;
+  return (
+    <div
+      aria-hidden="true"
+      data-testid={touchTestIds.saveBarSpacer}
+      className={`${BAR_HEIGHT} shrink-0`}
+    />
+  );
+}
+
 /**
  * The touch Save bar (K5, SHIP-805 rule 15): message · Discard · Save, fixed to the bottom while something is unsaved.
  * It renders only at 900px and below; above that, pages keep their own Save and Cancel. Put it last in the scrolling
- * content: it leaves an in-flow spacer of its own height so the end of the page can scroll clear of it.
+ * content: it leaves an in-flow spacer of its own height so the end of the page can scroll clear of it. A page whose bar
+ * is not at its end passes `spacer={false}` and renders a `SaveBarSpacer` last instead.
  */
 export function SaveBar({
   dirty,
@@ -17,6 +31,7 @@ export function SaveBar({
   onSave,
   saveDisabled = false,
   saving = false,
+  spacer = true,
 }: {
   dirty: boolean;
   /** Text, or an element such as a button that opens the list of changes. */
@@ -25,13 +40,15 @@ export function SaveBar({
   onSave: () => void;
   saveDisabled?: boolean;
   saving?: boolean;
+  /** Leave the in-flow spacer to the caller (`SaveBarSpacer`). Default true. */
+  spacer?: boolean;
 }) {
   const { touch } = useTouchShell();
   if (!touch || !dirty) return null;
 
   return (
     <>
-      <div aria-hidden="true" className={`${BAR_HEIGHT} shrink-0`} />
+      {spacer ? <SaveBarSpacer /> : null}
       <div
         data-testid={touchTestIds.saveBar}
         role="region"

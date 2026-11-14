@@ -21,7 +21,7 @@ export function AppearancePanel() {
       meta="Applies straight away, on every browser you use"
       testId={settingsTestIds.appearancePanel}
     >
-      <div className="grid grid-cols-[130px_minmax(0,1fr)] max-sm:grid-cols-1">
+      <div className="grid grid-cols-[130px_minmax(0,1fr)] touch:grid-cols-1">
         <FormRow label="Theme">
           <SegmentedChoice
             label="Theme"
@@ -39,7 +39,7 @@ export function AppearancePanel() {
             selected={me.density}
             onPick={(value) => save('density', value)}
           />
-          <span className="text-[length:var(--text-xs)] text-ink-muted">
+          <span className="text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
             Compact fits more rows on backlogs and boards. Comfortable gives rows, controls and the
             side menu more room.
           </span>

@@ -16,7 +16,7 @@ export function SegmentedChoice<T extends string>({
     <div
       role="group"
       aria-label={label}
-      className="inline-flex overflow-hidden rounded-control border border-edge"
+      className="inline-flex overflow-hidden rounded-control border border-edge touch:flex touch:h-9"
     >
       {options.map((option) => (
         <button
@@ -25,7 +25,7 @@ export function SegmentedChoice<T extends string>({
           data-testid={testId}
           data-value={option.value}
           aria-pressed={option.value === selected}
-          className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold"
+          className="cursor-pointer touch:min-h-9 touch:flex-1 touch:basis-0 touch:whitespace-nowrap touch:px-2 touch:text-[length:var(--text-base)] border-r border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold"
           onClick={() => onPick(option.value)}
         >
           {option.label}

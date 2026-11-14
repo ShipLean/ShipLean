@@ -15,7 +15,11 @@ export function ColourField({
 }) {
   return (
     <FormRow label="Colour">
-      <div role="group" aria-label="Avatar colour" className="flex flex-wrap gap-1.5">
+      <div
+        role="group"
+        aria-label="Avatar colour"
+        className="flex flex-wrap gap-1.5 touch:grid touch:grid-cols-[repeat(5,32px)] touch:gap-x-3.5 touch:gap-y-2.5"
+      >
         {AVATAR_COLOURS.map((colour) => (
           <button
             key={colour}
@@ -24,13 +28,13 @@ export function ColourField({
             data-colour={colour}
             aria-pressed={draft.avatarColour === colour}
             aria-label={`Colour ${colour}`}
-            className="size-6 cursor-pointer rounded-full border-2 border-transparent p-0 aria-pressed:border-ink"
+            className="size-6 touch:size-8 cursor-pointer rounded-full border-2 border-transparent p-0 aria-pressed:border-ink"
             style={{ background: colour, boxShadow: 'inset 0 0 0 2px var(--color-panel)' }}
             onClick={() => onPick(colour)}
           />
         ))}
       </div>
-      <span className="text-[length:var(--text-xs)] text-ink-muted">
+      <span className="text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
         {hasPhoto(me, draft)
           ? "Behind your photo while it loads, and wherever it can't be shown."
           : 'Behind your initials.'}

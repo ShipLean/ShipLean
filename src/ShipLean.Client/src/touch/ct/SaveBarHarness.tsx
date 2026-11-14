@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Dialog } from '../../components/Dialog';
-import { SaveBar } from '../SaveBar';
+import { SaveBar, SaveBarSpacer } from '../SaveBar';
 import { saveBarHarnessIds as ids } from './saveBarHarnessIds';
 
 /** CT-only: a long page (or a full-screen dialog's body) ending in a SaveBar, with counters for its handlers. */
@@ -10,12 +10,15 @@ export function SaveBarHarness({
   saving,
   messageIsButton,
   inDialog,
+  ownSpacer,
 }: {
   dirty?: boolean;
   saveDisabled?: boolean;
   saving?: boolean;
   messageIsButton?: boolean;
   inDialog?: boolean;
+  /** The bar leaves its spacer out and a SaveBarSpacer follows it, after the page end. */
+  ownSpacer?: boolean;
 }) {
   const [saves, setSaves] = useState(0);
   const [discards, setDiscards] = useState(0);
@@ -56,7 +59,9 @@ export function SaveBarHarness({
         onSave={() => setSaves((count) => count + 1)}
         saveDisabled={saveDisabled}
         saving={saving}
+        spacer={!ownSpacer}
       />
+      {ownSpacer ? <SaveBarSpacer /> : null}
     </>
   );
 

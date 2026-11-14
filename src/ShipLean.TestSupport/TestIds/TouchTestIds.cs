@@ -29,6 +29,7 @@ public static class TouchTestIds
     public const string SaveBarMessage = "touch-save-bar-message";
     public const string SaveBarDiscard = "touch-save-bar-discard";
     public const string SaveBarSave = "touch-save-bar-save";
+    public const string SaveBarSpacer = "touch-save-bar-spacer";
     public const string DialogClose = "touch-dialog-close";
     public const string DialogPrimary = "touch-dialog-primary";
 

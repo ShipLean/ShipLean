@@ -165,6 +165,10 @@ public static class SettingsTestIds
     public const string ProfileSave = "settings-profile-save";
     public const string ProfileDiscard = "settings-profile-discard";
     public const string ProfileSaveError = "settings-profile-save-error";
+    // SHIP-733 profile form touch
+    public const string ProfileBarError = "settings-profile-bar-error";
+    public const string PasswordOpen = "settings-password-open";
+    public const string PasswordCancel = "settings-password-cancel";
     public const string InstanceDenied = "settings-instance-denied";
     public const string InstanceGeneralPanel = "settings-instance-general-panel";
     public const string InstanceLoading = "settings-instance-loading";

@@ -9,6 +9,7 @@ import { hasPhoto, isDirty, nameProblem, photoProblem, type IdentityDraft } from
 import { NameField } from './NameField';
 import { PhotoField } from './PhotoField';
 import { SaveBar } from './SaveBar';
+import { ProfileSaveBar } from './touch/ProfileSaveBar';
 import { useSaveIdentity } from './useSaveIdentity';
 
 const fromMe = (me: MeDto): IdentityDraft => ({
@@ -44,6 +45,19 @@ export function IdentityForm({ me }: { me: MeDto }) {
     }
   };
 
+  const saveBar = {
+    dirty: isDirty(me, draft),
+    canSave: nameProblem(draft.name) === null,
+    saving,
+    error,
+    onSave: () => save(draft),
+    onDiscard: () => {
+      setPhotoError(null);
+      clearError();
+      setDraft(fromMe(me));
+    },
+  };
+
   return (
     <section
       aria-label="Profile"
@@ -54,7 +68,7 @@ export function IdentityForm({ me }: { me: MeDto }) {
         <h2 className="text-[length:var(--text-md)] font-semibold text-ink">Profile</h2>
       </header>
       <IdentityHeader me={me} draft={draft} />
-      <div className="grid grid-cols-[130px_minmax(0,1fr)] max-sm:grid-cols-1">
+      <div className="grid grid-cols-[130px_minmax(0,1fr)] touch:grid-cols-1">
         <NameField
           name={draft.name}
           readOnly={proxy}
@@ -79,18 +93,8 @@ export function IdentityForm({ me }: { me: MeDto }) {
         />
         <EmailRow email={me.email} proxy={proxy} />
       </div>
-      <SaveBar
-        dirty={isDirty(me, draft)}
-        canSave={nameProblem(draft.name) === null}
-        saving={saving}
-        error={error}
-        onSave={() => save(draft)}
-        onDiscard={() => {
-          setPhotoError(null);
-          clearError();
-          setDraft(fromMe(me));
-        }}
-      />
+      <SaveBar {...saveBar} />
+      <ProfileSaveBar {...saveBar} />
     </section>
   );
 }
