@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { taskboardKey, taskboardMoveKey, type TaskboardMoveRequest } from '../../taskboardApi';
 import type { TaskboardGridView } from '../../taskboardGridView';
@@ -73,5 +73,16 @@ export function useTeammatePulses(
       return next;
     });
   }, [view, projectId, scope, queryClient]);
+  // Once the board is idle, every move of this tab has been through its refetch: a later change is a teammate's, even to
+  // the same task. (After the view effect, which still needs those moves for the view the refetch brings.)
+  const mutating = useIsMutating({ mutationKey: taskboardMoveKey(projectId, scope) });
+  const fetching = useIsFetching({ queryKey: taskboardKey(projectId, scope) });
+  useEffect(() => {
+    if (mutating > 0 || fetching > 0) return;
+    queryClient
+      .getMutationCache()
+      .findAll({ mutationKey: taskboardMoveKey(projectId, scope) })
+      .forEach((mutation) => consumed.current.add(mutation));
+  }, [mutating, fetching, projectId, scope, queryClient]);
   return pulses;
 }

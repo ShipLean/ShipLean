@@ -3,7 +3,7 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
 import type { CardDto, TaskboardPersonRowDto } from '@shiplean/core/api/views';
-import { taskboardMoveKey } from '../../taskboardApi';
+import { taskboardKey, taskboardMoveKey } from '../../taskboardApi';
 import type { TaskboardGridView } from '../../taskboardGridView';
 import type { TaskboardScope } from '../../taskboardScope';
 import { landedStates, useTeammatePulses } from './teammateMoves';
@@ -109,12 +109,22 @@ describe('useTeammatePulses', () => {
       () => new Promise<void>((_, reject) => (refuse = () => reject(new Error('no')))),
     );
     show(MOVED);
+    // The refetch that follows the settled move is under way when the rollback arrives.
+    let answer: () => void = () => undefined;
+    const reading = client.fetchQuery({
+      queryKey: taskboardKey('p1', scope),
+      queryFn: () => new Promise<null>((resolve) => (answer = () => resolve(null))),
+    });
 
     await act(async () => {
       refuse();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     show(START);
+    await act(async () => {
+      answer();
+      await reading;
+    });
 
     expect(seen.pulses.size).toBe(0);
   });
@@ -132,6 +142,21 @@ describe('useTeammatePulses', () => {
     show(MOVED);
 
     expect(seen.pulses.get('active')).toBe(1);
+  });
+
+  it('UseTeammatePulses_WhenTeammateMovesTheTaskYouMovedAfterTheBoardIsIdle_ShouldPulse', async () => {
+    const { client, seen, show } = setup();
+    let finish: () => void = () => undefined;
+    await ownMove(client, () => new Promise<void>((resolve) => (finish = resolve)));
+    show(MOVED);
+    await act(async () => {
+      finish();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    // The refetch answered what the cache held: the same view, so no view change follows.
+    show(viewOf({ new: [], active: [], closed: ['a'] }));
+
+    expect(seen.pulses.get('closed')).toBe(1);
   });
 
   it('UseTeammatePulses_WhenSecondTeammateMoveLandsInSameState_ShouldCountAgain', () => {
