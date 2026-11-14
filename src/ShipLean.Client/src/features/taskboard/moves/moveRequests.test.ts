@@ -157,6 +157,7 @@ describe('pickUpRequest', () => {
       stateId: 't-active',
       row: { grouping: 'people', target: 'u-priya' },
       beforeItemId: null,
+      method: 'pick-up',
     });
   });
 });
