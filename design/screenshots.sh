@@ -102,6 +102,17 @@ declare -A variants=(
   [profile-devices]="profile.html?at=sessions"
   [profile-devices-signout]="profile.html?at=sessions&devout=px"
   [profile-devices-none]="profile.html?at=sessions&devices=0"
+  # SHIP-1460: Task changes (the diff and code comments on a Task or Bug; desktop only)
+  [task-changes-task]="task-changes.html?view=task"
+  [task-changes-bug]="task-changes.html?view=task&item=bug"
+  [task-changes-empty]="task-changes.html?view=task&state=empty"
+  [task-changes-compose]="task-changes.html?view=review&state=compose"
+  [task-changes-commits]="task-changes.html?view=review&state=commits"
+  [task-changes-split]="task-changes.html?view=review&state=split"
+  [task-changes-request]="task-changes.html?view=review&state=request"
+  [task-changes-approve]="task-changes.html?view=review&state=approve"
+  [task-changes-outdated]="task-changes.html?view=review&state=outdated"
+  [task-changes-noaccess]="task-changes.html?view=review&state=noaccess"
 )
 
 names=("$@")
