@@ -4,6 +4,8 @@ Mock-up, not built. Decisions D14–D22 settled by Joel, 14 Nov 2026. Screen: [`
 
 ShipLean reads runs from the team's ClickHouse or Tempo + Loki through `ITraceSource`. It never writes telemetry.
 
+**Naming.** "OpenAI CLI" here is the OpenAI command-line coding agent that SHIP-1463 names. Its product name, and the namespace prefix on its event names, can't appear in this repository (`NoForeignProductNameTests`), so the mock-up shows its events without the prefix (`tool_result`, `api_request`). How the build matches those event names is decision D23 on SHIP-1463.
+
 Images: `screens/agent-runs*.png` (1440 × 900) in light and dark; the variants are in `screenshots.sh`. `screens/agent-runs-phone-*.png` (390 × 844) show the narrow-screen states, taken with headless Chrome at `--window-size=390,844` because `screenshots.sh` can't shoot that narrow.
 
 ## Task page: Agent runs section
@@ -12,7 +14,7 @@ Under **Changes** (SHIP-1460), above Discussion. Newest run first. Shown only wh
 
 | Column | What it shows |
 |---|---|
-| Agent | Claude Code, Codex CLI or Cursor; who started it and when |
+| Agent | Claude Code, OpenAI CLI or Cursor; who started it and when |
 | What it did | From the run's ShipLean MCP calls only (`report_task: done · 3 commits`, `hand_back: blocked …`), never prompt text (D17). Under it: how the run was linked (**Tagged** = `shiplean.item` on the run; **From pick_up** = derived from a ShipLean tool call; **.shiplean file** = Cursor's hook script), turns, spans or events, model |
 | Took | Wall-clock length of the run |
 | Timeline | Mini strip: turns, permission waits (striped), errors (red ticks), ShipLean tool calls (dots) |
@@ -32,9 +34,9 @@ States (`?view=task`): default (3 runs), `&state=empty` (no runs; how runs get l
 - **Waterfall**: grouped by turn (the turn row shows its prompt when content is shown), indented by parent, one bar per span placed on the axis. Kinds: model call, tool, ShipLean MCP tool, subagent (collapsed with a span count), permission wait (striped part of the tool's bar). Error spans have a ✕ and a red bar; a retried API error a dashed bar.
 - **Detail panel**: kind, start, duration, offset into the run, wait; Copy link, Open in Grafana. Then **Open in Changes** for edits (file + commit, SHIP-1460), input, output (first 40 lines), attributes, joined log records (by span id; by conversation and time for log-only runs).
 - **Content hidden** (project default, D4): turn rows say "prompt hidden", tool rows show the tool name only, and Input/Output become one note. Timings, attributes and logs still show.
-- **Log-only runs** (Codex CLI log events, Cursor hook events; D19): same page, flat rows grouped by turn, a bar drawn back from the event by `duration_ms`, a diamond for events with no duration, and a banner saying what the agent doesn't send.
+- **Log-only runs** (OpenAI CLI log events, Cursor hook events; D19): same page, flat rows grouped by turn, a bar drawn back from the event by `duration_ms`, a diamond for events with no duration, and a banner saying what the agent doesn't send.
 
-States: default (`run=claude`, failed test selected), `&state=zoom|errors|permission|edit|hidden|truncated|expired`, `&run=codex`, `&run=cursor`.
+States: default (`run=claude`, failed test selected), `&state=zoom|errors|permission|edit|hidden|truncated|expired`, `&run=openai`, `&run=cursor`.
 
 Span and event names follow what each agent sends as far as we knew on 14 Nov 2026; lane 1c's recorded runs replace the sample data.
 
@@ -69,7 +71,7 @@ Desktop only (D15): under 900px no section, and a run link shows one line and a 
 | 21-minute permission wait (`&state=permission`) | ![](screens/agent-runs-permission.light.png) | ![](screens/agent-runs-permission.dark.png) |
 | Edit linked into Changes (`&state=edit`) | ![](screens/agent-runs-edit.light.png) | ![](screens/agent-runs-edit.dark.png) |
 | Content hidden (`&state=hidden`) | ![](screens/agent-runs-hidden.light.png) | ![](screens/agent-runs-hidden.dark.png) |
-| Codex CLI, log events (`&run=codex`) | ![](screens/agent-runs-codex.light.png) | ![](screens/agent-runs-codex.dark.png) |
+| OpenAI CLI, log events (`&run=openai`) | ![](screens/agent-runs-openai.light.png) | ![](screens/agent-runs-openai.dark.png) |
 | Cursor, hook events (`&run=cursor`) | ![](screens/agent-runs-cursor.light.png) | ![](screens/agent-runs-cursor.dark.png) |
 | Trace truncated (`&state=truncated`) | ![](screens/agent-runs-truncated.light.png) | ![](screens/agent-runs-truncated.dark.png) |
 | Run no longer available (`&state=expired`) | ![](screens/agent-runs-expired.light.png) | ![](screens/agent-runs-expired.dark.png) |

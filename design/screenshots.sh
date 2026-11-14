@@ -122,7 +122,7 @@ declare -A variants=(
   [agent-runs-permission]="agent-runs.html?view=run&state=permission"
   [agent-runs-edit]="agent-runs.html?view=run&state=edit"
   [agent-runs-hidden]="agent-runs.html?view=run&state=hidden"
-  [agent-runs-codex]="agent-runs.html?view=run&run=codex"
+  [agent-runs-openai]="agent-runs.html?view=run&run=openai"
   [agent-runs-cursor]="agent-runs.html?view=run&run=cursor"
   [agent-runs-truncated]="agent-runs.html?view=run&state=truncated"
   [agent-runs-expired]="agent-runs.html?view=run&state=expired"

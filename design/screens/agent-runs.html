@@ -10,7 +10,7 @@
   shiplean.css and shared.js only; no build step.
   ?view=task     the Task page (SHIP-171) with its Agent runs section under Changes. &state=empty | down
   ?view=run      (default) the Run page, /p/SHIP/items/SHIP-171/runs/<run>.
-                 &run=claude (default, a traced run: waterfall) | codex (log-only: event timeline) | cursor (hook events)
+                 &run=claude (default, a traced run: waterfall) | openai (log-only: event timeline) | cursor (hook events)
                  &state= zoom | errors | hidden | permission | edit | truncated | expired
   Decisions D14–D22 settled by Joel, 14 Nov 2026: no cost or price in v1 (D21), no comments on spans in v1 (D20).
   Span and event names follow what each agent sends as far as we know on 14 Nov; lane 1c's recorded runs replace them.
@@ -33,7 +33,7 @@
 .num { font-variant-numeric: tabular-nums; }
 .agent { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--color-surface-2); border: 1px solid var(--color-border); font: 700 9px/1 var(--font-sans); color: var(--color-muted); flex: none; }
 .abadge { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: var(--radius-sm); font: 700 9px/1 var(--font-sans); flex: none; color: #fff; }
-.abadge.claude { background: #c46a4a; } .abadge.codex { background: #3d4a5c; } .abadge.cursor { background: #2a2a2a; }
+.abadge.claude { background: #c46a4a; } .abadge.openai { background: #3d4a5c; } .abadge.cursor { background: #2a2a2a; }
 :root[data-theme="dark"] .abadge.cursor { background: #555; }
 .who { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
 
@@ -233,8 +233,8 @@ table.runs td.what { width: 100%; max-width: 0; }
   $('appbar').outerHTML = SL.appBar('backlogs')
     .replace(/<nav class="crumbs"[^]*?<\/nav>/, `<nav class="crumbs" aria-label="You are here"><span>SHIP</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>`);
   const agentAv = '<span class="agent" title="Claude Code (agent)">AI</span>';
-  const badge = a => `<span class="abadge ${a}" title="${AGENTS[a]}">${{ claude: 'CC', codex: 'CX', cursor: 'CU' }[a]}</span>`;
-  const AGENTS = { claude: 'Claude Code', codex: 'Codex CLI', cursor: 'Cursor' };
+  const badge = a => `<span class="abadge ${a}" title="${AGENTS[a]}">${{ claude: 'CC', openai: 'OA', cursor: 'CU' }[a]}</span>`;
+  const AGENTS = { claude: 'Claude Code', openai: 'OpenAI CLI', cursor: 'Cursor' };
   const CONTENT = state !== 'hidden'; // project setting: show prompts, responses and tool input/output (D4)
 
   /* ---------------- Time helpers ---------------- */
@@ -280,35 +280,35 @@ table.runs td.what { width: 100%; max-width: 0; }
     ],
   };
   const ev = (n, d, s, o = {}) => ({ k: o.k || 'ev', n, d, s, t: o.t || 0, ...o });
-  const codex = {
-    id: 'cx-4b91d0', agent: 'codex', base: 15 * 3600 + 2 * 60 + 10, day: 'Wed 21 Oct', end: 640,
-    who: 'agent-relay', where: 'on build-02', model: 'gpt-5-codex', link: 'From pick_up', linkWhy: 'a shiplean pick_up call named SHIP-171 (no shiplean.item on the run)',
+  const openai = {
+    id: 'cx-4b91d0', agent: 'openai', base: 15 * 3600 + 2 * 60 + 10, day: 'Wed 21 Oct', end: 640,
+    who: 'agent-relay', where: 'on build-02', model: 'gpt-5', link: 'From pick_up', linkWhy: 'a shiplean pick_up call named SHIP-171 (no shiplean.item on the run)',
     tokensIn: '398k', tokensOut: '14.1k', spans: 0, events: 31, outcome: 'hand_back: blocked · vault answers 429 in the tests', traced: false,
     turns: [
       { n: 'Turn 1', prompt: 'You are working on SHIP-171 in acme/storefront. Read its brief with get_brief, pick it up, and do it.', s: 0, t: 640, kids: [
-        ev('codex.conversation_starts', 'gpt-5-codex · sandbox workspace-write · approval never', 0),
-        ev('codex.user_prompt', 'prompt_length 412', 0.1),
-        ev('codex.api_request', '200 · 5.8 s', 6.3, { t: 5.8, k: 'model' }),
-        ev('codex.tool_result', 'shiplean__get_brief', 7.5, { t: 1.1, k: 'mcp' }),
-        ev('codex.tool_result', 'shiplean__pick_up', 8.4, { t: 0.8, k: 'mcp' }),
-        ev('codex.api_request', '200 · 12.0 s', 21, { t: 12, k: 'model' }),
-        ev('codex.tool_decision', 'shell · approved · config', 21.2),
-        ev('codex.tool_result', 'shell · rg -n IVaultClient', 21.7, { t: 0.4, k: 'tool' }),
-        ev('codex.api_request', '200 · 48.2 s', 70, { t: 48.2, k: 'model' }),
-        ev('codex.tool_result', 'apply_patch · 4 files', 70.6, { t: 0.5, k: 'tool' }),
-        ev('codex.tool_result', 'shell · dotnet build -c Release', 140, { t: 52, k: 'tool' }),
-        ev('codex.api_request', '200 · 9.1 s', 150, { t: 9.1, k: 'model' }),
-        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 214, { t: 61, k: 'tool', err: 'success false', id: 'cxt1' }),
-        ev('codex.api_request', '200 · 31.4 s', 247, { t: 31.4, k: 'model' }),
-        ev('codex.tool_result', 'apply_patch · VaultClient.cs', 248, { t: 0.3, k: 'tool' }),
-        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 310, { t: 58, k: 'tool', err: 'success false' }),
-        ev('codex.api_request', '200 · 22.0 s', 334, { t: 22, k: 'model' }),
-        ev('codex.tool_result', 'shell · curl -s $VAULT_URL/health', 336, { t: 1.2, k: 'tool' }),
-        ev('codex.api_request', '200 · 41.0 s', 380, { t: 41, k: 'model' }),
-        ev('codex.tool_result', 'shell · dotnet test --filter CardLookup', 446, { t: 59, k: 'tool', err: 'success false' }),
-        ev('codex.api_request', '200 · 166 s', 615, { t: 166, k: 'model' }),
-        ev('codex.tool_result', 'shiplean__hand_back · blocked', 628, { t: 1.4, k: 'mcp' }),
-        ev('codex.api_request', '200 · 4.2 s', 640, { t: 4.2, k: 'model' }) ] },
+        ev('conversation_starts', 'gpt-5 · sandbox workspace-write · approval never', 0),
+        ev('user_prompt', 'prompt_length 412', 0.1),
+        ev('api_request', '200 · 5.8 s', 6.3, { t: 5.8, k: 'model' }),
+        ev('tool_result', 'shiplean__get_brief', 7.5, { t: 1.1, k: 'mcp' }),
+        ev('tool_result', 'shiplean__pick_up', 8.4, { t: 0.8, k: 'mcp' }),
+        ev('api_request', '200 · 12.0 s', 21, { t: 12, k: 'model' }),
+        ev('tool_decision', 'shell · approved · config', 21.2),
+        ev('tool_result', 'shell · rg -n IVaultClient', 21.7, { t: 0.4, k: 'tool' }),
+        ev('api_request', '200 · 48.2 s', 70, { t: 48.2, k: 'model' }),
+        ev('tool_result', 'apply_patch · 4 files', 70.6, { t: 0.5, k: 'tool' }),
+        ev('tool_result', 'shell · dotnet build -c Release', 140, { t: 52, k: 'tool' }),
+        ev('api_request', '200 · 9.1 s', 150, { t: 9.1, k: 'model' }),
+        ev('tool_result', 'shell · dotnet test --filter CardLookup', 214, { t: 61, k: 'tool', err: 'success false', id: 'cxt1' }),
+        ev('api_request', '200 · 31.4 s', 247, { t: 31.4, k: 'model' }),
+        ev('tool_result', 'apply_patch · VaultClient.cs', 248, { t: 0.3, k: 'tool' }),
+        ev('tool_result', 'shell · dotnet test --filter CardLookup', 310, { t: 58, k: 'tool', err: 'success false' }),
+        ev('api_request', '200 · 22.0 s', 334, { t: 22, k: 'model' }),
+        ev('tool_result', 'shell · curl -s $VAULT_URL/health', 336, { t: 1.2, k: 'tool' }),
+        ev('api_request', '200 · 41.0 s', 380, { t: 41, k: 'model' }),
+        ev('tool_result', 'shell · dotnet test --filter CardLookup', 446, { t: 59, k: 'tool', err: 'success false' }),
+        ev('api_request', '200 · 166 s', 615, { t: 166, k: 'model' }),
+        ev('tool_result', 'shiplean__hand_back · blocked', 628, { t: 1.4, k: 'mcp' }),
+        ev('api_request', '200 · 4.2 s', 640, { t: 4.2, k: 'model' }) ] },
     ],
   };
   const cursor = {
@@ -329,7 +329,7 @@ table.runs td.what { width: 100%; max-width: 0; }
         ev('stop', 'status aborted', 371) ] },
     ],
   };
-  const RUNS = { claude, codex, cursor };
+  const RUNS = { claude, openai, cursor };
   const run = RUNS[RUN] || claude;
 
   // Number every span and give it a depth; subagents are collapsed by default (D18) unless state says otherwise.
@@ -341,7 +341,7 @@ table.runs td.what { width: 100%; max-width: 0; }
     walk(tu.kids, 1, tu);
   });
   const byId = Object.fromEntries(flat.map(s => [s.id, s]));
-  const selDefault = { claude: { '': 'test1', errors: 'test1', zoom: 'build1', hidden: 'test1', truncated: 'test1', edit: 'editVault', permission: 'commit2' }, codex: { '': 'cxt1' }, cursor: {} }[run.agent];
+  const selDefault = { claude: { '': 'test1', errors: 'test1', zoom: 'build1', hidden: 'test1', truncated: 'test1', edit: 'editVault', permission: 'commit2' }, openai: { '': 'cxt1' }, cursor: {} }[run.agent];
   const ui = { sel: (selDefault && (selDefault[state] || selDefault[''])) || flat[1].id, errorsOnly: state === 'errors', find: '', range: state === 'zoom' ? [0, 416] : null };
   if (run.agent === 'cursor') ui.sel = flat.find(s => s.k === 'mcp').id;
 
@@ -380,8 +380,8 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
     cxt1: {
       input: 'shell: dotnet test tests/Storefront.Vault.Tests --filter CardLookup',
       output: '<span class="e">Failed!  - Failed: 2, Passed: 7, Skipped: 0, Total: 9, Duration: 2.1 s</span>\n<span class="m">  CardLookupTests.ForCustomerAsync_WhenTheVaultAnswers429_ShouldRetryOnce\n  CardLookupTests.ForCustomerAsync_WhenTheVaultIsDown_ShouldReturnVaultDown</span>',
-      attrs: [['event.name', 'codex.tool_result'], ['tool_name', 'shell'], ['success', 'false'], ['duration_ms', '61022'], ['conversation.id', '4b91d0e2-…-77aa'], ['model', 'gpt-5-codex']],
-      logs: [['15:05:44', 'INFO', 'codex.tool_decision', 'tool_name=shell decision=approved source=config'], ['15:05:44', 'ERROR', 'codex.tool_result', 'tool_name=shell success=false duration_ms=61022']],
+      attrs: [['event.name', 'tool_result'], ['tool_name', 'shell'], ['success', 'false'], ['duration_ms', '61022'], ['conversation.id', '4b91d0e2-…-77aa'], ['model', 'gpt-5']],
+      logs: [['15:05:44', 'INFO', 'tool_decision', 'tool_name=shell decision=approved source=config'], ['15:05:44', 'ERROR', 'tool_result', 'tool_name=shell success=false duration_ms=61022']],
     },
   };
   const genericDetail = sp => ({
@@ -422,7 +422,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
         <div class="empty-box">
           <span>No agent runs for SHIP-171 in the last 30 days. A run shows here when the agent's telemetry is tagged with <code>shiplean.item = SHIP-171</code>, or when it calls ShipLean's tools about SHIP-171 (<code>get_brief</code>, <code>pick_up</code>, <code>report_task</code> …).</span>
           <span>Set up the agent that works on this task:</span>
-          <span class="agents3">${['claude', 'codex', 'cursor'].map(a => `<a href="#">${badge(a)} ${AGENTS[a]}</a>`).join('')}<a href="#" style="padding-left:10px">All agent setup ↗</a></span>
+          <span class="agents3">${['claude', 'openai', 'cursor'].map(a => `<a href="#">${badge(a)} ${AGENTS[a]}</a>`).join('')}<a href="#" style="padding-left:10px">All agent setup ↗</a></span>
           <span class="xs">Project settings › Inspection › Agent setup has copy-ready config with SHIP's collector filled in. Or run <code>shiplean telemetry env SHIP-171 --agent claude-code</code>.</span>
         </div>
       </section>`;
@@ -431,13 +431,13 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
         <div class="sec-h"><h2>Agent runs</h2><span class="spacer"></span><button class="btn tiny" type="button">Try again</button></div>
         <div class="callout warn"><b>Can't reach the trace store right now.</b>Tempo at tempo.larkspur.internal didn't answer within 10 s, so runs can't be listed. The rest of SHIP-171 works as usual. Instance admins can see the store's status in Admin › Instance health.</div>
       </section>`;
-    const list = [cursor, claude, codex];
+    const list = [cursor, claude, openai];
     return `
       <section class="sec runs-sec" data-testid="task-agent-runs">
         <div class="sec-h"><h2>Agent runs</h2>
           <span class="sum">3 runs · 1 h 29 m · 2.7M tokens</span>
           <span class="spacer"></span>
-          <span class="pill danger">${errCount(claude) + errCount(codex) + errCount(cursor)} errors</span>
+          <span class="pill danger">${errCount(claude) + errCount(openai) + errCount(cursor)} errors</span>
           <span class="pill warn" title="Time the agent sat waiting for someone to allow a tool">Waited 22 m for permission</span>
         </div>
         <div class="box"><table class="runs">
@@ -491,7 +491,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
             <ul class="hist" style="margin-top:8px">
               <li><span class="rev">5</span><div>${agentAv} <b>Claude Code</b> <span class="xs muted">Thu 22 Oct, 17:24</span><div class="ch">State Active → <b>In review</b></div><div class="ch">Commits <b>+3</b> (acme/storefront)</div></div></li>
               <li><span class="rev">4</span><div>${av('priya')} <b>Priya Shah</b> <span class="xs muted">Thu 22 Oct, 16:12</span><div class="ch">State New → <b>Active</b></div></div></li>
-              <li><span class="rev">3</span><div>${agentAv} <b>Codex CLI</b> <span class="xs muted">Wed 21 Oct, 15:12</span><div class="ch">Handed back: <b>blocked</b></div></div></li>
+              <li><span class="rev">3</span><div>${agentAv} <b>OpenAI CLI</b> <span class="xs muted">Wed 21 Oct, 15:12</span><div class="ch">Handed back: <b>blocked</b></div></div></li>
             </ul></section>
         </aside>
       </div>`;
@@ -527,7 +527,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
   const subCount = sp => { let n = 0; const w = l => l.forEach(x => { n++; x.kids && w(x.kids); }); w(sp.kids); return n; };
   const kindLetter = { model: 'M', tool: 'T', mcp: 'SL', sub: 'S', ev: '•', turn: '›' };
   const label = sp => {
-    if (!run.traced && sp.k !== 'turn') return `<span class="nm mono xs">${esc(sp.n.replace(/^codex\./, ''))}</span><span class="dt">${esc(sp.d === 'prompt' && !CONTENT ? 'prompt hidden' : sp.d)}</span>`;
+    if (!run.traced && sp.k !== 'turn') return `<span class="nm mono xs">${esc(sp.n)}</span><span class="dt">${esc(sp.d === 'prompt' && !CONTENT ? 'prompt hidden' : sp.d)}</span>`;
     if (sp.k === 'model') return `<span class="nm">Model call</span><span class="dt">${esc(sp.d)}</span>`;
     if (sp.k === 'mcp') return `<span class="nm">${esc(sp.n)}</span><span class="dt">${esc(sp.d)}</span>`;
     if (sp.k === 'sub') return `<span class="nm">${esc(sp.n)}</span><span class="dt">${CONTENT ? esc(sp.d) : ''}</span>`;
@@ -612,7 +612,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
         <div class="wi-top"><a class="back" href="?view=task${keep}">← Back to SHIP-171</a><span class="spacer"></span><span class="xs muted">Task ${tIcon('task')} SHIP-171 API: tokenised card lookup · ${st('In review')}</span></div>
         <div class="rv-title">${badge(run.agent)}<h1>${AGENTS[run.agent]} run · ${run.day}, ${clock(run.base, 0).slice(0, 5)}</h1><span class="xs muted">${run.who} ${run.where}</span>
           <span class="pill ${run.link === 'Tagged' ? 'ok' : 'info'}" title="${esc(run.linkWhy)}">Linked: ${run.link}</span><span class="spacer"></span>
-          ${(() => { const order = ['codex', 'claude', 'cursor'], i = order.indexOf(run.agent); return `<span class="row" style="gap:4px"><a class="btn tiny" ${i > 0 ? `href="?view=run&run=${order[i - 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>‹ Older</a><span class="xs muted" style="padding:0 4px">Run ${i + 1} of 3 on SHIP-171</span><a class="btn tiny" ${i < 2 ? `href="?view=run&run=${order[i + 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>Newer ›</a></span>`; })()}</div>
+          ${(() => { const order = ['openai', 'claude', 'cursor'], i = order.indexOf(run.agent); return `<span class="row" style="gap:4px"><a class="btn tiny" ${i > 0 ? `href="?view=run&run=${order[i - 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>‹ Older</a><span class="xs muted" style="padding:0 4px">Run ${i + 1} of 3 on SHIP-171</span><a class="btn tiny" ${i < 2 ? `href="?view=run&run=${order[i + 1]}${keep}"` : 'aria-disabled="true" style="opacity:.4"'}>Newer ›</a></span>`; })()}</div>
         <div class="rv-bar">
           <span class="stat"><b>${dur(run.end)}</b><span>Took</span></span>
           <span class="stat"><b>${run.turns.length}</b><span>${run.agent === 'cursor' ? 'Prompts' : 'Turns'}</span></span>
@@ -661,7 +661,7 @@ new_string: using var response = await SendWithRetryAsync(() => new HttpRequestM
   SL.preview([
     { label: 'Task page', run: () => { location.search = '?view=task'; } },
     { label: 'Claude Code run', run: () => { location.search = '?view=run'; } },
-    { label: 'Codex CLI run', run: () => { location.search = '?view=run&run=codex'; } },
+    { label: 'OpenAI CLI run', run: () => { location.search = '?view=run&run=openai'; } },
     { label: 'Cursor run', run: () => { location.search = '?view=run&run=cursor'; } },
   ]);
 })();
