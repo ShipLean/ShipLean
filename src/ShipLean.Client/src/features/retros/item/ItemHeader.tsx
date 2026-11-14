@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import type { RetroItemDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { routePath } from '../../../routes';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { retrosTestIds as ids } from '../testIds';
+import { ItemKpiButtons } from './touch/ItemKpiButtons';
 
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
@@ -20,7 +23,20 @@ function Kpi({ value, of, label }: { value: number; of?: number; label: string }
 }
 
 /** The item's title row (type, key, title, Open work item), what it holds, its Part-of line and its KPIs. */
-export function ItemHeader({ projectKey, item }: { projectKey: string; item: RetroItemDto }) {
+export function ItemHeader({
+  projectKey,
+  item,
+  toDecideOn,
+  onToDecide,
+  onActions,
+}: {
+  projectKey: string;
+  item: RetroItemDto;
+  toDecideOn: boolean;
+  onToDecide: () => void;
+  onActions: () => void;
+}) {
+  const { touch } = useTouchShell();
   const isFeature = item.item.type.id === 'feature';
   const childRetros = item.children.reduce((sum, child) => sum + child.retros, 0);
   const summary = isFeature
@@ -34,16 +50,19 @@ export function ItemHeader({ projectKey, item }: { projectKey: string; item: Ret
           <span className="font-mono text-[length:var(--text-sm)] text-ink-muted">
             {item.item.key}
           </span>
-          <h1 className="text-[length:var(--text-lg)] font-semibold">{item.item.title}</h1>
+          <h1 className="min-w-0 text-[length:var(--text-lg)] font-semibold [overflow-wrap:anywhere]">
+            {item.item.title}
+          </h1>
           <Link
-            className="rounded-control border border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] text-ink"
+            data-testid={ids.retroItemOpenWorkItem}
+            className="rounded-control border border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] text-ink touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
             to={routePath('workItem', { key: projectKey, itemKey: item.item.key })}
           >
             Open work item
           </Link>
         </div>
         {item.parent ? (
-          <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted">
+          <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted [overflow-wrap:anywhere]">
             Part of{' '}
             <Link
               className="text-signal underline"
@@ -55,11 +74,22 @@ export function ItemHeader({ projectKey, item }: { projectKey: string; item: Ret
         ) : null}
         <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted">{summary}</p>
       </div>
-      <div className="flex gap-6">
-        <Kpi value={item.totals.toDecide} label="To decide" />
-        <Kpi value={item.totals.actions} label="Action items" />
-        <Kpi value={item.totals.decided} of={item.totals.decidable} label="Decided" />
-      </div>
+      {touch ? (
+        <div className="w-full">
+          <ItemKpiButtons
+            totals={item.totals}
+            toDecideOn={toDecideOn}
+            onToDecide={onToDecide}
+            onActions={onActions}
+          />
+        </div>
+      ) : (
+        <div className="flex gap-6">
+          <Kpi value={item.totals.toDecide} label="To decide" />
+          <Kpi value={item.totals.actions} label="Action items" />
+          <Kpi value={item.totals.decided} of={item.totals.decidable} label="Decided" />
+        </div>
+      )}
     </section>
   );
 }
