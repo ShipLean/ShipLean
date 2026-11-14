@@ -7,5 +7,5 @@ namespace ShipLean.Application.Features.TaskChanges.Comments;
 
 public sealed class CodeCommentsServices : IServiceModule
 {
-    public void AddServices(IServiceCollection services, IConfiguration configuration) => services.AddScoped<ICodeComments, StubCodeComments>();
+    public void AddServices(IServiceCollection services, IConfiguration configuration) => services.AddScoped<ICodeComments, CodeComments>();
 }
