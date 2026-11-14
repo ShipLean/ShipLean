@@ -9,7 +9,13 @@ const BAR_HEIGHT = 'h-[calc(var(--touch-target)+1rem+env(safe-area-inset-bottom)
 export function SaveBarSpacer() {
   const { touch } = useTouchShell();
   if (!touch) return null;
-  return <div aria-hidden="true" className={`${BAR_HEIGHT} shrink-0`} />;
+  return (
+    <div
+      aria-hidden="true"
+      data-testid={touchTestIds.saveBarSpacer}
+      className={`${BAR_HEIGHT} shrink-0`}
+    />
+  );
 }
 
 /**

@@ -76,7 +76,7 @@ test('SaveBar_WhenSpacerLeftToTheCaller_ShouldLeaveRoomOnlyThroughSaveBarSpacer'
   if (!end || !bar) throw new Error('the page end and the bar should render');
   expect(end.y + end.height).toBeLessThanOrEqual(bar.y);
   // Exactly one spacer: the bar did not add its own.
-  const spacers = await page.locator('div[aria-hidden="true"].shrink-0').count();
+  const spacers = await page.getByTestId(ids.saveBarSpacer).count();
   expect(spacers).toBe(1);
 });
 

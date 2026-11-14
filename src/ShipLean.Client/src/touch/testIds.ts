@@ -25,6 +25,7 @@ export const touchTestIds = {
   saveBarMessage: 'touch-save-bar-message',
   saveBarDiscard: 'touch-save-bar-discard',
   saveBarSave: 'touch-save-bar-save',
+  saveBarSpacer: 'touch-save-bar-spacer',
   dialogClose: 'touch-dialog-close',
   dialogPrimary: 'touch-dialog-primary',
   // K6 pager and touch drag

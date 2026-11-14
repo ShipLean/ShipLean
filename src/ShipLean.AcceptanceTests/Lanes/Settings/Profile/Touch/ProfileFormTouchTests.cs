@@ -63,6 +63,8 @@ public class ProfileFormTouchTests : SeededAcceptanceTest
         await Expect(profile.PasswordNew).ToBeVisibleAsync();
         await Expect(profile.PasswordConfirm).ToBeVisibleAsync();
         await profile.PasswordCurrent.FillAsync("something-typed");
+        await profile.PasswordNew.FillAsync("another-typed-one");
+        await profile.PasswordConfirm.FillAsync("another-typed-one");
         (await TouchRules.ViolationsAsync(Page, profile.PasswordPanel)).ShouldBeEmpty();
         await profile.PasswordCancel.TapAsync();
 
