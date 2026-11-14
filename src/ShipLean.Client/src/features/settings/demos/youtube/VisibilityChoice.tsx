@@ -35,9 +35,9 @@ export function VisibilityChoice({
       {YOU_TUBE_VISIBILITIES.map((visibility) => (
         <span
           key={visibility}
-          className="inline-flex items-center gap-1.5 touch:min-h-[var(--touch-target)] touch:flex-col touch:items-start touch:justify-center touch:rounded-control touch:border touch:border-edge touch:px-2 touch:py-1"
+          className="inline-flex items-center gap-1.5 touch:relative touch:min-h-[var(--touch-target)] touch:flex-col touch:items-start touch:justify-center touch:rounded-control touch:border touch:border-edge touch:px-2 touch:py-1"
         >
-          <label className="inline-flex items-center gap-1.5 font-medium text-ink">
+          <label className="inline-flex items-center gap-1.5 font-medium text-ink touch:after:absolute touch:after:inset-0">
             <input
               type="radio"
               name={name}

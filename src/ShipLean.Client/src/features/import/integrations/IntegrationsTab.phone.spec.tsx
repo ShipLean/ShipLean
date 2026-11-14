@@ -60,9 +60,14 @@ for (const theme of THEMES) {
     expect(open.width).toBeGreaterThan(panel.width - 80);
     const link = await box(ids.jobLink);
     expect(link.height).toBeGreaterThanOrEqual(32);
-    // Two lines: the link sits under the status, not beside it.
-    const row = await box(ids.jobRow);
-    expect(row.height).toBeGreaterThan(50);
+    // Two lines: the status is on the name's line, and the date and the link sit below the name.
+    const rowBox = page.getByTestId(ids.jobRow).first();
+    const name = (await rowBox.locator('span').nth(0).boundingBox())!;
+    const status = (await rowBox.locator('span').nth(1).boundingBox())!;
+    const date = (await rowBox.locator('span').nth(2).boundingBox())!;
+    expect(Math.abs(status.y - name.y)).toBeLessThan(4);
+    expect(date.y).toBeGreaterThanOrEqual(name.y + name.height);
+    expect(link.y).toBeGreaterThanOrEqual(name.y + name.height);
     expect(await tab.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
 
     await expect(page).toHaveScreenshot(`settings-integrations-phone.${theme}.png`, {

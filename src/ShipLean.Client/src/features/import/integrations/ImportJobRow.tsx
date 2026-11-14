@@ -10,7 +10,7 @@ export function ImportJobRow({ job }: { job: ImportJobDto }) {
       data-status={job.status}
       className="flex items-center gap-[var(--space-3)] border-t border-edge py-2 text-[length:var(--text-sm)] touch:grid touch:grid-cols-[minmax(0,1fr)_auto] touch:gap-x-[var(--space-3)] touch:gap-y-1"
     >
-      <span className="min-w-0 font-mono break-words">
+      <span className="font-mono touch:min-w-0 touch:break-words">
         {job.jiraProjectKey} → {job.projectKey}
       </span>
       <span className="text-ink-muted">{job.status}</span>

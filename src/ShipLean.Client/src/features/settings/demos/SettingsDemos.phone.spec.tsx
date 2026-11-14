@@ -67,12 +67,24 @@ for (const theme of THEMES) {
     const segments = await visibility.locator('> span').evaluateAll((els) =>
       els.map((el) => {
         const r = el.getBoundingClientRect();
-        return { width: Math.round(r.width), height: r.height };
+        return { x: r.x, y: Math.round(r.y), width: Math.round(r.width), height: r.height };
       }),
     );
     expect(segments).toHaveLength(3);
     expect(new Set(segments.map((s) => s.width)).size).toBe(1);
     for (const segment of segments) expect(segment.height).toBeGreaterThanOrEqual(32);
+    // Side by side: one row, each a third of the group.
+    expect(new Set(segments.map((s) => s.y)).size).toBe(1);
+    const group = (await visibility.boundingBox())!;
+    for (const segment of segments) expect(segment.width).toBeLessThan(group.width / 3 + 1);
+    // A tap near a segment's bottom-right corner, away from the radio and its text, chooses it.
+    await visibility.scrollIntoViewIfNeeded();
+    const last = (await visibility.locator('> span').nth(2).boundingBox())!;
+    await page.route('**/api/projects/*/youtube/check', (route) =>
+      route.fulfill({ json: { ...connected, visibility: 'private' } }),
+    );
+    await page.mouse.click(last.x + last.width - 4, last.y + last.height - 4);
+    await expect(visibility.getByLabel('Private', { exact: true })).toBeChecked();
 
     await page.getByTestId(ids.youtubeDisconnect).click();
     const confirm = (await page.getByTestId(ids.youtubeDisconnect).boundingBox())!;
