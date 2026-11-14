@@ -145,7 +145,7 @@ public class GitHubCodeHostTests
 
         var patch = await HostOn(_server.BaseAddress).ReadRangePatchAsync(Repo, "aaa", "bbb");
 
-        patch.Status.ShouldBe(CommitReadStatus.Found);
         _server.Requests.ShouldBe(["GET /repos/acme/storefront/compare/aaa...bbb"]);
+        patch.Status.ShouldBe(CommitReadStatus.Found);
     }
 }
