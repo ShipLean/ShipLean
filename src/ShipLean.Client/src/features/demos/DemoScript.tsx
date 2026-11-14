@@ -13,7 +13,7 @@ export function DemoScript({ demo }: DemoProps) {
           What the agent said, by chapter
         </span>
       </header>
-      <div data-testid={ids.demoScript} className="max-w-205 px-4 py-3">
+      <div data-testid={ids.demoScript} className="max-w-205 px-4 py-3 touch:px-3">
         {scriptHtml === null || scriptHtml === '' ? (
           <p className="text-[length:var(--text-sm)] text-ink-muted">This demo has no script.</p>
         ) : (
