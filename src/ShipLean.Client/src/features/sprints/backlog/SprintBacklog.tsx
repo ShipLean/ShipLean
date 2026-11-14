@@ -66,8 +66,7 @@ export function SprintBacklog({ project, sprint }: { project: ProjectDto; sprint
         ) : null}
         {touch && summary ? <GlanceRows projectId={project.id} summary={summary} /> : null}
         {stories && unparented ? (
-          // TODO: drop the sideways scroll once the list is the two-line rows, which fit the screen.
-          <div className="min-w-0 touch:overflow-x-auto">
+          <div className="min-w-0">
             <BacklogTable
               projectId={project.id}
               sprintId={sprint.id}
