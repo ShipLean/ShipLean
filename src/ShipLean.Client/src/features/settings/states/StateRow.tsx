@@ -150,7 +150,7 @@ export function StateRow({
       </td>
       <td
         data-testid={settingsTestIds.stateColumn}
-        className="px-3 py-2 text-ink-muted touch:order-4 touch:min-w-0 touch:flex-1 touch:truncate touch:p-0 touch:text-[length:var(--text-sm)]"
+        className="px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Board:_']"
       >
         {column ?? 'Not mapped'}
       </td>

@@ -69,7 +69,7 @@ const storiesBoard = {
       },
       {
         id: 'c2',
-        name: 'Doing',
+        name: 'Ready for QA sign-off and release',
         wipLimit: null,
         split: false,
         definitionOfDone: '',
@@ -103,6 +103,35 @@ const stub = async (page: Routable) => {
 
 const phoneOnly = (page: { viewportSize(): { width: number } | null }) =>
   expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
+
+test('SettingsStatesPhone_WhenColumnIsLong_ShouldShowItWholeOnItsOwnLine', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const rows = view.getByTestId(ids.statesPanel).getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(3);
+  const long = rows.nth(1).getByTestId(ids.stateColumn);
+  const unmapped = rows.nth(2).getByTestId(ids.stateColumn);
+  await expect(long).toHaveText('Ready for QA sign-off and release');
+  await expect(unmapped).toHaveText('Not mapped');
+  for (const cell of [long, unmapped]) {
+    const fits = await cell.evaluate((e) => ({
+      clipped: e.scrollWidth > e.clientWidth,
+      label: getComputedStyle(e, '::before').content,
+      ellipsis: getComputedStyle(e).textOverflow === 'ellipsis',
+      wide: e.getBoundingClientRect().width,
+    }));
+    expect(fits.clipped).toBe(false);
+    expect(fits.ellipsis).toBe(false);
+    expect(fits.label).toContain('Board:');
+    expect(fits.wide).toBeGreaterThan(300);
+  }
+});
 
 for (const theme of THEMES) {
   const open = async (
