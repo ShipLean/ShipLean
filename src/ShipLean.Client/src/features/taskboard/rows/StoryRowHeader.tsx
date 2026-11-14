@@ -1,4 +1,3 @@
-import { useState, useSyncExternalStore } from 'react';
 import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 import type { SprintRef } from '@shiplean/core/api/refs';
 import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
@@ -10,20 +9,8 @@ import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
+import { useOfferDismissal } from './useOfferDismissal';
 import { SprintPill } from './SprintPill';
-
-// The phone lane draws one copy of each story per page; ✕ on the offer hides it on all of them, so the dismissed stories
-// are kept here by story id. Desktop has one copy of a header and keeps its own state.
-const dismissedOffers = new Set<string>();
-const dismissListeners = new Set<() => void>();
-const subscribeDismissed = (listener: () => void) => {
-  dismissListeners.add(listener);
-  return () => void dismissListeners.delete(listener);
-};
-const dismissOffer = (storyId: string) => {
-  dismissedOffers.add(storyId);
-  dismissListeners.forEach((listener) => listener());
-};
 
 /** The index card drawn behind a header's content: inset in the cell, which stays the theme surface. */
 function CardLayer({ collapsed }: { collapsed: boolean }) {
@@ -78,11 +65,7 @@ export function StoryRowHeader({
   /** On a collapsed phone lane: its tasks on the page on screen. */
   laneCount?: number;
 }) {
-  const [dismissedHere, setDismissedHere] = useState(false);
-  const dismissedEverywhere = useSyncExternalStore(subscribeDismissed, () =>
-    dismissedOffers.has(parent.id),
-  );
-  const dismissed = compact ? dismissedEverywhere : dismissedHere;
+  const [dismissed, dismiss] = useOfferDismissal(parent.id, offerResolve, compact);
   const states = parentStates.find((s) => s.type === parent.type.id)?.states ?? [];
   const tasks = parent.rollups.find((r) => r.type === 'task');
   const total = tasks ? tasks.open + tasks.closed : 0;
@@ -108,7 +91,7 @@ export function StoryRowHeader({
           data-testid={ids.rowOfferDismiss}
           aria-label="Dismiss"
           className="btn-ghost h-[22px] px-1.5 text-[length:var(--text-xs)] touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
-          onClick={() => (compact ? dismissOffer(parent.id) : setDismissedHere(true))}
+          onClick={dismiss}
         >
           ✕
         </button>

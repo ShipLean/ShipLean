@@ -20,7 +20,7 @@ export function UnparentedHeader({
     return (
       <div
         data-testid={ids.rowHeader}
-        className="flex min-h-10 items-center gap-2 rounded-control border border-dashed border-edge bg-canvas py-0 pl-0.5 pr-1"
+        className="flex min-h-10 items-center gap-2 relative z-[1] rounded-md border border-dashed border-edge bg-panel py-0 pl-0.5 pr-1"
       >
         <RowToggle collapsed={collapsed} onToggle={onToggle} label="unparented tasks" />
         <b data-testid={ids.rowTitle} className="min-w-0 flex-1 truncate font-semibold">
