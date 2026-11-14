@@ -17,7 +17,7 @@ import type { RetroCardDto } from '@shiplean/core/api/retros';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
 /** The whole retro of the selected point as a board of the same notes and buttons as everywhere else, the clicked point highlighted, and the raw log open when that point matched only there. */
-export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProps) {
+export function SelectedRetro({ project, query, search, pointId }: RetrosSearchSlotProps) {
   const { touch } = useTouchShell();
   const selected = search.selected;
   // A retro is of an item or of a sprint (K4); a card with neither cannot exist, so it gets no board.
@@ -28,7 +28,8 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
   const inLog = highlighted !== undefined && search.logMatchPointIds.includes(highlighted.id);
   // At 900px and below the open retro is a full screen of its own (SHIP-730); the aside is the desktop's.
   if (touch) {
-    return card && target ? (
+    // Only when the address names it: the result carries a default retro that a phone must not open on its own.
+    return query.selected && card && target ? (
       <OpenRetroView
         project={project}
         search={search}
