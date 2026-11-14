@@ -1,12 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiRequestError } from '@shiplean/core/api/client';
 import type { RetroThemeRefDto } from '@shiplean/core/api/retros';
-import { renameRetroTheme } from '@shiplean/core/api/retrosApi';
 import { retrosTestIds as ids } from '../../testIds';
-import { retrosRootKey } from '../../useRetroQueries';
-
-const TAKEN = 'That name is taken';
+import { useRenameTheme } from './useRenameTheme';
 
 /** A theme's name with an edit button; editing renames it (`PUT api/retros/themes/{id}`). */
 export function ThemeNameCell({
@@ -16,25 +11,13 @@ export function ThemeNameCell({
   projectId: string;
   theme: RetroThemeRefDto;
 }) {
-  const queryClient = useQueryClient();
   const [draft, setDraft] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const rename = useMutation({
-    mutationFn: (name: string) => renameRetroTheme(theme.id, { name }),
-    onSuccess: async () => {
-      setDraft(null);
-      setError(null);
-      await queryClient.invalidateQueries({ queryKey: retrosRootKey(projectId) });
-    },
-    onError: (failure) => {
-      setError(
-        failure instanceof ApiRequestError && failure.status === 409 ? TAKEN : failure.message,
-      );
-    },
-  });
+  const { rename, pending, error, clearError } = useRenameTheme(projectId, theme.id, () =>
+    setDraft(null),
+  );
   const cancel = () => {
     setDraft(null);
-    setError(null);
+    clearError();
   };
   const save = () => {
     const name = (draft ?? '').trim();
@@ -42,7 +25,7 @@ export function ThemeNameCell({
       cancel();
       return;
     }
-    rename.mutate(name);
+    rename(name);
   };
 
   if (draft === null) {
@@ -83,7 +66,7 @@ export function ThemeNameCell({
           type="button"
           data-action="save"
           className="cursor-pointer rounded-control border border-edge bg-panel px-2 py-0.5 text-[length:var(--text-xs)]"
-          disabled={rename.isPending}
+          disabled={pending}
           onClick={save}
         >
           Save
