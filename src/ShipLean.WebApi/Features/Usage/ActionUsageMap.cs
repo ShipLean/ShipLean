@@ -192,6 +192,7 @@ public static class ActionUsageMap
             "ConnectedAgents.List",
             "Consent.Get",
             "FeatureBoardRead.Get",
+            "FeatureTimeline.Get",
             "Holidays.Countries",
             "ImportJobs.Errors",
             "ImportJobs.Get",
