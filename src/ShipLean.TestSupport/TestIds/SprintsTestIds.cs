@@ -128,6 +128,11 @@ public static class SprintsTestIds
     public const string CapacityKpiVelocity = "sprints-capacity-kpi-velocity";
     public const string CapacityRoom = "sprints-capacity-room";
     public const string CapacityCallout = "sprints-capacity-callout";
+    // L726a phone
+    public const string CapacityPhoneToolbar = "sprints-capacity-phone-toolbar";
+    public const string CapacitySummary = "sprints-capacity-summary";
+    public const string CapacityTable = "sprints-capacity-table";
+    public const string CapacityCopyBlocked = "sprints-capacity-copy-blocked";
     public const string CloseSprint = "sprints-close-sprint";
     public const string EndRow = "sprints-end-row";
     public const string EndDestination = "sprints-end-destination";

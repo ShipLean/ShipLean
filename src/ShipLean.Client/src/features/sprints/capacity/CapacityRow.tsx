@@ -20,7 +20,7 @@ interface CapacityRowProps {
   onRemove: () => void;
 }
 
-export const cell = 'px-3 py-1.5 align-middle';
+export const cell = 'px-3 py-1.5 align-middle touch:block touch:p-0';
 const small = 'text-[length:var(--text-xs)] text-ink-muted';
 
 /** One member: who, their days (the default until typed over), the capacity those days give and a note. */
@@ -28,15 +28,18 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
   const { user, row, points } = line;
   const isDefault = row.days === '';
   return (
-    <tr data-testid={ids.capacityRow} className="border-t border-edge">
-      <td className={cell}>
+    <tr
+      data-testid={ids.capacityRow}
+      className="border-t border-edge touch:grid touch:grid-cols-[auto_minmax(0,1fr)_auto_auto] touch:items-center touch:gap-x-2 touch:gap-y-1.5 touch:px-3 touch:py-2"
+    >
+      <td className={`${cell} touch:order-1 touch:col-span-2 touch:min-w-0`}>
         <div className="flex min-w-0 items-center gap-2">
           <Avatar {...user} />
           <span className="truncate">{user.name}</span>
         </div>
       </td>
-      <td className={cell}>
-        <div className="flex flex-col items-end gap-0.5">
+      <td className={`${cell} touch:order-4`}>
+        <div className="flex flex-col items-end gap-0.5 touch:flex-row touch:items-center touch:gap-2">
           {readOnly ? (
             <>
               {/* A null days is "the default" of the calendar when it was stored; today's calendar may not match, so no number. */}
@@ -67,7 +70,7 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
                 <button
                   type="button"
                   data-testid={ids.capacityDaysReset}
-                  className="rounded-control text-[length:var(--text-xs)] text-signal underline"
+                  className="rounded-control text-[length:var(--text-xs)] text-signal underline touch:min-h-[var(--touch-target)] touch:px-1"
                   title={`Back to the default of ${shape.defaultDays} days`}
                   aria-label={`Reset days for ${user.name} to the default`}
                   onClick={() => onChange({ ...row, days: '' })}
@@ -79,11 +82,11 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
           )}
         </div>
       </td>
-      <td className={`${cell} text-right tabular-nums`}>
+      <td className={`${cell} text-right tabular-nums touch:order-2`}>
         <span data-testid={ids.capacityPoints}>{points ?? '—'}</span>
         <span className="ml-1 text-ink-muted">pts</span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} touch:order-5 touch:col-span-3 touch:min-w-0`}>
         {readOnly ? (
           <span data-testid={ids.capacityNote} className="text-ink-muted">
             {row.note}
@@ -99,12 +102,12 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
           />
         )}
       </td>
-      <td className={`${cell} text-center`}>
+      <td className={`${cell} text-center touch:order-3`}>
         {readOnly ? null : (
           <button
             type="button"
             data-testid={ids.capacityRemove}
-            className="inline-flex size-7 items-center justify-center rounded-control text-ink-muted hover:bg-signal-soft hover:text-ink"
+            className="inline-flex size-7 touch:size-[var(--touch-target)] items-center justify-center rounded-control text-ink-muted hover:bg-signal-soft hover:text-ink"
             title={`Remove ${user.name} from this sprint's capacity`}
             aria-label={`Remove ${user.name}`}
             onClick={onRemove}

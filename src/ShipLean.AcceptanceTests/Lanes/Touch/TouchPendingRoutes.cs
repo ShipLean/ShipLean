@@ -19,7 +19,6 @@ public static class TouchPendingRoutes
         // SHIP-724
         // SHIP-725
         // SHIP-726
-        ["capacity"] = "SHIP-726",
         // SHIP-727
         // SHIP-730
         // SHIP-728
