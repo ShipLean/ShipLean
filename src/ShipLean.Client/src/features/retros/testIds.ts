@@ -62,6 +62,7 @@ export const retrosTestIds = {
   // SHIP-730 search touch
   retrosFilterOpen: 'retros-filter-open',
   retrosFilterShow: 'retros-filter-show',
+  retrosFilterSheetClear: 'retros-filter-sheet-clear',
   retrosFilterChoice: 'retros-filter-choice',
   retrosCount: 'retros-count',
   retrosChips: 'retros-chips',

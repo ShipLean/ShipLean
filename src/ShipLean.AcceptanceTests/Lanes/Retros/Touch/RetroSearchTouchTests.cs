@@ -74,12 +74,35 @@ public class RetroSearchTouchTests : SeededAcceptanceTest
         await Expect(touch.Chips).ToHaveCountAsync(2);
         await Expect(touch.ChipsClear).ToBeVisibleAsync();
         await Expect(search.Row).ToHaveCountAsync(1);
+        (await TouchRules.ViolationsAsync(Page, touch.ChipRow)).ShouldBeEmpty();
 
         await touch.ChipOf("Went badly").GetByTestId(RetrosTestIds.RetrosChipRemove).TapAsync();
         await Expect(touch.Chips).ToHaveCountAsync(1);
         Page.Url.ShouldNotContain("category=");
         Page.Url.ShouldContain("unthemed=true");
         await Expect(touch.ChipsClear).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    public async Task Clear_WhenUsedInTheSheetOrOnTheChips_ShouldKeepTheSearchTextAndEmptyClearDropsIt()
+    {
+        var arranged = await ArrangeAsync();
+        var (search, touch) = await OpenAsync(("q", arranged.Suffix), ("category", "wentBadly"), ("unthemed", "true"));
+        await Expect(touch.FilterOpen).ToHaveAttributeAsync("data-count", "2");
+
+        await touch.ChipsClear.TapAsync();
+        await Expect(touch.Chips).ToHaveCountAsync(0);
+        await Expect(search.SearchBox).ToHaveValueAsync(arranged.Suffix);
+        Page.Url.ShouldContain("q=");
+
+        await Page.GotoAsync(Page.Url + "&category=wentBadly&unthemed=true");
+        await Expect(touch.Chips).ToHaveCountAsync(2);
+        await touch.OpenSheetAsync();
+        await touch.SheetClear.TapAsync();
+        await Expect(touch.Chips).ToHaveCountAsync(0);
+        await Expect(search.SearchBox).ToHaveValueAsync(arranged.Suffix);
+        Page.Url.ShouldContain("q=");
+        Page.Url.ShouldNotContain("category=");
     }
 
     [Test]

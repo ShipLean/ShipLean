@@ -11,6 +11,10 @@ public sealed class RetroSearchTouch(IPage page)
 
     public ILocator Count => page.GetByTestId(RetrosTestIds.RetrosCount);
 
+    public ILocator ChipRow => page.GetByTestId(RetrosTestIds.RetrosChips);
+
+    public ILocator SheetClear => Sheet.GetByTestId(RetrosTestIds.RetrosFilterSheetClear);
+
     public ILocator Chips => page.GetByTestId(RetrosTestIds.RetrosChip);
 
     public ILocator ChipsClear => page.GetByTestId(RetrosTestIds.RetrosChipsClear);

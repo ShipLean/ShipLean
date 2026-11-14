@@ -13,14 +13,14 @@ export function FilterChips({ query, search, change }: RetrosSearchSlotProps) {
           key={filter.key}
           data-testid={ids.retrosChip}
           data-filter={filter.key}
-          className="inline-flex max-w-full min-h-[var(--touch-target)] items-center gap-1 rounded-full border border-signal bg-signal-soft pr-1 pl-2.5 text-[length:var(--text-sm)] text-ink"
+          className="inline-flex max-w-full min-h-[var(--touch-target)] items-center gap-1 rounded-full border border-signal bg-signal-soft pr-0 pl-2.5 text-[length:var(--text-sm)] text-ink"
         >
           <span className="min-w-0 truncate">{filter.label}</span>
           <button
             type="button"
             data-testid={ids.retrosChipRemove}
             aria-label={`Remove ${filter.label}`}
-            className="grid size-6 flex-none cursor-pointer place-items-center rounded-full text-[length:var(--text-xs)] text-ink-muted"
+            className="grid size-[var(--touch-target)] flex-none cursor-pointer place-items-center rounded-full text-[length:var(--text-xs)] text-ink-muted"
             onClick={() => change(filter.clear)}
           >
             ✕

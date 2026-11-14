@@ -100,7 +100,7 @@ export function FilterSheet({
         <>
           <button
             type="button"
-            data-testid={ids.retrosFilterClear}
+            data-testid={ids.retrosFilterSheetClear}
             className="btn-ghost min-h-[var(--touch-target)]"
             onClick={() => change(CLEAR_FILTERS)}
           >

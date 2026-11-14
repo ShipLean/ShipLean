@@ -201,3 +201,28 @@ test('SearchPhone_WhenNothingMatches_ShouldOfferClearSearchAndFilters', async ({
   await expect(page.getByTestId(ids.retrosChip)).toHaveCount(0);
   await expect(page.getByTestId(ids.retrosSearchBox)).toHaveValue('');
 });
+
+test('SearchPhone_WhenCleared_ShouldKeepTheSearchTextFromTheSheetAndTheChipsButNotFromNoResults', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(
+    <RetrosSearchPanel project={project} />,
+    route('?q=brief&category=wentBadly&unthemed=true'),
+  );
+  const box = page.getByTestId(ids.retrosSearchBox);
+  // The search text is not a filter: two filters count, the text does not.
+  await expect(page.getByTestId(ids.retrosFilterOpen)).toHaveAttribute('data-count', '2');
+  await page.getByTestId(ids.retrosChipsClear).tap();
+  await expect(page.getByTestId(ids.retrosChip)).toHaveCount(0);
+  await expect(box).toHaveValue('brief');
+
+  await page.getByTestId(ids.retrosFilterOpen).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await sheet.locator('[data-filter="category"][data-value="wentWell"]').tap();
+  await expect(page.getByTestId(ids.retrosChip)).toHaveCount(1);
+  await sheet.getByTestId(ids.retrosFilterSheetClear).tap();
+  await expect(page.getByTestId(ids.retrosChip)).toHaveCount(0);
+  await expect(box).toHaveValue('brief');
+});

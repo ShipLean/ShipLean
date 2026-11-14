@@ -65,6 +65,7 @@ public static class RetrosTestIds
     // SHIP-730 search touch
     public const string RetrosFilterOpen = "retros-filter-open";
     public const string RetrosFilterShow = "retros-filter-show";
+    public const string RetrosFilterSheetClear = "retros-filter-sheet-clear";
     public const string RetrosFilterChoice = "retros-filter-choice";
     public const string RetrosCount = "retros-count";
     public const string RetrosChips = "retros-chips";
