@@ -45,7 +45,7 @@ export function FormHeader({
     <section
       data-testid={ids.header}
       aria-label="Work item header"
-      className="grid gap-2 border-b border-edge bg-panel px-4 py-3"
+      className="grid gap-2 border-b border-edge bg-panel px-4 py-3 touch:grid-cols-[minmax(0,1fr)]"
     >
       <div className="flex items-center gap-2 text-[length:var(--text-sm)] touch:order-2">
         {inModal ? null : (

@@ -36,7 +36,9 @@ export function Chip({
           type="button"
           data-testid={componentTestIds.chipRemove}
           aria-label="Remove"
-          className="text-ink-muted hover:text-ink"
+          // At touch the button is 32px square (SHIP-805 rule 13); the negative margins give back the extra size, so the chip
+          // keeps its 20px height and its width.
+          className="inline-flex items-center justify-center text-ink-muted hover:text-ink touch:-mx-[12.5px] touch:-my-1.5 touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
           onClick={onRemove}
         >
           ×
