@@ -21,7 +21,7 @@ function lanesLabel(level: Level, value: string | null, laneCount: number): stri
   if (level === 'epics') return null;
   if (level === 'features') {
     const choice = featuresLaneChoice(value);
-    if (choice === 'epic') return 'By Epic';
+    if (choice === 'epic') return 'Lanes by Epic';
     return choice === 'on' && laneCount > 1 ? 'Swimlanes' : null;
   }
   return value !== 'off' && laneCount > 1 ? 'Swimlanes' : null;
@@ -33,6 +33,7 @@ function lanesLabel(level: Level, value: string | null, laneCount: number): stri
 export function BoardToolbar({
   view,
   projectId,
+  projectKey,
   boardId,
   level,
   compact,
@@ -42,6 +43,7 @@ export function BoardToolbar({
 }: {
   view: BoardViewDto;
   projectId: string;
+  projectKey: string;
   boardId: string;
   level: Level;
   compact: boolean;
@@ -62,7 +64,7 @@ export function BoardToolbar({
         <b className="font-semibold text-ink">{view.openPoints}</b> pts
       </span>,
       laneText === null ? null : <span key="lanes">{laneText}</span>,
-      compact ? <span key="cards">Compact</span> : null,
+      compact ? <span key="cards">Compact cards</span> : null,
       filterCount(filter) === 0 ? null : (
         <span key="filtered" className="text-signal">
           Filtered: {shown} of {total} cards
@@ -73,7 +75,7 @@ export function BoardToolbar({
       <>
         <div data-testid={ids.toolbar} className="flex-none">
           <div className="flex flex-nowrap items-center gap-2 pt-2">
-            <LevelSwitch level={level} />
+            <LevelSwitch level={level} projectKey={projectKey} />
             <FilterToggle
               filter={filter}
               open={filterOpen}

@@ -1,4 +1,4 @@
-import { Link, matchPath, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { routePath, type Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 
@@ -13,10 +13,7 @@ const OPTIONS = [
 }[];
 
 // The level switch of the touch toolbar: Epics · Features · Stories, each a link to that level's board route.
-export function LevelSwitch({ level }: { level: Level }) {
-  const { pathname } = useLocation();
-  const key = matchPath('/p/:key/boards/:level', pathname)?.params.key;
-  if (key === undefined) return null;
+export function LevelSwitch({ level, projectKey }: { level: Level; projectKey: string }) {
   return (
     <nav
       aria-label="Board level"
@@ -26,7 +23,7 @@ export function LevelSwitch({ level }: { level: Level }) {
       {OPTIONS.map((option) => (
         <Link
           key={option.level}
-          to={routePath(option.route, { key })}
+          to={routePath(option.route, { key: projectKey })}
           data-testid={ids.levelOption}
           data-level={option.level}
           aria-current={option.level === level ? 'page' : undefined}

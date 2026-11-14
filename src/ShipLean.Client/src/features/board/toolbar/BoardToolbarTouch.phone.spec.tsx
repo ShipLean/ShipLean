@@ -67,7 +67,7 @@ test('BoardMoreSheet_WhenCompactPicked_ShouldSwitchCards', async ({ mount, page 
 
   await expect(sheet).toHaveCount(0);
   await expect(page.getByTestId(ids.card).first()).toHaveAttribute('data-compact', 'true');
-  await expect(page.getByTestId(ids.meta)).toContainText('Compact');
+  await expect(page.getByTestId(ids.meta)).toContainText('Compact cards');
   expect(server.preferenceWrites.at(-1)?.value).toBe('compact');
 });
 
