@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Feature timeline (reference)</title>
+<!--
+  SHIP-1465 Feature timeline: Backlogs › SHIP-99 › Timeline, opened from the key dates on the Feature page.
+  After the fact: how a Feature's work actually ran. The key dates strip (Added, Planned, Execution started, Finished)
+  sits at the top; below it a Gantt chart of the execution, task by task under their stories.
+  Decided 14 Nov (Joel): one solid bar per task, from its first move to Active to its last move to Resolved, from
+  state history only; pull requests play no part (D2, D5). A story's bracket runs from its first task Active to its
+  last task Resolved (D3). Reviews are events the review agent logs on a task (D15, proposed): a marker per review,
+  joined to the bar by a thin line. Arrows are dependencies (blocked_by / predecessor links and plan waves) with the
+  wait labelled; the critical path is outlined once the Feature is Done (D7). Just the chart: no computed findings (D8).
+  Click a bar, a row or a review marker to see that item's history in the rail.
+  JSON shows exactly what the MCP tool feature_timeline returns for the same Feature (D11).
+  Uses ../tokens.css, shiplean.css, shared.js, timeline.css and timeline-data.js; no build step.
+    ?key=SHIP-101            a Feature still running (open bars run to now, no critical path yet); default SHIP-99, Done
+    ?group=people|tasks      group by People, or a flat list of tasks (default Stories)
+    ?zoom=days               a fixed day width with horizontal scroll (default Fit)
+    ?select=SHIP-194         an item selected; its history in the rail
+    ?view=json               what agents get
+    ?deps=off  ?cp=off       hide dependencies or the critical path
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<link rel="stylesheet" href="timeline.css">
+<script src="shared.js"></script>
+<script src="timeline-data.js"></script>
+<style>
+[hidden] { display: none !important; }
+.fb-head { flex: none; display: grid; gap: 6px; padding: var(--space-2) var(--space-4) var(--space-3); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.back { color: var(--color-muted); font-size: var(--text-sm); text-decoration: none; justify-self: start; }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.fb-title { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.fb-title .key { font-size: var(--text-sm); color: var(--color-text); }
+.fb-title h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.fb-row { display: flex; align-items: flex-end; gap: var(--space-5); flex-wrap: wrap; }
+.kpi .v { font-size: 18px; }
+.kpi .l { white-space: nowrap; }
+.kd-wrap { flex: none; padding: var(--space-3) var(--space-4) var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); --kd-bg: var(--color-surface); }
+.kd-wrap .kd { margin: 0 auto; }
+.toolbar label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-sm); white-space: nowrap; }
+.toolbar label.chk input { margin: 0; accent-color: var(--color-accent); }
+.toolbar label.chk.off { color: var(--color-muted); }
+.tsep { width: 1px; height: 20px; background: var(--color-border); }
+
+/* Gantt: one scroll box; the left column and the date header stick */
+.tl-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 40px); }
+.gantt { background: var(--color-surface); position: relative; }
+.g { display: grid; position: relative; }
+.g-corner, .g-axis { position: sticky; top: 0; z-index: 3; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.g-corner { left: 0; z-index: 4; display: grid; grid-template-columns: minmax(0, 1fr) 28px 64px; align-items: end; gap: 6px; padding: 0 var(--space-2) 6px var(--space-3); border-right: 1px solid var(--color-border); }
+.g-corner span { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.g-corner span:last-child { text-align: right; }
+.g-left { position: sticky; left: 0; z-index: 2; background: var(--color-surface); border-right: 1px solid var(--color-border); }
+.g-row { display: grid; grid-template-columns: minmax(0, 1fr) 28px 64px; align-items: center; gap: 6px; height: var(--g-rh); padding: 0 var(--space-2) 0 var(--space-3); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent); cursor: pointer; font-size: var(--text-sm); }
+.g-row:hover { background: color-mix(in srgb, var(--color-accent-soft) 45%, transparent); }
+.g-row.sel { background: var(--color-accent-soft); box-shadow: inset 3px 0 0 var(--color-accent); }
+.g-row .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.g-row .nm .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-row.task .nm { padding-left: 18px; }
+.g-row.story, .g-row.group { background: color-mix(in srgb, var(--color-surface-2) 40%, var(--color-surface)); font-weight: var(--weight-medium); }
+.g-row.story.sel, .g-row.group.sel { background: var(--color-accent-soft); }
+.g-row.group { cursor: default; }
+.g-row .key { font-size: var(--text-xs); color: var(--color-muted); flex: none; }
+.g-row .took { text-align: right; font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.g-row .took.open { color: var(--color-accent); }
+.g-row .took.open::after { content: " ▸"; font-size: 8px; }
+.g-row .cpm { width: 6px; height: 6px; border-radius: 50%; background: var(--tl-critical); flex: none; }
+.g-row.nots { color: var(--color-muted); cursor: default; font-style: italic; }
+.g-row .av { width: 20px; height: 20px; font-size: 8.5px; }
+svg.gsvg { display: block; overflow: visible; font-family: var(--font-sans); }
+svg.gsvg text { fill: var(--color-muted); font-size: 10px; }
+.wkend { fill: color-mix(in srgb, var(--color-surface-2) 55%, transparent); }
+.sprint-b { fill: color-mix(in srgb, var(--color-accent-soft) 70%, transparent); }
+svg.gsvg text.sprint-t { fill: var(--color-text); font-weight: 600; }
+.dayline { stroke: color-mix(in srgb, var(--color-border) 55%, transparent); }
+.rowline { stroke: color-mix(in srgb, var(--color-border) 45%, transparent); }
+.rowsel { fill: color-mix(in srgb, var(--color-accent-soft) 70%, transparent); }
+.bar { cursor: pointer; }
+.bar .body { fill: var(--tl-active); }
+.bar .outline { fill: none; stroke: var(--tl-critical); stroke-width: 1.75; }
+.bar.dim { opacity: .38; }
+.bar:hover .body { filter: brightness(1.12); }
+.bar.sel .halo { fill: none; stroke: var(--color-accent); stroke-width: 2; }
+.bar .open { fill: var(--tl-active); }
+.tail { stroke: var(--color-muted); stroke-width: 1; stroke-dasharray: 2 2; }
+.rv { stroke: var(--color-surface); stroke-width: 1.5; }
+.rv.approved { fill: var(--tl-approved); }
+.rv.changes { fill: var(--tl-changes); }
+.bracket { fill: none; stroke: var(--type-story); stroke-width: 2.5; }
+.bracket.bug { stroke: var(--type-bug); }
+.bracket.open { stroke-dasharray: 5 3; }
+.mark { fill: var(--color-surface); stroke: var(--color-muted); stroke-width: 1.5; stroke-dasharray: 2 2; }
+svg.gsvg text.lbl { font-size: 10px; fill: var(--color-muted); }
+svg.gsvg text.lbl.cp { fill: var(--color-text); font-weight: 600; }
+.edge { fill: none; stroke: color-mix(in srgb, var(--color-muted) 70%, transparent); stroke-width: 1.25; }
+.edge.cp { stroke: var(--tl-critical); stroke-width: 1.75; }
+.edge.blk { stroke: var(--tl-blocked); stroke-dasharray: 3 2; }
+.edge.dim { opacity: .3; }
+svg.gsvg text.wait { fill: var(--color-text); font-size: 9.5px; font-weight: 600; paint-order: stroke; stroke: var(--color-surface); stroke-width: 3px; }
+.nowline { stroke: var(--color-accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+svg.gsvg text.now-t { fill: var(--color-accent); font-weight: 700; }
+.arrow-head { fill: color-mix(in srgb, var(--color-muted) 70%, transparent); }
+.arrow-head.cp { fill: var(--tl-critical); }
+.arrow-head.blk { fill: var(--tl-blocked); }
+.arrow-head.dim { opacity: .3; }
+
+/* Rail */
+.card { display: grid; gap: var(--space-2); padding: var(--space-3); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.card.soon { border-style: dashed; background: transparent; color: var(--color-muted); font-size: var(--text-xs); }
+.read { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: var(--text-xs); color: var(--color-muted); }
+.read li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; align-items: center; }
+.read li b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.read svg { display: block; }
+.chip.cp { height: 16px; font-size: var(--text-2xs); background: transparent; box-shadow: inset 0 0 0 1.5px var(--tl-critical); }
+.sel-h { display: flex; align-items: flex-start; gap: 6px; }
+.sel-h b { font-size: var(--text-md); line-height: 1.3; }
+.sel-h .ib { margin-left: auto; }
+.facts { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 4px 8px; margin: 0; font-size: var(--text-sm); }
+.facts dt { color: var(--color-muted); font-size: var(--text-xs); padding-top: 1px; }
+.facts dd { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.periods { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; font-size: var(--text-xs); }
+.periods li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 6px; align-items: start; padding: 4px 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent); }
+.periods li:first-child { border-top: 0; }
+.periods .h { font-variant-numeric: tabular-nums; color: var(--color-muted); white-space: nowrap; }
+.periods .why { grid-column: 2 / -1; color: var(--color-text); }
+.dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 3px; background: var(--color-muted); }
+.dot.active { background: var(--tl-active); } .dot.blocked { background: var(--tl-blocked); } .dot.resolved, .dot.closed { background: var(--state-completed); }
+.dot.approved { background: var(--tl-approved); } .dot.changes { background: var(--tl-changes); }
+.rel { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--text-sm); }
+.rel li { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rel a { color: var(--color-text); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rel a:hover { color: var(--color-accent); text-decoration: underline; }
+.rel .w { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.retro { padding: 6px var(--space-2); border-radius: var(--radius-sm); background: var(--paper-postit); color: #2b2510; font-size: var(--text-xs); line-height: 1.4; }
+.retro b { display: block; font-size: var(--text-2xs); text-transform: uppercase; letter-spacing: .05em; color: var(--paper-postit-muted); }
+.btnrow { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn[aria-disabled="true"] { opacity: .5; cursor: default; }
+.av.agent { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); }
+
+/* JSON for agents */
+.json { margin: 0; padding: var(--space-3) var(--space-4); font: 12px/1.55 var(--font-mono); white-space: pre; tab-size: 2; color: var(--color-text); }
+.json .k { color: var(--color-accent); }
+.json .s { color: var(--color-ok); }
+.json .n { color: var(--color-warn); }
+.json .b { color: var(--color-purple); }
+.call { margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--color-surface-2); font: 11.5px/1.5 var(--font-mono); white-space: pre-wrap; }
+.maps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--text-xs); }
+.maps li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px; }
+.maps code { font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="fb-head" id="head" aria-label="Feature"></section>
+<div class="kd-wrap" id="kd"></div>
+<div class="toolbar" id="tools"></div>
+<div class="split tl-split">
+  <div class="scroll gantt" id="main"></div>
+  <aside class="rail" id="rail" aria-label="Selected item"></aside>
+</div>
+
+<script>
+(() => {
+  const { people, esc, tIcon, av } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  document.getElementById('appbar').outerHTML = SL.appBar('backlogs');
+  const KEY = TL.DATA[params.get('key')] ? params.get('key') : 'SHIP-99';
+  const M = TL.build(KEY);
+  const { H, day, when, dur, STATE } = TL;
+  const ui = {
+    group: ['people', 'tasks'].includes(params.get('group')) ? params.get('group') : 'stories',
+    zoom: params.get('zoom') === 'days' ? 'days' : 'fit',
+    deps: params.get('deps') !== 'off', cp: params.get('cp') !== 'off' && M.finished,
+    sel: params.get('select'), view: params.get('view') === 'json' ? 'json' : 'chart',
+  };
+  const RH = 30, LEFT = 330, AXIS = 44, PADR = 96;
+  document.documentElement.style.setProperty('--g-rh', RH + 'px');
+  const byKey = Object.fromEntries([...M.bars, ...M.stories].map(b => [b.key, b]));
+  const avH = p => (p === 'agent' ? '<span class="av agent" title="Claude Code (agent)">AI</span>' : p ? av(p) : '<span class="av none" title="Unassigned"></span>');
+  const whoName = p => (p === 'agent' ? 'Claude Code <span class="chip agent" style="height:16px;font-size:var(--text-2xs)">Agent</span>' : p ? esc(people[p].name) : '<span class="muted">Unassigned</span>');
+  const VERDICT = { approved: 'Approved', changes: 'Changes requested' };
+  const reviewer = p => (p === 'agent' ? 'review agent' : people[p].name);
+
+  /* Header: identity and the numbers that frame the chart */
+  function renderHead() {
+    const lead = ((M.finished ? M.key_dates[3].at : M.now) - M.key_dates[0].at) / H;
+    const withHist = M.bars.filter(b => b.start != null).length, notStarted = M.bars.filter(b => b.state === 'not_started').length;
+    const reviews = M.bars.flatMap(b => b.reviews), changes = reviews.filter(r => r.verdict === 'changes').length;
+    $('head').innerHTML = `
+      <a class="back" href="${KEY === 'SHIP-101' ? 'feature.html' : '#'}">← Back to ${KEY}</a>
+      <div class="fb-title">${tIcon('feature')}<span class="key">${KEY}</span><h1>${esc(M.title)}</h1>${SL.st(M.state === 'Done' ? 'Closed' : 'Active').replace(/>(Closed|Active)</, `>${M.state}<`)}<span class="chip">${esc(M.epic)}</span>
+        <span class="spacer"></span><span class="xs muted">${M.finished ? `Finished ${day(M.key_dates[3].at)}. Bars run from Active to Resolved, from each task's state history.` : `Still running. Open bars run to now, ${when(M.now)}.`}</span></div>
+      <div class="fb-row">
+        <div class="kpi"><div class="v">${Math.round(lead / 24)} <small>days</small></div><div class="l">Lead time, Added → ${M.finished ? 'Finished' : 'now'}</div></div>
+        <div class="kpi"><div class="v">${M.execution.calendar_days} <small>days</small></div><div class="l">Execution${M.finished ? '' : ' so far'}</div></div>
+        <div class="kpi"><div class="v">${withHist} <small>of ${M.bars.length} tasks</small></div><div class="l">${notStarted ? `${notStarted} not started` : 'started'}${M.bars.some(b => b.inferred) ? ` · ${M.bars.filter(b => b.inferred).length} with no start` : ''}</div></div>
+        <div class="kpi"><div class="v">${reviews.length} <small>reviews</small></div><div class="l">${changes ? `${changes} asked for changes` : 'all approved first time'}</div></div>
+      </div>`;
+  }
+
+  function renderTools() {
+    const seg = (name, val, opts) => `<div class="seg" role="group" aria-label="${name}">${opts.map(([v, l]) => `<button type="button" data-${name}="${v}" aria-pressed="${val === v}">${l}</button>`).join('')}</div>`;
+    $('tools').innerHTML = ui.view === 'json'
+      ? `<span class="sm" style="font-weight:600">What agents get</span><span class="xs muted">The same view model as the chart, from <code>feature_timeline</code>. Times are UTC.</span><span class="spacer"></span>${seg('view', ui.view, [['chart', 'Chart'], ['json', 'JSON for agents']])}`
+      : `<span class="xs muted">Group</span>${seg('group', ui.group, [['stories', 'Stories'], ['people', 'People'], ['tasks', 'Tasks']])}
+      <span class="xs muted">Zoom</span>${seg('zoom', ui.zoom, [['fit', 'Fit'], ['days', 'Days']])}
+      <span class="tsep"></span>
+      <label class="chk"><input type="checkbox" id="deps"${ui.deps ? ' checked' : ''}>Dependencies</label>
+      <label class="chk${M.finished ? '' : ' off'}" title="${M.finished ? 'The chain of tasks that set the finish date' : 'Shows once the Feature is Done'}"><input type="checkbox" id="cp"${ui.cp ? ' checked' : ''}${M.finished ? '' : ' disabled'}>Critical path</label>
+      <span class="spacer"></span>
+      <span class="lg"><span title="From Active to Resolved"><i class="sw active"></i>Task</span><span><i class="sw rv approved"></i>Approved</span><span><i class="sw rv changes"></i>Changes asked</span>${M.finished ? '<span><i class="sw cp"></i>Critical path</span>' : ''}<span><i class="sw mark"></i>No start</span></span>
+      <span class="tsep"></span>${seg('view', ui.view, [['chart', 'Chart'], ['json', 'JSON for agents']])}`;
+  }
+
+  /* Rows for the left column and the chart, in the chosen grouping */
+  function rows() {
+    const tasksIn = keys => M.bars.filter(b => keys.includes(b.key)).sort((a, b) => (a.start ?? a.end ?? Infinity) - (b.start ?? b.end ?? Infinity));
+    if (ui.group === 'tasks') return tasksIn(M.bars.map(b => b.key)).map(b => ({ kind: 'task', b }));
+    if (ui.group === 'people') {
+      const order = [...new Set(M.bars.filter(b => b.who).sort((a, b) => (a.start ?? a.end) - (b.start ?? b.end)).map(b => b.who))];
+      return [...order.map(p => [{ kind: 'group', p }, ...tasksIn(M.bars.filter(b => b.who === p).map(b => b.key)).map(b => ({ kind: 'task', b }))]).flat(),
+        ...(M.bars.some(b => !b.who) ? [{ kind: 'group', p: null }, ...tasksIn(M.bars.filter(b => !b.who).map(b => b.key)).map(b => ({ kind: 'task', b }))] : [])];
+    }
+    const stories = [...M.stories].sort((a, b) => (a.start ?? Infinity) - (b.start ?? Infinity));
+    return [...stories.map(s => [{ kind: 'story', b: s }, ...tasksIn(s.tasks).map(b => ({ kind: 'task', b }))]).flat(),
+      ...M.not_started.map(n => ({ kind: 'nots', b: n }))];
+  }
+
+  function leftRow(r) {
+    const sel = r.b && r.b.key === ui.sel ? ' sel' : '';
+    if (r.kind === 'group') { const n = M.bars.filter(b => b.who === r.p).length; return `<div class="g-row group"><div class="nm">${avH(r.p)}<span class="t">${r.p === 'agent' ? 'Claude Code (agent)' : r.p ? esc(people[r.p].name) : 'Unassigned'}</span></div><span></span><span class="took">${n === 1 ? '1 task' : `${n} tasks`}</span></div>`; }
+    if (r.kind === 'nots') return `<div class="g-row nots"><div class="nm">${tIcon(r.b.type)}<span class="key">${r.b.key}</span><span class="t">${esc(r.b.title)}</span></div><span></span><span class="took">Not started</span></div>`;
+    const b = r.b, cp = ui.cp && b.on_critical_path, open = b.start != null && b.end == null;
+    const took = b.inferred ? 'No start' : b.hours == null ? 'Not started' : dur(b.hours);
+    return `<div class="g-row ${r.kind}${sel}" data-pick="${b.key}" title="${esc(b.title)}"><div class="nm">${tIcon(b.type)}<span class="key">${b.key}</span><span class="t">${esc(b.title)}</span>${cp ? '<span class="cpm" title="On the critical path"></span>' : ''}</div>${avH(b.who)}<span class="took${open ? ' open' : ''}"${open ? ' title="Still open: so far"' : ''}>${took}</span></div>`;
+  }
+
+  /* The chart */
+  function renderChart() {
+    const R = rows();
+    const recorded = M.bars.filter(b => b.start != null || b.end != null);
+    const ends = recorded.flatMap(b => [b.end ?? M.now, ...b.reviews.map(r => r.at)]);
+    const first = Math.min(...recorded.map(b => b.start ?? b.end)), last = M.finished ? Math.max(...ends) : M.now;
+    const DAY = 24 * H;
+    const t0 = Math.floor(first / DAY) * DAY, t1 = Math.ceil((last + 2 * H) / DAY) * DAY;
+    const days = Math.round((t1 - t0) / DAY);
+    const avail = Math.max(360, $('main').clientWidth - LEFT - PADR - 4);
+    const pxDay = ui.zoom === 'days' ? 84 : Math.max(16, avail / days);
+    const W = Math.round(pxDay * days), x = ms => ((ms - t0) / DAY) * pxDay;
+    const Hh = R.length * RH;
+    const rowOf = Object.fromEntries(R.map((r, i) => [r.b?.key, i]).filter(([k]) => k));
+    const yMid = k => rowOf[k] * RH + RH / 2;
+
+    // Axis: sprint bands, then days (every day when there's room, Mondays otherwise), weekends shaded
+    const SPR = [['Sprint 22', '21 Sep', '2 Oct'], ['Sprint 23', '5 Oct', '16 Oct'], ['Sprint 24', '19 Oct', '30 Oct']];
+    const tt = s => { const [dd, mm] = s.split(' '); return Date.UTC(2026, { Sep: 8, Oct: 9 }[mm], +dd); };
+    let axis = '';
+    SPR.forEach(([n, a, b]) => { const xa = Math.max(0, x(tt(a))), xb = Math.min(W, x(tt(b) + DAY)); if (xb > xa + 4) axis += `<rect class="sprint-b" x="${xa + 1}" y="3" width="${xb - xa - 2}" height="15" rx="3"/><text class="sprint-t" x="${xa + 6}" y="14">${xb - xa > 60 ? n : n.replace('Sprint ', 'S')}</text>`; });
+    let grid = '';
+    for (let i = 0; i < days; i++) {
+      const ms = t0 + i * DAY, dt = new Date(ms), dow = dt.getUTCDay();
+      if (dow === 0 || dow === 6) { axis += `<rect class="wkend" x="${x(ms)}" y="20" width="${pxDay}" height="${AXIS - 20}"/>`; grid += `<rect class="wkend" x="${x(ms)}" y="0" width="${pxDay}" height="${Hh}"/>`; }
+      if (pxDay >= 30 || dow === 1) {
+        axis += `<text x="${x(ms) + 4}" y="37">${pxDay >= 30 ? `${'SMTWTFS'[dow]} ${dt.getUTCDate()}` : day(ms).slice(4)}</text>`;
+        grid += `<line class="dayline" x1="${x(ms)}" x2="${x(ms)}" y1="0" y2="${Hh}"/>`;
+      }
+    }
+    if (!M.finished) axis += `<text class="now-t" x="${x(M.now) - 12}" y="${AXIS - 4}" text-anchor="end">Now</text>`;
+
+    // Rows, bars, review markers and brackets
+    let body = R.map((r, i) => `${r.b && r.b.key === ui.sel ? `<rect class="rowsel" x="0" y="${i * RH}" width="${W}" height="${RH}"/>` : ''}<line class="rowline" x1="0" x2="${W}" y1="${(i + 1) * RH}" y2="${(i + 1) * RH}"/>`).join('');
+    R.forEach((r, i) => {
+      const y = i * RH;
+      if (r.kind === 'story' && r.b.start != null) {
+        const xa = x(r.b.start), xb = x(r.b.end ?? M.now);
+        body += `<path class="bracket ${r.b.type}${r.b.end == null ? ' open' : ''}" d="M${xa} ${y + 21}V${y + 13}H${xb}V${y + 21}"/>`;
+        body += `<text class="lbl" x="${xb + 6}" y="${y + 19}">${dur(r.b.hours)}${r.b.end == null ? ' so far' : ''}</text>`;
+      }
+      if (r.kind !== 'task') return;
+      const b = r.b, cp = ui.cp && b.on_critical_path, dim = ui.cp && !b.on_critical_path ? ' dim' : '', sel = b.key === ui.sel ? ' sel' : '';
+      const cy = y + RH / 2;
+      if (b.inferred) {
+        const cx = x(b.end);
+        body += `<g class="bar${dim}${sel}" data-pick="${b.key}"><title>${b.key} ${esc(b.title)}: closed ${when(b.end)}, no start recorded</title><path class="mark" d="M${cx} ${cy - 7}L${cx + 7} ${cy}L${cx} ${cy + 7}L${cx - 7} ${cy}Z"/>${sel ? `<circle class="halo" cx="${cx}" cy="${cy}" r="11"/>` : ''}</g><text class="lbl" x="${cx + 12}" y="${cy + 3.5}">Closed, no start recorded</text>`;
+        return;
+      }
+      if (b.start == null) return;
+      const xa = x(b.start), xb = x(b.end ?? M.now), by = y + 8, bh = RH - 16;
+      const rvs = b.reviews, xr = rvs.length ? x(rvs[rvs.length - 1].at) : xb;
+      body += `<g class="bar${dim}${sel}" data-pick="${b.key}"><title>${b.key} ${esc(b.title)}\nActive ${when(b.start)} → ${b.end ? `Resolved ${when(b.end)}` : 'still open'} · ${dur(b.hours)}${rvs.map(rv => `\n${VERDICT[rv.verdict]} by ${reviewer(rv.by)}, ${when(rv.at)}`).join('')}</title>
+        <rect class="body" x="${xa}" y="${by}" width="${Math.max(3, xb - xa)}" height="${bh}" rx="2"/>
+        ${b.end == null ? `<path class="open" d="M${xb} ${by - 2}L${xb + 6} ${by + bh / 2}L${xb} ${by + bh + 2}Z"/>` : ''}
+        ${rvs.length ? `<line class="tail" x1="${xb}" x2="${xr}" y1="${cy}" y2="${cy}"/>` : ''}
+        ${rvs.map(rv => `<circle class="rv ${rv.verdict}" cx="${x(rv.at)}" cy="${cy}" r="4.5"/>`).join('')}
+        ${cp ? `<rect class="outline" x="${xa - 1.5}" y="${by - 1.5}" width="${Math.max(3, xb - xa) + 3}" height="${bh + 3}" rx="3"/>` : ''}
+        ${sel ? `<rect class="halo" x="${xa - 4}" y="${by - 4}" width="${Math.max(xr, xb) - xa + 8}" height="${bh + 8}" rx="4"/>` : ''}</g>`;
+      body += `<text class="lbl${cp ? ' cp' : ''}" x="${Math.max(xr + 8, xb + (b.end == null ? 10 : 6))}" y="${cy + 3.5}">${dur(b.hours)}</text>`;
+    });
+
+    // Dependencies: resolved → active elbows; blocked part-way: dashed red into the moment it went back to Active
+    let edges = '';
+    if (ui.deps) M.edges.forEach(e => {
+      if (rowOf[e.from] == null || rowOf[e.to] == null) return;
+      const a = byKey[e.from], b = byKey[e.to];
+      if (e.kind === 'depends' && b.start == null) return;
+      const cls = e.kind === 'blocked' ? 'blk' : ui.cp && e.on_critical_path ? 'cp' : '';
+      const dim = ui.cp && !e.on_critical_path && e.kind !== 'blocked' ? ' dim' : '';
+      const x1 = x(a.end ?? M.now), y1 = yMid(e.from), y2 = yMid(e.to);
+      const x2 = e.kind === 'blocked' ? x(e.unblocked_at) : x(b.start);
+      const down = y2 > y1 ? 1 : -1, yEnd = e.kind === 'blocked' ? y2 - down * 7 : y2;
+      const d = e.kind === 'blocked'
+        ? `M${x1} ${y1}H${x1 + 6}V${y2 - down * 9}H${x2}V${yEnd}`
+        : x2 >= x1 + 12 ? `M${x1} ${y1}H${x1 + 6}V${y2}H${x2 - 5}` : `M${x1} ${y1}H${x1 + 6}V${y2 - down * (RH / 2)}H${x2 - 10}V${y2}H${x2 - 5}`;
+      const head = e.kind === 'blocked' ? `<path class="arrow-head blk" d="M${x2 - 4} ${yEnd - down * 5}L${x2 + 4} ${yEnd - down * 5}L${x2} ${yEnd}Z"/>` : `<path class="arrow-head ${cls}${dim}" d="M${x2 - 5} ${y2 - 4}L${x2} ${y2}L${x2 - 5} ${y2 + 4}Z"/>`;
+      edges += `<path class="edge ${cls}${dim}" d="${d}"/>${head}`;
+      if (e.kind === 'depends' && e.wait_hours >= 12 && x2 - x1 > 48) edges += `<text class="wait" x="${(x1 + 6 + x2) / 2}" y="${y2 - 5}" text-anchor="middle">${dur(e.wait_hours)} wait</text>`;
+    });
+    const now = M.finished ? '' : `<line class="nowline" x1="${x(M.now)}" x2="${x(M.now)}" y1="0" y2="${Hh}"/>`;
+
+    $('main').innerHTML = `<div class="g" style="grid-template-columns:${LEFT}px ${W + PADR}px;width:${LEFT + W + PADR}px">
+      <div class="g-corner" style="height:${AXIS}px"><span>${ui.group === 'people' ? 'Person · task' : ui.group === 'tasks' ? 'Task' : 'Story · task'}</span><span></span><span>Took</span></div>
+      <svg class="gsvg g-axis" width="${W + PADR}" height="${AXIS}" aria-hidden="true">${axis}</svg>
+      <div class="g-left">${R.map(leftRow).join('')}</div>
+      <svg class="gsvg" width="${W + PADR}" height="${Hh}" role="img" aria-label="Gantt chart of ${KEY}'s execution">${grid}${body}${edges}${now}</svg>
+    </div>`;
+    if (ui.sel && rowOf[ui.sel] != null) { const sc = $('main'), top = rowOf[ui.sel] * RH; if (top < sc.scrollTop || top > sc.scrollTop + sc.clientHeight - AXIS - RH) sc.scrollTop = Math.max(0, top - 120); }
+    if (ui.sel && byKey[ui.sel]) { const sc = $('main'), b = byKey[ui.sel], bx = x(b.start ?? b.end ?? M.now); if (bx < sc.scrollLeft || bx > sc.scrollLeft + sc.clientWidth - LEFT - 160) sc.scrollLeft = Math.max(0, bx - 160); }
+  }
+
+  /* JSON view: the MCP response, highlighted */
+  function renderJson() {
+    const src = JSON.stringify(TL.toJson(M), null, 2);
+    const hl = esc(src).replace(/(&quot;[^&]*?&quot;)(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?)/g, (m, str, colon, b, n) =>
+      str ? (colon ? `<span class="k">${str}</span>${colon}` : `<span class="s">${str}</span>`) : b ? `<span class="b">${b}</span>` : `<span class="n">${n}</span>`);
+    $('main').innerHTML = `<pre class="json" aria-label="feature_timeline response for ${KEY}">${hl}</pre>`;
+  }
+
+  /* Rail: how to read the chart, or the selected item's history. No computed findings (D8). */
+  const mini = inner => `<svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true">${inner}</svg>`;
+  function railOverview() {
+    const nots = [...M.bars.filter(b => b.state === 'not_started'), ...M.not_started];
+    return `
+      <section><div class="overline">Reading the chart</div>
+        <ul class="read">
+          <li>${mini('<rect x="1" y="3" width="24" height="8" rx="2" fill="var(--tl-active)"/>')}<span><b>A task</b>, from its first move to Active to its last move to Resolved.</span></li>
+          <li>${mini('<rect x="1" y="3" width="10" height="8" rx="2" fill="var(--tl-active)"/><line x1="11" x2="20" y1="7" y2="7" stroke="var(--color-muted)" stroke-dasharray="2 2"/><circle cx="20" cy="7" r="4.5" fill="var(--tl-approved)"/>')}<span><b>A review</b> the review agent logged, approved or asking for changes. The line runs from Resolved to the last review.</span></li>
+          <li>${mini('<path d="M2 11V5H24V11" fill="none" stroke="var(--type-story)" stroke-width="2.5"/>')}<span><b>A story</b>, from its first task Active to its last task Resolved.</span></li>
+          <li>${mini('<path d="M1 3H6V11H20" fill="none" stroke="var(--color-muted)" stroke-width="1.25"/><path d="M20 7L25 11L20 15Z" transform="translate(0,-4)" fill="var(--color-muted)"/>')}<span><b>Waited on</b>: a dependency, with the wait labelled when it's 12 hours or more. Dashed red: blocked part-way.</span></li>
+          ${M.finished ? `<li>${mini('<rect x="2" y="3" width="22" height="8" rx="2" fill="none" stroke="var(--tl-critical)" stroke-width="1.75"/>')}<span><b>Critical path</b>: the chain that set the finish date.</span></li>` : ''}
+        </ul>
+        <p class="hint">Click a bar, a row or a review to see that item's history.</p>
+      </section>
+      ${nots.length ? `<section><div class="overline">Not started</div><ul class="rel">${nots.map(b => `<li>${tIcon(b.type)}<span class="key xs muted">${b.key}</span><a href="#">${esc(b.title)}</a></li>`).join('')}</ul></section>` : ''}
+      <section><div class="card soon">Inside a task: the agent's run (traces, tool calls, time per step) links from each bar once agent traces exist (SHIP-1463).</div></section>`;
+  }
+  function railItem(k) {
+    const b = byKey[k];
+    if (!b) return railOverview();
+    const isStory = b.type !== 'task', inE = M.edges.filter(e => e.to === k), outE = M.edges.filter(e => e.from === k);
+    const retros = M.retros[k] || [];
+    const story = !isStory && byKey[b.parent];
+    const rel = (list, dir) => list.map(e => { const o = byKey[dir === 'in' ? e.from : e.to]; const w = e.kind === 'blocked' ? 'blocked it part-way' : e.wait_hours == null ? '' : e.wait_hours < 0 ? `started ${dur(-e.wait_hours)} before it resolved` : `${dur(e.wait_hours)} wait`; return `<li>${tIcon(o.type)}<a href="#" data-pick="${o.key}"><span class="xs muted">${o.key}</span> ${esc(o.title)}</a><span class="w">${w}</span></li>`; }).join('');
+    const lastReview = !isStory && b.reviews.length ? b.reviews[b.reviews.length - 1] : null;
+    return `
+      <section class="card">
+        <div class="sel-h">${tIcon(b.type)}<div style="min-width:0"><span class="xs muted">${b.key}</span><br><b>${esc(b.title)}</b></div><button class="ib" type="button" data-close aria-label="Close">✕</button></div>
+        <dl class="facts">
+          <dt>${isStory ? 'Owner' : 'Assignee'}</dt><dd>${avH(b.who)}${whoName(b.who)}</dd>
+          ${story ? `<dt>${story.type === 'bug' ? 'Bug' : 'Story'}</dt><dd><a href="#" data-pick="${story.key}">${story.key}</a> ${esc(story.title)}</dd>` : ''}
+          <dt>Active</dt><dd>${b.start != null ? when(b.start) : '<span class="muted">Not recorded</span>'}</dd>
+          <dt>${b.inferred ? 'Closed' : 'Resolved'}</dt><dd>${b.end != null ? when(b.end) : b.start != null ? '<span class="muted">Not yet</span>' : '—'}</dd>
+          <dt>Took</dt><dd><b>${b.hours != null ? dur(b.hours) : '—'}</b>${b.end == null && b.start != null ? '<span class="xs muted">so far</span>' : ''}${ui.cp && b.on_critical_path ? '<span class="chip cp">Critical path</span>' : ''}</dd>
+          ${lastReview ? `<dt>Reviewed</dt><dd>${when(lastReview.at)} <span class="xs muted">${dur((lastReview.at - b.end) / H)} after Resolved</span></dd>` : !isStory && b.end != null && !b.inferred ? '<dt>Reviewed</dt><dd class="muted">No review logged</dd>' : ''}
+        </dl>
+        ${b.note ? `<div class="hint xs">${esc(b.note)}. ShipLean knows when it closed, not when work on it started, so it shows as a marker.</div>` : ''}
+        ${!isStory && b.history.length ? `<div class="overline" style="margin-top:2px">History</div><ul class="periods">${b.history.map(h => `<li><i class="dot ${h.state}"></i><span>${STATE[h.state]} · ${when(h.from)}${h.to != null ? ` → ${h.to === M.now ? 'now' : when(h.to).replace(day(h.from) + ', ', '')}` : ''}</span><span class="h">${h.hours != null ? dur(h.hours) : ''}</span>${h.reason ? `<span class="why">${esc(h.reason)}</span>` : ''}</li>`).join('')}</ul>` : ''}
+        ${!isStory && b.reviews.length ? `<div class="overline" style="margin-top:2px">Reviews</div><ul class="periods">${b.reviews.map(rv => `<li><i class="dot ${rv.verdict}"></i><span>${VERDICT[rv.verdict]} · ${when(rv.at)}</span><span class="h">${esc(reviewer(rv.by))}</span></li>`).join('')}</ul>` : ''}
+        ${isStory ? `<ul class="rel">${b.tasks.map(t => byKey[t]).map(t => `<li>${tIcon('task')}<a href="#" data-pick="${t.key}"><span class="xs muted">${t.key}</span> ${esc(t.title)}</a><span class="w">${t.hours != null ? dur(t.hours) : t.inferred ? 'no start' : 'not started'}</span></li>`).join('')}</ul><div class="hint xs">A story's bar runs from its first task going Active to its last task going Resolved.</div>` : ''}
+        <div class="btnrow"><a class="btn" href="${k === 'SHIP-171' ? 'work-item.html' : '#'}">Open ${k}</a><span class="btn ghost" aria-disabled="true" title="Comes with SHIP-1463 (agent traces)">Agent run · later</span></div>
+      </section>
+      ${inE.length ? `<section><div class="overline">Waited on</div><ul class="rel">${rel(inE, 'in')}</ul></section>` : ''}
+      ${outE.length ? `<section><div class="overline">Held up</div><ul class="rel">${rel(outE, 'out')}</ul></section>` : ''}
+      ${retros.length ? `<section><div class="overline">From its retrospective</div>${retros.map(([cat, txt, who]) => `<div class="retro"><b>${cat} · ${esc(people[who].name)}</b>${esc(txt)}</div>`).join('')}</section>` : ''}
+      <section><button class="btn ghost" type="button" data-close style="justify-self:start">← Reading the chart</button></section>`;
+  }
+  function railJson() {
+    return `
+      <section><div class="overline">The call</div><pre class="call">feature_timeline({ key: "${KEY}" })</pre>
+        <p class="hint" style="margin-top:0">Read-only. Any project member's agent. One call returns the whole picture; there is nothing to page through.</p></section>
+      <section><div class="overline">How the chart maps to it</div><ul class="maps">
+        <li><span>Key dates strip</span><span><code>key_dates</code>, <code>gaps</code></span></li>
+        <li><span>A bar</span><span><code>bars[]</code>: <code>start</code> (first Active), <code>end</code> (last Resolved), <code>hours</code></span></li>
+        <li><span>Its history</span><span><code>bars[].history</code>: each state, with <code>reason</code> when Blocked</span></li>
+        <li><span>Review markers</span><span><code>bars[].reviews</code>: <code>verdict</code>, <code>by</code>, <code>at</code></span></li>
+        <li><span>A story's bracket</span><span><code>stories[]</code></span></li>
+        <li><span>Arrows</span><span><code>edges[]</code> with <code>wait_hours</code>; blocked part-way has <code>unblocked_at</code></span></li>
+        <li><span>Outlined bars</span><span><code>critical_path</code></span></li>
+        <li><span>Diamond marker</span><span><code>inferred: true</code> and <code>note</code></span></li>
+      </ul></section>
+      <section><div class="card soon">Rule for every chart from now on: the screen and the MCP tool are built from one server view model, so a person and an agent can't see different numbers.</div></section>`;
+  }
+  function renderRail() { $('rail').innerHTML = ui.view === 'json' ? railJson() : ui.sel ? railItem(ui.sel) : railOverview(); }
+
+  function render() {
+    renderTools();
+    if (ui.view === 'json') renderJson(); else renderChart();
+    renderRail();
+  }
+  function pick(k) { ui.sel = k; render(); }
+
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const g = t.closest('[data-group]'); if (g) { ui.group = g.dataset.group; render(); return; }
+    const z = t.closest('[data-zoom]'); if (z) { ui.zoom = z.dataset.zoom; render(); return; }
+    const v = t.closest('[data-view]'); if (v) { ui.view = v.dataset.view; render(); return; }
+    if (t.closest('[data-close]')) { ui.sel = null; render(); return; }
+    const p = t.closest('[data-pick]'); if (p) { e.preventDefault(); pick(p.dataset.pick); }
+  });
+  document.addEventListener('change', e => {
+    if (e.target.id === 'deps') { ui.deps = e.target.checked; render(); }
+    if (e.target.id === 'cp') { ui.cp = e.target.checked; render(); }
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sel) { ui.sel = null; render(); } });
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (ui.view === 'chart' && ui.zoom === 'fit') renderChart(); }, 80); });
+
+  renderHead();
+  $('kd').innerHTML = TL.keyDatesHtml(M);
+  requestAnimationFrame(render);
+  SL.preview([
+    { label: 'Finished Feature (SHIP-99)', run: () => { location.search = ''; } },
+    { label: 'Still running (SHIP-101)', run: () => { location.search = '?key=SHIP-101'; } },
+  ]);
+})();
+</script>
+</body>
+</html>

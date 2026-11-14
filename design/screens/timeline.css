@@ -1,0 +1,37 @@
+/* SHIP-1465 Feature timeline: shared by feature-timeline.html and the Timeline section on feature.html. Tokens only. */
+:root {
+  --tl-active: var(--chart-completed);
+  --tl-blocked: var(--color-danger);
+  --tl-approved: var(--color-ok);
+  --tl-changes: var(--color-warn);
+  --tl-critical: var(--color-text);
+}
+
+/* Key dates: four points, gaps labelled but not drawn to scale. The execution gap is the one in colour. */
+.kd { display: grid; grid-template-columns: auto minmax(40px, 1fr) auto minmax(40px, 1fr) auto minmax(80px, 2fr) auto; align-items: start; max-width: 1100px; }
+.kd-pt { position: relative; z-index: 1; display: grid; justify-items: center; gap: 1px; text-align: center; min-width: 96px; max-width: 190px; }
+.kd-dot { width: 12px; height: 12px; margin: 5px 0 4px; border-radius: 50%; background: var(--color-muted); box-shadow: 0 0 0 3px var(--color-surface); }
+.kd-pt.exec .kd-dot { background: var(--color-accent); }
+.kd-pt.pending .kd-dot { background: var(--color-surface); box-shadow: inset 0 0 0 2px var(--color-accent), 0 0 0 3px var(--color-surface); }
+.kd-l { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.kd-d { font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; }
+.kd-pt.pending .kd-d { color: var(--color-muted); font-weight: var(--weight-medium); }
+.kd-s { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.35; }
+.kd-gap { position: relative; height: 22px; margin: 0 -40px; }
+.kd-gap::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; border-top: 2px dotted color-mix(in srgb, var(--color-muted) 55%, transparent); }
+.kd-gap.exec::before { border-top: 3px solid var(--color-accent); top: 9px; }
+.kd-gap.exec.open::before { border-top-style: dashed; }
+.kd-gap span { position: absolute; left: 50%; top: -9px; transform: translateX(-50%); padding: 0 6px; background: var(--kd-bg, var(--color-surface)); font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kd-gap.exec span { color: var(--color-text); font-weight: var(--weight-semibold); }
+.kd.compact .kd-pt { min-width: 84px; }
+
+/* Legend swatches, used in the toolbar, the rail and the summary */
+.lg { display: inline-flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-xs); color: var(--color-muted); }
+.lg span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.sw { width: 14px; height: 8px; border-radius: 2px; flex: none; }
+.sw.active { background: var(--tl-active); }
+.sw.rv { width: 9px; height: 9px; border-radius: 50%; }
+.sw.rv.approved { background: var(--tl-approved); }
+.sw.rv.changes { background: var(--tl-changes); }
+.sw.cp { background: transparent; box-shadow: inset 0 0 0 1.5px var(--tl-critical); }
+.sw.mark { width: 9px; height: 9px; border-radius: 1px; transform: rotate(45deg); background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-muted); }

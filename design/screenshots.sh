@@ -126,6 +126,13 @@ declare -A variants=(
   [agent-runs-cursor]="agent-runs.html?view=run&run=cursor"
   [agent-runs-truncated]="agent-runs.html?view=run&state=truncated"
   [agent-runs-expired]="agent-runs.html?view=run&state=expired"
+  # SHIP-1465: Feature timeline
+  [feature-timeline-summary]="feature.html?timeline"
+  [feature-timeline-selected]="feature-timeline.html?select=SHIP-192"
+  [feature-timeline-running]="feature-timeline.html?key=SHIP-101"
+  [feature-timeline-people]="feature-timeline.html?key=SHIP-101&group=people"
+  [feature-timeline-days]="feature-timeline.html?zoom=days&select=SHIP-198"
+  [feature-timeline-json]="feature-timeline.html?view=json"
 )
 
 names=("$@")
