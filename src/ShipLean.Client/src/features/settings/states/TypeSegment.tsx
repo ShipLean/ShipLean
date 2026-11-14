@@ -29,7 +29,7 @@ export function TypeSegment({
   onPick(type: WorkItemTypeId): void;
 }) {
   return (
-    <div role="group" aria-label="Work item type" className="flex gap-1">
+    <div role="group" aria-label="Work item type" className="flex gap-1 touch:hidden">
       {WORK_ITEM_TYPE_IDS.map((type) => (
         <button
           key={type}

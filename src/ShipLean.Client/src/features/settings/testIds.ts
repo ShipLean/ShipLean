@@ -82,6 +82,8 @@ export const settingsTestIds = {
   stateAddName: 'settings-state-add-name',
   stateAddCategory: 'settings-state-add-category',
   stateAdd: 'settings-state-add',
+  // SHIP-732 states touch
+  stateTypeSelect: 'settings-state-type-select',
   usersPanel: 'settings-users-panel',
   usersLoading: 'settings-users-loading',
   usersLoadFailed: 'settings-users-load-failed',
