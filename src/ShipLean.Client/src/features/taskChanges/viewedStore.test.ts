@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import {
-  fileKey,
+  viewedKey,
   isViewed,
   readViewed,
   restampViewed,
@@ -55,7 +55,7 @@ test('restampViewed_WhenTheHeadChanges_ShouldKeepOnlyFilesWhosePatchIsUnchanged'
     { repo: 'r', path: 'b.ts', patchId: 'p2-changed' },
   ]);
 
-  expect(Object.keys(next)).toEqual([fileKey('r', 'a.ts')]);
+  expect(Object.keys(next)).toEqual([viewedKey('r', 'a.ts')]);
   expect(viewedCount(readViewed('w1'), 'h1', paths)).toBe(2);
   expect(viewedCount(next, 'h2', paths)).toBe(1);
   expect(viewedCount(next, 'h1', paths)).toBe(0);

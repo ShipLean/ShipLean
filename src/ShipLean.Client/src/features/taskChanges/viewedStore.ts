@@ -9,7 +9,7 @@ export interface ViewedEntry {
 export type ViewedState = Record<string, ViewedEntry>;
 
 const keyOf = (workItemId: string) => `shiplean.taskChanges.viewed.${workItemId}`;
-export const fileKey = (repo: string, path: string) => `${repo}\u0000${path}`;
+export const viewedKey = (repo: string, path: string) => `${repo}\u0000${path}`;
 
 const isEntry = (value: unknown): value is ViewedEntry => {
   if (typeof value !== 'object' || value === null) return false;
@@ -44,7 +44,7 @@ export const isViewed = (
   repo: string,
   path: string,
   patchId: string,
-): boolean => state[fileKey(repo, path)]?.patchId === patchId;
+): boolean => state[viewedKey(repo, path)]?.patchId === patchId;
 
 export function setViewed(
   workItemId: string,
@@ -55,8 +55,8 @@ export function setViewed(
   viewed: boolean,
 ): ViewedState {
   const next = { ...readViewed(workItemId) };
-  if (viewed) next[fileKey(repo, path)] = { patchId, headCommitId };
-  else delete next[fileKey(repo, path)];
+  if (viewed) next[viewedKey(repo, path)] = { patchId, headCommitId };
+  else delete next[viewedKey(repo, path)];
   saveViewed(workItemId, next);
   return next;
 }
@@ -72,9 +72,9 @@ export function restampViewed(
 ): ViewedState {
   const next: ViewedState = {};
   for (const file of current) {
-    const entry = stored[fileKey(file.repo, file.path)];
+    const entry = stored[viewedKey(file.repo, file.path)];
     if (entry?.patchId === file.patchId)
-      next[fileKey(file.repo, file.path)] = { ...entry, headCommitId };
+      next[viewedKey(file.repo, file.path)] = { ...entry, headCommitId };
   }
   return next;
 }
@@ -86,7 +86,7 @@ export function viewedCount(
   paths: TaskChangeFilePathDto[],
 ): number {
   return paths.filter((p) => {
-    const entry = state[fileKey(p.repo, p.path)];
+    const entry = state[viewedKey(p.repo, p.path)];
     return entry !== undefined && entry.headCommitId === headCommitId;
   }).length;
 }

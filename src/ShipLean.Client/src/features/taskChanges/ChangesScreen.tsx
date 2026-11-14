@@ -21,7 +21,14 @@ import {
 import { taskChangesTestIds as ids } from './testIds';
 import type { ComposerTarget, DiffLayout } from './types';
 import { useWideScreen } from './useWideScreen';
-import { readViewed, restampViewed, saveViewed, setViewed, type ViewedState } from './viewedStore';
+import {
+  isViewed,
+  readViewed,
+  restampViewed,
+  saveViewed,
+  setViewed,
+  type ViewedState,
+} from './viewedStore';
 
 export interface ChangesScreenProps {
   project: ProjectDto;
@@ -98,9 +105,7 @@ function WideChanges({ project, itemKey }: ChangesScreenProps) {
       },
       { replace: true },
     );
-  const viewedCount = files.filter(
-    (f) => viewed[`${f.repo}\u0000${f.path}`]?.patchId === f.patchId,
-  ).length;
+  const viewedCount = files.filter((f) => isViewed(viewed, f.repo, f.path, f.patchId)).length;
   const composer =
     composerTarget === null ? null : (
       <CodeCommentComposer
