@@ -7,5 +7,9 @@ namespace ShipLean.Application.Features.TaskChanges.Commits;
 
 public sealed class TaskCommitsServices : IServiceModule
 {
-    public void AddServices(IServiceCollection services, IConfiguration configuration) => services.AddScoped<ITaskCommits, StubTaskCommits>();
+    public void AddServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<TaskCommitRows>();
+        services.AddScoped<ITaskCommits, TaskCommits>();
+    }
 }
