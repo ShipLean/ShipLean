@@ -32,6 +32,8 @@ export const backlogTestIds = {
   columnSort: 'backlog-column-sort',
   row: 'backlog-row',
   rank: 'backlog-rank',
+  touchHandle: 'backlog-touch-handle',
+  touchHandleGrip: 'backlog-touch-handle-grip',
   key: 'backlog-key',
   title: 'backlog-title',
   state: 'backlog-state',
