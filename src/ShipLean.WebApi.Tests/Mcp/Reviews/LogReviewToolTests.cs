@@ -64,7 +64,7 @@ public class LogReviewToolTests : McpFixture
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
         error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
-        error.GetProperty("message").GetString().ShouldContain("task");
+        error.GetProperty("message").GetString()!.ShouldContain("task");
         (await RowsAsync(id)).ShouldBeEmpty();
     }
 

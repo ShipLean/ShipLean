@@ -41,7 +41,7 @@ public class FeatureTimelineToolTests : McpFixture
         var reply = await CallToolAsync(token, "feature_timeline", $$"""{"key":"{{_featureKey}}"}""");
 
         reply.IsToolError().ShouldBeFalse();
-        var body = JsonNode.Parse(reply.Structured().GetRawText()).AsObject();
+        var body = JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
         body["project"]!.GetValue<string>().ShouldBe("SHIP");
         body["open_url"]!.GetValue<string>().ShouldEndWith($"/p/SHIP/items/{_featureKey}");
         body.Remove("project");
