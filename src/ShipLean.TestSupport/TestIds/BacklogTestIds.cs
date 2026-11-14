@@ -96,6 +96,10 @@ public static class BacklogTestIds
     public const string LevelFeatureCount = "backlog-level-feature-count";
     public const string LevelNested = "backlog-level-nested";
 
+    // The touch Features and Epics rows (900px and below, SHIP-716)
+    public const string LevelTouchMeta = "backlog-level-touch-meta";
+    public const string LevelTouchProgress = "backlog-level-touch-progress";
+
     // F3 new Feature dialog
     public const string NewFeatureTitle = "backlog-new-feature-title";
     public const string NewFeatureEpic = "backlog-new-feature-epic";

@@ -94,6 +94,9 @@ export const backlogTestIds = {
   levelPointsSum: 'backlog-level-points-sum',
   levelFeatureCount: 'backlog-level-feature-count',
   levelNested: 'backlog-level-nested',
+  // The touch Features and Epics rows (900px and below, SHIP-716): the row's meta line and its progress line.
+  levelTouchMeta: 'backlog-level-touch-meta',
+  levelTouchProgress: 'backlog-level-touch-progress',
   // F3 new Feature dialog
   newFeatureTitle: 'backlog-new-feature-title',
   newFeatureEpic: 'backlog-new-feature-epic',

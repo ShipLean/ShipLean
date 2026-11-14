@@ -26,6 +26,7 @@ import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
 import { useNewItemFromLink } from '../useNewItemFromLink';
 import { useTouchSelectMode } from '../touch/selectMode';
+import { NewItemRow } from './NewItemRow';
 import { TouchRowList } from '../touch/TouchRowList';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { ListDnd } from './ListDnd';
@@ -106,6 +107,18 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                       flashing={flashing}
                       filtered={addingOff}
                       searched={search.active ? search.query.trim() : ''}
+                      addRow={
+                        state.adding ? (
+                          <NewItemRow
+                            projectId={project.id}
+                            projectKey={project.key}
+                            columnCount={columns.length}
+                            onClose={() => state.setAdding(false)}
+                            initialType={state.addType}
+                            request={state.addRequest}
+                          />
+                        ) : undefined
+                      }
                     />
                   ) : (
                     <ListDnd

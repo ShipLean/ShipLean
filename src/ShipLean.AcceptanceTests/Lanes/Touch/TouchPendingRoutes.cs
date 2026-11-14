@@ -12,8 +12,6 @@ public static class TouchPendingRoutes
         ["profile"] = "SHIP-733",
         // SHIP-716
         ["storiesBacklog"] = "SHIP-716",
-        ["featuresBacklog"] = "SHIP-716",
-        ["epicsBacklog"] = "SHIP-716",
         // SHIP-714
         ["workItem"] = "SHIP-714",
         // SHIP-722
