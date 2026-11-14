@@ -7,7 +7,6 @@ public static class TouchPendingRoutes
     public static readonly IReadOnlyDictionary<string, string> All = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         // SHIP-736
-        ["login"] = "SHIP-736",
         // SHIP-733
         // SHIP-716
         ["storiesBacklog"] = "SHIP-716",

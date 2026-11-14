@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { fetchMe, meKey } from '../../queries/shared';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { Banner } from './Banner';
 import { authTestIds } from './testIds';
 
@@ -25,6 +26,7 @@ export function ProxySignInPage({
   onSignedIn: () => void;
   onTryAgain: () => void;
 }) {
+  const { touch } = useTouchShell();
   const disabled = state === 'disabled';
   const me = useQuery({ queryKey: meKey, queryFn: fetchMe, retry: false, enabled: !disabled });
 
@@ -39,12 +41,23 @@ export function ProxySignInPage({
 
   const message = disabled ? messages.disabled : state === 'ended' ? messages.ended : messages.none;
 
+  const retry = (
+    <button
+      type="button"
+      data-testid={authTestIds.proxyRetry}
+      className="btn-signal touch:h-10 touch:w-full"
+      onClick={onTryAgain}
+    >
+      Try again
+    </button>
+  );
+
   return (
     <div
       data-testid={authTestIds.proxySignIn}
-      className="flex w-[min(380px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel"
+      className="flex w-[min(380px,100%)] flex-col rounded-frame border border-edge bg-panel shadow-panel touch:w-[min(440px,100%)]"
     >
-      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold">
+      <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold touch:text-[length:var(--text-lg)]">
         Sign in
         {instanceName ? (
           <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted">
@@ -56,17 +69,13 @@ export function ProxySignInPage({
         <Banner tone="info" testId={authTestIds.proxyMessage}>
           {message}
         </Banner>
+        {touch ? retry : null}
       </div>
-      <footer className="flex items-center justify-end gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
-        <button
-          type="button"
-          data-testid={authTestIds.proxyRetry}
-          className="btn-signal"
-          onClick={onTryAgain}
-        >
-          Try again
-        </button>
-      </footer>
+      {touch ? null : (
+        <footer className="flex items-center justify-end gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
+          {retry}
+        </footer>
+      )}
     </div>
   );
 }
