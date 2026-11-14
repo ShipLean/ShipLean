@@ -41,7 +41,7 @@ public class GitHubCodeHostTests
     [Test]
     public async Task GitHubCodeHost_WhenCommitRead_ShouldMapMetaPathsAndFullSha()
     {
-        _server.Respond(CommitPath, CommitJson);
+        _server.Respond($"/repos/acme/storefront/commits/{Sha[..7]}", CommitJson);
 
         var read = await HostOn(_server.BaseAddress).ReadCommitAsync(Repo, Sha[..7]);
 
