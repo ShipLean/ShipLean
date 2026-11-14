@@ -82,7 +82,7 @@ export function NewItemRow({
         ref={input}
         data-testid={ids.addTitle}
         aria-label="Title"
-        className="field min-w-0 flex-1"
+        className="field flex-1 touch:min-w-0"
         placeholder="Title, then Enter to add at the top"
         value={title}
         onChange={(event) => setTitle(event.target.value)}

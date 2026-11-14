@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { touchTestIds } from '../../../touch/testIds';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
 import { backlogView, ROWS } from '../ct/fixtures';
+import { FEATURE_STATES } from '../newFeature/ct/stubNewFeature';
 import { stubBacklog } from '../ct/stubApi';
 import { ListMode } from '../list/ListMode';
 import { LevelHarness } from '../ct/LevelHarness';
@@ -110,6 +111,8 @@ test('LevelNewItemRow_WhenOpenedOnPhone_ShouldHaveTouchSizedButtons', async ({ m
   await page.getByTestId(ids.newItem).tap();
 
   await expect(page.getByTestId(ids.addRow)).toBeVisible();
+  expect(await page.getByTestId(ids.addRow).evaluate((e) => e.tagName)).toBe('DIV');
+  await expect(page.locator('tr')).toHaveCount(0);
   expect(await heightOf(page.getByTestId(ids.addSubmit))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   expect(await heightOf(page.getByTestId(ids.addClose))).toBeGreaterThanOrEqual(TOUCH_TARGET);
 });
@@ -128,6 +131,8 @@ test('NewItemRow_WhenNewChosenInStoriesListOnPhone_ShouldShowTheAddRow', async (
   await page.getByTestId(ids.newItem).tap();
 
   await expect(page.getByTestId(ids.addRow)).toBeVisible();
+  expect(await page.getByTestId(ids.addRow).evaluate((e) => e.tagName)).toBe('DIV');
+  await expect(page.locator('tr')).toHaveCount(0);
   await expect(page.getByTestId(ids.addTitle)).toHaveCSS('font-size', '16px');
   expect(await heightOf(page.getByTestId(ids.addSubmit))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   expect(await heightOf(page.getByTestId(ids.addClose))).toBeGreaterThanOrEqual(TOUCH_TARGET);
@@ -138,7 +143,7 @@ test('NewItemRow_WhenNewChosenInStoriesListOnPhone_ShouldShowTheAddRow', async (
 });
 
 test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({ mount, page }) => {
-  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await stubLevel(page, levelView('features', FEATURE_ROWS), { states: FEATURE_STATES });
   await mount(<LevelHarness project={PROJECT} level="features" />, features);
   await page.getByTestId(ids.newItem).tap();
 
@@ -150,6 +155,7 @@ test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({
     TOUCH_TARGET,
   );
   const options = page.getByTestId(ids.newFeatureStartOption);
+  await expect(options).toHaveCount(2);
   for (let i = 0; i < (await options.count()); i++) {
     expect(await heightOf(options.nth(i))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   }
