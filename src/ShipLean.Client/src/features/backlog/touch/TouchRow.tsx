@@ -8,6 +8,7 @@ import { ParentCell } from '../list/ParentCell';
 import { SprintCell } from '../list/SprintCell';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
+import { RowActions } from './RowActions';
 import { useTouchSelectMode } from './selectMode';
 
 // Taps on these keep their own behaviour instead of opening or selecting the row.
@@ -27,8 +28,8 @@ const inside = 'a, button, input, select, textarea, label';
  *
  * The row's test id is `backlogTestIds.row`, as in every mode. Every row carries `data-drop-target` with its id, so a
  * drag can find the row under the finger. Tapping the row opens the item modal, or in Select mode toggles the row; taps
- * on controls inside it (links, buttons, inputs, labels) keep their own. The points here are display only, with a warn
- * ? when there's no estimate.
+ * on controls inside it (links, buttons, inputs, labels) keep their own. The right edge is RowActions: the points (a warn ?
+ * chip opening the Points sheet while there is no estimate) and the ⋯ sheet.
  */
 export function TouchRow({
   row,
@@ -51,6 +52,8 @@ export function TouchRow({
   const selected = selection.has(row.id);
   const closed = row.state?.category === 'completed';
   const tap = (event: MouseEvent<HTMLDivElement>) => {
+    // A sheet is a portal: a click in it bubbles here through React, but its target is not inside the row.
+    if (!event.currentTarget.contains(event.target as Node)) return;
     if (event.target instanceof Element && event.target.closest(inside) !== null) return;
     if (selecting) selection.toggle(row.id);
     else peek.open(row.key);
@@ -113,22 +116,11 @@ export function TouchRow({
         </div>
       </div>
       <div className="flex flex-none items-center gap-2 pr-3">
-        {row.points === null ? (
-          <span
-            data-testid={ids.points}
-            title="Not estimated"
-            className="font-semibold text-caution"
-          >
-            ?
+        <RowActions row={row}>
+          <span data-testid={ids.assignee}>
+            <Avatar {...(row.assignee ?? {})} />
           </span>
-        ) : (
-          <span data-testid={ids.points} className="font-semibold tabular-nums">
-            {row.points}
-          </span>
-        )}
-        <span data-testid={ids.assignee}>
-          <Avatar {...(row.assignee ?? {})} />
-        </span>
+        </RowActions>
         {trailing}
       </div>
     </div>

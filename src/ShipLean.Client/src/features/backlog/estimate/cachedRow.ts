@@ -5,6 +5,8 @@ import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 export interface CachedRow {
   row: BacklogRowDto;
   projectId: string;
+  /** The backlog read holding that copy: its mode, its sections and its velocity. */
+  view: BacklogViewDto;
 }
 
 /** The newest copy of a row in the cached backlog reads (any mode), or null when none holds it. A send takes its points and revision from here, never from a render's closure. */
@@ -18,7 +20,7 @@ export function cachedRow(queryClient: QueryClient, id: string): CachedRow | nul
     const rows = [...view.rows, ...view.sections.flatMap((section) => section.rows)];
     for (const row of rows) {
       if (row.id === id && (found === null || row.revision > found.row.revision)) {
-        found = { row, projectId: view.projectId };
+        found = { row, projectId: view.projectId, view };
       }
     }
   }

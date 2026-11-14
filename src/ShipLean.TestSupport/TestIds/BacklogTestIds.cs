@@ -139,6 +139,17 @@ public static class BacklogTestIds
     public const string DragBadge = "backlog-drag-badge";
     public const string SectionPreview = "backlog-section-preview";
     public const string PointsInput = "backlog-points-input";
+    public const string PointsSheet = "backlog-points-sheet";
+    public const string PointsSheetInput = "backlog-points-sheet-input";
+    public const string PointsSheetSave = "backlog-points-sheet-save";
+    public const string PointsSheetClear = "backlog-points-sheet-clear";
+    public const string RowSprintOption = "backlog-row-sprint-option";
+    public const string RowSprintSheet = "backlog-row-sprint-sheet";
+    public const string RowParentSheet = "backlog-row-parent-sheet";
+    public const string QueueBanner = "backlog-queue-banner";
+    public const string QueueStepKey = "backlog-queue-step-key";
+    public const string QueuePoints = "backlog-queue-points";
+    public const string QueueSkip = "backlog-queue-skip";
     public const string AddMany = "backlog-add-many";
     public const string PasteDialog = "backlog-paste-dialog";
     public const string PasteSource = "backlog-paste-source";
