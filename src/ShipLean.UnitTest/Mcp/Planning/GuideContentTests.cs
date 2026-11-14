@@ -50,11 +50,16 @@ public class GuideContentTests
     [Test]
     public void Guide_Step9_ShouldNameFeatureTimeline()
     {
-        Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..].ShouldContain("`feature_timeline`");
+        var step9 = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
+
+        step9.ShouldContain("`feature_timeline`");
     }
 
     [Test]
-    public void Lead_ShouldNameLogReview() => PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_review`");
+    public void Lead_ShouldNameLogReview()
+    {
+        PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_review`");
+    }
 
     [Test]
     public void GuideContent_ShouldMapModesToStories()
