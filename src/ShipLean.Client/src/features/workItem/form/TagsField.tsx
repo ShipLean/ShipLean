@@ -29,7 +29,7 @@ export function TagsField({
     >
       <div
         data-testid={ids.tags}
-        className="flex min-h-7 flex-wrap items-center gap-1 touch:gap-1.5 touch:[&>span]:text-[length:var(--text-sm)]"
+        className="flex min-h-7 flex-wrap items-center gap-1 touch:gap-1.5 touch:gap-y-3 touch:[&>span]:h-7 touch:[&>span]:text-[length:var(--text-sm)]"
       >
         {value.map((tag) => (
           <Chip key={tag} onRemove={() => onChange(value.filter((t) => t !== tag))}>
