@@ -128,6 +128,16 @@ public static class RetrosTestIds
     public const string RetroItemRailActions = "retro-item-rail-actions";
     public const string RetroItemRailCompiled = "retro-item-rail-compiled";
     public const string RetroItemRailWriters = "retro-item-rail-writers";
+    // SHIP-729 item page touch
+    public const string RetroItemKpiToDecide = "retro-item-kpi-to-decide";
+    public const string RetroItemKpiActions = "retro-item-kpi-actions";
+    public const string RetroItemKpiDecided = "retro-item-kpi-decided";
+    public const string RetroItemRetroSelect = "retro-item-retro-select";
+    public const string RetroItemSheetActions = "retro-item-sheet-actions";
+    public const string RetroItemSheetCompiled = "retro-item-sheet-compiled";
+    public const string RetroItemSheetWriters = "retro-item-sheet-writers";
+    public const string RetroItemOpenWorkItem = "retro-item-open-work-item";
+    public const string RetroItemPartOf = "retro-item-part-of";
     public const string WorkItemRetroRow = "work-item-retro-row";
     public const string RetroActionWhy = "retro-action-why";
     public const string RetroActionWhyAdd = "retro-action-why-add";
