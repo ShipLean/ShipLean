@@ -59,6 +59,9 @@ public static class TaskboardTestIds
     public const string CardTag = "taskboard-card-tag";
     public const string CardPoints = "taskboard-card-points";
     public const string CardAssignee = "taskboard-card-assignee";
+    // L725a pick up
+    public const string ActionPickUp = "taskboard-task-action-pick-up";
+    public const string StoryNoParent = "taskboard-task-story-no-parent";
     public const string CardParent = "taskboard-card-parent";
     public const string CardParentFeature = "taskboard-card-parent-feature";
     public const string CardPickUp = "taskboard-card-pick-up";

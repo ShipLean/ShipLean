@@ -54,6 +54,9 @@ export const taskboardTestIds = {
   cardTag: 'taskboard-card-tag',
   cardPoints: 'taskboard-card-points',
   cardAssignee: 'taskboard-card-assignee',
+  // L725a pick up
+  actionPickUp: 'taskboard-task-action-pick-up',
+  storyNoParent: 'taskboard-task-story-no-parent',
   cardParent: 'taskboard-card-parent',
   cardParentFeature: 'taskboard-card-parent-feature',
   cardPickUp: 'taskboard-card-pick-up',

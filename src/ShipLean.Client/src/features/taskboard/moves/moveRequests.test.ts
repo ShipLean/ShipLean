@@ -157,7 +157,14 @@ describe('pickUpRequest', () => {
       stateId: 't-active',
       row: { grouping: 'people', target: 'u-priya' },
       beforeItemId: null,
+      method: 'pick-up',
     });
+  });
+});
+
+describe('pickUpRequest method', () => {
+  it('pickUpRequest_WhenBuilt_ShouldCarryMethodPickUp', () => {
+    expect(pickUpRequest(card, 't-active', 'u-priya').method).toBe('pick-up');
   });
 });
 
