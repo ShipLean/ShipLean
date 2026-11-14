@@ -6,6 +6,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Views.Timeline;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Timeline;
@@ -40,12 +41,12 @@ public class FeatureTimelineToolTests : McpFixture
         var reply = await CallToolAsync(token, "feature_timeline", $$"""{"key":"{{_featureKey}}"}""");
 
         reply.IsToolError().ShouldBeFalse();
-        var body = JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
+        var body = JsonNode.Parse(reply.Structured().GetRawText()).AsObject();
         body["project"]!.GetValue<string>().ShouldBe("SHIP");
         body["open_url"]!.GetValue<string>().ShouldEndWith($"/p/SHIP/items/{_featureKey}");
         body.Remove("project");
         body.Remove("open_url");
-        var expected = JsonNode.Parse(File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "views", "feature-timeline-mcp.json")))!;
+        var expected = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "views", "feature-timeline-mcp.json")));
         JsonNode.DeepEquals(body, expected).ShouldBeTrue(body.ToJsonString());
     }
 

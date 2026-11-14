@@ -2,6 +2,7 @@ using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Timeline;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
@@ -63,7 +64,7 @@ public class LogReviewToolTests : McpFixture
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
         error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
-        error.GetProperty("message").GetString()!.ShouldContain("task");
+        error.GetProperty("message").GetString().ShouldContain("task");
         (await RowsAsync(id)).ShouldBeEmpty();
     }
 
