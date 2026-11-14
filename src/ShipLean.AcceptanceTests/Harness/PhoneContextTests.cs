@@ -39,12 +39,12 @@ public class PhoneContextTests : SeededAcceptanceTest
         region.ShouldBeEmpty();
     }
 
-    // The shell's main region has overflow-auto, so on the taskboard (a desktop grid today) it scrolls sideways while
-    // the document does not.
+    // The shell's main region has overflow-auto, so content wider than it scrolls the region sideways while the
+    // document does not. The page puts the wide content in itself, so the test does not depend on any screen's layout.
     [Test]
     public async Task TouchRules_WhenScopedToARegionThatScrollsSideways_ShouldReportItsOwnScroll()
     {
-        await OpenTaskboardAsync();
+        await OpenWithWideContentInShellMainAsync();
 
         var region = await TouchRules.ViolationsAsync(Page, Page.GetByTestId(AppTestIds.ShellMain));
 
@@ -55,7 +55,7 @@ public class PhoneContextTests : SeededAcceptanceTest
     [Test]
     public async Task TouchRules_WhenTheShellMainScrollsSideways_ShouldReportThePageScrolling()
     {
-        await OpenTaskboardAsync();
+        await OpenWithWideContentInShellMainAsync();
 
         var page = await TouchRules.ViolationsAsync(Page);
 
@@ -78,9 +78,11 @@ public class PhoneContextTests : SeededAcceptanceTest
 
     private const string ShellMainDescription ="main [data-testid=" + AppTestIds.ShellMain + "]";
 
-    private async Task OpenTaskboardAsync()
+    private async Task OpenWithWideContentInShellMainAsync()
     {
-        await Page.GotoAsync(Links.Taskboard("SHIP", SeedIds.Sprints.Sprint24));
-        await Expect(Page.GetByTestId(TaskboardTestIds.Card).First).ToBeVisibleAsync();
+        await Page.GotoAsync(Links.Home());
+        var main = Page.GetByTestId(AppTestIds.ShellMain);
+        await Expect(main).ToBeVisibleAsync();
+        await main.EvaluateAsync("main => { const wide = document.createElement('div'); wide.style.width = '1200px'; wide.style.height = '1px'; main.append(wide); }");
     }
 }
