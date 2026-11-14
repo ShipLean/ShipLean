@@ -6,7 +6,7 @@ import { demosTestIds as ids } from '../../../demos/testIds';
 import shipleanLogo from './shiplean-logo.svg';
 
 const previewBox =
-  'grid h-[72px] w-[200px] place-items-center overflow-hidden rounded-control border border-edge bg-white p-2';
+  'grid h-[72px] w-[200px] place-items-center overflow-hidden rounded-control border border-edge bg-white p-2 touch:w-full';
 
 /** The logo: previewed through an img, uploaded and removed with the server's message shown beside it. */
 export function LogoField({
@@ -32,7 +32,7 @@ export function LogoField({
   return (
     <div className="grid gap-2 text-[length:var(--text-sm)]">
       <span className="font-medium text-ink">Logo</span>
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4 touch:flex-col touch:items-stretch">
         <span className={previewBox}>
           <img
             data-testid={ids.demoLogoPreview}
@@ -41,7 +41,7 @@ export function LogoField({
             className="max-h-14 max-w-44 object-contain"
           />
         </span>
-        <div className="grid justify-items-start gap-1">
+        <div className="grid justify-items-start gap-1 touch:justify-items-stretch">
           {brand.logoUrl === null ? (
             <span className="flex items-center gap-2">
               <b className="text-ink">ShipLean&apos;s logo</b>
@@ -61,8 +61,8 @@ export function LogoField({
             </span>
           ) : null}
           {readOnly ? null : (
-            <span className="flex items-center gap-2">
-              <label className="btn-ghost relative cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal">
+            <span className="flex items-center gap-2 touch:[&>*]:flex-1">
+              <label className="btn-ghost relative touch:min-h-[var(--touch-target)] cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-signal">
                 {brand.logoUrl === null ? 'Upload a logo' : 'Replace'}
                 <input
                   type="file"
@@ -81,7 +81,7 @@ export function LogoField({
                 <button
                   type="button"
                   data-testid={ids.demoLogoRemove}
-                  className="btn-ghost text-alert"
+                  className="btn-ghost text-alert touch:min-h-[var(--touch-target)]"
                   disabled={busy}
                   onClick={() => remove.mutate(undefined, { onSuccess: done, onError: fail })}
                 >
