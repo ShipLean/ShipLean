@@ -5,6 +5,7 @@ import { backlogTestIds as ids } from '../testIds';
 import { useTouchSelectMode } from './selectMode';
 import { TouchHandle } from './TouchHandle';
 import { TouchRow } from './TouchRow';
+import { TouchRowGhost } from './TouchRowGhost';
 
 // The select box in a row's handle slot while Select mode is on: the whole slot is its hit area.
 function TouchSelectBox({ row }: { row: BacklogRowDto }) {
@@ -40,11 +41,7 @@ function TouchListHandle({
       rank={row.rank ?? ''}
       onDrop={(target) => onDrop(row.id, target)}
       onLiftedChange={onLiftedChange}
-      ghost={
-        <div className="w-[min(80vw,22rem)] truncate rounded-control border border-accent bg-panel px-3 py-3 text-[length:var(--text-sm)] font-medium shadow-lg">
-          {row.key} {row.title}
-        </div>
-      }
+      ghost={<TouchRowGhost row={row} />}
     />
   );
 }

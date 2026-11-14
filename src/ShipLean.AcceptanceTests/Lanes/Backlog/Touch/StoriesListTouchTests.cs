@@ -52,10 +52,10 @@ public class StoriesListTouchTests : SeededAcceptanceTest
     {
         var touch = new TouchRows(Page);
         await new StoriesBacklog(Page).OpenAsync("SHIP");
-        await Expect(touch.Handles.First).ToBeVisibleAsync();
+        await Expect(touch.Handle((await touch.KeysAsync())[0])).ToBeVisibleAsync();
         var before = (await touch.KeysAsync()).Take(4).ToList();
 
-        var response = await touch.DragByHandleAsync(from: 0, to: 2);
+        var response = await touch.DragByHandleAsync(before[0], before[2]);
 
         response.Ok.ShouldBeTrue(await response.TextAsync());
         var expected = new[] { before[1], before[0], before[2], before[3] };

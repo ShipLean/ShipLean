@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { ApiRequestError } from '@shiplean/core/api/client';
 import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { backlogView, itemRow } from '../ct/fixtures';
 
@@ -52,14 +53,14 @@ const dropOn = (rowId: string, targetId: string | null) =>
 const order = () => client.getQueryData<BacklogViewDto>(KEY)?.rows.map((row) => row.key);
 
 test('useTouchReorder_WhenDroppedOnRow_ShouldSendBeforeThatRow', async () => {
-  await dropOn('id-SHIP-3', 'id-SHIP-1');
+  await dropOn('id-SHIP-1', 'id-SHIP-3');
 
   expect(post).toHaveBeenCalledTimes(1);
-  expect(post).toHaveBeenCalledWith('/api/work-items/id-SHIP-3/reorder', {
-    expectedRevision: 1,
-    beforeItemId: 'id-SHIP-1',
+  expect(post).toHaveBeenCalledWith('/api/work-items/id-SHIP-1/reorder', {
+    expectedRevision: 4,
+    beforeItemId: 'id-SHIP-3',
   });
-  expect(order()).toEqual(['SHIP-3', 'SHIP-1', 'SHIP-2']);
+  expect(order()).toEqual(['SHIP-2', 'SHIP-1', 'SHIP-3']);
 });
 
 test('useTouchReorder_WhenDroppedOnItself_ShouldSendNothing', async () => {
@@ -77,11 +78,22 @@ test('useTouchReorder_WhenDroppedOutsideARow_ShouldSendNothing', async () => {
 });
 
 test('useTouchReorder_ShouldReturnTheUseReorderItSends', async () => {
-  await dropOn('id-SHIP-3', 'id-SHIP-1');
+  post.mockRejectedValueOnce(
+    new ApiRequestError('Changed.', 409, 'conflict', {
+      error: 'Changed.',
+      code: 'conflict',
+      current: { revision: 9 },
+      theirChanges: [{ changedBy: { name: 'Tom' } }],
+    }),
+  );
 
-  // The screen's frame reads this object: a drop's write must go through it, and its conflict handlers must be it.
-  expect(typeof seen.reorder?.reorder.drop).toBe('function');
-  expect(seen.reorder?.conflict).toBe(seen.reorder?.reorder.conflict);
-  expect(seen.reorder?.useMine).toBe(seen.reorder?.reorder.useMine);
-  expect(seen.reorder?.keepTheirs).toBe(seen.reorder?.reorder.keepTheirs);
+  await dropOn('id-SHIP-2', 'id-SHIP-1');
+
+  // The write went through the hook's own useReorder, so its conflict is the one the returned values read.
+  const returned = seen.reorder;
+  expect(returned?.reorder.conflict?.itemKey).toBe('SHIP-2');
+  expect(returned?.reorder.conflict?.currentRevision).toBe(9);
+  expect(returned?.conflict).toBe(returned?.reorder.conflict);
+  expect(returned?.useMine).toBe(returned?.reorder.useMine);
+  expect(returned?.keepTheirs).toBe(returned?.reorder.keepTheirs);
 });
