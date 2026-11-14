@@ -20,6 +20,9 @@ public sealed class SprintDemoTab(IPage page)
 
     public ILocator CreateBlocked => page.GetByTestId(DemosTestIds.DemoCreateBlocked);
 
+    // The visible reason beside a blocked Create button (the phone layout shows it under the full-width action).
+    public ILocator CreateReason => page.GetByTestId(DemosTestIds.DemoCreateReason);
+
     public ILocator ItemLink => page.GetByTestId(DemosTestIds.DemoItemLink);
 
     public ILocator Player => page.GetByTestId(DemosTestIds.DemoPlayer);
