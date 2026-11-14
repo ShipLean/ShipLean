@@ -61,6 +61,7 @@ test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount
     done: false,
     laneId: 'lane-default',
     beforeItemId: null,
+    method: 'sheet',
   });
   await expect(toasts(page)).toContainText('SHIP-160 → In progress');
   await expect(sheet(page)).toHaveCount(0);
