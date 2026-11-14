@@ -10,27 +10,27 @@ export interface PersonLane {
 }
 
 /**
- * The rows of every lane of the People grouping. The view holds only Unassigned and the people who have tasks; on the
- * Taskboard `everyone` (the project's members) adds the rest, each with no tasks: Unassigned first, then the members in
- * their order, then anyone with tasks who is no longer a member. Without `everyone` (the Feature board) the view's rows.
+ * The rows of every lane of the People grouping: the view's rows in the view's order (Unassigned first; people who left the
+ * project but still have tasks stay), then, on the Taskboard, `everyone` (the project's members) who have no row, by name,
+ * each with no tasks. Without `everyone` (the Feature board) the view's rows.
  */
 export function everyoneRows(
   rows: readonly TaskboardPersonRowDto[],
   everyone: readonly UserRef[] | null,
 ): TaskboardPersonRowDto[] {
   if (!everyone) return [...rows];
-  const empty = (person: UserRef | null): TaskboardPersonRowDto => ({
-    person,
+  const unassigned = rows.find((row) => row.person === null) ?? {
+    person: null,
     taskCount: 0,
     cells: [],
-  });
-  const byId = new Map(rows.map((row) => [row.person?.id ?? UNASSIGNED_FACE, row]));
-  const listed = new Set(everyone.map((user) => user.id));
-  return [
-    byId.get(UNASSIGNED_FACE) ?? empty(null),
-    ...everyone.map((user) => byId.get(user.id) ?? empty(user)),
-    ...rows.filter((row) => row.person && !listed.has(row.person.id)),
-  ];
+  };
+  const people = rows.filter((row) => row.person !== null);
+  const listed = new Set(people.map((row) => row.person!.id));
+  const empty = everyone
+    .filter((user) => !listed.has(user.id))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((person): TaskboardPersonRowDto => ({ person, taskCount: 0, cells: [] }));
+  return [unassigned, ...people, ...empty];
 }
 
 /** One state's page, grouped by People: the people the face filter keeps, each with their tasks here. */

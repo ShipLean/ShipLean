@@ -19,7 +19,7 @@ const viewOf = (placed: Record<string, string[]>): TaskboardGridView => {
 };
 
 describe('landedStates', () => {
-  it('LandedStates_WhenTaskChangedState_ShouldNameTheStateItLandedIn', () => {
+  it('teammateMoves_WhenATaskChangedState_ShouldReturnTheLandedState', () => {
     const before = viewOf({ new: ['a', 'b'], active: [] });
     const after = viewOf({ new: ['a'], active: ['b'] });
 
@@ -31,6 +31,14 @@ describe('landedStates', () => {
     const after = viewOf({ new: ['a', 'created'], active: [] });
 
     expect(landedStates(before, after)).toEqual([]);
+  });
+
+  it('LandedStates_WhenTaskIsOwn_ShouldNotNameItsState', () => {
+    const before = viewOf({ new: ['a', 'b'], active: [] });
+    const after = viewOf({ new: [], active: ['a', 'b'] });
+
+    expect(landedStates(before, after, new Set(['a', 'b']))).toEqual([]);
+    expect(landedStates(before, after, new Set(['a']))).toEqual(['active']);
   });
 
   it('LandedStates_WhenTwoTasksLandInOneState_ShouldNameItOnce', () => {
@@ -73,19 +81,57 @@ describe('useTeammatePulses', () => {
     expect(seen.pulses.has('new')).toBe(false);
   });
 
-  it('UseTeammatePulses_WhenOwnMoveIsPending_ShouldNotPulse', () => {
-    const { client, seen, show } = setup();
-    const own = new MutationObserver(client, {
+  const ownMove = async (client: QueryClient, mutationFn: () => Promise<void>) => {
+    const observer = new MutationObserver<void, Error, { request: { taskId: string } }>(client, {
       mutationKey: taskboardMoveKey('p1', scope),
-      mutationFn: () => new Promise<void>(() => undefined),
+      mutationFn,
     });
-    act(() => {
-      void own.mutate();
+    await act(async () => {
+      observer.mutate({ request: { taskId: 'a' } }).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
+  };
+
+  it('teammateMoves_WhenTheTaskIsYourOwnMove_ShouldIgnoreIt', async () => {
+    const { client, seen, show } = setup();
+    await ownMove(client, () => new Promise<void>(() => undefined));
 
     show(MOVED);
 
     expect(seen.pulses.size).toBe(0);
+  });
+
+  it('UseTeammatePulses_WhenOwnMoveIsRefusedAndRolledBack_ShouldNotPulseTheStateItCameFrom', async () => {
+    const { client, seen, show } = setup();
+    let refuse: () => void = () => undefined;
+    await ownMove(
+      client,
+      () => new Promise<void>((_, reject) => (refuse = () => reject(new Error('no')))),
+    );
+    show(MOVED);
+
+    await act(async () => {
+      refuse();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    show(START);
+
+    expect(seen.pulses.size).toBe(0);
+  });
+
+  it('UseTeammatePulses_WhenTeammateMovesAfterOwnMoveSettled_ShouldPulse', async () => {
+    const { client, seen, show } = setup();
+    let finish: () => void = () => undefined;
+    await ownMove(client, () => new Promise<void>((resolve) => (finish = resolve)));
+    show(MOVED);
+    await act(async () => {
+      finish();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    show(viewOf({ new: [], active: [], closed: ['a'] }));
+    show(MOVED);
+
+    expect(seen.pulses.get('active')).toBe(1);
   });
 
   it('UseTeammatePulses_WhenSecondTeammateMoveLandsInSameState_ShouldCountAgain', () => {

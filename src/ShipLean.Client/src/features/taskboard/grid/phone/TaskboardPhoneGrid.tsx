@@ -1,7 +1,6 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import type { SprintRef, UserRef } from '@shiplean/core/api/refs';
 import type { TaskboardRowDto } from '@shiplean/core/api/views';
-import { useProjectMembers } from '../../../workItem/workItemApi';
 import { StateDot } from '../../../../components/StateDot';
 import { TouchPager } from '../../../../touch/TouchPager';
 import type { TaskboardGrouping } from '../../taskboardApi';
@@ -9,10 +8,9 @@ import type { TaskboardGridView } from '../../taskboardGridView';
 import type { TaskboardScope } from '../../taskboardScope';
 import { taskboardTestIds as ids } from '../../testIds';
 import { ClosedStoryLine } from './ClosedStoryLine';
-import { PhonePersonLane } from './PhonePersonLane';
+import { FeaturePeopleLanes, SprintPeopleLanes } from './PhonePeopleLanes';
 import { PhoneStoryLane } from './PhoneStoryLane';
 import { phoneLanes } from './phoneLanes';
-import { phonePeopleLanes } from './phonePeopleLanes';
 import { stateChips } from './stateChips';
 import { useTeammatePulses } from './teammateMoves';
 import { TaskboardPagerContext, type TaskboardPager } from './TaskboardPagerContext';
@@ -63,9 +61,6 @@ export function TaskboardPhoneGrid({
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
   label: string;
 }) {
-  // The sprint Taskboard lists everyone on the project; the Feature board only the people with tasks.
-  const members = useProjectMembers(projectId).data;
-  const everyone = scope.kind === 'sprint' && members ? members.map((m) => m.user) : null;
   const pulses = useTeammatePulses(projectId, scope, view);
   const pages = stateChips(
     view.columns,
@@ -113,6 +108,19 @@ export function TaskboardPhoneGrid({
   const sectionBody = (section: PhoneGridSection, stateId: string) =>
     section.rows.length === 0 ? section.empty : storyLanes(section, stateId);
 
+  const peopleLanes = (stateId: string) =>
+    scope.kind === 'sprint' ? (
+      <SprintPeopleLanes
+        projectId={projectId}
+        view={view}
+        stateId={stateId}
+        faces={faces}
+        meId={me?.id}
+      />
+    ) : (
+      <FeaturePeopleLanes view={view} stateId={stateId} faces={faces} meId={me?.id} />
+    );
+
   const renderPage = (stateId: string) => {
     const column = view.columns.find((c) => c.state.id === stateId);
     const page = pages.find((p) => p.id === stateId);
@@ -132,16 +140,7 @@ export function TaskboardPhoneGrid({
                 {section.closed ? null : sectionBody(section, stateId)}
               </Fragment>
             ))
-          : phonePeopleLanes(view.peopleRows, stateId, faces, everyone).map((lane) => (
-              <PhonePersonLane
-                key={lane.rowId}
-                view={view}
-                lane={lane}
-                stateId={stateId}
-                meId={me?.id}
-                emptyLane={scope.kind === 'sprint'}
-              />
-            ))}
+          : peopleLanes(stateId)}
       </div>
     );
   };
