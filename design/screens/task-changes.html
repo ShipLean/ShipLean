@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Task changes (SHIP-1460 mock-up)</title>
+<!--
+  SHIP-1460 mock-up: the code a Task's or Bug's commits changed, inside ShipLean, with comments on lines. Desktop only;
+  Tasks and Bugs only (D3). Commits from any repository the instance token can read (D4); diffs fetched on view and
+  cached a day (D6); Viewed kept in the browser (D12). Decisions D1–D16 settled by Joel, 14 Nov 2026.
+  Not built. Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js only; no build step.
+  ?view=task       the Task page (SHIP-171) with its Changes section. &state=empty shows a Task with no commits and
+                   the Add commit form. &item=bug shows a Bug (SHIP-153) with its own commits.
+  ?view=review     (default) the Changes page, /p/SHIP/items/SHIP-171/changes. &state=
+                   compose | commits | split | request | approve | outdated | noaccess
+  Under 900px the Task page has no Changes section, and the Changes page shows one line saying it needs a wider screen.
+  The Preview panel (bottom left) is a review aid; ?shot hides it, ?theme=light|dark forces a theme.
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<style>
+[hidden] { display: none !important; }
+.a11y { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.btn.tiny { height: 22px; padding: 0 7px; font-size: var(--text-xs); }
+.btn.danger { color: var(--color-danger); }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 999px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); background: var(--color-surface-2); color: var(--color-muted); white-space: nowrap; }
+.pill.warn { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-text); }
+.pill.ok { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-text); }
+.pill.info { background: color-mix(in srgb, var(--color-info) 18%, transparent); color: var(--color-text); }
+.plus { color: var(--color-ok); font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: var(--text-xs); }
+.minus { color: var(--color-danger); font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: var(--text-xs); }
+.sha { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-accent); text-decoration: none; }
+.sha:hover { text-decoration: underline; }
+.agent { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--color-surface-2); border: 1px solid var(--color-border); font: 700 9px/1 var(--font-sans); color: var(--color-muted); flex: none; }
+.who { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); white-space: nowrap; }
+.bars { display: inline-flex; gap: 1px; }
+.bars i { width: 6px; height: 6px; border-radius: 1px; background: var(--color-border); }
+.bars i.a { background: var(--color-ok); } .bars i.d { background: var(--color-danger); }
+
+/* ---------- Task page (header and fields as the work item form) ---------- */
+.wi-head { flex: none; display: grid; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.wi-top { display: flex; align-items: center; gap: var(--space-2); min-height: 20px; }
+.back { color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.wi-title { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; }
+.ident { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: var(--text-sm); }
+.wi-title h1 { margin: 0 0 0 8px; font-size: var(--text-lg); font-weight: var(--weight-semibold); flex: 1; min-width: 0; }
+.fields { flex: none; display: flex; padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.fcell { flex: none; display: grid; align-content: center; gap: 2px; min-height: 54px; padding: 6px var(--space-3) 6px var(--space-2); border-right: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-sm); }
+.fcell:last-child { border-right: 0; flex: 1; }
+.lbl { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+.fval { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.wi-split { grid-template-columns: minmax(0, 1fr) calc(var(--rail-width) + 72px); }
+.wi-main { background: var(--color-surface); }
+.sec { display: grid; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.sec:last-child { border-bottom: 0; }
+.sec-h { display: flex; align-items: center; gap: var(--space-2); min-height: 24px; flex-wrap: wrap; }
+.sec-h h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.sec-h .sum { font-size: var(--text-sm); color: var(--color-muted); }
+.md { max-width: 780px; } .md p { margin: 0 0 6px; } .md code { padding: 0 4px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-size: var(--text-xs); }
+.box { border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+table.commits { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+table.commits td { height: 34px; padding: 0 var(--space-2); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); white-space: nowrap; }
+table.commits tr:first-child td { border-top: 0; }
+table.commits td.subj { width: 100%; max-width: 0; overflow: hidden; text-overflow: ellipsis; }
+table.commits td.num { text-align: right; }
+.changes-foot { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); color: var(--color-muted); flex-wrap: wrap; }
+.add-commit { display: grid; grid-template-columns: 220px minmax(0, 1fr) auto auto; gap: var(--space-2); align-items: end; padding: var(--space-3); border: 1px solid var(--color-accent); border-radius: var(--radius-md); }
+.add-commit label { display: grid; gap: 4px; font-size: var(--text-xs); color: var(--color-muted); }
+.add-commit .field, .add-commit select { height: var(--control-height); }
+.add-commit .hint { grid-column: 1 / -1; font-size: var(--text-xs); color: var(--color-muted); }
+.empty-box { display: grid; gap: 6px; padding: var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); color: var(--color-muted); }
+.empty-box code { font-size: var(--text-xs); }
+.cm { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); max-width: 780px; font-size: var(--text-sm); }
+.cm-h { display: flex; align-items: baseline; gap: var(--space-2); }
+.cm pre { margin: 4px 0 0; padding: var(--space-2); background: var(--color-bg); border-radius: var(--radius-sm); font: var(--text-xs)/1.5 var(--font-mono); white-space: pre-wrap; }
+.wi-side { gap: var(--space-4); }
+.sec-h2 { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.cnt { font-size: var(--text-xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.lcard { display: grid; gap: 2px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); }
+.lcard .t { display: flex; align-items: center; gap: 6px; }
+.prov { display: inline-grid; place-items: center; width: 18px; height: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); font: 700 8px/1 var(--font-sans); color: var(--color-muted); flex: none; }
+.hist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); font-size: var(--text-sm); }
+.hist li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: var(--space-2); }
+.hist .rev { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); font-size: var(--text-2xs); color: var(--color-muted); }
+.hist .ch { color: var(--color-muted); }
+.hist .ch b { color: var(--color-text); font-weight: var(--weight-semibold); }
+
+/* ---------- Changes page ---------- */
+.cv-head { flex: none; display: grid; gap: 6px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.cv-title { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.cv-title h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv-bar { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.cv-bar .sep { width: 1px; height: 18px; background: var(--color-border); }
+.prog { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-muted); white-space: nowrap; }
+.prog .track { width: 90px; height: 6px; border-radius: 3px; background: var(--color-surface-2); overflow: hidden; }
+.prog .track i { display: block; height: 100%; background: var(--color-accent); }
+.pick-wrap { position: relative; }
+.menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; width: 460px; padding: var(--space-1); display: grid; gap: 1px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-raised); }
+.menu .grp { padding: 6px var(--space-2) 2px; font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.menu .opt { display: grid; grid-template-columns: 14px 64px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: 30px; padding: 0 var(--space-2); border: 0; border-radius: var(--radius-sm); background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; }
+.menu .opt:hover, .menu .opt.hi { background: var(--color-accent-soft); }
+.menu .opt .cs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu .opt .tick { color: var(--color-accent); font-weight: var(--weight-semibold); }
+.menu .foot { padding: 6px var(--space-2) 4px; margin-top: 2px; border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-muted); }
+.cv { flex: 1; min-height: 0; display: grid; grid-template-columns: 264px minmax(0, 1fr) 320px; }
+.cv > * { min-height: 0; overflow: auto; }
+.tree { padding: var(--space-2); background: var(--color-surface-2); border-right: 1px solid var(--color-border); font-size: var(--text-sm); }
+.tree .th { display: flex; align-items: center; gap: 6px; padding: 2px var(--space-2) 6px; }
+.tree .dir { display: flex; align-items: center; gap: 4px; height: 24px; padding-left: calc(var(--d) * 12px + 6px); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree .file { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; height: 26px; padding: 0 6px 0 calc(var(--d) * 12px + 6px); border: 0; border-radius: var(--radius-sm); background: none; font-size: var(--text-sm); text-align: left; cursor: pointer; }
+.tree .file:hover { background: var(--color-surface); }
+.tree .file.on { background: var(--color-accent-soft); }
+.tree .file .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree .file.viewed .n { color: var(--color-muted); }
+.fs { font: 700 9px/1 var(--font-mono); width: 14px; text-align: center; }
+.fs.A { color: var(--color-ok); } .fs.M { color: var(--color-warn); } .fs.D { color: var(--color-danger); }
+.cbub { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--color-warn); color: #1d1d1d; font-size: 10px; font-weight: 700; }
+.vtick { color: var(--color-ok); font-size: var(--text-xs); width: 12px; text-align: center; }
+.diffs { padding: var(--space-3) var(--space-4) 120px; background: var(--color-bg); }
+.diffs > * + * { margin-top: var(--space-3); }
+.df { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; scroll-margin-top: 12px; }
+.df-h { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-2) 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+.df.collapsed .df-h { border-bottom: 0; }
+.df-h .chev { border: 0; background: none; color: var(--color-muted); cursor: pointer; width: 16px; padding: 0; }
+.df-h .path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--text-xs); }
+.df-h .path b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.df-h .path span { color: var(--color-muted); }
+.df-h .ext { color: var(--color-muted); text-decoration: none; font-size: var(--text-xs); }
+.df-h .ext:hover { color: var(--color-accent); }
+.df-h .check { font-size: var(--text-xs); }
+.dl { width: 100%; border-collapse: collapse; font: var(--text-xs)/1.6 var(--font-mono); table-layout: fixed; }
+.dl col.ln { width: 46px; } .dl col.sg { width: 16px; }
+.dl td { padding: 0 8px; vertical-align: top; }
+.dl td.ln { color: var(--color-muted); text-align: right; user-select: none; position: relative; opacity: .8; }
+.dl td.sg { padding: 0; text-align: center; color: var(--color-muted); user-select: none; }
+.dl td.code { white-space: pre-wrap; word-break: break-word; }
+.dl tr.add td { background: color-mix(in srgb, var(--color-ok) 11%, transparent); }
+.dl tr.add td.ln, .dl tr.add td.sg { background: color-mix(in srgb, var(--color-ok) 20%, transparent); color: var(--color-text); }
+.dl tr.del td { background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
+.dl tr.del td.ln, .dl tr.del td.sg { background: color-mix(in srgb, var(--color-danger) 18%, transparent); color: var(--color-text); }
+.dl tr.hunk td { background: color-mix(in srgb, var(--color-info) 9%, var(--color-surface)); color: var(--color-muted); height: 26px; vertical-align: middle; }
+.dl tr.fold td { background: var(--color-surface-2); color: var(--color-muted); height: 24px; vertical-align: middle; cursor: pointer; }
+.dl tr.fold td:hover { color: var(--color-accent); }
+.dl tr.sel td { box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--color-warn) 16%, transparent); }
+.dl tr.sel td.ln { box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--color-warn) 34%, transparent); }
+.dl td.ln .addc { position: absolute; left: 2px; top: 1px; display: none; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 3px; background: var(--color-accent); color: var(--color-accent-fg); font: 700 12px/16px var(--font-sans); cursor: pointer; }
+.dl tr:hover td.ln.n .addc, .dl tr.sel td.ln.n .addc { display: block; }
+.dl.sbs tr:hover td.ln .addc { display: block; }
+.dl td.e { background: var(--color-surface-2) !important; }
+.k { color: var(--color-purple); } .s { color: var(--color-ok); } .c { color: var(--color-muted); font-style: italic; } .t { color: var(--color-info); } .nm { color: var(--color-warn); }
+.dl tr.thr td { padding: var(--space-2) var(--space-3) var(--space-2) 116px; background: var(--color-bg); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); font-family: var(--font-sans); font-size: var(--text-sm); line-height: var(--leading); white-space: normal; }
+.thread { max-width: 760px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.thread.resolved { opacity: .75; }
+.thread .msg { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.thread .msg:first-child { border-top: 0; }
+.thread .mh { display: flex; align-items: baseline; gap: var(--space-2); }
+.thread .acts { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-3); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); background: var(--color-bg); border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.thread .rsum { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-3); font-size: var(--text-sm); color: var(--color-muted); cursor: pointer; }
+.composer { max-width: 760px; display: grid; gap: 6px; padding: var(--space-2); border: 1px solid var(--color-accent); border-radius: var(--radius-md); background: var(--color-surface); }
+.composer .anch { font-size: var(--text-xs); color: var(--color-muted); }
+.composer textarea { width: 100%; min-height: 64px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); resize: vertical; }
+.composer .row { justify-content: flex-end; }
+.composer .draft { margin-right: auto; font-size: var(--text-xs); color: var(--color-muted); font-style: italic; }
+.collapsed-note { padding: var(--space-2) var(--space-3); font-size: var(--text-sm); color: var(--color-muted); }
+.cmts { padding: var(--space-3); background: var(--color-bg); border-left: 1px solid var(--color-border); display: flex; flex-direction: column; gap: var(--space-2); }
+.cmts .tabs .tab { cursor: pointer; border: 0; background: none; }
+.cmts .tabs .tab[aria-selected="true"] { background: var(--color-accent-soft); color: var(--color-text); }
+.ccard { display: grid; gap: 6px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: var(--text-sm); cursor: pointer; }
+.ccard:hover { border-color: var(--color-accent); }
+.ccard .where { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); min-width: 0; }
+.ccard .where span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ccard .snip { margin: 0; padding: 2px 6px; border-radius: var(--radius-xs); background: var(--color-surface-2); font: var(--text-2xs)/1.6 var(--font-mono); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.ccard .snip.old { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--color-muted) 60%, transparent); }
+.ccard .mh { display: flex; align-items: center; gap: 6px; }
+.ccard p { margin: 0; }
+.rail-note { font-size: var(--text-xs); color: var(--color-muted); }
+.newbar { flex: none; display: flex; align-items: center; gap: var(--space-2); padding: 6px var(--space-4); background: color-mix(in srgb, var(--color-info) 10%, var(--color-surface)); border-bottom: 1px solid var(--color-border); border-left: 3px solid var(--color-info); font-size: var(--text-sm); }
+.noaccess { max-width: 760px; }
+.narrow-note { display: none; }
+
+/* Desktop only: under the touch shell's breakpoint there is no Changes section and no Changes page. */
+@media (max-width: 900px) {
+  .changes-sec { display: none !important; }
+  .cv-head, .cv, .newbar { display: none !important; }
+  .narrow-note { display: grid; gap: var(--space-2); padding: var(--space-4); font-size: var(--text-base); }
+  .wi-split { grid-template-columns: minmax(0, 1fr); }
+  .wi-side { display: none; }
+  .fields { flex-wrap: wrap; }
+  .wi-title { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<div id="page" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+
+<script>
+(() => {
+  const { people, esc, av, tIcon, st, toast } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view') || 'review';
+  const state = params.get('state') || '';
+  const BUG = params.get('item') === 'bug';
+  const crumbs = view === 'task' ? (BUG ? ['Backlogs', 'SHIP-153'] : ['Backlogs', 'SHIP-141', 'SHIP-171']) : ['Backlogs', 'SHIP-141', 'SHIP-171', 'Changes'];
+  $('appbar').outerHTML = SL.appBar('backlogs')
+    .replace(/<nav class="crumbs"[^]*?<\/nav>/, `<nav class="crumbs" aria-label="You are here"><span>SHIP</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>`);
+
+  const agentAv = '<span class="agent" title="Claude Code (agent)">AI</span>';
+  const bars = (a, d) => { const t = a + d || 1, n = 5, ga = Math.round(a / t * n), gd = Math.min(n - ga, Math.round(d / t * n)); return `<span class="bars" aria-hidden="true">${'<i class="a"></i>'.repeat(ga)}${'<i class="d"></i>'.repeat(gd)}${'<i></i>'.repeat(n - ga - gd)}</span>`; };
+
+  /* ---------------- Sample data ---------------- */
+  const REPO = 'acme/storefront';
+  const commits = [
+    { sha: '3f9c2a17e4b0d6c58a1f20e7b9d4c3a6f1e08b52', subj: 'SHIP-171: Card lookup returns brand, last four and expiry', when: 'Thu 22 Oct, 16:41', a: 105, d: 12 },
+    { sha: 'a81d4e09c7f3b2165e0d9a4c8b7f1e3d2c6a5b90', subj: 'SHIP-171: 503 when the vault is down; retry once on 429', when: 'Thu 22 Oct, 17:05', a: 46, d: 8 },
+    { sha: 'c27e8b5d1a09f4e6b3c8d7a2e5f1b0c9d4e3a871', subj: 'SHIP-171: Client types and the vault notes', when: 'Thu 22 Oct, 17:22', a: 63, d: 41 },
+  ];
+  const newCommit = { sha: 'e5b1c9047d2a8f3e6c0b4d9a7e2f1c8b3d6a0f94', subj: 'SHIP-171: Expiry compared in UTC through TimeProvider', when: 'Fri 23 Oct, 09:12', a: 3, d: 2 };
+
+  // Diff lines: [kind, oldLine, newLine, text]; kind: c (context), a (added), d (deleted), h (hunk), f (fold: text = how many lines)
+  const files = [
+    { path: 'docs/vault.md', st: 'M', a: 9, d: 41, viewed: true, lang: 'md' },
+    { path: 'src/Storefront.Api/Cards/CardsController.cs', st: 'M', lang: 'cs', lines: [
+      ['h', 0, 0, '@@ -9,8 +9,22 @@ namespace Storefront.Api.Cards;'],
+      ['c', 9, 9, '[Route("api/cards")]'],
+      ['d', 10, 0, 'public sealed class CardsController(IVaultClient vault) : ApiControllerBase'],
+      ['a', 0, 10, 'public sealed class CardsController(ICardLookup cards) : ApiControllerBase'],
+      ['c', 11, 11, '{'],
+      ['c', 12, 12, '    [HttpGet]'],
+      ['d', 13, 0, '    public Task<IActionResult> List(CancellationToken ct) => vault.ListAsync(ct);'],
+      ['a', 0, 13, '    [ProducesResponseType<IReadOnlyList<CardSummary>>(StatusCodes.Status200OK)]'],
+      ['a', 0, 14, '    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]'],
+      ['a', 0, 15, '    public async Task<IActionResult> List(CancellationToken ct)'],
+      ['a', 0, 16, '    {'],
+      ['a', 0, 17, '        var result = await cards.ForCustomerAsync(User.CustomerId(), ct);'],
+      ['a', 0, 18, '        return result switch'],
+      ['a', 0, 19, '        {'],
+      ['a', 0, 20, '            CardLookupResult.Found found => Ok(found.Cards),'],
+      ['a', 0, 21, '            CardLookupResult.Empty => Ok(Array.Empty<CardSummary>()),'],
+      ['a', 0, 22, '            CardLookupResult.VaultDown => StatusCode(StatusCodes.Status503ServiceUnavailable),'],
+      ['a', 0, 23, '            _ => throw new UnreachableException(),'],
+      ['a', 0, 24, '        };'],
+      ['a', 0, 25, '    }'],
+      ['c', 14, 26, '}'],
+    ] },
+    { path: 'src/Storefront.Api/Cards/CardsModule.cs', st: 'M', a: 3, d: 1, viewed: true, lang: 'cs' },
+    { path: 'src/Storefront.Vault/CardLookup.cs', st: 'A', lang: 'cs', lines: [
+      ['h', 0, 0, '@@ -0,0 +1,31 @@'],
+      ...[
+        'namespace Storefront.Vault;',
+        '',
+        '// Reads a customer\'s saved cards from the vault as brand, last four and expiry.',
+        '// We never see the card number: the vault returns tokens only.',
+        'public sealed class CardLookup(IVaultClient vault, TimeProvider clock) : ICardLookup',
+        '{',
+        '    public async Task<CardLookupResult> ForCustomerAsync(CustomerId customer, CancellationToken ct)',
+        '    {',
+        '        VaultCards cards;',
+        '        try',
+        '        {',
+        '            cards = await vault.ListAsync(customer, ct);',
+        '        }',
+        '        catch (VaultUnavailableException)',
+        '        {',
+        '            return new CardLookupResult.VaultDown();',
+        '        }',
+        '',
+        '        if (cards.Items.Count == 0)',
+        '        {',
+        '            return new CardLookupResult.Empty();',
+        '        }',
+        '',
+        '        var today = DateOnly.FromDateTime(DateTime.Now);',
+        '        return new CardLookupResult.Found([',
+        '            .. cards.Items',
+        '                .OrderByDescending(c => c.LastUsedAt)',
+        '                .Select(c => new CardSummary(c.Token, c.Brand, c.Last4, c.Expiry, Expired: c.Expiry < today)),',
+        '        ]);',
+        '    }',
+        '}',
+      ].map((t, i) => ['a', 0, i + 1, t]),
+    ] },
+    { path: 'src/Storefront.Vault/CardSummary.cs', st: 'A', a: 14, d: 0, viewed: true, lang: 'cs' },
+    { path: 'src/Storefront.Vault/VaultClient.cs', st: 'M', lang: 'cs', lines: [
+      ['h', 0, 0, '@@ -18,6 +18,16 @@ public sealed class VaultClient(HttpClient http) : IVaultClient'],
+      ['c', 18, 18, '    public async Task<VaultCards> ListAsync(CustomerId customer, CancellationToken ct)'],
+      ['c', 19, 19, '    {'],
+      ['d', 20, 0, '        var response = await http.GetAsync($"customers/{customer}/cards", ct);'],
+      ['a', 0, 20, '        using var response = await SendWithRetryAsync(() => new HttpRequestMessage(HttpMethod.Get, $"customers/{customer}/cards"), ct);'],
+      ['a', 0, 21, '        if (response.StatusCode is HttpStatusCode.ServiceUnavailable) throw new VaultUnavailableException();'],
+      ['c', 21, 22, '        response.EnsureSuccessStatusCode();'],
+      ['c', 22, 23, '        return (await response.Content.ReadFromJsonAsync<VaultCards>(ct))!;'],
+      ['c', 23, 24, '    }'],
+      ['a', 0, 25, ''],
+      ['a', 0, 26, '    // The vault asks for one retry after Retry-After on 429, then gives up.'],
+      ['a', 0, 27, '    private async Task<HttpResponseMessage> SendWithRetryAsync(Func<HttpRequestMessage> request, CancellationToken ct)'],
+      ['a', 0, 28, '    {'],
+      ['a', 0, 29, '        var first = await http.SendAsync(request(), ct);'],
+      ['a', 0, 30, '        if (first.StatusCode != HttpStatusCode.TooManyRequests) return first;'],
+      ['a', 0, 31, '        await Task.Delay(first.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1), ct);'],
+      ['a', 0, 32, '        return await http.SendAsync(request(), ct);'],
+      ['a', 0, 33, '    }'],
+      ['f', 0, 0, '41'],
+    ] },
+    { path: 'tests/Storefront.Vault.Tests/CardLookupTests.cs', st: 'A', a: 71, d: 0, lang: 'cs', lines: [
+      ['h', 0, 0, '@@ -0,0 +1,71 @@'],
+      ...[
+        'namespace Storefront.Vault.Tests;',
+        '',
+        'public sealed class CardLookupTests',
+        '{',
+        '    [Fact]',
+        '    public async Task ForCustomerAsync_WhenTheVaultIsDown_ShouldReturnVaultDown()',
+        '    {',
+        '        var lookup = new CardLookup(new DownVault(), TimeProvider.System);',
+        '',
+        '        var result = await lookup.ForCustomerAsync(Customers.Priya, CancellationToken.None);',
+        '',
+        '        Assert.IsType<CardLookupResult.VaultDown>(result);',
+        '    }',
+      ].map((t, i) => ['a', 0, i + 1, t]),
+      ['f', 0, 0, '58'],
+    ] },
+    { path: 'web/src/api/cards.ts', st: 'M', lang: 'ts', lines: [
+      ['h', 0, 0, '@@ -1,8 +1,14 @@'],
+      ['c', 1, 1, "import { get } from './http';"],
+      ['c', 2, 2, ''],
+      ['d', 3, 0, 'export type Card = { token: string; brand: string; last4: string };'],
+      ['a', 0, 3, 'export type CardSummary = {'],
+      ['a', 0, 4, '  token: string;'],
+      ['a', 0, 5, "  brand: 'visa' | 'mastercard' | 'amex';"],
+      ['a', 0, 6, '  last4: string;'],
+      ['a', 0, 7, '  expiry: string; // yyyy-MM, UTC'],
+      ['a', 0, 8, '  expired: boolean;'],
+      ['a', 0, 9, '};'],
+      ['c', 4, 10, ''],
+      ['d', 5, 0, 'export async function listCards(): Promise<Card[]> {'],
+      ['d', 6, 0, "  const res = await get<Card[]>('/api/cards');"],
+      ['d', 7, 0, '  return res ?? [];'],
+      ['a', 0, 11, "export async function listCards(): Promise<CardSummary[] | 'vault-down'> {"],
+      ['a', 0, 12, "  const res = await get<CardSummary[]>('/api/cards', { allow: [503] });"],
+      ['a', 0, 13, "  return res.status === 503 ? 'vault-down' : res.body;"],
+      ['c', 8, 14, '}'],
+    ] },
+  ];
+  files.forEach((f, i) => {
+    f.id = 'f' + i;
+    if (f.lines && f.a === undefined) { f.a = f.lines.filter(l => l[0] === 'a').length; f.d = f.lines.filter(l => l[0] === 'd').length; }
+  });
+
+  // Comment threads, anchored to a commit sha + path + side + line.
+  let threads = [
+    { id: 'c1', file: 1, side: 'new', line: 21, sha: 'a81d4e0', resolved: false, msgs: [
+      { who: 'tom', when: 'Fri 23 Oct, 08:40', body: 'Empty and Found both return 200 here. The picker already treats [] as "no saved cards", so that\'s fine, but say so in docs/vault.md: the old notes promised a 404.' },
+    ] },
+    { id: 'c2', file: 3, side: 'new', line: 24, sha: 'a81d4e0', resolved: false, msgs: [
+      { who: 'ana', when: 'Fri 23 Oct, 08:52', body: 'DateTime.Now is local time, and the clock passed in is never used. Compare in UTC through clock.GetUtcNow(), or a card expires a day early in some time zones.' },
+    ] },
+    { id: 'c3', file: 5, side: 'new', line: 30, sha: 'a81d4e0', resolved: true, resolvedBy: 'priya', msgs: [
+      { who: 'mei', when: 'Thu 22 Oct, 18:10', body: 'Matches the vault\'s 429 guidance: one retry after Retry-After.' },
+      { who: 'priya', when: 'Thu 22 Oct, 18:31', body: 'Agreed, resolving.' },
+    ] },
+  ];
+  if (state === 'outdated') { threads[1].outdated = true; threads[1].oldText = '        var today = DateOnly.FromDateTime(DateTime.Now);'; }
+
+  /* ---------------- Syntax colouring (enough for a mock-up) ---------------- */
+  const KW = /^(namespace|public|private|internal|sealed|class|record|async|await|var|return|new|using|if|else|try|catch|throw|static|readonly|import|export|from|type|function|const|let|string|boolean|bool|int|void|null|true|false|switch|is|default)$/;
+  function hl(text, lang) {
+    if (lang === 'md') return esc(text);
+    let out = '', m;
+    const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*"|\$"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([A-Za-z_][A-Za-z0-9_]*)|(\d+)|([^A-Za-z0-9_"'/$]+|.)/g;
+    while ((m = re.exec(text))) {
+      if (m[1]) out += `<span class="c">${esc(m[1])}</span>`;
+      else if (m[2]) out += `<span class="s">${esc(m[2])}</span>`;
+      else if (m[3]) out += KW.test(m[3]) ? `<span class="k">${m[3]}</span>` : /^[A-Z]/.test(m[3]) ? `<span class="t">${m[3]}</span>` : m[3];
+      else if (m[4]) out += `<span class="nm">${m[4]}</span>`;
+      else out += esc(m[5]);
+    }
+    return out;
+  }
+
+  const ui = { mode: state === 'split' ? 'split' : 'unified', commit: 'all', tab: 'open', compose: state === 'compose' ? { file: 1, line: 22 } : null, menu: state === 'commits', sel: null };
+  if (ui.compose) ui.sel = { file: ui.compose.file, line: ui.compose.line };
+
+  /* ---------------- Task page ---------------- */
+  function taskPage() {
+    const empty = state === 'empty';
+    const tot = commits.reduce((s, c) => ({ a: s.a + c.a, d: s.d + c.d }), { a: 0, d: 0 });
+    const open = threads.filter(t => !t.resolved).length;
+    const changes = empty ? `
+      <section class="sec changes-sec" data-testid="task-changes">
+        <div class="sec-h"><h2>Changes</h2><span class="sum">No commits yet</span><span class="spacer"></span><button class="btn tiny" type="button" id="addCommitBtn">+ Add commit</button></div>
+        <div class="empty-box">
+          <span>When an agent finishes this task it sends the commits it made, and they show here with their diff. Tasks and Bugs take commits; Stories and Features don't.</span>
+          <span>Agents send them with <code>report_task</code> (tasks of a plan) or <code>add_commits</code> (any task or bug). People add one with <b>+ Add commit</b>.</span>
+        </div>
+        <form class="add-commit" id="addCommit" onsubmit="return false">
+          <label>Repository<input class="field mono" value="github.com/${REPO}" aria-label="Repository"></label>
+          <label>Commit sha or URL<input class="field mono" value="3f9c2a17e4b0d6c58a1f20e7b9d4c3a6f1e08b52" aria-label="Commit sha or URL"></label>
+          <button class="btn primary" type="button">Add commit</button>
+          <button class="btn ghost" type="button">Cancel</button>
+          <span class="hint">✓ <b>3f9c2a1</b> SHIP-171: Card lookup returns brand, last four and expiry · Claude Code · +105 −12. Any repository the instance's GitHub or GitLab token can read.</span>
+        </form>
+      </section>` : `
+      <section class="sec changes-sec" data-testid="task-changes">
+        <div class="sec-h"><h2>Changes</h2>
+          <span class="sum">${commits.length} commits · ${files.length} files · <span class="plus">+${tot.a}</span> <span class="minus">−${tot.d}</span></span>
+          <span class="spacer"></span>
+          ${open ? `<span class="pill warn">${open} open comments</span>` : ''}
+          <span class="prog"><span class="track"><i style="width:${3 / 8 * 100}%"></i></span>3 / 8 files viewed</span>
+          <a class="btn primary" href="?view=review${params.has('theme') ? '&theme=' + params.get('theme') : ''}">Review changes</a>
+        </div>
+        <div class="box"><table class="commits">${commits.map(c => `<tr>
+          <td><a class="sha" href="#" title="${c.sha}">${c.sha.slice(0, 7)}</a></td>
+          <td class="subj" title="${esc(c.subj)}">${esc(BUG ? c.subj.replace('SHIP-171', 'SHIP-153') : c.subj)}</td>
+          <td><span class="pill">${REPO}</span></td>
+          <td><span class="who">${agentAv}Claude Code</span></td>
+          <td class="muted sm">${c.when}</td>
+          <td class="num"><span class="plus">+${c.a}</span> <span class="minus">−${c.d}</span></td>
+          <td>${bars(c.a, c.d)}</td></tr>`).join('')}</table></div>
+        <div class="changes-foot"><span>Sent by Claude Code (agent) through <code>report_task</code>, Thu 22 Oct, 17:24</span><span class="spacer"></span><span>Pull request <a href="#">#433</a> is open</span></div>
+      </section>`;
+    $('page').innerHTML = `
+      <section class="wi-head" aria-label="Work item header">
+        <div class="wi-top"><a class="back" href="#">${BUG ? '← Back to Stories backlog' : '← Back to SHIP-141 Pay with saved card'}</a><span class="spacer"></span><span class="xs muted">Created by Priya Shah, Mon 19 Oct · Changed by Claude Code (agent), Thu 22 Oct, 17:24 · revision 5</span></div>
+        <div class="wi-title"><span class="ident">${BUG ? `${tIcon('bug')} Bug <span class="mono">SHIP-153</span>` : `${tIcon('task')} Task <span class="mono">SHIP-171</span>`}</span><h1>${BUG ? 'Card picker spins forever when the vault times out' : 'API: tokenised card lookup'}</h1><span class="xs muted">Saved · revision 5</span><button class="btn primary" type="button" disabled style="opacity:.45">Save</button></div>
+      </section>
+      <div class="fields">
+        <div class="fcell"><span class="lbl">State</span><span class="fval">${st(empty ? 'Active' : 'In review')} <span class="muted xs">▾</span></span></div>
+        <div class="fcell"><span class="lbl">Assignee</span><span class="fval">${av('priya')} Priya Shah</span></div>
+        <div class="fcell"><span class="lbl">Sprint</span><span class="fval">Sprint 24 (current)</span></div>
+        ${BUG ? '<div class="fcell"><span class="lbl">Severity</span><span class="fval">2 · High</span></div><div class="fcell"><span class="lbl">Parent</span><span class="fval">' + tIcon('feature') + ' Checkout v2</span></div>' : `<div class="fcell"><span class="lbl">Remaining</span><span class="fval">2 h</span></div>
+        <div class="fcell"><span class="lbl">Parent</span><span class="fval">${tIcon('story')} SHIP-141 Pay with saved card</span></div>`}
+        <div class="fcell"><span class="lbl">Tags</span><span class="fval">${BUG ? '<span class="chip">Checkout</span>' : '<span class="chip">wave:1</span><span class="chip">lane:api</span>'}</span></div>
+      </div>
+      <div class="split wi-split">
+        <div class="scroll wi-main">
+          <section class="sec"><div class="sec-h"><h2>Description</h2></div>
+            <div class="md"><p>${BUG ? 'The saved-card picker shows its spinner forever when the vault takes more than 10 s. It should fall back to the new-card form. Fixed without tasks, so the commits sit on the bug.' : "Look up a customer's saved cards from the vault and return brand, last four and expiry from <code>GET /api/cards</code>. Answer 503 when the vault is down so the picker can fall back to the new-card form."}</p></div></section>
+          ${changes}
+          <section class="sec"><div class="sec-h"><h2>Discussion</h2><span class="cnt">1</span></div>
+            <div class="cm">${agentAv}<div><div class="cm-h"><b>Claude Code</b><span class="xs muted">(agent) · Thu 22 Oct, 17:24</span></div>
+              ${empty ? '<p style="margin:2px 0 0">Started on the lookup; the vault client needs a retry on 429 first.</p>' : '<pre>Report: done\nCommits: 3f9c2a1, a81d4e0, c27e8b5\nTests: dotnet test --filter CardLookup · 9 passed, 0 failed · 14 s\nPull request: https://github.com/acme/storefront/pull/433</pre>'}</div></div>
+          </section>
+        </div>
+        <aside class="rail wi-side" aria-label="Links, attachments and history">
+          <section><div class="sec-h2"><span class="overline">Links</span><span class="cnt">${empty ? 0 : 1}</span><span class="spacer"></span><button class="btn ghost tiny" type="button">+ Add link</button></div>
+            ${empty ? '<p class="xs muted" style="margin:4px 0 0">No links.</p>' : `<div class="overline" style="margin:8px 0 4px">Code</div>
+            <div class="lcard"><div class="t"><span class="prov">GH</span><b>#433</b> Tokenised card lookup<span class="spacer"></span><span class="pill info">Open</span></div><span class="xs muted">${REPO} · Claude Code · <span style="color:var(--color-ok)">●</span> live</span></div>
+            <p class="xs muted" style="margin:6px 0 0">Commits now sit under <b>Changes</b>, not here.</p>`}
+          </section>
+          <section><div class="sec-h2"><span class="overline">Attachments</span><span class="cnt">0</span><span class="spacer"></span><button class="btn ghost tiny" type="button">+ Attach</button></div></section>
+          <section><div class="sec-h2"><span class="overline">History</span><span class="cnt">5 revisions</span></div>
+            <ul class="hist" style="margin-top:8px">${empty ? `<li><span class="rev">2</span><div>${av('priya')} <b>Priya Shah</b> <span class="xs muted">Thu 22 Oct, 14:02</span><div class="ch">State New → <b>Active</b></div></div></li>` : `
+              <li><span class="rev">5</span><div>${agentAv} <b>Claude Code</b> <span class="xs muted">Thu 22 Oct, 17:24</span><div class="ch">State Active → <b>In review</b></div><div class="ch">Commits <b>+3</b> (acme/storefront)</div></div></li>
+              <li><span class="rev">4</span><div>${av('priya')} <b>Priya Shah</b> <span class="xs muted">Thu 22 Oct, 14:02</span><div class="ch">State New → <b>Active</b></div></div></li>`}
+            </ul></section>
+        </aside>
+      </div>`;
+  }
+
+  /* ---------------- Changes page ---------------- */
+  function threadHtml(t) {
+    if (t.resolved) return `<div class="thread resolved"><div class="rsum">✓ Resolved by ${people[t.resolvedBy].name} · ${t.msgs.length} comments · <span style="color:var(--color-accent)">Show</span></div></div>`;
+    return `<div class="thread" id="th-${t.id}">${t.msgs.map(m => `<div class="msg">${av(m.who)}<div><div class="mh"><b>${people[m.who].name}</b><span class="xs muted">${m.when}</span>${t.outdated ? '<span class="pill warn">Outdated</span>' : ''}</div><div>${esc(m.body)}</div></div></div>`).join('')}
+      <div class="acts"><button class="btn tiny" type="button">Reply</button><button class="btn tiny" type="button" data-resolve="${t.id}">Resolve</button><span class="spacer"></span><span class="xs muted">on ${t.sha}</span></div></div>`;
+  }
+  function composerHtml(fi, line) {
+    return `<div class="composer" id="composer"><span class="anch">Comment on ${files[fi].path.split('/').pop()} line ${line} (new) · ${commits[1].sha.slice(0, 7)}</span>
+      <textarea id="cmText" aria-label="Comment">${state === 'compose' ? 'Say why 503 and not 502 in docs/vault.md; the picker falls back on either, but the next person will ask.' : ''}</textarea>
+      <div class="row"><span class="draft">${state === 'compose' ? 'Draft saved' : ''}</span><button class="btn ghost" type="button" data-cancel>Cancel</button><button class="btn primary" type="button" data-post>Comment</button></div></div>`;
+  }
+  function unifiedRows(f, fi) {
+    const cols = 4;
+    return f.lines.map(([k, o, n, t]) => {
+      if (k === 'h') return `<tr class="hunk"><td colspan="2"></td><td></td><td class="code">${esc(t)}</td></tr>`;
+      if (k === 'f') return `<tr class="fold"><td colspan="${cols}">↕ Show ${t} more lines</td></tr>`;
+      const sel = ui.sel && ui.sel.file === fi && ui.sel.line === n && k !== 'd';
+      let row = `<tr class="${k === 'a' ? 'add' : k === 'd' ? 'del' : 'ctx'}${sel ? ' sel' : ''}" data-f="${fi}" data-n="${n}">
+        <td class="ln o">${o || ''}</td><td class="ln n">${k !== 'd' ? `<button class="addc" type="button" aria-label="Comment on line ${n}" data-add="${fi}:${n}">+</button>` : ''}${n || ''}</td>
+        <td class="sg">${k === 'a' ? '+' : k === 'd' ? '−' : ''}</td><td class="code">${hl(t, f.lang) || ' '}</td></tr>`;
+      threads.filter(th => th.file === fi && th.line === n && k !== 'd' && !th.outdated).forEach(th => { row += `<tr class="thr"><td colspan="${cols}">${threadHtml(th)}</td></tr>`; });
+      if (ui.compose && ui.compose.file === fi && ui.compose.line === n && k !== 'd') row += `<tr class="thr"><td colspan="${cols}">${composerHtml(fi, n)}</td></tr>`;
+      return row;
+    }).join('');
+  }
+  function splitRows(f, fi) {
+    const out = []; let i = 0; const L = f.lines;
+    while (i < L.length) {
+      const [k, o, n, t] = L[i];
+      if (k === 'h') { out.push(`<tr class="hunk"><td class="ln"></td><td class="code" colspan="3">${esc(t)}</td></tr>`); i++; continue; }
+      if (k === 'f') { out.push(`<tr class="fold"><td colspan="4">↕ Show ${t} more lines</td></tr>`); i++; continue; }
+      if (k === 'c') { out.push(`<tr class="ctx"><td class="ln">${o}</td><td class="code">${hl(t, f.lang) || ' '}</td><td class="ln">${n}</td><td class="code">${hl(t, f.lang) || ' '}</td></tr>`); i++; continue; }
+      const dels = [], adds = [];
+      while (i < L.length && L[i][0] === 'd') dels.push(L[i++]);
+      while (i < L.length && L[i][0] === 'a') adds.push(L[i++]);
+      for (let j = 0; j < Math.max(dels.length, adds.length); j++) {
+        const d = dels[j], a = adds[j];
+        out.push(`<tr><td class="ln ${d ? 'dl-' : 'e'}" style="${d ? 'background:color-mix(in srgb,var(--color-danger) 18%,transparent)' : ''}">${d ? d[1] : ''}</td><td class="code ${d ? '' : 'e'}" style="${d ? 'background:color-mix(in srgb,var(--color-danger) 10%,transparent)' : ''}">${d ? hl(d[3], f.lang) || ' ' : ''}</td>
+          <td class="ln ${a ? '' : 'e'}" style="${a ? 'background:color-mix(in srgb,var(--color-ok) 20%,transparent)' : ''}">${a ? a[2] : ''}</td><td class="code ${a ? '' : 'e'}" style="${a ? 'background:color-mix(in srgb,var(--color-ok) 11%,transparent)' : ''}">${a ? hl(a[3], f.lang) || ' ' : ''}</td></tr>`);
+        if (a) threads.filter(th => th.file === fi && th.line === a[2] && !th.outdated).forEach(th => out.push(`<tr class="thr"><td colspan="4" style="padding-left:var(--space-3)">${threadHtml(th)}</td></tr>`));
+      }
+    }
+    return out.join('');
+  }
+  function fileHtml(f, fi) {
+    const dir = f.path.split('/').slice(0, -1).join('/') + '/', name = f.path.split('/').pop();
+    const collapsed = f.viewed || !f.lines;
+    const body = collapsed ? `<div class="collapsed-note">${f.viewed ? 'Viewed in this browser. Collapsed until it changes again.' : ''}</div>`
+      : ui.mode === 'split' ? `<table class="dl sbs"><colgroup><col style="width:46px"><col style="width:calc(50% - 46px)"><col style="width:46px"><col style="width:calc(50% - 46px)"></colgroup>${splitRows(f, fi)}</table>`
+      : `<table class="dl"><colgroup><col class="ln"><col class="ln"><col class="sg"><col></colgroup>${unifiedRows(f, fi)}</table>`;
+    return `<section class="df${collapsed ? ' collapsed' : ''}" id="${f.id}" data-testid="diff-file">
+      <header class="df-h"><button class="chev" type="button" aria-label="${collapsed ? 'Expand' : 'Collapse'}">${collapsed ? '▸' : '▾'}</button>
+        <span class="fs ${f.st}">${f.st}</span><span class="path"><span>${esc(dir)}</span><b>${esc(name)}</b></span>
+        <span class="plus">+${f.a}</span><span class="minus">−${f.d}</span>
+        <span class="spacer"></span><a class="ext" href="#" title="Open this file at c27e8b5 on GitHub">GitHub ↗</a>
+        <label class="check"><input type="checkbox" ${f.viewed ? 'checked' : ''} data-viewed="${fi}"> Viewed</label></header>
+      ${collapsed ? '' : body}</section>`;
+  }
+  function treeHtml() {
+    const rows = []; let lastDir = null;
+    files.forEach((f, fi) => {
+      const parts = f.path.split('/'), dir = parts.slice(0, -1).join('/');
+      if (dir !== lastDir) { rows.push(`<div class="dir" style="--d:0">▾ ${esc(dir)}</div>`); lastDir = dir; }
+      const n = threads.filter(t => t.file === fi && !t.resolved).length;
+      rows.push(`<button class="file${f.viewed ? ' viewed' : ''}" type="button" data-go="${f.id}" style="--d:1"><span class="fs ${f.st}">${f.st}</span><span class="n">${esc(parts.at(-1))}</span>${n ? `<span class="cbub" title="${n} open">${n}</span>` : '<span></span>'}<span class="vtick">${f.viewed ? '✓' : ''}</span></button>`);
+    });
+    return `<div class="th"><span class="overline">Files</span><span class="cnt">${files.length}</span><span class="spacer"></span><span class="xs muted">${files.filter(f => f.viewed).length} viewed</span></div>${rows.join('')}`;
+  }
+  function railHtml() {
+    const open = threads.filter(t => !t.resolved), list = ui.tab === 'open' ? open : threads;
+    return `<div class="sec-h2"><span class="overline">Comments</span><span class="spacer"></span></div>
+      <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="${ui.tab === 'open'}" data-tab="open">Open (${open.length})</button><button class="tab" role="tab" aria-selected="${ui.tab === 'all'}" data-tab="all">All (${threads.length})</button></div>
+      ${list.map(t => { const f = files[t.file], line = f.lines?.find(l => l[2] === t.line); return `<div class="ccard" data-jump="${t.id}" data-file="${f.id}">
+        <div class="where"><span>${esc(f.path.split('/').pop())}:${t.line}</span><span class="spacer"></span>${t.outdated ? '<span class="pill warn">Outdated</span>' : t.resolved ? '<span class="pill ok">Resolved</span>' : ''}</div>
+        <pre class="snip${t.outdated ? ' old' : ''}">${esc((t.oldText || (line ? line[3] : '')).trim())}</pre>
+        <div class="mh">${av(t.msgs[0].who)}<b>${people[t.msgs[0].who].name}</b><span class="xs muted">${t.msgs[0].when.split(', ')[0]}</span>${t.msgs.length > 1 ? `<span class="xs muted">· ${t.msgs.length - 1} reply</span>` : ''}</div>
+        <p>${esc(t.msgs[0].body)}</p>
+        ${t.outdated ? '<span class="xs muted">The line changed in e5b1c90. Resolve it, or reply to keep it open.</span>' : ''}</div>`; }).join('')}
+      <p class="rail-note">Comments stay in ShipLean, on SHIP-171. <b>Request changes</b> sends the open ones back with the task, so the next agent to pick it up gets them in its brief.</p>`;
+  }
+  function commitMenu() {
+    if (!ui.menu) return '';
+    const list = state === 'outdated' ? [...commits, newCommit] : commits;
+    return `<div class="menu" role="listbox" aria-label="Commits">
+      <div class="grp">Show</div>
+      <button class="opt hi" type="button"><span class="tick">✓</span><span><b>All ${list.length}</b></span><span class="cs">Combined diff, ${list[0].sha.slice(0, 7)}^ … ${list.at(-1).sha.slice(0, 7)}</span><span><span class="plus">+214</span> <span class="minus">−61</span></span></button>
+      <div class="grp">One commit</div>
+      ${list.map(c => `<button class="opt" type="button"><span></span><span class="sha">${c.sha.slice(0, 7)}</span><span class="cs">${esc(c.subj.replace('SHIP-171: ', ''))}</span><span><span class="plus">+${c.a}</span> <span class="minus">−${c.d}</span></span></button>`).join('')}
+      <div class="foot">These commits follow one another, so <b>All</b> is one diff. When another task's commits sit between them, <b>All</b> lists each commit's diff in turn instead.</div></div>`;
+  }
+  function reviewPage() {
+    const open = threads.filter(t => !t.resolved).length;
+    const list = state === 'outdated' ? [...commits, newCommit] : commits;
+    const banner = state === 'outdated' ? `<div class="newbar"><b>1 new commit since you last looked in this browser</b> (e5b1c90, Fri 23 Oct, 09:12 by Claude Code). 1 file changed again, so it's no longer marked viewed; 1 comment is outdated.<span class="spacer"></span><button class="btn tiny" type="button">Show only what's new</button></div>` : '';
+    const noaccess = state === 'noaccess';
+    $('page').innerHTML = `
+      <div class="narrow-note"><b>Changes need a wider screen.</b><span class="muted">Open SHIP-171's changes on a computer. On a phone the task shows without them.</span><a href="?view=task">← Back to SHIP-171</a></div>
+      <section class="cv-head">
+        <div class="wi-top"><a class="back" href="?view=task${params.has('theme') ? '&theme=' + params.get('theme') : ''}">← Back to SHIP-171</a><span class="spacer"></span><span class="xs muted">Task of ${tIcon('story')} SHIP-141 Pay with saved card · ${av('priya')} Priya Shah</span></div>
+        <div class="cv-title">${tIcon('task')}<span class="mono sm">SHIP-171</span><h1>API: tokenised card lookup</h1>${st('In review')}</div>
+        <div class="cv-bar">
+          <span class="pick-wrap"><button class="btn" type="button" id="pick" aria-expanded="${ui.menu}">All ${list.length} commits ▾</button>${commitMenu()}</span>
+          <span class="pill">github.com/${REPO}</span>
+          <span class="sm muted">${files.length} files · <span class="plus">+214</span> <span class="minus">−61</span></span>
+          <span class="sep"></span>
+          <span class="seg" role="group" aria-label="Layout"><button type="button" data-mode="unified" aria-pressed="${ui.mode === 'unified'}">Unified</button><button type="button" data-mode="split" aria-pressed="${ui.mode === 'split'}">Split</button></span>
+          <label class="check"><input type="checkbox"> Hide whitespace</label>
+          <span class="spacer"></span>
+          <span class="prog" title="Viewed is kept in this browser"><span class="track"><i style="width:${3 / 8 * 100}%"></i></span>3 / 8 viewed</span>
+          <button class="btn" type="button" id="approve">Approve</button>
+          <button class="btn primary" type="button" id="request" ${open ? '' : 'disabled'}>Request changes${open ? ` · ${open}` : ''}</button>
+        </div>
+      </section>
+      ${banner}
+      <div class="cv">
+        <nav class="tree" aria-label="Changed files">${treeHtml()}</nav>
+        <div class="diffs" id="diffs">${noaccess ? `<div class="callout warn noaccess"><b>ShipLean can't read github.com/${REPO}.</b>The instance's GitHub token was refused (401) when this page asked for the diff, so there's none to show. An instance admin replaces the token in Instance settings › Integrations; the diff loads on the next visit. A commit that no longer exists (squashed or force-pushed away) shows the same way, as <i>no longer on GitHub</i>. Each commit still opens on GitHub: ${commits.map(c => `<a class="sha" href="#">${c.sha.slice(0, 7)}</a>`).join(', ')}.</div>` : files.map(fileHtml).join('')}</div>
+        <aside class="cmts" aria-label="Comments">${railHtml()}</aside>
+      </div>
+      ${state === 'request' ? requestDialog() : ''}${state === 'approve' ? approveDialog() : ''}`;
+  }
+  function requestDialog() {
+    const open = threads.filter(t => !t.resolved);
+    return `<div class="backdrop"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rqT" style="width:min(620px,100%)">
+      <header><div><h2 id="rqT">Send SHIP-171 back with ${open.length} comments</h2><span class="sm muted">It goes back to <b>New</b> and is unassigned, so the next agent or person who picks it up gets these comments in its brief and answers them when it reports.</span></div></header>
+      <div class="body">
+        ${open.map(t => `<label class="check" style="align-items:flex-start;color:var(--color-text);white-space:normal"><input type="checkbox" checked style="margin-top:3px"><span><span class="mono xs muted">${esc(files[t.file].path)}:${t.line}</span><br>${esc(t.msgs[0].body)}</span></label>`).join('')}
+        <label style="display:grid;gap:4px" class="sm">Anything else for whoever picks it up <span class="muted xs">(optional, goes on the task as a comment)</span><textarea class="field" style="height:64px;padding:6px 8px">Fix both, then add a test for the expiry on the last day of the month.</textarea></label>
+        <label class="check"><input type="checkbox"> Keep Priya Shah assigned and leave it Active</label>
+      </div>
+      <footer><span class="xs muted">The 1 resolved comment stays resolved.</span><span class="spacer"></span><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="button" data-close data-sent>Send back</button></footer>
+    </div></div>`;
+  }
+  function approveDialog() {
+    return `<div class="backdrop"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="apT" style="width:min(560px,100%)">
+      <header><div><h2 id="apT">Approve and close SHIP-171?</h2><span class="sm muted">It moves from In review to <b>Closed</b>, and History records that you approved commits 3f9c2a1 … c27e8b5.</span></div></header>
+      <div class="body"><div class="callout warn"><b>2 comments are still open.</b>They stay open on the task and show on its page. Request changes instead if they need doing.</div></div>
+      <footer><span class="spacer"></span><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn primary" type="button" data-close>Approve and close</button></footer>
+    </div></div>`;
+  }
+
+  function render() { (view === 'task' ? taskPage : reviewPage)(); }
+  render();
+
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const go = t.closest('[data-go]'); if (go) { $(go.dataset.go)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const jump = t.closest('[data-jump]'); if (jump) { const el = $('th-' + jump.dataset.jump) || $(jump.dataset.file); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    const mode = t.closest('[data-mode]'); if (mode) { ui.mode = mode.dataset.mode; render(); return; }
+    const tab = t.closest('[data-tab]'); if (tab) { ui.tab = tab.dataset.tab; render(); return; }
+    if (t.id === 'pick') { ui.menu = !ui.menu; render(); return; }
+    const add = t.closest('[data-add]'); if (add) { const [fi, n] = add.dataset.add.split(':').map(Number); ui.compose = { file: fi, line: n }; ui.sel = { file: fi, line: n }; render(); $('cmText')?.focus(); return; }
+    if (t.closest('[data-cancel]')) { ui.compose = null; ui.sel = null; render(); return; }
+    if (t.closest('[data-post]')) { const text = $('cmText').value.trim(); if (!text) return; threads.push({ id: 'n' + threads.length, file: ui.compose.file, line: ui.compose.line, sha: 'c27e8b5', resolved: false, msgs: [{ who: 'priya', when: 'Just now', body: text }] }); ui.compose = null; ui.sel = null; render(); toast('Comment added to SHIP-171'); return; }
+    const res = t.closest('[data-resolve]'); if (res) { const th = threads.find(x => x.id === res.dataset.resolve); th.resolved = true; th.resolvedBy = 'priya'; render(); return; }
+    if (t.id === 'request') { $('page').insertAdjacentHTML('beforeend', requestDialog()); return; }
+    if (t.id === 'approve') { $('page').insertAdjacentHTML('beforeend', approveDialog()); return; }
+    if (t.closest('[data-close]')) { const sent = t.closest('[data-sent]'); t.closest('.backdrop').remove(); if (sent) toast('SHIP-171 is back in <b>New</b>, unassigned, with 2 comments in its brief'); return; }
+    if (ui.menu && !t.closest('.pick-wrap')) { ui.menu = false; render(); }
+  });
+  document.addEventListener('change', e => { const v = e.target.dataset.viewed; if (v !== undefined) { files[v].viewed = e.target.checked; render(); } });
+
+  SL.preview([
+    { label: 'Task page', run: () => { location.search = '?view=task'; } },
+    { label: 'Changes', run: () => { location.search = '?view=review'; } },
+    { label: 'Bug page', run: () => { location.search = '?view=task&item=bug'; } },
+  ]);
+})();
+</script>
+</body>
+</html>

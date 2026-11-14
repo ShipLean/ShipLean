@@ -45,6 +45,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `mobile/` | **Touch shell** (SHIP-713): the frame under 900px (drawer, top bar, project picker sheet, full-screen quick search), its review page `mobile/index.html`, phone images in light and dark, and today's phone screenshots. Also the **work item page** on a phone (SHIP-714): `mobile/work-item.html`, built in `screens/item-touch.css` and `item-touch.js`. The **backlogs** on a phone (SHIP-716): `mobile/backlogs.html`. The **Feature board** on a phone (SHIP-722): `mobile/feature-board.html`, built in `screens/feature-board-touch.css` and `feature-board-touch.js`. See [Touch shell](#touch-shell-ship-713) and [`mobile/README.md`](mobile/README.md). |
 | `mobileapp/` | **Native phone app** (epic SHIP-905, Feature SHIP-916): voice-first mock-ups of the work item, backlog, Feature board, retro, and install and setup (choosing the voice models), 50 states in light and dark at 390 × 844. Throwaway HTML on a small kit (`app.css`, `app.js`) over `tokens.css`; review page `mobileapp/index.html`, decisions and voice actions per area in `mobileapp/<area>.md`. See [`mobileapp/README.md`](mobileapp/README.md). |
 | `ship-907-web-screens.md` | **Web screens the phone app adds** (SHIP-907, S5): the `/mobile/sign-in` confirm page for the app's browser handoff (`mobile/device-sign-in.html`), **Your profile › Signed-in devices** (`screens/profile.html`) and **Health** on Features (`screens/feature.html`, `features.html`, `features-board.html`). States, decisions C1–C6, V1–V6 and H1–H9 (Joel, 9 Nov 2026), CT baselines. See [Web screens for the phone app](#web-screens-for-the-phone-app-ship-907). |
+| `screens/task-changes.html`, `ship-1460-task-changes.md` | **Task changes** (SHIP-1460, mockup for approval, not built yet): the commits a Task or Bug was done in, the Changes page with the diff and line comments, Approve and Request changes. Desktop only. `?view=task\|review`, `&item=bug`, `&state=empty\|compose\|commits\|split\|request\|approve\|outdated\|noaccess`. The data model, agent contract and decisions D1–D16 (Joel, 14 Nov 2026) are in the `.md`. See [Task changes](#task-changes-ship-1460). |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
 
@@ -510,6 +511,16 @@ The phone app adds three things to the web app. Everything is in [`ship-907-web-
 | Signed-in devices · Sign out | ![Signed-in devices, light](screens/profile-devices-signout.light.png) | ![Signed-in devices, dark](screens/profile-devices-signout.dark.png) |
 | Feature form · Health menu | ![Health menu, light](screens/feature-health-menu.light.png) | ![Health menu, dark](screens/feature-health-menu.dark.png) |
 | Features board · Health | ![Features board with health, light](screens/features-board.light.png) | ![Features board with health, dark](screens/features-board.dark.png) |
+
+## Task changes (SHIP-1460)
+
+A Task or Bug shows the commits it was done in, and **Review changes** opens their diff inside ShipLean with comments on lines. **Request changes** sends the open comments back with the work item to the next agent. Desktop only: under 900px the section isn't rendered, and the phone app never shows it. Everything is in [`ship-1460-task-changes.md`](ship-1460-task-changes.md): the states, the data model, the agent contract (`report_task` + `repo`, new `add_commits`, `open_code_comments` in briefs) and all 16 decisions (Joel, 14 Nov 2026). Not built.
+
+| Screen | Light | Dark |
+|---|---|---|
+| Task page · Changes | ![Task page with Changes, light](screens/task-changes-task.light.png) | ![Task page with Changes, dark](screens/task-changes-task.dark.png) |
+| Changes page | ![Changes page, light](screens/task-changes.light.png) | ![Changes page, dark](screens/task-changes.dark.png) |
+| Request changes | ![Request changes, light](screens/task-changes-request.light.png) | ![Request changes, dark](screens/task-changes-request.dark.png) |
 
 ## Your profile on a phone (SHIP-733)
 
