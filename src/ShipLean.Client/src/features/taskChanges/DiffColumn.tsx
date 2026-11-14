@@ -1,7 +1,7 @@
 import { PatchDiff } from '@pierre/diffs/react';
 import type { DiffLineAnnotation } from '@pierre/diffs';
 import type { CodeSide, DiffFileDto, DiffPartDto } from '@shiplean/core/api/taskChanges';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { currentThemeType, diffThemes, diffUnsafeCss } from './diffTheme';
 import { lineTextOf, parseFile, withHeader } from './diffLines';
@@ -32,6 +32,22 @@ const sideOf = (side: CodeSide) => (side === 'old' ? 'deletions' : 'additions');
 const codeSide = (side: 'deletions' | 'additions'): CodeSide =>
   side === 'deletions' ? 'old' : 'new';
 const shaOf = (part: DiffPartDto) => part.sha ?? part.headSha;
+
+// The file at the part's head on its host, from the repository URL the commit rows carry. Only GitHub and GitLab are known;
+// a deleted file has no blob at the head, and an unknown repo or provider gets no link.
+function hostLink(data: ChangesData, part: DiffPartDto, file: DiffFileDto) {
+  if (file.status === 'deleted') return null;
+  const commit = data.commits.find((c) => c.repo === part.repo);
+  if (!commit) return null;
+  const base = commit.repoUrl.replace(/\/+$/, '');
+  const blob =
+    commit.provider === 'gitlab' ? '/-/blob/' : commit.provider === 'github' ? '/blob/' : null;
+  if (blob === null) return null;
+  return {
+    href: `${base}${blob}${shaOf(part)}/${file.path}`,
+    host: commit.provider === 'gitlab' ? 'GitLab' : 'GitHub',
+  };
+}
 
 export function DiffColumn(props: DiffColumnProps) {
   const { data, openFile, scrollNonce } = props;
@@ -103,6 +119,7 @@ export function DiffColumn(props: DiffColumnProps) {
 function DiffFile({
   part,
   file,
+  data,
   viewed,
   layout,
   markers,
@@ -113,6 +130,10 @@ function DiffFile({
 }: DiffColumnProps & { part: DiffPartDto; file: DiffFileDto }) {
   const sha = shaOf(part);
   const done = isViewed(viewed, part.repo, file.path, file.patchId);
+  // Collapse is local to the page and separate from Viewed: a viewed file stays collapsed.
+  const [folded, setFolded] = useState(false);
+  const collapsed = done || folded;
+  const link = hostLink(data, part, file);
   const meta = useMemo(
     () => parseFile(file.patch, file.path, file.oldPath),
     [file.patch, file.path, file.oldPath],
@@ -149,14 +170,41 @@ function DiffFile({
       data-file-key={key}
       className="scroll-mt-3 overflow-hidden rounded-control border border-edge bg-panel"
     >
-      <header className="sticky top-0 z-[2] flex min-h-9 items-center gap-2 border-b border-edge bg-panel px-3 text-[length:var(--text-sm)]">
+      <header
+        className={`sticky top-0 z-[2] flex min-h-9 items-center gap-2 bg-panel px-3 text-[length:var(--text-sm)] ${collapsed ? '' : 'border-b border-edge'}`}
+      >
+        <button
+          type="button"
+          data-testid={ids.diffFileCollapse}
+          aria-label={collapsed ? 'Expand' : 'Collapse'}
+          aria-expanded={!collapsed}
+          disabled={done}
+          className="w-4 border-0 bg-transparent p-0 text-ink-muted"
+          onClick={() => setFolded(!folded)}
+        >
+          {collapsed ? '▸' : '▾'}
+        </button>
         <span className="min-w-0 truncate font-mono text-[length:var(--text-xs)]">
           {file.oldPath !== null && <span className="text-ink-muted">{file.oldPath} → </span>}
           {file.path}
         </span>
         <span className="text-[length:var(--text-xs)] text-good">+{file.additions}</span>
         <span className="text-[length:var(--text-xs)] text-alert">-{file.deletions}</span>
-        <label className="ml-auto flex items-center gap-1 text-[length:var(--text-xs)]">
+        {link && (
+          <a
+            data-testid={ids.diffFileHostLink}
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+            title={`Open this file at ${shortOf(part)} on ${link.host}`}
+            className="ml-auto text-[length:var(--text-xs)] text-ink-muted no-underline hover:text-signal"
+          >
+            {link.host} ↗
+          </a>
+        )}
+        <label
+          className={`${link ? '' : 'ml-auto '}flex items-center gap-1 text-[length:var(--text-xs)]`}
+        >
           <input
             type="checkbox"
             data-testid={ids.fileViewed}
@@ -166,9 +214,9 @@ function DiffFile({
           Viewed
         </label>
       </header>
-      {done ? (
+      {collapsed ? (
         <p className="m-0 px-3 py-2 text-[length:var(--text-sm)] text-ink-muted">
-          Viewed. The diff is collapsed.
+          {done ? 'Viewed. The diff is collapsed.' : ''}
         </p>
       ) : (
         <PatchDiff<Annotation>
@@ -203,6 +251,8 @@ function DiffFile({
     </section>
   );
 }
+
+const shortOf = (part: DiffPartDto) => shaOf(part).slice(0, 7);
 
 function MarkerChip({ marker }: { marker: LineMarker }) {
   return (

@@ -201,3 +201,32 @@ test('DiffColumn_WhenOpenFileIsSet_ShouldScrollToThatFile', async ({ mount, page
   await expect(page.locator('[data-gutter] [data-column-number="80"]')).toBeVisible();
   await expect(target).toBeInViewport();
 });
+
+test('DiffColumn_WhenAFileHasAHostLink_ShouldPointAtTheBlobAtTheHeadSha', async ({
+  mount,
+  page,
+}) => {
+  await mount(column());
+  const link = page.getByTestId(ids.diffFile).first().getByTestId(ids.diffFileHostLink);
+  await expect(link).toHaveAttribute(
+    'href',
+    `https://github.com/acme/storefront/blob/${part.headSha}/${first.path}`,
+  );
+  await expect(link).toHaveText('GitHub ↗');
+});
+
+test('DiffColumn_WhenTheChevronIsPressed_ShouldCollapseAndExpandWithoutMarkingViewed', async ({
+  mount,
+  page,
+}) => {
+  const calls: unknown[] = [];
+  await mount(column({ onToggleViewed: (...a) => calls.push(a) }));
+  const file = page.getByTestId(ids.diffFile).first();
+  await expect(file.getByText('import { SavedCards }')).toBeVisible();
+  await file.getByTestId(ids.diffFileCollapse).click();
+  await expect(file.getByText('import { SavedCards }')).toHaveCount(0);
+  await expect(file.getByTestId(ids.diffFileCollapse)).toHaveAttribute('aria-expanded', 'false');
+  await file.getByTestId(ids.diffFileCollapse).click();
+  await expect(file.getByText('import { SavedCards }')).toBeVisible();
+  expect(calls).toEqual([]);
+});

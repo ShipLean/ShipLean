@@ -58,3 +58,12 @@ test('ChangesToolbar_WhenNoNewCommit_ShouldHideTheBannerAndShowViewedProgress', 
   await expect(page.getByTestId(ids.newCommitBanner)).toHaveCount(0);
   await expect(page.getByTestId(ids.filesViewed)).toHaveText('1 / 2 viewed');
 });
+
+test('ChangesToolbar_WhenHalfTheFilesAreViewed_ShouldFillHalfTheTrack', async ({ mount, page }) => {
+  await mount(toolbar({ viewedCount: 1, fileTotal: 2 }));
+  const fill = page.getByTestId(ids.filesViewedFill);
+  const track = fill.locator('..');
+  const [f, t] = await Promise.all([fill.boundingBox(), track.boundingBox()]);
+  expect(t?.width).toBe(90);
+  expect(f?.width).toBeCloseTo(45, 0);
+});
