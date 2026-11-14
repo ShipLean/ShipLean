@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { FeatureBoardViewDto } from '@shiplean/core/api/views';
@@ -10,6 +11,11 @@ import { FeatureBoardSections } from '../features/featureBoard/FeatureBoardSecti
 import { featureBoardTestIds as boardIds } from '../features/featureBoard/testIds';
 import { pagesTestIds } from '../features/pages/testIds';
 import { CardFeatureContext } from '../features/taskboard/cards/CardFeatureContext';
+import type { SheetAction } from '../touch/ActionSheet';
+import { routePath } from '../routes';
+import { collapseAllMap } from '../features/taskboard/grid/boardRowIds';
+import { useOpenCardSettings } from '../features/taskboard/grid/useOpenCardSettings';
+import { faceCounts } from '../features/taskboard/grid/faceFilter';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardToolbar } from '../features/taskboard/grid/TaskboardToolbar';
 import { TaskboardDnd } from '../features/taskboard/moves/TaskboardDnd';
@@ -50,6 +56,8 @@ function LoadedBoard({
 }) {
   const { loaded, grouping, setGrouping } = useTaskboardGrouping();
   const setState = useSetParentState(project.id, scope);
+  const navigate = useNavigate();
+  const openCardSettings = useOpenCardSettings();
   const meDto = useQuery({ queryKey: meKey, queryFn: fetchMe }).data;
   const me: UserRef | undefined = meDto && {
     id: meDto.id,
@@ -85,6 +93,29 @@ function LoadedBoard({
       if (!next.delete(sectionId)) next.add(sectionId);
       return next;
     });
+  const more: SheetAction[] = [
+    {
+      id: 'collapse-all',
+      label: 'Collapse all',
+      onSelect: () => setToggled(collapseAllMap(view, true)),
+    },
+    {
+      id: 'expand-all',
+      label: 'Expand all',
+      onSelect: () => setToggled(collapseAllMap(view, false)),
+    },
+    {
+      id: 'card-settings',
+      label: 'Card settings',
+      onSelect: openCardSettings,
+    },
+    {
+      id: 'open-feature',
+      label: 'Open the Feature',
+      onSelect: () =>
+        void navigate(routePath('workItem', { key: project.key, itemKey: view.header.key })),
+    },
+  ];
   const isCollapsed = (rowId: string, completed: boolean) => toggled.get(rowId) ?? completed;
 
   return (
@@ -95,7 +126,10 @@ function LoadedBoard({
         onGroupingChange={setGrouping}
         people={people}
         faces={faces}
+        faceCounts={faceCounts(view, grouping)}
         onFaceToggle={toggleFace}
+        onFacesClear={() => setFaces(new Set())}
+        more={more}
         onAddStory={() => setAdding(true)}
       />
       {adding ? (

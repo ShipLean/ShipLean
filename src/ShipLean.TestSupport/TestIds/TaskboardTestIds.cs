@@ -18,6 +18,11 @@ public static class TaskboardTestIds
     public const string AddStorySubmit = "taskboard-add-story-submit";
     public const string AddStoryClose = "taskboard-add-story-close";
     public const string AddStoryError = "taskboard-add-story-error";
+    // L722b phone toolbar
+    public const string FilterButton = "taskboard-filter-button";
+    public const string FilterSheetRow = "taskboard-filter-sheet-row";
+    public const string FilterSheetCount = "taskboard-filter-sheet-count";
+    public const string FilterSheetClear = "taskboard-filter-sheet-clear";
     public const string ColumnHeader = "taskboard-column-header";
     public const string ColumnCount = "taskboard-column-count";
     public const string Row = "taskboard-row";
