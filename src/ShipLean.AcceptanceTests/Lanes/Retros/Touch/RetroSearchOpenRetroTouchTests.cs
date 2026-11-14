@@ -129,11 +129,23 @@ public class RetroSearchOpenRetroTouchTests : SeededAcceptanceTest
         var retros = new List<Seeded>();
         for (var i = 1; i <= 2; i++)
         {
-            var title = $"Phone open story {i} {word}";
+            var title = $"Phone open story {i} {Guid.NewGuid().ToString("N")[..8]}";
             var story = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithTitle(title).InsertAsync(connection);
             var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, RetroRole.SubAgent, WorkItemId: story, AgentName: $"agent-{i}"));
+            // Improve points above the matched one (by position) push it below the fold of the stacked board.
+            for (var filler = 1; filler <= 14; filler++)
+            {
+                await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, $"Phone open filler {filler} of retro {i}: a long enough line to take a few rows of the phone screen on its own.", Position: filler));
+            }
+
             var text = $"Phone open point {i} {word}";
-            var point = await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, text));
+            var point = await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, text, Position: 100));
+            // And points after it, so the end of the scroll doesn't bring it into view on its own.
+            for (var filler = 1; filler <= 8; filler++)
+            {
+                await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, $"Phone open after {filler} of retro {i}: a long enough line to take a few rows of the phone screen on its own.", Position: 200 + filler));
+            }
+
             retros.Add(new Seeded(retro, point, title, text));
         }
 

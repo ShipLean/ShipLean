@@ -46,7 +46,11 @@ for (const theme of THEMES) {
     );
     await mount(<AppRoutes />, { hooksConfig: { route } });
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
-    await expect(page.getByTestId(shared.retroCardLog)).toBeVisible();
+    const log = page.getByTestId(shared.retroCardLog);
+    await expect(log).toBeVisible();
+    // The raw log sits below the fold; bring it up so the shot shows it open.
+    await log.scrollIntoViewIfNeeded();
+    await expect(log).toBeInViewport();
     await expect(page).toHaveScreenshot(`retro-search-retro-log-phone.${theme}.png`, {
       animations: 'disabled',
     });

@@ -1,5 +1,5 @@
 import { expect } from '@playwright/experimental-ct-react';
-import { stubRetros } from '../../features/retros/ct/retroFixtures';
+import { retroSearch, stubRetros } from '../../features/retros/ct/retroFixtures';
 import { retrosTestIds as ids } from '../../features/retros/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import type { Page } from './shoot';
@@ -18,8 +18,20 @@ const ready = async (page: Page) => {
   await expect(page.getByTestId(ids.retrosRow).first()).toBeVisible();
 };
 
+const open = `?q=masked&selected=${retroSearch.selected!.id}&point=${retroSearch.rows[0].id}`;
+
 phonePageShots([
   { name: 'retro-search', route: '/p/SHIP/retros', shell: true, arrange, ready },
+  {
+    name: 'retro-search-retro',
+    route: `/p/SHIP/retros${open}`,
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
+      await expect(page.locator('[data-highlighted="true"]')).toHaveCount(1);
+    },
+  },
   {
     name: 'retro-search-filter',
     route: '/p/SHIP/retros?category=wentBadly',
