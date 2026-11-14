@@ -67,7 +67,10 @@ public sealed partial class RepoAddresses(IIntegrationSettings settings) : IRepo
     }
 
     private static string? HostOf(string address)
-        => Uri.TryCreate(address.Contains("://", StringComparison.Ordinal) ? address : $"https://{address}", UriKind.Absolute, out var uri) ? uri.Host.ToLowerInvariant() : null;
+    {
+        var withScheme = address.Contains("://", StringComparison.Ordinal) ? address : $"https://{address}";
+        return Uri.TryCreate(withScheme, UriKind.Absolute, out var uri) ? uri.Host.ToLowerInvariant() : null;
+    }
 
     // The lower-case host and the path segments, with a trailing .git, query and fragment dropped.
     private static (string Host, List<string> Segments) Split(string input, string field, string message)
