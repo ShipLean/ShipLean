@@ -221,3 +221,31 @@ test('SettingsPhone_WhenReadOnly_ShouldShowNoSaveBar', async ({ mount, page }) =
   await expect(page.getByTestId(ids.readOnlyBanner)).toBeVisible();
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
+
+test('SettingsPhone_WhenDraftIsDirtyOnDemos_ShouldShowNoSaveBarButKeepTheTabDot', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('general'));
+  await page.getByTestId(ids.generalName).fill('Shop');
+  await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
+
+  await page.getByTestId(ids.tabDemos).tap();
+
+  await expect(page.getByTestId(ids.tabDemos)).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
+  await expect(page.getByTestId(ids.tabDirty)).toHaveCount(1);
+});
+
+test('SettingsPhone_WhenReadOnly_ShouldDisableEveryEditControl', async ({ mount, page }) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="member" />, route('general'));
+  await expect(page.getByTestId(ids.generalName)).toBeDisabled();
+  await expect(page.getByTestId(ids.workingDay1)).toBeDisabled();
+  await page.getByTestId(ids.tabMembers).tap();
+  await expect(page.getByTestId(ids.memberRole).first()).toBeDisabled();
+  await expect(page.getByTestId(ids.memberRemove)).toHaveCount(0);
+  await expect(page.getByTestId(ids.memberAddEmail)).toHaveCount(0);
+  await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
+});
