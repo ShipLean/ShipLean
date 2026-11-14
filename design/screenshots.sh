@@ -113,6 +113,13 @@ declare -A variants=(
   [task-changes-approve]="task-changes.html?view=review&state=approve"
   [task-changes-outdated]="task-changes.html?view=review&state=outdated"
   [task-changes-noaccess]="task-changes.html?view=review&state=noaccess"
+  # SHIP-1465: Feature timeline
+  [feature-timeline-summary]="feature.html?timeline"
+  [feature-timeline-selected]="feature-timeline.html?select=SHIP-192"
+  [feature-timeline-running]="feature-timeline.html?key=SHIP-101"
+  [feature-timeline-people]="feature-timeline.html?key=SHIP-101&group=people"
+  [feature-timeline-days]="feature-timeline.html?zoom=days&select=SHIP-198"
+  [feature-timeline-json]="feature-timeline.html?view=json"
 )
 
 names=("$@")
