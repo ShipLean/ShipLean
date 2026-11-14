@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { ColumnPartsHarness } from '../ct/ColumnPartsHarness';
 import { GridHarness } from '../ct/GridHarness';
-import { featuresBoard } from '../ct/fixtures';
+import { cell, featuresBoard } from '../ct/fixtures';
 import { boardTestIds as ids } from '../testIds';
 
 // The column header, Show older and + New at touch sizes (SHIP-719, L719f), each on its own at 390 wide. Runs in the CT
@@ -98,6 +98,44 @@ test('Cell_WhenEmptyOnHeaderlessBoardAtTouch_ShouldShowNoCards', async ({ mount,
   await expect(empty).toHaveCount(2);
   await expect(empty.first()).toHaveText('No cards');
   await expect(empty.first()).toHaveCSS('display', 'block');
+});
+
+test('Cell_WhenItOffersNewOrHasOlderCards_ShouldNotShowNoCards', async ({ mount, page }) => {
+  const base = featuresBoard();
+  const view = {
+    ...base,
+    lanes: base.lanes.map((lane) => ({
+      ...lane,
+      // New holds only "+ New", and Done holds only older cards behind Show older.
+      cells: lane.cells.map((one) =>
+        one.columnId === 'col-new'
+          ? cell('col-new')
+          : one.columnId === 'col-done'
+            ? cell('col-done', [], { olderCount: 2, olderCursor: 'done:lane' })
+            : one,
+      ),
+    })),
+  };
+  await mount(<GridHarness view={view} level="features" />);
+
+  await expect(page.getByTestId(ids.newCardOpen)).toHaveCount(1);
+  await expect(page.getByTestId(ids.showOlder)).toHaveCount(1);
+  // Only Ready's two empty cells say it.
+  await expect(page.getByTestId(ids.cellEmpty)).toHaveCount(2);
+  await expect(
+    page.getByTestId(ids.cell).filter({ has: page.getByTestId(ids.newCardOpen) }),
+  ).not.toContainText('No cards');
+});
+
+test('ColumnHeader_WhenInfoOpenedAtTouch_ShouldKeepThePopoverButtonItsNaturalSize', async ({
+  mount,
+  page,
+}) => {
+  await mount(<ColumnPartsHarness part="header" />);
+  await page.getByTestId(ids.dodOpen).tap();
+
+  const edit = await box(page, ids.dodSettings);
+  expect(edit.height).toBeLessThan(TOUCH);
 });
 
 test('ShowOlder_WhenTouch_ShouldBeAFullWidth32pxRow', async ({ mount, page }) => {

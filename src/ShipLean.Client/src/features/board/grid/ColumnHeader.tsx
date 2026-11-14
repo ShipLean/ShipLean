@@ -35,7 +35,7 @@ export function ColumnHeader({ column, flashes }: { column: BoardColumnDto; flas
           className="board-header-flash pointer-events-none absolute -inset-px rounded-control"
         />
       ) : null}
-      <div className="flex h-5 min-w-0 items-center gap-1.5 touch:h-6 touch:[&_button]:-mr-1.5 touch:[&_button]:size-(--touch-target)">
+      <div className="flex h-5 min-w-0 items-center gap-1.5 touch:h-6 touch:[&>button]:-mr-1.5 touch:[&>button]:size-(--touch-target)">
         <span
           data-testid={ids.columnName}
           className="truncate text-[length:var(--text-sm)] font-semibold touch:text-[length:var(--text-md)]"
