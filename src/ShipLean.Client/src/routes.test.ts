@@ -78,6 +78,20 @@ const samples: {
     path: '/p/SHIP/items/SHIP-101/board?settings=fields',
     crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Feature board', 'Settings'],
   },
+  featureTimeline: {
+    params: { key: 'SHIP', itemKey: 'SHIP-99' },
+    query: {
+      group: 'people',
+      zoom: 'days',
+      deps: 'off',
+      cp: 'off',
+      select: 'SHIP-192',
+      view: 'json',
+      from: 'feature',
+    },
+    path: '/p/SHIP/items/SHIP-99/timeline?group=people&zoom=days&deps=off&cp=off&select=SHIP-192&view=json&from=feature',
+    crumbs: ['SHIP', 'Backlogs', 'SHIP-99', 'Timeline'],
+  },
   storiesBoard: {
     params: project,
     query: { settings: 'columns' },

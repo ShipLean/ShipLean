@@ -116,4 +116,6 @@ export const featureTestIds = {
   addLinkCancel: 'feature-add-link-cancel',
   addLinkError: 'feature-add-link-error',
   epicOpen: 'feature-epic-open',
+  featureTimelineSection: 'feature-timeline-section',
+  featureTimelineOpen: 'feature-timeline-open',
 } as const;

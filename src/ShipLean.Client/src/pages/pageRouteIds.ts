@@ -18,6 +18,7 @@ export const pageRouteIds = {
   workItem: 'workItem',
   workItemAttachment: 'workItemAttachment',
   featureBoard: 'featureBoard',
+  featureTimeline: 'featureTimeline',
   sprints: 'sprints',
   sprintBacklog: 'sprintBacklog',
   taskboard: 'taskboard',
