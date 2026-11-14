@@ -34,6 +34,7 @@ export function VerdictChip({
     <Tip
       data-verdict={verdict}
       data-mode={mode}
+      entry={verdict}
       tip={verdictWording(verdict, mode)}
       className="no-underline"
     >

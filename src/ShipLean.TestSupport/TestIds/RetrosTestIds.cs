@@ -89,6 +89,11 @@ public static class RetrosTestIds
     public const string RetroInsightsPanel = "retro-insights-panel";
     public const string RetroInsightsTab = "retro-insights-tab";
     public const string RetroInsightsRange = "retro-insights-range";
+    // SHIP-731 frame touch
+    public const string RetroInsightsToolbar = "retro-insights-toolbar";
+    public const string RetroInsightsRangeOption = "retro-insights-range-option";
+    public const string RetroInsightsRangeGroup = "retro-insights-range-group";
+    public const string RetroInsightsDefsEntry = "retro-insights-defs-entry";
     // Insights: recurring and keeps working
     public const string RetroRecurringTable = "retro-recurring-table";
     public const string RetroRecurringRow = "retro-recurring-row";
