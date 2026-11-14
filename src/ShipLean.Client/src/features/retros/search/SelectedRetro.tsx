@@ -9,6 +9,8 @@ import { FailureLog } from '../sprint/views/byWorkItem/FailureLog';
 import { cardAddTarget, cardColumns } from '../sprint/views/byWorkItem/cardColumns';
 import { retrosTestIds as ids } from '../testIds';
 import { highlightedRow } from './parts/matches';
+import { OpenRetroView } from './touch/OpenRetroView';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { RetroActionScope } from '../../retroShared/actionDialog/RetroActionScope';
 import type { AddTarget } from '../../retroShared/board/AddTarget';
 import type { RetroCardDto } from '@shiplean/core/api/retros';
@@ -16,6 +18,7 @@ import type { RetrosSearchSlotProps } from './SearchSlotProps';
 
 /** The whole retro of the selected point as a board of the same notes and buttons as everywhere else, the clicked point highlighted, and the raw log open when that point matched only there. */
 export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProps) {
+  const { touch } = useTouchShell();
   const selected = search.selected;
   // A retro is of an item or of a sprint (K4); a card with neither cannot exist, so it gets no board.
   const target = selected ? boardTarget(selected) : undefined;
@@ -23,6 +26,19 @@ export function SelectedRetro({ project, search, pointId }: RetrosSearchSlotProp
   const isFeature = card?.workItem?.type.id === 'feature';
   const highlighted = highlightedRow(search, pointId);
   const inLog = highlighted !== undefined && search.logMatchPointIds.includes(highlighted.id);
+  // At 900px and below the open retro is a full screen of its own (SHIP-730); the aside is the desktop's.
+  if (touch) {
+    return card && target ? (
+      <OpenRetroView
+        project={project}
+        search={search}
+        pointId={pointId}
+        target={target}
+        highlighted={highlighted}
+        inLog={inLog}
+      />
+    ) : null;
+  }
   return (
     <aside
       data-testid={ids.retrosSelected}

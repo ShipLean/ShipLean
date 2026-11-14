@@ -80,6 +80,11 @@ public static class RetrosTestIds
     public const string RetrosRow = "retros-row";
     public const string RetrosEmpty = "retros-empty";
     public const string RetrosSelected = "retros-selected";
+    // SHIP-730 open retro touch
+    public const string RetrosOpenRetro = "retros-open-retro";
+    public const string RetrosOpenRetroPrevious = "retros-open-retro-previous";
+    public const string RetrosOpenRetroNext = "retros-open-retro-next";
+    public const string RetrosOpenRetroPosition = "retros-open-retro-position";
     // Insights
     public const string RetroInsightsPanel = "retro-insights-panel";
     public const string RetroInsightsTab = "retro-insights-tab";
