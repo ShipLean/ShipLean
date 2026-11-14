@@ -35,13 +35,25 @@ test('AttachmentEditor_WhenTouch_ShouldPinToolbarAndHideFullscreen', async ({ mo
   expect(box.height).toBeGreaterThanOrEqual(48);
   expect(box.y + box.height).toBeGreaterThanOrEqual(slot.y + slot.height);
   await expect(page.locator('.w-md-editor-toolbar button[data-name="fullscreen"]')).toHaveCount(0);
-  // One row that scrolls sideways: the toolbar's content is wider than the toolbar, and it does not wrap.
+  // One row that scrolls sideways: every command button shares one top, is at least 32px, and the row is wider
+  // than the toolbar.
+  const buttons = toolbar.locator('> ul > li > button');
+  const tops = await buttons.evaluateAll((all) =>
+    all.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { top: Math.round(r.top), height: r.height, width: r.width };
+    }),
+  );
+  expect(tops.length).toBeGreaterThan(8);
+  expect(new Set(tops.map((t) => t.top)).size, JSON.stringify(tops)).toBe(1);
+  for (const t of tops) {
+    expect(t.height).toBeGreaterThanOrEqual(32);
+    expect(t.width).toBeGreaterThanOrEqual(32);
+  }
   const row = await toolbar.evaluate((el) => ({
     scrollWidth: el.scrollWidth,
     clientWidth: el.clientWidth,
-    overflowX: getComputedStyle(el).overflowX,
   }));
-  expect(row.overflowX).toBe('auto');
   expect(row.scrollWidth).toBeGreaterThan(row.clientWidth);
   // The page scrolling leaves it where it is.
   await page.evaluate(() => window.scrollTo(0, 200));
@@ -67,4 +79,34 @@ test('AttachmentEditor_WhenTouch_ShouldFillHeightBelowTopBar', async ({ mount, p
   await expect(page.getByTestId(touchTestIds.saveBarMessage)).toHaveText(
     'Saving replaces the file',
   );
+});
+
+test('AttachmentEditor_WhenHeadingListOpenedOnTouch_ShouldListBelowTheBarInTouchRows', async ({
+  mount,
+  page,
+}) => {
+  await openEditor({ mount, page });
+  const toolbar = page.locator('.w-md-editor > .w-md-editor-toolbar');
+  const bar = (await toolbar.boundingBox())!;
+
+  await toolbar.locator('> ul > li > button[data-name="title"]').tap();
+
+  const list = page.locator('.w-md-editor-toolbar-child.active');
+  await expect(list).toBeVisible();
+  const box = (await list.boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+  // The list is on top there, not clipped by the bar: the element at its middle is one of its rows.
+  const hit = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.closest('.w-md-editor-toolbar-child') !== null,
+    { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+  );
+  expect(hit).toBe(true);
+  // The main toolbar stays where it was, and its commands stay visible.
+  expect(await toolbar.boundingBox()).toEqual(bar);
+  await expect(toolbar.locator('> ul > li > button[data-name="title"]')).toBeVisible();
+  const rows = list.locator('button');
+  expect(await rows.count()).toBe(6);
+  for (const row of await rows.all()) {
+    expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  }
 });

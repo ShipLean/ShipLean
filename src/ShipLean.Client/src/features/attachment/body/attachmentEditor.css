@@ -1,12 +1,14 @@
 /* The phone's edit toolbar (SHIP-715 D3, rule 12): MDEditor's own toolbar lies over the top bar's pinned spot as one
-   row that scrolls sideways. Touch rules only; above 900px the shared markdownEditor.css is all there is. */
+   row that scrolls sideways. Touch rules only; above 900px the shared markdownEditor.css is all there is.
+   Every rule starts at the editor's own toolbar (`> .w-md-editor-toolbar`): the heading list is a second
+   .w-md-editor-toolbar nested inside it, which must not get the bar's rules. */
 @media (max-width: 900px) {
   .attachment-editor-touch.w-md-editor {
     border-radius: 0;
     border-inline: 0;
   }
 
-  .attachment-editor-touch .w-md-editor-toolbar {
+  .attachment-editor-touch.w-md-editor > .w-md-editor-toolbar {
     position: fixed;
     top: 0;
     inset-inline: 0;
@@ -22,14 +24,48 @@
     background-color: var(--color-surface);
   }
 
-  .attachment-editor-touch .w-md-editor-toolbar ul {
+  .attachment-editor-touch.w-md-editor > .w-md-editor-toolbar > ul {
     display: flex;
     flex: none;
+    flex-wrap: nowrap;
     align-items: center;
   }
 
-  .attachment-editor-touch .w-md-editor-toolbar li > button {
+  .attachment-editor-touch.w-md-editor > .w-md-editor-toolbar > ul > li > button {
     min-width: var(--touch-target);
     height: var(--touch-target);
+  }
+
+  /* The heading list: fixed below the bar (fixed, so the bar's sideways scroll cannot clip it), rows of 32px. */
+  .attachment-editor-touch.w-md-editor > .w-md-editor-toolbar .w-md-editor-toolbar-child {
+    position: fixed;
+    top: calc(var(--mobile-bar-height) + env(safe-area-inset-top));
+    inset-inline-start: 8px;
+    z-index: 41;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .attachment-editor-touch.w-md-editor
+    > .w-md-editor-toolbar
+    .w-md-editor-toolbar-child
+    .w-md-editor-toolbar {
+    position: static;
+    height: auto;
+    overflow: visible;
+    padding: 3px;
+  }
+
+  .attachment-editor-touch.w-md-editor
+    > .w-md-editor-toolbar
+    .w-md-editor-toolbar-child
+    .w-md-editor-toolbar
+    ul
+    > li
+    > button {
+    min-width: 8rem;
+    height: var(--touch-target);
+    padding: 0 8px;
+    text-align: start;
   }
 }
