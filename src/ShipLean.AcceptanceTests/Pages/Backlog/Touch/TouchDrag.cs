@@ -10,6 +10,8 @@ public static class TouchDrag
 
     public static async Task ByHandleAsync(IPage page, ILocator handle, ILocator target)
     {
+        // Only the handle is scrolled into view: the target must already be on screen with it, or the scroll would move it.
+        await handle.ScrollIntoViewIfNeededAsync();
         var from = await CentreAsync(handle);
         var to = await CentreAsync(target);
         var cdp = await page.Context.NewCDPSessionAsync(page);
@@ -33,7 +35,6 @@ public static class TouchDrag
 
     private static async Task<Point> CentreAsync(ILocator locator)
     {
-        await locator.ScrollIntoViewIfNeededAsync();
         var box = await locator.BoundingBoxAsync() ?? throw new InvalidOperationException("The drag element has no box.");
         return new Point(Math.Round(box.X + (box.Width / 2)), Math.Round(box.Y + (box.Height / 2)));
     }

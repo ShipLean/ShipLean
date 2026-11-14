@@ -125,10 +125,10 @@ test('PlanningTouch_WhenRowLiftedOverSprintHeader_ShouldLightItAndMoveOnDrop', a
   const server = await stubBacklog(page, planningView(), { saved });
   await mount(<PlanningMode project={PROJECT} />, route);
   const cdp = await page.context().newCDPSession(page);
-  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', x?: number, y?: number) =>
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', x = -1, y = -1) =>
     cdp.send('Input.dispatchTouchEvent', {
       type,
-      touchPoints: x === undefined ? [] : [{ x, y }],
+      touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
     });
   const handle = page
     .getByTestId(ids.row)
