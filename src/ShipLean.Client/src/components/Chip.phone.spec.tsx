@@ -22,9 +22,9 @@ test('Chip_WhenRemovableOnPhone_ShouldHaveTouchSizedRemoveAndSameChipSize', asyn
   // The chip keeps its 20px height and its desktop width, 74px with this label.
   expect(chip.height).toBe(20);
   expect(chip.width).toBeCloseTo(74, 0);
-  // The ✕ stays where it was drawn: inside the chip, near its right edge.
-  expect(remove.x + remove.width / 2).toBeGreaterThan(chip.x + chip.width - 12);
-  expect(remove.x + remove.width / 2).toBeLessThan(chip.x + chip.width);
+  // The ✕'s box reaches back over the chip's own end and stops at its edge, so it never covers a neighbour.
+  expect(remove.x + remove.width).toBeCloseTo(chip.x + chip.width, 0);
+  expect(remove.x).toBeGreaterThanOrEqual(chip.x);
 
   await page.getByTestId(ids.chipRemove).tap();
   expect(removed).toBe(1);
