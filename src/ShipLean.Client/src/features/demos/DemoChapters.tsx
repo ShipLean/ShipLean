@@ -32,12 +32,14 @@ export function DemoChapters({ demo, player }: DemoProps) {
               data-testid={ids.demoChapter}
               aria-current={index === current}
               onClick={() => player.seekTo(chapter.startSeconds)}
-              className="grid min-h-7.5 w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-sm)] hover:bg-sunken aria-[current=true]:bg-signal-soft aria-[current=true]:font-semibold"
+              className="grid min-h-7.5 w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-sm)] hover:bg-sunken touch:min-h-[var(--touch-target)] touch:py-1.5 aria-[current=true]:bg-signal-soft aria-[current=true]:font-semibold"
             >
               <span className="text-[length:var(--text-xs)] text-ink-muted tabular-nums">
                 {chapter.startLabel}
               </span>
-              <span className="truncate">{chapter.title}</span>
+              <span className="truncate touch:line-clamp-2 touch:whitespace-normal [overflow-wrap:anywhere]">
+                {chapter.title}
+              </span>
               {chapter.featureKey !== null && (
                 <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] text-ink-muted">
                   {chapter.featureKey}
