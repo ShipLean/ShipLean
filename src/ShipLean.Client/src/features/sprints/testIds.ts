@@ -67,6 +67,9 @@ export const sprintsTestIds = {
   stateButton: 'sprints-backlog-state-button',
   stateNotice: 'sprints-backlog-state-notice',
   unparentedHeading: 'sprints-backlog-unparented-heading',
+  // L724c phone rows
+  statesSheetOption: 'sprints-backlog-states-option',
+  statesSheetCategory: 'sprints-backlog-states-category',
   rail: 'sprints-backlog-rail',
   railReady: 'sprints-backlog-rail-ready',
   railReadyItem: 'sprints-backlog-rail-ready-item',

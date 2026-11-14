@@ -70,6 +70,9 @@ public static class SprintsTestIds
     public const string StateButton = "sprints-backlog-state-button";
     public const string StateNotice = "sprints-backlog-state-notice";
     public const string UnparentedHeading = "sprints-backlog-unparented-heading";
+    // L724c phone rows
+    public const string StatesSheetOption = "sprints-backlog-states-option";
+    public const string StatesSheetCategory = "sprints-backlog-states-category";
     public const string Rail = "sprints-backlog-rail";
     public const string RailReady = "sprints-backlog-rail-ready";
     public const string RailReadyItem = "sprints-backlog-rail-ready-item";

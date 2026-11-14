@@ -641,9 +641,14 @@ test('SprintBacklog_WhenNarrow_ShouldScrollTheTableAndKeepTheStateMenuVisible', 
   mount,
   page,
 }) => {
-  await page.setViewportSize({ width: 420, height: 1600 });
+  await page.setViewportSize({ width: 1000, height: 1600 });
   await stub(page);
-  await mount(<SprintBacklog project={project} sprint={sprint} />);
+  // A narrow column on a desktop-width window: at 900px and below the touch rows replace the table.
+  await mount(
+    <div style={{ width: 420 }}>
+      <SprintBacklog project={project} sprint={sprint} />
+    </div>,
+  );
 
   const table = page.getByTestId(ids.table);
   const scrolls = await table.evaluate((node) => {
@@ -696,7 +701,7 @@ test('SprintBacklog_WhenThePageScrollsWithAStateMenuOpen_ShouldCloseIt', async (
   mount,
   page,
 }) => {
-  await page.setViewportSize({ width: 420, height: 300 });
+  await page.setViewportSize({ width: 901, height: 300 });
   await stub(page);
   await mount(<SprintBacklog project={project} sprint={sprint} />);
 
