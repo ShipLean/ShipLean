@@ -159,6 +159,18 @@ public class AddCommitsTests : ApiFixture
     }
 
     [Test]
+    public async Task AddCommits_WhenMigrationWithNoRequestUser_ShouldStoreWithNullAddedBy()
+    {
+        var item = await NewItemAsync("task");
+        Host.ActAs(null);
+
+        await AddAsync(item, CommitSource.Migration, new CommitRef(Storefront, Shas.First));
+
+        await using var connection = await OpenDatabaseAsync();
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*)::int FROM work_item_commit WHERE work_item_id = @item AND added_by IS NULL AND added_via = 'migration'", new { item })).ShouldBe(1);
+    }
+
+    [Test]
     public async Task AddCommits_WhenTwoCallsRace_ShouldNotDuplicate()
     {
         var item = await NewItemAsync("task");

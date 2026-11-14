@@ -35,7 +35,8 @@ public sealed partial class TaskCommits(
             return new AddCommitsOutcome([], []);
         }
 
-        var addedBy = currentUser.Id == Guid.Empty ? (Guid?)null : currentUser.Id;
+        // A migration runs in a startup job with no request, so there is no user to read.
+        Guid? addedBy = via == CommitSource.Migration ? null : currentUser.Id;
         var inserted = await rows.InsertAsync(workItemId, read, via, addedBy, AgentStamp.Of(currentAgent), cancellationToken);
         var all = await rows.ListAsync(workItemId, cancellationToken);
         var wanted = read.Select(r => (r.Repo.Path, r.Meta.Sha)).ToHashSet();
