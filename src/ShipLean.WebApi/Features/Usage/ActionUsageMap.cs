@@ -137,7 +137,7 @@ public static class ActionUsageMap
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
-            "ProjectUsage.BacklogSort");
+            "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected");
 
         // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
         Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");

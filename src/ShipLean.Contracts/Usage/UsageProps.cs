@@ -32,6 +32,12 @@ public static class UsageProps
     // Why a device session ended, on device_session.ended: one of DeviceSessionEndReasons.
     public const string Reason = "reason";
 
+    // Where a Feature timeline was opened from, on timeline.opened: "feature" (Open timeline on the Feature page) or "link".
+    public const string From = "from";
+
+    // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.
+    public const string ItemType = "item_type";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)
