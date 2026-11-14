@@ -72,6 +72,12 @@ const samples: {
     path: '/p/SHIP/items/SHIP-101/attachments/a%201',
     crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Attachment'],
   },
+  taskChanges: {
+    params: { ...project, itemKey: 'SHIP-142' },
+    query: { commit: 'c-1', file: 'src/a b.ts', layout: 'split' },
+    path: '/p/SHIP/items/SHIP-142/changes?commit=c-1&file=src%2Fa+b.ts&layout=split',
+    crumbs: ['SHIP', 'Backlogs', 'SHIP-142', 'Changes'],
+  },
   featureBoard: {
     params: { key: 'SHIP', itemKey: 'SHIP-101' },
     query: { settings: 'fields' },

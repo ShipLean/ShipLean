@@ -9,6 +9,7 @@ export function WorkItemScreen({
   itemKey,
   links,
   retro = null,
+  changes = null,
   tasks,
   discussion,
   side,
@@ -36,6 +37,7 @@ export function WorkItemScreen({
       project={project}
       links={links}
       retro={retro}
+      changes={changes}
       tasks={tasks}
       discussion={discussion}
       side={side}
