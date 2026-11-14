@@ -8,9 +8,9 @@ export function ImportJobRow({ job }: { job: ImportJobDto }) {
     <li
       data-testid={ids.jobRow}
       data-status={job.status}
-      className="flex items-center gap-[var(--space-3)] border-t border-edge py-2 text-[length:var(--text-sm)]"
+      className="flex items-center gap-[var(--space-3)] border-t border-edge py-2 text-[length:var(--text-sm)] touch:grid touch:grid-cols-[minmax(0,1fr)_auto] touch:gap-x-[var(--space-3)] touch:gap-y-1"
     >
-      <span className="font-mono">
+      <span className="min-w-0 font-mono break-words">
         {job.jiraProjectKey} → {job.projectKey}
       </span>
       <span className="text-ink-muted">{job.status}</span>
@@ -19,7 +19,7 @@ export function ImportJobRow({ job }: { job: ImportJobDto }) {
       </span>
       <Link
         data-testid={ids.jobLink}
-        className="ml-auto"
+        className="ml-auto touch:ml-0 touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center touch:justify-self-end"
         to={`${routePath('jiraImport', { key: job.projectKey })}?job=${encodeURIComponent(job.id)}`}
       >
         Open the import

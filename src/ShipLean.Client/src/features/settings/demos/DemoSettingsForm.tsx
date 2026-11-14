@@ -11,7 +11,7 @@ import { Panel } from '../draft/Panel';
 const maxEnvironment = 4000;
 
 const textarea =
-  'w-full max-w-2xl rounded-control border border-edge bg-panel px-2 py-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'w-full max-w-2xl touch:max-w-none rounded-control border border-edge bg-panel px-2 py-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
 
 /** The Demos panel: Automatic and the environment text, with a Save of its own. */
 export function DemoSettingsForm({
@@ -34,7 +34,7 @@ export function DemoSettingsForm({
   return (
     <Panel title="Demos" testId={ids.demoSettingsPanel}>
       <div className="grid gap-1 text-[length:var(--text-sm)]">
-        <label className="inline-flex items-center gap-2 font-medium text-ink">
+        <label className="inline-flex items-center gap-2 font-medium text-ink touch:min-h-[var(--touch-target)]">
           <input
             type="checkbox"
             data-testid={ids.demoSettingsAutomatic}
@@ -82,7 +82,7 @@ export function DemoSettingsForm({
         <button
           type="button"
           data-testid={ids.demoSettingsSave}
-          className="btn-signal"
+          className="btn-signal touch:min-h-[var(--touch-target)] touch:w-full"
           disabled={locked}
           onClick={() =>
             save.mutate(

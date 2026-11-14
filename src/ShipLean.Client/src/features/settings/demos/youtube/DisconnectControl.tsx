@@ -13,7 +13,7 @@ export function DisconnectControl({
 }) {
   const [asking, setAsking] = useState(false);
   return (
-    <span className="flex flex-wrap items-center gap-2">
+    <span className="flex flex-wrap items-center gap-2 touch:flex-col touch:items-stretch">
       {asking ? (
         <span className="text-ink">
           Disconnect {channelTitle}? ShipLean asks Google to revoke its access and stops publishing
@@ -23,7 +23,7 @@ export function DisconnectControl({
       <button
         type="button"
         data-testid={ids.youtubeDisconnect}
-        className="btn-ghost text-alert"
+        className="btn-ghost text-alert touch:min-h-[var(--touch-target)]"
         disabled={busy}
         onClick={() => {
           if (!asking) return setAsking(true);
@@ -34,7 +34,11 @@ export function DisconnectControl({
         {asking ? 'Yes, disconnect' : 'Disconnect'}
       </button>
       {asking ? (
-        <button type="button" className="btn-ghost" onClick={() => setAsking(false)}>
+        <button
+          type="button"
+          className="btn-ghost touch:min-h-[var(--touch-target)]"
+          onClick={() => setAsking(false)}
+        >
           Keep it
         </button>
       ) : null}
