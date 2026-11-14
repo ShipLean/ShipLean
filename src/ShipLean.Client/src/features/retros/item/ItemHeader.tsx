@@ -50,7 +50,7 @@ export function ItemHeader({
           <span className="font-mono text-[length:var(--text-sm)] text-ink-muted">
             {item.item.key}
           </span>
-          <h1 className="min-w-0 text-[length:var(--text-lg)] font-semibold [overflow-wrap:anywhere]">
+          <h1 className="text-[length:var(--text-lg)] font-semibold touch:min-w-0 touch:[overflow-wrap:anywhere]">
             {item.item.title}
           </h1>
           <Link
@@ -62,10 +62,11 @@ export function ItemHeader({
           </Link>
         </div>
         {item.parent ? (
-          <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted [overflow-wrap:anywhere]">
+          <p className="mt-1 text-[length:var(--text-sm)] text-ink-muted touch:[overflow-wrap:anywhere]">
             Part of{' '}
             <Link
-              className="text-signal underline"
+              data-testid={ids.retroItemPartOf}
+              className="text-signal underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
               to={routePath('retroItem', { key: projectKey, itemKey: item.parent.key })}
             >
               {item.parent.key} {item.parent.title}

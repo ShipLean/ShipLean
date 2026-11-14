@@ -65,7 +65,7 @@ export function RailActions({ item, sheet }: { item: RetroItemDto; sheet?: boole
                 <ItemLink
                   itemKey={action.key}
                   title={action.title}
-                  className="font-mono text-ink-muted no-underline"
+                  className="font-mono text-ink-muted no-underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
                 >
                   {action.key}
                 </ItemLink>

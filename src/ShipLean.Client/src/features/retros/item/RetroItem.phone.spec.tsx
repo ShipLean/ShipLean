@@ -123,3 +123,42 @@ test('RetroItemPhone_WhenChildRowTapped_ShouldBeOneLinkToTheChildRetro', async (
   await expect(row).toHaveAttribute('href', `/p/SHIP/retros/items/${child.item.key}`);
   expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(32);
 });
+
+test('RetroItemPhone_WhenActionItemsSheetOpened_ShouldGiveEachActionKeyATouchTarget', async ({
+  mount,
+  page,
+}) => {
+  await serve(page);
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  await page.getByTestId(ids.retroItemKpiActions).tap();
+  const links = page.getByTestId(ids.retroItemSheetActions).locator('a');
+  await expect(links.first()).toBeVisible();
+  for (const link of await links.all()) {
+    expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  }
+});
+
+test('RetroItemPhone_WhenItemHasAParent_ShouldGivePartOfATouchTarget', async ({ mount, page }) => {
+  await stubRetros(page);
+  const parent = { ...retroItem.item, id: 'p-parent', key: 'SHIP-90', title: 'Checkout epic' };
+  await page.route(/\/api\/projects\/[^/]+\/retros\/items\/[^/]+$/, (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...retroItem, parent }),
+    }),
+  );
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  const link = page.getByTestId(ids.retroItemPartOf);
+  await expect(link).toHaveAttribute('href', '/p/SHIP/retros/items/SHIP-90');
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+});
+
+test('RetroItemDesktop_WhenOpenedAbove900_ShouldNotBreakTitlesMidWord', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await serve(page);
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  const title = page.getByRole('heading', { level: 1 });
+  await expect(title).toHaveCSS('overflow-wrap', 'normal');
+  await expect(title).toHaveCSS('min-width', 'auto');
+});

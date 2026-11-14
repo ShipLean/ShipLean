@@ -133,6 +133,7 @@ export const retrosTestIds = {
   retroItemSheetCompiled: 'retro-item-sheet-compiled',
   retroItemSheetWriters: 'retro-item-sheet-writers',
   retroItemOpenWorkItem: 'retro-item-open-work-item',
+  retroItemPartOf: 'retro-item-part-of',
   workItemRetroRow: 'work-item-retro-row',
   retroActionWhy: 'retro-action-why',
   retroActionWhyAdd: 'retro-action-why-add',
