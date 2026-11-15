@@ -128,6 +128,14 @@ public static class UsageEventNames
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";
     public const string ScreenViewed = "screen.viewed";
+    public const string InspectionSectionSeen = "inspection.section_seen";
+    public const string InspectionRunOpened = "inspection.run_opened";
+    public const string InspectionRowSelected = "inspection.row_selected";
+    public const string InspectionZoomed = "inspection.zoomed";
+    public const string InspectionErrorsOnly = "inspection.errors_only";
+    public const string InspectionAgentSetupViewed = "inspection.agent_setup_viewed";
+    public const string InspectionRunsListed = "inspection.runs_listed";
+    public const string InspectionRunViewed = "inspection.run_viewed";
     public const string SprintDemoCreated = "sprint_demo.created";
     public const string SprintDemoYouTubeRetried = "sprint_demo.youtube_retried";
     public const string ProjectDemoSettingsChanged = "project_demo.settings_changed";

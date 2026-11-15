@@ -69,4 +69,18 @@ public class FakeTraceSourceTests
         (await source.GetRunAsync(new RunRef("DEMO", "DEMO-14", "sess-cc-1", start.AddDays(-1), start.AddDays(1), null, null), CancellationToken.None))
             .ShouldNotBeNull().Spans.ShouldAllBe(s => s.Attributes["shiplean.project"] == "DEMO" && s.Attributes["shiplean.item"] == "DEMO-14");
     }
+
+    [Test]
+    public async Task Remap_WhenSpanInputNamesTheOldItem_ShouldRewriteItsItemKey()
+    {
+        var source = new FakeTraceSource(InspectionFixtures.Synthetic);
+        var start = TestDates.Today.AddDays(3);
+
+        source.Remap("claude-code-synthetic", "DEMO", "DEMO-14", start);
+
+        var run = (await source.GetRunAsync(new RunRef("DEMO", "DEMO-14", "sess-cc-1", start.AddDays(-1), start.AddDays(1), null, null), CancellationToken.None)).ShouldNotBeNull();
+        var inputs = run.Spans.Select(s => s.Attributes.GetValueOrDefault("tool_parameters")).OfType<string>().ToList();
+        inputs.ShouldContain("{\"item\":\"DEMO-14\"}");
+        inputs.ShouldNotContain(i => i.Contains("SHIP-1\"", StringComparison.Ordinal));
+    }
 }
