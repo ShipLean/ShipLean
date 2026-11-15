@@ -17,8 +17,8 @@ public interface ICodeComments
     // The top-level comments that are neither resolved nor archived.
     Task<IReadOnlyList<CodeComment>> OpenAsync(Guid workItemId, CancellationToken cancellationToken = default);
 
-    // Replies to each comment and resolves it. An id not on the item is Validation (field "answered_comments") and nothing is
-    // written. Idempotent: a comment already resolved whose last reply is from the same caller with the same text is skipped.
+    // Replies to each comment and resolves it. An id not on the item is not_found and a reply's id is Validation, both on
+    // field "answered_comments", and nothing is written. Idempotent: a comment already resolved whose last reply is from the same caller with the same text is skipped.
     Task AnswerAsync(Guid workItemId, IReadOnlyList<CodeCommentAnswer> answers, CancellationToken cancellationToken = default);
 
     // An open comment goes outdated when an added commit in the same repository has a hunk touching its path and line on its side.
