@@ -271,6 +271,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
   expect(pageRouteIds).toEqual({
     workItem: 'workItem',
     workItemAttachment: 'workItemAttachment',
+    taskChanges: 'taskChanges',
     featureBoard: 'featureBoard',
     sprints: 'sprints',
     sprintBacklog: 'sprintBacklog',
