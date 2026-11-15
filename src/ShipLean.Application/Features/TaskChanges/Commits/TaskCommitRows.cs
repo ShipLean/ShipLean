@@ -9,42 +9,9 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
 {
     public sealed record ItemRow(Guid ProjectId, string Type);
 
-    private sealed class CommitQueryRow
-    {
-        public Guid Id { get; set; }
-
-        public string Provider { get; set; } = string.Empty;
-
-        public string Host { get; set; } = string.Empty;
-
-        public string Path { get; set; } = string.Empty;
-
-        public string Sha { get; set; } = string.Empty;
-
-        public int Position { get; set; }
-
-        public string Subject { get; set; } = string.Empty;
-
-        public string AuthorName { get; set; } = string.Empty;
-
-        public DateTime AuthoredAt { get; set; }
-
-        public int Additions { get; set; }
-
-        public int Deletions { get; set; }
-
-        public string[] Paths { get; set; } = [];
-
-        public string[] ParentShas { get; set; } = [];
-
-        public string AddedVia { get; set; } = string.Empty;
-
-        public string? AddedByName { get; set; }
-
-        public string? AddedByAgent { get; set; }
-
-        public DateTime AddedAt { get; set; }
-    }
+    private sealed record CommitQueryRow(
+        Guid Id, string Provider, string Host, string Path, string Sha, int Position, string Subject, string AuthorName, DateTime AuthoredAt,
+        int Additions, int Deletions, string[] Paths, string[] ParentShas, string AddedVia, string? AddedByName, string? AddedByAgent, DateTime AddedAt);
 
     public async Task<ItemRow?> FindItemAsync(Guid workItemId, CancellationToken cancellationToken)
     {
