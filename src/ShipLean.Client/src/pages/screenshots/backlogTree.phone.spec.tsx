@@ -6,6 +6,8 @@ import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { stubLevel } from '../../features/backlog/ct/stubLevels';
 import { backlogTestIds as ids } from '../../features/backlog/testIds';
 import { TreeMode } from '../../features/backlog/tree/TreeMode';
+import { stubShell } from './shellStub';
+import { phonePageShots } from './shootPhone';
 import type { Page } from './shoot';
 
 // Tree mode on a phone (SHIP-716, L716e), as element shots of this task's regions only, so the other backlog tasks' merges
@@ -56,3 +58,17 @@ for (const theme of THEMES) {
     });
   });
 }
+
+// The Stories Tree as a whole page: Epic and Feature headers with their rows under them.
+phonePageShots([
+  {
+    name: 'backlogs-tree',
+    route: '/p/SHIP/backlogs/stories?mode=tree',
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubBacklog(page, treeView(treeRows().rows));
+    },
+    ready: (page) => expect(page.getByTestId(ids.row)).toHaveCount(6),
+  },
+]);
