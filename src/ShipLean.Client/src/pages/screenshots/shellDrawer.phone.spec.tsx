@@ -25,6 +25,7 @@ const summary = (id: string, key: string, name: string, memberCount: number) => 
   name,
   role: 'member' as const,
   memberCount,
+  isOnlyAdmin: false,
 });
 
 const PROJECTS: ProjectSummaryDto[] = [

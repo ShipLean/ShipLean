@@ -230,6 +230,8 @@ export const settingsTestIds = {
   myProjectLeaveError: 'settings-my-project-leave-error',
   // SHIP-733 projects touch
   myProjectLeaveRow: 'settings-my-project-leave-row',
+  // SHIP-1517 only admin
+  myProjectOnlyAdmin: 'settings-my-project-only-admin',
   sessionsPanel: 'settings-sessions-panel',
   signOutOthers: 'settings-sign-out-others',
   resetViews: 'settings-reset-views',

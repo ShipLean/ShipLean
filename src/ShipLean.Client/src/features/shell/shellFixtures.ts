@@ -22,7 +22,7 @@ export function meDto(overrides: Partial<MeDto> = {}): MeDto {
 }
 
 export function summary(key: string, name: string, memberCount = 3): ProjectSummaryDto {
-  return { id: `id-${key}`, key, name, role: 'member', memberCount };
+  return { id: `id-${key}`, key, name, role: 'member', memberCount, isOnlyAdmin: false };
 }
 
 export const shellProjects = [

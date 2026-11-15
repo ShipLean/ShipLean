@@ -13,7 +13,9 @@ const CURRENT = 'OLD-SECRET-PASSWORD';
 const NEXT = 'NEW-SECRET-PASSWORD';
 
 const me = { id: 'me', email: 'priya@example.test', theme: 'os', density: 'compact' };
-const projects = [{ id: 'p1', key: 'SHIP', name: 'Ship', role: 'member', memberCount: 2 }];
+const projects = [
+  { id: 'p1', key: 'SHIP', name: 'Ship', role: 'member', memberCount: 2, isOnlyAdmin: false },
+];
 
 const reply = (status: number, body?: unknown) =>
   Promise.resolve(
