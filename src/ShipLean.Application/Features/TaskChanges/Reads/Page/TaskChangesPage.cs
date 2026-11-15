@@ -144,12 +144,13 @@ public sealed class TaskChangesPage(
             ORDER BY w.position, w.id
             """, new { workItemId }, cancellationToken: cancellationToken));
         return [.. rows.Select(r => new Row(
-            r.Id, new RepoRef(r.Provider == "gitlab" ? CodeProvider.Gitlab : CodeProvider.Github, r.Host, r.Path), r.Provider, r.Sha, r.ParentShas, r.Subject,
+            r.Id, new RepoRef(r.Provider == "gitlab" ? CodeProvider.Gitlab : CodeProvider.Github, r.Host, r.Path), r.Provider, r.Sha, [.. r.ParentShas.Cast<string>()], r.Subject,
             r.AuthorName, r.AuthoredAt, r.Additions, r.Deletions, r.FilesChanged, r.AddedBy, r.AddedByAgent))];
     }
 
+    // Dapper matches the constructor by exact column types: a text[] column arrives as Array.
     private sealed record RawRow(
-        Guid Id, string Sha, string Provider, string Host, string Path, string[] ParentShas, string Subject, string AuthorName,
+        Guid Id, string Sha, string Provider, string Host, string Path, Array ParentShas, string Subject, string AuthorName,
         DateTimeOffset AuthoredAt, int Additions, int Deletions, int FilesChanged, string AddedBy, bool AddedByAgent);
 
     private sealed record Row(

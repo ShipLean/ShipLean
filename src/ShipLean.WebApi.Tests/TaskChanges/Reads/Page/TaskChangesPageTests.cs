@@ -144,7 +144,7 @@ public class TaskChangesPageTests : ApiFixture
     public async Task Changes_WhenCommitMissing_ShouldMarkMissing()
     {
         var (item, _, _) = await ArrangeAsync(FakeCodeHost.Shas.First);
-        await CopyCommitAsync(item, Storefront, FakeCodeHost.Shas.Second, FakeCodeHost.Shas.Missing, 2);
+        await CopyCommitAsync(item, Storefront, FakeCodeHost.Shas.First, FakeCodeHost.Shas.Missing, 2);
 
         var page = await GetAsync(item, "all");
 
@@ -155,9 +155,9 @@ public class TaskChangesPageTests : ApiFixture
     [Test]
     public async Task Changes_WhenSamePatch_ShouldKeepPatchIdAcrossHeads()
     {
-        var (item, _, seed) = await ArrangeAsync(FakeCodeHost.Shas.First);
+        var (item, _, seed) = await ArrangeAsync(FakeCodeHost.Shas.First, FakeCodeHost.Shas.Second);
         var before = await GetAsync(item, "all");
-        await seed.CommitAsync(item, Storefront, FakeCodeHost.Shas.Second);
+        await seed.CommitAsync(item, Storefront, FakeCodeHost.Shas.Third);
 
         var after = await GetAsync(item, "all");
 
@@ -165,7 +165,7 @@ public class TaskChangesPageTests : ApiFixture
         var checkoutBefore = before.Parts.Single().Files.Single(f => f.Path == "src/checkout.ts");
         var checkoutAfter = after.Parts.Single().Files.Single(f => f.Path == "src/checkout.ts");
         checkoutAfter.PatchId.ShouldBe(checkoutBefore.PatchId);
-        after.Parts.Single().Files.Single(f => f.Path != "src/checkout.ts").PatchId.ShouldNotBe(before.Parts.Single().Files.Single(f => f.Path != "src/checkout.ts").PatchId);
+        after.Parts.Single().Files.Single(f => f.Path == "src/basket.ts").PatchId.ShouldNotBe(before.Parts.Single().Files.Single(f => f.Path == "src/basket.ts").PatchId);
     }
 
     [Test]
@@ -242,7 +242,7 @@ public class TaskChangesPageTests : ApiFixture
 
         using var response = await Api.GetAsync($"api/work-items/{item}/changes?commit=all");
         var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
-        var fixture = JsonNode.Parse(File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "taskChanges", "changes-per-commit.json")))!["changesPerCommit"]!;
+        var fixture = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "taskChanges", "changes-per-commit.json")))!["changesPerCommit"]!;
 
         Keys(body).ShouldBe(Keys(fixture));
         Keys(body["commits"]![0]!).ShouldBe(Keys(fixture["commits"]![0]!));
