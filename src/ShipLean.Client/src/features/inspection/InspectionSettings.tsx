@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
-import { AgentSetup } from './AgentSetup';
+import { AgentSetup, asSetupAgent } from './AgentSetup';
 import { InspectionSettingsGeneral } from './InspectionSettingsGeneral';
 import { inspectionTestIds as ids } from './testIds';
 
@@ -13,7 +14,10 @@ type SubTab = (typeof SUB_TABS)[number]['id'];
 // The Inspection project-settings tab: hosts the General and Agent setup sub-tabs. Save lives in General (D30);
 // Agent setup is read-only.
 export function InspectionSettings({ project }: { project: ProjectDto }) {
-  const [tab, setTab] = useState<SubTab>('general');
+  // The Agent runs section's empty state links here with ?agent=<agent>: open on Agent setup with that agent chosen.
+  const [params] = useSearchParams();
+  const agent = asSetupAgent(params.get('agent'));
+  const [tab, setTab] = useState<SubTab>(agent === undefined ? 'general' : 'agent-setup');
   return (
     <div data-testid={ids.inspectionSettings} className="p-4">
       <div className="mb-4 flex items-center gap-2">
@@ -38,7 +42,7 @@ export function InspectionSettings({ project }: { project: ProjectDto }) {
       {tab === 'general' ? (
         <InspectionSettingsGeneral project={project} />
       ) : (
-        <AgentSetup project={project} />
+        <AgentSetup project={project} initialAgent={agent} />
       )}
     </div>
   );

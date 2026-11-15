@@ -26,7 +26,7 @@ export function InspectionHealthPanel() {
           <Health
             data={health.data}
             checking={health.isFetching}
-            onCheck={() => void health.refetch()}
+            onCheck={() => health.refetch()}
           />
         ) : (
           <Off />
@@ -58,7 +58,7 @@ function Health({
 }: {
   data: InspectionHealthDto;
   checking: boolean;
-  onCheck: () => void;
+  onCheck: () => Promise<unknown>;
 }) {
   // The fields arrive with the health, but they show only once an admin asks, so the answer is the one they just got.
   const [asked, setAsked] = useState(false);
@@ -67,7 +67,7 @@ function Health({
       <dl className="m-0 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-[length:var(--text-sm)]">
         <dt className="text-ink-muted">Store</dt>
         <dd data-testid={ids.inspectionHealthMode} className="m-0 text-ink">
-          {data.mode === null ? 'Not set' : (MODE_LABEL[data.mode] ?? data.mode)}
+          {data.mode === 'off' ? 'Not set' : (MODE_LABEL[data.mode] ?? data.mode)}
         </dd>
         <dt className="text-ink-muted">Reachable</dt>
         <dd
@@ -105,15 +105,16 @@ function Health({
           data-testid={ids.inspectionHealthCheckFields}
           disabled={checking}
           onClick={() => {
-            setAsked(true);
-            onCheck();
+            // Hide the old answer until this check's answer is in; a background refetch must not hide it.
+            setAsked(false);
+            void onCheck().then(() => setAsked(true));
           }}
           className="h-[30px] rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-60"
         >
           Check fields
         </button>
       </div>
-      {asked && !checking && (
+      {asked && (
         <ul className="m-0 grid list-none gap-1 p-0 text-[length:var(--text-sm)]">
           {data.fields.map((field) => (
             <li
