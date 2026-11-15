@@ -1,0 +1,111 @@
+{
+  "source": "cursor-synthetic.assembled.json, mapped as InspectionViews.RunAsync does",
+  "axis": {
+    "startMs": 0,
+    "endMs": 20000
+  },
+  "turns": [
+    {
+      "number": 1,
+      "promptText": null,
+      "rows": [
+        {
+          "id": "log-1",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "cursor.hook.beforeSubmitPrompt",
+          "startMs": 0,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-2",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "cursor.hook.beforeShellExecution",
+          "startMs": 4000,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-3",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "cursor.hook.afterShellExecution",
+          "startMs": 4000,
+          "endMs": 9000,
+          "durationMs": 5000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-4",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "cursor.hook.afterFileEdit",
+          "startMs": 12000,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-5",
+          "parentId": null,
+          "depth": 0,
+          "kind": "shipleanTool",
+          "name": "cursor.hook.afterMCPExecution",
+          "startMs": 13400,
+          "endMs": 14000,
+          "durationMs": 600,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-6",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "cursor.hook.stop",
+          "startMs": 20000,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        }
+      ]
+    }
+  ]
+}
