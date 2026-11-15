@@ -36,6 +36,20 @@ public class InspectionOptionsTests
         error.Message.ShouldContain("SHIPLEAN_INSPECTION_CLICKHOUSE_TRACES_TABLE");
     }
 
+    [TestCase("ITEM")]
+    [TestCase("PROJECT")]
+    [TestCase("SESSION")]
+    [TestCase("PROMPT")]
+    [TestCase("REPO")]
+    [TestCase("BRANCH")]
+    [TestCase("PR")]
+    public void From_WhenAFieldNameHasAControlCharacter_ShouldNameTheVariable(string field)
+    {
+        var error = Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(($"SHIPLEAN_INSPECTION_FIELD_{field}", "bad\u0001name"))));
+
+        error.Message.ShouldContain($"SHIPLEAN_INSPECTION_FIELD_{field}");
+    }
+
     [Test]
     public void From_WhenClickHouseWithConnection_ShouldBeOn()
     {

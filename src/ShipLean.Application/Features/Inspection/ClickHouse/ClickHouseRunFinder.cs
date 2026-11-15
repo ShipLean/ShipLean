@@ -35,7 +35,27 @@ public sealed class ClickHouseRunFinder
         }
     }
 
-    private async Task<List<RunSummary>> ReadRunsAsync(RunQuery query, CancellationToken ct)
+    // One run, if it links to the item inside the window: the same summary and links FindAsync gives it. Null when it does not, and
+    // when the store cannot answer (the port never throws).
+    public async Task<RunSummary?> FindOneAsync(RunRef run, CancellationToken ct)
+    {
+        try
+        {
+            if (!await migrator.EnsureAsync(ct))
+            {
+                return null;
+            }
+            var query = new RunQuery(run.ProjectKey, run.ItemKey, run.From, run.To, run.TenantOverride, run.SelectorOverride);
+            var found = await ReadRunsAsync(query, ct, run.RunId);
+            return (await WithLinksAsync(query, found, ct)).FirstOrDefault();
+        }
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ex is ClickHouseLayoutException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<List<RunSummary>> ReadRunsAsync(RunQuery query, CancellationToken ct, string? session = null)
     {
         var rows = await db.QueryAsync($$"""
             SELECT session_id, max(agent), max(started_by), groupUniqArrayArray(models), min(started_at), max(ended_at),
@@ -44,7 +64,9 @@ public sealed class ClickHouseRunFinder
                 sum(span_tokens_out), sum(span_tokens_out_n), sum(log_tokens_out), sum(log_tokens_out_n)
             FROM {{names.Runs}}
             WHERE project = {project:String}
-                AND session_id IN (SELECT session_id FROM {{names.RunItems}} WHERE project = {project:String} AND item_key = {item:String})
+                AND ({session:String} = '' OR session_id = {session:String})
+                AND session_id IN (SELECT session_id FROM {{names.RunItems}}
+                    WHERE project = {project:String} AND item_key = {item:String} AND {{LinkSeenInWindow}})
             GROUP BY session_id
             HAVING min(started_at) <= {to:DateTime64(6, 'UTC')} AND max(ended_at) >= {from:DateTime64(6, 'UTC')}
             ORDER BY min(started_at) DESC, session_id
@@ -53,6 +75,7 @@ public sealed class ClickHouseRunFinder
             {
                 ["project"] = query.ProjectKey,
                 ["item"] = query.ItemKey,
+                ["session"] = session ?? "",
                 ["from"] = ClickHouseDb.Typed.Time(query.From),
                 ["to"] = ClickHouseDb.Typed.Time(query.To),
             },
@@ -69,14 +92,24 @@ public sealed class ClickHouseRunFinder
         var rows = await db.QueryAsync($$"""
             SELECT session_id, item_key, max(link_version)
             FROM {{names.RunItems}}
-            WHERE project = {project:String} AND session_id IN {sessions:Array(String)}
+            WHERE project = {project:String} AND session_id IN {sessions:Array(String)} AND {{LinkSeenInWindow}}
             GROUP BY session_id, item_key
             """,
-            new Dictionary<string, object> { ["project"] = query.ProjectKey, ["sessions"] = runs.Select(r => r.SessionId).ToArray() },
+            new Dictionary<string, object>
+            {
+                ["project"] = query.ProjectKey,
+                ["sessions"] = runs.Select(r => r.SessionId).ToArray(),
+                ["from"] = ClickHouseDb.Typed.Time(query.From),
+                ["to"] = ClickHouseDb.Typed.Time(query.To),
+            },
             ct);
         var links = rows.ToLookup(row => (string)row[0]!, row => new RunItemLink((string)row[1]!, Source(Convert.ToInt32(row[2], System.Globalization.CultureInfo.InvariantCulture))));
         return [.. runs.Select(run => run with { Links = [.. links[run.SessionId].OrderBy(link => link.ItemKey, StringComparer.Ordinal)] })];
     }
+
+    // A link row is stamped with the second of the record that made it; it counts when that second is inside the query's window
+    // (both ends cut to the second, as the stamp is).
+    private const string LinkSeenInWindow = "seen_at BETWEEN toDateTime({from:DateTime64(6, 'UTC')}, 'UTC') AND toDateTime({to:DateTime64(6, 'UTC')}, 'UTC')";
 
     private static LinkSource Source(int version) => version switch
     {

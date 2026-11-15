@@ -7,7 +7,6 @@ namespace ShipLean.WebApi.Tests.Inspection.Contract;
 
 // Lane A (SHIP-1555): red against the stubs until A1 (find runs) and A2 (get run) land.
 [TestFixture(TestName = "ClickHouse store, SHIP-1555")]
-[Category("RedUntilLane")] // Lane A removes this category when the suite goes green, so CI stops excluding it.
 [Category("SHIP-1555")]
 public sealed class ClickHouseTraceSourceContractTests : TraceSourceContractTests
 {
@@ -21,6 +20,7 @@ public sealed class ClickHouseTraceSourceContractTests : TraceSourceContractTest
     private static ClickHouseTraceSource Build(InspectionOptions options)
     {
         var migrator = new ClickHouseSchemaMigrator(options);
-        return new(new ClickHouseRunFinder(options, migrator), new ClickHouseRunReader(), new ClickHouseHealth(options, migrator), new ClickHouseFieldCheck(options, migrator));
+        var finder = new ClickHouseRunFinder(options, migrator);
+        return new(finder, new ClickHouseRunReader(options, migrator, finder), new ClickHouseHealth(options, migrator), new ClickHouseFieldCheck(options, migrator));
     }
 }
