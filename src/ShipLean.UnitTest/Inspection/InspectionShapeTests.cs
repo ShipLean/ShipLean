@@ -28,6 +28,20 @@ public class InspectionShapeTests
         JsonNode.DeepEquals(document, JsonSerializer.SerializeToNode(value, type, Options)).ShouldBeTrue(file);
     }
 
+    [TestCase("claude-code-synthetic")]
+    [TestCase("codex-cli-synthetic")]
+    [TestCase("cursor-synthetic")]
+    public void AssembledJson_WhenParsed_ShouldHoldTheSpansTheExpectedRunHolds(string name)
+    {
+        var fixture = ShipLean.TestSupport.Inspection.InspectionFixtures.Get(name);
+
+        var assembled = JsonSerializer.Deserialize<AssembledRun>(File.ReadAllText(fixture.AssembledPath), ShipLean.TestSupport.Inspection.RawRunJson.Options)!;
+
+        assembled.Summary.RunId.ShouldBe(fixture.Expected.Summary.RunId);
+        assembled.Turns.ShouldNotBeEmpty();
+        assembled.LogOnly.ShouldBe(fixture.Expected.Spans.Count == 0);
+    }
+
     [Test]
     public void Enums_WhenSerialized_ShouldBeCamelCase()
     {

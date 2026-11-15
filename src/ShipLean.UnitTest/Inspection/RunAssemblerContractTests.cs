@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ShipLean.Application.Features.Inspection.Assembly;
+using ShipLean.Contracts.Inspection;
 using ShipLean.TestSupport.Inspection;
 
 namespace ShipLean.UnitTest.Inspection;
@@ -17,7 +18,7 @@ public class RunAssemblerContractTests
     public void Assemble_WhenASyntheticRun_ShouldMatchItsAssembledJson(string name)
     {
         var fixture = InspectionFixtures.Get(name);
-        var pinned = JsonNode.Parse(File.ReadAllText(fixture.AssembledPath))!;
+        var pinned = JsonSerializer.SerializeToNode(JsonSerializer.Deserialize<AssembledRun>(File.ReadAllText(fixture.AssembledPath), RawRunJson.Options), RawRunJson.Options);
 
         var assembled = new RunAssembler().Assemble(fixture.Expected);
 

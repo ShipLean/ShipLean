@@ -1,0 +1,10 @@
+# Inspection fixtures
+
+Each fixture is a pair: `<name>.otlp.json` (OTLP/JSON a collector receives: `resourceSpans` and `resourceLogs`, one entry per collector batch) and `<name>.expected.json` (`{ compareKeys, run }`: the `RawRun` a store must return, normalised as K3 says). Times are anchored at 2026-11-10T10:00:00Z; loaders rebase them and `RawRunComparer` compares offsets from the run start. `<name>.assembled.json` is the `AssembledRun` the K4 assembler must produce from `run`.
+
+Summary rules the expected files pin: `models` is the distinct `model` attributes; `tokensIn`/`tokensOut` sum `input_tokens`/`output_tokens` on spans when any span has them, else on logs, else null; `errorCount` is error spans plus ERROR logs; `links` follows `LinkRules` (one per item, Tagged, then ShipleanFile, then FromToolCall).
+
+Assembly rules the assembled files pin:
+- Traced runs: a turn per `claude_code.interaction` root span (prompt text from the `claude_code.user_prompt` log with the same prompt id). Rows are the root's descendants except `claude_code.tool.blocked_on_user` (becomes the tool row's wait) and `claude_code.tool.execution` (dropped). Depth is below the root. Kind: `claude_code.llm_request` is ModelCall, a ShipLean tool is ShipleanTool, `claude_code.subagent` is Subagent (its descendants are dropped and counted in CollapsedChildCount), anything else Tool. IsRetry is an `attempt` above 1. Logs with the row's span id attach to the row; logs with no span id join the interaction span, which has no row.
+- Log-only runs: turns group by prompt id in time order; one row per log record (`log-<n>`), Event (ShipleanTool for a ShipLean tool); a record with `duration_ms` ends at its time and starts that long before it, otherwise it has no end.
+- Markers: Wait per permission wait, Error per error row or ERROR record, ShipleanTool per ShipLean call, sorted by time. `WhatItDid` is the last `report_task` or `hand_back` call: `report_task: done · 1 commit`, never prompt text.
