@@ -474,7 +474,7 @@ pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono)
       <section><div class="overline">On the Bug form</div>
         <div class="field-demo"><label><input type="checkbox"> Found before release</label><span class="xs muted">Tick when the bug was caught before its change reached users: in review, in testing, by the agent that wrote it. A ticked bug isn't counted as escaping.</span></div>
         <p class="hint">New optional field on Bug, off by default. Agents set it with <code>found_before_release: true</code> when they file a bug during their own review (capture_work, report_task's left-undone bugs).</p></section>
-      <section><div class="overline">Caused by</div><p class="sm" style="margin:0">A link from a bug to the task that introduced it. Optional: set by hand, or proposed by a triage agent. It feeds the later bug ideas: escape lag, and counting a bug against the ${unit} its cause shipped in.</p></section>
+      <section><div class="overline">Caused by</div><p class="sm" style="margin:0">A link from a bug to the task that introduced it. Optional: set by hand, or proposed by a triage agent. Built in wave 2 (D14). Once bugs carry it, a bug can count against the ${unit} its cause shipped in instead of the ${unit} it was filed (D11).</p></section>
       <section><div class="overline">Per 100 merged PRs</div><p class="sm" style="margin:0">Pull requests linked to an item in this project, by the ${unit} they merged. GitLab merge requests need <code>merged_at</code> stored as GitHub's are. Unlinked PRs are left out.</p></section>
     </aside></div>`;
     later(() => bugChart(document.getElementById('bugs'), vm.rows));

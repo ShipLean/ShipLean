@@ -2,7 +2,7 @@
 
 How a team is going on **velocity, quality and cost**, and a way down from each number to the work behind it. A new top-level menu, **Inspection**, holds a dashboard and one page per measure. Every number opens the list of tasks or bugs behind it, and every task opens the detail views that already exist or are planned: the Feature timeline (SHIP-1465) and agent runs (SHIP-1463).
 
-Mock-ups, not built. Decisions D1–D5 were settled by Joel on 15 Nov 2026 (Q1–Q5 on SHIP-1398). D6–D11 are proposed. The research behind this is attached to SHIP-1398: `warp-factory-dashboard-ideas.md` and `inspection-metrics-proposal.md`.
+Mock-ups, not built. Every decision below was settled by Joel on 15 Nov 2026: D1–D5 as Q1–Q5 on SHIP-1398, and D6–D14 in the Lavish review of these mock-ups. The research behind this is attached to SHIP-1398: `warp-factory-dashboard-ideas.md` and `inspection-metrics-proposal.md`.
 
 ## Screens
 
@@ -78,7 +78,7 @@ States of `inspection.html`:
   - The count per sprint.
   - A severity-weighted count. The weights are a project setting, defaulting to sev 1 = 8, 2 = 4, 3 = 2 and 4 = 1.
   - The count per 100 merged PRs. This counts PRs linked to an item in the project, by the sprint they merged in. Unlinked PRs are left out.
-- **Caused by** (a link from a bug to the task that introduced it) appears in the bug list as a column with **+ Caused by**. Joel picks which bug ideas to build in wave 2 (O3).
+- **Caused by** (a link from a bug to the task that introduced it) appears in the bug list as a column with **+ Caused by**. Wave 2 builds it (D14).
 
 **Cost (wave 3).**
 
@@ -101,7 +101,7 @@ States of `inspection.html`:
 | Rework | First resolve, or a changes-requested review (`log_review`), to the last commit | No |
 | Reviews, commits | `log_review` events, `report_task` commits | No |
 | Found before release | A new optional field on Bug (D2) | **New field** |
-| Caused by | A new link type, Bug → Task (wave 2, if picked) | **New link type** |
+| Caused by | A new link type, Bug → Task (wave 2, D14) | **New link type** |
 | Merged PRs | `link_state.merged_at`. GitHub stores it today; the GitLab merge request hook needs to store it too | **GitLab change** |
 | Tokens | SHIP-1463 agent runs | After SHIP-1463 |
 
@@ -112,13 +112,14 @@ One Feature in three waves (D5).
 **Wave 1: lead time.**
 
 - `committed_at` (optional, UTC) on each commit in `report_task`, stored with the commit. The planning guide and briefs tell agents to send it (`git log -1 --format=%aI <sha>`). It uses the author date, because rebases and squashes rewrite the committer date.
-- The backfill for existing installs (O1).
+- The backfill for existing installs: the temporary `backfill_commit_times` MCP tool (D12).
+- The last-commit tick on the Feature timeline's task bars (D13).
 - The lead-time view model and its API: one request per screen.
 - The Inspection menu with Overview (the lead-time card and chart, and Longest tasks) and Lead time (the range picker, the cuts, quarter rows, the period drill-down with Tasks and Features, and the rail).
 - The `inspection_metrics` MCP tool. It returns the same view model, so retro and planning agents can quote the numbers.
 - Analytics: Inspection viewed (per view), a period opened, a task opened from the rail. Each is compared with Retrospectives › Insights views per week over the same weeks.
 
-**Wave 2: quality.** The Found before release field on Bug, GitLab `merged_at`, the Quality page and its Overview card, and the bug ideas Joel picks (O3).
+**Wave 2: quality.** The Found before release field on Bug, GitLab `merged_at`, the Quality page and its Overview card, and the Caused by link (D14).
 
 **Wave 3: cost.** Blocked by SHIP-1463. The Cost page and its Overview card from the agent runs, with a roll-up cache for Tempo + Loki installs, where runs are found by querying on demand.
 
@@ -131,15 +132,12 @@ One Feature in three waves (D5).
 | D3 | The period is a sprint. Turning sprints off is a future project setting; Inspection switches to weeks when it exists. The note goes on that Feature. | Joel, 15 Nov |
 | D4 | The headline aggregate is the **mean** ("it sounds strange but it actually works"). | Joel, 15 Nov |
 | D5 | One Feature, with bugs and cost as later waves. | Joel, 15 Nov |
-| D6 | The cards headline the last **finished** sprint. The running one is shown as *so far*. | Proposed |
-| D7 | Quarters are calendar quarters, and a sprint belongs to the quarter its end date falls in. Q4 asked about quarters too, but only the aggregate was answered. | Proposed |
-| D8 | Rework counts from the first resolve, or the first changes-requested review, to the last commit. This includes waiting for that review. | Proposed |
-| D9 | A task with no start recorded is left out and listed, never given a made-up start. This matches the timeline's D4. | Proposed |
-| D10 | Desktop only in wave 1, like Task changes and Agent runs. A phone layout comes later. | Proposed |
-| D11 | Escaping bugs count in the sprint they were filed, until a Caused by link exists to count them against the sprint their cause shipped in. | Proposed |
-
-## Open questions
-
-- **O1. How the backfill runs.** Proposed: an instance-admin MCP tool, `backfill_commit_times`, that takes `[{sha, committed_at}]`. An agent with the repos checked out fills it from `git log` for every sha already stored on the install. The alternative is a one-off SQL script in the runbook.
-- **O2. A last-commit marker on the Feature timeline.** Timeline bars end at Resolved (SHIP-1465 D2), while lead time ends at the last commit. Proposed: add a tick at the last commit on each bar, so a drill-down from Inspection shows the same end. It would ship in wave 1.
-- **O3. Which bug ideas go in wave 2.** The options are Caused by, escape lag, containment ratio, bug-fix lead time, bugs by Feature and reopen rate (see `inspection-metrics-proposal.md`). Caused by and containment ratio are recommended first.
+| D6 | The cards headline the last **finished** sprint. The running one is shown as *so far*. | Joel, 15 Nov |
+| D7 | Quarters are calendar quarters, and a sprint belongs to the quarter its end date falls in. | Joel, 15 Nov |
+| D8 | Rework counts from the first resolve, or the first changes-requested review, to the last commit. This includes waiting for that review. | Joel, 15 Nov |
+| D9 | A task with no start recorded is left out and listed, never given a made-up start. This matches the timeline's D4. | Joel, 15 Nov |
+| D10 | Desktop only in wave 1, like Task changes and Agent runs. A phone layout comes later. | Joel, 15 Nov |
+| D11 | Escaping bugs count in the sprint they were filed, until a Caused by link exists to count them against the sprint their cause shipped in. | Joel, 15 Nov |
+| D12 | The backfill is an instance-admin MCP tool, `backfill_commit_times([{sha, committed_at}])`. An agent with the repos checked out fills it from `git log` for every sha already stored on the install. The tool is temporary: its removal in a later version is its own Feature, SHIP-1625. | Joel, 15 Nov |
+| D13 | The Feature timeline gets a last-commit tick on each task bar in wave 1, so a drill-down from Inspection shows the same end. | Joel, 15 Nov |
+| D14 | Wave 2 builds one bug idea: the **Caused by** link (Bug → the task that introduced it). Containment ratio, escape lag, bug-fix lead time, bugs by Feature and reopen rate are not in this Feature. | Joel, 15 Nov |
