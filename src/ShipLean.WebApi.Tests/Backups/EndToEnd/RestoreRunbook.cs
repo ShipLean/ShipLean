@@ -72,8 +72,9 @@ public sealed class RestoreRunbook : IAsyncDisposable
         using var process = Process.Start(startInfo)!;
         var error = process.StandardError.ReadToEndAsync();
         var output = process.StandardOutput.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        await output;
+        await Bounded.WithinAsync(process.WaitForExitAsync(), "pg_restore to exit");
+        await Bounded.WithinAsync(output, "pg_restore's stdout to close");
+        await Bounded.WithinAsync(error, "pg_restore's stderr to close");
         return (process.ExitCode, await error);
     }
 
