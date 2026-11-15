@@ -119,7 +119,10 @@ public class FeatureTimelineEndToEndTests : McpFixture
         mcp["open_url"]!.GetValue<string>().ShouldEndWith($"/p/SHIP/items/{_feature.Key}");
         mcp.Remove("project");
         mcp.Remove("open_url");
-        var expected = JsonSerializer.SerializeToNode(http, TimelineJson.McpOptions);
+        // as_of is the clock at each call, so the two replies differ by it alone; every other field must be equal.
+        mcp.Remove("as_of");
+        var expected = JsonSerializer.SerializeToNode(http, TimelineJson.McpOptions)!.AsObject();
+        expected.Remove("as_of");
         JsonNode.DeepEquals(mcp, expected).ShouldBeTrue(mcp.ToJsonString());
         mcp["critical_path"]!.AsArray().Select(node => node!.GetValue<string>()).ShouldBe([_a1, _b2]);
     }
