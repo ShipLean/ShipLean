@@ -5,7 +5,9 @@ import type {
   RetroUnthemedDto,
 } from '@shiplean/core/api/retros';
 import { routePath } from '../../../../routes';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { retrosTestIds as ids } from '../../testIds';
+import { UnthemedCard } from '../touch/UnthemedCard';
 import { UnthemedTip } from '../tips/UnthemedTip';
 import { MentionCell } from './MentionCell';
 import { NoSprintCell } from './NoSprintCell';
@@ -24,7 +26,19 @@ export function UnthemedRow({
   max: number;
   mode: RetroInsightsMode;
 }) {
+  const { touch } = useTouchShell();
   if (unthemed.total === 0) return null;
+  if (touch) {
+    return (
+      <UnthemedCard
+        projectKey={projectKey}
+        unthemed={unthemed}
+        columns={columns}
+        max={max}
+        mode={mode}
+      />
+    );
+  }
   return (
     <tr
       data-testid={ids.retroInsightsUnthemed}

@@ -45,6 +45,7 @@ public static class FeatureTestIds
     public const string StripSlug = "feature-strip-slug";
     public const string StripStarted = "feature-strip-started";
     public const string StripChildrenCount = "feature-strip-children-count";
+    public const string StatusEditHint = "feature-status-edit-hint";
     public const string ChildrenCount = "feature-children-count";
     public const string ChildrenEmpty = "feature-children-empty";
     public const string ChildRow = "feature-child-row";
@@ -68,6 +69,7 @@ public static class FeatureTestIds
     public const string RailItem = "feature-rail-item";
     public const string RailItemSize = "feature-rail-item-size";
     public const string RailItemRemove = "feature-rail-item-remove";
+    public const string LinkCardClose = "feature-link-card-close";
     public const string ImagePreview = "feature-image-preview";
     public const string ImagePreviewImage = "feature-image-preview-image";
     public const string ImagePreviewClose = "feature-image-preview-close";

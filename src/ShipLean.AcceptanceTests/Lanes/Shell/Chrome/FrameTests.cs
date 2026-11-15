@@ -1,5 +1,6 @@
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Shell;
+using ShipLean.AcceptanceTests.Pages.Touch;
 using ShipLean.TestSupport;
 
 namespace ShipLean.AcceptanceTests.Lanes.Shell.Chrome;
@@ -9,18 +10,21 @@ namespace ShipLean.AcceptanceTests.Lanes.Shell.Chrome;
 public class FrameTests : SeededAcceptanceTest
 {
     [Test]
-    public async Task Shell_WhenNarrow_ShouldShowStrip()
+    public async Task Shell_WhenNarrow_ShouldShowTheTouchTopBar()
     {
         var frame = new ShellFrame(Page);
+        var touch = new TouchShell(Page);
         await Page.SetViewportSizeAsync(800, 700);
 
-        await frame.OpenAsync(ShellFrame.BacklogPath("SHIP"));
+        await Page.GotoAsync(ShellFrame.BacklogPath("SHIP"));
 
-        var side = (await frame.SideMenu.BoundingBoxAsync())!;
+        await Expect(touch.TopBar).ToBeVisibleAsync();
+        await Expect(frame.SideMenu).ToHaveCountAsync(0);
+        await Expect(frame.TopBar).ToHaveCountAsync(0);
+        var bar = (await touch.TopBar.BoundingBoxAsync())!;
         var main = (await frame.Main.BoundingBoxAsync())!;
-        side.Width.ShouldBeGreaterThan(780);
-        side.Height.ShouldBeLessThan(200);
-        main.Y.ShouldBeGreaterThanOrEqualTo(side.Y + side.Height);
+        bar.Width.ShouldBe(800);
+        main.Y.ShouldBeGreaterThanOrEqualTo(bar.Y + bar.Height);
     }
 
     [Test]

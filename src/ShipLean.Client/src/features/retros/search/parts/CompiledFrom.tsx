@@ -12,7 +12,11 @@ export function CompiledFrom({ items }: { items: RetroItemRefDto[] }) {
         <span key={item.id}>
           <span className="inline-flex items-center gap-1">
             <TypeIcon type={item.type.id} />
-            <ItemLink itemKey={item.key} title={item.title} className="font-mono">
+            <ItemLink
+              itemKey={item.key}
+              title={item.title}
+              className="inline-flex items-center font-mono touch:min-h-[var(--touch-target)]"
+            >
               {item.key}
             </ItemLink>
           </span>

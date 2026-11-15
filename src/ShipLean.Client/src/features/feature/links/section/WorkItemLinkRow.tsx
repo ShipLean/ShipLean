@@ -16,7 +16,7 @@ export function WorkItemLinkRow({
     <li
       data-testid={ids.linkWorkItemRow}
       data-key={row.key}
-      className="flex items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0"
+      className="flex items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0 touch:min-h-10"
     >
       <TypeIcon type={row.itemType.id} />
       <span className="w-20 shrink-0 text-ink-muted">{row.key}</span>

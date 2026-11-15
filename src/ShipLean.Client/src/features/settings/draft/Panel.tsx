@@ -13,7 +13,7 @@ export function Panel({
     <section
       aria-label={title}
       data-testid={testId}
-      className="mb-4 rounded-panel border border-edge bg-panel"
+      className="mb-4 rounded-panel border border-edge bg-panel touch:mb-3"
     >
       <header className="border-b border-edge px-4 py-2">
         <h2 className="text-[length:var(--text-md)] font-semibold text-ink">{title}</h2>

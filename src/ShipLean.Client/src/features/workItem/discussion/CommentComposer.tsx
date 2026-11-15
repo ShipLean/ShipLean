@@ -56,7 +56,7 @@ export function CommentComposer({
           data-testid={ids.commentInput}
           aria-label="New comment"
           placeholder="Add a comment. Type @ to mention someone"
-          className={`${textareaClass} min-h-14 font-[family-name:var(--font-sans)]`}
+          className={`${textareaClass} min-h-14 font-[family-name:var(--font-sans)] touch:min-h-24`}
           value={text}
           onChange={(event) => {
             setText(event.target.value);
@@ -86,14 +86,14 @@ export function CommentComposer({
         {open ? <MentionMenu people={hits} highlighted={highlighted} onPick={pick} /> : null}
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-[length:var(--text-xs)] text-ink-muted">
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">
           Markdown and @mentions · Ctrl+Enter posts · comments post straight away, not with Save
         </span>
         <button
           type="button"
           data-testid={ids.commentPost}
           disabled={body === '' || posting}
-          className="ml-auto h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
+          className="ml-auto h-7 rounded-control bg-signal px-3 touch:h-10 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
           onClick={post}
         >
           Comment

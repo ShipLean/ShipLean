@@ -70,9 +70,9 @@ test('Tips_WhenFocusedByKeyboard_ShouldShowAndHideTheTip', async ({ mount, page 
 });
 
 test('Tips_WhenOnTheLastRowAndRightColumn_ShouldStayInsideTheWindow', async ({ mount, page }) => {
-  await page.setViewportSize({ width: 700, height: 400 });
+  await page.setViewportSize({ width: 1000, height: 400 });
   await mount(
-    <div style={{ position: 'relative', height: 380, width: 690 }}>
+    <div style={{ position: 'relative', height: 380, width: 990 }}>
       <div style={{ position: 'absolute', right: 0, bottom: 0 }}>
         <StatusChip status="recurring" mode="sprint" />
       </div>
@@ -84,7 +84,7 @@ test('Tips_WhenOnTheLastRowAndRightColumn_ShouldStayInsideTheWindow', async ({ m
   const box = (await tip.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(700);
+  expect(box.x + box.width).toBeLessThanOrEqual(1000);
   expect(box.y + box.height).toBeLessThanOrEqual(400);
 });
 

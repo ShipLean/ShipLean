@@ -1,6 +1,5 @@
-import { IMPACT_HEIGHT, IMPACT_WIDTH, impactShape } from './impactGeometry';
-
-const shortName = (label: string) => label.replace(/^Sprint\s+/, 'S');
+import { retrosTestIds as ids } from '../../testIds';
+import { IMPACT_HEIGHT, IMPACT_WIDTH, impactShape, shortColumnLabel } from './impactGeometry';
 
 /** Mentions per column (sprint or week) as bars, the before and after averages as lines and a dashed marker where the action closed. Inline SVG. */
 export function ImpactChart({
@@ -12,6 +11,8 @@ export function ImpactChart({
   beforeAvg,
   afterAvg,
   unit,
+  selected = null,
+  onSelect,
 }: {
   label: string;
   actionKey: string;
@@ -21,6 +22,9 @@ export function ImpactChart({
   beforeAvg: number;
   afterAvg: number | null;
   unit: 'sprint' | 'week';
+  /** The tapped column, outlined. Only the touch layout passes `onSelect`; the hover titles stay either way. */
+  selected?: number | null;
+  onSelect?: (index: number) => void;
 }) {
   const shape = impactShape(counts, closedAt, beforeAvg, afterAvg);
   const markerOnRight = shape.markerX > IMPACT_WIDTH - 90;
@@ -62,12 +66,28 @@ export function ImpactChart({
             rx={2}
             fill={bar.after ? 'var(--color-ok)' : 'var(--color-warn)'}
             opacity={bar.count > 0 ? 1 : 0.35}
+            data-selected={selected === bar.index ? '' : undefined}
+            stroke={selected === bar.index ? 'var(--color-text)' : undefined}
+            strokeWidth={selected === bar.index ? 2 : undefined}
           >
             <title>{`${columnLabels[bar.index] ?? ''}: ${bar.count}`}</title>
           </rect>
           <text x={bar.labelX} y={IMPACT_HEIGHT - 4} textAnchor="middle" fill="var(--color-muted)">
-            {shortName(columnLabels[bar.index] ?? '')}
+            {shortColumnLabel(columnLabels[bar.index] ?? '')}
           </text>
+          {onSelect ? (
+            <rect
+              data-testid={ids.retroImpactBar}
+              data-index={bar.index}
+              data-selected={selected === bar.index ? '' : undefined}
+              x={bar.x - 5}
+              y={0}
+              width={bar.width + 10}
+              height={IMPACT_HEIGHT}
+              fill="transparent"
+              onClick={() => onSelect(bar.index)}
+            />
+          ) : null}
         </g>
       ))}
       {shape.before ? (

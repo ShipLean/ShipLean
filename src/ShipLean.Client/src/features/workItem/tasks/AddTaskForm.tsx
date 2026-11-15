@@ -47,7 +47,7 @@ export function AddTaskForm({
           data-testid={ids.taskInput}
           aria-label="Task title"
           placeholder="Task title, then Enter"
-          className={`${inputClass} min-w-0 flex-1`}
+          className={`${inputClass} min-w-0 flex-1 touch:h-[var(--touch-target)]`}
           value={title}
           ref={input}
           onChange={(event) => setTitle(event.target.value)}
@@ -63,14 +63,14 @@ export function AddTaskForm({
           type="submit"
           data-testid={ids.taskSubmit}
           disabled={trimmed === '' || add.isPending}
-          className="h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
+          className="h-7 rounded-control bg-signal px-3 touch:h-[var(--touch-target)] text-[length:var(--text-sm)] font-semibold text-signal-ink disabled:opacity-50"
         >
           Add
         </button>
         <button
           type="button"
           data-testid={ids.taskCancel}
-          className="h-7 rounded-control px-2 text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft"
+          className="h-7 rounded-control px-2 text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft touch:h-[var(--touch-target)]"
           onClick={onClose}
         >
           Cancel

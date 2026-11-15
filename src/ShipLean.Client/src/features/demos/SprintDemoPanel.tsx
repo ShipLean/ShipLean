@@ -18,7 +18,10 @@ export function SprintDemoPanel({ project, sprint }: { project: ProjectDto; spri
   const player = useMemo(() => newPlayerHandle(), []);
   const demo = query.data;
   return (
-    <div data-testid={ids.demoPanel} className="grid max-w-[1280px] content-start gap-3">
+    <div
+      data-testid={ids.demoPanel}
+      className="grid max-w-[1280px] content-start gap-3 touch:max-w-none"
+    >
       {demo === undefined ? (
         query.isError ? (
           <div
@@ -32,7 +35,7 @@ export function SprintDemoPanel({ project, sprint }: { project: ProjectDto; spri
               type="button"
               data-testid={ids.demoLoadRetry}
               onClick={() => void query.refetch()}
-              className="h-7 rounded-control border border-edge bg-panel px-3 font-medium hover:bg-sunken"
+              className="h-7 rounded-control border border-edge bg-panel px-3 font-medium hover:bg-sunken touch:h-[var(--touch-target)]"
             >
               Retry
             </button>
@@ -45,7 +48,7 @@ export function SprintDemoPanel({ project, sprint }: { project: ProjectDto; spri
           <DemoStatusBand demo={demo} player={player} />
           {demo.video !== null && (
             <>
-              <div className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-4">
+              <div className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-4 touch:grid-cols-[minmax(0,1fr)]">
                 <div className="grid min-w-0 gap-2">
                   <DemoPlayer demo={demo} player={player} />
                   <DemoYouTubeNotice demo={demo} player={player} />

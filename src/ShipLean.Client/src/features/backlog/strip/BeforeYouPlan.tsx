@@ -1,7 +1,9 @@
 import type { BacklogCheckId, BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { useListCommand } from '../commands/listCommands';
 import { backlogTestIds as ids } from '../testIds';
 import { useQueueFixed } from './queueFixed';
+import { TouchQueueBanner } from './TouchQueueBanner';
 import type { CheckQueue } from './useCheckQueue';
 
 const LABELS: Record<BacklogCheckId, string> = {
@@ -27,52 +29,58 @@ export function BeforeYouPlan({
   queue: CheckQueue;
 }) {
   const tally = useQueueFixed();
+  const { touch } = useTouchShell();
   if (!review) return null;
   const fixed = tally.fixed.size;
   return (
-    <div
-      data-testid={ids.planStrip}
-      className="flex min-h-9 shrink-0 flex-wrap items-center gap-2 border-b border-edge bg-canvas px-4 py-1 text-sm"
-    >
-      <span className="text-ink-muted">Before you plan</span>
-      {review.checks.map((check) => {
-        const count = check.itemIds.length;
-        const pressed = queue.checkId === check.id;
-        return (
-          <button
-            key={check.id}
-            type="button"
-            data-testid={ids.planCheck}
-            data-check={check.id}
-            data-done={count === 0}
-            aria-pressed={pressed}
-            disabled={count === 0 && !pressed}
-            onClick={() => queue.open(check.id, check.itemIds)}
-            className={`inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-xs font-medium ${
-              pressed ? 'border-signal bg-signal-soft font-semibold' : 'border-edge bg-panel'
-            } ${count === 0 ? 'text-ink-muted' : ''}`}
-          >
-            <b className="tabular-nums">{count === 0 ? '✓' : count}</b> {LABELS[check.id]}
-          </button>
-        );
-      })}
-      {queue.active ? (
-        <>
-          <QueueEscape exit={queue.exit} />
-          <span className="flex-1" />
-          <span data-testid={ids.planQueueBar} data-fixed={fixed}>
-            {fixed} of {tally.total} fixed
-          </span>
-          <button
-            type="button"
-            data-testid={ids.planQueueExit}
-            className="btn ghost"
-            onClick={queue.exit}
-          >
-            Leave <kbd>Esc</kbd>
-          </button>
-        </>
+    <>
+      <div
+        data-testid={ids.planStrip}
+        className="flex min-h-9 shrink-0 flex-wrap items-center gap-2 border-b border-edge bg-canvas px-4 py-1 text-sm"
+      >
+        <span className="text-ink-muted">Before you plan</span>
+        {review.checks.map((check) => {
+          const count = check.itemIds.length;
+          const pressed = queue.checkId === check.id;
+          return (
+            <button
+              key={check.id}
+              type="button"
+              data-testid={ids.planCheck}
+              data-check={check.id}
+              data-done={count === 0}
+              aria-pressed={pressed}
+              disabled={count === 0 && !pressed}
+              onClick={() => queue.open(check.id, check.itemIds)}
+              className={`inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-xs font-medium ${
+                pressed ? 'border-signal bg-signal-soft font-semibold' : 'border-edge bg-panel'
+              } ${count === 0 ? 'text-ink-muted' : ''}`}
+            >
+              <b className="tabular-nums">{count === 0 ? '✓' : count}</b> {LABELS[check.id]}
+            </button>
+          );
+        })}
+        {queue.active ? (
+          <>
+            <QueueEscape exit={queue.exit} />
+            <span className="flex-1" />
+            <span data-testid={ids.planQueueBar} data-fixed={fixed}>
+              {fixed} of {tally.total} fixed
+            </span>
+            <button
+              type="button"
+              data-testid={ids.planQueueExit}
+              className="btn ghost"
+              onClick={queue.exit}
+            >
+              Leave <kbd>Esc</kbd>
+            </button>
+          </>
+        ) : null}
+      </div>
+      {touch && queue.active && queue.checkId === 'unestimated' ? (
+        <TouchQueueBanner review={review} frozenIds={queue.frozenIds} />
       ) : null}
-    </div>
+    </>
   );
 }

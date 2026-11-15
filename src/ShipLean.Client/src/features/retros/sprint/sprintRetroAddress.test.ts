@@ -7,6 +7,7 @@ test('sprintRetroAddress_WhenDecideAndPointAreGiven_ShouldReadThem', () => {
     point: 'p1',
     view: 'category',
     writtenBy: 'all',
+    cat: 'wentWell',
   });
 });
 
@@ -16,6 +17,7 @@ test('sprintRetroAddress_WhenEmpty_ShouldDefaultToAllPointsByCategoryAndNoPoint'
     point: undefined,
     view: 'category',
     writtenBy: 'all',
+    cat: 'wentWell',
   });
 });
 
@@ -25,6 +27,7 @@ test('sprintRetroAddress_WhenViewAndWrittenByAreGiven_ShouldReadThemAndIgnoreJun
   expect(parseSprintRetroAddress(new URLSearchParams('view=zzz&writtenBy=zzz'))).toMatchObject({
     view: 'category',
     writtenBy: 'all',
+    cat: 'wentWell',
   });
 });
 
@@ -35,4 +38,15 @@ test('withSprintRetroValue_ShouldSetANonDefaultAndDropADefault', () => {
   expect(withSprintRetroValue(set, 'writtenBy', 'people').toString()).toBe(
     'point=p1&view=item&writtenBy=people',
   );
+});
+
+test('sprintRetroAddress_WhenCatIsGiven_ShouldReadItAndIgnoreJunk', () => {
+  expect(parseSprintRetroAddress(new URLSearchParams('cat=notInPlan')).cat).toBe('notInPlan');
+  expect(parseSprintRetroAddress(new URLSearchParams('cat=zzz')).cat).toBe('wentWell');
+});
+
+test('withSprintRetroValue_WhenCat_ShouldSetItAndDropWentWell', () => {
+  const set = withSprintRetroValue(new URLSearchParams('decide=open'), 'cat', 'wentBadly');
+  expect(set.toString()).toBe('decide=open&cat=wentBadly');
+  expect(withSprintRetroValue(set, 'cat', 'wentWell').toString()).toBe('decide=open');
 });

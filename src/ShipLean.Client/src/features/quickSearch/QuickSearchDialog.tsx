@@ -120,7 +120,7 @@ export function QuickSearchDialog({
       onClick={(event) => {
         if (event.target === event.currentTarget && pressedScrim.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[899px]:items-start max-[899px]:p-2"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 touch:items-stretch touch:p-0"
       style={{ background: 'var(--scrim)' }}
     >
       <div
@@ -132,10 +132,11 @@ export function QuickSearchDialog({
         tabIndex={-1}
         onKeyDown={onPanelKeyDown}
         style={{ boxShadow: 'var(--shadow-dialog)' }}
-        // A fixed height, so the panel doesn't jump as results arrive; a short window shrinks it and the list scrolls.
-        className="flex h-[min(520px,calc(100dvh-96px))] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel max-[899px]:h-[min(520px,calc(100dvh-16px))] max-[899px]:w-[calc(100vw-16px)]"
+        // A fixed height, so the panel doesn't jump as results arrive; a short window shrinks it and the list scrolls. At
+        // touch widths it fills the screen (SHIP-713): the field at the top with Cancel, the list below.
+        className="flex h-[min(520px,calc(100dvh-96px))] w-[min(640px,100vw-32px)] flex-col overflow-hidden rounded-frame border border-edge bg-panel touch:h-dvh touch:w-full touch:rounded-none touch:border-0 touch:pt-[env(safe-area-inset-top)] touch:pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="relative flex h-[46px] flex-none items-center gap-2.5 border-b border-edge px-3.5">
+        <div className="relative flex h-[46px] flex-none items-center gap-2.5 border-b border-edge px-3.5 touch:h-(--mobile-bar-height) touch:pr-1">
           <svg
             aria-hidden="true"
             viewBox="0 0 16 16"
@@ -167,9 +168,18 @@ export function QuickSearchDialog({
             onKeyDown={onInputKeyDown}
             className="min-w-0 flex-1 bg-transparent text-[length:var(--text-md)] text-ink outline-none placeholder:text-ink-muted"
           />
-          <kbd className="rounded-xs border border-edge bg-canvas px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted">
+          <kbd className="rounded-xs border border-edge bg-canvas px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted touch:hidden">
             Esc
           </kbd>
+          {/* C9: Cancel only beside a search field; at touch widths it replaces Esc and the scrim. */}
+          <button
+            type="button"
+            data-testid={ids.cancel}
+            className="hidden min-h-(--touch-target) flex-none items-center rounded-control border-0 bg-transparent px-2 text-[length:var(--text-base)] font-medium text-signal touch:flex"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
           {results.status === 'loading' ? (
             <span
               data-testid={ids.loading}
@@ -244,7 +254,7 @@ export function QuickSearchDialog({
                       data-kind={row.kind}
                       data-highlighted={highlighted}
                       {...rowDataAttributes(row)}
-                      className={`grid min-h-[34px] cursor-pointer grid-cols-[16px_1fr_auto] items-center gap-x-2.5 rounded-control px-2 py-1 ${
+                      className={`grid min-h-[34px] cursor-pointer grid-cols-[16px_1fr_auto] items-center gap-x-2.5 rounded-control px-2 py-1 touch:min-h-[52px] ${
                         highlighted ? 'bg-signal-soft' : ''
                       }`}
                       onMouseEnter={() => move(position)}

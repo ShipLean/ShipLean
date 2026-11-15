@@ -16,7 +16,7 @@ export function SectionToggle({
     <button
       type="button"
       data-testid={ids.sectionToggle}
-      className="btn-ghost px-1 disabled:opacity-50"
+      className="btn-ghost px-1 disabled:opacity-50 touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
       aria-expanded={open}
       aria-label={`${open ? 'Collapse' : 'Expand'} ${title}`}
       disabled={disabled}

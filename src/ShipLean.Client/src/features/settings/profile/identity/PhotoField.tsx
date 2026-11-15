@@ -16,11 +16,11 @@ export function PhotoField({
   const input = useRef<HTMLInputElement>(null);
   return (
     <FormRow label="Photo">
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-2 touch:flex-wrap">
         <button
           type="button"
           data-testid={settingsTestIds.profilePhotoUpload}
-          className="btn-ghost"
+          className="btn-ghost touch:h-9"
           onClick={() => input.current?.click()}
         >
           {hasPhoto ? 'Replace photo' : 'Upload photo'}
@@ -41,7 +41,7 @@ export function PhotoField({
           <button
             type="button"
             data-testid={settingsTestIds.profilePhotoRemove}
-            className="btn-ghost border-transparent"
+            className="btn-ghost border-transparent touch:h-9"
             onClick={onRemove}
           >
             Remove
@@ -57,7 +57,7 @@ export function PhotoField({
           {error}
         </span>
       )}
-      <span className="text-[length:var(--text-xs)] text-ink-muted">
+      <span className="text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
         Optional. PNG, JPEG or WebP up to 2 MB, cropped to a circle. It shows at 20px on cards, so a
         close-up of your face works best. Without one, your initials show on your colour.
       </span>

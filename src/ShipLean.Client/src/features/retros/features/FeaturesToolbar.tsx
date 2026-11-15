@@ -1,7 +1,7 @@
 import { retrosTestIds as ids } from '../testIds';
 import type { RetroFeaturesAddress, RetroFeaturesShow } from './retroFeaturesAddress';
 
-const SHOWS: { id: RetroFeaturesShow; label: string }[] = [
+export const SHOWS: { id: RetroFeaturesShow; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'To decide' },
   { id: 'waiting', label: 'No Feature retro yet' },
@@ -20,7 +20,7 @@ export function FeaturesToolbar({
   onSearch: (q: string) => void;
 }) {
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-canvas py-1">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-canvas py-1 touch:static">
       <div
         role="group"
         aria-label="Show"
@@ -34,7 +34,7 @@ export function FeaturesToolbar({
             data-testid={ids.retroFeaturesFilterOption}
             data-value={option.id}
             aria-pressed={address.show === option.id}
-            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-[length:var(--text-sm)] whitespace-nowrap text-ink-muted last:border-r-0 aria-pressed:bg-signal-soft aria-pressed:font-semibold aria-pressed:text-ink"
+            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 touch:min-h-[var(--touch-target)] text-[length:var(--text-sm)] whitespace-nowrap text-ink-muted last:border-r-0 aria-pressed:bg-signal-soft aria-pressed:font-semibold aria-pressed:text-ink"
             onClick={() => onShow(option.id)}
           >
             {option.label}
@@ -47,7 +47,7 @@ export function FeaturesToolbar({
         aria-label="Search Features"
         placeholder="Search Features"
         value={address.q}
-        className="w-60 rounded-control border border-edge bg-panel px-2.5 py-1 text-[length:var(--text-sm)]"
+        className="w-60 touch:h-[var(--touch-target)] rounded-control border border-edge bg-panel px-2.5 py-1 text-[length:var(--text-sm)]"
         onChange={(event) => onSearch(event.target.value)}
       />
       <span className="flex-1" />

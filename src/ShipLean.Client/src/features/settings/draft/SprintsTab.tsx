@@ -7,7 +7,7 @@ import { Panel } from './Panel';
 import type { TabProps } from './tabProps';
 
 const input =
-  'h-7 w-20 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'h-7 w-20 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:min-h-[var(--touch-target)]';
 
 export function SprintsTab({
   project,
@@ -32,7 +32,7 @@ export function SprintsTab({
           <select
             id="settings-field-sprintNaming"
             data-testid={settingsTestIds.sprintNaming}
-            className="h-7 w-fit rounded-control border border-edge bg-panel px-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60"
+            className="h-7 w-fit rounded-control border border-edge bg-panel px-1 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:min-h-[var(--touch-target)] touch:w-full"
             value={draft.sprintNaming}
             disabled={readOnly}
             onChange={(e) => {
@@ -53,7 +53,7 @@ export function SprintsTab({
         </label>
         <Link
           to={routePath('sprints', { key: project.key })}
-          className="text-[length:var(--text-sm)] text-signal"
+          className="text-[length:var(--text-sm)] text-signal touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
         >
           All sprints
         </Link>
@@ -64,7 +64,7 @@ export function SprintsTab({
           <input
             id="settings-field-velocityWindow"
             data-testid={settingsTestIds.velocityWindow}
-            className={input}
+            className={`${input} touch:w-full`}
             value={draft.velocityWindow}
             inputMode="numeric"
             disabled={readOnly}
@@ -79,7 +79,7 @@ export function SprintsTab({
             <input
               id="settings-field-velocityOverride"
               data-testid={settingsTestIds.velocityOverride}
-              className={input}
+              className={`${input} touch:min-w-0 touch:flex-1`}
               value={draft.velocityOverride}
               inputMode="decimal"
               disabled={readOnly}
@@ -90,7 +90,7 @@ export function SprintsTab({
               <button
                 type="button"
                 data-testid={settingsTestIds.velocityClear}
-                className="text-[length:var(--text-sm)] text-signal"
+                className="text-[length:var(--text-sm)] text-signal touch:min-h-[var(--touch-target)] touch:shrink-0 touch:px-2"
                 onClick={() => setDraft((d) => ({ ...d, velocityOverride: '' }))}
               >
                 Use calculated

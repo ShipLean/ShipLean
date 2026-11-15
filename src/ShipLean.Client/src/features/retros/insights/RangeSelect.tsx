@@ -14,6 +14,19 @@ const WEEK_RANGES = [
 
 const ALL_RANGES: readonly { id: RetroRange; label: string }[] = [...SPRINT_RANGES, ...WEEK_RANGES];
 
+/** The two groups of ranges, as the select and the touch Range sheet list them. */
+export const RANGE_GROUPS: readonly {
+  label: string;
+  ranges: readonly { id: RetroRange; label: string }[];
+}[] = [
+  { label: 'By sprint', ranges: SPRINT_RANGES },
+  { label: 'By week', ranges: WEEK_RANGES },
+];
+
+/** A range's label, such as "Last 6 sprints". */
+export const rangeLabel = (range: RetroRange): string =>
+  ALL_RANGES.find((r) => r.id === range)?.label ?? '';
+
 /** The range as the address spells it; anything it doesn't know is the default, the last 6 sprints. */
 export const rangeOf = (value: string | null): RetroRange =>
   ALL_RANGES.find((r) => r.id === value)?.id ?? '6';

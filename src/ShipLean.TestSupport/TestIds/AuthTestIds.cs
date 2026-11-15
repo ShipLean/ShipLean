@@ -26,4 +26,6 @@ public static class AuthTestIds
     public const string ProxySignIn = "auth-proxy-sign-in";
     public const string ProxyMessage = "auth-proxy-message";
     public const string ProxyRetry = "auth-proxy-retry";
+    public const string OrWithEmail = "auth-or-with-email";
+    public const string TopBar = "auth-top-bar";
 }

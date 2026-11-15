@@ -32,6 +32,17 @@ public class SelfEmittedProxyUsageTests : ProxyApiFixture
     }
 
     [Test]
+    public async Task ProxySignIn_WhenCookieIssued_ShouldTrackProxyMethod()
+    {
+        using var client = ProxyClient().WithIdentity($"proxy-{Guid.NewGuid():N}@shiplean.test");
+
+        using var response = await client.GetAsync("/api/me");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        Recorder.Events.ShouldHaveSingleItem().Properties[UsageProps.Method].ShouldBe(SignInMethods.Proxy);
+    }
+
+    [Test]
     public async Task ProxySignIn_WhenCookieAlreadyIssued_ShouldTrackOnlyTheFirst()
     {
         using var client = ProxyClient().WithIdentity($"proxy-{Guid.NewGuid():N}@shiplean.test");

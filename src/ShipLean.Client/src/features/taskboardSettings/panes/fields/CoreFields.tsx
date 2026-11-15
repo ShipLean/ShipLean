@@ -29,7 +29,10 @@ export function CoreFields({
       {core
         .filter(({ field }) => field !== 'showTags' || setting.type === 'task')
         .map(({ field, label, testId }) => (
-          <label key={field} className="flex items-center gap-2 text-[length:var(--text-sm)]">
+          <label
+            key={field}
+            className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)]"
+          >
             <input
               type="checkbox"
               data-testid={testId}

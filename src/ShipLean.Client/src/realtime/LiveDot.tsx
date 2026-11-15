@@ -8,7 +8,8 @@ const labels: Record<ConnectionState, string> = {
   offline: 'Offline',
 };
 
-/** The top bar's Live dot: green while connected, warn (and saying why) otherwise. */
+/** The top bar's Live dot: green while connected, warn (and saying why) otherwise. At touch widths Live is the dot
+ * alone (its word stays for screen readers); the warn states keep their word (SHIP-713). */
 export function LiveDot({ state }: { state: ConnectionState }) {
   const colour = state === 'live' ? '--color-ok' : '--color-warn';
   return (
@@ -26,7 +27,7 @@ export function LiveDot({ state }: { state: ConnectionState }) {
           boxShadow: `0 0 0 3px color-mix(in srgb, var(${colour}) 22%, transparent)`,
         }}
       />
-      {labels[state]}
+      <span className={state === 'live' ? 'touch:sr-only' : undefined}>{labels[state]}</span>
     </span>
   );
 }

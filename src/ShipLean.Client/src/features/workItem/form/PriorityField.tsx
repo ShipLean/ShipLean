@@ -13,12 +13,12 @@ export function PriorityField({
   onChange: (priority: number) => void;
 }) {
   return (
-    <FieldCell label="Priority" field="priority" changed={changed}>
+    <FieldCell label="Priority" field="priority" changed={changed} className="touch:col-span-2">
       <div
         data-testid={ids.priority}
         role="group"
         aria-label="Priority, 1 is highest"
-        className="inline-flex h-7 overflow-hidden rounded-control border border-edge"
+        className="inline-flex h-7 overflow-hidden rounded-control border border-edge touch:flex touch:h-9"
       >
         {priorities.map((priority) => (
           <button
@@ -26,7 +26,7 @@ export function PriorityField({
             type="button"
             data-priority={priority}
             aria-pressed={value === priority}
-            className={`w-7 text-[length:var(--text-sm)] ${
+            className={`w-7 text-[length:var(--text-sm)] touch:flex-1 touch:text-[length:var(--text-base)] ${
               value === priority
                 ? 'bg-signal font-semibold text-signal-ink'
                 : 'bg-panel text-ink hover:bg-signal-soft'

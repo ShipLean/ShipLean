@@ -6,6 +6,9 @@ import { useAttachmentEvents } from '../../workItem/side/useAttachmentEvents';
 import { useAttachmentWrites } from '../../workItem/side/useAttachmentWrites';
 import { workItemTestIds } from '../../workItem/testIds';
 import { fetchAttachments, workItemAttachmentsKey } from '../../workItem/workItemApi';
+import { openImageViewer } from '../../../touch/imageViewer';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { itemViewerImages } from '../../attachment/viewer/itemViewerImages';
 import { useChooseFiles } from '../drop/dropZoneContext';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { featureTestIds as ids } from '../testIds';
@@ -25,6 +28,14 @@ export function FeatureAttachmentsRail({ item, projectKey }: FeatureRegionProps)
   const choose = useChooseFiles();
   const [previewing, setPreviewing] = useState<AttachmentDto | null>(null);
   const list = attachments.data ?? [];
+  const { touch } = useTouchShell();
+  // At touch a tapped image opens the full-screen viewer on the item's images; above that, the preview dialog.
+  const preview = (attachment: AttachmentDto) => {
+    if (!touch) return setPreviewing(attachment);
+    const images = itemViewerImages(list);
+    const start = images.findIndex((image) => image.src === attachment.downloadUrl);
+    openImageViewer({ images, start: Math.max(start, 0), context: item.key });
+  };
   const error = writes.archive.error;
   return (
     <div data-testid={ids.attachmentsRail}>
@@ -47,7 +58,7 @@ export function FeatureAttachmentsRail({ item, projectKey }: FeatureRegionProps)
             <button
               type="button"
               data-testid={ids.railAttach}
-              className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+              className="ml-auto h-6 rounded-control px-2 touch:min-h-[var(--touch-target)] text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
               onClick={choose}
             >
               + Attach
@@ -82,7 +93,7 @@ export function FeatureAttachmentsRail({ item, projectKey }: FeatureRegionProps)
                     attachments={ofThisKind}
                     projectKey={projectKey}
                     itemKey={item.key}
-                    onPreview={setPreviewing}
+                    onPreview={preview}
                     onRemove={(attachment) => writes.archive.mutate(attachment)}
                   />
                 );

@@ -33,6 +33,8 @@ public static class RetroSharedTestIds
     public const string RetroBoardAddAbout = "retro-board-add-about";
     public const string RetroBoardAddSave = "retro-board-add-save";
     public const string RetroBoardAddCancel = "retro-board-add-cancel";
+    // L727b board
+    public const string RetroThemeRecurring = "retro-theme-recurring";
     public const string RetroActionDialog = "retro-action-dialog";
     public const string RetroActionModeNew = "retro-action-mode-new";
     public const string RetroActionModeExisting = "retro-action-mode-existing";
@@ -44,4 +46,8 @@ public static class RetroSharedTestIds
     public const string RetroActionFixOption = "retro-action-fix-option";
     public const string RetroActionPickCheck = "retro-action-pick-check";
     public const string RetroActionSave = "retro-action-save";
+    // L727a touch
+    public const string RetroActionCreate = "retro-action-create";
+    public const string RetroActionStartsNote = "retro-action-starts-note";
+    public const string RetroThemeSheetNew = "retro-theme-sheet-new";
 }

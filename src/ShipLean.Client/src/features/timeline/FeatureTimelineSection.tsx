@@ -20,7 +20,7 @@ export function FeatureTimelineSection({ item, projectKey }: FeatureTimelineSect
             { key: projectKey, itemKey: item.key },
             { from: 'feature' },
           )}
-          className="text-[length:var(--text-sm)] text-signal no-underline hover:underline max-[900px]:hidden"
+          className="text-[length:var(--text-sm)] text-signal no-underline hover:underline touch:hidden"
         >
           Open timeline
         </Link>

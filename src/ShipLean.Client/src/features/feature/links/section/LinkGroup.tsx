@@ -2,7 +2,7 @@ import type { LinkCardDto } from '@shiplean/core/api/linkCards';
 import { featureTestIds as ids } from '../../testIds';
 import { LinkCard } from './LinkCard';
 
-// The cards of one group (Code or Pages), two across.
+// The cards of one group (Code or Pages), two across (one on a phone).
 export function LinkGroup({
   group,
   title,
@@ -26,7 +26,7 @@ export function LinkGroup({
       <h3 className="m-0 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         {title}
       </h3>
-      <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+      <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0 touch:grid-cols-1">
         {cards.map((card) => (
           <LinkCard key={card.id} card={card} projectId={projectId} itemKey={itemKey} />
         ))}

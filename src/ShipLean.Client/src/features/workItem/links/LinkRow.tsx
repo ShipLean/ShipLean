@@ -5,7 +5,7 @@ import { workItemTestIds as ids } from '../testIds';
 import { isWebUrl, linkTypeLabels } from './linkTypes';
 
 const rowButton =
-  'size-6 rounded-control text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal';
+  'size-6 touch:size-[var(--touch-target)] rounded-control text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal';
 
 // One link: its type, its target, the pull or merge request state a webhook reported (with "auto" when the webhook
 // added the link) and, for a link not saved yet, a note that it is waiting for Save.
@@ -28,12 +28,14 @@ export function LinkRow({
           target="_blank"
           rel="noopener noreferrer"
           title={link.url}
-          className="truncate text-signal hover:underline"
+          className="truncate text-signal hover:underline touch:flex touch:min-h-[var(--touch-target)] touch:items-center touch:overflow-visible touch:whitespace-normal touch:[overflow-wrap:anywhere]"
         >
           {link.title || link.url}
         </a>
       ) : (
-        <span className="truncate">{link.title || link.url}</span>
+        <span className="truncate touch:overflow-visible touch:whitespace-normal touch:[overflow-wrap:anywhere]">
+          {link.title || link.url}
+        </span>
       )
     ) : (
       <>
@@ -43,12 +45,15 @@ export function LinkRow({
           <ItemLink
             projectKey={projectKey}
             itemKey={link.key}
-            className="font-semibold text-signal hover:underline"
+            className="font-semibold text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
           >
             {link.key}
           </ItemLink>
         )}
-        <span className="truncate" title={link.title ?? undefined}>
+        <span
+          className="truncate touch:min-w-0 touch:overflow-visible touch:whitespace-normal touch:[overflow-wrap:anywhere]"
+          title={link.title ?? undefined}
+        >
           {link.title}
         </span>
       </>
@@ -57,9 +62,9 @@ export function LinkRow({
     <li
       data-testid={ids.linkRow}
       data-link-type={link.type}
-      className="flex items-center gap-2 text-[length:var(--text-sm)]"
+      className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)]"
     >
-      <span className="w-20 shrink-0 text-[length:var(--text-xs)] text-ink-muted">
+      <span className="w-20 shrink-0 text-[length:var(--text-xs)] text-ink-muted touch:w-16">
         {linkTypeLabels[link.type]}
       </span>
       {target}

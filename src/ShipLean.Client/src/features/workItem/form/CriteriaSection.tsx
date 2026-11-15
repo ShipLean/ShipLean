@@ -43,11 +43,12 @@ export function CriteriaSection({
       </header>
       <ul className="grid gap-1">
         {value.map((criterion, index) => (
-          <li key={index} className="flex items-center gap-2">
-            <label className="flex flex-1 items-center gap-2 text-[length:var(--text-base)]">
+          <li key={index} className="flex items-center gap-2 touch:min-h-[var(--touch-target)]">
+            <label className="flex flex-1 items-center gap-2 text-[length:var(--text-base)] touch:min-h-[var(--touch-target)]">
               <input
                 type="checkbox"
                 data-testid={ids.criterion}
+                className="touch:size-5 touch:shrink-0"
                 checked={criterion.done}
                 onChange={() =>
                   onChange(value.map((c, i) => (i === index ? { ...c, done: !c.done } : c)))
@@ -61,7 +62,7 @@ export function CriteriaSection({
               type="button"
               data-testid={ids.criterionRemove}
               aria-label="Remove criterion"
-              className="text-ink-muted hover:text-ink"
+              className="text-ink-muted hover:text-ink touch:inline-flex touch:size-[var(--touch-target)] touch:shrink-0 touch:items-center touch:justify-center touch:text-[length:var(--text-lg)]"
               onClick={() => onChange(value.filter((_, i) => i !== index))}
             >
               ×
@@ -74,7 +75,7 @@ export function CriteriaSection({
         aria-label="Add a criterion"
         placeholder="+ Add a criterion, then Enter"
         autoComplete="off"
-        className={inputClass}
+        className={`${inputClass} touch:h-10`}
         value={text}
         onChange={(event) => setText(event.target.value)}
         onKeyDown={(event) => {

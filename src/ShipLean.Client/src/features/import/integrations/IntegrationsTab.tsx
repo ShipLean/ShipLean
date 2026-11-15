@@ -24,11 +24,11 @@ export function IntegrationsTab({ project }: { project: ProjectDto }) {
         <ConnectionPanel projectId={project.id} />
       </section>
       <section className="panel flex flex-col gap-[var(--space-2)] p-[var(--space-4)]">
-        <div className="flex items-center">
+        <div className="flex items-center touch:flex-col touch:items-stretch touch:gap-[var(--space-2)]">
           <h2 className="font-semibold">Import jobs</h2>
           <Link
             data-testid={ids.openImport}
-            className="btn-signal ml-auto"
+            className="btn-signal ml-auto touch:ml-0 touch:min-h-[var(--touch-target)] touch:w-full"
             to={routePath('jiraImport', { key: project.key })}
           >
             Open Jira import

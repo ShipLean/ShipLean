@@ -4,6 +4,8 @@ import type { BoardColumnDto } from '@shiplean/core/api/views';
 import { DodButton } from '../dod/DodButton';
 import { mappedStates } from './layout';
 
+// At 900px and below it is a plain block in the page's flow (no sticky header at touch), the name and WIP a size up, the
+// states wrapping, and ⓘ a --touch-target square.
 // A column's header: name, cards against the WIP limit, and how many a filter hides (over it the header turns danger and nothing is blocked; hidden
 // cards still count), the states it maps, and for a split column its Doing and Done halves. `flashes` counts the board
 // settings changes teammates made: each one flashes the header again.
@@ -15,7 +17,7 @@ export function ColumnHeader({ column, flashes }: { column: BoardColumnDto; flas
       data-column={column.id}
       data-over={column.overLimit}
       data-flashes={flashes}
-      className="board-header relative grid min-w-0 content-start gap-0.5 rounded-control border border-edge border-t-2 py-[5px] pr-1.5 pl-2"
+      className="board-header relative grid min-w-0 content-start gap-0.5 rounded-control border border-edge border-t-2 py-[5px] pr-1.5 pl-2 touch:gap-1 touch:px-2.5 touch:py-2"
       style={
         column.overLimit
           ? {
@@ -33,16 +35,16 @@ export function ColumnHeader({ column, flashes }: { column: BoardColumnDto; flas
           className="board-header-flash pointer-events-none absolute -inset-px rounded-control"
         />
       ) : null}
-      <div className="flex h-5 min-w-0 items-center gap-1.5">
+      <div className="flex h-5 min-w-0 items-center gap-1.5 touch:h-6 touch:[&>button]:-mr-1.5 touch:[&>button]:size-(--touch-target)">
         <span
           data-testid={ids.columnName}
-          className="truncate text-[length:var(--text-sm)] font-semibold"
+          className="truncate text-[length:var(--text-sm)] font-semibold touch:text-[length:var(--text-md)]"
         >
           {column.name}
         </span>
         <span
           data-testid={ids.columnCount}
-          className={`text-[length:var(--text-xs)] font-medium whitespace-nowrap tabular-nums ${
+          className={`text-[length:var(--text-xs)] font-medium whitespace-nowrap tabular-nums touch:text-[length:var(--text-sm)] ${
             column.overLimit
               ? 'inline-flex h-[18px] items-center rounded-full px-1.5 font-semibold text-alert'
               : 'text-ink-muted'
@@ -67,12 +69,12 @@ export function ColumnHeader({ column, flashes }: { column: BoardColumnDto; flas
       </div>
       <div
         data-testid={ids.columnMap}
-        className="h-4 truncate text-[length:var(--text-2xs)] leading-4 text-ink-muted"
+        className="h-4 truncate text-[length:var(--text-2xs)] leading-4 text-ink-muted touch:h-auto touch:text-[length:var(--text-xs)] touch:leading-snug touch:whitespace-normal"
       >
         {mapped}
       </div>
       {column.split ? (
-        <div className="grid h-4 grid-cols-2 gap-x-2 text-[length:var(--text-2xs)] leading-4 text-ink-muted">
+        <div className="grid h-4 grid-cols-2 gap-x-2 text-[length:var(--text-2xs)] leading-4 text-ink-muted touch:h-auto touch:text-[length:var(--text-xs)] touch:leading-snug">
           <span data-testid={ids.subDoing}>
             Doing <b className="font-semibold text-ink tabular-nums">{column.doingCount}</b>
           </span>

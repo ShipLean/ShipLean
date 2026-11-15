@@ -4,7 +4,9 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Features.Auth.Google;
 
 namespace ShipLean.WebApi.Tests.Auth.Google;
@@ -72,6 +74,22 @@ public class GoogleSignInTests : GoogleSignInFixture
         me["email"]!.GetValue<string>().ShouldBe("new.person@example.test");
         me["name"]!.GetValue<string>().ShouldBe("New Person");
         me["status"]!.GetValue<string>().ShouldBe("googleOnly");
+    }
+
+    [Test]
+    public async Task SignIn_WhenGoogleSignsIn_ShouldTrackGoogleMethod()
+    {
+        using var browser = Browser();
+
+        using var response = await SignInAsync(browser, "method-subject", "method.person@example.test");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Found);
+        await using var connection = await OpenDatabaseAsync();
+        var userId = await connection.ExecuteScalarAsync<Guid>("SELECT id FROM app_user WHERE email = @email", new { email = "method.person@example.test" });
+        var recorder = (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
+        var tracked = recorder.Events.Where(e => e.Name == UsageEventNames.AuthSignedIn && e.Actor.UserId == userId).ShouldHaveSingleItem();
+        tracked.Source.ShouldBe("system:GoogleSignInEvents");
+        tracked.Properties[UsageProps.Method].ShouldBe(SignInMethods.Google);
     }
 
     [Test]

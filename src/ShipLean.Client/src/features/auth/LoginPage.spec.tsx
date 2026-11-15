@@ -455,3 +455,34 @@ test('the app line stays after a failed sign-in', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.failure)).toBeVisible();
   await expect(page.getByTestId(ids.appInfo)).toBeVisible();
 });
+
+test('LoginPage_WhenOpenedOnADesktop_ShouldGiveEmailThePhoneKeyboardAttributes', async ({
+  mount,
+  page,
+}) => {
+  await stubInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  const email = page.getByTestId(ids.email);
+  await expect(email).toHaveAttribute('inputmode', 'email');
+  await expect(email).toHaveAttribute('autocapitalize', 'off');
+  await expect(email).toHaveAttribute('autocorrect', 'off');
+  await expect(email).toHaveAttribute('spellcheck', 'false');
+  await expect(email).toHaveAttribute('enterkeyhint', 'next');
+  await expect(page.getByTestId(ids.password)).toHaveAttribute('enterkeyhint', 'go');
+});
+
+test('LoginPage_WhenOpenedOnADesktop_ShouldKeepGoogleAfterTheFieldsAndAutofocus', async ({
+  mount,
+  page,
+}) => {
+  await stubGoogleInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  await expect(page.getByTestId(ids.email)).toBeFocused();
+  await expect(page.getByTestId(ids.orWithEmail)).toHaveCount(0);
+  const password = (await page.getByTestId(ids.password).boundingBox())!;
+  const google = (await page.getByTestId(ids.googleSignIn).boundingBox())!;
+  expect(google.y).toBeGreaterThan(password.y);
+  const submit = (await page.getByTestId(ids.signInSubmit).boundingBox())!;
+  const footer = (await page.getByTestId(ids.signInForm).locator('footer').boundingBox())!;
+  expect(submit.y).toBeGreaterThan(footer.y);
+});

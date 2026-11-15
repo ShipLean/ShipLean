@@ -766,7 +766,8 @@ test('Capacity_WhenNarrow_ShouldStackTheSummaryBelowAndNeverScrollThePage', asyn
   mount,
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 800 });
+  // Above the 900px touch breakpoint (below it the summary goes first: Capacity.phone.spec.tsx), under lg:.
+  await page.setViewportSize({ width: 950, height: 800 });
   await stubApi(page, { current: capacityOf('s24', [entry(0, 15), entry(1, 15)]) });
   await mount(<CapacityPanel project={project} sprint={sprint} sprints={sprints} />);
   const table = (await page.locator('table').boundingBox())!;

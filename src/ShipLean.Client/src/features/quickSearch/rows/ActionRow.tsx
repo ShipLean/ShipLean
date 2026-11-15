@@ -17,7 +17,9 @@ export function ActionRow({
       <span data-testid={ids.optionLabel} className="min-w-0 truncate">
         {label}
       </span>
-      <span className="text-right text-[length:var(--text-xs)] text-ink-muted">{detail}</span>
+      <span className="text-right text-[length:var(--text-xs)] text-ink-muted touch:col-start-2 touch:row-start-2 touch:text-left">
+        {detail}
+      </span>
     </>
   );
 }

@@ -13,11 +13,18 @@ import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { CardDto } from '@shiplean/core/api/views';
 import { TaskCardFace } from '../cards/TaskCardFace';
-import type { TaskboardGrouping } from '../taskboardApi';
+import type { MoveMethod, TaskboardGrouping, TaskboardMoveRequest } from '../taskboardApi';
 import type { TaskboardGridView } from '../taskboardGridView';
 import type { TaskboardScope } from '../taskboardScope';
-import { dropRequest, keyboardTarget, pickUpRequest, type DropTarget } from './moveRequests';
-import { undoOf } from './applyMove';
+import {
+  assignRequest,
+  dropRequest,
+  keyboardTarget,
+  pickUpRequest,
+  reparentRequest,
+  type DropTarget,
+} from './moveRequests';
+import { UNASSIGNED, UNPARENTED, undoOf } from './applyMove';
 import { TaskboardMovesContext, type TaskboardMoves } from './TaskboardMovesContext';
 import { useTaskboardMove } from './useTaskboardMove';
 
@@ -73,24 +80,52 @@ export function TaskboardDnd({
   const startId = view.columns.find((column) => column.state.category === 'inProgress')?.state.id;
 
   const moves = useMemo<TaskboardMoves>(() => {
-    function drop(card: CardDto, fromRowId: string, to: DropTarget) {
-      const request = dropRequest(card, grouping, fromRowId, to);
-      if (!request) return;
+    function sendMove(
+      card: CardDto,
+      fromRowId: string,
+      request: TaskboardMoveRequest,
+      applied: { stateId: string; rowId: string; assignee?: UserRef | null },
+    ) {
       send({
         request,
-        applied: {
-          taskId: card.id,
-          stateId: to.stateId,
-          rowId: to.rowId,
-          beforeItemId: request.beforeItemId,
-        },
+        applied: { taskId: card.id, beforeItemId: request.beforeItemId, ...applied },
         undo: undoOf(card, fromRowId),
         key: card.key,
       });
-      onLanded(to.rowId);
+      onLanded(applied.rowId);
+    }
+    function drop(card: CardDto, fromRowId: string, to: DropTarget, method: MoveMethod) {
+      const request = dropRequest(card, grouping, fromRowId, to, method);
+      if (!request) return;
+      sendMove(card, fromRowId, request, { stateId: to.stateId, rowId: to.rowId });
+    }
+    function reparent(
+      card: CardDto,
+      fromRowId: string,
+      storyId: string | null,
+      method: MoveMethod,
+    ) {
+      // Grouped by people the card stays in its person's row: the refetch shows its new story.
+      const rowId = grouping === 'stories' ? (storyId ?? UNPARENTED) : fromRowId;
+      sendMove(card, fromRowId, reparentRequest(card, storyId, method), {
+        stateId: card.state.id,
+        rowId,
+      });
+    }
+    function assign(card: CardDto, fromRowId: string, person: UserRef | null, method: MoveMethod) {
+      const rowId = grouping === 'stories' ? fromRowId : (person?.id ?? UNASSIGNED);
+      sendMove(card, fromRowId, assignRequest(card, person?.id ?? null, method), {
+        stateId: card.state.id,
+        rowId,
+        assignee: person,
+      });
     }
     return {
       drop,
+      reparent,
+      assign,
+      view,
+      grouping,
       pickUp:
         me === undefined || startId === undefined
           ? null
@@ -114,7 +149,7 @@ export function TaskboardDnd({
         const to = keyboardTarget(view, grouping, card, rowId, key);
         if (!to) return key.startsWith('Arrow');
         focusKey.current = card.key;
-        drop(card, rowId, to);
+        drop(card, rowId, to, 'keyboard');
         return true;
       },
       takeFocus: (cardKey) => {
@@ -134,11 +169,16 @@ export function TaskboardDnd({
     const from = active.data.current as DragData | undefined;
     const to = over?.data.current as DropData | undefined;
     if (!from || !to) return;
-    moves.drop(from.card, from.rowId, {
-      stateId: to.stateId,
-      rowId: to.rowId,
-      beforeItemId: to.kind === 'card' && to.cardId !== from.card.id ? (to.cardId ?? null) : null,
-    });
+    moves.drop(
+      from.card,
+      from.rowId,
+      {
+        stateId: to.stateId,
+        rowId: to.rowId,
+        beforeItemId: to.kind === 'card' && to.cardId !== from.card.id ? (to.cardId ?? null) : null,
+      },
+      'drag',
+    );
   }
 
   return (

@@ -4,7 +4,7 @@ import { retroCategoryColours, retroCategoryLabels } from '../../retroShared/ret
 /** A category's column heading: its coloured square and name. */
 export function CategoryHead({ category }: { category: RetroCategory }) {
   return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap">
+    <span className="inline-flex items-center gap-1 whitespace-nowrap touch:items-baseline touch:whitespace-normal">
       <span
         aria-hidden="true"
         className="size-2 flex-none rounded-[2px]"

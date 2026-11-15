@@ -1,15 +1,28 @@
+import type { RetroActionRowDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { useProjectSprints } from '../../workItem/workItemApi';
 import { retrosTestIds as ids } from '../testIds';
 import { AddActionItemButton } from './actions/AddActionItemButton';
 import { ActionRow } from './actions/ActionRow';
 import { nextSprintOf } from './actions/nextSprint';
 import type { RetroInsightsSlotProps } from './InsightsSlotProps';
+import { ActionItemCard } from './touch/ActionItemCard';
 
 const HEAD = 'px-3 py-2 text-left text-[length:var(--text-xs)] font-semibold text-ink-muted';
 
+const isOpen = (row: RetroActionRowDto) =>
+  row.action.state.category !== 'completed' && row.action.state.category !== 'removed';
+
+/** Open items first, then the rest, each group in the order it came. */
+const openFirst = (rows: readonly RetroActionRowDto[]) => [
+  ...rows.filter(isOpen),
+  ...rows.filter((r) => !isOpen(r)),
+];
+
 /** Action items: every action item raised from a retro, with its sprint (or a button to pull it into the next one) and its impact. */
 export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) {
+  const { touch } = useTouchShell();
   const sprints = useProjectSprints(project.id);
   const next = sprints.data ? nextSprintOf(sprints.data) : undefined;
   const { actionItems } = insights;
@@ -35,6 +48,19 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
         </header>
         {actionItems.length === 0 ? (
           <p className="m-0 px-4 pb-4 text-[length:var(--text-sm)] text-ink-muted">Nothing here.</p>
+        ) : touch ? (
+          <div data-testid={ids.retroActionCards} className="grid gap-2 px-3 pb-3">
+            {openFirst(actionItems).map((row) => (
+              <ActionItemCard
+                key={row.action.workItemId}
+                projectId={project.id}
+                row={row}
+                next={next}
+                mode={insights.mode}
+                recurring={row.theme ? recurring.has(row.theme.id) : false}
+              />
+            ))}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table data-testid={ids.retroActionsTable} className="w-full border-collapse">

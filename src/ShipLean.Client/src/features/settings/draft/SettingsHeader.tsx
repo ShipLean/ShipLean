@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { settingsTestIds } from '../testIds';
 import type { Change } from './model';
 
@@ -23,17 +24,19 @@ export function SettingsHeader({
   onDiscard(): void;
 }) {
   const changeCount = changes.length;
+  // At touch the SaveBar holds the unsaved message, Discard and Save, so the header is the title alone.
+  const { touch } = useTouchShell();
   const [open, setOpen] = useState(false);
   const button =
     'h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink disabled:opacity-50';
   return (
-    <header className="flex items-center gap-3 border-b border-edge bg-panel px-4 py-3">
+    <header className="flex items-center gap-3 border-b border-edge bg-panel px-4 py-3 touch:mb-3 touch:flex-wrap touch:gap-x-3 touch:gap-y-1 touch:rounded-panel touch:border">
       <h1 className="text-[length:var(--text-lg)] font-semibold text-ink">Project settings</h1>
-      <span className="text-[length:var(--text-sm)] text-ink-muted">
+      <span className="min-w-0 text-[length:var(--text-sm)] text-ink-muted touch:break-words">
         {projectName} · changes apply to everyone in the project
       </span>
       <span className="flex-1" />
-      {changeCount > 0 ? (
+      {!touch && changeCount > 0 ? (
         <div className="relative">
           <button
             type="button"
@@ -68,7 +71,7 @@ export function SettingsHeader({
           ) : null}
         </div>
       ) : null}
-      {readOnly ? null : (
+      {readOnly || touch ? null : (
         <>
           <button
             type="button"

@@ -21,16 +21,18 @@ export function DemoFeatures({ demo }: DemoProps) {
           <li
             key={feature.key}
             data-testid={ids.demoFeature}
-            className="flex min-h-7.5 items-center gap-2 px-2 text-[length:var(--text-sm)]"
+            className="flex min-h-7.5 items-center gap-2 px-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)]"
           >
             <TypeIcon type="feature" />
             <Link
               to={feature.url}
-              className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] text-signal hover:underline"
+              className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
             >
               {feature.key}
             </Link>
-            <span className="min-w-0 flex-1 truncate">{feature.title}</span>
+            <span className="min-w-0 flex-1 truncate touch:line-clamp-2 touch:whitespace-normal [overflow-wrap:anywhere]">
+              {feature.title}
+            </span>
             <StateDot category={feature.state.category} name={feature.state.name} />
           </li>
         ))}

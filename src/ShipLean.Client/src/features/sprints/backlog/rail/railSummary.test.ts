@@ -53,8 +53,24 @@ test('railSummary counts what each person has in progress and ignores other cate
     ],
     [],
   );
-  expect(summary.activeByUser.get('u1')).toEqual(['Title S1', 'Title T1']);
+  expect(summary.activeByUser.get('u1')?.map((item) => item.key)).toEqual(['S1', 'T1']);
   expect(summary.activeByUser.size).toBe(1);
+});
+
+test("railSummary keeps each person's active items apart, in backlog order", () => {
+  const tom = { id: 'u2', name: 'Tom' } as UserRef;
+  const summary = railSummary(
+    [
+      {
+        story: item('S1', 'story', 'inProgress', { assignee: tom }),
+        tasks: [item('T1', 'task', 'inProgress', { assignee: priya })],
+      },
+      { story: item('S2', 'bug', 'inProgress', { assignee: priya }), tasks: [] },
+    ],
+    [item('T9', 'task', 'inProgress', { assignee: tom })],
+  );
+  expect(summary.activeByUser.get('u1')?.map((i) => i.key)).toEqual(['T1', 'S2']);
+  expect(summary.activeByUser.get('u2')?.map((i) => i.key)).toEqual(['S1', 'T9']);
 });
 
 test('railSummary sums action item points with story and bug points', () => {

@@ -10,7 +10,7 @@ export function AddManyButton() {
     <button
       type="button"
       data-testid={ids.addMany}
-      className="btn-ghost"
+      className="btn-ghost touch:h-auto touch:min-h-[var(--touch-target)] touch:w-full touch:justify-start touch:border-0 touch:bg-transparent touch:px-2 touch:py-1.5 touch:text-[length:var(--text-base)] touch:font-normal touch:text-ink"
       onClick={() => open('', 'story')}
     >
       Add many

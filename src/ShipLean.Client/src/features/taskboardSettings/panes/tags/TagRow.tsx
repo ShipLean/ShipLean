@@ -17,9 +17,9 @@ export function TagRow({
   return (
     <div
       data-testid={ids.tagRow}
-      className="flex items-center gap-3 border-b border-edge/60 py-1.5 last:border-b-0"
+      className="flex items-center gap-3 touch:flex-wrap border-b border-edge/60 py-1.5 last:border-b-0"
     >
-      <span className="w-44 min-w-0">
+      <span className="w-44 min-w-0 touch:w-full">
         <span
           className="inline-flex h-4 items-center rounded-[var(--radius-xs)] px-1.5 text-[length:var(--text-2xs)] font-medium whitespace-nowrap text-ink"
           style={tagStyle(colour)}
@@ -27,7 +27,11 @@ export function TagRow({
           {tag}
         </span>
       </span>
-      <span role="group" aria-label={`Colour for ${tag}`} className="inline-flex gap-1">
+      <span
+        role="group"
+        aria-label={`Colour for ${tag}`}
+        className="inline-flex gap-1 touch:flex-wrap"
+      >
         {SWATCHES.map((swatch) => (
           <button
             key={swatch}
@@ -37,7 +41,7 @@ export function TagRow({
             aria-label={swatch}
             title={swatch}
             disabled={readOnly}
-            className="size-5 rounded-full border-2 border-transparent aria-pressed:border-ink disabled:opacity-50"
+            className="size-5 rounded-full border-2 border-transparent aria-pressed:border-ink disabled:opacity-50 touch:size-[var(--touch-target)]"
             style={{ background: `var(--color-${swatch})` }}
             onClick={() => onChange(swatch)}
           />
@@ -50,7 +54,7 @@ export function TagRow({
         aria-label={`Clear colour for ${tag}`}
         title="Clear colour"
         disabled={readOnly}
-        className={`inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:opacity-35 ${colour === null ? 'invisible' : ''}`}
+        className={`inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:opacity-35 touch:size-[var(--touch-target)] ${colour === null ? 'invisible' : ''}`}
         onClick={() => onChange(null)}
       >
         ✕

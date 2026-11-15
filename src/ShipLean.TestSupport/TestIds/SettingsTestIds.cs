@@ -12,6 +12,8 @@ public static class SettingsTestIds
     public const string TabDemos = "settings-tab-demos";
     public const string TabDirty = "settings-tab-dirty";
     public const string TabError = "settings-tab-error";
+    // SHIP-732 frame touch
+    public const string TabRow = "settings-tab-row";
     public const string ChangesList = "settings-changes-list";
     public const string ChangeItem = "settings-change-item";
     public const string ReadOnlyBanner = "settings-read-only-banner";
@@ -83,6 +85,9 @@ public static class SettingsTestIds
     public const string StateAddName = "settings-state-add-name";
     public const string StateAddCategory = "settings-state-add-category";
     public const string StateAdd = "settings-state-add";
+
+    // SHIP-732 states touch
+    public const string StateTypeSelect = "settings-state-type-select";
 
     public const string UsersPanel = "settings-users-panel";
     public const string UsersLoading = "settings-users-loading";
@@ -165,6 +170,10 @@ public static class SettingsTestIds
     public const string ProfileSave = "settings-profile-save";
     public const string ProfileDiscard = "settings-profile-discard";
     public const string ProfileSaveError = "settings-profile-save-error";
+    // SHIP-733 profile form touch
+    public const string ProfileBarError = "settings-profile-bar-error";
+    public const string PasswordOpen = "settings-password-open";
+    public const string PasswordCancel = "settings-password-cancel";
     public const string InstanceDenied = "settings-instance-denied";
     public const string InstanceGeneralPanel = "settings-instance-general-panel";
     public const string InstanceLoading = "settings-instance-loading";
@@ -222,6 +231,8 @@ public static class SettingsTestIds
     public const string MyProjectLeaveConfirm = "settings-my-project-leave-confirm";
     public const string MyProjectLeaveCancel = "settings-my-project-leave-cancel";
     public const string MyProjectLeaveError = "settings-my-project-leave-error";
+    // SHIP-733 projects touch
+    public const string MyProjectLeaveRow = "settings-my-project-leave-row";
     public const string MyProjectsList = "settings-my-projects-list";
     public const string SessionsPanel = "settings-sessions-panel";
     public const string SignOutOthers = "settings-sign-out-others";

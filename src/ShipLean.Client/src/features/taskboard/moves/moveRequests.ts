@@ -1,6 +1,6 @@
 import type { CardDto } from '@shiplean/core/api/views';
 import type { TaskboardGridView } from '../taskboardGridView';
-import type { TaskboardGrouping, TaskboardMoveRequest } from '../taskboardApi';
+import type { MoveMethod, TaskboardGrouping, TaskboardMoveRequest } from '../taskboardApi';
 import { UNASSIGNED, UNPARENTED } from './applyMove';
 
 export interface DropTarget {
@@ -19,6 +19,7 @@ export function dropRequest(
   grouping: TaskboardGrouping,
   fromRowId: string,
   to: DropTarget,
+  method: MoveMethod,
 ): TaskboardMoveRequest | null {
   const beforeItemId = grouping === 'stories' ? to.beforeItemId : null;
   const sameRow = to.rowId === fromRowId;
@@ -29,6 +30,39 @@ export function dropRequest(
     stateId: to.stateId,
     row: sameRow ? null : { grouping, target: targetOf(to.rowId) },
     beforeItemId,
+    method,
+  };
+}
+
+/** Moves the task to another story (or bug) in the state it is in; null target = the Unparented row. */
+export function reparentRequest(
+  card: CardDto,
+  storyId: string | null,
+  method: MoveMethod,
+): TaskboardMoveRequest {
+  return {
+    taskId: card.id,
+    expectedRevision: card.revision,
+    stateId: card.state.id,
+    row: { grouping: 'stories', target: storyId },
+    beforeItemId: null,
+    method,
+  };
+}
+
+/** Gives the task to a person (null = Unassigned) and keeps its state, as a move into that person's row. */
+export function assignRequest(
+  card: CardDto,
+  personId: string | null,
+  method: MoveMethod,
+): TaskboardMoveRequest {
+  return {
+    taskId: card.id,
+    expectedRevision: card.revision,
+    stateId: card.state.id,
+    row: { grouping: 'people', target: personId },
+    beforeItemId: null,
+    method,
   };
 }
 

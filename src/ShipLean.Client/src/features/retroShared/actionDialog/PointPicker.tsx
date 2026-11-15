@@ -31,7 +31,7 @@ export function PointPicker({
           Every point is decided already, so there is nothing to cover.
         </p>
       ) : (
-        <div className="grid max-h-[260px] gap-0.5 overflow-auto rounded-control border border-edge bg-canvas p-1">
+        <div className="grid max-h-[260px] gap-0.5 overflow-auto touch:max-h-none touch:overflow-visible rounded-control border border-edge bg-canvas p-1">
           <PointGroup label="Selected" points={selected} checked={checked} onToggle={onToggle} />
           {offeredGroups.map((group) => (
             <PointGroup

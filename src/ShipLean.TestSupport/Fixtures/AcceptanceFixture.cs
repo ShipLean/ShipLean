@@ -32,6 +32,9 @@ public abstract partial class AcceptanceFixture
 
     protected virtual Action<IServiceCollection>? ConfigureTestServices => null;
 
+    // The browser context's size and input: desktop unless a class opts into AcceptanceViewport.Phone.
+    protected virtual AcceptanceViewport Viewport => AcceptanceViewport.Desktop;
+
     // More app configuration for the host, such as a SHIPLEAN_* variable the scenario turns on.
     protected virtual IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>();
 
@@ -93,10 +96,14 @@ public abstract partial class AcceptanceFixture
         await BeforeHostStartAsync();
         _host = ShipLeanHost.Start(_database.ConnectionString, null, ConfigureTestServices, settings: HostSettings);
         var browser = await SharedBrowser.GetAsync();
+        var viewport = Viewport;
         _context = await browser.NewContextAsync(new BrowserNewContextOptions
         {
             BaseURL = _host.BaseUrl,
-            ViewportSize = new ViewportSize { Width = 1280, Height = 800 },
+            ViewportSize = new ViewportSize { Width = viewport.Width, Height = viewport.Height },
+            HasTouch = viewport.HasTouch,
+            IsMobile = viewport.IsMobile,
+            DeviceScaleFactor = viewport.DeviceScaleFactor,
             TimezoneId = "UTC",
         });
         await _context.Tracing.StartAsync(new TracingStartOptions { Screenshots = true, Snapshots = true });

@@ -18,4 +18,5 @@ public static class QuickSearchTestIds
     public const string Footer = "quick-search-footer";
     public const string Note = "quick-search-note";
     public const string Scrim = "quick-search-scrim";
+    public const string Cancel = "quick-search-cancel";
 }

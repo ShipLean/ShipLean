@@ -123,7 +123,10 @@ export function YouTubePanel({ project, youtube, readOnly }: YouTubePanelProps) 
             Sign in with Google.
           </span>
           <span>
-            <Link className="btn-ghost" to={routePath('instanceSettings', { tab: 'integrations' })}>
+            <Link
+              className="btn-ghost touch:min-h-[var(--touch-target)] touch:w-full"
+              to={routePath('instanceSettings', { tab: 'integrations' })}
+            >
               Instance settings › Integrations
             </Link>
           </span>
@@ -144,7 +147,7 @@ export function YouTubePanel({ project, youtube, readOnly }: YouTubePanelProps) 
               <button
                 type="button"
                 data-testid={ids.youtubeConnect}
-                className="btn-signal"
+                className="btn-signal touch:min-h-[var(--touch-target)] touch:w-full"
                 disabled={locked}
                 onClick={connect}
               >
@@ -171,7 +174,7 @@ export function YouTubePanel({ project, youtube, readOnly }: YouTubePanelProps) 
                 <Chip tone="warn">Pending check</Chip>
               )}
             </span>
-            <span className="flex flex-wrap items-center gap-3">
+            <span className="flex flex-wrap items-center gap-3 touch:flex-col touch:items-stretch">
               <b data-testid={ids.youtubeChannel} className="text-ink">
                 {current.channelTitle}
               </b>
@@ -229,7 +232,7 @@ export function YouTubePanel({ project, youtube, readOnly }: YouTubePanelProps) 
                 <button
                   type="button"
                   data-testid={ids.youtubeCheck}
-                  className="btn-signal"
+                  className="btn-signal touch:min-h-[var(--touch-target)] touch:w-full"
                   disabled={locked || choice === null}
                   onClick={() => choice !== null && runCheck(choice)}
                 >

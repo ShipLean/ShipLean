@@ -4,6 +4,8 @@ import type { DropTarget } from './applyMove';
 /** What a card and a cell need from the board to move cards: set up once by `BoardDnd`. */
 export interface BoardMoves {
   drop: (itemId: string, to: DropTarget) => void;
+  /** The same move as a drop, from a sheet (Move to, Lane, top, bottom): pull rule, lane criteria, done check and toast all apply. */
+  moveTo: (itemId: string, to: DropTarget) => void;
   /** Alt + an arrow key on a focused card. True when the key was a move key (the card takes focus again once it lands). */
   keyMove: (itemId: string, cardKey: string, key: string) => boolean;
   /** The card's "Move to Done" offer: one move into the board's last column, in the card's lane. */

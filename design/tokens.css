@@ -83,11 +83,14 @@
   --sidebar-width: 216px;  /* left side menu: project picker + navigation */
   --dialog-width: 680px;   /* wide dialogs (sprint end) */
 
-  /* Touch shell (SHIP-713): the frame under 900px. Only the shell's own controls grow; data rows keep the density. */
-  --touch-target: 44px;       /* menu, search and close buttons, drawer rows, sheet rows */
-  --mobile-bar-height: 52px;  /* top bar under 900px */
-  --drawer-width: 304px;      /* navigation drawer under 900px (never more than 86vw) */
-  --text-input-touch: 16px;   /* text inputs under 900px: below 16px, iOS Safari zooms the page on focus */
+  /* Touch shell (SHIP-713; rules in SHIP-805): the frame at 900px and below. Same values in light and dark. */
+  --touch-target: 32px;       /* controls, icon buttons, list and sheet rows (SHIP-805 rule 13) */
+  --mobile-bar-height: 48px;  /* top bar at 900px and below */
+  --drawer-width: 304px;      /* navigation drawer at 900px and below (never more than 86vw) */
+  --text-input-touch: 16px;   /* text inputs at 900px and below: below 16px, iOS Safari zooms the page on focus */
+  --text-body-touch: 15px;    /* Markdown and long text at 900px and below */
+  /* Behind the drawer and every sheet (SHIP-805 rule 9). --scrim stays the desktop one. */
+  --scrim-touch: rgb(10 16 28 / .45);
 
   /* Work item types: a separate palette from the UI colours above. Use only on type icons. */
   --type-epic: #d0731c;

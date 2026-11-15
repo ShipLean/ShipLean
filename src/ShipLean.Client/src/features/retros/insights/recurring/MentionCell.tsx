@@ -1,4 +1,5 @@
 import { retrosTestIds as ids } from '../../testIds';
+import { heatShade } from './heatShade';
 
 /** One column's (sprint or week) mention count, shaded by how many there are against the busiest cell in the table. */
 export function MentionCell({
@@ -12,7 +13,6 @@ export function MentionCell({
   columnKey: string;
   columnLabel: string;
 }) {
-  const strength = max > 0 ? Math.round((count / max) * 70) : 0;
   return (
     <td
       data-testid={ids.retroMentionCell}
@@ -25,10 +25,7 @@ export function MentionCell({
       <span
         className="inline-block min-w-7 rounded-[var(--radius-xs)] px-1 py-0.5"
         style={{
-          background:
-            count > 0
-              ? `color-mix(in srgb, var(--color-warn) ${strength}%, transparent)`
-              : undefined,
+          background: count > 0 ? heatShade(count, max) : undefined,
         }}
       >
         {count}
