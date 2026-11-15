@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.TestSupport.Inspection;
@@ -56,6 +57,30 @@ public sealed class FakeTraceSource(IEnumerable<InspectionFixture> fixtures) : I
     private static string PrimaryItem(RawRun run)
         => (run.Summary.Links.FirstOrDefault(l => l.Source != LinkSource.FromToolCall) ?? run.Summary.Links[0]).ItemKey;
 
+    // A ShipLean tool call links a run through the top-level item, key or task of its input (K3), so Remap moves those with the item.
+    private static readonly string[] ToolInputAttributes = ["tool_parameters", "tool_input", "input"];
+
+    private static readonly string[] ToolInputItemFields = ["item", "key", "task"];
+
+    private static string RewriteToolInput(string json, string oldItem, string item)
+    {
+        if (!json.Contains(oldItem, StringComparison.Ordinal) || JsonNode.Parse(json) is not JsonObject input)
+        {
+            return json;
+        }
+
+        var changed = false;
+        foreach (var field in ToolInputItemFields)
+        {
+            if (input[field] is JsonValue value && value.TryGetValue<string>(out var text) && text == oldItem)
+            {
+                input[field] = item;
+                changed = true;
+            }
+        }
+        return changed ? input.ToJsonString() : json;
+    }
+
     private static RawRun Rewrite(RawRun run, string oldProject, string project, string oldItem, string item, TimeSpan shift)
     {
         string Value(string key, string value)
@@ -64,7 +89,11 @@ public sealed class FakeTraceSource(IEnumerable<InspectionFixture> fixtures) : I
             {
                 return project;
             }
-            return key == ItemAttribute && value == oldItem ? item : value;
+            if (key == ItemAttribute && value == oldItem)
+            {
+                return item;
+            }
+            return ToolInputAttributes.Contains(key) ? RewriteToolInput(value, oldItem, item) : value;
         }
 
         IReadOnlyDictionary<string, string> Attributes(IReadOnlyDictionary<string, string> source)

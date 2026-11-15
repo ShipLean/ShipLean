@@ -139,6 +139,13 @@ public static class ActionUsageMap
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort");
 
+        // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
+        Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");
+        Add(ActionUsage.Untracked("An admin's own configuration change; the project's settings are not an analytics subject."), "InspectionSettings.Put");
+        Add(ActionUsage.Untracked(Helper), "InspectionAgentSetup.Get");
+        Add(ActionUsage.Untracked("An operator's health check; no project."), "InspectionHealth.Get");
+        Add(ActionUsage.SelfEmitted, "InspectionUsage.Report");
+
         // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
         Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");
         Add(ActionUsage.SelfEmitted, "DeviceSignIn.Exchange", "DeviceSessions.Revoke", "DeviceSessions.Current");
