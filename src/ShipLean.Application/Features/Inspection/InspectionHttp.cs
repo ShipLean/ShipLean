@@ -14,6 +14,9 @@ public static class InspectionHttp
 
     private const char Slash = (char)47;
 
+    // No single request to a store waits longer than this (the HttpClient default is 100 s).
+    public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
+
     public const string TenantHeader = "X-Scope-OrgID";
 
     public static readonly HttpRequestOptionsKey<string> TenantOverride = new("shiplean.inspection.tenant");
@@ -28,6 +31,7 @@ public static class InspectionHttp
 
     private static void SetBase(HttpClient client, string? url)
     {
+        client.Timeout = RequestTimeout;
         if (!string.IsNullOrWhiteSpace(url))
         {
             client.BaseAddress = new Uri(url.TrimEnd(Slash) + Slash);
