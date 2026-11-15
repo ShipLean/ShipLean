@@ -23,6 +23,7 @@ import { SprintRetroPage } from './pages/SprintRetroPage';
 import { SprintDemoPage } from './pages/SprintDemoPage';
 import { SprintsPage } from './pages/SprintsPage';
 import { TaskboardPage } from './pages/TaskboardPage';
+import { AgentRunPage } from './pages/AgentRunPage';
 import { WorkItemPage } from './pages/WorkItemPage';
 import { routePattern } from './routes';
 import { Shell } from './Shell';
@@ -50,6 +51,7 @@ export function AppRoutes() {
           <Route path={routePattern('epicsBacklog')} element={<BacklogPage level="epics" />} />
           <Route path={routePattern('workItem')} element={<WorkItemPage />} />
           <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
+          <Route path={routePattern('agentRun')} element={<AgentRunPage />} />
           <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
           <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />
           <Route path={routePattern('featuresBoard')} element={<BoardPage level="features" />} />

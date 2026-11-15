@@ -14,12 +14,14 @@ export function SettingsDraftFrame({
   states,
   integrations,
   demos,
+  inspection = null,
 }: {
   project: ProjectDto;
   tab: ProjectSettingsTab;
   states: ReactNode;
   integrations: ReactNode;
   demos: ReactNode;
+  inspection?: ReactNode;
 }) {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -57,6 +59,7 @@ export function SettingsDraftFrame({
       states={states}
       integrations={integrations}
       demos={demos}
+      inspection={inspection}
     />
   );
 }

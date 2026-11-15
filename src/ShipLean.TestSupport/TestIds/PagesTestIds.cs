@@ -7,6 +7,7 @@ public static class PagesTestIds
     public const string BacklogPage = "page-backlog";
     public const string WorkItemPage = "page-work-item";
     public const string AttachmentPage = "page-attachment";
+    public const string AgentRunPage = "page-agent-run";
     public const string BoardPage = "page-board";
     public const string SprintsPage = "page-sprints";
     public const string SprintBacklogPage = "page-sprint-backlog";

@@ -16,6 +16,7 @@
 //     /p/:key/backlogs/epics      ?mode=            (the Epics level)
 //     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141
 //     /p/:key/items/:itemKey/attachments/:attachmentId   one attachment of that item, opened on its own page
+//     /p/:key/items/:itemKey/runs/:runId   one agent run of that item, full width   ?turn=&errorsOnly=&row=&q=
 //     /p/:key/items/:itemKey/board   ?settings=   (the Feature board of a Feature; the Taskboard settings dialog's section)
 //     /p/:key/boards/stories      ?settings=        (the board settings dialog's section, closed when absent)
 //     /p/:key/boards/features     ?settings=
@@ -28,7 +29,7 @@
 //     /p/:key/retros/items/:itemKey   one item's retros   ?retro=&decide=open&point=
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
 //     /p/:key/import              Jira import
-//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations
+//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
@@ -52,6 +53,7 @@ export const projectSettingsTabs = [
   'sprints',
   'integrations',
   'demos',
+  'inspection',
 ] as const;
 export type ProjectSettingsTab = (typeof projectSettingsTabs)[number];
 
@@ -84,6 +86,7 @@ export interface RouteParams {
   epicsBacklog: ProjectParams;
   workItem: ProjectParams & { itemKey: string };
   workItemAttachment: ProjectParams & { itemKey: string; attachmentId: string };
+  agentRun: ProjectParams & { itemKey: string; runId: string };
   featureBoard: ProjectParams & { itemKey: string };
   storiesBoard: ProjectParams;
   featuresBoard: ProjectParams;
@@ -135,6 +138,10 @@ export interface RouteQuery {
   noSprint?: string;
   decision?: string;
   unthemed?: string;
+  // The run page's zoomed turn number, errors-only switch ('true'), selected row id (q, above, is its find box).
+  turn?: string;
+  errorsOnly?: string;
+  row?: string;
   // The retro open on an item's retro screen.
   retro?: string;
   // 'open' puts the screen in decide mode; `point` is the point to highlight. The sprint Retro tab and the item screen both take them.
@@ -206,6 +213,14 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['item'],
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey],
+  },
+  // The run page of an agent run (SHIP-1463). `turn` zooms to one turn, `errorsOnly` is 'true' when on, `row` is the
+  // selected row and `q` the find-a-span text.
+  agentRun: {
+    pattern: '/p/:key/items/:itemKey/runs/:runId',
+    query: ['turn', 'errorsOnly', 'row', 'q'],
+    installLevel: false,
+    crumbs: (p) => ['Backlogs', p.itemKey, 'Agent run'],
   },
   // The attachment crumb says "Attachment" until the page that knows the file's name replaces it.
   workItemAttachment: {

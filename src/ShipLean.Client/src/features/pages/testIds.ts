@@ -4,6 +4,7 @@ export const pagesTestIds = {
   backlogPage: 'page-backlog',
   workItemPage: 'page-work-item',
   attachmentPage: 'page-attachment',
+  agentRunPage: 'page-agent-run',
   boardPage: 'page-board',
   sprintsPage: 'page-sprints',
   sprintBacklogPage: 'page-sprint-backlog',
