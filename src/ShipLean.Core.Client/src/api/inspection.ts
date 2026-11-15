@@ -3,7 +3,7 @@
 // every label and every percentage; times are milliseconds offsets from the run start, never Dates.
 import { api } from './client';
 
-export const INSPECTION_STORE_MODES = ['clickhouse', 'tempo-loki'] as const;
+export const INSPECTION_STORE_MODES = ['clickhouse', 'tempoLoki'] as const;
 export type InspectionStoreMode = (typeof INSPECTION_STORE_MODES)[number];
 
 export const INSPECTION_AGENTS = ['claude-code', 'codex-cli', 'cursor'] as const;

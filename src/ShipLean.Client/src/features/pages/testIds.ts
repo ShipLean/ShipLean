@@ -36,6 +36,7 @@ export const pagesTestIds = {
   slotInstanceAnalytics: 'slot-instanceAnalytics',
   slotInstanceAgents: 'slot-instanceAgents',
   slotInstanceBackups: 'slot-instanceBackups',
+  slotInstanceInspection: 'slot-instanceInspection',
   slotInstanceProjects: 'slot-instanceProjects',
   slotInstanceUsers: 'slot-instanceUsers',
   slotLevelBacklog: 'slot-levelBacklog',
