@@ -32,7 +32,7 @@ public sealed class TaskCommitsSection(NpgsqlDataSource dataSource, TimeProvider
 
         var commits = rows.Select(Commit).ToList();
         var filePaths = rows
-            .SelectMany(row => row.Paths.Select(path => new TaskChangeFilePathDto(row.RepoPath, path)))
+            .SelectMany(row => ((string[])row.Paths).Select(path => new TaskChangeFilePathDto(row.RepoPath, path)))
             .Distinct()
             .ToList();
         return new TaskCommitsSectionDto(
@@ -49,11 +49,12 @@ public sealed class TaskCommitsSection(NpgsqlDataSource dataSource, TimeProvider
         var repo = new RepoRef(row.Provider == "gitlab" ? CodeProvider.Gitlab : CodeProvider.Github, row.Host, row.RepoPath);
         return new TaskCommitRowDto(
             row.Id, repo.Name, repo.WebUrl, row.Provider, row.Sha, row.Sha[..7], row.Subject, row.AuthorName,
-            DisplayDate.Relative(row.AuthoredAt, clock), row.AddedBy, row.AddedByAgent, row.Additions, row.Deletions, row.FilesChanged,
+            DisplayDate.Relative(new DateTimeOffset(DateTime.SpecifyKind(row.AuthoredAt, DateTimeKind.Utc)), clock), row.AddedBy, row.AddedByAgent, row.Additions, row.Deletions, row.FilesChanged,
             repo.CommitUrl(row.Sha), "ok");
     }
 
+    // Dapper binds a record by constructor and Npgsql hands it timestamptz as DateTime and text[] as Array, so the row says exactly that.
     private sealed record Row(
-        Guid Id, string Provider, string Host, string RepoPath, string Sha, string Subject, string AuthorName, DateTimeOffset AuthoredAt,
-        string AddedBy, bool AddedByAgent, int Additions, int Deletions, int FilesChanged, string[] Paths);
+        Guid Id, string Provider, string Host, string RepoPath, string Sha, string Subject, string AuthorName, DateTime AuthoredAt,
+        string AddedBy, bool AddedByAgent, int Additions, int Deletions, int FilesChanged, Array Paths);
 }

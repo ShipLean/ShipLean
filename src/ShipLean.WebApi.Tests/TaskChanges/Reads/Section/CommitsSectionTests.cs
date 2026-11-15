@@ -5,6 +5,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.TaskChanges.Dtos;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.TaskChanges;
 
