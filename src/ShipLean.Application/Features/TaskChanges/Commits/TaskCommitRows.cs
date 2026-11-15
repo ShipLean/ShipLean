@@ -11,7 +11,7 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
 
     private sealed record CommitQueryRow(
         Guid Id, string Provider, string Host, string Path, string Sha, int Position, string Subject, string AuthorName, DateTime AuthoredAt,
-        int Additions, int Deletions, string[] Paths, string[] ParentShas, string AddedVia, string? AddedByName, string? AddedByAgent, DateTime AddedAt);
+        int Additions, int Deletions, Array Paths, Array ParentShas, string AddedVia, string? AddedByName, string? AddedByAgent, DateTime AddedAt);
 
     public async Task<ItemRow?> FindItemAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -107,7 +107,7 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
 
     private static TaskCommit ToCommit(CommitQueryRow r) => new(
         r.Id, new RepoRef(Enum.Parse<CodeProvider>(r.Provider, ignoreCase: true), r.Host, r.Path), r.Sha, r.Position, r.Subject, r.AuthorName, Utc(r.AuthoredAt),
-        r.Additions, r.Deletions, r.Paths, r.ParentShas, ViaOf(r.AddedVia), r.AddedByAgent ?? r.AddedByName ?? string.Empty, r.AddedByAgent is not null, Utc(r.AddedAt));
+        r.Additions, r.Deletions, (string[])r.Paths, (string[])r.ParentShas, ViaOf(r.AddedVia), r.AddedByAgent ?? r.AddedByName ?? string.Empty, r.AddedByAgent is not null, Utc(r.AddedAt));
 
     private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 
