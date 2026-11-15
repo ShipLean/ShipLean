@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using ShipLean.Application.Features.Links.GitLab;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.TaskChanges;
 
@@ -50,7 +49,7 @@ public sealed class GitLabCodeHost(IHttpClientFactory clients, IIntegrationSetti
         var meta = new CommitMeta(
             commit.Id,
             commit.ParentIds ?? [],
-            GitLabLimits.Truncate(commit.Title, GitLabLimits.MaxTitle) ?? "",
+            CommitSubject.Cut(commit.Title),
             commit.AuthorName ?? "",
             commit.AuthoredDate ?? DateTimeOffset.UnixEpoch,
             commit.Stats?.Additions ?? 0,
@@ -160,7 +159,7 @@ public sealed class GitLabCodeHost(IHttpClientFactory clients, IIntegrationSetti
             return (null, CommitReadStatus.Unreadable);
         }
 
-        var client = clients.CreateClient(GitLabSource.HttpClientName);
+        var client = clients.CreateClient(CodeHostServices.GitLabClientName);
         var reply = await CodeHostReply.GetAsync(client, url, Decorate(config, url), cancellationToken);
         if (reply.Ok)
         {

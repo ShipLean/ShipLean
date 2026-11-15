@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using ShipLean.Application.Features.Links.GitHub;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.TaskChanges;
 
@@ -71,7 +70,7 @@ public sealed class GitHubCodeHost(IHttpClientFactory clients, IIntegrationSetti
             return (null, CommitReadStatus.Unreadable);
         }
 
-        var client = clients.CreateClient(GitHubSource.HttpClientName);
+        var client = clients.CreateClient(CodeHostServices.GitHubClientName);
         var reply = await CodeHostReply.GetAsync(client, url, Decorate(config, url, diff), cancellationToken);
         if (reply.Ok)
         {
@@ -99,7 +98,7 @@ public sealed class GitHubCodeHost(IHttpClientFactory clients, IIntegrationSetti
     private static string Subject(string? message)
     {
         var line = (message ?? "").Split('\n', 2)[0].TrimEnd('\r');
-        return GitHubLimits.Truncate(line, GitHubLimits.MaxTitle) ?? "";
+        return CommitSubject.Cut(line);
     }
 
     private sealed record GitHubCommit(string? Sha, List<GitHubParent>? Parents, GitHubCommitBody? Commit, GitHubStats? Stats, List<GitHubFile>? Files);
