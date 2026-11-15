@@ -11,7 +11,7 @@ namespace ShipLean.WebApi.Tests.TaskChanges.Http;
 [TestFixture]
 public class TaskChangesUsageTests : ApiFixture
 {
-    private static readonly string Item = $"api/work-items/{SeedIds.WorkItems.Ship101}";
+    private static readonly string Item = $"api/work-items/{SeedIds.WorkItems.Ship172}";
 
     private RecordingUsageEvents Recorder => (RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>();
 
