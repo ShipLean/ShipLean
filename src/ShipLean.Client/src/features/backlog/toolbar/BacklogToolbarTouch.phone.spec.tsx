@@ -189,7 +189,7 @@ test('MoreSheet_WhenSearchTypedInListMode_ShouldNarrowTheTouchRows', async ({ mo
   await stubBacklog(page, backlogView(ROWS));
   await mount(<ListMode project={PROJECT} />, route);
   await expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
-  await page.getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   await page.locator(actionRow('search')).tap();
   await page.getByTestId(ids.searchBox).fill(ROWS[0].key);
   await expect(page.getByTestId(ids.row)).toHaveCount(1);
