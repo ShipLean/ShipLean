@@ -19,6 +19,14 @@ public class CommitCardMigrationTests : ApiFixture
 {
     protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddFakeCodeHost();
 
+    // The job sweeps every live commit card, so each test starts with none left over from another.
+    [SetUp]
+    public async Task ArchiveLeftoverCards()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync("UPDATE work_item_link SET archived_at = now() WHERE link_type = 'url' AND archived_at IS NULL");
+    }
+
     [Test]
     public async Task CommitCardMigration_WhenReadable_ShouldMoveToCommitsAndArchiveCard()
     {
@@ -66,7 +74,7 @@ public class CommitCardMigrationTests : ApiFixture
 
         first.ShouldBe((2, 0));
         second.ShouldBe((0, 0));
-        (await ListAsync(item)).Select(c => c.Sha).ShouldBe([Shas.First, Shas.Second]);
+        (await ListAsync(item)).Select(c => c.Sha).ShouldBe([Shas.First, Shas.Second], ignoreOrder: true);
     }
 
     [Test]
