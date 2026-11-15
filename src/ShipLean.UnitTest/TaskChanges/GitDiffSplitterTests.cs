@@ -110,5 +110,8 @@ public class GitDiffSplitterTests
     }
 
     [Test]
-    public void Split_WhenEmpty_ShouldReturnNoFiles() => GitDiffSplitter.Split(string.Empty).ShouldBeEmpty();
+    public void Split_WhenEmpty_ShouldReturnNoFiles()
+    {
+        GitDiffSplitter.Split(string.Empty).ShouldBeEmpty();
+    }
 }
