@@ -14,6 +14,7 @@ export function FeatureTimelineSection({ item, projectKey }: FeatureTimelineSect
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="m-0 text-[length:var(--text-md)] font-semibold">Timeline</h2>
         <Link
+          data-testid={featureTestIds.featureTimelineOpen}
           to={routePath(
             'featureTimeline',
             { key: projectKey, itemKey: item.key },

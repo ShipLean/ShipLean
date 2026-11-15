@@ -8,6 +8,7 @@ using ShipLean.Contracts.Views.Timeline;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Retros;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
