@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "beforeShellExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "afterShellExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "beforeMCPExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "afterMCPExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "afterFileEdit": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }],
+    "stop": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs" }]
+  }
+}

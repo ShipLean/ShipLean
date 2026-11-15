@@ -25,10 +25,9 @@ public sealed class AgentSetupService(InspectionGate gate, InspectionProjectStor
         {
             throw ApiException.Validation("agent must be claude-code, codex-cli or cursor.", "agent");
         }
-        var itemKey = item is null ? "<item-key>" : (await items.RequireAsync(projectKey, item, ct)).ItemKey;
+        var itemKey = item is null ? AgentSetupContent.ItemPlaceholder : (await items.RequireAsync(projectKey, item, ct)).ItemKey;
 
-        // TODO: the real files and notes for each agent, from the embedded templates under AgentSetup/.
-        var content = $"OTEL_EXPORTER_OTLP_ENDPOINT={options.AgentOtlpEndpoint ?? "<your collector>"}\nOTEL_RESOURCE_ATTRIBUTES={options.Fields.Item}={itemKey},{options.Fields.Project}={projectKey}\n";
-        return new AgentSetupDto(agent, label, [new AgentSetupFileDto("telemetry.env", "dotenv", content)], [], $"https://docs.shiplean.app/inspection/{agent}");
+        var inputs = new AgentSetupContent.Inputs(projectKey, itemKey, options.AgentOtlpEndpoint, options.AgentOtlpHeaders, options.Fields);
+        return AgentSetupContent.For(agent, label, inputs);
     }
 }
