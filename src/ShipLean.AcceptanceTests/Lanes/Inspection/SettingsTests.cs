@@ -43,7 +43,7 @@ public class SettingsTests : InspectionAcceptanceTest
         await Expect(save).ToBeEnabledAsync();
         var response = await Page.RunAndWaitForApiAsync(
             $"/api/inspection/projects/{ProjectKey}/settings", "PUT", () => save.ClickAsync());
-        Assert.That(response.Ok, Is.True);
+        response.Ok.ShouldBeTrue();
 
         await Page.ReloadAsync();
         await Expect(Page.GetByTestId(InspectionTestIds.InspectionShowContent)).ToBeCheckedAsync();
@@ -54,9 +54,8 @@ public class SettingsTests : InspectionAcceptanceTest
     [CancelAfter(120_000)]
     public async Task Settings_ForAMember_ShouldBeReadOnly()
     {
-        var tom = TestUser.Tom;
         await SignOutAsync();
-        await SignInAsync(tom.Email!, tom.Password!);
+        await SignInAsync("tom@shiplean.local", SeedIds.Passwords.Tom);
         await Page.GotoAsync(Links.ProjectSettings(ProjectKey, "inspection"));
 
         await Expect(Page.GetByTestId(InspectionTestIds.InspectionReadOnly)).ToBeVisibleAsync();
