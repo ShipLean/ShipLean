@@ -22,6 +22,26 @@ public static partial class QueryText
         return $"`{name}`";
     }
 
+    // A single-quoted ClickHouse string literal, for the places a statement cannot take a parameter (a materialized view's definition,
+    // which names configured attributes). Backslash and quote are escaped; empty input and control characters are refused.
+    public static string ClickHouseString(string value)
+    {
+        if (value.Length == 0)
+        {
+            throw new ArgumentException("A ClickHouse string literal cannot be empty.", nameof(value));
+        }
+        var text = new StringBuilder(value.Length + 2).Append('\'');
+        foreach (var c in value)
+        {
+            if (char.IsControl(c))
+            {
+                throw new ArgumentException($"A ClickHouse string literal cannot hold the control character U+{(int)c:X4}.", nameof(value));
+            }
+            text.Append(c switch { '\\' => "\\\\", '\'' => "\\'", _ => c.ToString() });
+        }
+        return text.Append('\'').ToString();
+    }
+
     private static string Quote(string value)
     {
         var text = new StringBuilder(value.Length + 2).Append('"');

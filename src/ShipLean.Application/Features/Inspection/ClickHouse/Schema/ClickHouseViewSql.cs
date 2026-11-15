@@ -20,7 +20,10 @@ public sealed class ClickHouseViewSql(ClickHouseNames names)
 
     public string CreateDatabase => $"CREATE DATABASE IF NOT EXISTS {names.Database}";
 
-    public string CreateMigrations => $"CREATE TABLE IF NOT EXISTS {names.Migrations} (name String, applied_at DateTime DEFAULT now()) ENGINE = MergeTree ORDER BY name";
+    public string CreateMigrations => $"CREATE TABLE IF NOT EXISTS {names.Migrations} (name String, applied_at DateTime64(6, 'UTC') DEFAULT now64(6)) ENGINE = MergeTree ORDER BY name";
+
+    // Older databases made applied_at a DateTime; the newest marker is told apart by microseconds.
+    public string ModifyMigrationsTime => $"ALTER TABLE {names.Migrations} MODIFY COLUMN applied_at DateTime64(6, 'UTC') DEFAULT now64(6)";
 
     // Counts and tokens add up across collector batches: every column aggregates (sum, min, max), so a run split over many
     // inserts merges to the same totals. Never ReplacingMergeTree here (it would keep one batch's totals).

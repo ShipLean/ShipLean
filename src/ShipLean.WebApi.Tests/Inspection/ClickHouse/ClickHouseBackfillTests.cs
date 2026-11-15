@@ -8,7 +8,7 @@ namespace ShipLean.WebApi.Tests.Inspection.ClickHouse;
 public sealed class ClickHouseBackfillTests
 {
     [Test]
-    public async Task Start_WhenRowsExistBeforeTheViews_CountsThemOnceAndASecondStartDoesNotRepeatIt()
+    public async Task Ensure_WhenRowsExistBeforeTheViews_CountsThemOnceAndASecondStartDoesNotRepeatIt()
     {
         await using var scratch = await ScratchExporter.CreateAsync();
         var tag = new Dictionary<string, string> { ["shiplean.item"] = "SHIP-1" };
@@ -18,12 +18,12 @@ public sealed class ClickHouseBackfillTests
         await scratch.AddSpanAsync("s1", 4 * 3600, 1, "Unset", tag);
         await scratch.AddLogAsync("s1", 30, "ERROR", tag);
 
-        await scratch.Migrator().StartAsync(CancellationToken.None);
+        await scratch.Migrator().EnsureAsync(CancellationToken.None);
         // A sentinel only a second backfill (which rebuilds the table) would wipe.
         await scratch.Db.ExecuteAsync(
             $"INSERT INTO `{scratch.InspectionDatabase}`.`run_items` (project, item_key, session_id, link_version, seen_at) VALUES ('SENTINEL', 'SHIP-1', 'sentinel-session', 3, now())", null, CancellationToken.None);
         var second = scratch.Migrator();
-        await second.StartAsync(CancellationToken.None);
+        await second.EnsureAsync(CancellationToken.None);
 
         var search = await scratch.Finder(second).FindAsync(ScratchExporter.Query("SHIP-1") with { To = ScratchExporter.Query("SHIP-1").To.AddHours(5) }, CancellationToken.None);
         search.Runs.Count.ShouldBe(1, search.Problem);
@@ -33,11 +33,11 @@ public sealed class ClickHouseBackfillTests
     }
 
     [Test]
-    public async Task Start_WhenRowsArriveAfterTheViews_CountsThemToo()
+    public async Task Ensure_WhenRowsArriveAfterTheViews_CountsThemToo()
     {
         await using var scratch = await ScratchExporter.CreateAsync();
         var migrator = scratch.Migrator();
-        await migrator.StartAsync(CancellationToken.None);
+        await migrator.EnsureAsync(CancellationToken.None);
 
         await scratch.AddSpanAsync("s2", 0, 10, "Unset", new Dictionary<string, string> { ["shiplean.item"] = "SHIP-2" });
 

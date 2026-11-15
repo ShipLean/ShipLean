@@ -58,6 +58,31 @@ public class QueryTextTests
         Should.Throw<ArgumentException>(() => QueryText.Identifier(name));
     }
 
+    [TestCase("shiplean.item", "'shiplean.item'")]
+    [TestCase("it's", "'it\\'s'")]
+    [TestCase("a\\b", "'a\\\\b'")]
+    [TestCase("a\\'b", "'a\\\\\\'b'")]
+    [TestCase("x' OR 1=1 --", "'x\\' OR 1=1 --'")]
+    public void ClickHouseString_WhenTheValueHasAQuoteOrBackslash_ShouldEscapeThem(string value, string expected)
+    {
+        QueryText.ClickHouseString(value).ShouldBe(expected);
+    }
+
+    [Test]
+    public void ClickHouseString_WhenTheValueIsEmpty_ShouldBeRefused()
+    {
+        Should.Throw<ArgumentException>(() => QueryText.ClickHouseString(""));
+    }
+
+    [TestCase("a\nb")]
+    [TestCase("a\rb")]
+    [TestCase("a\0b")]
+    [TestCase("a\tb")]
+    public void ClickHouseString_WhenTheValueHasAControlCharacter_ShouldBeRefused(string value)
+    {
+        Should.Throw<ArgumentException>(() => QueryText.ClickHouseString(value));
+    }
+
     // Reads a double-quoted literal the way TraceQL and LogQL do: it must start and end with an unescaped quote and hold no
     // other unescaped quote, so nothing in the value can end the string early.
     private static string ReadLiteral(string literal)

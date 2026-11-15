@@ -8,19 +8,19 @@ namespace ShipLean.WebApi.Tests.Inspection.ClickHouse;
 public sealed class ClickHouseExporterLayoutTests
 {
     [Test]
-    public async Task Start_WhenTheTracesTableLacksAColumnTheViewsRead_FailsNamingTheTableAndTheColumn()
+    public async Task Ensure_WhenTheTracesTableLacksAColumnTheViewsRead_FailsNamingTheTableAndTheColumn()
     {
         await using var scratch = await ScratchExporter.CreateAsync(
             "Timestamp DateTime64(9), SpanName String, ServiceName String, ResourceAttributes Map(String, String), Duration UInt64, StatusCode String");
 
-        var failure = await Should.ThrowAsync<ClickHouseLayoutException>(() => scratch.Migrator().StartAsync(CancellationToken.None));
+        var failure = await Should.ThrowAsync<ClickHouseLayoutException>(() => scratch.Migrator().EnsureAsync(CancellationToken.None));
 
         failure.Message.ShouldContain($"{scratch.ExporterDatabase}.otel_traces");
         failure.Message.ShouldContain("SpanAttributes");
     }
 
     [Test]
-    public async Task Start_WhenTheTablesHaveEveryColumn_Succeeds()
+    public async Task Ensure_WhenTheTablesHaveEveryColumn_Succeeds()
     {
         await using var scratch = await ScratchExporter.CreateAsync();
 

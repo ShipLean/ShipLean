@@ -1,4 +1,3 @@
-using ClickHouse.Client;
 using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 
@@ -30,7 +29,7 @@ public sealed class ClickHouseRunFinder
             var runs = await ReadRunsAsync(query, ct);
             return new RunSearch(await WithLinksAsync(query, runs, ct), true, null);
         }
-        catch (Exception ex) when (ex is HttpRequestException or ClickHouseServerException or ClickHouseLayoutException or TimeoutException)
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ex is ClickHouseLayoutException)
         {
             return new RunSearch([], false, ex.Message);
         }

@@ -1,12 +1,11 @@
 using System.Diagnostics;
-using ClickHouse.Client;
 using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.Application.Features.Inspection.ClickHouse;
 
-// Is the store reachable, how long does a round trip take, how far behind the exporter's tables are the views, and can the
-// ClickHouse user write to the exporter's tables (it should only read them: the collector writes, ShipLean never does).
+// Is the store reachable, how long does a round trip take and how far behind the exporter's tables are the views.
+// ShipLean's ClickHouse user should only read them (the docs recommend a read-only user); health does not probe for write grants.
 public sealed class ClickHouseHealth
 {
     private readonly ClickHouseDb db;
@@ -31,9 +30,9 @@ public sealed class ClickHouseHealth
             {
                 return new StoreHealth(true, latency, null, $"The exporter's tables {names.ExporterDatabase}.{names.TracesTable} and {names.ExporterDatabase}.{names.LogsTable} do not exist yet. Start the collector, which creates them.");
             }
-            return new StoreHealth(true, latency, await ViewLagAsync(ct), await WritableProblemAsync(ct));
+            return new StoreHealth(true, latency, await ViewLagAsync(ct), null);
         }
-        catch (Exception ex) when (ex is HttpRequestException or ClickHouseServerException or ClickHouseLayoutException or TimeoutException)
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ex is ClickHouseLayoutException)
         {
             return new StoreHealth(false, null, null, ex.Message);
         }
@@ -57,18 +56,5 @@ public sealed class ClickHouseHealth
         var source = Convert.ToInt64(rows[0][0], System.Globalization.CultureInfo.InvariantCulture);
         var seen = Convert.ToInt64(rows[0][1], System.Globalization.CultureInfo.InvariantCulture);
         return source == 0 ? null : (int)Math.Max(0, source - seen);
-    }
-
-    private async Task<string?> WritableProblemAsync(CancellationToken ct)
-    {
-        foreach (var table in new[] { names.Traces, names.Logs })
-        {
-            var granted = await db.ScalarAsync<long>($"CHECK GRANT INSERT ON {table}", null, ct);
-            if (granted == 1)
-            {
-                return $"The ClickHouse user can write to {table}. Give it SELECT on the exporter's tables only: the collector writes them, ShipLean never does.";
-            }
-        }
-        return null;
     }
 }

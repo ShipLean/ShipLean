@@ -12,6 +12,12 @@ public sealed class ClickHouseDb(string connectionString)
     public static ClickHouseDb From(InspectionOptions options)
         => new(options.ClickHouseConnection ?? throw new InvalidOperationException("SHIPLEAN_INSPECTION_CLICKHOUSE_CONNECTION is not set."));
 
+    // The store did not answer: refused, a server error, or an HTTP timeout (which surfaces as TaskCanceledException while the
+    // caller's own token is not cancelled).
+    public static bool IsStoreDown(Exception ex, CancellationToken ct)
+        => ex is HttpRequestException or global::ClickHouse.Client.ClickHouseServerException or TimeoutException
+            || (ex is TaskCanceledException && !ct.IsCancellationRequested);
+
     public async Task ExecuteAsync(string statement, IReadOnlyDictionary<string, object>? parameters, CancellationToken ct)
     {
         await using var connection = new ClickHouseConnection(connectionString);

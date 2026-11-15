@@ -53,6 +53,8 @@ public sealed class ScratchExporter : IAsyncDisposable
 
     public ClickHouseSchemaMigrator Migrator() => new(Options, InspectionDatabase);
 
+    public ClickHouseSchemaMigrator Migrator(InspectionOptions options) => new(options, InspectionDatabase);
+
     public ClickHouseRunFinder Finder(ClickHouseSchemaMigrator migrator) => new(Options, migrator);
 
     // One span, `seconds` after the origin and lasting `lasting` seconds, with the project and session on its resource.

@@ -1,4 +1,3 @@
-using ClickHouse.Client;
 using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 
@@ -53,7 +52,7 @@ public sealed class ClickHouseFieldCheck
             var found = rows.Select(row => Convert.ToInt32(row[0], System.Globalization.CultureInfo.InvariantCulture)).ToHashSet();
             return [.. fields.Select((f, i) => new FieldCheck(f.Name, f.Attribute, found.Contains(i)))];
         }
-        catch (Exception ex) when (ex is HttpRequestException or ClickHouseServerException or ClickHouseLayoutException or TimeoutException)
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ex is ClickHouseLayoutException)
         {
             return [.. fields.Select(f => new FieldCheck(f.Name, f.Attribute, false))];
         }

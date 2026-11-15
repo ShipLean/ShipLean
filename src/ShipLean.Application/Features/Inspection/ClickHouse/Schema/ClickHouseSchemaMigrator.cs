@@ -1,5 +1,5 @@
-using ClickHouse.Client;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 
@@ -8,43 +8,74 @@ namespace ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 // backfill of rows written before the views existed. The backfill is recorded in `inspection.migrations` under the views'
 // fingerprint, so a second start does nothing, and a changed definition (other field names) rebuilds the tables and backfills again.
 // When the exporter has not created its tables yet (the collector starts later), start does nothing and the next use tries again.
-public sealed class ClickHouseSchemaMigrator : IHostedService
+public sealed class ClickHouseSchemaMigrator : IHostedService, IDisposable
 {
     private readonly ClickHouseDb db;
     private readonly ClickHouseNames names;
     private readonly ClickHouseViewSql sql;
     private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly ILogger<ClickHouseSchemaMigrator>? logger;
+    private readonly CancellationTokenSource stopping = new();
     private volatile string? migratedFingerprint;
-
-    public ClickHouseSchemaMigrator(InspectionOptions options)
-        : this(options, ClickHouseNames.InspectionDatabase)
-    {
-    }
+    private Task startup = Task.CompletedTask;
 
     // The database name is a parameter so the schema tests can migrate a scratch database next to the real one.
-    public ClickHouseSchemaMigrator(InspectionOptions options, string inspectionDatabase)
+    public ClickHouseSchemaMigrator(InspectionOptions options, string? inspectionDatabase = null, ILogger<ClickHouseSchemaMigrator>? logger = null)
     {
         db = ClickHouseDb.From(options);
-        names = new ClickHouseNames(options, inspectionDatabase);
+        names = new ClickHouseNames(options, inspectionDatabase ?? ClickHouseNames.InspectionDatabase);
         sql = new ClickHouseViewSql(names);
+        this.logger = logger;
     }
 
     public ClickHouseNames Names => names;
 
-    // A store that is down at start does not stop the app: the finder, health and field check migrate on first use. A wrong layout does.
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public void Dispose()
     {
+        stopping.Dispose();
+        gate.Dispose();
+    }
+
+    // Start does not wait for the migration (a backfill can take a long while, and a store that does not answer must not hold the app
+    // back): it begins in the background and logs how it ended. Every read of the store calls EnsureAsync, so a failed or unfinished
+    // migration is retried on first use.
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        startup = Task.Run(MigrateInBackgroundAsync, CancellationToken.None);
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        await stopping.CancelAsync();
         try
         {
-            await EnsureAsync(cancellationToken);
+            await startup;
         }
-        catch (Exception ex) when (ex is HttpRequestException or ClickHouseServerException)
+        catch (OperationCanceledException)
         {
-            // Retried by the next EnsureAsync, which every read of the store makes.
+            // Stopping: the migration is retried on the next start.
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    private async Task MigrateInBackgroundAsync()
+    {
+        try
+        {
+            if (!await EnsureAsync(stopping.Token))
+            {
+                logger?.LogInformation("Inspection: the exporter's tables do not exist yet; the schema is created on first use.");
+            }
+        }
+        catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+        {
+            // Stopping.
+        }
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, stopping.Token) || ex is ClickHouseLayoutException)
+        {
+            logger?.LogWarning(ex, "Inspection: the ClickHouse schema was not migrated at start ({Reason}); it is retried on first use.", ex.Message);
+        }
+    }
 
     // Migrates when not done yet; true when the schema is in place, false when the exporter's tables are not there yet. Throws
     // ClickHouseLayoutException when a table lacks a column the views read.
@@ -65,11 +96,12 @@ public sealed class ClickHouseSchemaMigrator : IHostedService
             await CheckLayoutAsync(names.LogsTable, names.ExporterDatabase, ClickHouseViewSql.LogColumns, ct);
             await db.ExecuteAsync(sql.CreateDatabase, null, ct);
             await db.ExecuteAsync(sql.CreateMigrations, null, ct);
+            await db.ExecuteAsync(sql.ModifyMigrationsTime, null, ct);
             await db.ExecuteAsync(sql.CreateRuns, null, ct);
             await db.ExecuteAsync(sql.CreateRunItems, null, ct);
             await db.ExecuteAsync(sql.ModifyRunsTtl, null, ct);
             await db.ExecuteAsync(sql.ModifyItemsTtl, null, ct);
-            if (!await BackfillRecordedAsync(ct))
+            if (!await IsCurrentAsync(ct))
             {
                 await RebuildAsync(ct);
             }
@@ -82,7 +114,7 @@ public sealed class ClickHouseSchemaMigrator : IHostedService
         }
     }
 
-    // Views first, so rows arriving during the backfill are not missed; the backfill covers rows up to the newest one there was when the views
+    // Views first, so rows arriving during the backfill are not missed; the backfill covers rows up to the newest one there was just after the views
     // went in (so a row stamped ahead of the clock is still counted). Tables are dropped and recreated first: a definition change must not leave rows of the old one behind.
     private async Task RebuildAsync(CancellationToken ct)
     {
@@ -94,12 +126,13 @@ public sealed class ClickHouseSchemaMigrator : IHostedService
         await db.ExecuteAsync($"DROP TABLE IF EXISTS {names.RunItems}", null, ct);
         await db.ExecuteAsync(sql.CreateRuns, null, ct);
         await db.ExecuteAsync(sql.CreateRunItems, null, ct);
-        var to = await db.ScalarAsync<long>(
-            $"SELECT toUnixTimestamp64Nano(greatest((SELECT max(Timestamp) FROM {names.Traces}), (SELECT max(Timestamp) FROM {names.Logs})))", null, ct);
         foreach (var view in sql.Views)
         {
             await db.ExecuteAsync(view.Create, null, ct);
         }
+        // Taken after the views exist: a row landing between the two is counted twice rather than lost.
+        var to = await db.ScalarAsync<long>(
+            $"SELECT toUnixTimestamp64Nano(greatest((SELECT max(Timestamp) FROM {names.Traces}), (SELECT max(Timestamp) FROM {names.Logs})))", null, ct);
         var parameters = new Dictionary<string, object> { ["days"] = (uint)names.RetentionDays, ["to"] = to };
         foreach (var view in sql.Views)
         {
@@ -112,8 +145,12 @@ public sealed class ClickHouseSchemaMigrator : IHostedService
 
     private string MarkerName => "views-" + sql.Fingerprint;
 
-    private async Task<bool> BackfillRecordedAsync(CancellationToken ct)
-        => await db.ScalarAsync<long>($"SELECT count() FROM {names.Migrations} WHERE name = {{name:String}}", new Dictionary<string, object> { ["name"] = MarkerName }, ct) > 0;
+    // The newest marker says which definition is live: an older marker of the same fingerprint (a deploy, then a rollback) does not.
+    private async Task<bool> IsCurrentAsync(CancellationToken ct)
+    {
+        var rows = await db.QueryAsync($"SELECT name FROM {names.Migrations} ORDER BY applied_at DESC, name LIMIT 1", null, ct);
+        return rows.Count > 0 && (string?)rows[0][0] == MarkerName;
+    }
 
     private async Task<bool> ExporterTablesExistAsync(CancellationToken ct)
     {

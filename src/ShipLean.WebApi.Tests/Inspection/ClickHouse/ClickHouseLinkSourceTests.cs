@@ -12,7 +12,7 @@ public sealed class ClickHouseLinkSourceTests
     {
         await using var scratch = await ScratchExporter.CreateAsync();
         var migrator = scratch.Migrator();
-        await migrator.StartAsync(CancellationToken.None);
+        await migrator.EnsureAsync(CancellationToken.None);
         await scratch.AddSpanAsync(
             "pick", 0, 1, "Unset",
             new Dictionary<string, string> { ["tool_name"] = "mcp__shiplean__pick_up", ["tool_parameters"] = "{\"item\":\"SHIP-7\"}" });
@@ -28,7 +28,7 @@ public sealed class ClickHouseLinkSourceTests
     {
         await using var scratch = await ScratchExporter.CreateAsync();
         var migrator = scratch.Migrator();
-        await migrator.StartAsync(CancellationToken.None);
+        await migrator.EnsureAsync(CancellationToken.None);
         await scratch.AddSpanAsync("other", 0, 1, "Unset", new Dictionary<string, string> { ["tool_name"] = "Edit", ["tool_parameters"] = "{\"item\":\"SHIP-8\"}" });
         await scratch.AddSpanAsync("other", 1, 1, "Unset", new Dictionary<string, string> { ["tool_name"] = "mcp__shiplean__pick_up", ["tool_parameters"] = "not json {\"item\":\"SHIP-9\"}" });
         await scratch.AddSpanAsync("other", 2, 1, "Unset", new Dictionary<string, string> { ["tool_name"] = "mcp__other__shiplean__pick_up", ["tool_parameters"] = "{\"item\":\"SHIP-10\"}" });
