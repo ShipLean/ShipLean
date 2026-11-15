@@ -55,14 +55,29 @@ public sealed class PostgresRunLinkStore(NpgsqlDataSource dataSource) : IRunLink
     public async Task<IReadOnlyList<RunLinkRow>> ReadAsync(string projectKey, string itemKey, DateTimeOffset notBefore, CancellationToken ct)
     {
         await using var connection = await dataSource.OpenConnectionAsync(ct);
-        var rows = await connection.QueryAsync<StoredRow>(new CommandDefinition(
+        await using var command = new NpgsqlCommand(
             """
-            SELECT run_id AS runId, session_id AS sessionId, trace_ids AS traceIds, source, summary::text AS summary, fetched_at AS fetchedAt
+            SELECT run_id, session_id, trace_ids, source, summary::text, fetched_at
             FROM inspection_run_links
             WHERE project_key = @projectKey AND item_key = @itemKey AND fetched_at > @notBefore
             """,
-            new { projectKey, itemKey, notBefore }, cancellationToken: ct));
-        return [.. rows.Select(r => new RunLinkRow(r.RunId, r.SessionId, r.TraceIds, r.Source, r.Summary, r.FetchedAt))];
+            connection);
+        command.Parameters.AddWithValue("projectKey", projectKey);
+        command.Parameters.AddWithValue("itemKey", itemKey);
+        command.Parameters.AddWithValue("notBefore", notBefore.UtcDateTime);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var rows = new List<RunLinkRow>();
+        while (await reader.ReadAsync(ct))
+        {
+            rows.Add(new RunLinkRow(
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.GetFieldValue<string[]>(2),
+                reader.GetString(3),
+                reader.GetString(4),
+                new DateTimeOffset(DateTime.SpecifyKind(reader.GetDateTime(5), DateTimeKind.Utc))));
+        }
+        return rows;
     }
 
     public async Task WriteAsync(string projectKey, string itemKey, IReadOnlyList<RunLinkRow> rows, CancellationToken ct)
@@ -83,5 +98,4 @@ public sealed class PostgresRunLinkStore(NpgsqlDataSource dataSource) : IRunLink
         }
     }
 
-    private sealed record StoredRow(string RunId, string SessionId, string[] TraceIds, string Source, string Summary, DateTimeOffset FetchedAt);
 }
