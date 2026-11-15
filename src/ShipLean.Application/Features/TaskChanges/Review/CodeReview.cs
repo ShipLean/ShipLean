@@ -6,6 +6,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 
