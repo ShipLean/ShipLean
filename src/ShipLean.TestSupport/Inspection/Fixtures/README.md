@@ -10,3 +10,18 @@ Assembly rules the assembled files pin:
 - Markers: Wait per permission wait, Error per error row or ERROR record, ShipleanTool per ShipLean call, sorted by time. `WhatItDid` is the last `report_task` or `hand_back` call: `report_task: done · 1 commit`, never prompt text.
 
 Comparison rules: `compareKeys` lists only keys a Loki reader keeps exactly: the K1 mapped fields (`session.id`, `prompt.id`, `shiplean.item`, `shiplean.project`, which Loki maps back to dotted form) and attributes whose names have no dots. Other dotted keys (`service.name`, `user.email`, `shiplean.link_source`, `event.name`, `host.name`) are not listed: Loki returns them underscored, and Agent, StartedBy and the ShipleanFile link are compared through the summary. Values compare ordinally in the K3 form (`1.5`, `true`, arrays as compact JSON); span events compare by name, offset and listed attributes. `claude-code-synthetic` covers a double (`temperature`), an array (`allowed_tools`), a record attribute that clashes with a resource one (`team`: the record's `infra` wins over the resource's `platform`, on the `pick_up` span) and a span event (`first_token` on the first `llm_request`).
+
+## Assembly rules
+
+Decisions the C1 assembler (`RunAssembler`) takes where the pinned files are silent. Later lanes build on them.
+- Row `Name` is the `tool_name` attribute, else the span name. `Input` is the first of `tool_parameters`, `tool_input`, `input`. `Output` is the span's `output` attribute, else the first row log's `output`.
+- Direct children of the interaction have `ParentId` null and `Depth` 0.
+- The ShipleanTool marker `At` is the span start in traced runs and the record time in log-only runs.
+- An error marker's label is the span `StatusMessage` (traced) or the record `Body` (log-only).
+- Prompt text comes only from events ending `user_prompt` (Cursor's `beforeSubmitPrompt` gives none).
+- `FilePath` is set only for Edit, MultiEdit, Write, NotebookEdit, apply_patch, or `*FileEdit` events. `CommitSha` comes from the `commit_sha` attribute.
+- `WhatItDid` is `<tool>: <status> · N commit(s)`, with no commit part when there are none.
+- Duplicates: spans are de-duplicated by span id (first by start, then end) and identical log records are collapsed, so a collector retry changes nothing and input order does not matter.
+- Logs from non-agent services (a test runner) in a traced run: a log with no row's span id that joins no interaction becomes a top-level Event row in the turn whose time window holds it; outside every turn it is not shown. In log-only runs every record is already an Event row.
+- A span whose parent is missing joins the turn with the same prompt id as a top-level row; with no matching turn it becomes its own turn. So a prompt id can appear on more than one turn only when no interaction span carries it.
+- Content hiding (C2): the content also sits in `RunRow.Attributes` (`tool_parameters`, `tool_input`, `input`, `output`) and in row logs' attributes (`prompt`, `output`); strip those keys too when content is hidden.
