@@ -39,6 +39,7 @@ public static class PagesTestIds
     public const string SlotInstanceAnalytics = "slot-instanceAnalytics";
     public const string SlotInstanceAgents = "slot-instanceAgents";
     public const string SlotInstanceBackups = "slot-instanceBackups";
+    public const string SlotInstanceInspection = "slot-instanceInspection";
     public const string SlotInstanceProjects = "slot-instanceProjects";
     public const string SlotInstanceUsers = "slot-instanceUsers";
     public const string SlotLevelBacklog = "slot-levelBacklog";

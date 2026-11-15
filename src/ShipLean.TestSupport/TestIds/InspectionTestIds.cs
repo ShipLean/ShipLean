@@ -115,6 +115,8 @@ public static class InspectionTestIds
     public const string InspectionStoreMode = "inspection-store-mode";
     public const string InspectionTenantOverride = "inspection-tenant-override";
     public const string InspectionSelectorOverride = "inspection-selector-override";
+    public const string InspectionContentConfirm = "inspection-content-confirm";
+    public const string InspectionReadOnly = "inspection-read-only";
     public const string InspectionAgentSetup = "inspection-agent-setup";
     public const string InspectionAgentPick = "inspection-agent-pick";
     public const string InspectionItemInput = "inspection-item-input";
@@ -122,4 +124,17 @@ public static class InspectionTestIds
     public const string InspectionSetupCopy = "inspection-setup-copy";
     public const string InspectionSetupNotes = "inspection-setup-notes";
     public const string InspectionDocsLink = "inspection-docs-link";
+
+    // Instance settings: Inspection health panel
+    public const string InspectionHealth = "inspection-health";
+    public const string InspectionHealthLoading = "inspection-health-loading";
+    public const string InspectionHealthLoadFailed = "inspection-health-load-failed";
+    public const string InspectionHealthOff = "inspection-health-off";
+    public const string InspectionHealthMode = "inspection-health-mode";
+    public const string InspectionHealthReachable = "inspection-health-reachable";
+    public const string InspectionHealthLatency = "inspection-health-latency";
+    public const string InspectionHealthLag = "inspection-health-lag";
+    public const string InspectionHealthProblem = "inspection-health-problem";
+    public const string InspectionHealthCheckFields = "inspection-health-check-fields";
+    public const string InspectionHealthField = "inspection-health-field";
 }

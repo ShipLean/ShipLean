@@ -63,6 +63,7 @@ export const instanceSettingsTabs = [
   'projects',
   'integrations',
   'analytics',
+  'inspection',
   'agents',
   'backups',
 ] as const;
