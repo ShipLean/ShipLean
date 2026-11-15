@@ -1,6 +1,7 @@
 using ShipLean.Application.Features.Inspection;
 using ShipLean.Application.Features.Inspection.TempoLoki;
 using ShipLean.Contracts.Inspection;
+using ShipLean.WebApi.Tests.Inspection.TempoLoki.Find;
 
 namespace ShipLean.WebApi.Tests.Inspection.Contract;
 
@@ -14,9 +15,17 @@ public sealed class TempoLokiTraceSourceContractTests : TraceSourceContractTests
 
     protected override string Store => "tempo-loki";
 
-    protected override ITraceSource CreateSource(InspectionOptions options) => Build();
+    protected override ITraceSource CreateSource(InspectionOptions options) => Build(options);
 
     // The one place the source's parts are built; lane B owns it and gives the parts their settings and HTTP clients here.
-    private static TempoLokiTraceSource Build()
-        => new(new TempoLokiRunFinder(), new TempoLokiRunReader(), new TempoLokiHealth(), new TempoLokiFieldCheck());
+    private static TempoLokiTraceSource Build(InspectionOptions options)
+    {
+        var clients = StoreClients.Create(options);
+        var cache = new RunLinkCache(new InMemoryRunLinkStore(), TimeProvider.System);
+        return new TempoLokiTraceSource(
+            new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options),
+            new TempoLokiRunReader(),
+            new TempoLokiHealth(clients, options, TimeProvider.System),
+            new TempoLokiFieldCheck(clients, options, TimeProvider.System));
+    }
 }
