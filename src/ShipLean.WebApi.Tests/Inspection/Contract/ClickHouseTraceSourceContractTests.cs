@@ -1,5 +1,6 @@
 using ShipLean.Application.Features.Inspection;
 using ShipLean.Application.Features.Inspection.ClickHouse;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.WebApi.Tests.Inspection.Contract;
@@ -14,9 +15,12 @@ public sealed class ClickHouseTraceSourceContractTests : TraceSourceContractTest
 
     protected override string Store => "clickhouse";
 
-    protected override ITraceSource CreateSource(InspectionOptions options) => Build();
+    protected override ITraceSource CreateSource(InspectionOptions options) => Build(options);
 
     // The one place the source's parts are built; lane A owns it and gives the parts their settings and connections here.
-    private static ClickHouseTraceSource Build()
-        => new(new ClickHouseRunFinder(), new ClickHouseRunReader(), new ClickHouseHealth(), new ClickHouseFieldCheck());
+    private static ClickHouseTraceSource Build(InspectionOptions options)
+    {
+        var migrator = new ClickHouseSchemaMigrator(options);
+        return new(new ClickHouseRunFinder(options, migrator), new ClickHouseRunReader(), new ClickHouseHealth(options, migrator), new ClickHouseFieldCheck(options, migrator));
+    }
 }
