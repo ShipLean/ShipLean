@@ -95,9 +95,9 @@
   flex: none;
 }
 .rw-pill.warn {
-  background: var(--color-warn);
+  background: color-mix(in srgb, var(--color-warn) 25%, transparent);
   border-color: var(--color-warn);
-  color: #1d1d1d;
+  color: var(--color-text);
 }
 .rw-kd {
   display: inline-grid;
@@ -106,7 +106,7 @@
   height: 16px;
   border-radius: 4px;
   font: 700 9px/1 var(--font-sans);
-  color: #fff;
+  color: var(--color-surface);
   flex: none;
 }
 .rw-kd.modelCall {

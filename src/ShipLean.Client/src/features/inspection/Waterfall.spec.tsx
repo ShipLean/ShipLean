@@ -7,6 +7,43 @@ import { WaterfallHarness } from './waterfall/ct/WaterfallHarness';
 
 const edit: RunRowDetailDto = { ...runRowDetail, commitSha: 'a81d4e0' };
 
+// One detail per row, matched to the row the state selects.
+const failedBash: RunRowDetailDto = {
+  ...runRowDetail,
+  name: 'Bash',
+  startLabel: '10:00:21',
+  durationMs: 9000,
+  offsetMs: 21000,
+  waitMs: null,
+  input: '{"command":"dotnet test"}',
+  output: 'Failed Foo_WhenBar_ShouldBaz\nExpected 3 but was 4\nExit status 1',
+  outputTruncated: true,
+  filePath: null,
+  commitSha: null,
+};
+const permissionBash: RunRowDetailDto = {
+  ...failedBash,
+  startLabel: '10:00:12',
+  durationMs: 1_278_000,
+  offsetMs: 12000,
+  waitMs: 1_260_000,
+  output: 'Build succeeded',
+  outputTruncated: false,
+};
+const hiddenBash: RunRowDetailDto = {
+  ...failedBash,
+  contentHidden: true,
+  input: null,
+  output: null,
+  outputTruncated: false,
+};
+const detailByState = {
+  default: { rowId: 'err-1', detail: failedBash },
+  permission: { rowId: 'perm-1', detail: permissionBash },
+  edit: { rowId: '0000000000001005', detail: edit },
+  hidden: { rowId: 'err-1', detail: hiddenBash },
+} as const;
+
 async function setup(page: Page, detail: RunRowDetailDto = edit, rowStatus = 200) {
   await page.setViewportSize({ width: 1440, height: 900 });
   const seen = await stubInspection(page);
@@ -26,27 +63,44 @@ async function setup(page: Page, detail: RunRowDetailDto = edit, rowStatus = 200
 }
 
 for (const theme of ['light', 'dark'] as const) {
-  for (const [variant, initial] of [
-    ['default', '0000000000001005'],
-    ['permission', 'perm-1'],
-    ['edit', '0000000000001005'],
-    ['hidden', '0000000000001005'],
-  ] as const) {
+  for (const variant of ['default', 'permission', 'edit', 'hidden'] as const) {
     test(`Waterfall_WhenState${variant}_ShouldMatchItsScreenshot_${theme}`, async ({
       mount,
       page,
     }) => {
-      await setup(
-        page,
-        variant === 'hidden' ? { ...edit, contentHidden: true, input: null, output: null } : edit,
-      );
+      const { rowId, detail } = detailByState[variant];
+      await setup(page, detail);
       await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-      const c = await mount(<WaterfallHarness variant={variant} initial={initial} />);
+      const c = await mount(<WaterfallHarness variant={variant} initial={rowId} />);
       await expect(page.getByTestId(ids.runPanelKind)).toBeVisible();
+      await expect(page.locator(`[data-row-id="${rowId}"]`)).toHaveAttribute(
+        'aria-selected',
+        'true',
+      );
+      await expectPanelFor(page, variant);
       await expect(c).toHaveScreenshot(`waterfall-${variant}.${theme}.png`, {
         animations: 'disabled',
       });
     });
+  }
+}
+
+async function expectPanelFor(page: Page, variant: keyof typeof detailByState) {
+  if (variant === 'default') {
+    await expect(page.getByTestId(ids.runPanelOutput)).toContainText('Expected 3 but was 4');
+    await expect(page.getByTestId(ids.runPanelOutputTruncated)).toBeVisible();
+    await expect(page.getByTestId(ids.runPanelFilePath)).toHaveCount(0);
+    await expect(page.getByTestId(ids.runPanelWait)).toHaveCount(0);
+  } else if (variant === 'permission') {
+    await expect(page.getByTestId(ids.runPanelWait)).toContainText('Waited 21 m');
+    await expect(page.getByTestId(ids.runPanelFilePath)).toHaveCount(0);
+  } else if (variant === 'edit') {
+    await expect(page.getByTestId(ids.runPanelFilePath)).toHaveText('src/App/Foo.cs');
+    await expect(page.getByTestId(ids.runPanelCommit)).toHaveText('a81d4e0');
+  } else {
+    await expect(page.getByTestId(ids.runPanelContentHidden)).toBeVisible();
+    await expect(page.getByTestId(ids.runPanelOutput)).toHaveCount(0);
+    await expect(page.getByTestId(ids.runPanelFilePath)).toHaveCount(0);
   }
 }
 

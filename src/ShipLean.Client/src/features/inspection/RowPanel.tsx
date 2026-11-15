@@ -133,9 +133,9 @@ export function RowPanel({ project, itemKey, runId, rowId }: RowPanelProps) {
         )}
         {detail.contentHidden ? (
           <div className="rp-hidden" data-testid={ids.runPanelContentHidden}>
-            Prompts, responses and tool input and output are hidden. A project admin can show them
-            in Project settings › Inspection; the agent or the team&apos;s collector decides whether
-            they&apos;re captured at all.
+            Prompts, responses and tool input and output are hidden in {project}. A project admin
+            can show them in Project settings › Inspection; the agent or the team&apos;s collector
+            decides whether they&apos;re captured at all.
           </div>
         ) : (
           <>

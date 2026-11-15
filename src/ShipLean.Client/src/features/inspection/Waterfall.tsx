@@ -149,7 +149,8 @@ export function Waterfall({
         <div className="rw-dur">Took</div>
       </div>
       {turns.map((turn) => {
-        const shown = contentShown && !turn.promptHidden && turn.prompt !== null;
+        const hidden = !contentShown || turn.promptHidden;
+        const shown = !hidden && turn.prompt !== null;
         return (
           <div key={turn.number} role="rowgroup" data-testid={ids.runTurn} data-turn={turn.number}>
             <div className="rw-row rw-turn">
@@ -160,11 +161,11 @@ export function Waterfall({
                   <span className="rw-pr" data-testid={ids.runTurnPrompt}>
                     “{turn.prompt}”
                   </span>
-                ) : (
+                ) : hidden ? (
                   <span className="rw-pr" data-testid={ids.runTurnPromptHidden}>
                     prompt hidden
                   </span>
-                )}
+                ) : null}
               </div>
               <div className="rw-track" />
               <div className="rw-dur" />
@@ -205,7 +206,7 @@ export function Waterfall({
                 'repeating-linear-gradient(135deg, var(--color-warn) 0 4px, transparent 4px 7px)',
             }}
           />
-          Permission wait
+          Waiting for permission
         </span>
         <span>
           <i style={{ background: 'var(--color-danger)' }} />
