@@ -186,7 +186,9 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             row.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), Lookup(users, row.HealthSetBy), row.HealthSetAgent) : null,
             // TODO: roll up the children's counts and count open asks for NeedsYou.
             [],
-            null);
+            null,
+            // TODO: true when Inspection is on for the instance and the project.
+            false);
     }
 
     private static UserRef? Lookup(IReadOnlyDictionary<Guid, UserRef> users, Guid? id) => id is { } value ? users.GetValueOrDefault(value) : null;

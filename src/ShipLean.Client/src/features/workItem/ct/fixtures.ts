@@ -63,6 +63,7 @@ export const story: WorkItemDto = {
   healthSet: null,
   rollups: [],
   needsYou: null,
+  inspectionEnabled: false,
 };
 
 export const bug: WorkItemDto = {

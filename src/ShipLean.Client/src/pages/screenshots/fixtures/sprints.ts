@@ -195,6 +195,7 @@ function item(
     healthSet: null,
     rollups: [],
     needsYou: null,
+    inspectionEnabled: false,
   };
 }
 

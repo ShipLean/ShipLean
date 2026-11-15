@@ -99,7 +99,9 @@ internal sealed class InMemoryDtoBuilder(
             item.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), UserOrNull(item.HealthSetBy), item.HealthSetAgent) : null,
             Rollups(item, project),
             // TODO: count open asks for NeedsYou; the fake has no asks, so nothing waits on anyone.
-            null);
+            null,
+            // TODO: true when Inspection is on for the instance and the project.
+            false);
     }
 
     // The descendants of an Epic, Feature or Story by type, at any depth: a Story's are its tasks and an Epic's or Feature's leave tasks out. Closed is the Completed category;
