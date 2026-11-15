@@ -106,6 +106,17 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 
+  test(`signing in ${theme}`, async ({ mount, page }) => {
+    await look(page, theme, phone);
+    await open(mount, page);
+    // The codes request is never answered, so the page stays on its signing-in state.
+    await page.route('**/api/auth/device-sessions/codes', () => new Promise(() => undefined));
+    await page.getByTestId(ids.signIn).click();
+    await expect(page.getByTestId(ids.signIn)).toHaveText('Signing in…');
+    await expect(page.getByTestId(ids.cancel)).toBeDisabled();
+    await expect(page).toHaveScreenshot(`signing-in.${theme}.png`, { animations: 'disabled' });
+  });
+
   test(`signed in on device after Sign in ${theme}`, async ({ mount, page }) => {
     await look(page, theme, phone);
     await open(mount, page);
