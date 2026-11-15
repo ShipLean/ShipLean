@@ -1,4 +1,11 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+
+interface Point {
+  x: number;
+  y: number;
+}
 import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
 import { PROJECT_ID } from '../../boardSettings/ct/boardSettingsFixtures';
 import { criteriaTestIds } from '../../criteria/testIds';
@@ -25,6 +32,26 @@ const blocked = styleRule('blocked', 'Blocked', {
   op: 'contains',
   value: 'Blocked',
 });
+
+const stuck = styleRule('stuck', 'Stuck', { field: 'tags', op: 'contains', value: 'Stuck' });
+
+async function touchDrag(page: Page, from: Point, to: Point) {
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: Point) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await send('touchStart', from);
+  await page.clock.runFor(450);
+  const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / 20));
+  for (let i = 1; i <= steps; i++) {
+    await send('touchMove', {
+      x: from.x + ((to.x - from.x) * i) / steps,
+      y: from.y + ((to.y - from.y) * i) / steps,
+    });
+  }
+  await send('touchEnd');
+}
 
 const dialog = (section: string, onClose: () => void = () => undefined) => (
   <TaskboardSettingsDialog
@@ -123,6 +150,51 @@ test('TagColours_WhenOnPhone_ShouldShow32pxSwatches', async ({ mount, page }) =>
     expect(box?.width).toBeGreaterThanOrEqual(32);
     expect(box?.height).toBeGreaterThanOrEqual(32);
   }
+});
+
+test('TagColours_WhenOnPhone_ShouldKeepClearButtonOnTheSwatchLine', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ tagColours: [{ tag: 'Blocked', colour: 'danger' }] }), [
+    'Blocked',
+  ]);
+  await mount(dialog('tags'));
+  const row = page.getByTestId(ids.tagRow);
+  const clear = await row.getByTestId(ids.tagClear).boundingBox();
+  const swatches = await row.getByTestId(ids.tagSwatch).all();
+  const last = await swatches[swatches.length - 1]?.boundingBox();
+  if (!clear || !last) throw new Error('the row should render');
+  expect(clear.y, 'the clear button sits on the swatch line').toBe(last.y);
+  expect(clear.x + clear.width).toBeLessThanOrEqual(390);
+  expect(clear.width).toBeGreaterThanOrEqual(32);
+  expect(clear.height).toBeGreaterThanOrEqual(32);
+});
+
+test('StyleRules_WhenGripHeldAndDraggedOnPhone_ShouldReorder', async ({ mount, page }) => {
+  const puts = await stubSettings(page, taskboardBoard({ styleRules: [blocked, stuck] }), [
+    'Blocked',
+    'Stuck',
+  ]);
+  await mount(dialog('styles'));
+  const rules = page.getByTestId(ids.styleRow);
+  await expect(rules).toHaveCount(2);
+  const order = () =>
+    page
+      .getByTestId(ids.styleName)
+      .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
+  expect(await order()).toEqual(['Blocked', 'Stuck']);
+  const centre = async (locator: typeof rules): Promise<Point> => {
+    const box = await locator.boundingBox();
+    if (!box) throw new Error('no box');
+    return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+  };
+  const from = await centre(rules.first().getByTestId(ids.styleGrip));
+  const to = await centre(rules.last());
+
+  await touchDrag(page, from, to);
+
+  await expect.poll(order).toEqual(['Stuck', 'Blocked']);
+  await page.clock.runFor(1000);
+  await expect.poll(() => puts.length).toBeGreaterThan(0);
+  expect(puts[0]?.settings.styleRules.map((r) => r.id)).toEqual(['stuck', 'blocked']);
 });
 
 test('StyleRule_WhenOnPhone_ShouldStackItsClauses', async ({ mount, page }) => {

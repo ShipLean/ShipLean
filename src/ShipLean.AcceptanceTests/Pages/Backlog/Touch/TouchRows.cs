@@ -12,7 +12,7 @@ public sealed class TouchRows(IPage page)
 
     // The row with this key.
     public ILocator Row(string key) =>
-        Rows.Filter(new() { Has = page.GetByTestId(BacklogTestIds.Key).Filter(new() { HasTextRegex = new Regex($"^{key}$") }) });
+        Rows.Filter(new() { Has = page.GetByTestId(BacklogTestIds.Key).Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(key)}$") }) });
 
     // The drag handle in the left-edge slot of the row with this key.
     public ILocator Handle(string key) => Row(key).GetByTestId(BacklogTestIds.TouchHandle);

@@ -10,8 +10,8 @@ using ShipLean.TestSupport.Usage;
 
 namespace ShipLean.AcceptanceTests.Lanes.Board.Touch;
 
-// Long-press drag of a card on a phone (SHIP-719 D2). The touch rules are checked on this task's regions only: each card
-// while one is lifted. Each test moves or opens a card of its own.
+// Long-press drag of a card on a phone (SHIP-719 D2). The touch rules are checked on this task's regions only: each card,
+// its ghost and the lane headers while one is lifted. Each test moves or opens a card of its own.
 [TestFixture]
 public class BoardTouchDragTests : SeededAcceptanceTest
 {
@@ -47,6 +47,28 @@ public class BoardTouchDragTests : SeededAcceptanceTest
         await Expect(board.CellOfTitled("Export sprint report to CSV")).ToHaveAttributeAsync("data-column", "col-in-progress");
         var tracked = Recorder.Events.Where(e => e.Name == UsageEventNames.WorkItemMoved).ShouldHaveSingleItem();
         tracked.Properties[UsageProps.Method].ShouldBe(MoveMethods.TouchDrag);
+    }
+
+    [Test]
+    public async Task LaneHeader_WhenCardLiftedOnPhone_ShouldFollowTouchRules()
+    {
+        var board = new BoardScreen(Page);
+        var pager = new BoardPager(Page);
+        await board.OpenAsync("SHIP", "features");
+        await pager.WaitAsync();
+        var drag = new BoardTouchDrag(Page);
+        var headers = pager.Track.GetByTestId(BoardTestIds.ColumnLaneHeader);
+        await Expect(headers.First).ToBeVisibleAsync();
+
+        await drag.LiftAsync(board.Card("SHIP-101"));
+
+        var count = await headers.CountAsync();
+        count.ShouldBeGreaterThan(1);
+        for (var i = 0; i < count; i++)
+        {
+            (await TouchRules.ViolationsAsync(Page, headers.Nth(i))).ShouldBeEmpty();
+        }
+        await drag.ReleaseAsync();
     }
 
     [Test]
