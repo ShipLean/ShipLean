@@ -146,9 +146,18 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         var settings = await gate.RequireRunsAsync(projectKey, ct);
         var item = await items.RequireAsync(projectKey, itemKey, ct);
         var window = WindowOf(item);
-        var run = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, runId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct)
-            ?? throw ApiException.NotFound("Run not found.");
         var found = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+        var run = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, runId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+        if (run is null)
+        {
+            // The store answers null for an expired or unknown run and also when it is down; an outage must not read as "no longer available".
+            if (found.Reachable)
+            {
+                throw ApiException.NotFound("Run not found.");
+            }
+            var why = found.Problem is null ? "" : ": " + found.Problem;
+            throw ApiException.Conflict($"The trace store is unreachable{why}. The run may still exist; try again shortly.");
+        }
         return (settings, run, [.. found.Runs.OrderBy(r => r.StartedAt)]);
     }
 
