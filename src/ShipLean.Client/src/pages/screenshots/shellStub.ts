@@ -100,6 +100,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
       name: project.name,
       role: project.role,
       memberCount: project.memberCount,
+      isOnlyAdmin: false,
     },
   ];
   const sprints = overrides.sprints ?? SHELL_SPRINTS;

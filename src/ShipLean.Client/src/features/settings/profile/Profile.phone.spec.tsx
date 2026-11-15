@@ -28,7 +28,14 @@ const me: MeDto = {
 };
 
 const projects: ProjectSummaryDto[] = [
-  { id: 'id-SHIP', key: 'SHIP', name: 'SHIP project', role: 'admin', memberCount: 3 },
+  {
+    id: 'id-SHIP',
+    key: 'SHIP',
+    name: 'SHIP project',
+    role: 'admin',
+    memberCount: 3,
+    isOnlyAdmin: false,
+  },
 ];
 
 interface Routable {

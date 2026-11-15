@@ -17,9 +17,23 @@ public sealed class CardActionsSheet(IPage page)
 
     public ILocator LaneSheet => shell.Sheet("Lane");
 
+    // The Assign sheet on Stories, the Owner sheet on Features and Epics (SHIP-719 L719e).
+    public ILocator AssignSheet(string title) => shell.Sheet(title);
+
+    // A person's row of the Assign / Owner sheet by name ("Unassigned" or "No owner" for nobody).
+    public static ILocator Person(ILocator sheet, string name) =>
+        sheet.GetByTestId(BoardTestIds.AssignOption).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(name) + "\\s*$") });
+
     // A row of a sheet by its label, a Move to row going on with " · WIP".
     public static ILocator Row(ILocator sheet, string startsWith) =>
         sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(startsWith) + "(\\s·|\\s*$)") });
+
+    // Taps ⋯ on the card, then its Assign (Owner) row; Row anchors the label, so Move to top and bottom never match.
+    public async Task OpenAssignAsync(ILocator card, string key, string label)
+    {
+        await More(card).TapAsync();
+        await Row(ActionsFor(key), label).TapAsync();
+    }
 
     // Taps ⋯ on the card, then Move to, then the column's row; returns the moves response.
     public Task<IResponse> MoveToColumnAsync(ILocator card, string key, string columnName) =>

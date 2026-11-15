@@ -34,7 +34,12 @@ export function AttachmentBody({
   );
   return view === 'rendered' ? (
     <article data-testid={ids.body} className="max-w-190 px-5 py-4 leading-relaxed">
-      <Markdown html={data.html} imageContext={data.workItem.key} viewerImages={viewerImages} />
+      <Markdown
+        html={data.html}
+        imageContext={data.workItem.key}
+        viewerImages={viewerImages}
+        viewerImagesLoading={attachments.isPending}
+      />
     </article>
   ) : (
     <pre

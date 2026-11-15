@@ -19,12 +19,17 @@ const me: MeDto = {
   density: 'compact',
 };
 
-const projectOf = (key: string, role: 'admin' | 'member'): ProjectSummaryDto => ({
+const projectOf = (
+  key: string,
+  role: 'admin' | 'member',
+  isOnlyAdmin = false,
+): ProjectSummaryDto => ({
   id: `id-${key}`,
   key,
   name: `${key} project`,
   role,
   memberCount: 3,
+  isOnlyAdmin,
 });
 
 interface Calls {
@@ -198,6 +203,20 @@ test('Projects_WhenOnlyAdminLeaves_ShouldShowServerMessageAndKeepTheRow', async 
 
   await expect(view.getByTestId(ids.myProjectLeaveError)).toHaveText(message);
   await expect(view.getByTestId(ids.myProjectRow)).toHaveCount(2);
+});
+
+test('Projects_WhenOnlyAdmin_ShouldShowOnlyAdminInsteadOfLeave', async ({ mount, page }) => {
+  await stub(page, {
+    projects: [projectOf('SHIP', 'admin', true), projectOf('PAY', 'admin')],
+  });
+  const view = await mount(<ProfileAccount />);
+
+  const only = view.locator(`[data-key="SHIP"]`);
+  await expect(only.getByTestId(ids.myProjectOnlyAdmin)).toHaveText('Only admin');
+  await expect(only.getByTestId(ids.myProjectLeave)).toHaveCount(0);
+  const other = view.locator(`[data-key="PAY"]`);
+  await expect(other.getByTestId(ids.myProjectLeave)).toBeVisible();
+  await expect(other.getByTestId(ids.myProjectOnlyAdmin)).toHaveCount(0);
 });
 
 test('Sessions_WhenActionsClicked_ShouldCallTheirEndpoints', async ({ mount, page }) => {

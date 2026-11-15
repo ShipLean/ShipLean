@@ -34,22 +34,24 @@ const data = {
   html: '<figure data-md-image="attached"><img src="/api/attachments/b/content" alt="b"><figcaption>b.png</figcaption></figure>',
 } as unknown as AttachmentMarkdownDto;
 
-function Seeded() {
+function Seeded({ seedImages }: { seedImages: boolean }) {
   const client = useQueryClient();
   // The item's three images and its project are already in the cache, as when the page is reached from the item.
   useState(() => {
     client.setQueryData(projectByKeyKey('SHIP'), { id: 'p1', key: 'SHIP' });
-    client.setQueryData(workItemAttachmentsKey('p1', 'SHIP-100'), ['a', 'b', 'c'].map(image));
+    if (seedImages) {
+      client.setQueryData(workItemAttachmentsKey('p1', 'SHIP-100'), ['a', 'b', 'c'].map(image));
+    }
   });
   return <AttachmentBody data={data} view="rendered" />;
 }
 
-/** AttachmentBody on a route with a project key, its item's attachments already cached (CT only). */
-export function AttachmentBodyHarness() {
+/** AttachmentBody on a route with a project key, its item's attachments cached unless `seedImages` is false (CT only). */
+export function AttachmentBodyHarness({ seedImages = true }: { seedImages?: boolean }) {
   return (
     <>
       <Routes>
-        <Route path="/p/:key/*" element={<Seeded />} />
+        <Route path="/p/:key/*" element={<Seeded seedImages={seedImages} />} />
       </Routes>
       <ImageViewerHost />
     </>

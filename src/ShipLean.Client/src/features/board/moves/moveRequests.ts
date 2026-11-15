@@ -1,17 +1,19 @@
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { BoardMoveRequest } from '../boardApi';
+import type { MoveMethod } from '../../taskboard/taskboardApi';
 import { tracksOf } from '../grid/layout';
 import { locate, type DropTarget } from './applyMove';
 
 /** What the board sends for a move; the revision is read when the request goes out. */
 export type MoveBody = Omit<BoardMoveRequest, 'expectedRevision'>;
 
-export const bodyOf = (itemId: string, to: DropTarget): MoveBody => ({
+export const bodyOf = (itemId: string, to: DropTarget, method?: MoveMethod): MoveBody => ({
   itemId,
   columnId: to.columnId,
   done: to.done,
   laneId: to.laneId,
   beforeItemId: to.beforeItemId,
+  ...(method ? { method } : {}),
 });
 
 /** True when the drop would leave the card where it is, in the same order. */

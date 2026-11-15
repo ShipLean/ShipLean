@@ -1,4 +1,4 @@
-import { DEFS_ENTRIES, type DefsEntry } from '../tips/tipWording';
+import { isDefsEntry, type DefsEntry } from '../tips/tipWording';
 
 // The Insights screen's lane-internal address at touch (SHIP-731): `sheet=range`, `sheet=defs[:<entry>]`,
 // `sheet=theme:<themeId>`, and `merge=` or `merge=<themeId>`. Written with `replace`, read at touch only.
@@ -16,7 +16,7 @@ export function readSheet(params: URLSearchParams): InsightsSheet | null {
   if (value === 'defs') return { kind: 'defs', entry: null };
   if (value.startsWith('defs:')) {
     const entry = value.slice('defs:'.length);
-    return { kind: 'defs', entry: DEFS_ENTRIES.includes(entry) ? entry : null };
+    return { kind: 'defs', entry: isDefsEntry(entry) ? entry : null };
   }
   if (value.startsWith('theme:') && value.length > 'theme:'.length) {
     return { kind: 'theme', themeId: value.slice('theme:'.length) };

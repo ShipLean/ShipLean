@@ -31,6 +31,7 @@ export const MY_PROJECTS: ProjectSummaryDto[] = [
   name: name as string,
   role: role as 'admin' | 'member',
   memberCount: memberCount as number,
+  isOnlyAdmin: false,
 }));
 
 export async function stubPhoto(page: Page) {

@@ -20,7 +20,7 @@ export function RangeSheet({
         <div
           key={group.label}
           data-testid={ids.retroInsightsRangeGroup}
-          role="group"
+          role="radiogroup"
           aria-label={group.label}
           className="grid gap-1"
         >
@@ -31,7 +31,7 @@ export function RangeSheet({
             <button
               key={r.id}
               type="button"
-              role="menuitemradio"
+              role="radio"
               aria-checked={r.id === range}
               data-testid={ids.retroInsightsRangeOption}
               data-value={r.id}

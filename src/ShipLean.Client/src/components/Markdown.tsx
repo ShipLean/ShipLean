@@ -1,5 +1,10 @@
 import { useEffect, useRef, type MouseEvent } from 'react';
-import { openImageViewer, type ViewerImage } from '../touch/imageViewer';
+import {
+  openImageViewer,
+  replaceImageViewerImages,
+  getImageViewerState,
+  type ViewerImage,
+} from '../touch/imageViewer';
 import { touchTestIds } from '../touch/testIds';
 import { useTouchShell } from '../touch/useTouchShell';
 import { drawMermaidDiagrams } from './mermaidDiagrams';
@@ -63,16 +68,22 @@ function wrapScrollBoxes(root: HTMLElement): () => void {
  * At 900px and below the text is 15px, and tapping an attached image opens the image viewer on it. `imageContext`
  * (for example the item key) goes to the viewer; `viewerImages` replaces this Markdown's own images as the set the
  * viewer swipes through, opening on the tapped image's place in it (or the first when it is not there).
+ * While `viewerImagesLoading` a tap opens on this Markdown's own images at once, and the viewer's set becomes
+ * `viewerImages` when they arrive, still on the tapped image.
  */
 export function Markdown({
   html,
   imageContext,
   viewerImages,
+  viewerImagesLoading = false,
 }: {
   html: string;
   imageContext?: string;
   viewerImages?: readonly ViewerImage[];
+  viewerImagesLoading?: boolean;
 }) {
+  // What a tap made before `viewerImages` arrived opened, so the set can be swapped when they do.
+  const early = useRef<{ opened: readonly ViewerImage[]; src: string } | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const { touch } = useTouchShell();
   useEffect(() => (root.current ? wrapScrollBoxes(root.current) : undefined), [html]);
@@ -83,6 +94,15 @@ export function Markdown({
       stale = true;
     };
   }, [html]);
+  useEffect(() => {
+    const waiting = early.current;
+    if (!viewerImages || !waiting) return;
+    early.current = null;
+    const stillOpen = getImageViewerState()?.images === waiting.opened;
+    if (stillOpen && viewerImages.some((image) => image.src === waiting.src)) {
+      replaceImageViewerImages(viewerImages);
+    }
+  }, [viewerImages]);
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     if (!touch || !(event.target instanceof Element)) return;
     const tapped = event.target.closest<HTMLImageElement>(attachedImage);
@@ -99,6 +119,8 @@ export function Markdown({
       ? viewerImages.findIndex((image) => image.src === tappedSrc)
       : own.indexOf(tapped);
     openImageViewer({ images, start: Math.max(index, 0), context: imageContext });
+    early.current =
+      !viewerImages && viewerImagesLoading ? { opened: images, src: tappedSrc } : null;
   };
   return (
     <div

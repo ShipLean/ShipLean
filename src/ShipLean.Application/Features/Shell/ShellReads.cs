@@ -24,7 +24,8 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
         p.id, p.key, p.name, p.description, m.role AS roleText,
         (SELECT count(*) FROM project_member x WHERE x.project_id = p.id AND x.archived_at IS NULL)::int AS memberCount,
         array_to_string(p.working_days, ',') AS workingDays, p.velocity_window AS velocityWindow, p.velocity_override AS velocityOverride,
-        p.next_item_number AS nextItemNumber, p.holiday_country::text AS holidayCountry
+        p.next_item_number AS nextItemNumber, p.holiday_country::text AS holidayCountry,
+        (m.role = 'admin' AND NOT EXISTS (SELECT 1 FROM project_member a WHERE a.project_id = p.id AND a.user_id <> m.user_id AND a.role = 'admin' AND a.archived_at IS NULL)) AS isOnlyAdmin
         """;
 
     private const string MyMembership = "JOIN project_member m ON m.project_id = p.id AND m.user_id = @me AND m.archived_at IS NULL";
@@ -37,7 +38,7 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
         var recent = await RecentAsync(connection, cancellationToken);
         return [.. rows
             .OrderBy(row => recent.IndexOf(row.Id) is var at and >= 0 ? at : int.MaxValue)
-            .Select(row => new ProjectSummaryDto(row.Id, row.Key, row.Name, row.Role, row.MemberCount))];
+            .Select(row => new ProjectSummaryDto(row.Id, row.Key, row.Name, row.Role, row.MemberCount, row.IsOnlyAdmin))];
     }
 
     public async Task<ProjectDto> ByKeyAsync(string key, IProjectAccess access, CancellationToken cancellationToken)
@@ -117,7 +118,7 @@ public sealed class ShellReads(NpgsqlDataSource dataSource, ICurrentUser current
 
     private sealed record ProjectRow(
         Guid Id, string Key, string Name, string Description, string RoleText, int MemberCount, string WorkingDays,
-        int VelocityWindow, decimal? VelocityOverride, int NextItemNumber, string? HolidayCountry)
+        int VelocityWindow, decimal? VelocityOverride, int NextItemNumber, string? HolidayCountry, bool IsOnlyAdmin)
     {
         public ProjectRole Role => Enum.Parse<ProjectRole>(RoleText, true);
 

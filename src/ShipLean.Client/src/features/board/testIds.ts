@@ -58,6 +58,7 @@ export const boardTestIds = {
   cardTag: 'board-card-tag',
   cardExtra: 'board-card-extra',
   dropLine: 'board-drop-line',
+  liftedCard: 'board-lifted-card',
   doneConfirm: 'board-done-confirm',
   doneConfirmChild: 'board-done-confirm-child',
   doneConfirmMore: 'board-done-confirm-more',
@@ -98,6 +99,9 @@ export const boardTestIds = {
   childAddSubmit: 'board-child-add-submit',
   childAddCancel: 'board-child-add-cancel',
   childAddError: 'board-child-add-error',
+  // SHIP-719 L719e: Assign / Owner sheet
+  assignSheet: 'board-assign-sheet',
+  assignOption: 'board-assign-option',
   locationProbe: 'board-location-probe',
 
   // SHIP-916 W1

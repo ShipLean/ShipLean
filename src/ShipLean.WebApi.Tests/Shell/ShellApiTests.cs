@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Dapper;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Preferences;
@@ -41,6 +42,33 @@ public class ShellApiTests : ApiFixture
         projects.Skip(2).Select(p => p.Name).ShouldBe(projects.Skip(2).Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList());
         projects.Single(p => p.Id == SeedIds.Projects.Ship).Role.ShouldBe(ProjectRole.Admin);
         projects.Single(p => p.Id == SeedIds.Projects.Ops).Role.ShouldBe(ProjectRole.Member);
+    }
+
+    [Test]
+    public async Task Projects_WhenCallerIsTheOnlyAdmin_ShouldFlagIt()
+    {
+        var projects = await ReadAsync<List<ProjectSummaryDto>>("api/projects");
+
+        projects.Single(p => p.Id == SeedIds.Projects.Ship).IsOnlyAdmin.ShouldBeTrue();
+        projects.Single(p => p.Id == SeedIds.Projects.Ops).IsOnlyAdmin.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Projects_WhenAnotherAdminExists_ShouldNotFlagTheCaller()
+    {
+        await using var database = await OpenDatabaseAsync();
+        const string setRole = "UPDATE project_member SET role = @role WHERE project_id = @project AND user_id = @user";
+        await database.ExecuteAsync(setRole, new { role = "admin", project = SeedIds.Projects.Ship, user = SeedIds.Users.Priya });
+        try
+        {
+            var projects = await ReadAsync<List<ProjectSummaryDto>>("api/projects");
+
+            projects.Single(p => p.Id == SeedIds.Projects.Ship).IsOnlyAdmin.ShouldBeFalse();
+        }
+        finally
+        {
+            await database.ExecuteAsync(setRole, new { role = "member", project = SeedIds.Projects.Ship, user = SeedIds.Users.Priya });
+        }
     }
 
     [Test]

@@ -126,6 +126,7 @@ export function TaskboardDnd({
       assign,
       view,
       grouping,
+      scope,
       pickUp:
         me === undefined || startId === undefined
           ? null
@@ -158,7 +159,7 @@ export function TaskboardDnd({
         return true;
       },
     };
-  }, [view, grouping, me, startId, send, onLanded]);
+  }, [view, grouping, scope, me, startId, send, onLanded]);
 
   function onDragStart({ active }: DragStartEvent) {
     setDragging((active.data.current as DragData | undefined)?.card ?? null);

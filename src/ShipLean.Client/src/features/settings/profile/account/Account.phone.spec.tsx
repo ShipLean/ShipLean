@@ -13,8 +13,22 @@ import { AccountPanelsHarness } from './ct/AccountPanelsHarness';
 const THEMES = ['light', 'dark'] as const;
 
 const projects: ProjectSummaryDto[] = [
-  { id: 'id-SHIP', key: 'SHIP', name: 'ShipLean product work', role: 'admin', memberCount: 3 },
-  { id: 'id-PAY', key: 'PAY', name: 'Payments', role: 'member', memberCount: 5 },
+  {
+    id: 'id-SHIP',
+    key: 'SHIP',
+    name: 'ShipLean product work',
+    role: 'admin',
+    memberCount: 3,
+    isOnlyAdmin: false,
+  },
+  {
+    id: 'id-PAY',
+    key: 'PAY',
+    name: 'Payments',
+    role: 'member',
+    memberCount: 5,
+    isOnlyAdmin: false,
+  },
 ];
 
 const agents: ConnectedAgentDto[] = [

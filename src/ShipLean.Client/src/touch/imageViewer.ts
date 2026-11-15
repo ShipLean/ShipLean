@@ -28,6 +28,14 @@ export function openImageViewer(open: ImageViewerState) {
   publish({ images: open.images, start: open.start, context: open.context });
 }
 
+/**
+ * Swaps the open viewer's set for a fuller one (the item's images arriving after a tap). The viewer keeps showing the
+ * image it is on. Does nothing while the viewer is closed.
+ */
+export function replaceImageViewerImages(images: readonly ViewerImage[]) {
+  if (state) publish({ ...state, images });
+}
+
 export function closeImageViewer() {
   publish(null);
 }

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 import type { SprintRef } from '@shiplean/core/api/refs';
 import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
@@ -10,6 +9,7 @@ import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
+import { useOfferDismissal } from './useOfferDismissal';
 import { SprintPill } from './SprintPill';
 
 /** The index card drawn behind a header's content: inset in the cell, which stays the theme surface. */
@@ -65,7 +65,7 @@ export function StoryRowHeader({
   /** On a collapsed phone lane: its tasks on the page on screen. */
   laneCount?: number;
 }) {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, dismiss] = useOfferDismissal(parent.id, offerResolve, compact);
   const states = parentStates.find((s) => s.type === parent.type.id)?.states ?? [];
   const tasks = parent.rollups.find((r) => r.type === 'task');
   const total = tasks ? tasks.open + tasks.closed : 0;
@@ -84,14 +84,14 @@ export function StoryRowHeader({
           className="btn-signal ml-auto h-[22px] whitespace-nowrap px-[7px] text-[length:var(--text-xs)] touch:h-[var(--touch-target)]"
           onClick={onMoveToResolved}
         >
-          Move story to Resolved
+          {compact ? 'Move to Resolved' : 'Move story to Resolved'}
         </button>
         <button
           type="button"
           data-testid={ids.rowOfferDismiss}
           aria-label="Dismiss"
           className="btn-ghost h-[22px] px-1.5 text-[length:var(--text-xs)] touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
-          onClick={() => setDismissed(true)}
+          onClick={dismiss}
         >
           ✕
         </button>
