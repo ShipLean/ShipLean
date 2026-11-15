@@ -31,7 +31,7 @@ PY
   local tag="rec-$(date +%s)"
   (cd "$dir/work" && env CLAUDE_CODE_ENABLE_TELEMETRY=1 CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1 \
     OTEL_TRACES_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp OTEL_METRICS_EXPORTER=none \
-    OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://127.0.0.1:14318}" \
+    OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf OTEL_EXPORTER_OTLP_ENDPOINT="${RECORD_OTLP_ENDPOINT:-http://127.0.0.1:14318}" \
     OTEL_TRACES_EXPORT_INTERVAL=1000 OTEL_LOGS_EXPORT_INTERVAL=1000 \
     OTEL_RESOURCE_ATTRIBUTES="shiplean.project=SHIP,shiplean.item=SHIP-1573,vcs.repository.name=ShipLean,vcs.ref.head.name=t1463/SHIP-1573,run.tag=$tag" \
     timeout 180 "${CLAUDE:-$HOME/.local/bin/claude}" -p "Call the pick_up tool with item SHIP-1573, then run the shell command: ls /nonexistent-dir . After that say done in one word." \
@@ -67,7 +67,8 @@ FIXED = {"user.email": "dev@example.com", "user.id": "user-0001", "user.account_
 ids = {}
 def alias(prefix, v):
     return ids.setdefault((prefix, v), f"{prefix}-{len([k for k in ids if k[0] == prefix]) + 1:04d}")
-ID_KEYS = {"request_id": "req", "client_request_id": "client-req", "gen_ai.response.id": "resp", "message.uuid": "msg"}
+ID_KEYS = {"request_id": "req", "client_request_id": "client-req", "gen_ai.response.id": "resp", "message.uuid": "msg", "prompt.id": "prompt",
+          "tool_use_id": "toolu", "gen_ai.tool.call.id": "toolu"}  # both tool keys share one prefix, so the log-to-span join by tool_use_id survives
 def fmt_ns(n):  # ISO with ms like the product writes event.timestamp
     return datetime.fromtimestamp(n // 10**9, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + f".{(n % 10**9) // 10**6:03d}Z"
 def red(k, v):
@@ -109,12 +110,12 @@ for l in logs:
     raw_logs.append((l, a, t))
 otlp = {"resourceSpans": [{"resource": resource, "scopeSpans": [{"scope": {"name": n, "version": v["ver"]}, "spans": v["spans"]} for n, v in scopes.items()]}],
         "resourceLogs": [{"resource": resource, "scopeLogs": [{"scope": {"name": n, "version": v["ver"]}, "logRecords": v["logs"]} for n, v in log_scopes.items()]}]}
-# expected.json: the RawRun K3 describes (attributes = resource merged under the record's own, microsecond times)
+# expected.json (D33: severity number 0 with no text is UNSPECIFIED, not TRACE): the RawRun K3 describes (attributes = resource merged under the record's own, microsecond times)
 def iso(n):
     d = datetime.fromtimestamp(n // 10**9, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
     us = (n % 10**9) // 1000
     return d + ("." + f"{us:06d}".rstrip("0") if us else "") + "Z"
-def sev(n): return "FATAL" if n >= 21 else "ERROR" if n >= 17 else "WARN" if n >= 13 else "INFO" if n >= 9 else "DEBUG" if n >= 5 else "TRACE"
+def sev(n): return "UNSPECIFIED" if n == 0 else "FATAL" if n >= 21 else "ERROR" if n >= 17 else "WARN" if n >= 13 else "INFO" if n >= 9 else "DEBUG" if n >= 5 else "TRACE"
 exp_spans = []
 for s, a, start, end, code, ev in raw_spans:
     merged = {**res, **a}
@@ -129,18 +130,28 @@ for l, a, t in raw_logs:
 span_tok_in = [int(x["attributes"]["input_tokens"]) for x in exp_spans if "input_tokens" in x["attributes"]]
 span_tok_out = [int(x["attributes"]["output_tokens"]) for x in exp_spans if "output_tokens" in x["attributes"]]
 models = sorted({x["attributes"]["model"] for x in exp_spans + exp_logs if x["attributes"].get("model")})
-starts = [x["start"] for x in exp_spans] + [x["time"] for x in exp_logs]; ends = [x["end"] for x in exp_spans] + [x["time"] for x in exp_logs]
+starts = [r[2] - r[2] % 1000 for r in raw_spans] + [r[2] - r[2] % 1000 for r in raw_logs]  # nanoseconds, not ISO strings
+ends = [r[3] - r[3] % 1000 for r in raw_spans] + [r[2] - r[2] % 1000 for r in raw_logs]
 errors = sum(1 for x in exp_spans if x["status"] == "error") + sum(1 for x in exp_logs if x["severity"] == "ERROR")
 summary = {"runId": SESSION, "sessionId": SESSION, "agent": res["service.name"], "startedBy": res.get("user.email") or exp_spans[0]["attributes"].get("user.email"),
-    "models": models, "startedAt": min(starts), "endedAt": max(ends), "spanCount": len(exp_spans), "logCount": len(exp_logs), "errorCount": errors,
+    "models": models, "startedAt": iso(min(starts)), "endedAt": iso(max(ends)), "spanCount": len(exp_spans), "logCount": len(exp_logs), "errorCount": errors,
     "tokensIn": sum(span_tok_in) if span_tok_in else None, "tokensOut": sum(span_tok_out) if span_tok_out else None,
     "links": [{"itemKey": res["shiplean.item"], "source": "tagged"}]}
 compare = sorted({"session.id", "prompt.id", "shiplean.item", "shiplean.project", "attempt", "duration_ms", "input_tokens", "output_tokens", "model", "success",
                   "tool_name", "tool_name_safe", "ttft_ms", "decision", "stop_reason", "error_class", "span.type", "tool_use_id"})
 expected = {"compareKeys": compare, "run": {"summary": summary, "spans": exp_spans, "logs": exp_logs, "truncated": False}}
 blob = json.dumps(otlp) + json.dumps(expected)
-for bad in ("/home", "virtualjoel", "joel", "sk-ant", "Bearer"):
-    assert bad not in blob, f"redaction missed {bad}"
+import getpass, socket, subprocess
+def _git(*a):
+    try: return subprocess.run(["git", *a], capture_output=True, text=True).stdout.strip()
+    except OSError: return ""
+email = _git("config", "user.email")
+local = {os.environ.get("USER", ""), getpass.getuser(), os.path.basename(os.path.expanduser("~")), socket.gethostname(), socket.gethostname().split(".")[0],
+         email, email.split("@")[0], _git("config", "user.name"), os.path.expanduser("~")}
+deny = ["/home", "sk-ant", "Bearer"] + sorted(x for x in local if len(x) >= 3)  # built at run time; nothing personal is committed
+low = blob.lower()
+for bad in deny:
+    assert bad.lower() not in low, "redaction missed a local identity string"
 assert not [m for m in re.findall(r"[\w.+-]+@[\w.-]+", blob) if m != "dev@example.com"], "an email is left"
 os.makedirs(out, exist_ok=True)
 json.dump(otlp, open(os.path.join(out, "claude-code-recorded.otlp.json"), "w"), indent=2); open(os.path.join(out, "claude-code-recorded.otlp.json"), "a").write("\n")

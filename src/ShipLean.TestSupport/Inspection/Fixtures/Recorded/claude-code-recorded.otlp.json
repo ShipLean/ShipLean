@@ -638,7 +638,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -698,7 +698,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -784,7 +784,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -832,7 +832,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -936,7 +936,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -996,7 +996,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -1228,7 +1228,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -1276,7 +1276,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -1631,7 +1631,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -1691,7 +1691,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -1905,7 +1905,7 @@
                 {
                   "key": "gen_ai.tool.call.id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -1953,7 +1953,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -3716,7 +3716,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -3853,7 +3853,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -3907,7 +3907,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -4002,7 +4002,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4062,7 +4062,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01Dzr4Hy5MP5iiaVYT1gNxEF"
+                    "stringValue": "toolu-0001"
                   }
                 },
                 {
@@ -4169,7 +4169,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4223,7 +4223,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -4384,7 +4384,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4533,7 +4533,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4587,7 +4587,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01NQGTvHovw61gZU6c8t3igH"
+                    "stringValue": "toolu-0002"
                   }
                 },
                 {
@@ -4688,7 +4688,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4742,7 +4742,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -4843,7 +4843,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -4903,7 +4903,7 @@
                 {
                   "key": "tool_use_id",
                   "value": {
-                    "stringValue": "toolu_01QxDLzcpywRaB4AgRVcg87x"
+                    "stringValue": "toolu-0003"
                   }
                 },
                 {
@@ -5064,7 +5064,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -5285,7 +5285,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -5434,7 +5434,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
@@ -5583,7 +5583,7 @@
                 {
                   "key": "prompt.id",
                   "value": {
-                    "stringValue": "ea99833a-be70-473d-a5aa-d9fefb7b693b"
+                    "stringValue": "prompt-0001"
                   }
                 },
                 {
