@@ -30,7 +30,7 @@ public sealed class CodeReview(
             SELECT id, sha FROM work_item_commit WHERE work_item_id = @workItemId AND archived_at IS NULL ORDER BY position, id
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
-        if (shas.Count == 0 || shas[^1].Id != request.HeadCommitId)
+        if (shas.Count == 0 || shas[^1].Sha != shas.FirstOrDefault(c => c.Id == request.HeadCommitId)?.Sha)
         {
             throw ApiException.Conflict("A newer commit arrived while you were reviewing. Reload the changes and look again.");
         }
