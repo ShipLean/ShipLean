@@ -111,6 +111,13 @@ public static class UsageEventNames
     public const string MentionSeen = "mention.seen";
     public const string MentionReplied = "mention.replied";
 
+    // The Feature timeline (SHIP-1465 D14, D20). timeline.opened and timeline.bar_selected are self-emitted by the page's reports;
+    // feature.timeline_viewed is the MCP tool feature_timeline and review.logged the MCP tool log_review.
+    public const string TimelineOpened = "timeline.opened";
+    public const string TimelineBarSelected = "timeline.bar_selected";
+    public const string FeatureTimelineViewed = "feature.timeline_viewed";
+    public const string ReviewLogged = "review.logged";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

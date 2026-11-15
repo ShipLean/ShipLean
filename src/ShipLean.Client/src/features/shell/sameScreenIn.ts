@@ -27,6 +27,7 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
     case 'workItem':
     case 'workItemAttachment':
     case 'featureBoard':
+    case 'featureTimeline':
       return routePath('storiesBacklog', { key });
     default:
       // The open item belongs to the old project, so it is dropped.

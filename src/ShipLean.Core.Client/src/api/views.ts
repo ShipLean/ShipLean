@@ -9,7 +9,7 @@ import type {
   TagColourJson,
 } from './persisted';
 import type { ForecastDto, VelocityDto } from './sprints';
-import type { SprintRef, StateRef, TypeRef, UserRef, WorkItemTypeId } from './refs';
+import type { SprintRef, StateCategory, StateRef, TypeRef, UserRef, WorkItemTypeId } from './refs';
 import type { FeatureHealth, NeedsYouDto } from './screens';
 import type { ParentRefDto } from './workItems';
 
@@ -274,4 +274,203 @@ export interface BacklogViewDto {
   triageStateIds: string[];
   /** Filled for the Stories level in list and planning mode, null for tree and the other levels. */
   review: BacklogReviewDto | null;
+}
+
+// Feature timeline (C1, SHIP-1465). C#: ShipLean.Contracts.Views.Timeline. Every instant is an opaque ISO string; positions are
+// hour offsets from scale.start and labels come from the server, so the browser does no date maths.
+
+export const KEY_DATE_POINTS = ['added', 'planned', 'executionStarted', 'finished'] as const;
+export type KeyDatePoint = (typeof KEY_DATE_POINTS)[number];
+
+export const TIMELINE_BAR_STATES = ['inFlight', 'resolved', 'closed'] as const;
+export type TimelineBarState = (typeof TIMELINE_BAR_STATES)[number];
+
+export const TIMELINE_PERIOD_STATES = [
+  'new',
+  'active',
+  'blocked',
+  'resolved',
+  'closed',
+  'removed',
+] as const;
+export type TimelinePeriodState = (typeof TIMELINE_PERIOD_STATES)[number];
+
+export const REVIEW_VERDICTS = ['approved', 'changesRequested'] as const;
+export type ReviewVerdict = (typeof REVIEW_VERDICTS)[number];
+
+export const TIMELINE_EDGE_KINDS = ['depends', 'blocked'] as const;
+export type TimelineEdgeKind = (typeof TIMELINE_EDGE_KINDS)[number];
+
+export const TIMELINE_EDGE_SOURCES = ['link', 'wave'] as const;
+export type TimelineEdgeSource = (typeof TIMELINE_EDGE_SOURCES)[number];
+
+/** An agent (agent true, userId null, name = the agent's name) or a person. */
+export interface TimelinePersonDto {
+  userId: string | null;
+  name: string;
+  agent: boolean;
+}
+
+export interface TimelineEpicDto {
+  key: string;
+  title: string;
+}
+
+export interface TimelineFeatureDto {
+  id: string;
+  key: string;
+  title: string;
+  state: string;
+  stateCategory: StateCategory;
+  epic: TimelineEpicDto | null;
+}
+
+/** at, dayLabel, by and source are null until the point is reached. */
+export interface TimelineKeyDateDto {
+  point: KeyDatePoint;
+  at: string | null;
+  dayLabel: string | null;
+  by: TimelinePersonDto | null;
+  source: string | null;
+}
+
+/** days and label are null while from isn't reached; soFar when from is reached and to isn't (runs to asOf). */
+export interface TimelineGapDto {
+  from: KeyDatePoint;
+  to: KeyDatePoint;
+  days: number | null;
+  label: string | null;
+  soFar: boolean;
+}
+
+export interface TimelineExecutionDto {
+  start: string | null;
+  end: string | null;
+  calendarDays: number | null;
+}
+
+/** One calendar day in the viewer's zone; a daylight-saving day is 23 or 25 hours long. */
+export interface TimelineDayDto {
+  startHours: number;
+  label: string;
+  dayOfMonth: string;
+  weekend: boolean;
+  monthStart: boolean;
+}
+
+export interface TimelineSprintDto {
+  name: string;
+  startHours: number;
+  endHours: number;
+}
+
+/** start is the UTC instant of the midnight that starts the first day drawn; nowHours is null once finished. */
+export interface TimelineScaleDto {
+  start: string;
+  endHours: number;
+  nowHours: number | null;
+  days: TimelineDayDto[];
+  sprints: TimelineSprintDto[];
+}
+
+/** A story's or bug's bracket: first task Active to last task Resolved; end is null while a task is open. */
+export interface TimelineStoryDto {
+  key: string;
+  type: Extract<WorkItemTypeId, 'story' | 'bug'>;
+  title: string;
+  assignee: TimelinePersonDto | null;
+  start: string | null;
+  end: string | null;
+  startHours: number | null;
+  endHours: number | null;
+  hours: number | null;
+  startLabel: string | null;
+  endLabel: string | null;
+  durationLabel: string | null;
+  tasks: string[];
+}
+
+/** stateName is the workflow's name (a blocked period is still in Active); the period a task ends in has to null. */
+export interface TimelinePeriodDto {
+  state: TimelinePeriodState;
+  stateName: string;
+  from: string;
+  to: string | null;
+  fromLabel: string;
+  hours: number | null;
+  durationLabel: string | null;
+}
+
+export interface TimelineReviewDto {
+  at: string;
+  atHours: number;
+  atLabel: string;
+  verdict: ReviewVerdict;
+  by: TimelinePersonDto;
+  note: string | null;
+}
+
+/** One task's bar. inferred = closed with no start recorded: start is null, drawn as a diamond at end. */
+export interface TimelineBarDto {
+  key: string;
+  type: Extract<WorkItemTypeId, 'task'>;
+  title: string;
+  parent: string;
+  assignee: TimelinePersonDto | null;
+  state: TimelineBarState;
+  start: string | null;
+  end: string | null;
+  startHours: number | null;
+  endHours: number | null;
+  hours: number | null;
+  startLabel: string | null;
+  endLabel: string | null;
+  durationLabel: string | null;
+  inferred: boolean;
+  onCriticalPath: boolean;
+  history: TimelinePeriodDto[];
+  reviews: TimelineReviewDto[];
+}
+
+/** waitLabel only when waitHours ≥ 12; unblocked* belong to blocked edges and are null while still blocked. */
+export interface TimelineEdgeDto {
+  from: string;
+  to: string;
+  kind: TimelineEdgeKind;
+  source: TimelineEdgeSource;
+  waitHours: number | null;
+  waitLabel: string | null;
+  unblockedAt: string | null;
+  unblockedHours: number | null;
+  onCriticalPath: boolean;
+}
+
+/** parent is null for a story or bug. */
+export interface TimelineNotStartedDto {
+  key: string;
+  type: WorkItemTypeId;
+  title: string;
+  parent: string | null;
+}
+
+export interface TimelineLinksDto {
+  ui: string;
+}
+
+/** GET of a Feature's timeline; the MCP tool feature_timeline sends the same fields in snake_case. */
+export interface FeatureTimelineViewDto {
+  feature: TimelineFeatureDto;
+  asOf: string;
+  finished: boolean;
+  keyDates: TimelineKeyDateDto[];
+  gaps: TimelineGapDto[];
+  execution: TimelineExecutionDto;
+  scale: TimelineScaleDto;
+  /** Empty unless finished. */
+  criticalPath: string[];
+  stories: TimelineStoryDto[];
+  bars: TimelineBarDto[];
+  edges: TimelineEdgeDto[];
+  notStarted: TimelineNotStartedDto[];
+  links: TimelineLinksDto;
 }

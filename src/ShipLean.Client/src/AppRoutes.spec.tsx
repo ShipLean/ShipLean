@@ -63,6 +63,10 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
     path: '/p/SHIP/items/SHIP-101/board',
     testId: pagesTestIds.featureBoardPage,
   },
+  featureTimeline: {
+    path: '/p/SHIP/items/SHIP-99/timeline',
+    testId: pagesTestIds.featureTimelinePage,
+  },
   storiesBoard: { path: '/p/SHIP/boards/stories', testId: pagesTestIds.boardPage },
   featuresBoard: { path: '/p/SHIP/boards/features', testId: pagesTestIds.boardPage },
   epicsBoard: { path: '/p/SHIP/boards/epics', testId: pagesTestIds.boardPage },

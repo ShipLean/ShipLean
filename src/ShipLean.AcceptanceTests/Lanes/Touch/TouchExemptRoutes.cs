@@ -11,5 +11,6 @@ public static class TouchExemptRoutes
         ["jiraImport"] = "desktop-only by decision, SHIP-707, 7 Nov 2026",
         ["authorize"] = "desktop-only by decision, SHIP-707, 7 Nov 2026",
         ["instanceSettings"] = "desktop-only by decision, SHIP-707, 7 Nov 2026",
+        ["featureTimeline"] = "desktop-only by decision, SHIP-1465 D12, 14 Nov 2026 (phones get the Feature page summary, no Open timeline)",
     };
 }

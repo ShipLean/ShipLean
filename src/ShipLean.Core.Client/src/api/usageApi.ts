@@ -16,3 +16,18 @@ export function postBacklogSort(
 ): Promise<void> {
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/backlog-sort`, body);
 }
+
+/** POST api/projects/{id}/usage/timeline-opened: a Feature timeline opened, from the Feature page ('feature') or a link. The server answers 204. */
+export function postTimelineOpened(projectId: string, from: 'feature' | 'link'): Promise<void> {
+  return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/timeline-opened`, {
+    from,
+  });
+}
+
+/** POST api/projects/{id}/usage/timeline-bar-selected: a bar selected on a Feature timeline. The server answers 204. */
+export function postTimelineBarSelected(projectId: string): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/timeline-bar-selected`,
+    {},
+  );
+}
