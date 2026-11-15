@@ -33,12 +33,14 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
         return [.. sessions.Distinct(StringComparer.Ordinal)];
     }
 
-    // Every span of the session in the project and window: all its traces.
-    public async Task<IReadOnlyList<SpanRecord>> SpansAsync(RunQuery query, string sessionId, TraceCache cache, CancellationToken ct)
+    // Every span of the session in the project and window. Tempo's search index lags ingestion and can be partial, so search only finds
+    // candidate trace ids; the ids the session's log records carry are added, and every trace is then fetched by id for the full spans.
+    public async Task<IReadOnlyList<SpanRecord>> SpansAsync(RunQuery query, string sessionId, IEnumerable<string> logTraceIds, TraceCache cache, CancellationToken ct)
     {
         var traceQl = $"{{ resource.{options.Fields.Project} = {QueryText.TraceQlString(query.ProjectKey)} && span.{options.Fields.Session} = {QueryText.TraceQlString(sessionId)} }}";
+        var candidates = (await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, ct)).Concat(logTraceIds).Distinct(StringComparer.Ordinal);
         var spans = new List<SpanRecord>();
-        foreach (var traceId in await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, ct))
+        foreach (var traceId in candidates)
         {
             spans.AddRange(await cache.GetAsync(traceId, () => FetchAsync(traceId, query.TenantOverride, ct)));
         }

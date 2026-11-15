@@ -50,8 +50,8 @@ public sealed class TempoLokiRunFinder(TempoRunFinder tempo, LokiRunFinder loki,
         var traceIds = new Dictionary<string, IReadOnlyList<string>>();
         foreach (var session in sessions)
         {
-            var spans = await tempo.SpansAsync(query, session, traces, ct);
             var logs = await loki.LogsAsync(query, session, ct);
+            var spans = await tempo.SpansAsync(query, session, logs.Select(l => l.TraceId).OfType<string>(), traces, ct);
             if (spans.Count + logs.Count == 0)
             {
                 continue;
