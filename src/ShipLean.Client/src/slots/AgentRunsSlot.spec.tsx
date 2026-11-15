@@ -52,3 +52,13 @@ test('Slot_WhenFlagOff_ShouldShowNothingAndRequestNothing', async ({ mount, page
   await page.waitForTimeout(300);
   expect(requests.urls).toEqual([]);
 });
+
+test('Slot_WhenFlagOff_ShouldTakeNoSpaceInTheLayout', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await stubItem(page, false);
+  await mount(<AgentRunsSlot project={project} itemKey="SHIP-1" />);
+
+  const slot = page.getByTestId(ids.agentRunsSlot);
+  await expect(slot).toHaveCSS('display', 'contents');
+  await expect(slot.locator('*')).toHaveCount(0);
+});

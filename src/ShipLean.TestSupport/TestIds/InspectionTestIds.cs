@@ -104,6 +104,7 @@ public static class InspectionTestIds
     public const string InspectionSubTabs = "inspection-sub-tabs";
     public const string InspectionSubTabGeneral = "inspection-sub-tab-general";
     public const string InspectionSubTabAgentSetup = "inspection-sub-tab-agent-setup";
+    public const string InspectionGeneral = "inspection-general";
     public const string InspectionSettingsSave = "inspection-settings-save";
     public const string InspectionSettingsSaveError = "inspection-settings-save-error";
     public const string InspectionSettingsLoading = "inspection-settings-loading";

@@ -98,6 +98,7 @@ export const inspectionTestIds = {
   inspectionSubTabs: 'inspection-sub-tabs',
   inspectionSubTabGeneral: 'inspection-sub-tab-general',
   inspectionSubTabAgentSetup: 'inspection-sub-tab-agent-setup',
+  inspectionGeneral: 'inspection-general',
   inspectionSettingsSave: 'inspection-settings-save',
   inspectionSettingsSaveError: 'inspection-settings-save-error',
   inspectionSettingsLoading: 'inspection-settings-loading',

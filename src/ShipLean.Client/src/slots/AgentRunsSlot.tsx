@@ -13,7 +13,7 @@ export interface AgentRunsSlotProps {
 export function AgentRunsSlot({ project, itemKey }: AgentRunsSlotProps) {
   const item = useWorkItem(project.id, itemKey);
   return (
-    <div data-testid={inspectionTestIds.agentRunsSlot}>
+    <div data-testid={inspectionTestIds.agentRunsSlot} className="contents">
       <AgentRunsPanel
         project={project}
         itemKey={itemKey}

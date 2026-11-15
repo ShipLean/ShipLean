@@ -6,7 +6,7 @@ export interface InspectionSettingsGeneralProps {
 }
 
 // The General sub-tab: Inspection on or off for the project, content display, tenant and selector overrides.
-// TODO: the form replaces this stub. It saves through the frame's Save, not a draft.
+// TODO: E1 (SHIP-1570) builds the form and its Save here (load, form and useSaveInspectionSettings), outside the settings draft.
 export function InspectionSettingsGeneral({ project }: InspectionSettingsGeneralProps) {
-  return <div data-testid={ids.inspectionEnabled} data-project={project.key} />;
+  return <div data-testid={ids.inspectionGeneral} data-project={project.key} />;
 }
