@@ -76,9 +76,11 @@ internal static class ReportChecks
             {
                 throw ApiException.Validation($"commits[{i}] needs a sha of at least 7 hex characters.", $"commits[{i}].sha");
             }
-            if (!IsWebAddress(commits[i].Url))
+            var hasRepo = !string.IsNullOrWhiteSpace(commits[i].Repo);
+            var hasUrl = !string.IsNullOrWhiteSpace(commits[i].Url);
+            if ((!hasRepo || hasUrl) && !IsWebAddress(commits[i].Url))
             {
-                throw ApiException.Validation($"commits[{i}] needs a url that starts with http:// or https://.", $"commits[{i}].url");
+                throw ApiException.Validation($"commits[{i}] needs a repo, or a url that starts with http:// or https://.", $"commits[{i}].url");
             }
         }
 

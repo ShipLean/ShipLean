@@ -1,14 +1,13 @@
 using System.Globalization;
 using System.Text;
 using ShipLean.Application.Plans;
-using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Reports;
 
 // The Report comment: the marker line with the status, then each field the agent filled in as a Markdown section.
 internal static class ReportBody
 {
-    public static string Build(ReportStatus status, string? blockedReason, IReadOnlyList<ReportCommit> commits, string? prUrl, ReportFields fields)
+    public static string Build(ReportStatus status, string? blockedReason, IReadOnlyList<ReportCommitLine> commits, string? prUrl, ReportFields fields)
     {
         var body = new StringBuilder(PlanMarkers.Report(status.ToString().ToLowerInvariant()));
         Section(body, "Blocked", blockedReason);
@@ -31,10 +30,10 @@ internal static class ReportBody
         return body.ToString();
     }
 
-    private static string CommitLine(ReportCommit commit)
+    private static string CommitLine(ReportCommitLine commit)
     {
         var subject = string.IsNullOrWhiteSpace(commit.Subject) ? string.Empty : commit.Subject.Trim() + " ";
-        return $"`{commit.Sha!.Trim()[..7].ToLowerInvariant()}` {subject}({commit.Url!.Trim()})";
+        return $"`{commit.Sha[..7].ToLowerInvariant()}` {subject}({commit.Where})";
     }
 
     private static string? Bullets(IEnumerable<string> lines)
@@ -51,3 +50,6 @@ internal static class ReportBody
         }
     }
 }
+
+// A commit as the report lists it: where it lives is its address, or else the repository the agent named.
+internal sealed record ReportCommitLine(string Sha, string? Subject, string Where);
