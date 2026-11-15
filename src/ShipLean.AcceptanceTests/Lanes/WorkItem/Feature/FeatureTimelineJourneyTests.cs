@@ -47,7 +47,8 @@ public class FeatureTimelineJourneyTests : SeededAcceptanceTest
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-group", "stories");
         await Expect(timeline.Bars).ToHaveCountAsync(3);
 
-        await timeline.Bar(a1).ClickAsync();
+        // The bar's box also spans the line out to its review dots, which sit over its middle: click its left edge.
+        await timeline.Bar(a1).ClickAsync(new() { Position = new Position { X = 3, Y = 3 } });
         await Expect(timeline.RailSelected).ToBeVisibleAsync();
         await Expect(timeline.Rail).ToHaveAttributeAsync("data-selected", a1);
         await Expect(timeline.RailSelected).ToContainTextAsync(a1);
