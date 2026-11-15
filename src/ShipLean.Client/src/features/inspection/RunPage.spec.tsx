@@ -1,32 +1,11 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import type { RunPageDto } from '@shiplean/core/api/inspection';
 import { claudeRunPage, stubInspection } from './ct/inspectionMocks';
+import { errorsPage } from './page/ct/errorsPage';
 import { inspectionTestIds as ids } from './testIds';
 import { RunPageHarness } from './page/ct/RunPageHarness';
 
 const route = '/p/SHIP/items/SHIP-1/runs/sess-cc-1';
-
-// The server filters errors-only; the stub answers it with the two failing rows of the synthetic run.
-const errorRow = (id: string, name: string, startMs: number) => ({
-  ...claudeRunPage.turns[0].rows[0],
-  id,
-  name,
-  startMs,
-  endMs: startMs + 2000,
-  durationMs: 2000,
-  isError: true,
-});
-const errorsPage: RunPageDto = {
-  ...claudeRunPage,
-  turns: [
-    {
-      ...claudeRunPage.turns[0],
-      rows: [errorRow('e1', 'Bash', 21000), errorRow('e2', 'Edit', 30000)],
-    },
-    { ...claudeRunPage.turns[1], rows: [] },
-  ],
-};
 
 async function setup(page: Page, status = 200) {
   await page.setViewportSize({ width: 1440, height: 900 });
