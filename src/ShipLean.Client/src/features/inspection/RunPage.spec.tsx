@@ -163,3 +163,28 @@ test('RunPage_WhenExpired_ShouldSayNoLongerAvailable', async ({ mount, page }) =
   await expect(page.getByTestId(ids.runExpired)).toContainText('no longer available');
   await expect(page.getByTestId(ids.runWaterfall)).toHaveCount(0);
 });
+
+test('RunPage_WhenErrorsOnlyToggledWithFindText_ShouldKeepTheFindBoxMounted', async ({
+  mount,
+  page,
+}) => {
+  await setup(page);
+  // A slow errors-only answer: the page must stay up on the previous data while it is in flight.
+  await page.route(
+    '**/api/inspection/projects/*/items/*/runs/sess-cc-1?errorsOnly=true',
+    async (r) => {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      await r.fulfill({ json: errorsPage });
+    },
+  );
+  await mount(<RunPageHarness />, { hooksConfig: { route } });
+  const find = page.getByTestId(ids.runFind);
+  await find.fill('e');
+  await find.evaluate((el) => el.setAttribute('data-mounted-marker', 'same'));
+  await page.getByTestId(ids.runErrorsOnly).click();
+  await expect(page.getByTestId(ids.runLoading)).toHaveCount(0);
+  await expect(find).toHaveAttribute('data-mounted-marker', 'same');
+  await expect(find).toHaveValue('e');
+  await expect(rows(page)).toHaveCount(1);
+  await expect(find).toHaveAttribute('data-mounted-marker', 'same');
+});

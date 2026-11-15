@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchAgentRuns,
   fetchAgentSetup,
@@ -33,6 +33,8 @@ export const useRunPage = (project: string, itemKey: string, runId: string, erro
   useQuery({
     queryKey: runPageKey(project, itemKey, runId, errorsOnly),
     queryFn: () => fetchRunPage(project, itemKey, runId, { errorsOnly }),
+    // Toggling errors only keeps the page (and the find box) up on the previous data while the new one loads.
+    placeholderData: keepPreviousData,
   });
 
 /** One row's detail, fetched when it is selected. */
