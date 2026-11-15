@@ -34,9 +34,10 @@ public sealed class TempoTraceLoader(IHttpClientFactory clients, InspectionOptio
         var spans = new List<SpanRecord>();
         foreach (var traceId in candidates)
         {
-            var fetched = await FetchAsync(traceId, query.TenantOverride, ct);
+            var fetched = await FetchAsync(traceId, query, ct);
             truncated |= fetched.Truncated;
-            spans.AddRange(fetched.Spans.Where(s => s.Attributes.GetValueOrDefault(options.Fields.Project) == query.ProjectKey
+            // Spans without a session attribute are kept on purpose: session.id may sit on only some spans of a trace.
+            spans.AddRange(fetched.Spans.Where(s => s.Start <= query.To && s.End >= query.From).Where(s => s.Attributes.GetValueOrDefault(options.Fields.Project) == query.ProjectKey
                 && s.Attributes.GetValueOrDefault(options.Fields.Session, sessionId) == sessionId));
         }
         return new TraceLoad([.. spans.OrderBy(s => s.Start).ThenBy(s => s.SpanId, StringComparer.Ordinal)], truncated);
@@ -65,9 +66,10 @@ public sealed class TempoTraceLoader(IHttpClientFactory clients, InspectionOptio
     }
 
     // A trace that is gone (404) has no spans.
-    private async Task<TraceLoad> FetchAsync(string traceId, string? tenant, CancellationToken ct)
+    private async Task<TraceLoad> FetchAsync(string traceId, RunQuery query, CancellationToken ct)
     {
-        using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.TempoClient), $"api/v2/traces/{Uri.EscapeDataString(traceId)}", tenant, ct);
+        var url = $"api/v2/traces/{Uri.EscapeDataString(traceId)}?start={StoreRequests.UnixSeconds(query.From)}&end={StoreRequests.UnixSeconds(query.To) + 1}";
+        using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.TempoClient), url, query.TenantOverride, ct);
         return document is null ? new TraceLoad([], false) : new TraceLoad(OtlpJsonMapping.Spans(document.RootElement, traceId), OtlpJsonMapping.IsPartial(document.RootElement));
     }
 }

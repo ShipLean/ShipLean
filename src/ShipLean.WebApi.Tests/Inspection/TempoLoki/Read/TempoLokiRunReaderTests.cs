@@ -105,4 +105,49 @@ public sealed class TempoLokiRunReaderTests
 
         run.ShouldBeNull();
     }
+
+    [TestCase("")]
+    [TestCase("  ")]
+    public async Task Get_WhenTheRunIdIsBlank_IsNullAndAsksNoStore(string runId)
+    {
+        var stores = ReaderStores.Stores(_ => ReaderStores.Trace(session: ""), OneHit, ReaderStores.LokiLines(2, session: ""));
+
+        var run = await ReaderStores.Reader(stores).GetAsync(ReaderStores.Ref(run: runId), CancellationToken.None);
+
+        run.ShouldBeNull();
+        stores.Requests.ShouldBeEmpty();
+    }
+
+    [TestCase("\"kind\":\"SPAN_KIND_CLIENT\"", "\"kind\":{}")]
+    [TestCase("\"code\":\"STATUS_CODE_ERROR\"", "\"code\":[]")]
+    [TestCase("\"code\":\"STATUS_CODE_ERROR\"", "\"code\":1.5")]
+    [TestCase("\"status\":{}}", "\"status\":{},\"attributes\":[{\"key\":\"x\",\"value\":{\"boolValue\":\"yes\"}}]}")]
+    [TestCase("\"status\":{}}", "\"status\":{},\"attributes\":[{\"key\":\"x\",\"value\":{\"intValue\":{}}}]}")]
+    [TestCase("\"status\":{}}", "\"status\":{},\"attributes\":[{\"key\":\"x\",\"value\":{\"doubleValue\":\"1\"}}]}")]
+    [TestCase("\"status\":{}}", "\"status\":{},\"attributes\":{}}")]
+    [TestCase("\"status\":{}}", "\"status\":{},\"attributes\":[{\"key\":\"input_tokens\",\"value\":{\"stringValue\":\"12.5\"}}]}")]
+    [TestCase("\"scopeSpans\":[{\"spans\":[", "\"scopeSpans\":[{\"spans\":{},\"x\":[")]
+    public async Task Get_WhenABodyHasAValueOfTheWrongKind_IsNullAndDoesNotThrow(string find, string replace)
+    {
+        var stores = ReaderStores.Stores(_ => ReaderStores.Trace().Replace(find, replace, StringComparison.Ordinal), OneHit, StoreJson.EmptyLoki);
+
+        var run = await ReaderStores.Reader(stores).GetAsync(ReaderStores.Ref(), CancellationToken.None);
+
+        run.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Get_WhenATraceHasSpansOutsideTheWindow_AsksWithTheWindowAndDropsThem()
+    {
+        var old = "\"status\":{}},{\"spanId\":\"AAAAAAAAEAM=\",\"name\":\"old\",\"startTimeUnixNano\":\"1700000000000000000\",\"endTimeUnixNano\":\"1700000001000000000\",\"status\":{}},";
+        var stores = ReaderStores.Stores(_ => ReaderStores.Trace().Replace("\"status\":{}},", old, StringComparison.Ordinal), OneHit, StoreJson.EmptyLoki);
+
+        var run = await ReaderStores.Reader(stores).GetAsync(ReaderStores.Ref(), CancellationToken.None);
+
+        run.ShouldNotBeNull();
+        run.Spans.Select(s => s.Name).ShouldBe(["root", "child"]);
+        var fetch = stores.Requests.Single(r => r.RequestUri!.AbsolutePath.Contains("/api/v2/traces/", StringComparison.Ordinal)).RequestUri!.Query;
+        fetch.ShouldContain($"start={ReaderStores.Now.AddDays(-1).ToUnixTimeSeconds()}");
+        fetch.ShouldContain($"end={ReaderStores.Now.ToUnixTimeSeconds() + 1}");
+    }
 }

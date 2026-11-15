@@ -12,6 +12,10 @@ public sealed class TempoLokiRunReader(TempoTraceLoader tempo, LokiLogReader lok
 {
     public async Task<RawRun?> GetAsync(RunRef run, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(run.RunId))
+        {
+            return null;
+        }
         using var deadline = new CancellationTokenSource(TempoLokiRunFinder.Deadline, time);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, deadline.Token);
         try
@@ -26,7 +30,19 @@ public sealed class TempoLokiRunReader(TempoTraceLoader tempo, LokiLogReader lok
             var summary = StoreRequests.Summarise(run.RunId, traces.Spans, logs.Logs, options.Fields.Item);
             return summary.Links.Any(link => link.ItemKey == run.ItemKey) ? new RawRun(summary, traces.Spans, logs.Logs, traces.Truncated || logs.Truncated) : null;
         }
-        catch (Exception problem) when (problem is HttpRequestException or JsonException or LokiSelectorException || (problem is OperationCanceledException && !ct.IsCancellationRequested))
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+        catch (LokiSelectorException)
+        {
+            return null;
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             return null;
         }

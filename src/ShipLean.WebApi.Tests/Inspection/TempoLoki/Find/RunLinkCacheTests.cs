@@ -68,4 +68,32 @@ public sealed class RunLinkCacheTests
         search.Runs.ShouldBeEmpty();
         stores.Requests.ShouldBeEmpty();
     }
+
+    private sealed class CountingLinkStore : IRunLinkStore
+    {
+        public int Writes { get; private set; }
+
+        public Task<IReadOnlyList<RunLinkRow>> ReadAsync(string projectKey, string itemKey, DateTimeOffset notBefore, CancellationToken ct) => Task.FromResult<IReadOnlyList<RunLinkRow>>([]);
+
+        public Task WriteAsync(string projectKey, string itemKey, IReadOnlyList<RunLinkRow> rows, CancellationToken ct)
+        {
+            Writes++;
+            return Task.CompletedTask;
+        }
+    }
+
+    [TestCase(-30, 0)]
+    [TestCase(-150, 1)]
+    public async Task Find_WhenTheWindowEndsWithinTwoMinutesOfNow_DoesNotKeepTheAnswer(int endSecondsFromNow, int expectedWrites)
+    {
+        var time = new FakeTimeProvider(Now);
+        var options = new InspectionOptions { TempoUrl = "http://tempo.test", LokiUrl = "http://loki.test" };
+        var clients = StoreClients.Create(options, new StubStores());
+        var links = new CountingLinkStore();
+        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), new RunLinkCache(links, time), options, time);
+
+        await finder.FindAsync(Query() with { To = Now.AddSeconds(endSecondsFromNow) }, CancellationToken.None);
+
+        links.Writes.ShouldBe(expectedWrites);
+    }
 }

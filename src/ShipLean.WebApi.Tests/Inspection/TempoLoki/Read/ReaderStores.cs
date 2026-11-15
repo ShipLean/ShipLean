@@ -9,7 +9,7 @@ namespace ShipLean.WebApi.Tests.Inspection.TempoLoki.Read;
 // Canned Tempo (trace by id, v2) and Loki answers for the run reader, and the reader built over a stub.
 public static class ReaderStores
 {
-    public static readonly DateTimeOffset Now = new(2026, 11, 15, 9, 0, 0, TimeSpan.Zero);
+    public static readonly DateTimeOffset Now = new(2025, 11, 15, 9, 5, 0, TimeSpan.Zero);
 
     public const string RootId = "AAAAAAAAEAE=";
     public const string ChildId = "AAAAAAAAEAI=";

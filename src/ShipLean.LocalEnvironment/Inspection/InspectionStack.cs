@@ -121,7 +121,7 @@ public sealed class InspectionStack
             return true;
         }
         var query = Uri.EscapeDataString($"{{ resource.shiplean.project = \"{loaded.ProjectKey}\" }}");
-        using var response = await client.GetAsync($"{TempoUrl}/api/search?q={query}&limit=1", ct);
+        using var response = await client.GetAsync($"{TempoUrl}/api/search?q={query}&start={TimeProvider.System.GetUtcNow().AddHours(-4).ToUnixTimeSeconds()}&end={TimeProvider.System.GetUtcNow().AddMinutes(5).ToUnixTimeSeconds()}&limit=1", ct);
         response.EnsureSuccessStatusCode();
         return JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))?["traces"]?.AsArray().Count > 0;
     }

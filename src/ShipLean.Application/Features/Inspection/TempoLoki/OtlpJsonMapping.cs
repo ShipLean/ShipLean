@@ -84,6 +84,14 @@ internal static class OtlpJsonMapping
         }
     }
 
+    // An OTLP enum is its name or its number; anything else is a body of the wrong shape.
+    private static string EnumName(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.String => value.GetString()!,
+        JsonValueKind.Number when value.TryGetInt32(out var number) => number.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        _ => throw new JsonException("A span has a kind or status code of the wrong kind."),
+    };
+
     // SPAN_KIND_CLIENT or its number; unspecified is internal.
     private static string Kind(JsonElement span)
     {
@@ -91,7 +99,7 @@ internal static class OtlpJsonMapping
         {
             return "internal";
         }
-        var name = kind.ValueKind == JsonValueKind.Number ? kind.GetInt32().ToString(System.Globalization.CultureInfo.InvariantCulture) : kind.GetString();
+        var name = EnumName(kind);
         return name switch
         {
             "2" or "SPAN_KIND_SERVER" => "server",
@@ -108,7 +116,7 @@ internal static class OtlpJsonMapping
         {
             return SpanStatus.Unset;
         }
-        var name = code.ValueKind == JsonValueKind.Number ? code.GetInt32().ToString(System.Globalization.CultureInfo.InvariantCulture) : code.GetString();
+        var name = EnumName(code);
         return name switch
         {
             "1" or "STATUS_CODE_OK" => SpanStatus.Ok,
