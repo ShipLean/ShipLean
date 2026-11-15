@@ -106,7 +106,7 @@ export function KeyDates({ view, compact }: KeyDatesProps) {
       aria-label="Key dates"
       data-testid={ids.keyDates}
       data-compact={compact}
-      className="grid max-w-[1100px] grid-cols-[auto_minmax(40px,1fr)_auto_minmax(40px,1fr)_auto_minmax(80px,2fr)_auto] items-start overflow-x-auto"
+      className="grid max-w-[1100px] grid-cols-[auto_minmax(40px,1fr)_auto_minmax(40px,1fr)_auto_minmax(80px,2fr)_auto] items-start overflow-x-auto pt-3"
     >
       {view.keyDates.map((point, i) => {
         const gap = view.gaps[i];
