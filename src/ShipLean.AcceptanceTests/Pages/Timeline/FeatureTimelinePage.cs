@@ -35,9 +35,9 @@ public sealed class FeatureTimelinePage(IPage page)
     public ILocator Json => Page.GetByTestId(TimelineTestIds.Json);
 
     // The toolbar's Group and View buttons by their labels; the toolbar root mirrors the chosen option in data-group and data-view.
-    public ILocator GroupButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarGroup).GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
+    public ILocator GroupButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarGroup).GetByText(label, new() { Exact = true });
 
-    public ILocator ViewButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarView).GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
+    public ILocator ViewButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarView).GetByText(label, new() { Exact = true });
 
     public async Task OpenFromFeatureAsync()
     {
