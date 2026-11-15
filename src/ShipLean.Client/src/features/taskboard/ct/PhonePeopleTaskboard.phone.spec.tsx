@@ -143,3 +143,41 @@ for (const theme of THEMES) {
     await expect(first).toHaveScreenshot(`taskboard-people-phone-${theme}.png`);
   });
 }
+
+for (const theme of THEMES) {
+  test(`PhoneGrid_WhenTeammateMoveLands_ShouldMatchTheChipPulseScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    // Reduced motion plays the static pulse: one fixed look for its whole 1.2s, frozen here so the shot never depends on timing.
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubTaskboard(page, VIEW);
+    const first = VIEW.peopleRows[0].cells.flatMap((c) => c.tasks)[0];
+    const landed = movedTo(VIEW, first.id, 't-active');
+    let reads = 0;
+    await page.route('**/api/sprints/*/taskboard', async (r) => {
+      reads += 1;
+      const body = JSON.stringify(reads > 1 ? landed : VIEW);
+      await r.fulfill({ status: 200, contentType: 'application/json', body });
+    });
+    await mount(slot, route);
+    await expect(page.getByTestId(touchTestIds.pagerChip)).toHaveCount(3);
+    const active = page.getByTestId(touchTestIds.pagerChip).filter({ hasText: /^\s*Active/ });
+
+    // A teammate's move reaches this tab as a refetch (the hub is not there in CT): focusing the tab refetches the board.
+    await page.evaluate(() => window.dispatchEvent(new Event('visibilitychange')));
+
+    await expect(active).toHaveClass(/is-pulsing/);
+    await page.evaluate(() =>
+      document.getAnimations().forEach((animation) => {
+        animation.pause();
+        animation.currentTime = 600;
+      }),
+    );
+    await expect(active).toHaveClass(/is-pulsing/);
+    await expect(page.getByTestId(touchTestIds.pagerChips)).toHaveScreenshot(
+      `taskboard-chip-pulse-${theme}.png`,
+      { animations: 'allow' },
+    );
+  });
+}
