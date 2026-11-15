@@ -1,6 +1,6 @@
-namespace ShipLean.WebApi.Tests.Backups.Dump;
+namespace ShipLean.WebApi.Tests.Backups;
 
-// Bounds a wait in the dumper tests at 30 s. AG0032 bans Task.Wait*/WaitAsync, so the bound is a
+// Bounds a wait in the backup tests at 30 s. AG0032 bans Task.Wait*/WaitAsync, so the bound is a
 // CancellationTokenSource whose token completes a source the wait races against.
 internal static class Bounded
 {
