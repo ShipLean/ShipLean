@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.TaskChanges;
+using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.TaskChanges;
@@ -55,16 +56,16 @@ public class ReviewJourneyTests : SeededAcceptanceTest
     [Test]
     public async Task ChangesPage_WhenNarrowViewport_ShouldShowWiderScreenNotice()
     {
-        await SeedCommitsAsync(SeedIds.WorkItems.Ship172);
+        await SeedCommitsAsync(SeedIds.WorkItems.Ship173);
         await Page.SetViewportSizeAsync(390, 800);
         var screen = new WorkItemScreen(Page);
         var section = new ChangesPanel(Page);
-        await screen.OpenAsync(Project, "SHIP-172");
+        await screen.OpenAsync(Project, "SHIP-173");
         await Expect(screen.Title).ToBeVisibleAsync();
         await Expect(section.Section).ToHaveCountAsync(0);
 
         var changes = new ChangesPage(Page);
-        await changes.OpenNarrowAsync(Project, "SHIP-172");
+        await changes.OpenNarrowAsync(Project, "SHIP-173");
         await Expect(changes.NarrowNotice).ToBeVisibleAsync();
         await Expect(changes.FileRows).ToHaveCountAsync(0);
         await changes.BackFromNarrowNoticeAsync();
