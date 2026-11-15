@@ -14,6 +14,7 @@ using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Planning.Reports;
@@ -34,6 +35,7 @@ internal sealed class ReportTools(
     ILinkCards linkCards,
     IWorkItemTreeWriter treeWriter,
     StaleWrites writes,
+    ICodeComments codeComments,
     ICurrentAgent agent)
 {
     [McpServerTool(Name = "report_task"), McpScope(McpScopes.Write)]
@@ -45,6 +47,7 @@ internal sealed class ReportTools(
         [Description("The pull request's URL, when there is one.")] string? pr_url = null,
         [Description("Each test command you ran, with its pass and fail counts and how long it took. Left out means none.")] IReadOnlyList<string>? tests_run = null,
         [Description("The acceptance tests that define done, each with pass or fail. Left out means none.")] IReadOnlyList<string>? acceptance_tests = null,
+        [Description("The open code comments on the task you answered, each with its id and a reply. Each is replied to and resolved; an id that is not on the task fails the report with nothing written.")] IReadOnlyList<AnsweredComment>? answered_comments = null,
         [Description("Config files you changed and why.")] string? config_files_changed = null,
         [Description("Red tests, each with the task that owns it.")] string? red_tests = null,
         [Description("About how much context you used, in thousands of tokens.")] int? context_used_k = null,
@@ -63,6 +66,7 @@ internal sealed class ReportTools(
         var undone = ReportChecks.LeftUndone(left_undone);
         ReportChecks.CheckLinks(commitList, pr_url);
         ReportChecks.CheckLists(tests_run, acceptance_tests);
+        var answers = ReportChecks.Answers(answered_comments);
         var blockedReason = parsedStatus == ReportStatus.Blocked ? ReportChecks.BlockedReason(constraint_not_met, undone) : null;
 
         var (tree, taskId) = await plans.TreeOfAsync(resolved.Id, cancellationToken);
@@ -85,7 +89,12 @@ internal sealed class ReportTools(
             throw ApiException.Validation($"The report is too long: {report.Length:N0} characters, the limit is {MarkdownRenderer.MaxLength:N0}.");
         }
 
-        // Links, orphans, the comment, then the state move: a call that fails part-way can be sent again.
+        // Answers first (atomic: a refusal writes nothing, and an empty list is skipped because it always publishes), then
+        // links, orphans, the comment and the state move: a call that fails part-way can be sent again.
+        if (answers.Count > 0)
+        {
+            await codeComments.AnswerAsync(taskId, answers, cancellationToken);
+        }
         var linksAdded = await AddLinksAsync(taskId, commitList, pr_url, cancellationToken);
         var orphans = await AddOrphansAsync(snapshot.ProjectId, story, task, undone, cancellationToken);
         var added = await comments.AddAsync(taskId, new CommentCreate(report), cancellationToken);
@@ -100,7 +109,7 @@ internal sealed class ReportTools(
 
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
         var result = new ReportResult(
-            projectKey, McpOpenUrls.WorkItem(issuer, projectKey, resolved.Key), resolved.Key, allStates.Single(s => s.Id == after.StateId).Name, added.Id, linksAdded, orphans);
+            projectKey, McpOpenUrls.WorkItem(issuer, projectKey, resolved.Key), resolved.Key, allStates.Single(s => s.Id == after.StateId).Name, added.Id, linksAdded, orphans, answers.Count);
         return PlanningReply.Of(result, $"Report for {resolved.Key} received; it is now {result.State}.");
     }
 

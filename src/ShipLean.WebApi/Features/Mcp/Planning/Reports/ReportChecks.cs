@@ -1,5 +1,6 @@
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Reports;
@@ -85,6 +86,27 @@ internal static class ReportChecks
         {
             throw ApiException.Validation("pr_url must start with http:// or https://.", "pr_url");
         }
+    }
+
+    // The answers, one per comment id (a repeated id keeps its last reply); each needs an id and a reply.
+    public static IReadOnlyList<CodeCommentAnswer> Answers(IReadOnlyList<AnsweredComment>? answered)
+    {
+        CheckCount(answered?.Count ?? 0, "answered_comments");
+        var kept = new Dictionary<Guid, string>();
+        for (var i = 0; i < (answered?.Count ?? 0); i++)
+        {
+            var answer = answered![i] ?? throw ApiException.Validation($"answered_comments[{i}] is empty.", $"answered_comments[{i}]");
+            if (answer.Id is not { } id || id == Guid.Empty)
+            {
+                throw ApiException.Validation($"answered_comments[{i}] needs the id of a code comment.", $"answered_comments[{i}].id");
+            }
+            if (string.IsNullOrWhiteSpace(answer.Reply))
+            {
+                throw ApiException.Validation($"answered_comments[{i}] needs a reply.", $"answered_comments[{i}].reply");
+            }
+            kept[id] = answer.Reply.Trim();
+        }
+        return [.. kept.Select(k => new CodeCommentAnswer(k.Key, k.Value))];
     }
 
     // A blocked task goes back with a reason: the constraint it could not meet, or else the first thing it left undone.
