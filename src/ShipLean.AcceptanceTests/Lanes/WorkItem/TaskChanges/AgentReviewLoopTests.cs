@@ -10,6 +10,7 @@ using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Mcp;
 using ShipLean.TestSupport.Plans;
 using ShipLean.TestSupport.TaskChanges;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.WorkItem.TaskChanges;
 
@@ -101,7 +102,7 @@ public class AgentReviewLoopTests : SeededAcceptanceTest
         await changes.ShowAllCommentsAsync();
         var thread = changes.Threads.Filter(new() { HasText = "Cover the zero-tax case." });
         await Expect(thread).ToContainTextAsync("Added a zero-tax test.");
-        await Expect(thread.GetByRole(AriaRole.Button, new() { Name = "Reopen" })).ToHaveCountAsync(1);
+        await Expect(thread.GetByTestId(TaskChangesTestIds.Resolve)).ToHaveTextAsync("Reopen");
     }
 
     private static async Task<JsonElement> CallAsync(McpClient mcp, string tool, Dictionary<string, object?> arguments)
