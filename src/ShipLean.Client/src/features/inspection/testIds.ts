@@ -31,6 +31,7 @@ export const inspectionTestIds = {
   runPage: 'run-page',
   runPageNarrow: 'run-page-narrow',
   runPageNarrowBack: 'run-page-narrow-back',
+  runBack: 'run-back',
   runLoading: 'run-loading',
   runLoadFailed: 'run-load-failed',
   runExpired: 'run-expired',
