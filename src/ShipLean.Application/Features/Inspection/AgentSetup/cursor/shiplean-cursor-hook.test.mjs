@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildLogRequest, parseShipleanFile, parseHeaders, run, answerFor, readShipleanFile } from './shiplean-cursor-hook.mjs';
+import { buildLogRequest, parseShipleanFile, parseHeaders, run, answerFor, readShipleanFile, gitInfo } from './shiplean-cursor-hook.mjs';
 
 const attr = (list, key) => list.find((a) => a.key === key)?.value.stringValue;
 const shell = { hook_event_name: 'afterShellExecution', conversation_id: 'c-1', generation_id: 'g-1', command: 'dotnet test', output: 'passed', duration: 5000 };
@@ -19,7 +19,7 @@ async function runWith(payload, env, files = {}) {
 }
 
 test('record tags item, project and link_source file, with the session, prompt, tool and duration', () => {
-  const body = buildLogRequest(shell, { item: 'SHIP-1', project: 'SHIP', email: 'dev@example.com', now: 1794304809000 });
+  const body = buildLogRequest(shell, { item: 'SHIP-1', itemFromFile: true, project: 'SHIP', email: 'dev@example.com', now: 1794304809000 });
   const resource = body.resourceLogs[0].resource.attributes;
   const record = body.resourceLogs[0].scopeLogs[0].logRecords[0];
   assert.equal(attr(resource, 'service.name'), 'cursor');
@@ -92,4 +92,33 @@ test('answers fit the event: continue for a prompt, permission for before hooks'
   assert.deepEqual(answerFor('beforeSubmitPrompt'), { continue: true });
   assert.deepEqual(answerFor('beforeMCPExecution'), { permission: 'allow' });
   assert.deepEqual(answerFor('stop'), {});
+});
+
+test('an item from the environment is a plain tag; only a .shiplean file sets link_source', async () => {
+  const fromEnv = await runWith(shell, { SHIPLEAN_INSPECTION_AGENT_OTLP_ENDPOINT: 'http://x', SHIPLEAN_ITEM: 'SHIP-9' });
+  const envResource = fromEnv.posts[0].body.resourceLogs[0].resource.attributes;
+  assert.equal(attr(envResource, 'shiplean.item'), 'SHIP-9');
+  assert.equal(attr(envResource, 'shiplean.link_source'), undefined);
+  const fromFile = buildLogRequest(shell, { item: 'SHIP-1', itemFromFile: true }).resourceLogs[0].resource.attributes;
+  assert.equal(attr(fromFile, 'shiplean.link_source'), 'file');
+});
+
+test('unparseable stdin answers a permissive response for every hook kind', async () => {
+  const out = [];
+  await run({ stdin: 'not json', env: {}, cwd: '/x', out: (s) => out.push(s) });
+  assert.deepEqual(JSON.parse(out[0]), { continue: true, permission: 'allow' });
+});
+
+test('repo, branch, model and Cursor version ride on the resource when known', () => {
+  const resource = buildLogRequest({ ...shell, model: 'm-1', cursor_version: '2.0' }, { repo: 'https://h/r.git', branch: 'main' }).resourceLogs[0].resource.attributes;
+  assert.equal(attr(resource, 'vcs.repository.url.full'), 'https://h/r.git');
+  assert.equal(attr(resource, 'vcs.ref.head.name'), 'main');
+  assert.equal(attr(resource, 'gen_ai.request.model'), 'm-1');
+  assert.equal(attr(resource, 'service.version'), '2.0');
+});
+
+test('gitInfo drops credentials and ignores a detached head or a failing git', () => {
+  const answers = { 'remote get-url origin': 'https://tok@github.com/o/r.git', 'rev-parse --abbrev-ref HEAD': 'HEAD' };
+  assert.deepEqual(gitInfo('/x', (a) => answers[a.join(' ')]), { repo: 'https://github.com/o/r.git' });
+  assert.deepEqual(gitInfo('/x', () => { throw new Error('no git'); }), {});
 });

@@ -70,4 +70,27 @@ public class AgentSetupTests : InspectionApiFixture
 
         All(dto).ShouldContain("<item-key>");
     }
+
+    [Test]
+    public async Task Get_ForClaudeCode_ShouldNeverOfferARepositorySettingsFileAndKeepTheItemOutOfTheUserFile()
+    {
+        var dto = await Api.GetAsync<AgentSetupDto>($"api/inspection/projects/{Project}/agent-setup?agent=claude-code&item={Item}");
+
+        dto.Files.ShouldNotContain(f => f.Name.EndsWith(".claude/settings.json") && !f.Name.StartsWith('~'));
+        dto.Files.Select(f => f.Name).ShouldContain("shiplean-telemetry.json");
+        dto.Files.Single(f => f.Name == "shiplean-telemetry.json").Content.ShouldContain(Item);
+        dto.Files.Single(f => f.Name == "user-claude-settings.json").Content.ShouldNotContain(Item);
+    }
+
+    [Test]
+    public async Task Get_ForTheOpenAiCli_ShouldTagThroughSpanAttributesAndWrapTheCommand()
+    {
+        var dto = await Api.GetAsync<AgentSetupDto>($"api/inspection/projects/{Project}/agent-setup?agent=codex-cli&item={Item}");
+
+        dto.Files.Single(f => f.Name == "config.toml").Content.ShouldContain($"[otel.span_attributes]");
+        dto.Files.Single(f => f.Name == "config.toml").Content.ShouldContain($"\"shiplean.project\" = \"{Project}\"");
+        var run = dto.Files.Single(f => f.Name == "run.sh").Content;
+        run.ShouldContain("# Usage: bash run.sh");
+        run.ShouldContain($"-c 'otel.span_attributes.\"shiplean.item\"=\"{Item}\"' \"$@\"");
+    }
 }

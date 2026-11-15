@@ -25,7 +25,7 @@
   <!-- Sprint demos: the prompt, ShipLean's default brand and the YouTube check clip ship inside the assembly (K11, K12). -->
   <ItemGroup>
     <EmbeddedResource Include="Features\Demos\Prompt\*.md" LogicalName="sprint-demo/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="Features\Inspection\AgentSetup\**" LogicalName="inspection/agent-setup/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Features\Inspection\AgentSetup\cursor\*.json;Features\Inspection\AgentSetup\cursor\*.mjs" Exclude="Features\Inspection\AgentSetup\cursor\*.test.mjs" LogicalName="inspection/agent-setup/cursor/%(Filename)%(Extension)" />
     <EmbeddedResource Include="Features\Demos\Prompt\*.svg" LogicalName="sprint-demo/%(Filename)%(Extension)" />
     <EmbeddedResource Include="Features\Demos\Prompt\*.css" LogicalName="sprint-demo/%(Filename)%(Extension)" />
     <EmbeddedResource Include="Features\Demos\YouTube\*.mp4" LogicalName="sprint-demo/%(Filename)%(Extension)" />

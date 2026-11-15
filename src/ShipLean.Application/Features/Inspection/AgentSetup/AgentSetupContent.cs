@@ -1,4 +1,3 @@
-using System.Text;
 using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.Application.Features.Inspection.AgentSetup;
@@ -30,11 +29,11 @@ public static class AgentSetupContent
 
     private static AgentSetupDto ClaudeCode(string label, Inputs i)
     {
-        var headers = string.IsNullOrWhiteSpace(i.Headers) ? "" : $"export OTEL_EXPORTER_OTLP_HEADERS=\"{i.Headers}\"\n";
+        var headers = string.IsNullOrWhiteSpace(i.Headers) ? "" : $"export OTEL_EXPORTER_OTLP_HEADERS={ShellQuote(i.Headers)}\n";
         var env = $"""
             # Claude Code telemetry to your collector.
             export CLAUDE_CODE_ENABLE_TELEMETRY=1
-            export CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1   # unverified: traces are a beta; the switch may change
+            export CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1
             export OTEL_TRACES_EXPORTER=otlp
             export OTEL_LOGS_EXPORTER=otlp
             export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
@@ -43,11 +42,31 @@ public static class AgentSetupContent
             # Optional, percent-encoded: add ,{i.Fields.Repo}=<repo url>,{i.Fields.Branch}=<branch> to OTEL_RESOURCE_ATTRIBUTES (agent-relay does this for you).
             # Content stays off. Uncomment to send it (see the note on secrets).
             # export OTEL_LOG_USER_PROMPTS=1
+            # export OTEL_LOG_ASSISTANT_RESPONSES=0         # OTEL_LOG_USER_PROMPTS=1 also captures replies unless this is 0
             # export OTEL_LOG_TOOL_DETAILS=1
-            # export OTEL_LOG_TOOL_CONTENT=1                # unverified name
+            # export OTEL_LOG_TOOL_CONTENT=1
 
             """;
-        var settings = new StringBuilder("{\n  \"env\": {\n");
+
+        return new AgentSetupDto("claude-code", label,
+        [
+            new AgentSetupFileDto("telemetry.env", "bash", env),
+            new AgentSetupFileDto("shiplean-telemetry.json", "json", ClaudeSettings(i, withItem: true)),
+            new AgentSetupFileDto("user-claude-settings.json", "json", ClaudeSettings(i, withItem: false)),
+        ],
+        [
+            "Claude Code reads its telemetry settings from the environment, a --settings file or your user settings (~/.claude/settings.json). A repository's .claude/settings.json cannot turn telemetry on: Claude Code ignores the exporter variables there.",
+            "Per run: start Claude Code with --settings shiplean-telemetry.json, or source telemetry.env first. Keep shiplean-telemetry.json out of the repository: it holds the collector token.",
+            "user-claude-settings.json is for ~/.claude/settings.json (merge its env block). It leaves out the item, because user settings apply to every run; tag a run with the item through the per-run file or OTEL_RESOURCE_ATTRIBUTES.",
+            $"Change {i.Fields.Item} in the per-run file to the item you start the run for, or let agent-relay set it.",
+            "The collector token is shared by the whole instance. Never commit it; rotate it if it leaks.",
+            ContentNote,
+        ],
+        Docs("claude-code"));
+    }
+
+    private static string ClaudeSettings(Inputs i, bool withItem)
+    {
         var pairs = new List<(string, string)>
         {
             ("CLAUDE_CODE_ENABLE_TELEMETRY", "1"),
@@ -61,20 +80,8 @@ public static class AgentSetupContent
         {
             pairs.Add(("OTEL_EXPORTER_OTLP_HEADERS", i.Headers));
         }
-        pairs.Add(("OTEL_RESOURCE_ATTRIBUTES", i.ResourceAttributes));
-        settings.Append(string.Join(",\n", pairs.Select(p => $"    {Json(p.Item1)}: {Json(p.Item2)}"))).Append("\n  }\n}\n");
-
-        return new AgentSetupDto("claude-code", label,
-        [
-            new AgentSetupFileDto("telemetry.env", "bash", env),
-            new AgentSetupFileDto(".claude/settings.json", "json", settings.ToString()),
-        ],
-        [
-            "Use either the env block (per user or per run) or the settings.json file (per repository); not both.",
-            $"The item tag is in OTEL_RESOURCE_ATTRIBUTES. Change {i.Fields.Item} to the item you start the run for, or let agent-relay set it.",
-            ContentNote,
-        ],
-        Docs("claude-code"));
+        pairs.Add(("OTEL_RESOURCE_ATTRIBUTES", withItem ? i.ResourceAttributes : $"{i.Fields.Project}={Uri.EscapeDataString(i.ProjectKey)}"));
+        return "{\n  \"env\": {\n" + string.Join(",\n", pairs.Select(p => $"    {Json(p.Item1)}: {Json(p.Item2)}")) + "\n  }\n}\n";
     }
 
     private static AgentSetupDto OpenAiCli(string label, Inputs i)
@@ -88,11 +95,16 @@ public static class AgentSetupContent
             "log_user_prompt = false   # content off; set true to send prompt text (see the note on secrets)",
             "exporter = { otlp-http = { endpoint = \"" + endpoint + "/v1/logs\", protocol = \"binary\"" + headers + " } }",
             "trace_exporter = { otlp-http = { endpoint = \"" + endpoint + "/v1/traces\", protocol = \"binary\"" + headers + " } }   # unverified: trace export",
+            "",
+            "[otel.span_attributes]   # documented route for tags; spans only",
+            "\"shiplean.project\" = " + Json(i.ProjectKey),
             "");
         var perRun = $"""
-            # Per run: tag it with the item (unverified: Codex CLI reading OTEL_RESOURCE_ATTRIBUTES)
-            export OTEL_RESOURCE_ATTRIBUTES="{i.ResourceAttributes}"
-            # then start Codex CLI as usual in this shell
+            # Usage: bash run.sh <your Codex CLI command> [args]
+            # Tags this one run with the item, then starts the command you gave.
+            export OTEL_RESOURCE_ATTRIBUTES="{i.ResourceAttributes}"   # unverified: Codex CLI may not read this variable
+            cmd="$1"; shift
+            exec "$cmd" -c 'otel.span_attributes."shiplean.item"="{i.ItemKey}"' "$@"
 
             """;
         return new AgentSetupDto("codex-cli", label,
@@ -102,6 +114,7 @@ public static class AgentSetupContent
         ],
         [
             "config.toml sets where Codex CLI sends its events; run.sh tags one run with the project and item.",
+            "Tags go in through [otel.span_attributes] (spans only). Log events may stay untagged until a real run shows otherwise; the OTEL_RESOURCE_ATTRIBUTES line in run.sh is unverified.",
             "Codex CLI sends log events (codex.*) and, in recent releases, may send traces too; the run page shows what arrives.",
             ContentNote,
         ],
@@ -111,7 +124,7 @@ public static class AgentSetupContent
     private static AgentSetupDto Cursor(string label, Inputs i)
     {
         var shiplean = $"item={i.ItemKey}\nproject={i.ProjectKey}\n";
-        var hookHeaders = string.IsNullOrWhiteSpace(i.Headers) ? "" : $"export SHIPLEAN_INSPECTION_AGENT_OTLP_HEADERS=\"{i.Headers}\"\n";
+        var hookHeaders = string.IsNullOrWhiteSpace(i.Headers) ? "" : $"export SHIPLEAN_INSPECTION_AGENT_OTLP_HEADERS={ShellQuote(i.Headers)}\n";
         var env = $"""
             # Where the hook posts. Set these where Cursor starts (shell profile or the OS environment).
             export SHIPLEAN_INSPECTION_AGENT_OTLP_ENDPOINT="{i.EndpointOrPlaceholder}"
@@ -129,6 +142,8 @@ public static class AgentSetupContent
         [
             "Cursor has no native telemetry export, so a hook script turns its hook events (shell, MCP call, file edit, stop) into log records for your collector. Needs Node 18 or newer.",
             "Cursor does not send model-call timing or token counts; the run page shows events only.",
+            "Known gap: Cursor sends bare MCP tool names and keeps the item key only in tool input, so runs are linked by tagging (.shiplean or SHIPLEAN_ITEM), not by tool calls.",
+            "The hook sends the user's email from Cursor's payload, and the repository URL and branch from git when it can read them.",
             "The .shiplean file in the repository root tags the run with its item; change it per task. SHIPLEAN_ITEM overrides it.",
             ContentNote,
         ],
@@ -136,6 +151,8 @@ public static class AgentSetupContent
     }
 
     private static string Docs(string agent) => $"https://docs.shiplean.app/inspection/{agent}";
+
+    private static string ShellQuote(string value) => "'" + value.Replace("'", "'\\''") + "'";
 
     private static string Json(string value) => System.Text.Json.JsonSerializer.Serialize(value);
 
