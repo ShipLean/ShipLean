@@ -125,6 +125,8 @@ One Feature in three waves (D5).
 
 ## Decisions
 
+On SHIP-1398, D1–D5 are the answered questions Q1–Q5, and D6–D14 are recorded as the item's decisions D1–D9, in the same order.
+
 | | Decision | By |
 |---|---|---|
 | D1 | Lead time ends at the last commit. Commit times come **only** from a new `committed_at` on `report_task`, plus a one-off backfill for existing installs. They are not looked up from the code host, and push webhooks are not used. | Joel, 15 Nov |
