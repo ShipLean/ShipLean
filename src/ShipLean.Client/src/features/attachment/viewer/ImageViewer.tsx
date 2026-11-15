@@ -22,6 +22,13 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
   const container = useRef<HTMLDivElement>(null);
   useModalFocus(container);
   const [index, setIndex] = useState(() => Math.min(Math.max(viewer.start, 0), images.length - 1));
+  // A fuller set can replace the images while open (the item's images arriving): stay on the image being shown.
+  const [shown, setShown] = useState(images);
+  if (shown !== images) {
+    setShown(images);
+    const at = images.findIndex((candidate) => candidate.src === shown[index]?.src);
+    if (at >= 0) setIndex(at);
+  }
   const zoom = useZoom();
   const { reset } = zoom;
   const count = images.length;
