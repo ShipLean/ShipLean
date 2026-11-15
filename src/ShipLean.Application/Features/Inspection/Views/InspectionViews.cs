@@ -7,16 +7,10 @@ using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.Application.Features.Inspection.Views;
 
-// What the run page shows: all turns or one, and every row or only the errors with their ancestors.
-public sealed record RunFilter(bool ErrorsOnly, int? Turn)
-{
-    public static RunFilter All { get; } = new(false, null);
-}
-
 // The three run views behind K5, built from ITraceSource and IRunAssembler. Every RunQuery and RunRef comes from IInspectionItemLookup
 // through RunWindow, and every label is formatted here with DisplayDate.
 [RegisterPerRequest]
-public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time)
+public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time) : IInspectionViews
 {
     // The section shows the newest runs; it assembles each one for its timeline, so it is capped.
     public const int MaxSectionRuns = 50;
@@ -107,18 +101,19 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     }
 
     // The rows of a run in one flat, errors-first order, one page at a time.
-    public async Task<RunRowsPage> RunRowsAsync(string projectKey, string itemKey, string runId, bool errorsOnly, string? cursor, int limit, CancellationToken ct)
+    public async Task<RunRowsPage> RunRowsAsync(string projectKey, string itemKey, string runId, bool errorsOnly, string? cursor, int? limit, CancellationToken ct)
     {
         if (limit is < 1 or > RunRowsCursor.MaxLimit)
         {
             throw ApiException.Validation($"limit must be 1 to {RunRowsCursor.MaxLimit}.", "limit");
         }
+        var size = limit ?? RunRowsCursor.DefaultLimit;
         var filter = errorsOnly ? "errors" : "all";
         var position = RunRowsCursor.Decode(cursor, filter);
         var page = await RunAsync(projectKey, itemKey, runId, new RunFilter(errorsOnly, null), ct);
         var ordered = RunRowsCursor.Order(page.Turns.SelectMany(t => t.Rows.Select(r => new RunRowsPageRow(t.Number, r))));
         var rest = RunRowsCursor.After(ordered, position).ToList();
-        var rows = rest.Take(limit).ToList();
+        var rows = rest.Take(size).ToList();
         var next = rows.Count < rest.Count ? RunRowsCursor.Encode(filter, rows[^1]) : null;
         return new RunRowsPage(page.Header, page.LogOnly, page.Banner, page.Truncated, page.GrafanaUrl, page.ContentShown, ordered.Count, ordered.Count(r => r.Row.IsError), next, rows);
     }

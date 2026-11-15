@@ -8,7 +8,7 @@ namespace ShipLean.Application.Features.Inspection.AgentSetup;
 
 // What an agent needs to send telemetry for one item (D24). Works while the project is off, so an admin can set agents up before turning it on.
 [RegisterPerRequest]
-public sealed class AgentSetupService(InspectionGate gate, InspectionProjectStore store, IInspectionItemLookup items)
+public sealed class AgentSetupService(InspectionGate gate, InspectionProjectStore store, IInspectionItemLookup items) : IAgentSetup
 {
     private static readonly Dictionary<string, string> Labels = new(StringComparer.Ordinal)
     {

@@ -4,21 +4,6 @@ using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.Application.Features.Inspection.Views;
 
-// The paged, errors-first rows of a run, for the MCP get_run tool.
-public sealed record RunRowsPage(
-    RunHeaderDto Header,
-    bool LogOnly,
-    string? Banner,
-    bool Truncated,
-    string? GrafanaUrl,
-    bool ContentShown,
-    int TotalRows,
-    int ErrorRows,
-    string? NextCursor,
-    IReadOnlyList<RunRowsPageRow> Rows);
-
-public sealed record RunRowsPageRow(int Turn, RunPageRowDto Row);
-
 // An opaque cursor over the ordered rows: the filter it was made for and the sort key of the last row sent. The next page resumes after that
 // key, so a row that appears while a run is still going cannot make a page repeat or skip rows.
 public static class RunRowsCursor

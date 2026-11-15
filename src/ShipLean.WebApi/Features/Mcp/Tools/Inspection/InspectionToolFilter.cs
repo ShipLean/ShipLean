@@ -1,6 +1,6 @@
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using ShipLean.Application.Features.Inspection;
+using ShipLean.Contracts.Inspection;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Mcp.Errors;
 
@@ -27,5 +27,5 @@ public static class InspectionToolFilter
             ? ValueTask.FromResult(ToolErrorFilter.Result(ApiException.NotFound("Inspection is off.")))
             : next(request, cancellationToken);
 
-    private static bool Enabled(IServiceProvider? services) => services?.GetService(typeof(InspectionOptions)) is InspectionOptions { Enabled: true };
+    private static bool Enabled(IServiceProvider? services) => services?.GetService(typeof(IInspectionStatus)) is IInspectionStatus { Enabled: true };
 }

@@ -1,5 +1,5 @@
 using Agoda.IoC.Core;
-using ShipLean.Application.Features.Inspection.Settings;
+using ShipLean.Contracts.Inspection;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Screens;
@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.WorkItems;
 // An Epic's, Feature's or Story's roll-up counts (a Story's are its tasks; Epics and Features leave tasks out, as the backlog does) and
 // what waits on the caller. Every type gets InspectionEnabled. Other types keep [] and null. A read with no signed-in user (ICurrentUser.Id throws then) gets no NeedsYou.
 [RegisterPerRequest]
-public sealed class WorkItemExtras(IWorkTreeReads reads, INeedsYouCounts counts, ICurrentUser currentUser, InspectionFlag inspection) : IWorkItemExtras
+public sealed class WorkItemExtras(IWorkTreeReads reads, INeedsYouCounts counts, ICurrentUser currentUser, IInspectionFlag inspection) : IWorkItemExtras
 {
     public async Task<WorkItemDto> ApplyAsync(WorkItemDto item, CancellationToken cancellationToken)
     {

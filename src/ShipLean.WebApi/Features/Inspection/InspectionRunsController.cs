@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ShipLean.Application.Features.Inspection.Views;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Inspection;
 using ShipLean.WebApi.Infrastructure;
@@ -8,7 +7,7 @@ namespace ShipLean.WebApi.Features.Inspection;
 
 // K5 reads: not_found while the instance or the project has Inspection off.
 [Route("api/inspection/projects/{project}/items/{key}/runs")]
-public sealed class InspectionRunsController(InspectionViews views) : ApiControllerBase
+public sealed class InspectionRunsController(IInspectionViews views) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<AgentRunsSectionDto>(StatusCodes.Status200OK)]

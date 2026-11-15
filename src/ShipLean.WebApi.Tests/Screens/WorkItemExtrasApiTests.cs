@@ -2,9 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dapper;
-using ShipLean.Application.Features.Inspection.Settings;
 using ShipLean.Application.Features.WorkItems;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Inspection;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.Views;
@@ -79,7 +79,7 @@ public class WorkItemExtrasApiTests : ApiFixture
         var read = await Api.GetAsync<WorkItemDto>($"api/work-items/{feature}");
         using var scope = Host.Services.CreateScope();
         var counts = new FakeNeedsYouCounts();
-        var extras = new WorkItemExtras(scope.ServiceProvider.GetRequiredService<IWorkTreeReads>(), counts, new NoUser(), scope.ServiceProvider.GetRequiredService<InspectionFlag>());
+        var extras = new WorkItemExtras(scope.ServiceProvider.GetRequiredService<IWorkTreeReads>(), counts, new NoUser(), scope.ServiceProvider.GetRequiredService<IInspectionFlag>());
 
         var applied = await extras.ApplyAsync(read with { Rollups = [], NeedsYou = null }, CancellationToken.None);
 

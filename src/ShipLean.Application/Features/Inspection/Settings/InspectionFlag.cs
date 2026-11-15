@@ -1,13 +1,14 @@
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.Application.Features.Inspection.Settings;
 
 // Whether an item page shows Agent runs: Inspection is on for the instance and for the item's project. No access check: the caller
 // already read the item.
 [RegisterPerRequest]
-public sealed class InspectionFlag(InspectionOptions options, NpgsqlDataSource dataSource)
+public sealed class InspectionFlag(InspectionOptions options, NpgsqlDataSource dataSource) : IInspectionFlag
 {
     public async Task<bool> IsOnAsync(Guid projectId, CancellationToken ct)
     {

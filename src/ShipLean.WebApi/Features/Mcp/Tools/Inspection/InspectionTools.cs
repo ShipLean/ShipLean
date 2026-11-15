@@ -3,10 +3,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using ShipLean.Application.Features.Inspection.AgentSetup;
-using ShipLean.Application.Features.Inspection.Views;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Inspection;
 using ShipLean.Contracts.Mcp;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
@@ -17,7 +16,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Inspection;
 
 // The agent runs of a work item, read through the same views as /api/inspection (K6). Not listed, and not_found when called, while the instance has Inspection off.
 [McpServerToolType]
-internal sealed class InspectionTools(ItemResolver items, CaptureSupport support, InspectionViews views, AgentSetupService setup)
+internal sealed class InspectionTools(ItemResolver items, CaptureSupport support, IInspectionViews views, IAgentSetup setup)
 {
     private static readonly JsonSerializerOptions DataOptions = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
 
@@ -49,7 +48,7 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
             throw ApiException.Validation("filter must be all or errors.", "filter");
         }
         var project = await support.ProjectOfAsync(resolved, cancellationToken);
-        var page = await views.RunRowsAsync(project.Key, resolved.Key, run, filter == "errors", cursor, limit ?? RunRowsCursor.DefaultLimit, cancellationToken);
+        var page = await views.RunRowsAsync(project.Key, resolved.Key, run, filter == "errors", cursor, limit, cancellationToken);
         return await ReplyAsync(resolved, project, page, $"Run {run} on {resolved.Key}: {page.Rows.Count} of {page.TotalRows} rows, {page.ErrorRows} with errors.", cancellationToken);
     }
 
