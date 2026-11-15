@@ -14,6 +14,13 @@ import {
 // The Sprint backlog list on a phone (SHIP-724, L724c): the page, the States sheet, a state conflict (toast and flashing
 // row) and the list with Tasks off. Regenerate with scripts/update-page-shots.sh src/pages/screenshots/sprintBacklogRows.phone.spec.tsx.
 
+// Scrolls the list's header (the "n stories and bugs" row and its Tasks switch) to just under the top bar, as the design shows it.
+const scrollToList = (page: Page) =>
+  page.getByTestId(ids.showTasks).evaluate((el) => {
+    el.style.scrollMarginTop = '120px';
+    el.scrollIntoView({ block: 'start' });
+  });
+
 const backlog = {
   route: `/p/SHIP/sprints/${SPRINT_24}/backlog`,
   shell: true,
@@ -27,7 +34,14 @@ const backlog = {
 };
 
 phonePageShots([
-  { name: 'sprint-backlog-list', ...backlog },
+  {
+    name: 'sprint-backlog-list',
+    ...backlog,
+    act: async (page) => {
+      await scrollToList(page);
+      await expect(page.getByTestId(ids.showTasks)).toBeInViewport();
+    },
+  },
   {
     name: 'sprint-backlog-state',
     ...backlog,
@@ -68,6 +82,8 @@ phonePageShots([
     act: async (page) => {
       await page.getByTestId(ids.showTasks).tap();
       await expect(page.getByTestId(ids.taskRow)).toHaveCount(0);
+      await scrollToList(page);
+      await expect(page.getByTestId(ids.showTasks)).toBeInViewport();
     },
   },
 ]);
