@@ -43,7 +43,7 @@
 .panel > header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; min-height: 40px; }
 .panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
 .panel .pad { padding: var(--space-2) var(--space-3); }
-.cols2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-3); }
+.cols2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-3); }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
 .cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .card { display: grid; gap: 6px; align-content: start; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); text-decoration: none; color: inherit; min-width: 0; }
@@ -115,6 +115,11 @@ table.list tr.cur td:first-child::after { content: " · so far"; font-weight: 40
 .field-demo label input { margin-top: 2px; accent-color: var(--color-accent); }
 .sev { display: inline-grid; place-items: center; min-width: 22px; height: 18px; padding: 0 5px; border-radius: var(--radius-xs); font-size: var(--text-2xs); font-weight: 700; color: #fff; }
 .sev.s1 { background: var(--type-bug); } .sev.s2 { background: color-mix(in srgb, var(--type-bug) 72%, var(--color-surface)); } .sev.s3 { background: color-mix(in srgb, var(--type-bug) 45%, var(--color-surface)); color: var(--color-text); } .sev.s4 { background: color-mix(in srgb, var(--type-bug) 22%, var(--color-surface)); color: var(--color-text); }
+details.rule > summary { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); cursor: pointer; list-style: none; }
+details.rule > summary h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+details.rule > summary::before { content: '▸'; color: var(--color-muted); }
+details.rule[open] > summary::before { content: '▾'; }
+details.rule[open] > summary { border-bottom: 1px solid var(--color-border); }
 .mini { height: 20px; padding: 0 6px; border: 1px dashed var(--color-border); border-radius: var(--radius-xs); background: transparent; color: var(--color-muted); font-size: var(--text-2xs); cursor: pointer; white-space: nowrap; }
 pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono); overflow: auto; max-height: calc(100vh - 230px); background: var(--color-bg); }
 .callout code { font-family: var(--font-mono); font-size: var(--text-xs); }
@@ -312,6 +317,28 @@ pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono)
     }
   }
 
+  /* How one task's lead time is measured, drawn: start → blocked → first resolve → review → rework → last commit,
+     then the part that isn't counted (last commit → Resolved). Collapsible; open by default. */
+  function ruleStrip() {
+    return `<details class="panel rule" open><summary><h2>How a task's lead time is measured</h2><span class="sm muted">the same rule for every number on this page</span></summary>
+      <div class="pad"><svg class="chart" id="rule" role="img" aria-label="Lead time runs from the first move to Active to the last commit; time after the last commit is not counted"></svg>
+      <p class="xs muted" style="margin:2px 0 0">No commit time reported → the end is the first move to Resolved, and the task says <span class="end-chip res">to Resolved</span>. A task with no start is left out.</p></div></details>`;
+  }
+  function drawRule(svg) {
+    const W = widthOf(svg), HH = 74, mk = svgEl(svg), L = 8, R = W - 8, u = (R - L) / 100, x = p => L + p * u;
+    svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+    const pat = mk('defs', {}); pat.innerHTML = '<pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="5" fill="color-mix(in srgb, var(--in-tail) 60%, transparent)"/></pattern>';
+    const seg = (a, b, fill, label) => { mk('rect', { x: x(a), y: 22, width: x(b) - x(a) - 1, height: 12, rx: 2, fill }); if (label) mk('text', { x: (x(a) + x(b)) / 2, y: 48, 'text-anchor': 'middle' }, label); };
+    seg(0, 20, 'var(--in-active)', 'Active'); seg(20, 34, 'var(--in-blocked)', 'Blocked'); seg(34, 44, 'var(--in-active)', 'Active');
+    seg(44, 70, 'var(--in-rework)', 'Rework: after a review asked for changes'); seg(70, 78, 'var(--in-active)', '');
+    seg(78, 96, 'url(#hatch)', 'Not counted');
+    const tick = (p, label, anchor, strong) => { mk('line', { x1: x(p), x2: x(p), y1: 16, y2: 36, stroke: 'var(--color-text)', 'stroke-width': strong ? 2 : 1 }); mk('text', { x: x(p) + (anchor === 'start' ? 2 : anchor === 'end' ? -2 : 0), y: 12, 'text-anchor': anchor, class: strong ? 'v' : '' }, label); };
+    tick(0, 'Start: first Active or pick_up', 'start', true); tick(44, 'First Resolved', 'middle'); tick(78, 'End: last commit (committed_at)', 'end', true); tick(96, 'Resolved', 'middle');
+    mk('line', { x1: x(0), x2: x(78), y1: 62, y2: 62, stroke: 'var(--color-text)', 'stroke-width': 1, 'marker-end': '' });
+    mk('line', { x1: x(0), x2: x(0), y1: 57, y2: 67, stroke: 'var(--color-text)' }); mk('line', { x1: x(78), x2: x(78), y1: 57, y2: 67, stroke: 'var(--color-text)' });
+    mk('text', { x: x(39), y: 66, 'text-anchor': 'middle', class: 'v lbl' }, 'lead time');
+  }
+
   /* ---------- Lead time ---------- */
   function leadtime() {
     head.innerHTML = `<h1>Lead time</h1><span class="sm muted">per task, from its first move to Active (or pick_up) to its last commit · mean per ${unit}</span><span class="spacer"></span><a class="btn" href="${keep({ view: 'json' })}">JSON for agents</a>`;
@@ -341,12 +368,14 @@ pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono)
         <tbody>${vm.cuts.map(c => `<tr><td>${cut === 'feature' ? fname(c.key) : isAgent(c.key) ? who(c.key) : `<span class="who"><span class="av" style="background:var(--color-muted)">5</span>People</span>`}</td>${c.cells.map(cell).join('')}<td class="n">${c.all.tasks}</td><td class="n"><b>${dur(c.all.lead_hours)}</b></td></tr>`).join('')}</tbody></table></div></section>`;
     }
     page.innerHTML = `<div class="scroll"><div class="body">${cadenceNote}${covCallout()}
+      ${ruleStrip()}
       <section class="panel"><header><h2>Mean lead time and every task</h2><span class="sm muted">click a ${unit} to see its tasks</span><span class="spacer"></span>${legendLead}</header>
         <div class="pad"><svg class="chart" id="lead" role="img" aria-label="Mean lead time per ${unit}"></svg></div></section>
       ${table}
       ${vm.left_out.length ? `<p class="sm muted" style="margin:0">Left out: ${vm.left_out.map(x => `<span class="key">${x.key}</span> ${esc(x.title)} (${esc(x.why.toLowerCase())})`).join('; ')}. A task with no start has no lead time; the timeline shows it as a diamond.</p>` : ''}
     </div></div>`;
     later(() => leadChart(document.getElementById('lead'), vm.rows, { H: 230 }));
+    later(() => drawRule(document.getElementById('rule')));
     toolbar.querySelectorAll('[data-cut]').forEach(b => b.addEventListener('click', () => { location.href = keep({ view: 'leadtime', cut: b.dataset.cut === 'none' ? null : b.dataset.cut }); }));
   }
 
@@ -388,10 +417,9 @@ pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono)
     const tabs = `<nav class="subtabs" aria-label="Period"><a class="tab" href="${keep({ view: 'period', p: r.period.id })}"${tab === 'tasks' ? ' aria-current="page"' : ''}>Tasks ${r.tasks}</a><a class="tab" href="${keep({ view: 'period', p: r.period.id, tab: 'features' })}"${tab === 'features' ? ' aria-current="page"' : ''}>Features ${new Set(list.map(k => k.feature)).size}</a></nav>`;
     let main;
     if (tab === 'tasks') {
-      main = `<table class="list"><thead><tr><th>Task</th><th>Feature</th><th>Who</th><th style="width:22%">Lead time</th><th class="n">Reviews</th><th class="n">Commits</th><th class="n">Runs</th><th>Ends at</th></tr></thead>
+      main = `<table class="list"><thead><tr><th>Task</th><th>Feature</th><th>Who</th><th style="width:24%">Lead time</th><th class="n" title="Reviews">Rev.</th><th class="n">Commits</th><th class="n">Runs</th></tr></thead>
         <tbody>${list.map(k => `<tr class="item" data-sel="${k.key}" aria-selected="${k === sel}"><td class="t">${tIcon('task')} <span class="key">${k.key}</span> ${esc(k.title)}</td><td>${fname(k.feature)}</td><td>${who(k.who)}</td>
-          <td><div class="lt"><b>${dur(k.lead)}</b>${splitBar(k, max)}</div></td><td class="n sm">${k.reviews}</td><td class="n sm">${k.commits.length}</td><td class="n sm">${k.runs || '<span class="muted">0</span>'}</td>
-          <td>${k.lastCommit != null ? '<span class="end-chip">Last commit</span>' : '<span class="end-chip res" title="No commit time was reported">Resolved</span>'}</td></tr>`).join('')}</tbody></table>
+          <td><div class="lt"><b>${dur(k.lead)}</b><span class="row" style="gap:6px;flex-wrap:nowrap">${splitBar(k, max)}${k.lastCommit == null ? '<span class="end-chip res" title="No commit time was reported, so the lead time ends at Resolved">to Resolved</span>' : ''}</span></div></td><td class="n sm">${k.reviews}</td><td class="n sm">${k.commits.length}</td><td class="n sm">${k.runs || '<span class="muted">0</span>'}</td></tr>`).join('')}</tbody></table>
         ${left.length ? `<p class="sm muted" style="margin:var(--space-2) var(--space-3)">Left out: ${left.map(x => `<span class="key">${x.key}</span> ${esc(x.title)}, ${esc(x.why.toLowerCase())}`).join('; ')}.</p>` : ''}`;
     } else {
       const feats = [...new Set(list.map(k => k.feature))].map(f => {

@@ -18,7 +18,7 @@ States of `inspection.html`:
 |---|---|
 | *(none)* | **Overview**: three cards (lead time, escaping bugs, tokens per task), the lead-time chart, the longest tasks and escaping bugs by sprint |
 | `?wave=1` | The Overview as wave 1 ships it: lead time only |
-| `?view=leadtime` | **Lead time**: the chart, and a row per sprint with the split and quarter roll-up rows |
+| `?view=leadtime` | **Lead time**: a drawing of how one task's lead time is measured, the chart, and a row per sprint with the split and quarter roll-up rows |
 | `?view=leadtime&cut=feature` / `&cut=who` | Mean lead time per Feature, or per agent connection and people, across the sprints |
 | `?view=period&p=s23` | **One sprint**: its numbers, its tasks slowest first, and how the selected task's lead time was measured |
 | `…&select=SHIP-192` | Another task in the rail (SHIP-192 has rework) |
