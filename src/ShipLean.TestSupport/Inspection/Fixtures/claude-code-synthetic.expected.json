@@ -1,11 +1,22 @@
 {
   "compareKeys": [
-    "service.name",
-    "session.id",
+    "allowed_tools",
+    "attempt",
+    "duration_ms",
+    "file_path",
+    "input_tokens",
+    "model",
+    "output_tokens",
     "prompt.id",
+    "session.id",
     "shiplean.item",
     "shiplean.project",
-    "user.email"
+    "status_code",
+    "success",
+    "team",
+    "temperature",
+    "tool_name",
+    "tool_parameters"
   ],
   "run": {
     "summary": {
@@ -69,6 +80,7 @@
         "status": "unset",
         "statusMessage": null,
         "attributes": {
+          "allowed_tools": "[\"Read\",\"Edit\"]",
           "attempt": "1",
           "host.name": "dev-box",
           "input_tokens": "1200",
@@ -80,9 +92,18 @@
           "shiplean.item": "SHIP-1",
           "shiplean.project": "SHIP",
           "team": "platform",
+          "temperature": "1.5",
           "user.email": "dev@example.com"
         },
-        "events": []
+        "events": [
+          {
+            "time": "2026-11-10T10:00:01.42Z",
+            "name": "first_token",
+            "attributes": {
+              "ttft_ms": "420"
+            }
+          }
+        ]
       },
       {
         "traceId": "00000000000000000000000000abc001",
@@ -101,7 +122,7 @@
           "session.id": "sess-cc-1",
           "shiplean.item": "SHIP-1",
           "shiplean.project": "SHIP",
-          "team": "platform",
+          "team": "infra",
           "tool_name": "mcp__shiplean__pick_up",
           "tool_parameters": "{\"item\":\"SHIP-1\"}",
           "user.email": "dev@example.com"

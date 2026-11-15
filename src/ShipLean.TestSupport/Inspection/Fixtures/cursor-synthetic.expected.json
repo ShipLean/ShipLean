@@ -1,12 +1,14 @@
 {
   "compareKeys": [
-    "service.name",
-    "session.id",
+    "duration_ms",
+    "file_path",
     "prompt.id",
+    "session.id",
     "shiplean.item",
     "shiplean.project",
-    "shiplean.link_source",
-    "user.email"
+    "status",
+    "tool_input",
+    "tool_name"
   ],
   "run": {
     "summary": {

@@ -1,11 +1,11 @@
-using System.Globalization;
 using ShipLean.Contracts.Inspection;
 
 namespace ShipLean.TestSupport.Inspection;
 
 // Compares the RawRun a store returned with a fixture's expected one (K3 normalisation). Times are compared as offsets from each
 // run's own start, so a fixture rebased to "now" still matches. Only the attribute keys in compareKeys are compared; spans and
-// logs are matched in time order. Numbers in attributes compare by value, so 42 and "42" and 42.0 are the same.
+// logs are matched in time order. Attribute values compare ordinally: K3 says a store returns the exact invariant form ("1.5", never "1.50"). A fixture may write a number or boolean
+// as JSON; the loader turns it into that form, so 42 and "42" in a fixture are the same value. Span events compare by name, offset and attributes.
 public static class RawRunComparer
 {
     // What differs, one line each; empty when the runs are equal.
@@ -31,6 +31,13 @@ public static class RawRunComparer
             Check(diffs, id + " status message", e.StatusMessage, a.StatusMessage);
             Attributes(diffs, id, e.Attributes, a.Attributes, compareKeys);
             Check(diffs, id + " events", e.Events.Count, a.Events.Count);
+            foreach (var (ee, ae) in Order(e.Events, v => v.Time, v => v.Name).Zip(Order(a.Events, v => v.Time, v => v.Name)))
+            {
+                var eventId = $"{id} event {ee.Name}";
+                Check(diffs, eventId + " name", ee.Name, ae.Name);
+                Check(diffs, eventId + " time", Rel(ee.Time, e0), Rel(ae.Time, a0));
+                Attributes(diffs, eventId, ee.Attributes, ae.Attributes, compareKeys);
+            }
         }
         Check(diffs, "log count", expected.Logs.Count, actual.Logs.Count);
         foreach (var (e, a) in Order(expected.Logs, l => l.Time, l => l.Body).Zip(Order(actual.Logs, l => l.Time, l => l.Body)))
@@ -73,17 +80,12 @@ public static class RawRunComparer
         foreach (var key in keys)
         {
             var (hasE, hasA) = (expected.TryGetValue(key, out var e), actual.TryGetValue(key, out var a));
-            if (hasE != hasA || (hasE && !SameValue(e!, a!)))
+            if (hasE != hasA || (hasE && !string.Equals(e, a, StringComparison.Ordinal)))
             {
                 diffs.Add($"{id} attribute {key}: expected {(hasE ? e : "<absent>")}, got {(hasA ? a : "<absent>")}");
             }
         }
     }
-
-    private static bool SameValue(string expected, string actual)
-        => expected == actual
-           || (decimal.TryParse(expected, NumberStyles.Float, CultureInfo.InvariantCulture, out var x)
-               && decimal.TryParse(actual, NumberStyles.Float, CultureInfo.InvariantCulture, out var y) && x == y);
 
     private static IEnumerable<T> Order<T>(IEnumerable<T> items, Func<T, DateTimeOffset> time, Func<T, string> tie)
         => items.OrderBy(time).ThenBy(tie, StringComparer.Ordinal);

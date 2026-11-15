@@ -117,11 +117,46 @@
                   "value": {
                     "intValue": "1"
                   }
+                },
+                {
+                  "key": "temperature",
+                  "value": {
+                    "doubleValue": 1.5
+                  }
+                },
+                {
+                  "key": "allowed_tools",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "Read"
+                        },
+                        {
+                          "stringValue": "Edit"
+                        }
+                      ]
+                    }
+                  }
                 }
               ],
               "status": {
                 "code": 0
-              }
+              },
+              "events": [
+                {
+                  "timeUnixNano": "1794304801420000000",
+                  "name": "first_token",
+                  "attributes": [
+                    {
+                      "key": "ttft_ms",
+                      "value": {
+                        "intValue": "420"
+                      }
+                    }
+                  ]
+                }
+              ]
             },
             {
               "traceId": "00000000000000000000000000abc001",
@@ -154,6 +189,12 @@
                   "key": "tool_parameters",
                   "value": {
                     "stringValue": "{\"item\":\"SHIP-1\"}"
+                  }
+                },
+                {
+                  "key": "team",
+                  "value": {
+                    "stringValue": "infra"
                   }
                 }
               ],

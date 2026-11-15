@@ -50,6 +50,7 @@
           "waitEnd": null,
           "collapsedChildCount": 0,
           "attributes": {
+            "allowed_tools": "[\"Read\",\"Edit\"]",
             "attempt": "1",
             "host.name": "dev-box",
             "input_tokens": "1200",
@@ -61,6 +62,7 @@
             "shiplean.item": "SHIP-1",
             "shiplean.project": "SHIP",
             "team": "platform",
+            "temperature": "1.5",
             "user.email": "dev@example.com"
           },
           "input": null,
@@ -90,7 +92,7 @@
             "session.id": "sess-cc-1",
             "shiplean.item": "SHIP-1",
             "shiplean.project": "SHIP",
-            "team": "platform",
+            "team": "infra",
             "tool_name": "mcp__shiplean__pick_up",
             "tool_parameters": "{\"item\":\"SHIP-1\"}",
             "user.email": "dev@example.com"
@@ -515,5 +517,5 @@
       "label": "report_task"
     }
   ],
-  "whatItDid": "report_task: done \u00b7 1 commit"
+  "whatItDid": "report_task: done · 1 commit"
 }

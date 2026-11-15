@@ -1,11 +1,15 @@
 {
   "compareKeys": [
-    "service.name",
-    "session.id",
+    "duration_ms",
+    "input_tokens",
+    "model",
+    "output_tokens",
     "prompt.id",
+    "session.id",
     "shiplean.item",
     "shiplean.project",
-    "user.email"
+    "tool_input",
+    "tool_name"
   ],
   "run": {
     "summary": {

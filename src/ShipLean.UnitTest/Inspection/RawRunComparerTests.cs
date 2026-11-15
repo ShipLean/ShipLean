@@ -25,6 +25,26 @@ public class RawRunComparerTests
     }
 
     [Test]
+    public void Differences_WhenTheDecimalFormDiffers_ShouldReportIt()
+    {
+        RawRunComparer.Differences(Run("\"1.5\""), Run("\"1.50\""), Keys).ShouldHaveSingleItem().ShouldContain("tokens");
+    }
+
+    [Test]
+    public void Differences_WhenASpanEventDiffers_ShouldReportIt()
+    {
+        var expected = Run("1");
+        var withEvent = expected with
+        {
+            Spans = [.. expected.Spans.Select(s => s with { Events = [new SpanEventData(s.Start.AddSeconds(1), "first_token", new Dictionary<string, string> { ["tokens"] = "1" })] })],
+        };
+        var renamed = withEvent with { Spans = [.. withEvent.Spans.Select(s => s with { Events = [s.Events[0] with { Name = "other" }] })] };
+
+        RawRunComparer.Differences(withEvent, withEvent, Keys).ShouldBeEmpty();
+        RawRunComparer.Differences(withEvent, renamed, Keys).ShouldNotBeEmpty();
+    }
+
+    [Test]
     public void Differences_WhenTheNumbersDiffer_ShouldReportTheAttribute()
     {
         RawRunComparer.Differences(Run("42"), Run("43"), Keys).ShouldHaveSingleItem().ShouldContain("tokens");
