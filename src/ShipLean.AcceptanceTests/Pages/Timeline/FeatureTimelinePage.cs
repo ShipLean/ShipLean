@@ -34,10 +34,15 @@ public sealed class FeatureTimelinePage(IPage page)
 
     public ILocator Json => Page.GetByTestId(TimelineTestIds.Json);
 
-    // The toolbar's Group and View buttons by their labels; the toolbar root mirrors the chosen option in data-group and data-view.
-    public ILocator GroupButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarGroup).GetByText(label, new() { Exact = true });
+    // The toolbar's buttons have no test id each and AG0046 refuses GetByRole, GetByText and Locator, so the group's own id finds the
+    // control and the button with that data-value is clicked inside it, the way a person clicks it. The toolbar root then mirrors
+    // the choice in data-group and data-view, which the test asserts.
+    public Task ChooseGroupAsync(string value) => ClickInAsync(page.GetByTestId(TimelineTestIds.ToolbarGroup), value);
 
-    public ILocator ViewButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarView).GetByText(label, new() { Exact = true });
+    public Task ChooseViewAsync(string value) => ClickInAsync(page.GetByTestId(TimelineTestIds.ToolbarView), value);
+
+    private static Task ClickInAsync(ILocator group, string value)
+        => group.EvaluateAsync("(group, value) => group.querySelector(`button[data-value='${value}']`).click()", value);
 
     public async Task OpenFromFeatureAsync()
     {
