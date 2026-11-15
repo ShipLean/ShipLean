@@ -196,7 +196,8 @@ export interface InspectionHealthFieldDto {
 
 export interface InspectionHealthDto {
   enabled: boolean;
-  mode: InspectionStoreMode | null;
+  // "off" while the instance has Inspection off (the server always sends a string).
+  mode: InspectionStoreMode | 'off';
   reachable: boolean;
   latencyMs: number | null;
   viewLagSeconds: number | null;
