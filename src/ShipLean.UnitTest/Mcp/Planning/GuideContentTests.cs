@@ -139,6 +139,17 @@ public class GuideContentTests
     }
 
     [Test]
+    public void GuideContent_ShouldTellAgentsToSendCommitsAndAnswerComments()
+    {
+        const string line = "When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else.";
+        PlanGuide.Read(PlanGuidePart.Brief).ShouldContain(line);
+        Guide.ShouldContain(line);
+        var report = PlanGuide.Read(PlanGuidePart.Report);
+        report.ShouldContain("full `sha`");
+        report.ShouldContain("`answered_comments`");
+    }
+
+    [Test]
     public void GuideContent_StepNine_ShouldCompileTheFeatureRetroWithCompiledFrom()
     {
         var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
