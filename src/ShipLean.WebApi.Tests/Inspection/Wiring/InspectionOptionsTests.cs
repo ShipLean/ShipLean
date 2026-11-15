@@ -12,20 +12,29 @@ public class InspectionOptionsTests
 
     [Test]
     public void From_WhenNothingSet_ShouldBeOff()
-        => InspectionOptionsReader.From(Config()).Enabled.ShouldBeFalse();
+    {
+        InspectionOptionsReader.From(Config()).Enabled.ShouldBeFalse();
+    }
 
     [Test]
     public void From_WhenSwitchUnknown_ShouldNameTheVariable()
-        => Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION", "maybe")))).Message.ShouldContain("SHIPLEAN_INSPECTION");
+    {
+        Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION", "maybe")))).Message.ShouldContain("SHIPLEAN_INSPECTION");
+    }
 
     [Test]
     public void From_WhenOnWithoutStore_ShouldNameTheStoreVariable()
-        => Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION", "on")))).Message.ShouldContain("SHIPLEAN_INSPECTION_STORE");
+    {
+        Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION", "on")))).Message.ShouldContain("SHIPLEAN_INSPECTION_STORE");
+    }
 
     [Test]
     public void From_WhenTableNameIsNotAnIdentifier_ShouldNameTheVariable()
-        => Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION_CLICKHOUSE_TRACES_TABLE", "otel;drop"))))
-            .Message.ShouldContain("SHIPLEAN_INSPECTION_CLICKHOUSE_TRACES_TABLE");
+    {
+        var error = Should.Throw<InvalidOperationException>(() => InspectionOptionsReader.From(Config(("SHIPLEAN_INSPECTION_CLICKHOUSE_TRACES_TABLE", "otel;drop"))));
+
+        error.Message.ShouldContain("SHIPLEAN_INSPECTION_CLICKHOUSE_TRACES_TABLE");
+    }
 
     [Test]
     public void From_WhenClickHouseWithConnection_ShouldBeOn()
