@@ -13,7 +13,7 @@ public sealed class InspectionSweepRows : IAccessSweepRows
         new("GET", "api/inspection/projects/{project}/items/{key}/runs", ProjectRole.Member, Url: Runs),
         new("GET", "api/inspection/projects/{project}/items/{key}/runs/{runId}", ProjectRole.Member, Url: $"{Runs}/{InspectionSweepHost.Run.Summary.RunId}"),
         new("GET", "api/inspection/projects/{project}/items/{key}/runs/{runId}/rows/{rowId}", ProjectRole.Member,
-            Url: $"{Runs}/{InspectionSweepHost.Run.Summary.RunId}/rows/{InspectionSweepHost.Run.Spans[0].SpanId}"),
+            Url: $"{Runs}/{InspectionSweepHost.Run.Summary.RunId}/rows/{InspectionSweepHost.Run.Spans.First(s => s.ParentSpanId is not null).SpanId}"),
         new("GET", "api/inspection/projects/{project}/settings", ProjectRole.Member, Url: "api/inspection/projects/SHIP/settings"),
         new("PUT", "api/inspection/projects/{project}/settings", ProjectRole.Admin, Url: "api/inspection/projects/SHIP/settings",
             Body: """{"enabled":true,"showContent":false,"tenantOverride":null,"selectorOverride":null,"storeMode":"tempoLoki"}"""),

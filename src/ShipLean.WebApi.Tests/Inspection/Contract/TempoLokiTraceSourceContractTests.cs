@@ -5,9 +5,8 @@ using ShipLean.WebApi.Tests.Inspection.TempoLoki.Find;
 
 namespace ShipLean.WebApi.Tests.Inspection.Contract;
 
-// Lane B (SHIP-1558): red against the stubs until B1 (find runs) and B2 (get run) land.
+// Lane B (SHIP-1558): the shared contract suite over the Tempo and Loki store.
 [TestFixture(TestName = "Tempo and Loki store, SHIP-1558")]
-[Category("RedUntilLane")] // Lane B removes this category when the suite goes green, so CI stops excluding it.
 [Category("SHIP-1558")]
 public sealed class TempoLokiTraceSourceContractTests : TraceSourceContractTests
 {
@@ -24,7 +23,7 @@ public sealed class TempoLokiTraceSourceContractTests : TraceSourceContractTests
         var cache = new RunLinkCache(new InMemoryRunLinkStore(), TimeProvider.System);
         return new TempoLokiTraceSource(
             new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options, TimeProvider.System),
-            new TempoLokiRunReader(),
+            new TempoLokiRunReader(new TempoTraceLoader(clients, options), new LokiLogReader(new LokiRunFinder(clients, options), options), options, TimeProvider.System),
             new TempoLokiHealth(clients, options, TimeProvider.System),
             new TempoLokiFieldCheck(clients, options, TimeProvider.System));
     }

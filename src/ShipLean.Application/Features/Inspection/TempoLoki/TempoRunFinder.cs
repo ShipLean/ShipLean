@@ -97,17 +97,17 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
     private string? SessionOf(JsonElement trace)
     {
         var sets = new List<JsonElement>();
-        if (trace.TryGetProperty("spanSets", out var many) && many.ValueKind == JsonValueKind.Array)
+        if (StoreRequests.TryMember(trace, "spanSets", out var many) && many.ValueKind == JsonValueKind.Array)
         {
             sets.AddRange(many.EnumerateArray());
         }
-        else if (trace.TryGetProperty("spanSet", out var one))
+        else if (StoreRequests.TryMember(trace, "spanSet", out var one))
         {
             sets.Add(one);
         }
         return sets
-            .Where(set => set.TryGetProperty("spans", out _))
-            .SelectMany(set => StoreRequests.Items(set.GetProperty("spans")))
+            .Where(set => StoreRequests.TryMember(set, "spans", out _))
+            .SelectMany(set => StoreRequests.Items(StoreRequests.Member(set, "spans")))
             .Select(span => StoreRequests.Attributes(span).GetValueOrDefault(options.Fields.Session))
             .FirstOrDefault(v => v is not null);
     }
@@ -126,7 +126,7 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
         var spans = new List<SpanRecord>();
         foreach (var batch in StoreRequests.Items(batches))
         {
-            var resource = batch.TryGetProperty("resource", out var r) ? StoreRequests.Attributes(r) : new Dictionary<string, string>();
+            var resource = StoreRequests.TryMember(batch, "resource", out var r) ? StoreRequests.Attributes(r) : new Dictionary<string, string>();
             foreach (var span in StoreRequests.Items(StoreRequests.Member(batch, "scopeSpans")).SelectMany(s => StoreRequests.Items(StoreRequests.Member(s, "spans"))))
             {
                 spans.Add(Span(traceId, span, resource));
@@ -143,11 +143,11 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
         {
             attributes[key] = value;
         }
-        var status = span.TryGetProperty("status", out var s) && s.TryGetProperty("code", out var code) ? code : default;
+        var status = StoreRequests.TryMember(span, "status", out var s) && StoreRequests.TryMember(s, "code", out var code) ? code : default;
         return new SpanRecord(
             traceId,
             StoreRequests.Text(StoreRequests.Member(span, "spanId")),
-            span.TryGetProperty("parentSpanId", out var parent) && parent.ValueKind == JsonValueKind.String ? parent.GetString() : null,
+            StoreRequests.TryMember(span, "parentSpanId", out var parent) && parent.ValueKind == JsonValueKind.String ? parent.GetString() : null,
             StoreRequests.Text(StoreRequests.Member(span, "name")),
             "internal",
             Time(span, "startTimeUnixNano"),

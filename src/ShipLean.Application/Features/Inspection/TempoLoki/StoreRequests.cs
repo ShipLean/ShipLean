@@ -89,6 +89,18 @@ internal static class StoreRequests
     }
 
     // The K3 string form of an OTLP/JSON AnyValue: ints and doubles invariant, bools true|false, arrays as compact JSON.
+    // OTLP/JSON writes an int64 as a string; a plain number is accepted too.
+    private static string IntText(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            return Text(value);
+        }
+        return value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var integer) ? integer.ToString(CultureInfo.InvariantCulture) : throw WrongKind();
+    }
+
+    private static JsonException WrongKind() => new("The answer has a value of the wrong kind.");
+
     public static string? ValueText(JsonElement value)
     {
         if (value.ValueKind != JsonValueKind.Object)
@@ -100,13 +112,18 @@ internal static class StoreRequests
             switch (property.Name)
             {
                 case "stringValue":
-                    return property.Value.GetString();
+                    return Text(property.Value);
                 case "intValue":
-                    return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : property.Value.GetInt64().ToString(CultureInfo.InvariantCulture);
+                    return IntText(property.Value);
                 case "doubleValue":
-                    return property.Value.GetDouble().ToString("R", CultureInfo.InvariantCulture);
+                    return property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetDouble(out var real) ? real.ToString("R", CultureInfo.InvariantCulture) : throw WrongKind();
                 case "boolValue":
-                    return property.Value.GetBoolean() ? "true" : "false";
+                    return property.Value.ValueKind switch
+                    {
+                        JsonValueKind.True => "true",
+                        JsonValueKind.False => "false",
+                        _ => throw WrongKind(),
+                    };
                 case "arrayValue":
                     return ArrayText(property.Value);
                 default:
@@ -118,14 +135,14 @@ internal static class StoreRequests
 
     private static string ArrayText(JsonElement array)
     {
-        var items = array.TryGetProperty("values", out var values) ? values.EnumerateArray().Select(ValueText).ToList() : [];
+        var items = TryMember(array, "values", out var values) ? Items(values).Select(ValueText).ToList() : [];
         return JsonSerializer.Serialize(items);
     }
 
     public static IReadOnlyDictionary<string, string> Attributes(JsonElement owner)
     {
         var map = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (owner.TryGetProperty("attributes", out var attributes))
+        if (TryMember(owner, "attributes", out var attributes))
         {
             foreach (var attribute in Items(attributes))
             {
@@ -168,7 +185,7 @@ internal static class StoreRequests
 
     private static long? Sum(IEnumerable<IReadOnlyDictionary<string, string>> attributes, string key)
     {
-        var values = attributes.Select(a => a.GetValueOrDefault(key)).OfType<string>().Select(v => long.Parse(v, CultureInfo.InvariantCulture)).ToList();
+        var values = attributes.Select(a => a.GetValueOrDefault(key)).OfType<string>().Select(v => long.TryParse(v, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number) ? number : throw new JsonException("A token count is not a whole number.")).ToList();
         return values.Count == 0 ? null : values.Sum();
     }
 }

@@ -39,6 +39,21 @@ public sealed class StoreFailureTests
         found.Problem.ShouldNotBeNull();
     }
 
+    [TestCase("{\"traces\":[{\"traceID\":\"t1\",\"spanSets\":[{\"spans\":[{\"attributes\":[{\"key\":\"session.id\",\"value\":{\"boolValue\":\"yes\"}}]}]}]}]}")]
+    [TestCase("{\"traces\":[{\"traceID\":\"t1\",\"spanSets\":[{\"spans\":[{\"attributes\":{}}]}]}]}")]
+    [TestCase("{\"traces\":[{\"traceID\":\"t1\",\"spanSets\":[{\"spans\":[{\"attributes\":[{\"key\":\"x\",\"value\":{\"intValue\":{}}}]}]}]}]}")]
+    public async Task Find_WhenASearchAnswerHasAValueOfTheWrongKind_IsUnreachableAndDoesNotThrow(string search)
+    {
+        var stores = new ScriptedStores((request, _) => ScriptedStores.Json(request.RequestUri!.AbsolutePath.EndsWith("/api/search", StringComparison.Ordinal) ? search : StoreJson.EmptyLoki));
+        var clients = StoreClients.Create(Options, stores);
+        var time = new FakeTimeProvider(Now);
+        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, Options), new LokiRunFinder(clients, Options), new RunLinkCache(new InMemoryRunLinkStore(), time), Options, time);
+
+        var found = await finder.FindAsync(new RunQuery("SHIP", "SHIP-1", Now.AddDays(-1), Now, null, null), CancellationToken.None);
+
+        found.Reachable.ShouldBeFalse();
+    }
+
     [TestCase("timeout")]
     [TestCase("notfound")]
     public async Task Health_WhenTheStoreFails_IsUnreachable(string kind)
