@@ -50,7 +50,7 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
     }
 
     // The base selector (and the project's extra matchers), then the project filter.
-    private string Scope(RunQuery query)
+    public string Scope(RunQuery query)
         => $"{Selector(query.SelectorOverride)} | {Label(options.Fields.Project)}={QueryText.LogQlString(query.ProjectKey)}";
 
     // The instance selector with the project's matchers added inside the braces. The override is settings text, not a value, so it must
@@ -68,7 +68,7 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
         return options.LokiSelector.TrimEnd('}') + "," + extra.Trim().TrimStart('{');
     }
 
-    private async Task<IReadOnlyList<LogRecordData>> QueryAsync(string logQl, RunQuery query, int limit, CancellationToken ct)
+    public async Task<IReadOnlyList<LogRecordData>> QueryAsync(string logQl, RunQuery query, int limit, CancellationToken ct)
     {
         var url = $"loki/api/v1/query_range?direction=forward&limit={limit}&start={StoreRequests.UnixNanos(query.From)}&end={StoreRequests.UnixNanos(query.To) + 1}&query={Uri.EscapeDataString(logQl)}";
         using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.LokiClient), url, query.TenantOverride, ct)

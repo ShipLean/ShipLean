@@ -16,6 +16,8 @@ public sealed class TempoLokiRunFinder(TempoRunFinder tempo, LokiRunFinder loki,
     // The whole call, searches and fetches together, gives up after this long.
     public static readonly TimeSpan Deadline = TimeSpan.FromSeconds(20);
 
+    public static readonly TimeSpan SearchLag = TimeSpan.FromMinutes(2);
+
     public async Task<RunSearch> FindAsync(RunQuery query, CancellationToken ct)
     {
         using var deadline = new CancellationTokenSource(Deadline, time);
@@ -82,7 +84,11 @@ public sealed class TempoLokiRunFinder(TempoRunFinder tempo, LokiRunFinder loki,
             // A cut-short answer is not kept for ten minutes: the next ask tries again.
             return new RunSearch(runs, true, string.Join(" ", scope.Problems));
         }
-        await cache.SaveAsync(query.ProjectKey, query.ItemKey, runs, traceIds, ct);
+        // A window that ends within two minutes of now is not kept: Tempo's search index lags ingestion, so a run linked only by a span can be missing yet.
+        if (query.To <= time.GetUtcNow() - SearchLag)
+        {
+            await cache.SaveAsync(query.ProjectKey, query.ItemKey, runs, traceIds, ct);
+        }
         return new RunSearch(runs, true, null);
     }
 
