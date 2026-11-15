@@ -27,6 +27,7 @@ public static class TouchRoutes
         ["workItemAttachment"] = new(
             attachment => $"{Links.WorkItem(Project, "SHIP-101")}/attachments/{attachment}", [ComponentTestIds.Markdown]),
         ["featureBoard"] = new(_ => Links.FeatureBoard(Project, "SHIP-101"), [TaskboardTestIds.Card]),
+        ["featureTimeline"] = new(_ => $"{Links.WorkItem(Project, "SHIP-101")}/timeline", [PagesTestIds.FeatureTimelinePage]),
         ["storiesBoard"] = new(_ => Links.Board(Project, "stories"), [BoardTestIds.Card]),
         ["featuresBoard"] = new(_ => Links.Board(Project, "features"), [BoardTestIds.Card]),
         ["epicsBoard"] = new(_ => Links.Board(Project, "epics"), [BoardTestIds.Card]),
