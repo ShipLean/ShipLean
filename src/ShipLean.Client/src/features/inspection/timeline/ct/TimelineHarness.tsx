@@ -4,16 +4,16 @@ import { EventTimeline } from '../../EventTimeline';
 import { RowPanel } from '../../RowPanel';
 import { RunBanners } from '../../RunBanners';
 import { Waterfall } from '../../Waterfall';
-import codexJson from './codex-run-page.json';
+import cliAgentJson from './codex-cli-run-page.json';
 import cursorJson from './cursor-run-page.json';
 import { claudeRunPage, logOnlyRunPage } from '../../ct/inspectionMocks';
 
-// The log-only run page's banner, timeline and panel with their own selection state. The codex and cursor runs are the
-// server's own mapping of codex-cli-synthetic and cursor-synthetic (codex-run-page.json, cursor-run-page.json; same
+// The log-only run page's banner, timeline and panel with their own selection state. The Codex CLI and cursor runs are the
+// server's own mapping of codex-cli-synthetic and cursor-synthetic (codex-cli-run-page.json, cursor-run-page.json; same
 // mapping as InspectionViews.RunAsync: start = event - duration_ms, no duration = null, labels "Turn N").
-const codexRun = codexJson as unknown as FixtureRun;
+const cliAgentRun = cliAgentJson as unknown as FixtureRun;
 const cursorRun = cursorJson as unknown as FixtureRun;
-export type Variant = 'codex' | 'cursor' | 'hidden' | 'truncated';
+export type Variant = 'codex-cli' | 'cursor' | 'hidden' | 'truncated';
 
 interface FixtureRun {
   axis: { startMs: number; endMs: number };
@@ -52,8 +52,8 @@ export function pageFor(variant: Variant): RunPageDto {
     ...base,
     banner:
       'Codex CLI sends events, not spans. Bars end at each event and reach back by its duration; events with no duration show as diamonds.',
-    axis: codexRun.axis,
-    turns: toTurns(codexRun, variant === 'hidden'),
+    axis: cliAgentRun.axis,
+    turns: toTurns(cliAgentRun, variant === 'hidden'),
   };
 }
 

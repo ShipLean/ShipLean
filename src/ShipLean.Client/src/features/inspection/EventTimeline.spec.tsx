@@ -25,7 +25,7 @@ async function setup(page: Page, theme: 'light' | 'dark' = 'light') {
 
 // Each state asserts its own data, so a baseline cannot pass for the wrong state.
 const assertState: Record<Variant, (page: Page) => Promise<void>> = {
-  codex: async (page) => {
+  'codex-cli': async (page) => {
     await expect(page.getByTestId(ids.runRowEvent)).toHaveCount(9);
     await expect(page.getByTestId(ids.runRowDiamond)).toHaveCount(2);
     await expect(page.getByTestId(ids.runRowBar)).toHaveCount(7);
@@ -59,14 +59,17 @@ const assertState: Record<Variant, (page: Page) => Promise<void>> = {
 };
 
 for (const theme of ['light', 'dark'] as const) {
-  for (const variant of ['codex', 'cursor', 'hidden', 'truncated'] as const) {
+  for (const variant of ['codex-cli', 'cursor', 'hidden', 'truncated'] as const) {
     test(`EventTimeline_WhenState${variant}_ShouldMatchItsScreenshot_${theme}`, async ({
       mount,
       page,
     }) => {
       await setup(page, theme);
       const c = await mount(
-        <TimelineHarness variant={variant} initial={variant === 'codex' ? 'log-5' : undefined} />,
+        <TimelineHarness
+          variant={variant}
+          initial={variant === 'codex-cli' ? 'log-5' : undefined}
+        />,
       );
       await assertState[variant](page);
       await expect(c).toHaveScreenshot(`event-timeline-${variant}.${theme}.png`, {
@@ -78,7 +81,7 @@ for (const theme of ['light', 'dark'] as const) {
 
 test('EventTimeline_WhenEventHasNoDuration_ShouldDrawADiamondAndNoBar', async ({ mount, page }) => {
   await setup(page);
-  await mount(<TimelineHarness variant="codex" />);
+  await mount(<TimelineHarness variant="codex-cli" />);
   const prompt = page.locator('[data-row-id="log-1"]');
   await expect(prompt.getByTestId(ids.runRowDiamond)).toHaveCount(1);
   await expect(prompt.getByTestId(ids.runRowBar)).toHaveCount(0);
@@ -89,7 +92,7 @@ test('EventTimeline_WhenEventHasNoDuration_ShouldDrawADiamondAndNoBar', async ({
 
 test('EventTimeline_WhenEventHasDuration_ShouldEndTheBarAtTheEvent', async ({ mount, page }) => {
   await setup(page);
-  await mount(<TimelineHarness variant="codex" />);
+  await mount(<TimelineHarness variant="codex-cli" />);
   // log-2 ends at 5 s on a 40 s axis and lasts 4.2 s: left 2 s (5%), width 4.2 s (10.5%).
   const bar = page.locator('[data-row-id="log-2"]').getByTestId(ids.runRowBar);
   await expect(bar).toHaveAttribute('style', /left: 2%; width: 10\.5%/);
