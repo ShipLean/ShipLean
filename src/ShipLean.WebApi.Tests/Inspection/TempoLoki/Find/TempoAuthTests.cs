@@ -15,7 +15,7 @@ public sealed class TempoAuthTests
         var stores = new StubStores();
         var clients = StoreClients.Create(options, stores);
         var cache = new RunLinkCache(new InMemoryRunLinkStore(), new FakeTimeProvider());
-        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options);
+        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options, new FakeTimeProvider());
         var now = new FakeTimeProvider().GetUtcNow();
         await finder.FindAsync(new RunQuery("SHIP", "SHIP-1", now.AddHours(-1), now, tenantOverride, null), CancellationToken.None);
         return stores;

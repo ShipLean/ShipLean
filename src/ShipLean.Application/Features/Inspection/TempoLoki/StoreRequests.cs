@@ -27,6 +27,38 @@ internal static class StoreRequests
         return await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
     }
 
+    // A required member of a store's answer; a body of the wrong shape is a JsonException, which the sources report as an unreachable store.
+    public static JsonElement Member(JsonElement owner, string name)
+    {
+        if (owner.ValueKind == JsonValueKind.Object && owner.TryGetProperty(name, out var value))
+        {
+            return value;
+        }
+        throw new JsonException($"The answer has no '{name}' member.");
+    }
+
+    // An optional member; a body that is not an object has none.
+    public static bool TryMember(JsonElement owner, string name, out JsonElement value)
+    {
+        value = default;
+        return owner.ValueKind == JsonValueKind.Object && owner.TryGetProperty(name, out value);
+    }
+
+    public static IEnumerable<JsonElement> Items(JsonElement array)
+    {
+        if (array.ValueKind != JsonValueKind.Array)
+        {
+            throw new JsonException("The answer has something other than a list where a list was expected.");
+        }
+        return array.EnumerateArray();
+    }
+
+    public static string Text(JsonElement value)
+        => value.ValueKind == JsonValueKind.String ? value.GetString()! : throw new JsonException("The answer has something other than text where text was expected.");
+
+    public static long Nanos(JsonElement value)
+        => long.TryParse(Text(value), NumberStyles.None, CultureInfo.InvariantCulture, out var nanos) ? nanos : throw new JsonException("The answer has a time that is not a number of nanoseconds.");
+
     public static long UnixSeconds(DateTimeOffset time) => time.ToUnixTimeSeconds();
 
     public static long UnixNanos(DateTimeOffset time) => (time.UtcTicks - DateTimeOffset.UnixEpoch.UtcTicks) * 100;
@@ -59,6 +91,10 @@ internal static class StoreRequests
     // The K3 string form of an OTLP/JSON AnyValue: ints and doubles invariant, bools true|false, arrays as compact JSON.
     public static string? ValueText(JsonElement value)
     {
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("The answer has a value of the wrong shape.");
+        }
         foreach (var property in value.EnumerateObject())
         {
             switch (property.Name)
@@ -91,12 +127,12 @@ internal static class StoreRequests
         var map = new Dictionary<string, string>(StringComparer.Ordinal);
         if (owner.TryGetProperty("attributes", out var attributes))
         {
-            foreach (var attribute in attributes.EnumerateArray())
+            foreach (var attribute in Items(attributes))
             {
-                var text = ValueText(attribute.GetProperty("value"));
+                var text = ValueText(Member(attribute, "value"));
                 if (text is not null)
                 {
-                    map[attribute.GetProperty("key").GetString()!] = text;
+                    map[Text(Member(attribute, "key"))] = text;
                 }
             }
         }

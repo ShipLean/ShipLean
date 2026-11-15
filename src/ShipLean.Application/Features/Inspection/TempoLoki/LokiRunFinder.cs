@@ -18,7 +18,7 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
     // The attributes whose Loki names are not the OTel names with '.' replaced the other way round: only the ones the rules read.
     private static readonly string[] KnownDotted = ["service.name", "user.email", "event.name", "shiplean.link_source", "host.name"];
 
-    public async Task<IReadOnlyList<string>> SessionsAsync(RunQuery query, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> SessionsAsync(RunQuery query, FindScope find, CancellationToken ct)
     {
         var scope = Scope(query);
         var item = $"{scope} | {Label(options.Fields.Item)}={QueryText.LogQlString(query.ItemKey)}";
@@ -28,13 +28,26 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
         foreach (var logQl in new[] { item, called })
         {
             var logs = await QueryAsync(logQl, query, DiscoveryLimit, ct);
+            if (logs.Count >= DiscoveryLimit)
+            {
+                find.Note($"Loki returned {DiscoveryLimit} lines for one search, which is its limit; newer runs of this item may be missing.");
+            }
             sessions.AddRange(logs.Select(l => l.SessionId).OfType<string>());
         }
         return [.. sessions.Distinct(StringComparer.Ordinal)];
     }
 
-    public Task<IReadOnlyList<LogRecordData>> LogsAsync(RunQuery query, string sessionId, CancellationToken ct)
-        => QueryAsync($"{Scope(query)} | {Label(options.Fields.Session)}={QueryText.LogQlString(sessionId)}", query, RunLimit, ct);
+    // The session's log records in the project; null when there are more than the limit, so a summary would count only part of them.
+    public async Task<IReadOnlyList<LogRecordData>?> LogsAsync(RunQuery query, string sessionId, FindScope scope, CancellationToken ct)
+    {
+        var logs = await QueryAsync($"{Scope(query)} | {Label(options.Fields.Session)}={QueryText.LogQlString(sessionId)}", query, RunLimit, ct);
+        if (logs.Count >= RunLimit)
+        {
+            scope.Note($"Loki holds {RunLimit} or more log lines for a run of this item, its limit; that run is left out.");
+            return null;
+        }
+        return [.. logs.Where(l => l.Attributes.GetValueOrDefault(options.Fields.Project) == query.ProjectKey)];
+    }
 
     // The base selector (and the project's extra matchers), then the project filter.
     private string Scope(RunQuery query)
@@ -50,7 +63,7 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
         }
         if (!MatchersPattern().IsMatch(extra))
         {
-            throw new ArgumentException("The project's Loki selector must be label matchers such as {team=\"platform\"}.", nameof(extra));
+            throw new LokiSelectorException("The project's Loki selector must be label matchers such as {team=\"platform\"}.");
         }
         return options.LokiSelector.TrimEnd('}') + "," + extra.Trim().TrimStart('{');
     }
@@ -58,22 +71,28 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
     private async Task<IReadOnlyList<LogRecordData>> QueryAsync(string logQl, RunQuery query, int limit, CancellationToken ct)
     {
         var url = $"loki/api/v1/query_range?direction=forward&limit={limit}&start={StoreRequests.UnixNanos(query.From)}&end={StoreRequests.UnixNanos(query.To) + 1}&query={Uri.EscapeDataString(logQl)}";
-        using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.LokiClient), url, query.TenantOverride, ct);
+        using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.LokiClient), url, query.TenantOverride, ct)
+            ?? throw new HttpRequestException("Loki answered 404 to query_range.");
         var logs = new List<LogRecordData>();
-        foreach (var stream in document!.RootElement.GetProperty("data").GetProperty("result").EnumerateArray())
+        foreach (var stream in StoreRequests.Items(StoreRequests.Member(StoreRequests.Member(document.RootElement, "data"), "result")))
         {
-            var labels = Labels(stream.GetProperty("stream"));
-            foreach (var value in stream.GetProperty("values").EnumerateArray())
+            var labels = Labels(StoreRequests.Member(stream, "stream"));
+            foreach (var value in StoreRequests.Items(StoreRequests.Member(stream, "values")))
             {
-                logs.Add(Record(labels, value[0].GetString()!, value[1].GetString()!));
+                var pair = StoreRequests.Items(value).ToList();
+                if (pair.Count < 2)
+                {
+                    throw new System.Text.Json.JsonException("A Loki entry is not a [time, line] pair.");
+                }
+                logs.Add(Record(labels, StoreRequests.Nanos(pair[0]), StoreRequests.Text(pair[1])));
             }
         }
         return logs;
     }
 
-    private LogRecordData Record(Dictionary<string, string> labels, string nanos, string line)
+    private LogRecordData Record(Dictionary<string, string> labels, long nanos, string line)
         => new(
-            StoreRequests.FromNanos(long.Parse(nanos, System.Globalization.CultureInfo.InvariantCulture)),
+            StoreRequests.FromNanos(nanos),
             Severity(labels),
             line,
             labels,
@@ -100,9 +119,9 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
             .Concat(KnownDotted)
             .ToDictionary(Label, name => name, StringComparer.Ordinal);
         var labels = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var label in stream.EnumerateObject())
+        foreach (var label in stream.ValueKind == JsonValueKind.Object ? stream.EnumerateObject() : throw new JsonException("A Loki stream has no labels."))
         {
-            labels[dotted.GetValueOrDefault(label.Name, label.Name)] = label.Value.GetString()!;
+            labels[dotted.GetValueOrDefault(label.Name, label.Name)] = StoreRequests.Text(label.Value);
         }
         return labels;
     }

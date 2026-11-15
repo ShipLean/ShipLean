@@ -17,7 +17,7 @@ public sealed class RunLinkCacheTests
         var stores = new StubStores();
         var options = new InspectionOptions { TempoUrl = "http://tempo.test", LokiUrl = "http://loki.test" };
         var clients = StoreClients.Create(options, stores);
-        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), new RunLinkCache(links, time), options);
+        var finder = new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), new RunLinkCache(links, time), options, time);
         return (finder, stores);
     }
 

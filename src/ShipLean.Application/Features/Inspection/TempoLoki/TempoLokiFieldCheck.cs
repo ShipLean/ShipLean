@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Agoda.IoC.Core;
 using ShipLean.Contracts.Inspection;
 
@@ -39,14 +40,14 @@ public sealed class TempoLokiFieldCheck(IHttpClientFactory clients, InspectionOp
             try
             {
                 using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.TempoClient), url, null, ct);
-                if (document is not null && document.RootElement.TryGetProperty("tagValues", out var values) && values.GetArrayLength() > 0)
+                if (document is not null && StoreRequests.TryMember(document.RootElement, "tagValues", out var values) && values.ValueKind == JsonValueKind.Array && values.GetArrayLength() > 0)
                 {
                     return true;
                 }
             }
-            catch (HttpRequestException)
+            catch (Exception problem) when (IsStoreProblem(problem, ct))
             {
-                // An unreachable store has no field to show: the health check reports why.
+                // An unreachable or confused store has no field to show: the health check reports why.
                 return false;
             }
         }
@@ -64,15 +65,24 @@ public sealed class TempoLokiFieldCheck(IHttpClientFactory clients, InspectionOp
         try
         {
             using var document = await StoreRequests.GetJsonAsync(clients.CreateClient(InspectionHttp.LokiClient), url, null, ct);
-            foreach (var stream in document!.RootElement.GetProperty("data").GetProperty("result").EnumerateArray())
+            if (document is null)
             {
-                labels.UnionWith(stream.GetProperty("stream").EnumerateObject().Select(p => p.Name));
+                return labels;
+            }
+            foreach (var stream in StoreRequests.Items(StoreRequests.Member(StoreRequests.Member(document.RootElement, "data"), "result")))
+            {
+                var labelSet = StoreRequests.Member(stream, "stream");
+                labels.UnionWith(labelSet.ValueKind == JsonValueKind.Object ? labelSet.EnumerateObject().Select(p => p.Name) : throw new JsonException("A Loki stream has no labels."));
             }
         }
-        catch (HttpRequestException)
+        catch (Exception problem) when (IsStoreProblem(problem, ct))
         {
-            // Same as Tempo: unreachable means nothing found.
+            // Same as Tempo: an unreachable or confused store means nothing found.
         }
         return labels;
     }
+
+    // The ways a store can fail that the caller did not ask for: not reachable, no answer in time, an answer that is not the expected JSON.
+    private static bool IsStoreProblem(Exception problem, CancellationToken ct)
+        => problem is HttpRequestException or JsonException || (problem is OperationCanceledException && !ct.IsCancellationRequested);
 }

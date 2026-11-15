@@ -14,55 +14,105 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
     private static readonly TimeSpan SearchChunk = TimeSpan.FromDays(6);
     private const int SearchLimit = 200;
 
-    // Session ids of the traces tagged with the item, or holding a call whose input names it. Not yet verified against LinkRules.
-    public async Task<IReadOnlyList<string>> SessionsAsync(RunQuery query, TraceCache cache, CancellationToken ct)
+    // The sessions of the traces tagged with the item, or holding a call whose input names it, each with the trace ids that led to it. The
+    // session comes from the search itself (select), so no trace is fetched for it, unless a hit shows none; then that trace is fetched
+    // once (within the call's fetch cap). Not yet verified against LinkRules.
+    public async Task<Dictionary<string, HashSet<string>>> SessionsAsync(RunQuery query, FindScope scope, CancellationToken ct)
     {
         var project = $"resource.{options.Fields.Project} = {QueryText.TraceQlString(query.ProjectKey)}";
-        var tagged = $"{{ {project} && resource.{options.Fields.Item} = {QueryText.TraceQlString(query.ItemKey)} }}";
+        var tagged = $"{{ {project} && .{options.Fields.Item} = {QueryText.TraceQlString(query.ItemKey)} }}";
         var pattern = QueryText.TraceQlString(StoreRequests.ContainsPattern(query.ItemKey));
         var called = $"{{ {project} && (span.tool_parameters =~ {pattern} || span.tool_input =~ {pattern} || span.input =~ {pattern}) }}";
-        var sessions = new List<string>();
+        var sessions = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var traceQl in new[] { tagged, called })
         {
-            foreach (var traceId in await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, ct))
+            foreach (var hit in await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, scope, ct))
             {
-                var spans = await cache.GetAsync(traceId, () => FetchAsync(traceId, query.TenantOverride, ct));
-                sessions.AddRange(spans.Select(s => s.Attributes.GetValueOrDefault(options.Fields.Session)).OfType<string>().Take(1));
+                var session = hit.Session;
+                if (session is null)
+                {
+                    var spans = await scope.GetAsync(hit.TraceId, () => FetchAsync(hit.TraceId, query.TenantOverride, ct));
+                    session = spans?.Select(s => s.Attributes.GetValueOrDefault(options.Fields.Session)).FirstOrDefault(v => v is not null);
+                }
+                if (session is not null)
+                {
+                    sessions.TryAdd(session, new HashSet<string>(StringComparer.Ordinal));
+                    sessions[session].Add(hit.TraceId);
+                }
             }
         }
-        return [.. sessions.Distinct(StringComparer.Ordinal)];
+        return sessions;
     }
 
     // Every span of the session in the project and window. Tempo's search index lags ingestion and can be partial, so search only finds
-    // candidate trace ids; the ids the session's log records carry are added, and every trace is then fetched by id for the full spans.
-    public async Task<IReadOnlyList<SpanRecord>> SpansAsync(RunQuery query, string sessionId, IEnumerable<string> logTraceIds, TraceCache cache, CancellationToken ct)
+    // candidate trace ids: the ones that led to the session, the ones the session's log records carry and the ones its own search names
+    // are all fetched by id for the full spans. Spans of another project are dropped (fetch by id does not filter). Null when the call's
+    // fetch cap stopped the read, so the session would be summarised from part of its spans.
+    public async Task<IReadOnlyList<SpanRecord>?> SpansAsync(RunQuery query, string sessionId, IEnumerable<string> knownTraceIds, FindScope scope, CancellationToken ct)
     {
-        var traceQl = $"{{ resource.{options.Fields.Project} = {QueryText.TraceQlString(query.ProjectKey)} && span.{options.Fields.Session} = {QueryText.TraceQlString(sessionId)} }}";
-        var candidates = (await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, ct)).Concat(logTraceIds).Distinct(StringComparer.Ordinal);
+        var traceQl = $"{{ resource.{options.Fields.Project} = {QueryText.TraceQlString(query.ProjectKey)} && .{options.Fields.Session} = {QueryText.TraceQlString(sessionId)} }}";
+        var candidates = knownTraceIds.Concat((await SearchAsync(traceQl, query.From, query.To, query.TenantOverride, scope, ct)).Select(h => h.TraceId)).Distinct(StringComparer.Ordinal);
         var spans = new List<SpanRecord>();
         foreach (var traceId in candidates)
         {
-            spans.AddRange(await cache.GetAsync(traceId, () => FetchAsync(traceId, query.TenantOverride, ct)));
+            var fetched = await scope.GetAsync(traceId, () => FetchAsync(traceId, query.TenantOverride, ct));
+            if (fetched is null)
+            {
+                return null;
+            }
+            spans.AddRange(fetched.Where(s => s.Attributes.GetValueOrDefault(options.Fields.Project) == query.ProjectKey));
         }
         return spans;
     }
 
-    private async Task<IReadOnlyList<string>> SearchAsync(string traceQl, DateTimeOffset from, DateTimeOffset to, string? tenant, CancellationToken ct)
+    // The trace ids a search returns, each with the session the search's select reported for it, if any.
+    private async Task<IReadOnlyList<Hit>> SearchAsync(string traceQl, DateTimeOffset from, DateTimeOffset to, string? tenant, FindScope scope, CancellationToken ct)
     {
         var client = clients.CreateClient(InspectionHttp.TempoClient);
-        var found = new List<string>();
+        var found = new Dictionary<string, string?>(StringComparer.Ordinal);
         for (var start = from; start < to; start += SearchChunk)
         {
             var end = start + SearchChunk < to ? start + SearchChunk : to;
-            var url = $"api/search?q={Uri.EscapeDataString(traceQl)}&start={StoreRequests.UnixSeconds(start)}&end={StoreRequests.UnixSeconds(end) + 1}&limit={SearchLimit}";
-            using var document = await StoreRequests.GetJsonAsync(client, url, tenant, ct);
-            if (document is not null && document.RootElement.TryGetProperty("traces", out var traces))
+            var url = $"api/search?q={Uri.EscapeDataString(traceQl + " | select(." + options.Fields.Session + ")")}&start={StoreRequests.UnixSeconds(start)}&end={StoreRequests.UnixSeconds(end) + 1}&limit={SearchLimit}";
+            using var document = await StoreRequests.GetJsonAsync(client, url, tenant, ct) ?? throw new HttpRequestException("Tempo answered 404 to a search.");
+            if (!StoreRequests.TryMember(document.RootElement, "traces", out var traces))
             {
-                found.AddRange(traces.EnumerateArray().Select(t => t.GetProperty("traceID").GetString()!));
+                continue;
+            }
+            var count = 0;
+            foreach (var trace in StoreRequests.Items(traces))
+            {
+                count++;
+                var id = StoreRequests.Text(StoreRequests.Member(trace, "traceID"));
+                found[id] = found.GetValueOrDefault(id) ?? SessionOf(trace);
+            }
+            if (count >= SearchLimit)
+            {
+                scope.Note($"Tempo returned {SearchLimit} traces for one search window, which is its limit; older runs of this item may be missing.");
             }
         }
-        return [.. found.Distinct(StringComparer.Ordinal)];
+        return [.. found.Select(f => new Hit(f.Key, f.Value))];
     }
+
+    private string? SessionOf(JsonElement trace)
+    {
+        var sets = new List<JsonElement>();
+        if (trace.TryGetProperty("spanSets", out var many) && many.ValueKind == JsonValueKind.Array)
+        {
+            sets.AddRange(many.EnumerateArray());
+        }
+        else if (trace.TryGetProperty("spanSet", out var one))
+        {
+            sets.Add(one);
+        }
+        return sets
+            .Where(set => set.TryGetProperty("spans", out _))
+            .SelectMany(set => StoreRequests.Items(set.GetProperty("spans")))
+            .Select(span => StoreRequests.Attributes(span).GetValueOrDefault(options.Fields.Session))
+            .FirstOrDefault(v => v is not null);
+    }
+
+    private sealed record Hit(string TraceId, string? Session);
 
     // One trace as spans, each with its resource's attributes merged in (the span's own winning), all assigned to the session the trace carries.
     private async Task<IReadOnlyList<SpanRecord>> FetchAsync(string traceId, string? tenant, CancellationToken ct)
@@ -72,12 +122,12 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
         {
             return [];
         }
-        var batches = document.RootElement.TryGetProperty("batches", out var b) ? b : document.RootElement.GetProperty("resourceSpans");
+        var batches = StoreRequests.TryMember(document.RootElement, "batches", out var b) ? b : StoreRequests.Member(document.RootElement, "resourceSpans");
         var spans = new List<SpanRecord>();
-        foreach (var batch in batches.EnumerateArray())
+        foreach (var batch in StoreRequests.Items(batches))
         {
             var resource = batch.TryGetProperty("resource", out var r) ? StoreRequests.Attributes(r) : new Dictionary<string, string>();
-            foreach (var span in batch.GetProperty("scopeSpans").EnumerateArray().SelectMany(s => s.GetProperty("spans").EnumerateArray()))
+            foreach (var span in StoreRequests.Items(StoreRequests.Member(batch, "scopeSpans")).SelectMany(s => StoreRequests.Items(StoreRequests.Member(s, "spans"))))
             {
                 spans.Add(Span(traceId, span, resource));
             }
@@ -96,9 +146,9 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
         var status = span.TryGetProperty("status", out var s) && s.TryGetProperty("code", out var code) ? code : default;
         return new SpanRecord(
             traceId,
-            span.GetProperty("spanId").GetString()!,
-            span.TryGetProperty("parentSpanId", out var parent) ? parent.GetString() : null,
-            span.GetProperty("name").GetString()!,
+            StoreRequests.Text(StoreRequests.Member(span, "spanId")),
+            span.TryGetProperty("parentSpanId", out var parent) && parent.ValueKind == JsonValueKind.String ? parent.GetString() : null,
+            StoreRequests.Text(StoreRequests.Member(span, "name")),
             "internal",
             Time(span, "startTimeUnixNano"),
             Time(span, "endTimeUnixNano"),
@@ -109,23 +159,7 @@ public sealed class TempoRunFinder(IHttpClientFactory clients, InspectionOptions
     }
 
     private static bool IsError(JsonElement code)
-        => code.ValueKind == JsonValueKind.String ? code.GetString() == "STATUS_CODE_ERROR" : code.ValueKind == JsonValueKind.Number && code.GetInt32() == 2;
+        => code.ValueKind == JsonValueKind.String ? code.GetString() == "STATUS_CODE_ERROR" : code.ValueKind == JsonValueKind.Number && code.TryGetInt32(out var number) && number == 2;
 
-    private static DateTimeOffset Time(JsonElement span, string name) => StoreRequests.FromNanos(long.Parse(span.GetProperty(name).GetString()!, System.Globalization.CultureInfo.InvariantCulture));
-}
-
-// Traces fetched during one search, so a trace named by two searches is read once.
-public sealed class TraceCache
-{
-    private readonly Dictionary<string, IReadOnlyList<SpanRecord>> traces = [];
-
-    public async Task<IReadOnlyList<SpanRecord>> GetAsync(string traceId, Func<Task<IReadOnlyList<SpanRecord>>> fetch)
-    {
-        if (!traces.TryGetValue(traceId, out var spans))
-        {
-            spans = await fetch();
-            traces[traceId] = spans;
-        }
-        return spans;
-    }
+    private static DateTimeOffset Time(JsonElement span, string name) => StoreRequests.FromNanos(StoreRequests.Nanos(StoreRequests.Member(span, name)));
 }

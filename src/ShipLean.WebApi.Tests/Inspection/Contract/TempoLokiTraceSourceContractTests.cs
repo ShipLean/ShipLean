@@ -23,7 +23,7 @@ public sealed class TempoLokiTraceSourceContractTests : TraceSourceContractTests
         var clients = StoreClients.Create(options);
         var cache = new RunLinkCache(new InMemoryRunLinkStore(), TimeProvider.System);
         return new TempoLokiTraceSource(
-            new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options),
+            new TempoLokiRunFinder(new TempoRunFinder(clients, options), new LokiRunFinder(clients, options), cache, options, TimeProvider.System),
             new TempoLokiRunReader(),
             new TempoLokiHealth(clients, options, TimeProvider.System),
             new TempoLokiFieldCheck(clients, options, TimeProvider.System));
