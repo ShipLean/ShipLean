@@ -125,6 +125,22 @@ test('TagColours_WhenOnPhone_ShouldShow32pxSwatches', async ({ mount, page }) =>
   }
 });
 
+test('TagColours_WhenOnPhone_ShouldKeepClearButtonOnTheSwatchLine', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ tagColours: [{ tag: 'Blocked', colour: 'danger' }] }), [
+    'Blocked',
+  ]);
+  await mount(dialog('tags'));
+  const row = page.getByTestId(ids.tagRow);
+  const clear = await row.getByTestId(ids.tagClear).boundingBox();
+  const swatches = await row.getByTestId(ids.tagSwatch).all();
+  const last = await swatches[swatches.length - 1]?.boundingBox();
+  if (!clear || !last) throw new Error('the row should render');
+  expect(clear.y, 'the clear button sits on the swatch line').toBe(last.y);
+  expect(clear.x + clear.width).toBeLessThanOrEqual(390);
+  expect(clear.width).toBeGreaterThanOrEqual(32);
+  expect(clear.height).toBeGreaterThanOrEqual(32);
+});
+
 test('StyleRule_WhenOnPhone_ShouldStackItsClauses', async ({ mount, page }) => {
   await stubSettings(page, taskboardBoard({ styleRules: [blocked] }), ['Blocked']);
   await mount(dialog('styles'));
