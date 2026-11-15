@@ -17,7 +17,7 @@ export function MentionMenu({
       data-testid={ids.mentionMenu}
       role="listbox"
       aria-label="Mention"
-      className="absolute top-full left-0 z-10 mt-1 grid min-w-48 gap-0.5 rounded-control border border-edge bg-panel p-1 shadow-md"
+      className="absolute top-full left-0 z-10 mt-1 grid min-w-48 touch:top-auto touch:right-0 touch:bottom-full touch:mt-0 touch:mb-1 gap-0.5 rounded-control border border-edge bg-panel p-1 shadow-md"
     >
       {people.map((person, index) => (
         <button
@@ -26,7 +26,7 @@ export function MentionMenu({
           role="option"
           aria-selected={index === highlighted}
           data-testid={ids.mentionOption}
-          className={`flex items-center gap-2 rounded-control px-2 py-1 text-left text-[length:var(--text-sm)] ${index === highlighted ? 'bg-signal-soft' : 'hover:bg-signal-soft'}`}
+          className={`flex items-center gap-2 rounded-control px-2 py-1 text-left touch:min-h-10 text-[length:var(--text-sm)] ${index === highlighted ? 'bg-signal-soft' : 'hover:bg-signal-soft'}`}
           onMouseDown={(event) => {
             event.preventDefault();
             onPick(person);

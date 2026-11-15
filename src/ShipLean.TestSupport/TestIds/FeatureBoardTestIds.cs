@@ -29,4 +29,7 @@ public static class FeatureBoardTestIds
     public const string SectionPoints = "feature-board-section-points";
     public const string SectionOpen = "feature-board-section-open";
     public const string SectionEmpty = "feature-board-section-empty";
+
+    // L722a phone grid
+    public const string Band = "feature-board-band";
 }

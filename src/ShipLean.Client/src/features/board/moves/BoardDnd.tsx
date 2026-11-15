@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { BoardContext } from '../grid/boardContext';
+import type { MoveMethod } from '../../taskboard/taskboardApi';
 import type { DropTarget } from './applyMove';
 import { BoardMovesContext, type BoardMoves } from './BoardMovesContext';
 import { DoneConfirm } from './doneConfirm/DoneConfirm';
@@ -17,7 +18,9 @@ import { openBelow, type OpenBelow } from './doneConfirm/openBelow';
 import { bodyOf, keyboardTarget, staysPut } from './moveRequests';
 import { applyMove, locate } from './applyMove';
 import { tracksOf } from '../grid/layout';
+import { TouchOverContext } from './touch/TouchOverContext';
 import { useBoardMove, type Sent } from './useBoardMove';
+import { CardActionsHost } from '../cards/touch/CardActionsHost';
 
 // A card under the pointer wins over the cell around it: dropping on a card puts the dragged one above it.
 const cardFirst: CollisionDetection = (args) => {
@@ -52,12 +55,15 @@ export function BoardDnd({
   children,
 }: {
   view: BoardViewDto;
-  context: Pick<BoardContext, 'projectId' | 'boardId' | 'level'>;
+  context: Pick<BoardContext, 'projectId' | 'boardId' | 'level' | 'onRollupClick'>;
   children: ReactNode;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const send = useBoardMove(context.projectId, context.boardId, context.level);
   const focusKey = useRef<string | null>(null);
+  // The card or cell a lifted card (touch drag) is over: it shows the drop line.
+  const [over, setOver] = useState<string | null>(null);
+  const touchOver = useMemo(() => ({ over, setOver }), [over]);
   // A move into Done that waits for the answer to "move it anyway?".
   const [asking, setAsking] = useState<AskedMove | null>(null);
   // The click that ends a drag lands on whatever now stands under the pointer (the card that was dragged there is a
@@ -98,22 +104,35 @@ export function BoardDnd({
     [send],
   );
   const moves = useMemo<BoardMoves>(() => {
-    function drop(itemId: string, to: DropTarget, key: string, focus: boolean) {
+    function drop(
+      itemId: string,
+      to: DropTarget,
+      key: string,
+      focus: boolean,
+      method?: MoveMethod,
+    ) {
       const view = shown.current;
       if (staysPut(view, itemId, to)) return;
       const columnName = view.columns.find((column) => column.id === to.columnId)?.name ?? '';
       const below = openBelow(view, level, itemId, to);
-      const request = { body: bodyOf(itemId, to), to, key, columnName, stillOpen: below?.text };
+      const request = {
+        body: bodyOf(itemId, to, method),
+        to,
+        key,
+        columnName,
+        stillOpen: below?.text,
+      };
       if (below) setAsking({ below, request, focus });
       else go(request, focus);
     }
     const keyOf = (itemId: string) => locateKey(shown.current, itemId);
     return {
-      drop: (itemId, to) => drop(itemId, to, keyOf(itemId), false),
+      drop: (itemId, to, method = 'drag') => drop(itemId, to, keyOf(itemId), false, method),
+      moveTo: (itemId, to) => drop(itemId, to, keyOf(itemId), false, 'sheet'),
       keyMove: (itemId, cardKey, key) => {
         const to = keyboardTarget(shown.current, itemId, key);
         if (!to) return key.startsWith('Arrow');
-        drop(itemId, to, cardKey, true);
+        drop(itemId, to, cardKey, true, 'keyboard');
         return true;
       },
       finish: (itemId) => {
@@ -155,17 +174,21 @@ export function BoardDnd({
 
   return (
     <BoardMovesContext.Provider value={moves}>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={cardFirst}
-        accessibility={{ screenReaderInstructions: { draggable: INSTRUCTIONS } }}
-        onDragStart={() => {
-          dragged.current = true;
-        }}
-        onDragEnd={onDragEnd}
-      >
-        {children}
-      </DndContext>
+      <TouchOverContext.Provider value={touchOver}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={cardFirst}
+          accessibility={{ screenReaderInstructions: { draggable: INSTRUCTIONS } }}
+          onDragStart={() => {
+            dragged.current = true;
+          }}
+          onDragEnd={onDragEnd}
+        >
+          <CardActionsHost view={view} onRollupClick={context.onRollupClick}>
+            {children}
+          </CardActionsHost>
+        </DndContext>
+      </TouchOverContext.Provider>
       {asking ? (
         <DoneConfirm
           projectId={context.projectId}

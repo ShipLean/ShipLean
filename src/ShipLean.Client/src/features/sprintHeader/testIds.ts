@@ -14,4 +14,10 @@ export const sprintHeaderTestIds = {
   tabDemo: 'sprint-header-tab-demo',
   pickerList: 'sprint-header-picker-list',
   pickerOption: 'sprint-header-picker-option',
+  // The touch header (SHIP-724): the picker sheet and the goal that expands on a tap.
+  pickerSheetNote: 'sprint-header-picker-sheet-note',
+  pickerSheetRow: 'sprint-header-picker-sheet-row',
+  pickerSheetTick: 'sprint-header-picker-sheet-tick',
+  pickerSheetAllSprints: 'sprint-header-picker-sheet-all-sprints',
+  goalToggle: 'sprint-header-goal-toggle',
 } as const;

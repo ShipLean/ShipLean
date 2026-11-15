@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { settingsDialogTestIds as ids } from '../../features/settingsDialog/testIds';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { isDisabledPane, type PaneDef, type PaneGroup } from './types';
 
 export function SettingsNav<TDoc, TContext>({
@@ -15,6 +16,18 @@ export function SettingsNav<TDoc, TContext>({
   warnings: ReadonlyMap<string, string>;
   onSelect(id: string): void;
 }) {
+  const { touch } = useTouchShell();
+  if (touch) {
+    return (
+      <TouchChips
+        panes={groups.flatMap((group) => group.panes)}
+        activeId={activeId}
+        dirtyIds={dirtyIds}
+        warnings={warnings}
+        onSelect={onSelect}
+      />
+    );
+  }
   return (
     <nav data-testid={ids.nav} aria-label="Settings sections" className="grid content-start gap-1">
       {groups.map((group) => (
@@ -126,5 +139,66 @@ function NavItem<TDoc, TContext>({
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * At 900px and below the sections are one row of chips that scrolls sideways in its own box (SHIP-805 rule 7). A pane that
+ * cannot be opened is left out: its reason is the desktop nav's hint, and a disabled chip would be a dead target.
+ */
+function TouchChips<TDoc, TContext>({
+  panes,
+  activeId,
+  dirtyIds,
+  warnings,
+  onSelect,
+}: {
+  panes: PaneDef<TDoc, TContext>[];
+  activeId: string | undefined;
+  dirtyIds: ReadonlySet<string>;
+  warnings: ReadonlyMap<string, string>;
+  onSelect(id: string): void;
+}) {
+  return (
+    <nav
+      data-testid={ids.nav}
+      aria-label="Settings sections"
+      className="flex min-w-0 gap-1.5 overflow-x-auto"
+    >
+      {panes
+        .filter((pane) => !isDisabledPane(pane))
+        .map((pane) => {
+          const active = pane.id === activeId;
+          return (
+            <button
+              key={pane.id}
+              type="button"
+              data-testid={`${ids.navItem}-${pane.id}`}
+              data-dirty={dirtyIds.has(pane.id)}
+              aria-current={active ? 'page' : undefined}
+              onClick={() => onSelect(pane.id)}
+              className={`inline-flex h-[var(--touch-target)] shrink-0 items-center gap-1.5 rounded-full border px-3 text-[length:var(--text-sm)] ${
+                active
+                  ? 'border-signal bg-signal-soft font-semibold text-ink'
+                  : 'border-edge bg-panel font-medium text-ink-muted'
+              }`}
+            >
+              {pane.label}
+              {warnings.has(pane.id) ? (
+                <span data-testid={`${ids.navWarning}-${pane.id}`} className="text-caution">
+                  <span aria-hidden="true">!</span>
+                  <span className="sr-only">has warnings</span>
+                </span>
+              ) : null}
+              {dirtyIds.has(pane.id) ? (
+                <span data-testid={`${ids.navDot}-${pane.id}`}>
+                  <span aria-hidden="true" className="block size-[7px] rounded-full bg-signal" />
+                  <span className="sr-only">unsaved changes</span>
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+    </nav>
   );
 }

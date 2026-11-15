@@ -6,12 +6,15 @@ import { checkCriteria } from '../../../../criteria/validate';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { taskboardSettingsTestIds as ids } from '../../testIds';
 import { withCriteria } from '../../../boardSettings/panes/styles/ruleEdits';
+import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
+import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { useHeldRules } from './HeldRulesContext';
 
 const iconButton =
-  'inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:cursor-default disabled:opacity-35';
+  'inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:cursor-default disabled:opacity-35 touch:size-[var(--touch-target)]';
 const formatButton =
-  'inline-grid size-6 place-items-center rounded-control border border-edge text-[length:var(--text-sm)] aria-pressed:bg-signal-soft aria-pressed:text-ink disabled:opacity-50';
+  'inline-grid size-6 place-items-center rounded-control border border-edge text-[length:var(--text-sm)] aria-pressed:bg-signal-soft aria-pressed:text-ink disabled:opacity-50 touch:size-[var(--touch-target)]';
 
 /**
  * One style rule: name, card colour, title bold / italic / underline, enabled, and the criteria that pick its cards.
@@ -27,6 +30,7 @@ export function RuleRow({
   onMove,
   onDragStart,
   onDrop,
+  onTouchDrop,
 }: {
   rule: StyleRuleJson;
   lists: PickLists;
@@ -37,7 +41,14 @@ export function RuleRow({
   onMove(step: number): void;
   onDragStart(): void;
   onDrop(): void;
+  /** At touch: the grip was held, dragged and let go over the rule with this id (null: off any rule). */
+  onTouchDrop(targetId: string | null): void;
 }) {
+  const { touch } = useTouchShell();
+  const drag = useLongPressDrag({
+    handle: true,
+    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
+  });
   const held = useHeldRules();
   const [name, setName] = useState(rule.name);
   const [seenName, setSeenName] = useState(rule.name);
@@ -93,110 +104,121 @@ export function RuleRow({
   return (
     <div
       data-testid={ids.styleRow}
-      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'}`}
+      data-drop-target={rule.id}
+      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          data-testid={ids.styleGrip}
-          draggable={!readOnly}
-          disabled={readOnly}
-          aria-label={`Move rule ${rule.name} (Alt+Up or Alt+Down)`}
-          title="Drag, or press Alt+Up or Alt+Down"
-          className={`${iconButton} cursor-grab`}
-          onKeyDown={keyDown}
-          onDragStart={onDragStart}
-        >
-          ⠿
-        </button>
-        <input
-          data-testid={ids.styleName}
-          className="field h-[26px] min-w-20 flex-1"
-          aria-label="Rule name"
-          value={name}
-          readOnly={readOnly}
-          onChange={(event) => setName(event.target.value)}
-          onBlur={commitName}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') commitName();
-          }}
-        />
-        <select
-          data-testid={ids.styleColour}
-          className="field h-[26px]"
-          aria-label={`Card colour for ${rule.name}`}
-          value={rule.colour ?? ''}
-          disabled={readOnly}
-          style={{
-            borderLeft: `4px solid ${rule.colour ? `var(--color-${rule.colour})` : 'transparent'}`,
-          }}
-          onChange={(event) =>
-            onChange({ ...rule, colour: (event.target.value || null) as Swatch | null })
-          }
-        >
-          <option value="">No colour</option>
-          {SWATCHES.map((swatch) => (
-            <option key={swatch} value={swatch}>
-              {swatch}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          data-testid={ids.styleBold}
-          aria-pressed={rule.bold}
-          aria-label="Bold title"
-          disabled={readOnly}
-          className={`${formatButton} font-bold`}
-          onClick={() => onChange({ ...rule, bold: !rule.bold })}
-        >
-          B
-        </button>
-        <button
-          type="button"
-          data-testid={ids.styleItalic}
-          aria-pressed={rule.italic}
-          aria-label="Italic title"
-          disabled={readOnly}
-          className={`${formatButton} italic`}
-          onClick={() => onChange({ ...rule, italic: !rule.italic })}
-        >
-          I
-        </button>
-        <button
-          type="button"
-          data-testid={ids.styleUnderline}
-          aria-pressed={rule.underline}
-          aria-label="Underlined title"
-          disabled={readOnly}
-          className={`${formatButton} underline`}
-          onClick={() => onChange({ ...rule, underline: !rule.underline })}
-        >
-          U
-        </button>
-        <label className="inline-flex items-center gap-1 text-[length:var(--text-sm)]">
-          <input
-            type="checkbox"
-            data-testid={ids.styleEnabled}
-            checked={rule.enabled}
+      <div className="flex items-center gap-2 touch:grid">
+        <div className="contents touch:flex touch:items-center touch:gap-2">
+          <button
+            type="button"
+            data-testid={ids.styleGrip}
+            draggable={!readOnly && !touch}
             disabled={readOnly}
-            onChange={(event) => onChange({ ...rule, enabled: event.target.checked })}
+            aria-label={`Move rule ${rule.name} (Alt+Up or Alt+Down)`}
+            title="Drag, or press Alt+Up or Alt+Down"
+            className={`${iconButton} cursor-grab`}
+            onKeyDown={keyDown}
+            onDragStart={onDragStart}
+            {...(touch && !readOnly ? drag.props : {})}
+          >
+            ⠿
+          </button>
+          {drag.lifted ? (
+            <TouchDragGhost x={drag.x} y={drag.y}>
+              <div className="px-3 py-2 text-[length:var(--text-sm)]">{rule.name}</div>
+            </TouchDragGhost>
+          ) : null}
+          <input
+            data-testid={ids.styleName}
+            className="field h-[26px] min-w-20 flex-1 touch:h-[var(--touch-target)]"
+            aria-label="Rule name"
+            value={name}
+            readOnly={readOnly}
+            onChange={(event) => setName(event.target.value)}
+            onBlur={commitName}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') commitName();
+            }}
           />
-          Enabled
-        </label>
-        <button
-          type="button"
-          data-testid={ids.styleDelete}
-          disabled={readOnly}
-          aria-label={`Delete rule ${rule.name}`}
-          title="Delete rule"
-          className={iconButton}
-          onClick={onDelete}
-        >
-          ✕
-        </button>
+          <select
+            data-testid={ids.styleColour}
+            className="field h-[26px] touch:h-[var(--touch-target)]"
+            aria-label={`Card colour for ${rule.name}`}
+            value={rule.colour ?? ''}
+            disabled={readOnly}
+            style={{
+              borderLeft: `4px solid ${rule.colour ? `var(--color-${rule.colour})` : 'transparent'}`,
+            }}
+            onChange={(event) =>
+              onChange({ ...rule, colour: (event.target.value || null) as Swatch | null })
+            }
+          >
+            <option value="">No colour</option>
+            {SWATCHES.map((swatch) => (
+              <option key={swatch} value={swatch}>
+                {swatch}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="contents touch:flex touch:items-center touch:gap-2">
+          <button
+            type="button"
+            data-testid={ids.styleBold}
+            aria-pressed={rule.bold}
+            aria-label="Bold title"
+            disabled={readOnly}
+            className={`${formatButton} font-bold`}
+            onClick={() => onChange({ ...rule, bold: !rule.bold })}
+          >
+            B
+          </button>
+          <button
+            type="button"
+            data-testid={ids.styleItalic}
+            aria-pressed={rule.italic}
+            aria-label="Italic title"
+            disabled={readOnly}
+            className={`${formatButton} italic`}
+            onClick={() => onChange({ ...rule, italic: !rule.italic })}
+          >
+            I
+          </button>
+          <button
+            type="button"
+            data-testid={ids.styleUnderline}
+            aria-pressed={rule.underline}
+            aria-label="Underlined title"
+            disabled={readOnly}
+            className={`${formatButton} underline`}
+            onClick={() => onChange({ ...rule, underline: !rule.underline })}
+          >
+            U
+          </button>
+          <label className="inline-flex items-center gap-1 text-[length:var(--text-sm)] touch:ml-auto touch:min-h-[var(--touch-target)]">
+            <input
+              type="checkbox"
+              data-testid={ids.styleEnabled}
+              checked={rule.enabled}
+              disabled={readOnly}
+              onChange={(event) => onChange({ ...rule, enabled: event.target.checked })}
+            />
+            Enabled
+          </label>
+          <button
+            type="button"
+            data-testid={ids.styleDelete}
+            disabled={readOnly}
+            aria-label={`Delete rule ${rule.name}`}
+            title="Delete rule"
+            className={iconButton}
+            onClick={onDelete}
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <div
         data-testid={ids.styleCriteria}

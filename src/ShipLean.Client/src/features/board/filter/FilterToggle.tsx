@@ -17,7 +17,7 @@ export function FilterToggle({
     <button
       type="button"
       data-testid={ids.filterToggle}
-      className="btn-ghost"
+      className="btn-ghost touch:min-h-[var(--touch-target)] touch:flex-none"
       aria-expanded={open}
       onClick={onToggle}
     >

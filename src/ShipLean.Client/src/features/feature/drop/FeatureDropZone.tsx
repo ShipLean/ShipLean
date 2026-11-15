@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { checkUploads } from '../featureApi';
 import { featureTestIds as ids } from '../testIds';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { uploadAttachment } from '../../workItem/side/attachmentUpload';
 import { workItemAttachmentsKey } from '../../workItem/workItemApi';
 import { DropZoneContext } from './dropZoneContext';
@@ -14,6 +15,7 @@ const carriesFiles = (event: DragEvent) => event.dataTransfer.types.includes('Fi
 // file's outcome, and Upload sends the ones the check allows. Attachments save at once and never touch the draft.
 export function FeatureDropZone({ item, children }: FeatureRegionProps & { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const { touch } = useTouchShell();
   const [entries, setEntries] = useState<DropEntry[] | null>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -73,7 +75,9 @@ export function FeatureDropZone({ item, children }: FeatureRegionProps & { child
   return (
     <div
       data-testid={ids.dropZone}
-      className={dragging ? 'outline-2 -outline-offset-2 outline-signal outline-dashed' : undefined}
+      className={
+        !touch && dragging ? 'outline-2 -outline-offset-2 outline-signal outline-dashed' : undefined
+      }
       onDragOver={(event) => {
         if (!carriesFiles(event)) return;
         event.preventDefault();

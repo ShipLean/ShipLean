@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Demos;
@@ -19,13 +20,16 @@ namespace ShipLean.AcceptanceTests.Lanes.Demos;
 // upload (read from the delivered body, since no relay runs here) lands through the real endpoint, and the open Demo tab turns Ready by the realtime event,
 // plays and seeks. Its own class: closing Sprint 24 moves its items. The layout test uses Sprint 23, which is already closed, so each filter runs alone.
 [TestFixture]
-public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
+public partial class CloseSprintDemoJourneyTests : SeededAcceptanceTest
 {
     private static readonly Dictionary<string, string> ClientHeaders = new() { [ClientHeader.Name] = "acceptance-test" };
 
     private static readonly string FixturePath = Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DemoFixtures", "demo-fixture.mp4");
 
     private const string Script = "## Introduction\n\n**Ann:** Welcome to the Sprint 24 demo.\n\n## Checkout v2\n\n**Keith:** Checkout now takes one step.\n";
+
+    [GeneratedRegex(@"^/api/attachments/[^/]+/content$")]
+    private static partial Regex AttachmentContentPath();
 
     [Test]
     [CancelAfter(240_000)]
@@ -54,6 +58,18 @@ public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
             $"SELECT d.body::text FROM agent_delivery d JOIN agent_session s ON s.id = d.session_id WHERE s.work_item_id = '{itemId}' ORDER BY d.created_at, d.seq LIMIT 1"));
         uploadUrl.ShouldStartWith(BaseUrl + "/api/uploads/demo?token=");
 
+        // Recorded from before the upload, not after it: the tab shows the video as soon as the sprint points at one, so the realtime event of the upload can
+        // make the browser fetch it while Working, ahead of anything this test does after the upload. It also means the browser's own first request is seen,
+        // not one its HTTP cache answers. The video's id is not known yet, so any attachment content path counts; the tab loads no other.
+        var media = new List<(int Status, string Range)>();
+        Page.Response += (_, r) =>
+        {
+            if (AttachmentContentPath().IsMatch(new Uri(r.Url).AbsolutePath))
+            {
+                media.Add((r.Status, r.Request.Headers.GetValueOrDefault("range") ?? string.Empty));
+            }
+        };
+
         var fixture = await File.ReadAllBytesAsync(FixturePath);
         using var http = new HttpClient();
         using var response = await http.PostAsync(uploadUrl, Form(Chapters(2), Script, fixture));
@@ -66,20 +82,10 @@ public class CloseSprintDemoJourneyTests : SeededAcceptanceTest
         pointers.Video.ShouldBe(live.Single(a => a.Name == "sprint-demo.mp4").Id);
         pointers.Script.ShouldBe(live.Single(a => a.Name == "sprint-demo-script.md").Id);
         pointers.Chapters.ShouldBe(live.Single(a => a.Name == "sprint-demo-chapters.json").Id);
+        var mediaPath = $"/api/attachments/{pointers.Video}/content";
         var stored = await Page.APIRequest.GetAsync($"/api/attachments/{pointers.Video}/content");
         stored.Ok.ShouldBeTrue();
         (await stored.BodyAsync()).ShouldBe(fixture);
-
-        // Recorded from before the tab can load the video, so the browser's own first request is seen and not one its HTTP cache answers.
-        var mediaPath = $"/api/attachments/{pointers.Video}/content";
-        var media = new List<(int Status, string Range)>();
-        Page.Response += (_, r) =>
-        {
-            if (new Uri(r.Url).AbsolutePath == mediaPath)
-            {
-                media.Add((r.Status, r.Request.Headers.GetValueOrDefault("range") ?? string.Empty));
-            }
-        };
 
         // The upload alone leaves the agent's session live, and a live session reads as Working. The agent's last act is its final response, through the
         // connection's own callback token on the Linear-compatible endpoint: nothing else here plays the agent.

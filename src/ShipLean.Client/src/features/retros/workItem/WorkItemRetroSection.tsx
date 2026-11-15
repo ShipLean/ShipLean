@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import { routePath } from '../../../routes';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { RetroQueryState } from '../RetroQueryState';
 import { CategoryHead } from '../features/CategoryHead';
 import { retrosTestIds as ids } from '../testIds';
 import { useWorkItemRetros } from '../useRetroQueries';
+import { PhoneRetroRow } from './touch/PhoneRetroRow';
 import { WorkItemRetroRow } from './WorkItemRetroRow';
 
 const head =
@@ -27,6 +29,7 @@ export function WorkItemRetroSection({
   workItemId: string;
 }) {
   const query = useWorkItemRetros(projectId, workItemId);
+  const { touch } = useTouchShell();
   return (
     <RetroQueryState query={query}>
       {({ rows }) =>
@@ -44,38 +47,51 @@ export function WorkItemRetroSection({
               </span>
               <Link
                 to={routePath('retroItem', { key: projectKey, itemKey })}
-                className="ml-auto rounded-control border border-edge px-2 py-1 text-[length:var(--text-sm)] font-medium whitespace-nowrap hover:bg-sunken"
+                className="ml-auto rounded-control border border-edge px-2 py-1 text-[length:var(--text-sm)] font-medium whitespace-nowrap hover:bg-sunken touch:flex touch:min-h-[var(--touch-target)] touch:items-center"
               >
                 All retros for this item
               </Link>
             </header>
-            <div className="overflow-x-auto rounded-panel border border-edge bg-panel">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className={head}>Retro</th>
-                    <th className={`${head}`}>Logged</th>
-                    {RETRO_CATEGORIES.map((category) => (
-                      <th key={category} className={`${headNum} ${wrapHead}`}>
-                        <CategoryHead category={category} />
-                      </th>
+            {touch ? (
+              <div className="overflow-hidden rounded-panel border border-edge bg-panel">
+                {rows.map((row) => (
+                  <PhoneRetroRow
+                    key={row.retroId}
+                    projectKey={projectKey}
+                    itemKey={itemKey}
+                    row={row}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-panel border border-edge bg-panel">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th className={head}>Retro</th>
+                      <th className={`${head}`}>Logged</th>
+                      {RETRO_CATEGORIES.map((category) => (
+                        <th key={category} className={`${headNum} ${wrapHead}`}>
+                          <CategoryHead category={category} />
+                        </th>
+                      ))}
+                      <th className={headNum}>To decide</th>
+                      <th className={head}>Decided</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <WorkItemRetroRow
+                        key={row.retroId}
+                        projectKey={projectKey}
+                        itemKey={itemKey}
+                        row={row}
+                      />
                     ))}
-                    <th className={headNum}>To decide</th>
-                    <th className={head}>Decided</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <WorkItemRetroRow
-                      key={row.retroId}
-                      projectKey={projectKey}
-                      itemKey={itemKey}
-                      row={row}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         )
       }

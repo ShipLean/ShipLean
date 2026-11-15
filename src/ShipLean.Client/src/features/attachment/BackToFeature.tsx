@@ -16,7 +16,7 @@ export function BackToFeature({
     <Link
       data-testid={ids.back}
       to={routePath('workItem', { key: projectKey, itemKey })}
-      className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)] text-ink-muted no-underline hover:text-signal hover:underline"
+      className="inline-flex items-center touch:hidden gap-1.5 text-[length:var(--text-sm)] text-ink-muted no-underline hover:text-signal hover:underline"
     >
       <span aria-hidden="true">←</span>
       <span data-testid={ids.workItem}>

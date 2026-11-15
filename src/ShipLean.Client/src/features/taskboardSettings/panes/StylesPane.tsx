@@ -28,7 +28,7 @@ export function StylesPane({
           type="button"
           data-testid={ids.stylesAdd}
           disabled={readOnly}
-          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50"
+          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50 touch:h-[var(--touch-target)]"
           onClick={() => setRules([...draft.styleRules, blankRule(lists)])}
         >
           + Add styling rule
@@ -49,6 +49,10 @@ export function StylesPane({
           onDelete={() => setRules(draft.styleRules.filter((r) => r.id !== rule.id))}
           onMove={(step) => setRules(moveRule(draft.styleRules, index, index + step))}
           onDragStart={() => setDragFrom(index)}
+          onTouchDrop={(targetId) => {
+            const to = draft.styleRules.findIndex((r) => r.id === targetId);
+            if (to >= 0) setRules(moveRule(draft.styleRules, index, to));
+          }}
           onDrop={() => {
             if (dragFrom !== undefined) setRules(moveRule(draft.styleRules, dragFrom, index));
             setDragFrom(undefined);

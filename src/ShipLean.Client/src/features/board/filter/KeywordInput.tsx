@@ -7,9 +7,14 @@ const TYPING_PAUSE_MS = 250;
 export function KeywordInput({
   value,
   onChange,
+  className = 'field w-56',
+  onDraft,
 }: {
   value: string;
   onChange: (value: string) => void;
+  className?: string;
+  /** Hears every keystroke, before the pause: the Filter sheet applies the last one when it closes. */
+  onDraft?: (text: string) => void;
 }) {
   const [text, setText] = useState(value);
   useEffect(() => {
@@ -21,11 +26,14 @@ export function KeywordInput({
     <input
       type="search"
       data-testid={ids.filterKeyword}
-      className="field w-56"
+      className={className}
       placeholder="Filter by keyword or key"
       aria-label="Filter by keyword"
       value={text}
-      onChange={(event) => setText(event.target.value)}
+      onChange={(event) => {
+        setText(event.target.value);
+        onDraft?.(event.target.value);
+      }}
     />
   );
 }

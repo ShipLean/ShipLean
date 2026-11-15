@@ -34,6 +34,7 @@ public sealed class ProxySignInHandler(
     ProxySignInSettings settings,
     IOptionsMonitor<CookieAuthenticationOptions> cookieOptions,
     IUsageEvents events,
+    IUsageScope scope,
     TimeProvider time)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder), IAuthenticationRequestHandler
 {
@@ -77,7 +78,7 @@ public sealed class ProxySignInHandler(
         // The cookie handler keeps the result it authenticated above for the rest of the request, so this request acts
         // as the principal just issued rather than re-reading it.
         var principal = await cookieSession.SignInAsync(user.Id, snapshot.SecurityStamp, identity);
-        SelfEmittedUsage.TrackOk(events, time, started, UsageEventNames.AuthSignedIn, user.Id, "system:ProxySignInHandler");
+        SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.AuthSignedIn, user.Id, "system:ProxySignInHandler", properties: new Dictionary<string, object> { [UsageProps.Method] = SignInMethods.Proxy });
         return AuthenticateResult.Success(new AuthenticationTicket(principal, base.Scheme.Name));
     }
 

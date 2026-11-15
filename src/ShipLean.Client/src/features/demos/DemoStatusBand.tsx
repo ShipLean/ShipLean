@@ -78,7 +78,7 @@ function createLabel(status: SprintDemoStatus): string {
 }
 
 const buttonClass =
-  'h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100';
+  'h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 touch:order-3 touch:h-[var(--touch-target)] touch:w-full';
 
 /** The tab's status band: the status chip, what it means, the run's labels with the BAU item's link, and Create demo. */
 export function DemoStatusBand({ demo }: DemoProps) {
@@ -87,23 +87,38 @@ export function DemoStatusBand({ demo }: DemoProps) {
   const note = detail(demo);
   const labels = runLabels(demo);
   const { actions, run } = demo;
+  const blocked = !actions.canCreate && actions.createBlockedMessage !== null;
   return (
     <div
       data-testid={ids.demoStatusBand}
       data-status={demo.status}
-      className={`flex flex-wrap items-center gap-3 rounded-panel border border-l-[3px] border-edge bg-panel px-3 py-2 ${look.edge}`}
+      className={`flex flex-wrap items-center gap-3 rounded-panel border border-l-[3px] border-edge bg-panel px-3 py-2 touch:grid touch:grid-cols-[minmax(0,1fr)] touch:justify-items-start touch:gap-2 ${look.edge}`}
     >
       <Chip tone={look.tone}>{look.chip}</Chip>
-      <div className="grid min-w-60 flex-1 gap-0.5 text-[length:var(--text-sm)] [overflow-wrap:anywhere]">
-        <b data-testid={ids.demoStatusMessage} className="text-[length:var(--text-base)]">
+      <div className="grid min-w-60 flex-1 gap-0.5 text-[length:var(--text-sm)] [overflow-wrap:anywhere] touch:contents">
+        <b
+          data-testid={ids.demoStatusMessage}
+          className="text-[length:var(--text-base)] touch:order-1"
+        >
           {headline(demo)}
         </b>
-        {note !== null && <span className="text-ink-muted">{note}</span>}
+        {note !== null && (
+          <span
+            data-testid={blocked ? ids.demoCreateReason : undefined}
+            className={`text-ink-muted ${blocked ? 'touch:order-4' : 'touch:order-2'}`}
+          >
+            {note}
+          </span>
+        )}
         {(labels.length > 0 || run !== null) && (
-          <span className="flex flex-wrap items-center gap-x-2 text-ink-muted">
+          <span className="flex flex-wrap items-center gap-x-2 text-ink-muted touch:order-2 touch:w-full">
             {labels.join(' · ')}
             {run !== null && (
-              <Link data-testid={ids.demoItemLink} to={run.itemUrl} className="text-signal">
+              <Link
+                data-testid={ids.demoItemLink}
+                to={run.itemUrl}
+                className="text-signal touch:inline-flex touch:min-h-[var(--touch-target)] touch:basis-full touch:items-center"
+              >
                 {run.itemKey}
               </Link>
             )}
@@ -113,7 +128,7 @@ export function DemoStatusBand({ demo }: DemoProps) {
       {demo.status === 'working' && (
         <span
           aria-hidden="true"
-          className="size-2 shrink-0 animate-pulse rounded-full bg-notice motion-reduce:animate-none"
+          className="size-2 shrink-0 animate-pulse rounded-full bg-notice motion-reduce:animate-none touch:hidden"
         />
       )}
       {actions.canCreate ? (

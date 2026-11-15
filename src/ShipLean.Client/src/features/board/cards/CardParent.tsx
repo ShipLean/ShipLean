@@ -12,7 +12,11 @@ export function CardParent({ parent, projectKey }: { parent: ParentRefDto; proje
       className="flex min-w-0 flex-1 items-center gap-[5px] text-[length:var(--text-xs)] text-ink-muted"
     >
       <TypeIcon type={parent.type.id} />
-      <ItemLink itemKey={parent.key} projectKey={projectKey} className="min-w-0 flex-1 truncate">
+      <ItemLink
+        itemKey={parent.key}
+        projectKey={projectKey}
+        className="min-w-0 flex-1 truncate touch:block touch:leading-[var(--touch-target)]"
+      >
         {parent.key} {parent.title}
       </ItemLink>
     </div>

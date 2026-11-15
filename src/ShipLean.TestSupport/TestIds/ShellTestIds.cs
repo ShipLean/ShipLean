@@ -5,7 +5,6 @@ public static class ShellTestIds
     public const string SideMenu = "shell-side-menu";
     public const string ProjectButton = "shell-project-button";
     public const string SearchButton = "shell-search-button";
-    public const string SearchIconButton = "shell-search-icon-button";
     public const string NavBacklogs = "shell-nav-backlogs";
     public const string NavBoards = "shell-nav-boards";
     public const string NavLevel = "shell-nav-level";

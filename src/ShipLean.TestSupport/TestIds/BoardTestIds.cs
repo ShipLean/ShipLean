@@ -14,6 +14,14 @@ public static class BoardTestIds
     public const string ColumnName = "board-column-name";
     public const string ColumnHidden = "board-column-hidden";
     public const string ColumnCount = "board-column-count";
+    public const string PagerGrid = "board-pager-grid";
+    public const string ColumnLane = "board-column-lane";
+    public const string ColumnLaneHeader = "board-column-lane-header";
+    public const string ColumnLaneToggle = "board-column-lane-toggle";
+    public const string ColumnLaneName = "board-column-lane-name";
+    public const string ColumnLaneCount = "board-column-lane-count";
+    public const string ColumnLaneSub = "board-column-lane-sub";
+    public const string ColumnEmpty = "board-column-empty";
     public const string ColumnMap = "board-column-map";
     public const string SubDoing = "board-sub-doing";
     public const string SubDone = "board-sub-done";
@@ -29,6 +37,7 @@ public static class BoardTestIds
     public const string Lane = "board-lane";
     public const string LaneHeader = "board-lane-header";
     public const string LaneToggle = "board-lane-toggle";
+    public const string CellEmpty = "board-cell-empty";
     public const string LaneName = "board-lane-name";
     public const string LaneCriteria = "board-lane-criteria";
     public const string LaneCount = "board-lane-count";
@@ -52,6 +61,7 @@ public static class BoardTestIds
     public const string CardTag = "board-card-tag";
     public const string CardExtra = "board-card-extra";
     public const string DropLine = "board-drop-line";
+    public const string LiftedCard = "board-lifted-card";
     public const string DoneConfirm = "board-done-confirm";
     public const string DoneConfirmChild = "board-done-confirm-child";
     public const string DoneConfirmMore = "board-done-confirm-more";
@@ -59,6 +69,7 @@ public static class BoardTestIds
     public const string DoneConfirmMove = "board-done-confirm-move";
     public const string CardOffer = "board-card-offer";
     public const string CardMoveToDone = "board-card-move-to-done";
+    public const string CardMore = "board-card-more";
     public const string SettingsOpen = "board-settings-open";
     public const string LanesToggle = "board-lanes-toggle";
     public const string LanesOption = "board-lanes-option";
@@ -70,6 +81,13 @@ public static class BoardTestIds
     public const string FilterEpic = "board-filter-epic";
     public const string FilterClear = "board-filter-clear";
     public const string FilterNote = "board-filter-note";
+    public const string LevelSwitch = "board-level-switch";
+    public const string LevelOption = "board-level-option";
+    public const string Meta = "board-meta";
+    public const string FilterSheet = "board-filter-sheet";
+    public const string FilterShow = "board-filter-show";
+    public const string MoreSheet = "board-more-sheet";
+    public const string DodSheet = "board-dod-sheet";
     public const string ChildList = "board-child-list";
     public const string ChildLoading = "board-child-loading";
     public const string ChildFailed = "board-child-failed";
@@ -83,6 +101,8 @@ public static class BoardTestIds
     public const string ChildAddSubmit = "board-child-add-submit";
     public const string ChildAddCancel = "board-child-add-cancel";
     public const string ChildAddError = "board-child-add-error";
+    public const string AssignSheet = "board-assign-sheet";
+    public const string AssignOption = "board-assign-option";
     public const string LocationProbe = "board-location-probe";
 
     // SHIP-916 W1

@@ -39,6 +39,9 @@ export interface ImpactShape {
   after: ImpactLine | null;
 }
 
+/** A column's short name: "Sprint 22" is "S22"; a week's label is kept. */
+export const shortColumnLabel = (label: string) => label.replace(/^Sprint\s+/, 'S');
+
 const round = (n: number) => Math.round(n * 100) / 100;
 
 /**

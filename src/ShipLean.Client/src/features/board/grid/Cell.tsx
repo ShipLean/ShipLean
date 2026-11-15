@@ -2,6 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import type { BoardCellDto } from '@shiplean/core/api/views';
 import { DraggableCard } from '../cards/DraggableCard';
 import { DropLine } from '../cards/DropLine';
+import { useTouchOver } from '../moves/touch/TouchOverContext';
 import { boardTestIds as ids } from '../testIds';
 import type { BoardContext } from './boardContext';
 import { NewCard } from './NewCard';
@@ -34,20 +35,25 @@ export function Cell({
     flashing,
     onRollupClick,
   } = context;
+  // Only a phone shows it: a column with nothing to show in a lane would otherwise be a blank box.
+  const empty = !offersNew && (cell?.cards ?? []).length === 0 && !(cell && cell.olderCount > 0);
   const place = { laneId, columnId: track.column.id, done: track.doneHalf };
+  const cellKey = `cell:${laneId}:${track.column.id}:${track.doneHalf}`;
+  const touchOver = useTouchOver().over === cellKey;
   const { setNodeRef, isOver } = useDroppable({
-    id: `cell:${laneId}:${track.column.id}:${track.doneHalf}`,
+    id: cellKey,
     data: { kind: 'cell', ...place },
   });
   return (
     <div
       ref={setNodeRef}
       data-testid={ids.cell}
+      data-drop-target={cellKey}
       data-over={isOver}
       data-lane={laneId}
       data-column={track.column.id}
       data-done-half={track.doneHalf}
-      className="flex min-h-16 min-w-0 flex-col gap-1.5 rounded-control p-1.5"
+      className="flex min-h-16 min-w-0 flex-col gap-1.5 rounded-control p-1.5 touch:min-h-12 touch:gap-2 touch:p-2"
       style={{
         background: track.doneHalf
           ? 'color-mix(in srgb, var(--color-surface-2) 30%, transparent)'
@@ -71,7 +77,15 @@ export function Cell({
           onRollupClick={onRollupClick && ((type) => onRollupClick(card.id, card.key, type))}
         />
       ))}
-      {isOver ? <DropLine /> : null}
+      {isOver || touchOver ? <DropLine /> : null}
+      {empty ? (
+        <p
+          data-testid={ids.cellEmpty}
+          className="hidden px-1 py-1.5 text-center text-[length:var(--text-xs)] text-ink-muted touch:block"
+        >
+          No cards
+        </p>
+      ) : null}
       {cell && cell.olderCount > 0 && cell.olderCursor !== null ? (
         <ShowOlder count={cell.olderCount} cursor={cell.olderCursor} onExpand={onExpand} />
       ) : null}

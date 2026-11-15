@@ -49,6 +49,18 @@ public class SelfEmittedAuthUsageTests : ApiFixture
     }
 
     [Test]
+    public async Task Login_WhenSignedIn_ShouldTrackPasswordMethod()
+    {
+        var (email, _) = await ArrangeUserAsync();
+        using var client = AuthClient.Create(Host);
+
+        using var response = await client.LoginAsync(email, AppUserBuilder.ArrangedPassword);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        Recorder.Events.ShouldHaveSingleItem().Properties[UsageProps.Method].ShouldBe(SignInMethods.Password);
+    }
+
+    [Test]
     public async Task Login_WhenWrongPassword_ShouldTrackNothing()
     {
         var (email, _) = await ArrangeUserAsync();

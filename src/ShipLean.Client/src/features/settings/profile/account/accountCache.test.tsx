@@ -13,7 +13,9 @@ const CURRENT = 'OLD-SECRET-PASSWORD';
 const NEXT = 'NEW-SECRET-PASSWORD';
 
 const me = { id: 'me', email: 'priya@example.test', theme: 'os', density: 'compact' };
-const projects = [{ id: 'p1', key: 'SHIP', name: 'Ship', role: 'member', memberCount: 2 }];
+const projects = [
+  { id: 'p1', key: 'SHIP', name: 'Ship', role: 'member', memberCount: 2, isOnlyAdmin: false },
+];
 
 const reply = (status: number, body?: unknown) =>
   Promise.resolve(
@@ -49,6 +51,12 @@ afterEach(() => {
 
 function mount(node: React.ReactNode, client = new QueryClient()) {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  // jsdom has no matchMedia, which the password panel reads (through useTouchShell) to know whether the form starts closed.
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
   const container = document.body.appendChild(document.createElement('div'));
   const root = createRoot(container);
   act(() =>

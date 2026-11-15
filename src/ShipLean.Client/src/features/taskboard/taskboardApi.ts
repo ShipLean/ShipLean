@@ -23,6 +23,9 @@ export interface TaskboardMoveRow {
   target: string | null;
 }
 
+/** How the user moved the card, recorded on `work_item.moved` (C#: MoveMethods). `touch-drag` is the long-press drag, `pick-up` the Pick up button; a request without one records none. */
+export type MoveMethod = 'drag' | 'touch-drag' | 'keyboard' | 'sheet' | 'pick-up';
+
 /** stateId is the column (a Task state); row is null when the drop stays in its row; beforeItemId is the task the card was dropped above (null = last in the cell). A People drop (row.grouping 'people') ignores beforeItemId: the task goes last in its (state, parent) cell, and People cells list tasks in parent row order, then cell order. */
 export interface TaskboardMoveRequest {
   taskId: string;
@@ -30,6 +33,7 @@ export interface TaskboardMoveRequest {
   stateId: string;
   row: TaskboardMoveRow | null;
   beforeItemId: string | null;
+  method?: MoveMethod;
 }
 
 /** offerResolve: the move closed the last open task of the parent's row, so offer Move to Resolved. It describes the destination row only; the GET is the source of truth for every row. */

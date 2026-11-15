@@ -318,7 +318,7 @@ export function MobileSignInPage() {
   return (
     <div data-testid={ids.page} className="flex min-h-dvh flex-col">
       <LoginTopBar />
-      <main className="flex flex-1 flex-col items-center px-4 pt-4 pb-5 min-[600px]:pt-[clamp(24px,10vh,120px)]">
+      <main className="flex flex-1 flex-col items-center px-4 pb-5 pt-[clamp(24px,10vh,120px)] phone:pt-4">
         {body()}
       </main>
     </div>

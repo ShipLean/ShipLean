@@ -29,7 +29,7 @@ export function PeopleFilter({
           data-testid={ids.filterPerson}
           data-person={option.id}
           aria-pressed={chosen.includes(option.id)}
-          className={`h-7 rounded-full border px-2.5 text-[length:var(--text-xs)] ${
+          className={`h-7 touch:h-[var(--touch-target)] rounded-full border px-2.5 touch:px-3 text-[length:var(--text-xs)] touch:text-[length:var(--text-sm)] ${
             chosen.includes(option.id)
               ? 'border-signal bg-signal-soft text-ink'
               : 'border-edge text-ink-muted hover:text-ink'

@@ -69,7 +69,7 @@ export function DemoPlayer({ demo, player }: DemoProps) {
             href={youTube.watchUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-7 items-center rounded-control border border-edge bg-surface px-3 font-medium text-ink hover:bg-sunken"
+            className="inline-flex h-7 items-center rounded-control border border-edge bg-surface px-3 font-medium text-ink hover:bg-sunken touch:h-[var(--touch-target)]"
           >
             Watch on YouTube ↗
           </a>

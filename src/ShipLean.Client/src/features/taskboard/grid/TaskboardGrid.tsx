@@ -9,8 +9,10 @@ import type { TaskboardScope } from '../taskboardScope';
 import { taskboardTestIds as ids } from '../testIds';
 import { passesFaces, UNASSIGNED_FACE } from './faceFilter';
 import { gridColumns, gridMinWidth } from './gridColumns';
+import { TaskboardPhoneGrid } from './phone/TaskboardPhoneGrid';
+import { useTouchShell } from '../../../touch/useTouchShell';
 
-/** The column headers and the rows of one grouping. It sits inside a TaskboardDnd. */
+/** The column headers and the rows of one grouping; at 900px and below the phone state pager. It sits inside a TaskboardDnd. */
 export function TaskboardGrid({
   projectKey,
   projectId,
@@ -40,6 +42,25 @@ export function TaskboardGrid({
   /** The grid's accessible name; a page with several grids gives each its own. */
   label?: string;
 }) {
+  const { touch } = useTouchShell();
+  if (touch) {
+    return (
+      <TaskboardPhoneGrid
+        projectKey={projectKey}
+        projectId={projectId}
+        scope={scope}
+        view={view}
+        sections={[{ id: 'all', band: null, closed: false, rows }]}
+        grouping={grouping}
+        faces={faces}
+        me={me}
+        isCollapsed={isCollapsed}
+        onToggle={onToggle}
+        onSetState={onSetState}
+        label={label}
+      />
+    );
+  }
   // The face filter works on the loaded view: it is the same GET's data and the endpoint has no assignee filter.
   const shownIn = (stateId: string) =>
     (grouping === 'stories' ? rows : view.peopleRows)

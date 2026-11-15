@@ -1,13 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemKey } from '../../workItem/workItemApi';
 import { useReorder } from '../drag/useReorder';
+import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import { useBacklogFilter } from '../filter/useBacklogFilter';
+import { NewItemRow } from '../list/NewItemRow';
 import { useReconnectSummary } from '../realtime/useReconnectSummary';
 import { useTeammateChanges } from '../realtime/useTeammateChanges';
+import { useTouchSelectMode } from '../touch/selectMode';
 import { reparentWrite } from './reparentWrite';
+import { TouchTree } from './touch/TouchTree';
 import { TreeTable } from './TreeTable';
 import { placeRow, treeTarget, withWritten } from './treeTarget';
 
@@ -23,6 +28,9 @@ export function TreeMode({ project }: { project: ProjectDto }) {
     rows.filter((row) => row.kind === 'item'),
   );
   useReconnectSummary(queryKey);
+  // At 900px and below the tree is path headers and touch rows (SHIP-716 D6), not the dnd-kit table.
+  const { touch } = useTouchShell();
+  const { selecting } = useTouchSelectMode();
 
   function drop(active: BacklogRowDto, over: BacklogRowDto) {
     const target = treeTarget(rows, active, over);
@@ -54,21 +62,45 @@ export function TreeMode({ project }: { project: ProjectDto }) {
       rowCount={rows.length}
       movingOffText="Moving items is off while a filter is on, because a place in the tree is relative to items you can't see."
     >
-      {(columns) => (
-        <TreeTable
-          rows={rows}
-          columns={columns}
-          projectId={project.id}
-          projectKey={project.key}
-          adding={state.adding}
-          onCloseAdd={() => state.setAdding(false)}
-          dragDisabled={state.filtering}
-          filtered={state.filtering}
-          includeCompleted={state.includeCompleted}
-          flashing={flashing}
-          onDrop={drop}
-        />
-      )}
+      {(columns) =>
+        touch ? (
+          <BulkRunProvider projectId={project.id} queryKey={queryKey}>
+            <TouchTree
+              rows={rows}
+              projectKey={project.key}
+              handles={!state.filtering && !selecting}
+              includeCompleted={state.includeCompleted}
+              flashing={flashing}
+              filtered={state.filtering}
+              addRow={
+                state.adding ? (
+                  <NewItemRow
+                    projectId={project.id}
+                    projectKey={project.key}
+                    columnCount={columns.length}
+                    onClose={() => state.setAdding(false)}
+                  />
+                ) : undefined
+              }
+              onDrop={drop}
+            />
+          </BulkRunProvider>
+        ) : (
+          <TreeTable
+            rows={rows}
+            columns={columns}
+            projectId={project.id}
+            projectKey={project.key}
+            adding={state.adding}
+            onCloseAdd={() => state.setAdding(false)}
+            dragDisabled={state.filtering}
+            filtered={state.filtering}
+            includeCompleted={state.includeCompleted}
+            flashing={flashing}
+            onDrop={drop}
+          />
+        )
+      }
     </BacklogFrame>
   );
 }

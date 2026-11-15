@@ -11,13 +11,17 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
       data-testid={ids.childRow}
       data-key={child.key}
       data-closed={closed}
-      className={`flex h-6 min-w-0 items-center gap-1.5 rounded-sm px-1 text-[length:var(--text-xs)] hover:bg-sunken ${
+      className={`flex h-6 touch:h-[var(--touch-target)] min-w-0 items-center gap-1.5 rounded-sm px-1 text-[length:var(--text-xs)] hover:bg-sunken ${
         closed ? 'text-ink-muted' : ''
       }`}
     >
       <TypeIcon type={child.type.id} />
       <span className="text-[length:var(--text-2xs)] text-ink-muted">{child.key}</span>
-      <ItemLink itemKey={child.key} projectKey={projectKey} className="min-w-0 flex-1 truncate">
+      <ItemLink
+        itemKey={child.key}
+        projectKey={projectKey}
+        className="min-w-0 flex-1 truncate touch:flex touch:h-full touch:items-center"
+      >
         {child.title}
       </ItemLink>
       <span data-testid={ids.childState} className="text-[length:var(--text-2xs)] text-ink-muted">

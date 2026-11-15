@@ -36,6 +36,10 @@ export interface PullLine {
     onPointerDown: (event: PointerEvent<HTMLElement>) => void;
     onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   };
+  /** The touch ▲ ▼: moves the line one item up (-1) or down (1). */
+  moveBy: (delta: 1 | -1) => void;
+  /** Whether the line has an item to move past in each direction. */
+  canMove: { up: boolean; down: boolean };
   /** True once after a keyboard move, so the remounted grip takes focus back. */
   takeFocus: () => boolean;
 }
@@ -123,11 +127,16 @@ export function usePullLine({
   function onPointerDown(event: PointerEvent<HTMLElement>) {
     if (!on) return;
     event.preventDefault();
-    const body = event.currentTarget.closest('tbody');
+    // The table's body, or at touch the block that holds the rows (data-pull-body).
+    const body = event.currentTarget.closest('tbody, [data-pull-body]');
     if (body === null) return;
     document.body.classList.add('pulling');
     const track = (pointer: globalThis.PointerEvent) => {
-      const shown = [...body.querySelectorAll(`tr[data-section="${section.id}"][data-row-id]`)];
+      const shown = [
+        ...body.querySelectorAll(
+          `tr[data-section="${section.id}"][data-row-id], [data-pull-section="${section.id}"]`,
+        ),
+      ];
       move(rowsBelow(pointer.clientY, shown));
     };
     const release = () => {
@@ -174,6 +183,10 @@ export function usePullLine({
     reset,
     pull,
     grip: { onPointerDown, onKeyDown },
+    moveBy: (delta) => {
+      if (on) move(n + delta);
+    },
+    canMove: { up: on && n > 0, down: on && n < furthest },
     takeFocus: () => {
       const wanted = refocus.current;
       refocus.current = false;

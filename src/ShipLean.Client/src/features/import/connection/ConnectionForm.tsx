@@ -64,7 +64,7 @@ export function ConnectionForm({
             data-testid={option.testId}
             aria-pressed={kind === option.kind}
             disabled={!editing}
-            className={kind === option.kind ? 'btn-signal' : 'btn-ghost'}
+            className={`${kind === option.kind ? 'btn-signal' : 'btn-ghost'} touch:min-h-[var(--touch-target)]`}
             onClick={() => setKind(option.kind)}
           >
             {option.label}
@@ -116,7 +116,7 @@ export function ConnectionForm({
           <button
             type="button"
             data-testid={ids.replace}
-            className="btn-ghost"
+            className="btn-ghost touch:min-h-[var(--touch-target)]"
             onClick={() => setReplacing(true)}
           >
             Replace
@@ -137,7 +137,7 @@ export function ConnectionForm({
           <button
             type="button"
             data-testid={ids.save}
-            className="btn-signal"
+            className="btn-signal touch:min-h-[var(--touch-target)]"
             disabled={!canSave || save.isPending}
             onClick={onSave}
           >
@@ -147,7 +147,7 @@ export function ConnectionForm({
         <button
           type="button"
           data-testid={ids.test}
-          className="btn-ghost"
+          className="btn-ghost touch:min-h-[var(--touch-target)] touch:flex-1"
           disabled={saved === null || replacing || test.isPending}
           onClick={onTest}
         >

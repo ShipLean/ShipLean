@@ -11,7 +11,6 @@ import { KeysButton } from '../commands/KeysButton';
 import { KeysDialog } from '../commands/KeysDialog';
 import { ListKeysHost } from '../commands/ListKeysHost';
 import { OpenCommandHost } from '../commands/OpenCommandHost';
-import { useReorder } from '../drag/useReorder';
 import { BACKLOG_COLUMNS } from '../backlogApi';
 import { BacklogFrame } from '../filter/BacklogFrame';
 import type { BacklogFilterState } from '../filter/useBacklogFilter';
@@ -25,6 +24,13 @@ import { QueueFixedProvider } from '../strip/QueueFixedProvider';
 import { BeforeYouPlan } from '../strip/BeforeYouPlan';
 import { useCheckQueue } from '../strip/useCheckQueue';
 import { useNewItemFromLink } from '../useNewItemFromLink';
+import { SelectBar } from '../touch/SelectBar';
+import { useTouchSelectMode } from '../touch/selectMode';
+import { useSelectMoreActions } from '../touch/selectMoreActions';
+import { NewItemRow } from './NewItemRow';
+import { TouchRowList } from '../touch/TouchRowList';
+import { useTouchReorder } from '../touch/useTouchReorder';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { ListDnd } from './ListDnd';
 import { ListTable } from './ListTable';
 
@@ -34,7 +40,8 @@ const STORY_KINDS: readonly NewItemKind[] = NEW_ITEM_KINDS.filter(isStoryLevel);
 // the ranked rows (drag to reorder) and the inline new-item row. The check queue narrows the rows first, then the
 // search; either one on counts as a filter for what moving and adding mean.
 export function ListScreen({ project, state }: { project: ProjectDto; state: BacklogFilterState }) {
-  const reorder = useReorder(project.id, state.queryKey);
+  const touchReorder = useTouchReorder(project.id, state.queryKey);
+  const { reorder } = touchReorder;
   const queue = useCheckQueue();
   const search = useBacklogSearch();
   const items = useMemo(() => state.rows.filter((row) => row.kind === 'item'), [state.rows]);
@@ -52,6 +59,10 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const addingOff = state.filtering || search.active;
   const narrowed = addingOff || queue.active;
   const filtering = narrowed || sort.sorted;
+  // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
+  const { touch } = useTouchShell();
+  const { selecting } = useTouchSelectMode();
+  const selectActions = useSelectMoreActions(queue, state.backlog.data?.review ?? null);
   useReconnectSummary(state.queryKey);
   useNewItemFromLink(STORY_KINDS, (kind) => state.openAdd(kind));
 
@@ -72,6 +83,15 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               options={() => <AddManyButton />}
               search={() => <BacklogSearchBox search={search} />}
               keys={() => <KeysButton />}
+              moreActions={selectActions}
+              sort={
+                sort.sort
+                  ? {
+                      label: `${BACKLOG_COLUMNS.find((c) => c.id === sort.sort?.column)?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
+                      onClear: sort.clear,
+                    }
+                  : undefined
+              }
               movingOffText={
                 narrowed
                   ? "Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
@@ -80,32 +100,57 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
             >
               {(columns) => (
                 <>
-                  <div className="sticky top-0 z-[5] flex-none">
+                  <div className="sticky top-0 z-[5] flex-none touch:static">
                     <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
                   </div>
                   <BulkOutcomeHost projectId={project.id} />
-                  <ListDnd
-                    rows={rows}
-                    filtering={filtering}
-                    onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
-                  >
-                    <ListTable
+                  <SelectBar />
+                  {touch ? (
+                    <TouchRowList
                       rows={rows}
-                      columns={columns}
-                      projectId={project.id}
                       projectKey={project.key}
-                      adding={state.adding}
-                      addType={state.addType}
-                      addRequest={state.addRequest}
-                      onCloseAdd={() => state.setAdding(false)}
-                      dragDisabled={filtering}
+                      handles={!filtering && !selecting}
+                      onHandleDrop={touchReorder.drop}
                       flashing={flashing}
                       filtered={addingOff}
                       searched={search.active ? search.query.trim() : ''}
-                      sort={sort.sort}
-                      onSort={sort.onSort}
+                      addRow={
+                        state.adding ? (
+                          <NewItemRow
+                            projectId={project.id}
+                            projectKey={project.key}
+                            columnCount={columns.length}
+                            onClose={() => state.setAdding(false)}
+                            initialType={state.addType}
+                            request={state.addRequest}
+                          />
+                        ) : undefined
+                      }
                     />
-                  </ListDnd>
+                  ) : (
+                    <ListDnd
+                      rows={rows}
+                      filtering={filtering}
+                      onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
+                    >
+                      <ListTable
+                        rows={rows}
+                        columns={columns}
+                        projectId={project.id}
+                        projectKey={project.key}
+                        adding={state.adding}
+                        addType={state.addType}
+                        addRequest={state.addRequest}
+                        onCloseAdd={() => state.setAdding(false)}
+                        dragDisabled={filtering}
+                        flashing={flashing}
+                        filtered={addingOff}
+                        searched={search.active ? search.query.trim() : ''}
+                        sort={sort.sort}
+                        onSort={sort.onSort}
+                      />
+                    </ListDnd>
+                  )}
                   <BulkBar
                     mode="list"
                     projectId={project.id}

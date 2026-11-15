@@ -37,3 +37,44 @@ export function statusHeadIntro(mode: RetroInsightsMode): string {
 }
 
 export const verdictHeadIntro = 'What happened to a theme after its last action item closed.';
+
+/** The order the What these mean sheet lists the statuses in; labels and tones are `STATUS` in StatusChip. */
+export const STATUS_ORDER: readonly RetroThemeStatus[] = [
+  'recurring',
+  'beingAddressed',
+  'resolved',
+  'quiet',
+];
+
+/** The order the What these mean sheet lists the verdicts in; labels and tones are `VERDICT` in VerdictChip. */
+export const VERDICT_ORDER: readonly RetroVerdict[] = [
+  'helped',
+  'someEffect',
+  'noEffect',
+  'tooEarly',
+];
+
+/**
+ * The entries of the What these mean sheet, as `sheet=defs:<entry>` names them: a status or verdict id, `nosprint`,
+ * `unthemed`, or a group (`status`, `verdicts`) for a column heading, which scrolls to its group without highlighting a row.
+ */
+export type DefsEntry =
+  RetroThemeStatus | RetroVerdict | 'nosprint' | 'unthemed' | 'status' | 'verdicts';
+
+export const DEFS_ENTRIES: readonly DefsEntry[] = [
+  ...STATUS_ORDER,
+  ...VERDICT_ORDER,
+  'nosprint',
+  'unthemed',
+  'status',
+  'verdicts',
+];
+
+export const isDefsEntry = (value: string): value is DefsEntry =>
+  (DEFS_ENTRIES as readonly string[]).includes(value);
+
+export const noSprintWording =
+  'Points on retros with no sprint. They count in Total, but not towards Recurring or a verdict, because they have no time order. Week mode places them by the day they were logged.';
+
+export const unthemedWording =
+  'Points with no theme, in every category except Went well. Give them one in Search, or run Decide what to do, which assigns themes as it goes.';

@@ -12,7 +12,7 @@ export function PinnedAction({ action }: { action: RetroActionRefDto }) {
       <ItemLink
         itemKey={action.key}
         title={action.title}
-        className="flex min-w-0 flex-wrap items-center gap-[5px] rounded-[var(--radius-xs)] border border-[color-mix(in_srgb,#ffffff,#1c2638_18%)] bg-white px-1.5 py-[3px] text-[length:var(--text-xs)] text-ink no-underline shadow-[0_1px_1px_rgb(16_24_40/0.12)] hover:border-signal"
+        className="flex min-w-0 flex-wrap items-center gap-[5px] rounded-[var(--radius-xs)] border border-[color-mix(in_srgb,#ffffff,#1c2638_18%)] bg-white px-1.5 py-[3px] text-[length:var(--text-xs)] text-ink no-underline shadow-[0_1px_1px_rgb(16_24_40/0.12)] hover:border-signal touch:min-h-[var(--touch-target)] touch:px-2 touch:py-1 touch:text-[length:var(--text-sm)]"
       >
         <TypeIcon type="action" />
         <span className="font-mono">{action.key}</span>

@@ -7,7 +7,7 @@ import type { TabProps } from './tabProps';
 import { WorkingDays } from './WorkingDays';
 
 const input =
-  'h-7 w-full max-w-md rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'h-7 w-full max-w-md rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:min-h-[var(--touch-target)] touch:max-w-none';
 
 export function GeneralTab({
   project,
@@ -36,7 +36,7 @@ export function GeneralTab({
           Description
           <textarea
             data-testid={settingsTestIds.generalDescription}
-            className={`${input} h-16 max-w-lg py-1`}
+            className={`${input} h-16 max-w-lg py-1 touch:h-24`}
             value={draft.description}
             disabled={readOnly}
             onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}

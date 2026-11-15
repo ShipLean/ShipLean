@@ -11,11 +11,11 @@ export function IdentityHeader({ me, draft }: { me: MeDto; draft: IdentityDraft 
         colour={draft.avatarColour}
         photoUrl={shownPhoto(me, draft)}
       />
-      <span className="grid">
+      <span className="grid min-w-0">
         <b data-testid={settingsTestIds.profileHeading} className="text-[length:var(--text-md)]">
           {draft.name.trim() === '' ? '—' : draft.name}
         </b>
-        <span className="text-[length:var(--text-sm)] text-ink-muted">
+        <span className="text-[length:var(--text-sm)] [overflow-wrap:anywhere] text-ink-muted">
           {me.email}
           {me.isInstanceAdmin ? ' · instance admin' : ''}
         </span>

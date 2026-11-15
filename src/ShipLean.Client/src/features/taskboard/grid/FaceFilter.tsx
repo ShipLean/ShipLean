@@ -8,13 +8,20 @@ export function FaceFilter({
   people,
   chosen,
   onToggle,
+  className = '',
 }: {
   people: UserRef[];
   chosen: ReadonlySet<string>;
   onToggle: (faceId: string) => void;
+  className?: string;
 }) {
   return (
-    <div data-testid={ids.faces} role="group" aria-label="Show tasks for" className="flex gap-1">
+    <div
+      data-testid={ids.faces}
+      role="group"
+      aria-label="Show tasks for"
+      className={`flex gap-1 ${className}`}
+    >
       {[...people.map((p) => ({ id: p.id, person: p })), { id: UNASSIGNED_FACE, person: null }].map(
         ({ id, person }) => (
           <button

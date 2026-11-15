@@ -40,6 +40,14 @@ public static class SprintsTestIds
     public const string DeleteSprintCancel = "sprints-delete-sprint-cancel";
     public const string DeleteSprintError = "sprints-delete-sprint-error";
     public const string RowEdit = "sprints-list-row-edit";
+    // L723a phone
+    public const string ListTouch = "sprints-list-touch";
+    public const string RowNotes = "sprints-list-row-notes";
+    public const string NewSprintOpen = "sprints-new-sprint-open";
+    public const string NewSprintCreate = "sprints-new-sprint-create";
+    public const string NewSprintToolbar = "sprints-new-sprint-toolbar";
+    public const string VelocityLabel = "sprints-velocity-label";
+    public const string VelocityValue = "sprints-velocity-value";
     public const string Backlog = "sprints-backlog";
     public const string BacklogLoadError = "sprints-backlog-load-error";
     public const string KpiCommitted = "sprints-backlog-kpi-committed";
@@ -62,6 +70,9 @@ public static class SprintsTestIds
     public const string StateButton = "sprints-backlog-state-button";
     public const string StateNotice = "sprints-backlog-state-notice";
     public const string UnparentedHeading = "sprints-backlog-unparented-heading";
+    // L724c phone rows
+    public const string StatesSheetOption = "sprints-backlog-states-option";
+    public const string StatesSheetCategory = "sprints-backlog-states-category";
     public const string Rail = "sprints-backlog-rail";
     public const string RailReady = "sprints-backlog-rail-ready";
     public const string RailReadyItem = "sprints-backlog-rail-ready-item";
@@ -69,11 +80,25 @@ public static class SprintsTestIds
     public const string RailPerson = "sprints-backlog-rail-person";
     public const string RailPersonActive = "sprints-backlog-rail-person-active";
     public const string RailPoints = "sprints-backlog-rail-points";
+
+    // L724b phone figures
+    public const string Figures = "sprints-backlog-figures";
+    public const string KpiRow = "sprints-backlog-kpi-row";
+    public const string PointsBar = "sprints-backlog-points-bar";
+    public const string BurndownReadout = "sprints-backlog-burndown-readout";
+    public const string GlanceRows = "sprints-backlog-glance-rows";
+    public const string GlanceReady = "sprints-backlog-glance-ready";
+    public const string GlanceActive = "sprints-backlog-glance-active";
+    public const string GlanceReadyItem = "sprints-backlog-glance-ready-item";
+    public const string GlancePerson = "sprints-backlog-glance-person";
+    public const string GlancePersonItem = "sprints-backlog-glance-person-item";
     public const string ShowTasks = "sprints-backlog-show-tasks";
     public const string GoalInput = "sprints-goal-input";
     public const string GoalSave = "sprints-goal-save";
     public const string GoalCancel = "sprints-goal-cancel";
     public const string GoalError = "sprints-goal-error";
+    // L724a phone edits
+    public const string GoalHint = "sprints-goal-hint";
     public const string Capacity = "sprints-capacity";
     public const string CapacityLoadError = "sprints-capacity-load-error";
     public const string CapacityRow = "sprints-capacity-row";
@@ -103,6 +128,11 @@ public static class SprintsTestIds
     public const string CapacityKpiVelocity = "sprints-capacity-kpi-velocity";
     public const string CapacityRoom = "sprints-capacity-room";
     public const string CapacityCallout = "sprints-capacity-callout";
+    // L726a phone
+    public const string CapacityPhoneToolbar = "sprints-capacity-phone-toolbar";
+    public const string CapacitySummary = "sprints-capacity-summary";
+    public const string CapacityTable = "sprints-capacity-table";
+    public const string CapacityCopyBlocked = "sprints-capacity-copy-blocked";
     public const string CloseSprint = "sprints-close-sprint";
     public const string EndRow = "sprints-end-row";
     public const string EndDestination = "sprints-end-destination";

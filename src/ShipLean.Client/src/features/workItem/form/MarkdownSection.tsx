@@ -86,7 +86,7 @@ export function MarkdownSection({
         <div
           role="group"
           aria-label={`${title} mode`}
-          className="ml-auto inline-flex h-6 overflow-hidden rounded-control border border-edge"
+          className="ml-auto inline-flex h-6 touch:h-[calc(var(--touch-target)+2px)] overflow-hidden rounded-control border border-edge"
         >
           <button
             type="button"

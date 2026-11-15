@@ -24,7 +24,7 @@ export function QuestionReply({
     answer.mutate({ number: question.number, body }, { onSuccess: onClose });
   };
   return (
-    <div className="col-span-2 col-start-2 mt-1.5 grid gap-1.5 rounded-panel border border-signal bg-canvas px-3 py-2 max-[900px]:col-span-1">
+    <div className="col-span-2 col-start-2 mt-1.5 grid gap-1.5 rounded-panel border border-signal bg-canvas px-3 py-2 touch:col-span-1">
       <span className="text-[length:var(--text-xs)] font-medium text-ink-muted">
         Answer {question.label}
       </span>

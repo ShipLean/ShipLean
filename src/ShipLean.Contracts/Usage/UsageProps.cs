@@ -17,8 +17,14 @@ public static class UsageProps
     // The backlog mode (list, planning or tree) on screen.viewed for a backlog screen, so a mode's views compare with the page's.
     public const string Mode = "mode";
 
+    // The SPA's width class (UsageViewports), on every event of a web request that sent a valid ViewportHeader.
+    public const string Viewport = "viewport";
+
     // The client being connected, on agent.connected / agent.consent_denied; cut to 64 characters.
     public const string AgentName = "agent_name";
+
+    // How a work item was moved (MoveMethods) on work_item.moved, or how the user signed in (SignInMethods) on auth.signed_in.
+    public const string Method = "method";
 
     // What started a backup run, on backup.run_finished: "scheduled" or "manual".
     public const string Trigger = "trigger";

@@ -57,4 +57,7 @@ public static class DemosTestIds
 
     // Header
     public const string SprintHeaderTabDemo = "sprint-header-tab-demo";
+
+    // SHIP-889 touch
+    public const string DemoCreateReason = "demo-create-reason";
 }

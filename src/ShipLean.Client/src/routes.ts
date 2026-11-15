@@ -148,6 +148,8 @@ export interface RouteQuery {
   point?: string;
   // The sprint Retro tab's Written by filter (all | agents | people).
   writtenBy?: string;
+  // The sprint Retro tab's category tile at touch (wentWell | wentBadly | improve | notInPlan).
+  cat?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -275,7 +277,7 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   sprintRetro: {
     pattern: '/p/:key/sprints/:sprintId/retro',
-    query: ['decide', 'point', 'view', 'writtenBy', 'item'],
+    query: ['decide', 'point', 'view', 'writtenBy', 'item', 'cat'],
     installLevel: false,
     crumbs: () => ['Sprints', 'Sprint', 'Retro'],
   },

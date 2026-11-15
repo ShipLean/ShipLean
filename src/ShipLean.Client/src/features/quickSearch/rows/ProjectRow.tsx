@@ -23,7 +23,7 @@ export function ProjectRow({
       <span data-testid={ids.optionLabel} className="min-w-0 truncate">
         <Match text={name} query={query} />
       </span>
-      <span className="flex items-center justify-end gap-2 text-[length:var(--text-xs)] text-ink-muted">
+      <span className="flex items-center justify-end gap-2 text-[length:var(--text-xs)] text-ink-muted touch:col-start-2 touch:row-start-2 touch:justify-start">
         <span>{detail}</span>
         <span data-testid={ids.optionKey}>
           <ProjectKeyBadge current={current}>{projectKey}</ProjectKeyBadge>

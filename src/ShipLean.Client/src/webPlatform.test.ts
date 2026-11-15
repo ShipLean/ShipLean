@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 // core's client, configured with this platform as main.tsx does, so each case is the response the browser sees.
 let client: typeof import('@shiplean/core/api/client');
 let webPlatform: typeof import('./webPlatform').webPlatform;
+let VIEWPORT_HEADER: string;
 
 const assign = vi.fn();
 const HERE = encodeURIComponent('/p/SHIP/sprints?x=1');
@@ -28,7 +29,7 @@ beforeEach(async () => {
   stubLocation('/p/SHIP/sprints', '?x=1');
   vi.resetModules();
   const seam = await import('@shiplean/core/platform');
-  webPlatform = (await import('./webPlatform')).webPlatform;
+  ({ webPlatform, VIEWPORT_HEADER } = await import('./webPlatform'));
   seam.configurePlatform(webPlatform);
   client = await import('@shiplean/core/api/client');
 });
@@ -123,13 +124,17 @@ test('webPlatform_WhenSessionEndedFollowsAPlain401_ShouldOpenLoginWithState', as
 
 test('webPlatform_ShouldSendSameOriginCookieRequestsWithNoAuthHeaders', async () => {
   const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  vi.stubGlobal('innerWidth', 1280);
 
   await client.api.get('/api/things');
 
   const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
   expect(url).toBe('/api/things');
   expect(init.credentials).toBe('same-origin');
-  expect(init.headers).toEqual({ [client.CLIENT_HEADER]: client.clientId });
+  expect(init.headers).toEqual({
+    [client.CLIENT_HEADER]: client.clientId,
+    [VIEWPORT_HEADER]: 'desktop',
+  });
 });
 
 test('webPlatform_ShouldUseTheBrowsersStorage', () => {
@@ -159,4 +164,34 @@ test('webPlatform_ShouldFollowTheBrowsersConnection', () => {
   window.dispatchEvent(new Event('online'));
   expect(listener).toHaveBeenCalledTimes(1);
   online.mockRestore();
+});
+
+test('webPlatform_ShouldSendTheViewportHeader', async () => {
+  const fetchStub = vi.fn(() => Promise.resolve(new Response('{}', { status: 200 })));
+  vi.stubGlobal('fetch', fetchStub);
+
+  vi.stubGlobal('innerWidth', 390);
+  await client.api.get('/api/things');
+  // Read at send time: a resize between two requests changes the second one's header.
+  vi.stubGlobal('innerWidth', 1280);
+  await client.api.post('/api/things', { name: 'x' });
+
+  const headersOf = (call: number) =>
+    (fetchStub.mock.calls[call] as unknown as [string, RequestInit])[1].headers;
+  expect(VIEWPORT_HEADER).toBe('X-ShipLean-Viewport');
+  expect(headersOf(0)).toMatchObject({ [VIEWPORT_HEADER]: 'phone' });
+  expect(headersOf(1)).toMatchObject({ [VIEWPORT_HEADER]: 'desktop' });
+});
+
+test('webPlatform_WhenSendingAForm_ShouldSendTheViewportHeader', async () => {
+  const fetchStub = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  vi.stubGlobal('innerWidth', 700);
+
+  await client.sendForm('POST', '/api/files', new FormData(), 'Too large.');
+
+  const [, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+  expect(init.headers).toMatchObject({
+    [client.CLIENT_HEADER]: client.clientId,
+    [VIEWPORT_HEADER]: 'tablet',
+  });
 });

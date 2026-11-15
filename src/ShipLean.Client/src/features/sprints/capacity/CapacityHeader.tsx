@@ -31,7 +31,7 @@ export function CapacityHeader({
   const { workingDays, holidays, holidayCountry } = capacity;
   const names = holidays.map((h) => `${h.name} (${h.label})`).join(', ');
   return (
-    <div className="grid gap-x-6 gap-y-3 border-b border-edge p-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+    <div className="grid gap-x-6 gap-y-3 border-b border-edge p-4 grid-cols-[auto_minmax(0,1fr)] touch:grid-cols-[minmax(0,1fr)] touch:p-3">
       <div className="grid gap-1">
         {readOnly ? (
           <span
@@ -61,7 +61,7 @@ export function CapacityHeader({
           <input
             id="capacity-velocity"
             data-testid={ids.capacityVelocity}
-            className="field w-28 text-right tabular-nums"
+            className="field w-28 text-right tabular-nums touch:w-full touch:text-left"
             type="number"
             min={0}
             max={9999.99}
@@ -97,7 +97,7 @@ export function CapacityHeader({
             {project.role === 'admin' ? (
               <Link
                 data-testid={ids.capacityNoCountryLink}
-                className="text-signal underline"
+                className="text-signal underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)] touch:items-center"
                 to={routePath('projectSettings', { key: project.key, tab: 'general' })}
               >
                 Settings › General

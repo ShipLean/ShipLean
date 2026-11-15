@@ -42,9 +42,14 @@ export function ParentField({
   const types = parentTypesOf(type);
   if (types.length === 0) return null;
   return (
-    <FieldCell label="Parent" field="parent" changed={changed} className="max-w-[420px] shrink">
+    <FieldCell
+      label="Parent"
+      field="parent"
+      changed={changed}
+      className="max-w-[420px] shrink touch:col-span-2"
+    >
       <div className="flex min-w-0 items-center gap-2">
-        <div className="min-w-0 [&>span]:max-w-full [&_button]:max-w-full">
+        <div className="min-w-0 touch:flex-1 [&>span]:max-w-full [&_button]:max-w-full touch:[&>span]:w-full">
           <FieldMenu
             buttonTestId={ids.parentButton}
             buttonLabel="Parent"
@@ -78,7 +83,7 @@ export function ParentField({
             testId={ids.parentOpen}
             itemKey={value.key}
             title="Open parent"
-            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline"
+            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center touch:px-1 touch:text-[length:var(--text-sm)]"
           >
             <span className="sr-only">Open parent </span>
             {value.key}

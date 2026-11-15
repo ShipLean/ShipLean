@@ -29,4 +29,8 @@ public static class AgentsTestIds
     public const string ConnectedEmpty = "agent-connected-empty";
     public const string ConnectedAddLine = "agent-connected-add-line";
     public const string ConnectedFailed = "agent-connected-failed";
+    public const string ConnectedRevokeRow = "agent-connected-revoke-row";
+    public const string ConnectedRevokeCancel = "agent-connected-revoke-cancel";
+    public const string ConnectedRevokeConfirm = "agent-connected-revoke-confirm";
+    public const string ConnectedCopy = "agent-connected-copy";
 }

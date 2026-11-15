@@ -18,6 +18,12 @@ public sealed class StatusBandPanel(IPage page)
 
     public ILocator EditLine => page.GetByTestId(FeatureTestIds.StatusEditLine);
 
+    public ILocator Editor => page.GetByTestId(FeatureTestIds.StatusEditor);
+
+    public ILocator EditHint => page.GetByTestId(FeatureTestIds.StatusEditHint);
+
+    public ILocator HealthSelect => page.GetByTestId(FeatureTestIds.StatusHealthSelect);
+
     public ILocator Done => page.GetByTestId(FeatureTestIds.StatusEditSave);
 
     // Clicks Still true and returns the POST response for the item's status confirmation.

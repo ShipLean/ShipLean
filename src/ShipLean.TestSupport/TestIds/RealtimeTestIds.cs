@@ -10,4 +10,6 @@ public static class RealtimeTestIds
     public const string PresenceList = "realtime-presence-list";
     public const string PresenceListItem = "realtime-presence-list-item";
     public const string Banner = "realtime-banner";
+    public const string PresenceCount = "realtime-presence-count";
+    public const string PresenceSheetItem = "realtime-presence-sheet-item";
 }

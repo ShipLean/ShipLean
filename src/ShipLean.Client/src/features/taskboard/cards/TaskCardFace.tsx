@@ -1,4 +1,4 @@
-import type { CSSProperties, HTMLAttributes, Ref } from 'react';
+import type { CSSProperties, HTMLAttributes, ReactNode, Ref } from 'react';
 import type { CardDto, TaskboardViewDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../components/Avatar';
 import { Chip } from '../../../components/Chip';
@@ -33,6 +33,7 @@ export function TaskCardFace({
   articleProps,
   style,
   pickUp,
+  actions,
 }: {
   card: CardDto;
   view: Pick<TaskboardViewDto, 'styleRules' | 'cardFields'>;
@@ -43,6 +44,8 @@ export function TaskCardFace({
   style?: CSSProperties;
   /** The Pick up button, or null when the card does not offer it. */
   pickUp?: (() => void) | null;
+  /** The task ⋯ button, shown at touch widths. */
+  actions?: ReactNode;
 }) {
   const fields = view.cardFields.find((f) => f.type === 'task') ?? ALL_FIELDS;
   const rule = view.styleRules.find((r) => r.id === card.styleRuleId);
@@ -85,7 +88,10 @@ export function TaskCardFace({
               {preview ? (
                 card.parent.title
               ) : (
-                <ItemLink itemKey={card.parent.key} className="hover:underline">
+                <ItemLink
+                  itemKey={card.parent.key}
+                  className="hover:underline touch:flex touch:min-h-[var(--touch-target)] touch:items-center"
+                >
                   {card.parent.title}
                 </ItemLink>
               )}
@@ -101,7 +107,10 @@ export function TaskCardFace({
           {preview ? (
             card.title
           ) : (
-            <ItemLink itemKey={card.key} className="text-inherit no-underline hover:underline">
+            <ItemLink
+              itemKey={card.key}
+              className="text-inherit no-underline hover:underline touch:flex touch:min-h-[var(--touch-target)] touch:items-center"
+            >
               {card.title}
             </ItemLink>
           )}
@@ -128,10 +137,12 @@ export function TaskCardFace({
           <button
             type="button"
             data-testid={id(ids.cardPickUp)}
-            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex"
+            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex touch:inline-flex touch:h-8 touch:min-w-8 touch:justify-center touch:border-transparent touch:bg-transparent touch:px-0"
             onClick={pickUp}
           >
-            Pick up
+            <span className="touch:inline-flex touch:h-7 touch:items-center touch:rounded-full touch:border touch:border-signal touch:bg-panel touch:px-2.5">
+              Pick up
+            </span>
           </button>
         ) : null}
         {fields.showAssignee ? (
@@ -139,6 +150,7 @@ export function TaskCardFace({
             <Avatar {...(card.assignee ?? {})} />
           </span>
         ) : null}
+        {actions}
       </span>
       <CardExtraFields fields={card.extraFields} />
     </article>

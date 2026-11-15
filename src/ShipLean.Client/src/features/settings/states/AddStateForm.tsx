@@ -4,7 +4,7 @@ import { settingsTestIds } from '../testIds';
 import { CATEGORIES, CATEGORY_LABELS, parseCategory } from './categories';
 
 const field =
-  'h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink';
+  'h-7 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink touch:h-[var(--touch-target)] touch:w-full';
 
 /** Name and category of a new state of the shown type; it joins the draft at the end of the list. */
 export function AddStateForm({
@@ -19,7 +19,7 @@ export function AddStateForm({
   const trimmed = name.trim();
   const repeated = trimmed !== '' && taken(trimmed);
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 touch:flex-col touch:items-stretch">
       <input
         data-testid={settingsTestIds.stateAddName}
         aria-label="New state name"
@@ -47,7 +47,7 @@ export function AddStateForm({
         type="button"
         data-testid={settingsTestIds.stateAdd}
         disabled={trimmed === '' || repeated}
-        className="h-7 rounded-control border border-edge px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60"
+        className="h-7 rounded-control border border-edge px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60 touch:h-[var(--touch-target)]"
         onClick={() => {
           onAdd(trimmed, category);
           setName('');

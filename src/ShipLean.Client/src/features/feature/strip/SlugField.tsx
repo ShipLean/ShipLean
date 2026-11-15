@@ -13,7 +13,7 @@ export function SlugField({ slug }: { slug: string | null }) {
           <button
             type="button"
             aria-label="Copy slug"
-            className="rounded-control px-1 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+            className="rounded-control px-1 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
             onClick={() => void navigator.clipboard.writeText(slug)}
           >
             Copy

@@ -34,6 +34,8 @@ interface SprintFormProps {
   datesHint?: string;
   /** When given, a Cancel button sits beside the submit button. */
   onCancel?: () => void;
+  /** Leaves out the button row, for a host that submits from elsewhere (the full-screen dialog's header). */
+  hideSubmit?: boolean;
 }
 
 const LABEL = 'text-[length:var(--text-sm)] text-ink-muted';
@@ -52,6 +54,7 @@ export function SprintForm({
   datesLocked = false,
   datesHint,
   onCancel,
+  hideSubmit = false,
 }: SprintFormProps) {
   return (
     <form
@@ -124,17 +127,31 @@ export function SprintForm({
       >
         {error}
       </span>
-      <span />
-      <div className="flex justify-end gap-2">
-        {onCancel !== undefined ? (
-          <button type="button" data-testid={ids.cancel} className="btn-ghost" onClick={onCancel}>
-            Cancel
-          </button>
-        ) : null}
-        <button type="submit" data-testid={ids.submit} className="btn-signal" disabled={pending}>
-          {submitLabel}
-        </button>
-      </div>
+      {hideSubmit ? null : (
+        <>
+          <span />
+          <div className="flex justify-end gap-2">
+            {onCancel !== undefined ? (
+              <button
+                type="button"
+                data-testid={ids.cancel}
+                className="btn-ghost"
+                onClick={onCancel}
+              >
+                Cancel
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              data-testid={ids.submit}
+              className="btn-signal"
+              disabled={pending}
+            >
+              {submitLabel}
+            </button>
+          </div>
+        </>
+      )}
     </form>
   );
 }

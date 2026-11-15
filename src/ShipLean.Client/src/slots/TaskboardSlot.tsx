@@ -4,6 +4,10 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { UserRef } from '@shiplean/core/api/refs';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { fetchMe, meKey } from '../queries/shared';
+import type { SheetAction } from '../touch/ActionSheet';
+import { collapseAllMap } from '../features/taskboard/grid/boardRowIds';
+import { useOpenCardSettings } from '../features/taskboard/grid/useOpenCardSettings';
+import { faceCounts } from '../features/taskboard/grid/faceFilter';
 import { AddStoryBox } from '../features/taskboard/grid/AddStoryBox';
 import { TaskboardGrid } from '../features/taskboard/grid/TaskboardGrid';
 import { TaskboardDnd } from '../features/taskboard/moves/TaskboardDnd';
@@ -31,6 +35,7 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
     [sprint.id],
   );
   const setState = useSetParentState(project.id, scope);
+  const openCardSettings = useOpenCardSettings();
   const meDto = useQuery({ queryKey: meKey, queryFn: fetchMe }).data;
   const me: UserRef | undefined = meDto && {
     id: meDto.id,
@@ -58,6 +63,26 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
     (rowId: string) => setToggled((current) => new Map(current).set(rowId, false)),
     [],
   );
+  const view = board.data;
+  const more: SheetAction[] = [
+    {
+      id: 'collapse-all',
+      label: 'Collapse all',
+      disabled: !view,
+      onSelect: () => view && setToggled(collapseAllMap(view, true)),
+    },
+    {
+      id: 'expand-all',
+      label: 'Expand all',
+      disabled: !view,
+      onSelect: () => view && setToggled(collapseAllMap(view, false)),
+    },
+    {
+      id: 'taskboard-settings',
+      label: 'Taskboard settings',
+      onSelect: openCardSettings,
+    },
+  ];
   const isCollapsed = (rowId: string, completed: boolean) => toggled.get(rowId) ?? completed;
 
   return (
@@ -67,7 +92,10 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
         onGroupingChange={setGrouping}
         people={people}
         faces={faces}
+        faceCounts={view ? faceCounts(view, grouping) : new Map()}
         onFaceToggle={toggleFace}
+        onFacesClear={() => setFaces(new Set())}
+        more={more}
         onAddStory={() => setAdding(true)}
       />
       {adding ? (

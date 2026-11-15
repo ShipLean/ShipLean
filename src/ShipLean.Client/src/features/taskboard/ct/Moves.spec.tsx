@@ -79,6 +79,7 @@ test('Taskboard_WhenCardDroppedInColumn_ShouldPostTheStateAndShowItAtOnce', asyn
     stateId: 't-active',
     row: null,
     beforeItemId: null,
+    method: 'drag',
   });
   await expect(cell(page, 0, 1).getByTestId(ids.card)).toHaveCount(2);
   await expect(cell(page, 0, 0).getByTestId(ids.card)).toHaveCount(0);
@@ -154,6 +155,7 @@ test('Taskboard_WhenCardDroppedOnPersonRow_ShouldPostThePersonAndNoOrder', async
     stateId: 't-active',
     row: { grouping: 'people', target: 'u-priya' },
     beforeItemId: null,
+    method: 'drag',
   });
 
   // The first drop has been drawn (the layout has stopped moving) before the second drag measures its cells.
@@ -223,8 +225,20 @@ test('Taskboard_WhenPickedUp_ShouldPostMeAndTheFirstInProgressState', async ({ m
     stateId: 't-active',
     row: { grouping: 'people', target: 'u-priya' },
     beforeItemId: null,
+    method: 'pick-up',
   });
   await expect(cell(page, 0, 1).getByTestId(ids.card)).toHaveCount(2);
+});
+
+test('Moves_WhenPickUpClicked_ShouldSendMethodPickUp', async ({ mount, page }) => {
+  const server = await stubTaskboard(page, VIEW, hold);
+  await mount(slot, route);
+
+  await card(page, 'SHIP-173').hover();
+  await card(page, 'SHIP-173').getByTestId(ids.cardPickUp).click();
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({ method: 'pick-up' });
 });
 
 test('Taskboard_WhenPickedUpInPeopleRows_ShouldMoveToMyRow', async ({ mount, page }) => {
@@ -326,6 +340,11 @@ test('Taskboard_WhenSameCardMovedTwice_ShouldNameTheRevisionTheFirstMoveWrote', 
 
   await card(page, 'SHIP-173').focus();
   await page.keyboard.press('Alt+ArrowRight');
+  // The card was focused before the first press, so focus alone proves nothing: wait for the move to be
+  // drawn, or the second press reads the card still in its old column and asks for the same state again.
+  await expect(
+    cell(page, 0, 1).getByTestId(ids.cardKey).filter({ hasText: 'SHIP-173' }),
+  ).toHaveCount(1);
   await expect(card(page, 'SHIP-173')).toBeFocused();
   await page.keyboard.press('Alt+ArrowRight');
 
@@ -349,6 +368,11 @@ test('Taskboard_WhenMoveSettlesWhileNextIsQueued_ShouldRefetchOnlyAfterTheLast',
 
   await card(page, 'SHIP-173').focus();
   await page.keyboard.press('Alt+ArrowRight');
+  // The card was focused before the first press, so focus alone proves nothing: wait for the move to be
+  // drawn, or the second press reads the card still in its old column and asks for the same state again.
+  await expect(
+    cell(page, 0, 1).getByTestId(ids.cardKey).filter({ hasText: 'SHIP-173' }),
+  ).toHaveCount(1);
   await expect(card(page, 'SHIP-173')).toBeFocused();
   await page.keyboard.press('Alt+ArrowRight');
   server.releaseMove();
@@ -532,4 +556,25 @@ test('Taskboard_WhenOneOfTwoMovesFails_ShouldPutBackOnlyThatCard', async ({ moun
   await expect(cell(page, 0, 0).getByTestId(ids.cardKey)).toHaveText(['SHIP-173']);
   await expect.poll(() => server.moves.length).toBe(2);
   await expect(cell(page, 0, 2).getByTestId(ids.cardKey)).toHaveText(['SHIP-171', 'SHIP-172']);
+});
+
+test('Moves_WhenCardDragged_ShouldSendMethodDrag', async ({ mount, page }) => {
+  const server = await stubTaskboard(page, VIEW, hold);
+  await mount(slot, route);
+
+  await drag(page, card(page, 'SHIP-173'), cell(page, 0, 1), 'cell');
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({ method: 'drag' });
+});
+
+test('Moves_WhenAltArrowPressed_ShouldSendMethodKeyboard', async ({ mount, page }) => {
+  const server = await stubTaskboard(page, VIEW, hold);
+  await mount(slot, route);
+
+  await card(page, 'SHIP-173').focus();
+  await page.keyboard.press('Alt+ArrowRight');
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({ method: 'keyboard' });
 });

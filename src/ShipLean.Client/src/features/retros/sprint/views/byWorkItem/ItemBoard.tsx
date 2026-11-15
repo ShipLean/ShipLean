@@ -10,6 +10,8 @@ import { FeatureChip } from '../../../../retroShared/FeatureChip';
 import { retroSharedTestIds as ids } from '../../../../retroShared/testIds';
 import { DecidedProgress } from '../../../features/DecidedProgress';
 import { retrosTestIds } from '../../../testIds';
+import { useTouchShell } from '../../../../../touch/useTouchShell';
+import { ItemCardPhone } from './ItemCardPhone';
 import { cardAddTarget, cardColumns } from './cardColumns';
 import { FailureLog } from './FailureLog';
 
@@ -30,6 +32,19 @@ export function ItemBoard({
   highlightedPointId?: string;
   onAdded?: (point: RetroPointDto) => void;
 }) {
+  const { touch } = useTouchShell();
+  if (touch) {
+    return (
+      <ItemCardPhone
+        projectKey={projectKey}
+        cards={cards}
+        sprintId={sprintId}
+        filter={filter}
+        highlightedPointId={highlightedPointId}
+        onAdded={onAdded}
+      />
+    );
+  }
   const [card] = cards;
   const { workItem, sprint } = card;
   const itemPage = workItem

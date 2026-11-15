@@ -188,10 +188,12 @@ test('RetroActionDialog_type of fix is two columns on a narrow screen and three 
     page
       .getByTestId(ids.retroActionFix)
       .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
-  await page.setViewportSize({ width: 800, height: 700 });
-  expect(await columns()).toBe(3);
-  await page.setViewportSize({ width: 600, height: 700 });
-  expect(await columns()).toBe(2);
+  // 901px is the first desktop width (touch is 900px and below); 599px is the phone rule. The dialog
+  // re-lays-out once the viewport change reaches its media queries, so poll instead of reading once.
+  await page.setViewportSize({ width: 901, height: 700 });
+  await expect.poll(columns).toBe(3);
+  await page.setViewportSize({ width: 599, height: 700 });
+  await expect.poll(columns).toBe(2);
 });
 
 test('RetroActionDialog_with nothing to offer shows an empty state and a disabled Save', async ({
