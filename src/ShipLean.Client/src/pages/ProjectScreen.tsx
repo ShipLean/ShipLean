@@ -13,12 +13,14 @@ import { QueryFailure } from './QueryFailure';
 interface ProjectScreenProps {
   routeId: RouteId;
   testId: string;
+  // The sprint tabs' 12px side gutter at touch (design sprint-backlog.html, --m-pad); other pages keep 16px.
+  tightGutter?: boolean;
   children: (project: ProjectDto) => ReactNode;
 }
 
 // The root of every project page: reports presence, resolves the project the URL's key names (not found when it does
 // not exist or you are not a member) and hands it to the page's layout.
-export function ProjectScreen({ routeId, testId, children }: ProjectScreenProps) {
+export function ProjectScreen({ routeId, testId, tightGutter = false, children }: ProjectScreenProps) {
   useScreenPresence(routeId);
   const { key = '' } = useParams();
   const project = useQuery(projectByKeyQuery(key));
@@ -28,7 +30,7 @@ export function ProjectScreen({ routeId, testId, children }: ProjectScreenProps)
     return project.isError ? <QueryFailure error={project.error} /> : null;
   }
   return (
-    <div data-testid={testId} className="p-4">
+    <div data-testid={testId} className={tightGutter ? 'p-4 touch:p-3' : 'p-4'}>
       <ScreenViewReporter routeId={routeId} projectId={project.data.id} />
       {children(project.data)}
       <UnsavedGuardHost />
