@@ -10,6 +10,8 @@ import { touchTestIds } from '../../touch/testIds';
 import { PEOPLE, SHELL_MEMBERS, SHELL_PROJECT, stubShell } from './shellStub';
 import type { Page } from './shoot';
 import { phonePageShots } from './shootPhone';
+import { SPRINT_24, sprintsWithGoals, stubSprintBacklog } from './fixtures/sprints';
+import { sprintsTestIds } from '../../features/sprints/testIds';
 
 // The touch top bar on a phone (SHIP-713): the breadcrumb, the presence count and the Live dot, the bar while the
 // connection is down (Reconnecting keeps its word, with the banner), and quick search full screen, empty and with
@@ -214,6 +216,20 @@ phonePageShots([
       await expect(
         page.getByTestId(quickSearchTestIds.group).and(page.locator('[data-group="items"]')),
       ).toBeVisible();
+    },
+  },
+  {
+    // A sprint page's crumb and tab row. The crumb reads "Sprint" for every tab but Retro today (SHIP-1626 gap SHELL-11).
+    name: 'top-bar-sprint',
+    route: `/p/SHIP/sprints/${SPRINT_24}/backlog`,
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page, { sprints: sprintsWithGoals });
+      await stubSprintBacklog(page);
+    },
+    ready: async (page) => {
+      await expect(page.getByTestId(sprintsTestIds.kpiCommitted)).toHaveText(/21/);
+      await expect(page.getByTestId(sprintsTestIds.glanceReady)).toBeVisible();
     },
   },
 ]);
