@@ -10,6 +10,7 @@ namespace ShipLean.UnitTest.Inspection;
 // Red until lane C1 replaces the stub RunAssembler; that is the only reason these fail.
 [TestFixture]
 [Category("RedUntilLaneC1")]
+[Category("RedUntilLane")] // Lane C1 removes this category (and RedUntilLaneC1) when the assembler goes green, so CI stops excluding it.
 public class RunAssemblerContractTests
 {
     [TestCase("claude-code-synthetic")]

@@ -1,0 +1,28 @@
+# Tempo for the Inspection test stack: one process, local storage, short block and idle times so a loaded fixture is searchable fast.
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+ingester:
+  trace_idle_period: 1s
+  max_block_duration: 5s
+  lifecycler:
+    min_ready_duration: 0s
+
+compactor:
+  compaction:
+    block_retention: 720h
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /tmp/tempo/wal
+    local:
+      path: /tmp/tempo/blocks
