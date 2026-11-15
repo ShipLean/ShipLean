@@ -1,3 +1,4 @@
+using ClickHouse.Client;
 using Microsoft.Extensions.Hosting;
 
 namespace ShipLean.Application.Features.Inspection.ClickHouse.Schema;
@@ -30,7 +31,18 @@ public sealed class ClickHouseSchemaMigrator : IHostedService
 
     public ClickHouseNames Names => names;
 
-    public Task StartAsync(CancellationToken cancellationToken) => EnsureAsync(cancellationToken);
+    // A store that is down at start does not stop the app: the finder, health and field check migrate on first use. A wrong layout does.
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await EnsureAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or ClickHouseServerException)
+        {
+            // Retried by the next EnsureAsync, which every read of the store makes.
+        }
+    }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
