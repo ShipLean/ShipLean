@@ -59,7 +59,11 @@ export function RunHeader({
   return (
     <header className="rv-head" data-testid={ids.runHeader}>
       <div className="rv-top">
-        <Link className="rv-back" to={routePath('workItem', { key: project, itemKey })}>
+        <Link
+          className="rv-back"
+          data-testid={ids.runBack}
+          to={routePath('workItem', { key: project, itemKey })}
+        >
           ← Back to {itemKey}
         </Link>
       </div>
