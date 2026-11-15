@@ -40,10 +40,10 @@ public class FeatureTimelineJourneyTests : SeededAcceptanceTest
             await Expect(timeline.Bar(key)).ToHaveCountAsync(1);
         }
 
-        await timeline.GroupButton("people").ClickAsync();
+        await timeline.GroupButton("People").ClickAsync();
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-group", "people");
         await Expect(timeline.Bars).ToHaveCountAsync(3);
-        await timeline.GroupButton("stories").ClickAsync();
+        await timeline.GroupButton("Stories").ClickAsync();
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-group", "stories");
         await Expect(timeline.Bars).ToHaveCountAsync(3);
 
@@ -54,7 +54,7 @@ public class FeatureTimelineJourneyTests : SeededAcceptanceTest
         await Expect(timeline.HistoryRows).ToHaveCountAsync(6);
         await Expect(timeline.ReviewRows).ToHaveCountAsync(2);
 
-        await timeline.ViewButton("json").ClickAsync();
+        await timeline.ViewButton("JSON for agents").ClickAsync();
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-view", "json");
         await Expect(timeline.Json).ToContainTextAsync("critical_path");
     }

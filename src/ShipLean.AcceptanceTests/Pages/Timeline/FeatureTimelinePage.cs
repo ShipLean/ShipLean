@@ -22,7 +22,7 @@ public sealed class FeatureTimelinePage(IPage page)
 
     public ILocator Bars => Page.GetByTestId(TimelineTestIds.ChartBar);
 
-    public ILocator Bar(string key) => Page.Locator($"[data-testid='{TimelineTestIds.ChartBar}'][data-key='{key}']");
+    public ILocator Bar(string key) => Bars.Filter(new() { HasTextString = key });
 
     public ILocator Rail => Page.GetByTestId(TimelineTestIds.Rail);
 
@@ -34,10 +34,10 @@ public sealed class FeatureTimelinePage(IPage page)
 
     public ILocator Json => Page.GetByTestId(TimelineTestIds.Json);
 
-    // The toolbar's Group and View buttons carry data-value; the toolbar root mirrors the chosen option in data-group and data-view.
-    public ILocator GroupButton(string value) => Page.GetByTestId(TimelineTestIds.ToolbarGroup).Locator($"button[data-value='{value}']");
+    // The toolbar's Group and View buttons by their labels; the toolbar root mirrors the chosen option in data-group and data-view.
+    public ILocator GroupButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarGroup).GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
 
-    public ILocator ViewButton(string value) => Page.GetByTestId(TimelineTestIds.ToolbarView).Locator($"button[data-value='{value}']");
+    public ILocator ViewButton(string label) => Page.GetByTestId(TimelineTestIds.ToolbarView).GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
 
     public async Task OpenFromFeatureAsync()
     {
