@@ -8,7 +8,7 @@
 }
 .ar-head h2 {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   font-weight: var(--weight-semibold);
 }
 .ar-sum {
@@ -20,26 +20,32 @@
   flex: 1;
 }
 .ar-pill {
-  display: inline-block;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  background: var(--color-surface-2);
+  color: var(--color-muted);
   white-space: nowrap;
 }
-.ar-pill.danger {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-}
 .ar-pill.warn {
-  color: var(--color-warn);
-  border-color: var(--color-warn);
+  background: color-mix(in srgb, var(--color-warn) 18%, transparent);
+  color: var(--color-text);
 }
 .ar-pill.ok {
-  color: var(--color-ok);
+  background: color-mix(in srgb, var(--color-ok) 18%, transparent);
+  color: var(--color-text);
 }
 .ar-pill.info {
-  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 18%, transparent);
+  color: var(--color-text);
+}
+.ar-pill.danger {
+  background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+  color: var(--color-danger);
 }
 .ar-box {
   border: 1px solid var(--color-border);
@@ -166,9 +172,17 @@
 }
 .ar-note.warn {
   border-style: solid;
-  border-color: var(--color-warn);
-  background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface));
+  border-left: 3px solid var(--color-warn);
+  background: var(--color-surface);
   color: var(--color-text);
+}
+.ar-note.warn b {
+  display: block;
+}
+.ar-open {
+  color: var(--color-muted);
+  font-size: 16px;
+  text-decoration: none;
 }
 .ar-note code {
   padding: 0 4px;

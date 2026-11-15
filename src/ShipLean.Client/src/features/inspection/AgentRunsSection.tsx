@@ -109,7 +109,10 @@ function Down({ data, onRetry }: { data: AgentRunsSectionDto; onRetry: () => voi
           <b>Can&apos;t reach the trace store right now.</b>{' '}
           {data.problem ?? 'Runs can’t be listed.'}
         </span>
-        <span>The rest of this item works as usual.</span>
+        <span>
+          The rest of this item works as usual. Instance admins can see the store&apos;s status in
+          Admin › Instance health.
+        </span>
       </div>
     </>
   );
@@ -168,8 +171,12 @@ function WithRuns({
           </span>
           {' · '}
           <span data-testid={ids.agentRunsTotalTook}>{formatTotalDuration(t.tookMs)}</span>
-          {' · '}
-          <span data-testid={ids.agentRunsTotalTokens}>{formatTokens(tokens)} tokens</span>
+          {tokens !== null && (
+            <>
+              {' · '}
+              <span data-testid={ids.agentRunsTotalTokens}>{formatTokens(tokens)} tokens</span>
+            </>
+          )}
         </span>
         <span className="ar-spacer" />
         {t.errors > 0 && (
@@ -197,6 +204,7 @@ function WithRuns({
               <th>Timeline</th>
               <th className="r">Tokens</th>
               <th className="r">Errors</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -300,7 +308,21 @@ function RunRow({
         {tokens === null ? <span className="ar-muted">&mdash;</span> : formatTokens(tokens)}
       </td>
       <td className="r" data-testid={ids.agentRunsRowErrors}>
-        {row.errors > 0 ? <span className="ar-errs">{row.errors}</span> : 0}
+        {row.errors > 0 ? (
+          <span className="ar-errs">{row.errors}</span>
+        ) : (
+          <span className="ar-muted">0</span>
+        )}
+      </td>
+      <td>
+        <Link
+          to={to}
+          className="ar-open"
+          aria-label="Open the run"
+          onClick={(e) => e.stopPropagation()}
+        >
+          ›
+        </Link>
       </td>
     </tr>
   );

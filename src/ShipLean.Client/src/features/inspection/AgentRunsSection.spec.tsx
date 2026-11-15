@@ -125,6 +125,15 @@ test('Section_WhenLoadFails_ShouldShowTheGenericFailure', async ({ mount, page }
   await expect(page.getByTestId(ids.agentRunsDown)).toHaveCount(0);
 });
 
+test('Section_WhileLoading_ShouldShowTheLoadingState', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route('**/api/inspection/**', () => new Promise(() => undefined));
+  await mount(<AgentRunsSection project={project} itemKey="SHIP-1" />);
+
+  await expect(page.getByTestId(ids.agentRunsLoading)).toBeVisible();
+  await expect(page.getByTestId(ids.agentRunsRow)).toHaveCount(0);
+});
+
 const shots = { default: undefined, empty, down } as const;
 for (const theme of ['light', 'dark'] as const) {
   for (const [state, section] of Object.entries(shots)) {

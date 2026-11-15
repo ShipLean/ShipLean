@@ -42,9 +42,11 @@ public class AgentRunsSectionTests : InspectionAcceptanceTest
     {
         await new WorkItemScreen(Page).OpenAsync(ProjectKey, ItemKey);
 
+        var firstRow = Page.GetByTestId(InspectionTestIds.AgentRunsRow).First;
+        var runId = await firstRow.GetAttributeAsync("data-run-id");
         await Page.GetByTestId(InspectionTestIds.AgentRunsRowAgent).First.ClickAsync();
 
         await Expect(Page.GetByTestId(InspectionTestIds.RunPage)).ToBeVisibleAsync();
-        await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex($"/items/{ItemKey}/runs/"));
+        await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex($"/items/{ItemKey}/runs/{System.Text.RegularExpressions.Regex.Escape(runId!)}(\\?.*)?$"));
     }
 }
