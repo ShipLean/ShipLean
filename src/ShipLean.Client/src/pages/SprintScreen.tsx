@@ -18,7 +18,7 @@ interface SprintScreenProps {
 export function SprintScreen({ routeId, testId, children }: SprintScreenProps) {
   const { sprintId } = useParams();
   return (
-    <ProjectScreen routeId={routeId} testId={testId}>
+    <ProjectScreen routeId={routeId} testId={testId} tightGutter>
       {(project) => (
         <WithSprints project={project}>
           {(sprints) => {
