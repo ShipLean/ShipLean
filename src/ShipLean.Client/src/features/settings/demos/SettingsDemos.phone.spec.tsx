@@ -77,6 +77,10 @@ for (const theme of THEMES) {
     expect(new Set(segments.map((s) => s.y)).size).toBe(1);
     const group = (await visibility.boundingBox())!;
     for (const segment of segments) expect(segment.width).toBeLessThan(group.width / 3 + 1);
+    // The untouched connected panel, before any tap changes the visibility or opens the disconnect confirm.
+    await expect(youtube).toHaveScreenshot(`settings-demos-youtube-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
     // A tap near a segment's bottom-right corner, away from the radio and its text, chooses it.
     await visibility.scrollIntoViewIfNeeded();
     const last = (await visibility.locator('> span').nth(2).boundingBox())!;
@@ -95,9 +99,5 @@ for (const theme of THEMES) {
     expect(keep.y).toBeGreaterThan(confirm.y + confirm.height - 1);
     expect(Math.round(keep.width)).toBe(Math.round(confirm.width));
     expect(confirm.width).toBeGreaterThan((await youtube.boundingBox())!.width - 40);
-
-    await expect(youtube).toHaveScreenshot(`settings-demos-youtube-phone.${theme}.png`, {
-      animations: 'disabled',
-    });
   });
 }
