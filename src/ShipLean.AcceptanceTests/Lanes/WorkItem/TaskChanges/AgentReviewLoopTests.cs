@@ -2,6 +2,8 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 using ShipLean.AcceptanceTests.Harness;
+using ShipLean.Application.Identity;
+using ShipLean.Contracts;
 using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.AcceptanceTests.Pages.TaskChanges;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
@@ -24,7 +26,14 @@ public class AgentReviewLoopTests : SeededAcceptanceTest
     private string _taskKey = null!;
     private Guid _taskId;
 
-    protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddFakeCodeHost();
+    // The acceptance host starts with no test user, so Host.ActAs has nothing to drive; registering ActingCurrentUser the way
+    // TestAuthentication does lets PlanTreeSeed write as Joel from Host.Services. Requests still use the real request user.
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        services.AddFakeCodeHost();
+        services.AddSingleton<ActingCurrentUser>(sp => new ActingCurrentUser(sp, new CurrentUser(sp)));
+        services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<ActingCurrentUser>());
+    };
 
     [OneTimeSetUp]
     public async Task SeedPlanAsync()
@@ -70,9 +79,9 @@ public class AgentReviewLoopTests : SeededAcceptanceTest
         requested.Ok.ShouldBeTrue();
 
         // 3. The task is New and unassigned, History says so, and the next agent's brief lists the comment.
-        var item = await CallAsync(mcp, "get_work_item", new() { ["item"] = _taskKey });
+        var item = await CallAsync(mcp, "get_work_item", new() { ["key"] = _taskKey });
         item.GetProperty("state").GetString().ShouldBe("New");
-        item.GetProperty("assignee").ValueKind.ShouldBe(JsonValueKind.Null);
+        (item.TryGetProperty("assignee", out var assignee) ? assignee.ValueKind : JsonValueKind.Null).ShouldBe(JsonValueKind.Null);
         item.GetProperty("open_code_comments").GetArrayLength().ShouldBe(1);
         await new WorkItemScreen(Page).OpenAsync(Project, _taskKey);
         await Expect(new SideRailPanel(Page).Revisions.Filter(new() { HasText = "Changes requested · 1 comment" })).ToHaveCountAsync(1);
