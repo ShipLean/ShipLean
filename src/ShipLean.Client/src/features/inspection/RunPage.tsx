@@ -41,6 +41,12 @@ export function RunPage({ project, itemKey, runId }: RunPageProps) {
     [page, view.zoomTurn, view.query],
   );
 
+  const back = (
+    <Link data-testid={ids.runBack} to={routePath('workItem', { key: project.key, itemKey })}>
+      Back to {itemKey}&apos;s runs
+    </Link>
+  );
+
   if (page === undefined || axis === undefined) {
     return (
       <div data-testid={ids.runPage}>
@@ -48,11 +54,13 @@ export function RunPage({ project, itemKey, runId }: RunPageProps) {
           <div className="rv-state" data-testid={ids.runLoadFailed} data-reason="store-unreachable">
             <h2>Store unreachable</h2>
             <p>{run.error.message}</p>
+            {back}
           </div>
         ) : run.isError ? (
           <div className="rv-state" data-testid={ids.runLoadFailed}>
             <h2>Couldn&apos;t load this run</h2>
             <p>Reload the page to try again.</p>
+            {back}
           </div>
         ) : (
           <div className="rv-state" data-testid={ids.runLoading}>
@@ -69,9 +77,7 @@ export function RunPage({ project, itemKey, runId }: RunPageProps) {
         <div className="rv-state" data-testid={ids.runExpired}>
           <h2>This run is no longer available</h2>
           <p>The store no longer keeps its traces and logs.</p>
-          <Link to={routePath('workItem', { key: project.key, itemKey })}>
-            Back to {itemKey}&apos;s runs
-          </Link>
+          {back}
         </div>
       </div>
     );

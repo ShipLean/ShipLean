@@ -62,6 +62,7 @@ const assertState: Record<State, (page: Page) => Promise<void>> = {
       'store-unreachable',
     );
     await expect(page.getByTestId(ids.runLoadFailed)).toContainText('connection refused');
+    await expect(page.getByTestId(ids.runBack)).toBeVisible();
     await expect(page.getByTestId(ids.runRow)).toHaveCount(0);
   },
   expired: async (page) => {

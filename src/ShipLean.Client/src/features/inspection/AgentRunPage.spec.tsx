@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import { stubInspection } from './ct/inspectionMocks';
+import { claudeRunPage, stubInspection } from './ct/inspectionMocks';
 import { AgentRunPageHarness } from './page/ct/AgentRunPageHarness';
 import { inspectionTestIds as ids } from './testIds';
 
@@ -37,4 +37,26 @@ test('AgentRunPage_WhenAt900px_ShouldShowTheRunPageNotTheNarrowLine', async ({ m
   await mount(<AgentRunPageHarness />, { hooksConfig: { route } });
   await expect(page.getByTestId(ids.runAgent)).toHaveText('Claude Code');
   await expect(page.getByTestId(ids.runPageNarrow)).toHaveCount(0);
+});
+
+test('AgentRunPage_WhenOlderClicked_ShouldNotShowTheOldRunHeaderWhileTheNextLoads', async ({
+  mount,
+  page,
+}) => {
+  await setup(page, 1440);
+  await page.route('**/api/inspection/projects/*/items/*/runs/sess-cc-1', (r) =>
+    r.fulfill({ json: claudeRunPage }),
+  );
+  await page.route('**/api/inspection/projects/*/items/*/runs/sess-cc-0', async (r) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await r.fulfill({
+      json: { ...claudeRunPage, header: { ...claudeRunPage.header, agentLabel: 'Older agent' } },
+    });
+  });
+  await mount(<AgentRunPageHarness />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.runAgent)).toHaveText('Claude Code');
+  await page.getByTestId(ids.runOlder).click();
+  await expect(page.getByTestId(ids.runLoading)).toBeVisible();
+  await expect(page.getByTestId(ids.runHeader)).toHaveCount(0);
+  await expect(page.getByTestId(ids.runAgent)).toHaveText('Older agent');
 });

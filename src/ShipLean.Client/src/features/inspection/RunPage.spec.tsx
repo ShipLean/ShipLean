@@ -49,6 +49,15 @@ test('RunPage_WhenLoaded_ShouldShowHeaderTotalsAndPostRunOpenedOnce', async ({ m
   await expect(page.getByTestId(ids.runTurn)).toHaveCount(2);
   expect(gets).toHaveLength(1);
   await expect.poll(() => posts.filter((a) => a === 'runOpened').length).toBe(1);
+  // A re-render with a changed query (typing in find) is not another open of the run.
+  await page.getByTestId(ids.runFind).fill('edit');
+  await expect(rows(page)).toHaveCount(1);
+  await page.getByTestId(ids.runFind).fill('');
+  await expect(rows(page)).toHaveCount(3);
+  // Posts arrive in order: once zoomed is in, any re-posted runOpened would be too.
+  await page.getByTestId(ids.runOverviewTurn).first().click();
+  await expect.poll(() => posts.includes('zoomed')).toBe(true);
+  expect(posts.filter((a) => a === 'runOpened')).toHaveLength(1);
 });
 
 test('RunPage_WhenTurnClicked_ShouldNarrowTheAxisToThatTurnAndPostZoomed', async ({
@@ -121,6 +130,18 @@ test('RunPage_WhenStoreIsUnreachable_ShouldShowTheProblemText', async ({ mount, 
   const failed = page.getByTestId(ids.runLoadFailed);
   await expect(failed).toHaveAttribute('data-reason', 'store-unreachable');
   await expect(failed).toContainText('ClickHouse is not reachable: connection refused');
+});
+
+test('RunPage_WhenRunFails_ShouldOfferTheWayBackToTheItem', async ({ mount, page }) => {
+  await setup(page, 409);
+  await mount(<RunPageHarness />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.runBack)).toHaveAttribute('href', '/p/SHIP/items/SHIP-1');
+});
+
+test('RunPage_WhenRunFails500_ShouldOfferTheWayBackToTheItem', async ({ mount, page }) => {
+  await setup(page, 500);
+  await mount(<RunPageHarness />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.runBack)).toHaveAttribute('href', '/p/SHIP/items/SHIP-1');
 });
 
 test('RunPage_WhenRunFails500_ShouldShowTheGenericFailure', async ({ mount, page }) => {
