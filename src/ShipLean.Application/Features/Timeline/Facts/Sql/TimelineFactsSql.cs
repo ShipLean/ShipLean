@@ -90,5 +90,13 @@ internal static class TimelineFactsSql
         ORDER BY start_date, name
         """;
 
+    // Who created the item: its revision 1.
+    public const string Creator =
+        """
+        SELECT r.changed_by AS userId, r.agent_name AS agentName
+        FROM revision r
+        WHERE r.work_item_id = @id AND r.rev = 1
+        """;
+
     public const string People = "SELECT id, name FROM app_user WHERE id = ANY(@userIds)";
 }

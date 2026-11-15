@@ -51,6 +51,12 @@ public sealed class TimelineFactsReader(NpgsqlDataSource dataSource) : ITimeline
         var taskKeys = tasks.Select(task => task.Key).ToHashSet();
         var sprints = await ReadSprintsAsync(Query<SprintRow>, projectId, moves.Where(move => taskKeys.Contains(move.ItemKey)), asOf);
 
+        var firstStory = stories.OrderBy(story => story.CreatedAt).ThenBy(story => story.Key, StringComparer.Ordinal).FirstOrDefault();
+        var plannedBy = firstStory is null
+            ? null
+            : await connection.QuerySingleOrDefaultAsync<TimelineActorFact>(new CommandDefinition(
+                TimelineFactsSql.Creator, new { id = firstStory.Id }, cancellationToken: cancellationToken));
+
         var waves = new Dictionary<string, string>();
         foreach (var story in stories)
         {
@@ -73,10 +79,11 @@ public sealed class TimelineFactsReader(NpgsqlDataSource dataSource) : ITimeline
             .. new[] { feature.CreatedBy }.Concat(storyFacts.Select(story => story.AssigneeId)).Concat(taskFacts.Select(task => task.AssigneeId))
                 .Concat(moves.Select(move => move.UserId)).OfType<Guid>(),
             .. reviews.Select(review => review.ByUserId),
+            .. new[] { plannedBy?.UserId }.OfType<Guid>(),
         ];
         var people = (await Query<PersonRow>(TimelineFactsSql.People, new { userIds = userIds.Distinct().ToArray() })).ToDictionary(row => row.Id, row => row.Name);
 
-        return new TimelineFacts(head.ProjectKey, feature, appliedAt, storyFacts, taskFacts, moves, blocked, links, waves, reviews, sprints, people);
+        return new TimelineFacts(head.ProjectKey, feature, appliedAt, storyFacts, taskFacts, moves, blocked, links, waves, reviews, sprints, people, plannedBy);
     }
 
     // From must finish before To: A successor B is A to B; A predecessor B and A blockedBy B are B to A.

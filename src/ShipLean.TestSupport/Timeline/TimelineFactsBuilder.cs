@@ -7,7 +7,8 @@ namespace ShipLean.TestSupport.Timeline;
 // The test double of C3: a fluent builder of TimelineFacts for the timeline builder's tests. Defaults give a valid Feature
 // (SHIP-99 "Coupons v2", New, created at Start, no epic) in project SHIP with nothing under it. A story, bug or task whose
 // current state isn't given takes the state of its latest move, or New when it has none. A move or Blocked tag change whose
-// revision isn't given takes the item's next revision, counted per item from 2 (revision 1 is the creation).
+// revision isn't given takes the item's next revision, counted per item from 2 (revision 1 is the creation). Nobody planned it
+// unless WithPlannedBy says so.
 public sealed class TimelineFactsBuilder
 {
     // Monday 5 October 2026, 00:00 UTC: the mock's first day.
@@ -28,6 +29,7 @@ public sealed class TimelineFactsBuilder
     private string _projectKey = "SHIP";
     private TimelineFeatureFact _feature = new(FeatureId, "SHIP-99", "Coupons v2", "New", StateCategory.Proposed, Start, null, null);
     private DateTimeOffset? _planAppliedAt;
+    private TimelineActorFact? _plannedBy;
 
     public TimelineFactsBuilder WithProjectKey(string projectKey)
     {
@@ -58,6 +60,13 @@ public sealed class TimelineFactsBuilder
     public TimelineFactsBuilder WithPlanApplied(DateTimeOffset at)
     {
         _planAppliedAt = at;
+        return this;
+    }
+
+    // Who captured the plan or added the first story; unset means unknown (null).
+    public TimelineFactsBuilder WithPlannedBy(Guid? userId = null, string? agentName = null)
+    {
+        _plannedBy = new TimelineActorFact(userId, agentName);
         return this;
     }
 
@@ -144,7 +153,8 @@ public sealed class TimelineFactsBuilder
             new Dictionary<string, string>(_waves, StringComparer.Ordinal),
             [.. _reviews],
             [.. _sprints],
-            new Dictionary<Guid, string>(_people));
+            new Dictionary<Guid, string>(_people),
+            _plannedBy);
 
     private TimelineFactsBuilder WithParent(
         string key, WorkItemTypeId type, string title, Guid? assignee, DateTimeOffset? createdAt, string? stateName, StateCategory? category)

@@ -141,6 +141,40 @@ public class TimelineFactsReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Read_WhenStoriesWereAddedAtDifferentTimes_ShouldNameTheCreatorOfTheEarliest()
+    {
+        var feature = await ItemAsync("feature");
+        var later = await ItemAsync("story", feature.Id);
+        var earlier = await ItemAsync("story", feature.Id);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE work_item SET created_at = @at WHERE id = @id", new { id = earlier.Id, at = T0.AddDays(-1) });
+            await connection.ExecuteAsync("UPDATE revision SET agent_name = 'Claude Code' WHERE work_item_id = @id AND rev = 1", new { id = earlier.Id });
+        }
+
+        var facts = await ReadAsync(feature.Id);
+
+        facts.PlannedBy.ShouldBe(new TimelineActorFact(SeedIds.Users.Joel, "Claude Code"));
+        later.Key.ShouldNotBe(earlier.Key);
+    }
+
+    [Test]
+    public async Task Read_WhenFirstStoryWasAddedByAPerson_ShouldNameThePerson()
+    {
+        var tree = await TreeAsync();
+
+        (await ReadAsync(tree.Feature)).PlannedBy.ShouldBe(new TimelineActorFact(SeedIds.Users.Joel, null));
+    }
+
+    [Test]
+    public async Task Read_WhenFeatureHasNoStories_ShouldHaveNoPlannedBy()
+    {
+        var feature = await ItemAsync("feature");
+
+        (await ReadAsync(feature.Id)).PlannedBy.ShouldBeNull();
+    }
+
+    [Test]
     public async Task Read_WhenBlockedTagAddedAndRemoved_ShouldReturnBothChanges()
     {
         var tree = await TreeAsync();

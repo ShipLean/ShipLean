@@ -30,6 +30,7 @@ public class TimelineFactsBuilderTests
             .WithReview("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, Mei, "codex", "Fix the test")
             .WithSprint("Sprint 7", new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 18))
             .WithPerson(Mei, "Mei")
+            .WithPlannedBy(Mei, "claude")
             .Build();
 
         facts.ProjectKey.ShouldBe("PART");
@@ -48,6 +49,7 @@ public class TimelineFactsBuilderTests
         facts.Reviews.ShouldBe([new TimelineReviewFact("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, "Fix the test", Mei, "codex")]);
         facts.Sprints.ShouldBe([new TimelineSprintFact("Sprint 7", new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 18))]);
         facts.People.ShouldBe(new Dictionary<Guid, string> { [Mei] = "Mei" });
+        facts.PlannedBy.ShouldBe(new TimelineActorFact(Mei, "claude"));
     }
 
     [Test]
@@ -68,6 +70,7 @@ public class TimelineFactsBuilderTests
         facts.Reviews.ShouldBeEmpty();
         facts.Sprints.ShouldBeEmpty();
         facts.People.ShouldBeEmpty();
+        facts.PlannedBy.ShouldBeNull();
     }
 
     [Test]

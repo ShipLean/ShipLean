@@ -52,12 +52,22 @@ internal static class TimelineKeyDates
     {
         if (facts.PlanAppliedAt is { } applied)
         {
-            return Point(lens, KeyDatePoint.Planned, applied, null, "Plan captured");
+            return Point(lens, KeyDatePoint.Planned, applied, Actor(lens, facts.PlannedBy), "Plan captured");
         }
 
         return facts.Stories.Count > 0
-            ? Point(lens, KeyDatePoint.Planned, facts.Stories.Min(s => s.CreatedAt), null, "First story added")
+            ? Point(lens, KeyDatePoint.Planned, facts.Stories.Min(s => s.CreatedAt), Actor(lens, facts.PlannedBy), "First story added")
             : Unreached(KeyDatePoint.Planned);
+    }
+
+    private static TimelinePersonDto? Actor(TimelineLens lens, TimelineActorFact? actor)
+    {
+        if (actor is null)
+        {
+            return null;
+        }
+
+        return actor.AgentName is { } agent ? TimelineLens.Agent(agent) : lens.User(actor.UserId);
     }
 
     private static TimelineKeyDateDto Point(TimelineLens lens, KeyDatePoint point, DateTimeOffset at, TimelinePersonDto? by, string source) =>

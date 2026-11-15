@@ -237,6 +237,29 @@ public class TimelineBarsTests
     }
 
     [Test]
+    public void Build_WhenPlanCapturedByAnAgent_ShouldNameTheAgent()
+    {
+        var planned = Build(Facts().WithPlanApplied(T0.AddHours(5)).WithPlannedBy(agentName: "Claude Code")).KeyDates[1];
+
+        planned.By.ShouldBe(new TimelinePersonDto(null, "Claude Code", true));
+    }
+
+    [Test]
+    public void Build_WhenFirstStoryAddedByAPerson_ShouldNameThePerson()
+    {
+        var planned = Build(Facts().WithPlannedBy(Ana)).KeyDates[1];
+
+        planned.Source.ShouldBe("First story added");
+        planned.By.ShouldBe(new TimelinePersonDto(Ana, "Ana Costa", false));
+    }
+
+    [Test]
+    public void Build_WhenNobodyIsKnownToHavePlanned_ShouldLeavePlannedByNull()
+    {
+        Build(Facts().WithPlanApplied(T0.AddHours(5))).KeyDates[1].By.ShouldBeNull();
+    }
+
+    [Test]
     public void Build_WhenNoStoriesAndNoPlan_ShouldLeavePlannedNull()
     {
         var planned = TimelineBars.Build(new TimelineFactsBuilder().Build(), AsOf, TimeZoneInfo.Utc).KeyDates[1];
