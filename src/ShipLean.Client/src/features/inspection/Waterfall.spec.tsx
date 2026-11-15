@@ -1,0 +1,136 @@
+import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
+import type { RunRowDetailDto } from '@shiplean/core/api/inspection';
+import { runRowDetail, stubInspection } from './ct/inspectionMocks';
+import { inspectionTestIds as ids } from './testIds';
+import { WaterfallHarness } from './waterfall/ct/WaterfallHarness';
+
+const edit: RunRowDetailDto = { ...runRowDetail, commitSha: 'a81d4e0' };
+
+async function setup(page: Page, detail: RunRowDetailDto = edit, rowStatus = 200) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const seen = await stubInspection(page);
+  await page.route('**/api/projects/by-key/*', (route) =>
+    route.fulfill({ json: { id: 'p1', key: 'SHIP', role: 'member' } }),
+  );
+  await page.route('**/runs/*/rows/*', (route) => {
+    seen.urls.push(new URL(route.request().url()).pathname);
+    return rowStatus === 200
+      ? route.fulfill({ json: detail })
+      : route.fulfill({
+          status: rowStatus,
+          json: { code: 'conflict', error: 'ClickHouse is not reachable: connection refused' },
+        });
+  });
+  return seen;
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const [variant, initial] of [
+    ['default', '0000000000001005'],
+    ['permission', 'perm-1'],
+    ['edit', '0000000000001005'],
+    ['hidden', '0000000000001005'],
+  ] as const) {
+    test(`Waterfall_WhenState${variant}_ShouldMatchItsScreenshot_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      await setup(
+        page,
+        variant === 'hidden' ? { ...edit, contentHidden: true, input: null, output: null } : edit,
+      );
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+      const c = await mount(<WaterfallHarness variant={variant} initial={initial} />);
+      await expect(page.getByTestId(ids.runPanelKind)).toBeVisible();
+      await expect(c).toHaveScreenshot(`waterfall-${variant}.${theme}.png`, {
+        animations: 'disabled',
+      });
+    });
+  }
+}
+
+test('Waterfall_WhenRendered_ShouldShowKindsWaitErrorRetryAndCollapsedCount', async ({
+  mount,
+  page,
+}) => {
+  await setup(page);
+  await mount(<WaterfallHarness variant="default" />);
+  await expect(page.getByTestId(ids.runTurn)).toHaveCount(2);
+  await expect(page.getByTestId(ids.runRow)).toHaveCount(5);
+  await expect(page.getByTestId(ids.runRowWait)).toHaveCount(1);
+  await expect(page.getByTestId(ids.runRowError)).toHaveCount(1);
+  await expect(page.getByTestId(ids.runRowRetry)).toHaveCount(1);
+  await expect(page.getByTestId(ids.runRowCollapsed)).toHaveText('2 spans');
+});
+
+test('Waterfall_WhenContentHidden_ShouldSayPromptHidden', async ({ mount, page }) => {
+  await setup(page);
+  await mount(<WaterfallHarness variant="hidden" />);
+  await expect(page.getByTestId(ids.runTurnPromptHidden)).toHaveCount(2);
+  await expect(page.getByTestId(ids.runTurnPrompt)).toHaveCount(0);
+});
+
+test('Waterfall_WhenRowSelectedAndRerendered_ShouldFetchItsDetailOnce', async ({ mount, page }) => {
+  const seen = await setup(page);
+  await mount(<WaterfallHarness variant="default" />);
+  await page.locator('[data-row-id="0000000000001005"]').click();
+  await expect(page.getByTestId(ids.runPanelFilePath)).toHaveText('src/App/Foo.cs');
+  // Interacting with the panel must not fetch the detail again.
+  await page.getByTestId(ids.runPanelCopyLink).click();
+  await page.locator('[data-row-id="0000000000001005"]').hover();
+  expect(seen.urls.filter((u) => /\/rows\/0000000000001005$/.test(u))).toHaveLength(1);
+});
+
+test('Waterfall_WhenRowSelected_ShouldPostRowSelectedUsageOnce', async ({ mount, page }) => {
+  const seen = await setup(page);
+  const posts: string[] = [];
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && r.url().endsWith('/usage/inspection'))
+      posts.push(r.postData() ?? '');
+  });
+  await mount(<WaterfallHarness variant="default" />);
+  await page.locator('[data-row-id="0000000000001005"]').click();
+  await expect(page.getByTestId(ids.runPanelKind)).toBeVisible();
+  await expect.poll(() => posts.length).toBe(1);
+  expect(JSON.parse(posts[0])).toEqual({ action: 'rowSelected', itemKey: 'SHIP-1' });
+  expect(seen.urls.length).toBeGreaterThan(0);
+});
+
+test('Waterfall_WhenFourHundredRows_ShouldRenderAllOfThem', async ({ mount, page }) => {
+  await setup(page);
+  await mount(<WaterfallHarness variant="big" />);
+  await expect(page.getByTestId(ids.runRow)).toHaveCount(400);
+});
+
+test('RowPanel_WhenStoreIsUnreachable_ShouldShowTheProblemText', async ({ mount, page }) => {
+  await setup(page, edit, 409);
+  await mount(<WaterfallHarness variant="default" initial="0000000000001005" />);
+  const failed = page.getByTestId(ids.runPanelLoadFailed);
+  await expect(failed).toHaveAttribute('data-reason', 'store-unreachable');
+  await expect(failed).toContainText('ClickHouse is not reachable: connection refused');
+});
+
+test('RowPanel_WhenDetailFails500_ShouldShowGenericFailureNotStoreUnreachable', async ({
+  mount,
+  page,
+}) => {
+  await setup(page, edit, 500);
+  await mount(<WaterfallHarness variant="default" initial="0000000000001005" />);
+  const failed = page.getByTestId(ids.runPanelLoadFailed);
+  await expect(failed).toBeVisible();
+  await expect(failed).not.toHaveAttribute('data-reason', 'store-unreachable');
+});
+
+test('RowPanel_WhenContentHidden_ShouldShowTheNoteInsteadOfInputAndOutput', async ({
+  mount,
+  page,
+}) => {
+  await setup(page, { ...edit, contentHidden: true, input: null, output: null });
+  await mount(<WaterfallHarness variant="hidden" initial="0000000000001005" />);
+  await expect(page.getByTestId(ids.runPanelContentHidden)).toBeVisible();
+  await expect(page.getByTestId(ids.runPanelInput)).toHaveCount(0);
+  await expect(page.getByTestId(ids.runPanelOutput)).toHaveCount(0);
+  await expect(page.getByTestId(ids.runPanelAttribute)).toHaveCount(2);
+  await expect(page.getByTestId(ids.runPanelLog)).toHaveCount(1);
+});
