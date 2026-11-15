@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Application.Features.Inspection.AgentSetup;
@@ -18,6 +19,8 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Inspection;
 [McpServerToolType]
 internal sealed class InspectionTools(ItemResolver items, CaptureSupport support, InspectionViews views, AgentSetupService setup)
 {
+    private static readonly JsonSerializerOptions DataOptions = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
+
     [McpServerTool(Name = "list_runs"), McpScope(McpScopes.Read)]
     [Description("List the agent runs (Claude Code, Codex CLI, Cursor) linked to a work item: when, which agent, what it did, how long, tokens and errors.")]
     public async Task<CallToolResult> ListRunsAsync(
@@ -31,12 +34,13 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
     }
 
     [McpServerTool(Name = "get_run"), McpScope(McpScopes.Read)]
-    [Description("Read one agent run of a work item: its turns and the rows of what happened. Cite run ids in log_retrospective failure logs.")]
+    [Description("Read one agent run of a work item as rows, errors first and then the rest in run order, a page at a time: pass nextCursor back as cursor for the next page, with the same filter (a cursor belongs to its filter). Quote the run id (and the row names) in log_retrospective failure logs so the next agent can find the run.")]
     public async Task<CallToolResult> GetRunAsync(
         [Description("The work item's key, such as SHIP-12.")] string item,
         [Description("The run id from list_runs.")] string run,
-        [Description("all or errors.")] string? filter = null,
-        [Description("Where the last page stopped.")] string? cursor = null,
+        [Description("all or errors (error rows and the rows they sit under).")] string? filter = null,
+        [Description("nextCursor from the previous page; leave out for the first.")] string? cursor = null,
+        [Description("Rows per page, 1 to 200; 50 when left out.")] int? limit = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await items.ResolveAsync(item, ProjectRole.Member, field: "item", cancellationToken: cancellationToken);
@@ -45,13 +49,8 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
             throw ApiException.Validation("filter must be all or errors.", "filter");
         }
         var project = await support.ProjectOfAsync(resolved, cancellationToken);
-        var page = await views.RunAsync(project.Key, resolved.Key, run, cancellationToken);
-        if (filter == "errors")
-        {
-            // TODO: errors-first ordering and paging by cursor.
-            page = page with { Turns = [.. page.Turns.Select(t => t with { Rows = [.. t.Rows.Where(r => r.IsError)] })] };
-        }
-        return await ReplyAsync(resolved, project, page, $"Run {run} on {resolved.Key}.", cancellationToken);
+        var page = await views.RunRowsAsync(project.Key, resolved.Key, run, filter == "errors", cursor, limit ?? RunRowsCursor.DefaultLimit, cancellationToken);
+        return await ReplyAsync(resolved, project, page, $"Run {run} on {resolved.Key}: {page.Rows.Count} of {page.TotalRows} rows, {page.ErrorRows} with errors.", cancellationToken);
     }
 
     [McpServerTool(Name = "agent_setup"), McpScope(McpScopes.Read)]
@@ -69,7 +68,8 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
 
     private async Task<CallToolResult> ReplyAsync(ResolvedItem resolved, ResolvedProject project, object data, string summary, CancellationToken cancellationToken)
     {
-        var result = new InspectionToolResult(project.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), project.Key, resolved.Key), data);
+        // The view goes out as the K5 routes send it (camelCase, enums as camelCase words), not in the default serializer's PascalCase.
+        var result = new InspectionToolResult(project.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), project.Key, resolved.Key), JsonSerializer.SerializeToElement(data, data.GetType(), DataOptions));
         return PlanningReply.Of(result, summary);
     }
 }
