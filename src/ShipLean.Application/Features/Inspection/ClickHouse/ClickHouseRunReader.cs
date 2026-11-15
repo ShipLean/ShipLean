@@ -27,6 +27,10 @@ public sealed class ClickHouseRunReader
 
     public async Task<RawRun?> GetAsync(RunRef run, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(run.RunId))
+        {
+            return null;
+        }
         try
         {
             var summary = await finder.FindOneAsync(run, ct);
@@ -55,6 +59,7 @@ public sealed class ClickHouseRunReader
             SELECT {{ClickHouseRowMapping.SpanSelect}}
             FROM {{names.Traces}}
             WHERE Timestamp >= {from:DateTime64(6, 'UTC')} AND Timestamp <= {to:DateTime64(6, 'UTC')}
+                AND mapUpdate(ResourceAttributes, SpanAttributes)[{{names.ProjectField}}] = {project:String}
                 AND TraceId IN (
                     SELECT DISTINCT TraceId FROM {{names.Traces}}
                     WHERE Timestamp >= {from:DateTime64(6, 'UTC')} AND Timestamp <= {to:DateTime64(6, 'UTC')}
@@ -76,7 +81,7 @@ public sealed class ClickHouseRunReader
             WHERE Timestamp >= {from:DateTime64(6, 'UTC')} AND Timestamp <= {to:DateTime64(6, 'UTC')}
                 AND mapUpdate(ResourceAttributes, LogAttributes)[{{names.ProjectField}}] = {project:String}
                 AND mapUpdate(ResourceAttributes, LogAttributes)[{{names.SessionField}}] = {session:String}
-            ORDER BY Timestamp, Body
+            ORDER BY Timestamp, Body, SpanId, cityHash64(LogAttributes)
             LIMIT {limit:UInt32}
             """,
             Parameters(run, MaxLogs + 1),

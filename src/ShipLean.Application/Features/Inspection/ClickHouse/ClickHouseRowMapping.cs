@@ -12,7 +12,7 @@ public static class ClickHouseRowMapping
         + "mapUpdate(ResourceAttributes, SpanAttributes), `Events.Timestamp`, `Events.Name`, `Events.Attributes`";
 
     // The columns LogSelect reads, in order.
-    public const string LogSelect = "Timestamp, SeverityText, SeverityNumber, Body, mapUpdate(ResourceAttributes, LogAttributes), TraceId, SpanId, EventName";
+    public const string LogSelect = "Timestamp, SeverityText, SeverityNumber, Body, mapUpdate(ResourceAttributes, LogAttributes), TraceId, SpanId";
 
     public static SpanRecord Span(object?[] row)
     {
@@ -52,7 +52,7 @@ public static class ClickHouseRowMapping
             Empty((string)row[6]!),
             attributes.GetValueOrDefault(fields.Session),
             attributes.GetValueOrDefault(fields.Prompt),
-            Empty((string)row[7]!) ?? attributes.GetValueOrDefault("event.name"));
+            attributes.GetValueOrDefault("event.name"));
     }
 
     // The exporter writes the span kind as "Internal", "Client", ...; the contract says lower case.

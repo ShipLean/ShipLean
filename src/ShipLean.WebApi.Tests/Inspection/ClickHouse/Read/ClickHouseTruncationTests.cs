@@ -8,21 +8,13 @@ namespace ShipLean.WebApi.Tests.Inspection.ClickHouse.Read;
 [Category("SHIP-1557")]
 public sealed class ClickHouseTruncationTests
 {
-    private const string FullTraceColumns = """
-        Timestamp DateTime64(9), TraceId String, SpanId String, ParentSpanId String, SpanName LowCardinality(String), SpanKind LowCardinality(String),
-        ServiceName LowCardinality(String), ResourceAttributes Map(LowCardinality(String), String), SpanAttributes Map(LowCardinality(String), String),
-        Duration UInt64, StatusCode LowCardinality(String), StatusMessage String,
-        `Events.Timestamp` Array(DateTime64(9)), `Events.Name` Array(LowCardinality(String)), `Events.Attributes` Array(Map(LowCardinality(String), String))
-        """;
-
     [TestCase(ClickHouseRunReader.MaxSpans, 0, false)]
     [TestCase(ClickHouseRunReader.MaxSpans + 1, 0, true)]
     [TestCase(1, ClickHouseRunReader.MaxLogs, false)]
     [TestCase(1, ClickHouseRunReader.MaxLogs + 1, true)]
     public async Task GetRun_WhenTheRunIsOverACap_IsCutAndMarkedTruncated(int spans, int logs, bool truncated)
     {
-        await using var scratch = await ScratchExporter.CreateAsync(FullTraceColumns);
-        await scratch.Db.ExecuteAsync($"ALTER TABLE {scratch.ExporterDatabase}.otel_logs ADD COLUMN Body String, ADD COLUMN TraceId String, ADD COLUMN SpanId String, ADD COLUMN EventName String", null, CancellationToken.None);
+        await using var scratch = await ScratchExporter.CreateAsync();
         await Fill(scratch, spans, logs);
         var migrator = scratch.Migrator();
         var finder = scratch.Finder(migrator);
@@ -40,8 +32,7 @@ public sealed class ClickHouseTruncationTests
     [Test]
     public async Task GetRun_WhenTheRunIsCut_KeepsTheEarliestRows()
     {
-        await using var scratch = await ScratchExporter.CreateAsync(FullTraceColumns);
-        await scratch.Db.ExecuteAsync($"ALTER TABLE {scratch.ExporterDatabase}.otel_logs ADD COLUMN Body String, ADD COLUMN TraceId String, ADD COLUMN SpanId String, ADD COLUMN EventName String", null, CancellationToken.None);
+        await using var scratch = await ScratchExporter.CreateAsync();
         await Fill(scratch, ClickHouseRunReader.MaxSpans + 10, 0);
         var migrator = scratch.Migrator();
         var reader = new ClickHouseRunReader(scratch.Options, migrator, scratch.Finder(migrator));
@@ -71,9 +62,9 @@ public sealed class ClickHouseTruncationTests
         await scratch.Db.ExecuteAsync(
             $$"""
             INSERT INTO {{scratch.ExporterDatabase}}.otel_logs
-                (Timestamp, ServiceName, SeverityText, SeverityNumber, ResourceAttributes, LogAttributes, Body, TraceId, SpanId, EventName)
+                (Timestamp, ServiceName, SeverityText, SeverityNumber, ResourceAttributes, LogAttributes, Body, TraceId, SpanId)
             SELECT toDateTime64('2026-11-10 10:10:00', 9, 'UTC') + toIntervalMillisecond(number), 'claude-code', 'INFO', 9,
-                map('shiplean.project', 'SCR'), map('session.id', 's1', 'shiplean.item', 'SHIP-1'), concat('log-', toString(number)), '', '', ''
+                map('shiplean.project', 'SCR'), map('session.id', 's1', 'shiplean.item', 'SHIP-1'), concat('log-', toString(number)), '', ''
             FROM numbers({logs:UInt64})
             """,
             parameters,

@@ -41,7 +41,7 @@ public sealed class ClickHouseRunFinder
     {
         try
         {
-            if (!await migrator.EnsureAsync(ct))
+            if (string.IsNullOrWhiteSpace(run.RunId) || !await migrator.EnsureAsync(ct))
             {
                 return null;
             }
@@ -64,7 +64,7 @@ public sealed class ClickHouseRunFinder
                 sum(span_tokens_out), sum(span_tokens_out_n), sum(log_tokens_out), sum(log_tokens_out_n)
             FROM {{names.Runs}}
             WHERE project = {project:String}
-                AND ({session:String} = '' OR session_id = {session:String})
+                {{(session is null ? "" : "AND session_id = {session:String}")}}
                 AND session_id IN (SELECT session_id FROM {{names.RunItems}}
                     WHERE project = {project:String} AND item_key = {item:String} AND {{LinkSeenInWindow}})
             GROUP BY session_id

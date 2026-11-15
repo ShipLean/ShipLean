@@ -43,7 +43,8 @@ public sealed class ScratchExporter : IAsyncDisposable
             $"""
             CREATE TABLE {exporter}.otel_logs (
                 Timestamp DateTime64(9), ServiceName LowCardinality(String), SeverityText LowCardinality(String), SeverityNumber UInt8,
-                ResourceAttributes Map(LowCardinality(String), String), LogAttributes Map(LowCardinality(String), String))
+                ResourceAttributes Map(LowCardinality(String), String), LogAttributes Map(LowCardinality(String), String),
+                Body String, TraceId String, SpanId String)
             ENGINE = MergeTree ORDER BY (ServiceName, Timestamp)
             """,
             null,
@@ -99,8 +100,9 @@ public sealed class ScratchExporter : IAsyncDisposable
     }
 
     private const string TraceColumns = """
-        Timestamp DateTime64(9), SpanName LowCardinality(String), ServiceName LowCardinality(String),
-        ResourceAttributes Map(LowCardinality(String), String), SpanAttributes Map(LowCardinality(String), String),
-        Duration UInt64, StatusCode LowCardinality(String)
+        Timestamp DateTime64(9), TraceId String, SpanId String, ParentSpanId String, SpanName LowCardinality(String), SpanKind LowCardinality(String),
+        ServiceName LowCardinality(String), ResourceAttributes Map(LowCardinality(String), String), SpanAttributes Map(LowCardinality(String), String),
+        Duration UInt64, StatusCode LowCardinality(String), StatusMessage String,
+        `Events.Timestamp` Array(DateTime64(9)), `Events.Name` Array(LowCardinality(String)), `Events.Attributes` Array(Map(LowCardinality(String), String))
         """;
 }
