@@ -17,7 +17,7 @@ const byAgent: Record<string, AgentSetupDto> = {
     files: [
       { name: 'config.toml', language: 'toml', content: '[otel]\nenvironment = "shiplean"\n' },
     ],
-    notes: ['Codex note'],
+    notes: ['Codex CLI note'],
     docsUrl: 'https://docs.shiplean.app/inspection/codex-cli',
   },
   cursor: {
@@ -66,7 +66,7 @@ test('AgentSetup_PerAgentTab_ShouldShowThatAgentsFilesAndNotes', async ({ mount,
     'data-name',
     'config.toml',
   );
-  await expect(view.getByTestId(ids.inspectionSetupNotes)).toContainText('Codex note');
+  await expect(view.getByTestId(ids.inspectionSetupNotes)).toContainText('Codex CLI note');
 
   await view.locator(`[data-agent="cursor"]`).click();
   await expect(view.getByTestId(ids.inspectionSetupFile)).toHaveCount(2);

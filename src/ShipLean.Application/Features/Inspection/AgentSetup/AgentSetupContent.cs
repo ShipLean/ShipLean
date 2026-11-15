@@ -23,7 +23,7 @@ public static class AgentSetupContent
     public static AgentSetupDto For(string agent, string label, Inputs inputs) => agent switch
     {
         "claude-code" => ClaudeCode(label, inputs),
-        "codex-cli" => CodexCli(label, inputs),
+        "codex-cli" => OpenAiCli(label, inputs),
         "cursor" => Cursor(label, inputs),
         _ => throw new ArgumentOutOfRangeException(nameof(agent), agent, "Unknown agent."),
     };
@@ -77,7 +77,7 @@ public static class AgentSetupContent
         Docs("claude-code"));
     }
 
-    private static AgentSetupDto CodexCli(string label, Inputs i)
+    private static AgentSetupDto OpenAiCli(string label, Inputs i)
     {
         var endpoint = i.EndpointOrPlaceholder;
         var headers = TomlHeaders(i.Headers);
@@ -92,7 +92,7 @@ public static class AgentSetupContent
         var perRun = $"""
             # Per run: tag it with the item (unverified: Codex CLI reading OTEL_RESOURCE_ATTRIBUTES)
             export OTEL_RESOURCE_ATTRIBUTES="{i.ResourceAttributes}"
-            codex -c 'otel.environment="shiplean"' "<your prompt>"
+            # then start Codex CLI as usual in this shell
 
             """;
         return new AgentSetupDto("codex-cli", label,

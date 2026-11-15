@@ -53,7 +53,7 @@ public class AgentSetupTests : InspectionApiFixture
     }
 
     [Test]
-    public async Task Get_ForCodexCli_ShouldWriteAnOtelTableWithTheHeadersAsToml()
+    public async Task Get_ForTheOpenAiCli_ShouldWriteAnOtelTableWithTheHeadersAsToml()
     {
         var dto = await Api.GetAsync<AgentSetupDto>($"api/inspection/projects/{Project}/agent-setup?agent=codex-cli&item={Item}");
 
