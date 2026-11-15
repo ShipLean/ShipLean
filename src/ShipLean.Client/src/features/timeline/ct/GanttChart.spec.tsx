@@ -65,7 +65,7 @@ test('GanttChart_WhenReviewDotClicked_ShouldSelectItsBar', async ({ mount, page 
   const picks: (string | null)[] = [];
   await mountChart(mount, FINISHED_TIMELINE, { picks });
   await page.getByTestId(ids.chartReviewDot).and(page.locator('[data-key="SHIP-191"]')).click();
-  expect(picks).toEqual(['SHIP-191']);
+  await expect.poll(() => picks).toEqual(['SHIP-191']);
 });
 
 test('GanttChart_WhenEscPressed_ShouldClearSelection', async ({ mount, page }) => {
@@ -80,7 +80,7 @@ test('GanttChart_WhenEnterOnFocusedBar_ShouldSelect', async ({ mount, page }) =>
   await mountChart(mount, FINISHED_TIMELINE, { picks });
   await page.getByTestId(ids.chartBar).and(page.locator('[data-key="SHIP-195"]')).focus();
   await page.keyboard.press('Enter');
-  expect(picks).toEqual(['SHIP-195']);
+  await expect.poll(() => picks).toEqual(['SHIP-195']);
 });
 
 test('GanttChart_WhenStoryBracketClicked_ShouldSelectStory', async ({ mount, page }) => {
