@@ -25,8 +25,9 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
         CancellationToken cancellationToken = default)
     {
         var resolved = await items.ResolveAsync(item, ProjectRole.Member, field: "item", cancellationToken: cancellationToken);
-        var section = await views.SectionAsync(ProjectKey(resolved.Key), resolved.Key, cancellationToken);
-        return await ReplyAsync(resolved, section, $"{section.Rows.Count} runs on {resolved.Key}.", cancellationToken);
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
+        var section = await views.SectionAsync(project.Key, resolved.Key, cancellationToken);
+        return await ReplyAsync(resolved, project, section, $"{section.Rows.Count} runs on {resolved.Key}.", cancellationToken);
     }
 
     [McpServerTool(Name = "get_run"), McpScope(McpScopes.Read)]
@@ -43,13 +44,14 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
         {
             throw ApiException.Validation("filter must be all or errors.", "filter");
         }
-        var page = await views.RunAsync(ProjectKey(resolved.Key), resolved.Key, run, cancellationToken);
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
+        var page = await views.RunAsync(project.Key, resolved.Key, run, cancellationToken);
         if (filter == "errors")
         {
             // TODO: errors-first ordering and paging by cursor.
             page = page with { Turns = [.. page.Turns.Select(t => t with { Rows = [.. t.Rows.Where(r => r.IsError)] })] };
         }
-        return await ReplyAsync(resolved, page, $"Run {run} on {resolved.Key}.", cancellationToken);
+        return await ReplyAsync(resolved, project, page, $"Run {run} on {resolved.Key}.", cancellationToken);
     }
 
     [McpServerTool(Name = "agent_setup"), McpScope(McpScopes.Read)]
@@ -60,15 +62,13 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
         CancellationToken cancellationToken = default)
     {
         var resolved = await items.ResolveAsync(item, ProjectRole.Member, field: "item", cancellationToken: cancellationToken);
-        var result = await setup.GetAsync(ProjectKey(resolved.Key), agent, resolved.Key, cancellationToken);
-        return await ReplyAsync(resolved, result, $"Setup for {result.AgentLabel} on {resolved.Key}.", cancellationToken);
+        var project = await support.ProjectOfAsync(resolved, cancellationToken);
+        var result = await setup.GetAsync(project.Key, agent, resolved.Key, cancellationToken);
+        return await ReplyAsync(resolved, project, result, $"Setup for {result.AgentLabel} on {resolved.Key}.", cancellationToken);
     }
 
-    private static string ProjectKey(string itemKey) => itemKey[..itemKey.IndexOf('-', StringComparison.Ordinal)];
-
-    private async Task<CallToolResult> ReplyAsync(ResolvedItem resolved, object data, string summary, CancellationToken cancellationToken)
+    private async Task<CallToolResult> ReplyAsync(ResolvedItem resolved, ResolvedProject project, object data, string summary, CancellationToken cancellationToken)
     {
-        var project = await support.ProjectOfAsync(resolved, cancellationToken);
         var result = new InspectionToolResult(project.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), project.Key, resolved.Key), data);
         return PlanningReply.Of(result, summary);
     }

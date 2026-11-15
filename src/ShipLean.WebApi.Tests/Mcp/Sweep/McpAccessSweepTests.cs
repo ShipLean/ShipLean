@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using ShipLean.WebApi.Tests.Inspection.Wiring;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
@@ -9,6 +11,22 @@ namespace ShipLean.WebApi.Tests.Mcp.Sweep;
 public class McpAccessSweepTests : McpFixture
 {
     protected override bool WithProbeTools => false;
+
+    // The Inspection tools answer not_found while the instance or the project is off: the sweep host turns both on, so the rows prove access.
+    protected override IReadOnlyDictionary<string, string?> HostSettings => InspectionSweepHost.Settings;
+
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        base.ConfigureTestServices?.Invoke(services);
+        InspectionSweepHost.UseFakeSource(services);
+    };
+
+    [OneTimeSetUp]
+    public async Task TurnOnShipInspection()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await InspectionSweepHost.TurnOnShipAsync(connection);
+    }
 
     [Test]
     public void McpAccessSweep_WhenToolsRegistered_ShouldEachHaveARow()

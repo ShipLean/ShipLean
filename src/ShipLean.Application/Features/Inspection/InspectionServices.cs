@@ -28,6 +28,7 @@ public sealed class InspectionServices : IServiceModule
         services.AddSingleton<TempoLokiFieldCheck>();
         services.AddSingleton<TempoLokiTraceSource>();
         services.AddSingleton<DisabledTraceSource>();
+        InspectionHttp.Add(services);
         services.AddSingleton<ClickHouseSchemaMigrator>();
         services.AddSingleton<ITraceSource>(sp => sp.GetRequiredService<InspectionOptions>() switch
         {
@@ -35,16 +36,16 @@ public sealed class InspectionServices : IServiceModule
             { Enabled: true, Store: InspectionOptionsReader.TempoLoki } => sp.GetRequiredService<TempoLokiTraceSource>(),
             _ => sp.GetRequiredService<DisabledTraceSource>(),
         });
-        services.AddSingleton<IHostedService>(sp => new InspectionStartup(sp.GetRequiredService<InspectionOptions>(), sp.GetRequiredService<ClickHouseSchemaMigrator>()));
+        services.AddSingleton<IHostedService>(sp => new InspectionStartup(sp.GetRequiredService<InspectionOptions>(), sp));
     }
 
-    // Starts the ClickHouse schema migrator only for the ClickHouse store; constructing it is what validated the options.
-    private sealed class InspectionStartup(InspectionOptions options, ClickHouseSchemaMigrator migrator) : IHostedService
+    // Resolving the options validated them; the ClickHouse schema migrator is resolved, and so built, only for the ClickHouse store.
+    private sealed class InspectionStartup(InspectionOptions options, IServiceProvider services) : IHostedService
     {
         public Task StartAsync(CancellationToken cancellationToken)
-            => options is { Enabled: true, Store: InspectionOptionsReader.ClickHouse } ? migrator.StartAsync(cancellationToken) : Task.CompletedTask;
+            => options is { Enabled: true, Store: InspectionOptionsReader.ClickHouse } ? services.GetRequiredService<ClickHouseSchemaMigrator>().StartAsync(cancellationToken) : Task.CompletedTask;
 
         public Task StopAsync(CancellationToken cancellationToken)
-            => options is { Enabled: true, Store: InspectionOptionsReader.ClickHouse } ? migrator.StopAsync(cancellationToken) : Task.CompletedTask;
+            => options is { Enabled: true, Store: InspectionOptionsReader.ClickHouse } ? services.GetRequiredService<ClickHouseSchemaMigrator>().StopAsync(cancellationToken) : Task.CompletedTask;
     }
 }
