@@ -115,6 +115,32 @@ public class TimelineFactsReaderTests : ApiFixture
     }
 
     [Test]
+    public async Task Read_WhenRevisionOrderAndTimeOrderDisagree_ShouldOrderByTime()
+    {
+        var tree = await TreeAsync();
+        await MoveAsync(tree.Task, 2, T0.AddHours(5), SeedIds.States.Ship.TaskActive);
+        await MoveAsync(tree.Task, 3, T0.AddHours(2), SeedIds.States.Ship.TaskInReview);
+
+        var facts = await ReadAsync(tree.Feature);
+
+        var moves = facts.Moves.Where(move => move.ItemKey == tree.TaskKey).ToList();
+        moves.Select(move => move.StateName).ShouldBe(["New", "In review", "Active"]);
+        moves.Select(move => move.Rev).ShouldBe([1, 3, 2]);
+    }
+
+    [Test]
+    public async Task Read_WhenTwoMovesShareATime_ShouldBreakTheTieByRevision()
+    {
+        var tree = await TreeAsync();
+        await MoveAsync(tree.Task, 3, T0.AddHours(2), SeedIds.States.Ship.TaskInReview);
+        await MoveAsync(tree.Task, 2, T0.AddHours(2), SeedIds.States.Ship.TaskActive);
+
+        var facts = await ReadAsync(tree.Feature);
+
+        facts.Moves.Where(move => move.ItemKey == tree.TaskKey).Select(move => move.Rev).ShouldBe([1, 2, 3]);
+    }
+
+    [Test]
     public async Task Read_WhenBlockedTagAddedAndRemoved_ShouldReturnBothChanges()
     {
         var tree = await TreeAsync();
