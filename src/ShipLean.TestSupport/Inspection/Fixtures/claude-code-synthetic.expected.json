@@ -16,7 +16,8 @@
     "team",
     "temperature",
     "tool_name",
-    "tool_parameters"
+    "tool_parameters",
+    "ttft_ms"
   ],
   "run": {
     "summary": {
