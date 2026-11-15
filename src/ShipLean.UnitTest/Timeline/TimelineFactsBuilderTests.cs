@@ -27,7 +27,7 @@ public class TimelineFactsBuilderTests
             .WithBlockedTag("PART-12", T0.AddHours(4), blockedAfter: true)
             .WithLink("PART-10", "PART-11", TimelineLinkKind.BlockedBy)
             .WithWave("PART-10", "0.1")
-            .WithReview("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, Mei, "codex", "Fix the test")
+            .WithReview("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, Mei, "claude", "Fix the test")
             .WithSprint("Sprint 7", new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 18))
             .WithPerson(Mei, "Mei")
             .WithPlannedBy(Mei, "claude")
@@ -46,7 +46,7 @@ public class TimelineFactsBuilderTests
         facts.BlockedTags.ShouldBe([new TimelineBlockedTagFact("PART-12", T0.AddHours(4), 3, true)]);
         facts.Links.ShouldBe([new TimelineLinkFact("PART-10", "PART-11", TimelineLinkKind.BlockedBy)]);
         facts.Waves.ShouldBe(new Dictionary<string, string> { ["PART-10"] = "0.1" });
-        facts.Reviews.ShouldBe([new TimelineReviewFact("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, "Fix the test", Mei, "codex")]);
+        facts.Reviews.ShouldBe([new TimelineReviewFact("PART-12", T0.AddHours(5), ReviewVerdict.ChangesRequested, "Fix the test", Mei, "claude")]);
         facts.Sprints.ShouldBe([new TimelineSprintFact("Sprint 7", new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 18))]);
         facts.People.ShouldBe(new Dictionary<Guid, string> { [Mei] = "Mei" });
         facts.PlannedBy.ShouldBe(new TimelineActorFact(Mei, "claude"));

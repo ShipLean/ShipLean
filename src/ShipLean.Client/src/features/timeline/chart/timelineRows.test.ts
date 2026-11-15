@@ -52,7 +52,7 @@ describe('timelineRows', () => {
   it('People_ShouldGroupAgentsByName', () => {
     const view = withBars([
       bar('SHIP-1', 'Claude Code', null, true, 1),
-      bar('SHIP-2', 'Codex', null, true, 2),
+      bar('SHIP-2', 'Claude', null, true, 2),
       bar('SHIP-3', 'Claude Code', null, true, 3),
       bar('SHIP-4', 'Ana', 'u1', false, 4),
     ]);
@@ -60,14 +60,14 @@ describe('timelineRows', () => {
     const groups = rows.filter((r) => r.kind === 'group');
     expect(groups.map((g) => (g.kind === 'group' ? `${g.label}:${g.agent}` : ''))).toEqual([
       'Claude Code:true',
-      'Codex:true',
+      'Claude:true',
       'Ana:false',
     ]);
     expect(rows.map((r) => (r.kind === 'group' ? r.label : r.key))).toEqual([
       'Claude Code',
       'SHIP-1',
       'SHIP-3',
-      'Codex',
+      'Claude',
       'SHIP-2',
       'Ana',
       'SHIP-4',

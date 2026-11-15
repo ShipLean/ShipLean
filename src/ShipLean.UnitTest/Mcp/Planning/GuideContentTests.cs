@@ -33,7 +33,7 @@ public class GuideContentTests
         var reviewer = PlanGuide.Read(PlanGuidePart.CodeReviewer);
 
         reviewer.ShouldContain("call `log_review` on the task");
-        reviewer.ShouldContain("`changes_requested`");
+        reviewer.ShouldContain("\"changes_requested\"");
         reviewer.ShouldContain("starting with \"Review · \"");
     }
 
