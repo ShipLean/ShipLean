@@ -92,7 +92,7 @@ public class AddCommitsToolTests : McpFixture
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
         error.GetProperty("code").GetString().ShouldBe(ApiErrorCodes.NotTaskOrBug);
-        error.GetProperty("message").GetString().ShouldContain(taskKey!);
+        error.GetProperty("message").GetString()!.ShouldContain(taskKey!);
     }
 
     [Test]
