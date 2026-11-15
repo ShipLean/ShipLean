@@ -27,8 +27,8 @@ async function setup(page: Page, theme: 'light' | 'dark' = 'light') {
 const assertState: Record<Variant, (page: Page) => Promise<void>> = {
   codex: async (page) => {
     await expect(page.getByTestId(ids.runRowEvent)).toHaveCount(9);
-    await expect(page.getByTestId(ids.runRowDiamond)).toHaveCount(3);
-    await expect(page.getByTestId(ids.runRowBar)).toHaveCount(6);
+    await expect(page.getByTestId(ids.runRowDiamond)).toHaveCount(2);
+    await expect(page.getByTestId(ids.runRowBar)).toHaveCount(7);
     await expect(page.getByTestId(ids.runRowError)).toHaveCount(1);
     await expect(page.getByTestId(ids.runBanner)).toContainText(
       'Codex CLI sends events, not spans',
@@ -36,9 +36,9 @@ const assertState: Record<Variant, (page: Page) => Promise<void>> = {
     await expect(page.getByTestId(ids.runPanelKind)).toBeVisible();
   },
   cursor: async (page) => {
-    await expect(page.getByTestId(ids.runRowEvent)).toHaveCount(7);
-    await expect(page.getByTestId(ids.runRowDiamond)).toHaveCount(6);
-    await expect(page.getByTestId(ids.runRowBar)).toHaveCount(1);
+    await expect(page.getByTestId(ids.runRowEvent)).toHaveCount(6);
+    await expect(page.getByTestId(ids.runRowDiamond)).toHaveCount(4);
+    await expect(page.getByTestId(ids.runRowBar)).toHaveCount(2);
     await expect(page.getByTestId(ids.runBanner)).toContainText('Cursor sends hook events only');
   },
   hidden: async (page) => {
@@ -98,7 +98,7 @@ test('EventTimeline_WhenEventHasDuration_ShouldEndTheBarAtTheEvent', async ({ mo
 test('EventTimeline_WhenRowClicked_ShouldSelectItAndClickAgainClears', async ({ mount, page }) => {
   await setup(page);
   await mount(<TimelineHarness variant="cursor" />);
-  const row = page.locator('[data-row-id="cu-3"]');
+  const row = page.locator('[data-row-id="log-3"]');
   await row.click();
   await expect(row).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByTestId(ids.runPanelKind)).toBeVisible();

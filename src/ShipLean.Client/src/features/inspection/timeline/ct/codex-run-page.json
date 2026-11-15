@@ -1,0 +1,165 @@
+{
+  "source": "codex-cli-synthetic.assembled.json, mapped as InspectionViews.RunAsync does",
+  "axis": {
+    "startMs": 0,
+    "endMs": 40000
+  },
+  "turns": [
+    {
+      "number": 1,
+      "promptText": "Fix the failing test",
+      "rows": [
+        {
+          "id": "log-1",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.user_prompt",
+          "startMs": 0,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-2",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.api_request",
+          "startMs": 800,
+          "endMs": 5000,
+          "durationMs": 4200,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-3",
+          "parentId": null,
+          "depth": 0,
+          "kind": "shipleanTool",
+          "name": "codex.tool_result",
+          "startMs": 5200,
+          "endMs": 6000,
+          "durationMs": 800,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-4",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.tool_result",
+          "startMs": 7000,
+          "endMs": 12000,
+          "durationMs": 5000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-5",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.tool_result",
+          "startMs": 19700,
+          "endMs": 20000,
+          "durationMs": 300,
+          "isError": true,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "promptText": "Try again and report",
+      "rows": [
+        {
+          "id": "log-6",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.user_prompt",
+          "startMs": 30000,
+          "endMs": null,
+          "durationMs": null,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-7",
+          "parentId": null,
+          "depth": 0,
+          "kind": "event",
+          "name": "codex.api_request",
+          "startMs": 31000,
+          "endMs": 36000,
+          "durationMs": 5000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-8",
+          "parentId": null,
+          "depth": 0,
+          "kind": "shipleanTool",
+          "name": "codex.tool_result",
+          "startMs": 37300,
+          "endMs": 38000,
+          "durationMs": 700,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "log-9",
+          "parentId": null,
+          "depth": 0,
+          "kind": "shipleanTool",
+          "name": "codex.tool_result",
+          "startMs": 39100,
+          "endMs": 40000,
+          "durationMs": 900,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        }
+      ]
+    }
+  ]
+}
