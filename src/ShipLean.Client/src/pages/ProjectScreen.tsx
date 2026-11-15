@@ -20,7 +20,12 @@ interface ProjectScreenProps {
 
 // The root of every project page: reports presence, resolves the project the URL's key names (not found when it does
 // not exist or you are not a member) and hands it to the page's layout.
-export function ProjectScreen({ routeId, testId, tightGutter = false, children }: ProjectScreenProps) {
+export function ProjectScreen({
+  routeId,
+  testId,
+  tightGutter = false,
+  children,
+}: ProjectScreenProps) {
   useScreenPresence(routeId);
   const { key = '' } = useParams();
   const project = useQuery(projectByKeyQuery(key));
