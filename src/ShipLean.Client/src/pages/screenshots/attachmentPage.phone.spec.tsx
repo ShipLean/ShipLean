@@ -32,6 +32,17 @@ const longView = {
     })),
   ],
 };
+const wideTable = `<table><thead><tr>${['Step', 'Owner', 'Environment', 'Rollback', 'Flag', 'Dashboard'].map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${['Canary', 'Staging', 'Everyone'].map((step) => `<tr>${[step, 'Payments team', 'production-eu-west', 'Flip the flag off', 'saved-cards-v2', 'grafana/saved-cards'].map((c) => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+const wideCode = `<pre><code>${'curl -X POST https://vault.example.com/cards --data customer=c_1234 --data include=brand,last4 '.repeat(2)}</code></pre>`;
+const tableView = {
+  ...longView,
+  // The table and code sit at the top of Rollout, with text after them, so the page can scroll them to the top.
+  html:
+    longView.html.replace(
+      /<h2 id="rollout">Rollout<\/h2>/,
+      `<h2 id="rollout">Rollout</h2>${wideTable}${wideCode}`,
+    ) + filler('Rollout'),
+};
 const route = `/p/SHIP/items/SHIP-100/attachments/${designView.attachment.id}`;
 
 const arrange = async (page: Page) => {
@@ -117,6 +128,25 @@ phonePageShots([
     ready: async (page) => {
       await expect(page.getByTestId(ids.loadFailed)).toContainText('too large');
       await expect(page.getByTestId(ids.loadFailedDownload)).toBeVisible();
+    },
+  },
+  {
+    name: 'attachment-scrolled-table',
+    route,
+    shell: true,
+    arrange: async (page) => {
+      await stubFeaturePage(page, checkoutV2, tableView);
+    },
+    ready,
+    act: async (page) => {
+      const body = page.getByTestId(ids.body);
+      await expect(body.getByTestId(touchTestIds.markdownScroll)).toHaveCount(2);
+      await body.locator('table').evaluate((table) => {
+        table.scrollIntoView({ block: 'start' });
+        // Clear of the pinned top bar, so the header row shows.
+        window.scrollBy(0, -56);
+      });
+      await expect(page.getByTestId(ids.contentsPill)).toContainText('Rollout');
     },
   },
 ]);
