@@ -111,6 +111,9 @@ public sealed class ChangesPage(IPage page)
             $"/api/work-items/{itemId}/code-comments/{commentId}/resolve", "POST",
             () => Threads.Nth(threadIndex).GetByTestId(TaskChangesTestIds.Resolve).ClickAsync());
 
+    // The comments column opens on its Open tab, which hides resolved threads; this switches to All.
+    public Task ShowAllCommentsAsync() => page.GetByTestId(TaskChangesTestIds.CommentsTabAll).ClickAsync();
+
     // Reloads after the banner said a teammate added a commit.
     public Task ReloadForNewCommitAsync() => page.GetByTestId(TaskChangesTestIds.NewCommitReload).ClickAsync();
 
