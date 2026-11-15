@@ -78,7 +78,7 @@ public sealed class InspectionStack
                 var tempo = await TempoSpanCountAsync(client, loaded, deadline.Token);
                 var loki = await LokiLineCountAsync(client, loaded, deadline.Token);
                 seen = $"ClickHouse {clickHouse.spans} spans {clickHouse.logs} logs, Tempo {tempo} spans, Loki {loki} lines";
-                if (clickHouse == (spans, logs) && tempo == spans && loki == logs)
+                if (clickHouse == (spans, logs) && tempo == spans && loki == logs && await TempoSearchesAsync(client, loaded, spans, deadline.Token))
                 {
                     return new StoreCounts(clickHouse.spans, clickHouse.logs, tempo, loki);
                 }
@@ -110,6 +110,20 @@ public sealed class InspectionStack
                 : throw new InvalidOperationException($"ClickHouse answered {(int)response.StatusCode}: {text}");
         }
         return int.Parse(text.Trim(), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    // Tempo's search index lags what trace-by-id serves by several seconds, so a finder that searches would see nothing yet. Ready when a
+    // search by the project key names a trace (a fixture with no spans has nothing to search for).
+    private async Task<bool> TempoSearchesAsync(HttpClient client, LoadedFixture loaded, int spans, CancellationToken ct)
+    {
+        if (spans == 0)
+        {
+            return true;
+        }
+        var query = Uri.EscapeDataString($"{{ resource.shiplean.project = \"{loaded.ProjectKey}\" }}");
+        using var response = await client.GetAsync($"{TempoUrl}/api/search?q={query}&limit=1", ct);
+        response.EnsureSuccessStatusCode();
+        return JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))?["traces"]?.AsArray().Count > 0;
     }
 
     private async Task<int> TempoSpanCountAsync(HttpClient client, LoadedFixture loaded, CancellationToken ct)
