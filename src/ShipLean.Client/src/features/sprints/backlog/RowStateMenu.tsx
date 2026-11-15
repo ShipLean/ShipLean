@@ -11,6 +11,8 @@ export interface StateChanger {
   states: StateDto[];
   busy: boolean;
   onChange: (item: WorkItemDto, stateId: string) => void;
+  /** The key of the row to flash after a state conflict (touch only). */
+  flashing?: string | null;
 }
 
 /** The row's state as a button that opens the item type's states; picking another one asks `onChange` for it. */

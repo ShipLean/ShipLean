@@ -1,3 +1,4 @@
+import { actionSheetRowClass } from '../../../touch/ActionSheet';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 
@@ -7,26 +8,42 @@ const FEATURE_OPTIONS = [
   { id: 'epic', label: 'By Epic' },
 ] as const;
 
+/** The Features board's lane choice from the saved value; no saved choice is swimlanes on, as on Stories. */
+export function featuresLaneChoice(value: string | null): 'none' | 'on' | 'epic' {
+  if (value === 'epic') return 'epic';
+  return value === 'none' || value === 'off' ? 'none' : 'on';
+}
+
 // The lane choice of the signed-in user. Stories is a checkbox: swimlanes on, or off. Features is three ways: one lane,
 // the board's stored swimlanes (the default), or one lane per Epic. The Epics board has no lanes to choose. A Stories
 // board that shows one lane and has swimlanes on has no stored lanes: the toggle would change nothing, so it is left
 // out (it stays when the user has turned lanes off, to turn them on).
+// In the touch More sheet (`onPicked` given) the controls are rows: Stories keeps the sheet open on the checkbox, Features
+// applies the picked row and closes the sheet.
 export function LanesSwitch({
   level,
   laneCount,
   value,
   onChoose,
+  onPicked,
 }: {
   level: Level;
   /** The lanes the board shows now. */
   laneCount: number;
   value: string | null;
   onChoose: (value: string) => void;
+  onPicked?: () => void;
 }) {
   if (level === 'stories') {
     if (laneCount <= 1 && value !== 'off') return null;
     return (
-      <label className="inline-flex items-center gap-1.5 text-ink-muted">
+      <label
+        className={
+          onPicked
+            ? `${actionSheetRowClass} gap-3 text-ink`
+            : 'inline-flex items-center gap-1.5 text-ink-muted'
+        }
+      >
         <input
           type="checkbox"
           data-testid={ids.lanesToggle}
@@ -38,8 +55,31 @@ export function LanesSwitch({
     );
   }
   if (level === 'epics') return null;
-  // No saved choice is swimlanes on, the same default as Stories. "none" and "off" are the one-lane view.
-  const choice = value === 'epic' ? 'epic' : value === 'none' || value === 'off' ? 'none' : 'on';
+  // "none" and "off" are the one-lane view.
+  const choice = featuresLaneChoice(value);
+  if (onPicked) {
+    return (
+      <div role="group" aria-label="Lanes" className="grid gap-1">
+        {FEATURE_OPTIONS.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            data-testid={ids.lanesOption}
+            data-option={option.id}
+            aria-pressed={choice === option.id}
+            className={`${actionSheetRowClass} gap-2 ${choice === option.id ? 'bg-signal-soft font-medium' : ''} text-ink`}
+            onClick={() => {
+              onChoose(option.id);
+              onPicked();
+            }}
+          >
+            <span className="flex-1">{option.label}</span>
+            {choice === option.id ? <span aria-hidden="true">✓</span> : null}
+          </button>
+        ))}
+      </div>
+    );
+  }
   return (
     <div
       role="group"

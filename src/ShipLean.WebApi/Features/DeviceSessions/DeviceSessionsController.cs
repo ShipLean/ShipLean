@@ -14,7 +14,7 @@ namespace ShipLean.WebApi.Features.DeviceSessions;
 // DELETE /api/auth/device-sessions/{id}     -> 204 (signs one of the caller's phones out; anyone else's is 404)
 // DELETE /api/auth/device-sessions/current  -> 204 (ends the session this request used; 404 from a browser)
 [Route("api/auth/device-sessions")]
-public sealed class DeviceSessionsController(IDeviceSessions sessions, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)
+public sealed class DeviceSessionsController(IDeviceSessions sessions, ICurrentUser currentUser, IUsageEvents events, IUsageScope scope, TimeProvider time)
     : ApiControllerBase
 {
     private const string NotFoundMessage = "That device isn't signed in.";
@@ -61,7 +61,7 @@ public sealed class DeviceSessionsController(IDeviceSessions sessions, ICurrentU
 
     private void TrackEnded(long started, string reason, string source)
         => SelfEmittedUsage.TrackOk(
-            events, time, started, UsageEventNames.DeviceSessionEnded, currentUser.Id, source,
+            events, scope, time, started, UsageEventNames.DeviceSessionEnded, currentUser.Id, source,
             properties: new Dictionary<string, object> { [UsageProps.Reason] = reason },
             surface: UsageSurfaces.Of(User));
 }

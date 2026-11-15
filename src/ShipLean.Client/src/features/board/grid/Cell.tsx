@@ -34,6 +34,8 @@ export function Cell({
     flashing,
     onRollupClick,
   } = context;
+  // Only a phone shows it: a column with nothing to show in a lane would otherwise be a blank box.
+  const empty = !offersNew && (cell?.cards ?? []).length === 0 && !(cell && cell.olderCount > 0);
   const place = { laneId, columnId: track.column.id, done: track.doneHalf };
   const { setNodeRef, isOver } = useDroppable({
     id: `cell:${laneId}:${track.column.id}:${track.doneHalf}`,
@@ -47,7 +49,7 @@ export function Cell({
       data-lane={laneId}
       data-column={track.column.id}
       data-done-half={track.doneHalf}
-      className="flex min-h-16 min-w-0 flex-col gap-1.5 rounded-control p-1.5"
+      className="flex min-h-16 min-w-0 flex-col gap-1.5 rounded-control p-1.5 touch:min-h-12 touch:gap-2 touch:p-2"
       style={{
         background: track.doneHalf
           ? 'color-mix(in srgb, var(--color-surface-2) 30%, transparent)'
@@ -72,6 +74,14 @@ export function Cell({
         />
       ))}
       {isOver ? <DropLine /> : null}
+      {empty ? (
+        <p
+          data-testid={ids.cellEmpty}
+          className="hidden px-1 py-1.5 text-center text-[length:var(--text-xs)] text-ink-muted touch:block"
+        >
+          No cards
+        </p>
+      ) : null}
       {cell && cell.olderCount > 0 && cell.olderCursor !== null ? (
         <ShowOlder count={cell.olderCount} cursor={cell.olderCursor} onExpand={onExpand} />
       ) : null}

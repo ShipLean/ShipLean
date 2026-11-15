@@ -5,6 +5,12 @@ namespace ShipLean.AcceptanceTests.Pages.Feature;
 // The Feature form's Goal, field strip and Stories and bugs regions.
 public sealed class FeatureStripPanel(IPage page)
 {
+    public ILocator Strip => page.GetByTestId(FeatureTestIds.Strip);
+
+    public ILocator Goal => page.GetByTestId(FeatureTestIds.Goal);
+
+    public ILocator StoriesAndBugs => page.GetByTestId(FeatureTestIds.StoriesAndBugs);
+
     public ILocator GoalEdit => page.GetByTestId(FeatureTestIds.GoalEdit);
 
     public ILocator GoalInput => page.GetByTestId(FeatureTestIds.GoalInput);

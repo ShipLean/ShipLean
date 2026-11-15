@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { Dialog } from '../../../../components/Dialog';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { RetroThemeOptionDto } from '@shiplean/core/api/retros';
@@ -11,14 +12,22 @@ import { retrosRootKey } from '../../useRetroQueries';
 export function MergeDialog({
   project,
   options,
+  initialSource,
   onClose,
 }: {
   project: ProjectDto;
   options: readonly RetroThemeOptionDto[];
+  /** A theme ticked when the dialog opens. */
+  initialSource?: string;
   onClose: () => void;
 }) {
+  const { touch } = useTouchShell();
   const queryClient = useQueryClient();
-  const [sources, setSources] = useState<readonly string[]>([]);
+  const [sources, setSources] = useState<readonly string[]>(
+    initialSource !== undefined && options.some((o) => o.theme.id === initialSource)
+      ? [initialSource]
+      : [],
+  );
   const [target, setTarget] = useState('');
   const [error, setError] = useState<string | null>(null);
   const merge = useMutation({
@@ -42,37 +51,55 @@ export function MergeDialog({
   const combined = picked.reduce((sum, o) => sum + o.pointCount, into?.pointCount ?? 0);
   const ready = picked.length > 0 && into !== undefined;
 
+  const mergeButton = (
+    <button
+      type="button"
+      data-testid={ids.retroMergeSave}
+      disabled={!ready || merge.isPending}
+      className="h-[var(--touch-target)] cursor-pointer px-3 text-[length:var(--text-base)] font-semibold text-signal disabled:cursor-default disabled:text-ink-muted disabled:opacity-60"
+      onClick={() => merge.mutate()}
+    >
+      Merge
+    </button>
+  );
+
   return (
     <Dialog
       title="Merge themes"
       onClose={onClose}
       testId={ids.retroMergeDialog}
+      primaryAction={mergeButton}
       footer={
-        <>
-          <span className="flex-1" />
-          <button
-            type="button"
-            className="cursor-pointer rounded-control border border-edge bg-panel px-3 py-1"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            data-testid={ids.retroMergeSave}
-            disabled={!ready || merge.isPending}
-            className="cursor-pointer rounded-control border border-edge bg-signal px-3 py-1 text-signal-ink disabled:opacity-50"
-            onClick={() => merge.mutate()}
-          >
-            Merge
-          </button>
-        </>
+        touch ? undefined : (
+          <>
+            <span className="flex-1" />
+            <button
+              type="button"
+              className="cursor-pointer rounded-control border border-edge bg-panel px-3 py-1"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              data-testid={ids.retroMergeSave}
+              disabled={!ready || merge.isPending}
+              className="cursor-pointer rounded-control border border-edge bg-signal px-3 py-1 text-signal-ink disabled:opacity-50"
+              onClick={() => merge.mutate()}
+            >
+              Merge
+            </button>
+          </>
+        )
       }
     >
       <fieldset className="m-0 grid gap-1 border-0 p-0">
         <legend className="mb-1 text-[length:var(--text-sm)] font-semibold">Themes to merge</legend>
         {options.map((o) => (
-          <label key={o.theme.id} className="flex items-center gap-2 text-[length:var(--text-sm)]">
+          <label
+            key={o.theme.id}
+            className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-10"
+          >
             <input
               type="checkbox"
               data-testid={ids.retroMergeSource}
@@ -91,7 +118,7 @@ export function MergeDialog({
         <select
           data-testid={ids.retroMergeTarget}
           value={target}
-          className="rounded-control border border-edge bg-panel px-2 py-1"
+          className="rounded-control border border-edge bg-panel px-2 py-1 touch:h-10"
           onChange={(event) => chooseTarget(event.target.value)}
         >
           <option value="">Choose the theme to keep</option>

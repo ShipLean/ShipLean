@@ -29,7 +29,7 @@ export function AttachmentUnavailable({
           data-testid={ids.loadFailedDownload}
           href={downloadUrl}
           download
-          className="inline-flex h-7 items-center rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink no-underline"
+          className="inline-flex h-7 touch:h-[var(--touch-target)] touch:w-full touch:justify-center items-center rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink no-underline"
         >
           Download
         </a>

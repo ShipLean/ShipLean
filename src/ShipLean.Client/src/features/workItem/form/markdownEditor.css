@@ -28,3 +28,16 @@
   background-color: var(--color-surface-2);
   border-bottom-color: var(--color-border);
 }
+
+/* At 900px and below the description editor's toolbar buttons are touch-sized (SHIP-805 rule 13); the toolbar already wraps.
+   The attachment editor sets its own (attachment-editor-touch). */
+@media (max-width: 900px) {
+  .work-item-markdown:not(.attachment-editor-touch) .w-md-editor-toolbar li > button {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target);
+    height: var(--touch-target);
+  }
+}

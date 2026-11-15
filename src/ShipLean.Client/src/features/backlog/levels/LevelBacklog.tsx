@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { NewItemKind } from '../../../routes';
 import { useNewItemFromLink } from '../useNewItemFromLink';
@@ -10,6 +10,9 @@ import { BacklogToolbar } from '../toolbar/BacklogToolbar';
 import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelTable } from './LevelTable';
 import { LevelTree } from './LevelTree';
+import { BacklogSearchBox } from '../search/BacklogSearchBox';
+import { useBacklogSearch } from '../search/useBacklogSearch';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { useColumnSort } from '../sort/useColumnSort';
 import { useLevelBacklog } from './useLevelBacklog';
 
@@ -37,12 +40,16 @@ export function LevelBacklog({
   });
   const { backlog, view, refused, criteria, lists } = state;
   const columns = state.specs.filter((c) => !view.hidden.includes(c.id)).map((c) => c.id);
+  const { touch } = useTouchShell();
+  const search = useBacklogSearch();
+  const searched = useMemo(() => search.apply(state.rows), [search, state.rows]);
   const sort = useColumnSort(
     project.id,
     level === 'features' ? 'featuresBacklog' : 'epicsBacklog',
-    state.rows,
+    searched,
     columns,
   );
+  const sortColumn = state.specs.find((c) => c.id === sort.sort?.column);
 
   if ((backlog.isError && refused === null) || view.failed) {
     return (
@@ -72,6 +79,16 @@ export function LevelBacklog({
         newItemLabel={level === 'features' ? '+ New Feature' : undefined}
         includeCompleted={state.includeCompleted}
         onIncludeCompletedChange={state.setIncludeCompleted}
+        // Search is offered in ⋯ More at touch only; above 900px these backlogs have none.
+        search={touch ? () => <BacklogSearchBox search={search} /> : undefined}
+        sort={
+          sort.sort
+            ? {
+                label: `${sortColumn?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
+                onClear: sort.clear,
+              }
+            : undefined
+        }
         columns={{ options: state.specs, hidden: view.hidden, onChange: view.setHidden }}
         filter={() => (
           <FilterButton
@@ -94,15 +111,16 @@ export function LevelBacklog({
           onChange={state.setCriteria}
           error={refused}
           lists={lists}
+          onClose={state.toggleFilter}
         />
       ) : null}
       {mode === 'tree' ? (
         <LevelTree
-          rows={state.rows}
+          rows={searched}
           columns={columns as LevelColumnId[]}
           specs={state.specs}
           projectKey={project.key}
-          filtered={state.filtering}
+          filtered={state.filtering || search.active}
         />
       ) : (
         <LevelTable
@@ -114,7 +132,7 @@ export function LevelBacklog({
           projectKey={project.key}
           adding={state.adding}
           onCloseAdd={() => state.setAdding(false)}
-          filtered={state.filtering}
+          filtered={state.filtering || search.active}
           sort={sort.sort}
           onSort={sort.onSort}
         />

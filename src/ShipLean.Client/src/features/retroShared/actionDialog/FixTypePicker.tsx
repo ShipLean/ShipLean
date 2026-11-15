@@ -17,13 +17,13 @@ export function FixTypePicker({
         role="radiogroup"
         aria-label="Type of fix"
         data-testid={ids.retroActionFix}
-        className="grid grid-cols-3 gap-1.5 max-[620px]:grid-cols-2"
+        className="grid grid-cols-3 gap-1.5 phone:grid-cols-2"
       >
         {retroFixOptions.map((fix) => (
           <label
             key={fix.id}
             data-testid={ids.retroActionFixOption}
-            className={`grid cursor-pointer gap-0.5 rounded-control border px-2 py-1.5 text-[length:var(--text-sm)] font-medium text-ink ${value === fix.id ? 'border-signal bg-signal-soft' : 'border-edge'}`}
+            className={`grid cursor-pointer gap-0.5 rounded-control border px-2 py-1.5 text-[length:var(--text-sm)] font-medium text-ink touch:min-h-[52px] touch:text-[length:var(--text-base)] ${value === fix.id ? 'border-signal bg-signal-soft' : 'border-edge'}`}
           >
             <input
               type="radio"

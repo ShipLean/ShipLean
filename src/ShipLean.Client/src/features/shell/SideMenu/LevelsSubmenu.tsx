@@ -15,7 +15,7 @@ const LEVELS = {
   ],
 } as const satisfies Record<string, readonly { label: string; route: RouteId }[]>;
 
-// Under Backlogs or Boards while you are in that section: Epics, Features and Stories.
+// Under Backlogs or Boards (while you are in that section, and always in the touch drawer): Epics, Features and Stories.
 export function LevelsSubmenu({
   section,
   projectKey,

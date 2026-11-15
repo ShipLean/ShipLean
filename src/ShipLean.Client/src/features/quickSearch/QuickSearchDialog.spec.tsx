@@ -371,10 +371,10 @@ test('Dialog_WhenTheWindowIsShort_ShouldShrinkToFitAndScrollTheList', async ({ m
   expect(overflows).toBe(true);
 });
 
-test('Dialog_WhenOnAPhone_ShouldLeaveAnEightPixelGutter', async ({ mount, page }) => {
+// SHIP-713 replaced the 8px gutter with a full-screen dialog at touch widths.
+test('Dialog_WhenOnAPhone_ShouldFillTheScreen', async ({ mount, page }) => {
   await page.setViewportSize({ width: 375, height: 700 });
   await mount(<QuickSearchDialogHarness results={results()} />);
   const box = await page.getByTestId(ids.dialog).boundingBox();
-  expect(box?.x).toBe(8);
-  expect(box?.width).toBe(359);
+  expect(box).toEqual({ x: 0, y: 0, width: 375, height: 700 });
 });

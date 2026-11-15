@@ -4,6 +4,8 @@ import { useQuickSearch } from '../../quickSearch/host/useQuickSearch';
 import { useLocation } from 'react-router-dom';
 import { matchRoute, routePath } from '../../../routes';
 import { ProjectPicker } from '../ProjectPicker/ProjectPicker';
+import { ProjectPickerSheet } from '../ProjectPicker/ProjectPickerSheet';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { shellTestIds as ids } from '../testIds';
 import { UserMenu } from '../UserMenu/UserMenu';
 import { useShellProject } from '../useShellProject';
@@ -15,11 +17,13 @@ import { RetrosSubmenu } from './RetrosSubmenu';
 import { SprintsSubmenu } from './SprintsSubmenu';
 
 // The frame's left side: the ShipLean mark, the project button and its picker, the sections of the project and the
-// signed-in user. Under 900px it becomes a strip across the top.
+// signed-in user. At 900px and below it is the touch drawer's body: every section's sub-pages show whichever section you
+// are in, and the picker is a bottom sheet over the drawer.
 export function SideMenu() {
   const { pathname, search } = useLocation();
   const route = matchRoute(pathname, search);
   const { key, project } = useShellProject();
+  const { touch } = useTouchShell();
   const [picking, setPicking] = useState(false);
   const side = useRef<HTMLElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -32,14 +36,15 @@ export function SideMenu() {
     if (searching) setPicking(false);
   }
 
+  // The touch sheet sits outside the side menu and closes from its own scrim.
   useEffect(() => {
-    if (!picking) return;
+    if (!picking || touch) return;
     const close = (event: MouseEvent) => {
       if (!side.current?.contains(event.target as Node)) setPicking(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [picking]);
+  }, [picking, touch]);
 
   // The shortcut opens quick search in the same render that puts the picker away, and the dialog takes focus's way back
   // from whatever has it then. Moving focus to the project button first (capture runs ahead of the shortcut's own
@@ -61,15 +66,16 @@ export function SideMenu() {
   };
   const label = shortcutLabel();
   const is = (ids_: readonly string[]) => route !== undefined && ids_.includes(route.id);
+  const shows = (ids_: readonly string[]) => touch || is(ids_);
 
   return (
     <aside
       ref={side}
       data-testid={ids.sideMenu}
       aria-label="Project navigation"
-      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2 max-[900px]:w-auto max-[900px]:flex-row max-[900px]:flex-wrap max-[900px]:items-center max-[900px]:border-r-0 max-[900px]:border-b"
+      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
     >
-      <div className="flex h-[26px] items-center justify-between max-[900px]:hidden">
+      <div className="flex h-[26px] items-center justify-between">
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
           <i className="inline-block size-3.5 rounded-[4px] bg-signal" />
           ShipLean
@@ -79,7 +85,7 @@ export function SideMenu() {
           data-testid={ids.searchButton}
           aria-label="Quick search"
           title={`Quick search (${label})`}
-          className="flex h-[22px] items-center gap-1 rounded-control border border-edge bg-panel px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted hover:border-signal hover:text-ink"
+          className="flex h-[22px] items-center gap-1 rounded-control border border-edge bg-panel px-1.5 font-mono touch:hidden text-[length:var(--text-2xs)] text-ink-muted hover:border-signal hover:text-ink"
           onClick={openQuickSearch}
         >
           <SearchIcon className="size-3" />
@@ -93,16 +99,6 @@ export function SideMenu() {
         open={picking}
         onClick={() => setPicking(!picking)}
       />
-      <button
-        type="button"
-        data-testid={ids.searchIconButton}
-        aria-label="Quick search"
-        title={`Quick search (${label})`}
-        className="hidden size-[30px] items-center justify-center rounded-control border border-edge bg-panel text-ink-muted hover:border-signal hover:text-ink max-[900px]:flex"
-        onClick={openQuickSearch}
-      >
-        <SearchIcon className="size-4" />
-      </button>
       {key ? (
         <>
           <NavItem
@@ -113,7 +109,7 @@ export function SideMenu() {
           >
             Backlogs
           </NavItem>
-          {is(backlogsRoutes) ? (
+          {shows(backlogsRoutes) ? (
             <LevelsSubmenu section="backlogs" projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -124,7 +120,7 @@ export function SideMenu() {
           >
             Boards
           </NavItem>
-          {is(boardsRoutes) ? (
+          {shows(boardsRoutes) ? (
             <LevelsSubmenu section="boards" projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -135,7 +131,7 @@ export function SideMenu() {
           >
             Sprints
           </NavItem>
-          {project && is(sprintsRoutes) ? (
+          {project && shows(sprintsRoutes) ? (
             <SprintsSubmenu projectId={project.id} projectKey={key} route={route} />
           ) : null}
           <NavItem
@@ -146,8 +142,13 @@ export function SideMenu() {
           >
             Retrospectives
           </NavItem>
-          {project && is(retrosRoutes) ? (
-            <RetrosSubmenu projectId={project.id} projectKey={key} route={route} />
+          {project && shows(retrosRoutes) ? (
+            <RetrosSubmenu
+              projectId={project.id}
+              projectKey={key}
+              route={route}
+              counted={is(retrosRoutes)}
+            />
           ) : null}
           <NavItem
             icon="⇪"
@@ -168,7 +169,8 @@ export function SideMenu() {
         </>
       ) : null}
       <UserMenu />
-      {picking ? <ProjectPicker currentKey={key} onClose={closePicker} /> : null}
+      {picking && touch ? <ProjectPickerSheet currentKey={key} onClose={closePicker} /> : null}
+      {picking && !touch ? <ProjectPicker currentKey={key} onClose={closePicker} /> : null}
     </aside>
   );
 }

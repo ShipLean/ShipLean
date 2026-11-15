@@ -27,7 +27,7 @@ export function ModeSwitch({
       role="group"
       aria-label="Mode"
       data-testid={ids.modeSwitch}
-      className="inline-flex overflow-hidden rounded-control border border-edge"
+      className="inline-flex touch:flex-none overflow-hidden rounded-control border border-edge"
     >
       {modes.map((option) => (
         <button
@@ -36,7 +36,7 @@ export function ModeSwitch({
           data-testid={ids.modeOption}
           data-mode={option}
           aria-pressed={option === mode}
-          className={`px-3 text-[length:var(--text-sm)] font-medium ${
+          className={`px-3 text-[length:var(--text-sm)] font-medium touch:min-h-[var(--touch-target)] touch:px-2 ${
             option === mode ? 'bg-signal-soft text-ink' : 'text-ink-muted hover:text-ink'
           }`}
           style={{ height: 'var(--control-height)' }}

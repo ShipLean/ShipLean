@@ -29,7 +29,7 @@ export function FieldsPane({
       {types.length > 1 ? (
         <TypeTabs types={types} current={setting.type} onSelect={setChosen} />
       ) : null}
-      <div className="grid items-start gap-3 md:grid-cols-2">
+      <div className="grid items-start gap-3 grid-cols-2 touch:grid-cols-1">
         <CoreFields setting={setting} readOnly={readOnly} onChange={change} />
         <ExtraFields setting={setting} readOnly={readOnly} onChange={change} />
       </div>

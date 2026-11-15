@@ -10,7 +10,8 @@ namespace ShipLean.UnitTest.Harness;
 // Whitespace and blank lines do not matter.
 //
 // Pairs: src/ShipLean.Client/src/features/<area>/testIds.ts <-> TestIds/<Area>TestIds.cs, plus the fixed pairs
-// src/testIds.ts <-> AppTestIds.cs (appTestIds) and src/components/testIds.ts <-> ComponentTestIds.cs (componentTestIds).
+// src/testIds.ts <-> AppTestIds.cs (appTestIds), src/components/testIds.ts <-> ComponentTestIds.cs (componentTestIds)
+// and src/touch/testIds.ts <-> TouchTestIds.cs (touchTestIds).
 public static partial class TestIdPin
 {
     public sealed record Pair(string Name, string? TsPath, string? CsPath, string ExportName, string ClassName, string? Problem = null);
@@ -36,6 +37,7 @@ public static partial class TestIdPin
         }
         pairs.Add(Make("app", "appTestIds", "AppTestIds", Path.Combine(clientSrc, "testIds.ts"), csDirectory));
         pairs.Add(Make("components", "componentTestIds", "ComponentTestIds", Path.Combine(clientSrc, "components", "testIds.ts"), csDirectory));
+        pairs.Add(Make("touch", "touchTestIds", "TouchTestIds", Path.Combine(clientSrc, "touch", "testIds.ts"), csDirectory));
 
         // A C# class with no TS file also fails.
         if (Directory.Exists(csDirectory))
@@ -57,7 +59,7 @@ public static partial class TestIdPin
                 if (pairs.All(p => p.TsPath != tsPath))
                 {
                     pairs.Add(new Pair(tsPath, tsPath, null, string.Empty, string.Empty,
-                        $"{tsPath}: testIds.ts belongs in features/<area>/, src/ or src/components/"));
+                        $"{tsPath}: testIds.ts belongs in features/<area>/, src/, src/components/ or src/touch/"));
                 }
             }
         }

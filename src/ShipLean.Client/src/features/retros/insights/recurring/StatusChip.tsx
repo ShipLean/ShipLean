@@ -4,7 +4,7 @@ import { retrosTestIds as ids } from '../../testIds';
 import { Tip } from '../tips/Tip';
 import { statusWording } from '../tips/tipWording';
 
-const STATUS: Record<RetroThemeStatus, { label: string; tone: ChipTone }> = {
+export const STATUS: Record<RetroThemeStatus, { label: string; tone: ChipTone }> = {
   recurring: { label: 'Recurring', tone: 'warn' },
   beingAddressed: { label: 'Being addressed', tone: 'accent' },
   resolved: { label: 'Resolved', tone: 'ok' },
@@ -25,6 +25,7 @@ export function StatusChip({
       data-testid={ids.retroStatusChip}
       data-status={status}
       data-mode={mode}
+      entry={status}
       tip={statusWording(status, mode)}
       className="no-underline"
     >

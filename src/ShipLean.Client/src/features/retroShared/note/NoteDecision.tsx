@@ -8,6 +8,12 @@ import { PinnedAction } from './PinnedAction';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 import { WhyEditor } from './WhyEditor';
 
+// At 900px and below (SHIP-727 D6) "+ Action item" and "Not needed" are 32px buttons; the link styles get an outline.
+const touchButton =
+  'touch:inline-flex touch:h-[var(--touch-target)] touch:items-center touch:rounded-control touch:px-3 touch:text-[length:var(--text-sm)] touch:no-underline';
+const touchOutline =
+  'touch:border touch:border-solid touch:border-edge touch:bg-[color-mix(in_srgb,#ffffff_55%,transparent)]';
+
 /** What a point offers by its decision: nothing for Went well, the buttons while undecided, the pin once actioned, the reason once not needed. */
 export function NoteDecision({
   point,
@@ -39,15 +45,15 @@ export function NoteDecision({
   }
   const emphasised = point.category === 'improve';
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-0.5 text-[length:var(--text-xs)]">
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5 pt-0.5 text-[length:var(--text-xs)] touch:gap-2">
       <button
         type="button"
         data-testid={ids.retroNoteAddAction}
         data-variant={emphasised ? 'button' : 'link'}
         className={
           emphasised
-            ? 'inline-flex h-6 cursor-pointer items-center gap-1 rounded-control border border-signal bg-signal px-2 font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08]'
-            : 'cursor-pointer border-0 bg-transparent p-0 font-medium whitespace-nowrap text-signal hover:underline'
+            ? `inline-flex h-6 cursor-pointer items-center gap-1 rounded-control border border-signal bg-signal px-2 font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08] ${touchButton}`
+            : `cursor-pointer border-0 bg-transparent p-0 font-medium whitespace-nowrap text-signal hover:underline ${touchButton} ${touchOutline}`
         }
         onClick={() => dialog.open({ pointIds: [point.id], scope })}
       >
@@ -56,7 +62,7 @@ export function NoteDecision({
       <button
         type="button"
         data-testid={ids.retroNoteNotNeeded}
-        className="cursor-pointer border-0 bg-transparent p-0 whitespace-nowrap text-ink-muted hover:underline"
+        className={`cursor-pointer border-0 bg-transparent p-0 whitespace-nowrap text-ink-muted hover:underline ${touchButton} ${touchOutline} touch:text-ink`}
         onClick={() => setAsking(true)}
       >
         Not needed

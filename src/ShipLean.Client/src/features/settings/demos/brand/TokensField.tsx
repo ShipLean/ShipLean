@@ -5,7 +5,7 @@ import { useSaveDemoTokens } from '../../../demos/demosApi';
 import { demosTestIds as ids } from '../../../demos/testIds';
 
 const textarea =
-  'w-full max-w-xl rounded-control border border-edge bg-panel px-2 py-1 font-mono text-[length:var(--text-sm)] text-ink disabled:opacity-60';
+  'w-full max-w-xl touch:max-w-none rounded-control border border-edge bg-panel px-2 py-1 font-mono text-[length:var(--text-sm)] text-ink disabled:opacity-60';
 
 /** The design tokens text, listing the seven names slides use as hints, saved on its own button. */
 export function TokensField({
@@ -51,7 +51,7 @@ export function TokensField({
           <button
             type="button"
             data-testid={ids.demoTokensSave}
-            className="btn-signal"
+            className="btn-signal touch:min-h-[var(--touch-target)] touch:w-full"
             disabled={save.isPending}
             onClick={() =>
               save.mutate(

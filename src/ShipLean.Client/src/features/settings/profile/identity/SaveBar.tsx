@@ -16,7 +16,7 @@ export function SaveBar({
   onDiscard(): void;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-b-panel border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">
+    <div className="flex items-center gap-2 touch:hidden rounded-b-panel border-t border-edge bg-canvas px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">
       {dirty ? (
         <span data-testid={settingsTestIds.profileDirty} className="font-semibold text-caution">
           Unsaved changes

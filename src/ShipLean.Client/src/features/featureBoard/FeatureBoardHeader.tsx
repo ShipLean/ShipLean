@@ -32,7 +32,7 @@ export function FeatureBoardHeader({
       <Link
         data-testid={ids.back}
         to={routePath('workItem', { key: projectKey, itemKey: header.key })}
-        className="justify-self-start text-[length:var(--text-sm)] text-ink-muted no-underline hover:text-signal hover:underline"
+        className="justify-self-start text-[length:var(--text-sm)] text-ink-muted no-underline hover:text-signal hover:underline touch:hidden"
       >
         ← {header.key} {header.title}
       </Link>
@@ -41,7 +41,10 @@ export function FeatureBoardHeader({
         <span data-testid={ids.key} className="text-[length:var(--text-sm)]">
           {header.key}
         </span>
-        <h1 data-testid={ids.title} className="m-0 text-[length:var(--text-lg)] font-semibold">
+        <h1
+          data-testid={ids.title}
+          className="m-0 text-[length:var(--text-lg)] font-semibold touch:order-1 touch:basis-full"
+        >
           {header.title}
         </h1>
         <span data-testid={ids.state}>
@@ -54,19 +57,21 @@ export function FeatureBoardHeader({
             </Chip>
           </span>
         ) : null}
-        <span className="flex-1" />
-        <span className="text-[length:var(--text-xs)] text-ink-muted">Feature board</span>
+        <span className="flex-1 touch:hidden" />
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">
+          Feature board
+        </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[length:var(--text-sm)] text-ink-muted">
         <span data-testid={ids.stories}>
           <b className="text-ink">{header.storiesClosed}</b> of{' '}
           <b className="text-ink">{header.storiesTotal}</b> stories and bugs closed
         </span>
-        <span data-testid={ids.points} className="inline-flex items-center gap-1.5">
+        <span data-testid={ids.points} className="inline-flex items-center gap-1.5 touch:w-full">
           <span
             data-testid={ids.pointsBar}
             data-percent={percent}
-            className="relative inline-block h-1.5 w-40 overflow-hidden rounded-[3px] bg-sunken"
+            className="relative inline-block h-1.5 w-40 overflow-hidden rounded-[3px] bg-sunken touch:min-w-0 touch:flex-1"
           >
             <i className="absolute inset-y-0 left-0 bg-good" style={{ width: `${percent}%` }} />
           </span>
@@ -79,7 +84,10 @@ export function FeatureBoardHeader({
           Tasks <b className="text-ink">{header.tasksClosed}</b>/
           <b className="text-ink">{header.tasksTotal}</b>
         </span>
-        <span data-testid={ids.sprints} className="inline-flex flex-wrap items-center gap-1">
+        <span
+          data-testid={ids.sprints}
+          className="inline-flex flex-wrap items-center gap-1 touch:[&>*]:min-h-[var(--touch-target)]"
+        >
           {header.sprints.map((sprint) => (
             <SprintPill key={sprint.id} sprint={sprint} />
           ))}
@@ -100,7 +108,7 @@ export function FeatureBoardHeader({
                 type="button"
                 data-testid={ids.jumpChip}
                 data-section={section.key}
-                className="inline-flex h-6 cursor-pointer items-center gap-1.5 rounded-full border border-edge bg-panel px-2 text-[length:var(--text-xs)] text-ink hover:border-signal"
+                className="inline-flex h-6 touch:h-[var(--touch-target)] cursor-pointer items-center gap-1.5 rounded-full border border-edge bg-panel px-2 text-[length:var(--text-xs)] text-ink hover:border-signal"
                 onClick={() =>
                   document
                     .getElementById(sectionDomId(section.id))

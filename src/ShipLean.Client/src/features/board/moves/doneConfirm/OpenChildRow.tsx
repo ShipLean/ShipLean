@@ -10,7 +10,7 @@ export function OpenChildRow({ child }: { child: ChildSummaryDto }) {
       data-testid={ids.doneConfirmChild}
       data-key={child.key}
       title={`${child.key} ${child.title} · ${child.state.name}`}
-      className="flex min-w-0 items-center gap-2 text-[length:var(--text-sm)]"
+      className="flex min-w-0 items-center gap-2 touch:min-h-[var(--touch-target)] text-[length:var(--text-sm)]"
     >
       <TypeIcon type={child.type.id} />
       <span className="min-w-0 flex-1 truncate text-ink">{child.title}</span>

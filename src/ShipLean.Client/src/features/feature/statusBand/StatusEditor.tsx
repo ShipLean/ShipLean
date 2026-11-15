@@ -1,6 +1,7 @@
 import type { StateRef } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { StateMenu } from '../../../components/StateMenu';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { FieldMenu } from '../../workItem/form/FieldMenu';
 import { textareaClass } from '../../workItem/form/inputClasses';
 import { useProjectStates } from '../../workItem/workItemApi';
@@ -19,6 +20,7 @@ export function StatusEditor({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { touch } = useTouchShell();
   const states = useProjectStates(projectId);
   const ofType = (states.data ?? [])
     .filter((state) => state.type === 'feature')
@@ -30,7 +32,7 @@ export function StatusEditor({
     close();
   };
   return (
-    <div data-testid={ids.statusEditor} className="grid gap-3">
+    <div data-testid={ids.statusEditor} className="grid grid-cols-[minmax(0,1fr)] gap-3">
       <div className="grid gap-1">
         <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
           State
@@ -59,17 +61,17 @@ export function StatusEditor({
           rows={2}
           value={draft.statusLine}
           onChange={(event) => setField({ statusLine: event.target.value })}
-          className={`${textareaClass} min-h-0 font-[family-name:var(--font-sans)]`}
+          className={`${textareaClass} min-h-0 font-[family-name:var(--font-sans)] touch:min-h-20`}
         />
       </label>
       <p className="text-[length:var(--text-xs)] text-ink-muted">
         Saving sets Verified at to now. The old line stays in History.
       </p>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 touch:gap-2">
         <button
           type="button"
           data-testid={ids.statusEditSave}
-          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] hover:bg-signal-soft"
+          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] hover:bg-signal-soft touch:h-10 touch:flex-1"
           onClick={onDone}
         >
           Done editing
@@ -77,13 +79,18 @@ export function StatusEditor({
         <button
           type="button"
           data-testid={ids.statusEditCancel}
-          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft"
+          className="h-7 rounded-control px-3 text-[length:var(--text-sm)] text-ink-muted hover:bg-signal-soft touch:h-10 touch:flex-1"
           onClick={onCancel}
         >
           Cancel
         </button>
-        <span className="text-[length:var(--text-xs)] text-ink-muted">
-          Save in the header writes it with any other changes.
+        <span
+          data-testid={ids.statusEditHint}
+          className="text-[length:var(--text-xs)] text-ink-muted touch:basis-full"
+        >
+          {touch
+            ? 'Save writes it with any other changes.'
+            : 'Save in the header writes it with any other changes.'}
         </span>
       </div>
     </div>

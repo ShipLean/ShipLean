@@ -12,7 +12,7 @@ import { UnparentedHeader } from './UnparentedHeader';
 import { TaskCell } from './TaskCell';
 
 // What a story or bug header shows when the board has no setting for its type.
-const ALL_FIELDS = {
+export const ALL_FIELDS = {
   showKey: true,
   showPoints: true,
   showAssignee: true,

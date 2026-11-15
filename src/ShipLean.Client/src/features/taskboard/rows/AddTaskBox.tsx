@@ -43,7 +43,7 @@ export function AddTaskBox({
       <button
         type="button"
         data-testid={ids.addTask}
-        className="btn-ghost justify-self-start"
+        className="btn-ghost justify-self-start touch:h-[var(--touch-target)]"
         onClick={() => setOpen(true)}
       >
         + Task

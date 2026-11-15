@@ -35,7 +35,7 @@ export function StartAs({
           aria-checked={state.id === value}
           data-testid={ids.newFeatureStartOption}
           data-state={state.name}
-          className={`h-[var(--control-height)] px-3 text-[length:var(--text-sm)] ${
+          className={`h-[var(--control-height)] px-3 touch:min-h-[var(--touch-target)] text-[length:var(--text-sm)] ${
             state.id === value ? 'bg-signal-soft font-semibold text-ink' : 'text-ink-muted'
           }`}
           onClick={() => onChange(state.id)}

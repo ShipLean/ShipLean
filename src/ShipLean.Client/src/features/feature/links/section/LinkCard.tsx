@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LinkCardDto } from '@shiplean/core/api/linkCards';
+import { MoreButton } from '../../../../touch/MoreButton';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { archiveLinkCard, editLinkCard, linkCardsKey } from '../../featureApi';
 import { featureTestIds as ids } from '../../testIds';
 import { LinkCardEditor } from './LinkCardEditor';
@@ -19,6 +21,7 @@ export function LinkCard({
   itemKey: string;
 }) {
   const queryClient = useQueryClient();
+  const { touch } = useTouchShell();
   const [editing, setEditing] = useState(false);
   const refetch = () =>
     queryClient.invalidateQueries({ queryKey: linkCardsKey(projectId, itemKey) });
@@ -33,6 +36,19 @@ export function LinkCard({
   const remove = useMutation({ mutationFn: () => archiveLinkCard(card.id), onSuccess: refetch });
   const error = edit.error ?? remove.error;
   const source = sourceLabel(card);
+  const startEdit = () => {
+    remove.reset();
+    setEditing(true);
+  };
+  const startRemove = () => {
+    edit.reset();
+    remove.mutate();
+  };
+  const stateChip = card.state ? (
+    <span data-testid={ids.linkCardState} data-state={card.state}>
+      <LinkStateChip state={card.state} />
+    </span>
+  ) : null;
   return (
     <li
       data-testid={ids.linkCard}
@@ -72,10 +88,11 @@ export function LinkCard({
                   href={card.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="min-w-0 flex-1 truncate font-medium hover:text-signal hover:underline"
+                  className="min-w-0 flex-1 truncate font-medium hover:text-signal hover:underline touch:-my-1.5 touch:py-2"
                 >
                   {card.title}
                 </a>
+                {touch ? stateChip : null}
               </div>
               <div className="truncate text-ink-muted">
                 <span data-testid={ids.linkCardLocation}>{locationLabel(card)}</span>
@@ -99,24 +116,34 @@ export function LinkCard({
             data-testid={ids.linkCardImage}
             src={card.imageUrl}
             alt=""
-            className="h-14 w-24 shrink-0 rounded-control object-cover"
+            className="h-14 w-24 shrink-0 rounded-control object-cover touch:h-10 touch:w-16"
           />
         ) : null}
-        {card.state ? (
-          <span data-testid={ids.linkCardState} data-state={card.state}>
-            <LinkStateChip state={card.state} />
-          </span>
-        ) : null}
-        <LinkCardMenu
-          onEdit={() => {
-            remove.reset();
-            setEditing(true);
-          }}
-          onRemove={() => {
-            edit.reset();
-            remove.mutate();
-          }}
-        />
+        {touch ? (
+          <div className="-my-1 -mr-1 flex shrink-0 items-center">
+            <button
+              type="button"
+              data-testid={ids.linkCardClose}
+              aria-label={`Remove ${card.title}`}
+              className="inline-grid size-[var(--touch-target)] place-items-center rounded-control text-ink-muted active:bg-signal-soft"
+              onClick={startRemove}
+            >
+              ✕
+            </button>
+            <MoreButton
+              label="Link actions"
+              actions={[
+                { id: 'edit', label: 'Edit title/note', onSelect: startEdit },
+                { id: 'remove', label: 'Remove', tone: 'danger', onSelect: startRemove },
+              ]}
+            />
+          </div>
+        ) : (
+          <>
+            {stateChip}
+            <LinkCardMenu onEdit={startEdit} onRemove={startRemove} />
+          </>
+        )}
       </div>
       {error ? (
         <p data-testid={ids.linkCardError} role="alert" className="m-0 text-danger">

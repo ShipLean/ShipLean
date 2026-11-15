@@ -14,7 +14,9 @@ import { featureTestIds as ids } from './testIds';
 
 // The Feature's layout (feature.html): the header, the field strip and the status band across the full width, then the
 // main column (Goal, Description, Links, Stories and bugs, Agent, Log) beside the rail (Attachments, History), all inside the
-// drop zone. The work item form owns the draft and Save and hands in its header, banners and Description.
+// drop zone. At 900px and below it is one column, the rail after the main column (SHIP-714 D10); the header the form
+// hands in carries the section chips. The work item form owns the draft and Save and hands in its header, banners and
+// Description.
 export function FeatureForm({
   region,
   header,
@@ -38,7 +40,7 @@ export function FeatureForm({
         <FeatureFieldsStrip {...region} />
         {banners}
         <StatusBand {...region} />
-        <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_20rem] gap-4 p-4 touch:grid-cols-[minmax(0,1fr)] touch:p-3">
           <div
             data-testid={ids.main}
             className="grid grid-cols-[minmax(0,1fr)] content-start gap-6"

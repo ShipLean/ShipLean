@@ -6,9 +6,11 @@ namespace ShipLean.Contracts.Taskboard;
 // task the card was dropped above in the target cell; null places it last in the cell. A People drop (Row.Grouping People)
 // ignores BeforeItemId: a People cell mixes parents while the store's cell is (state, parent), so the task goes last in its
 // (state, parent) cell. People cells list tasks in parent row order, then cell order.
+// Method is how the user moved the card (MoveMethods); null records no method.
 public sealed record TaskboardMoveRequest(
     [property: JsonRequired] Guid TaskId,
     [property: JsonRequired] int ExpectedRevision,
     [property: JsonRequired] Guid StateId,
     TaskboardMoveRow? Row,
-    Guid? BeforeItemId);
+    Guid? BeforeItemId,
+    string? Method = null);

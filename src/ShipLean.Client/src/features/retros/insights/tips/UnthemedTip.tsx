@@ -1,13 +1,11 @@
 import { retrosTestIds as ids } from '../../testIds';
 import { Tip } from './Tip';
-
-const TEXT =
-  'Points with no theme, in every category except Went well. Give them one in Search, or run Decide what to do, which assigns themes as it goes.';
+import { unthemedWording } from './tipWording';
 
 /** The Unthemed row's label with its tooltip. */
 export function UnthemedTip({ children = 'Unthemed' }: { children?: string }) {
   return (
-    <Tip data-testid={ids.retroTipUnthemed} tip={TEXT}>
+    <Tip data-testid={ids.retroTipUnthemed} entry="unthemed" tip={unthemedWording}>
       {children}
     </Tip>
   );

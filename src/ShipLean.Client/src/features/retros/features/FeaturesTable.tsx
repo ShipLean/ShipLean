@@ -5,7 +5,9 @@ import { CategoryHead } from './CategoryHead';
 import { FeatureRow } from './FeatureRow';
 
 const head =
-  'bg-sunken px-2.5 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted';
+  'bg-sunken px-2.5 py-1.5 text-left text-[length:var(--text-xs)] font-semibold whitespace-nowrap text-ink-muted touch:align-bottom touch:leading-tight touch:whitespace-normal';
+// The Feature column stays put while the rest scrolls inside the table's box (SHIP-805 rules 1 and 7).
+const pinnedHead = `${head} touch:sticky touch:left-0 touch:z-[1] touch:min-w-[200px] touch:max-w-60 touch:shadow-[1px_0_0_var(--color-edge)]`;
 const headNum = `${head} text-right`;
 const COLUMNS = RETRO_CATEGORIES.length + 7;
 
@@ -20,11 +22,14 @@ export function FeaturesTable({
   loose: RetroFeatureRowDto[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-panel border border-edge bg-panel">
+    <div
+      data-testid={ids.retroFeaturesTableBox}
+      className="overflow-x-auto rounded-panel border border-edge bg-panel"
+    >
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th className={head}>Feature</th>
+            <th className={pinnedHead}>Feature</th>
             <th className={head}>State</th>
             <th className={headNum}>Retros</th>
             {RETRO_CATEGORIES.map((category) => (
@@ -49,7 +54,7 @@ export function FeaturesTable({
                 colSpan={COLUMNS}
                 className="border-t border-edge bg-canvas px-2.5 py-1.5 text-[length:var(--text-xs)] font-semibold text-ink-muted"
               >
-                Stories and bugs with no Feature
+                <span className="touch:sticky touch:left-2">Stories and bugs with no Feature</span>
               </td>
             </tr>
           ) : null}

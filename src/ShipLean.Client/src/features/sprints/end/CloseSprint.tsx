@@ -18,21 +18,37 @@ import { SprintEndDone } from './SprintEndDone';
 
 /**
  * The Close sprint button. Closing a sprint is something a person chooses to do: nothing opens by itself. The dialog
- * stays open if a teammate closes the sprint meanwhile, and says so.
+ * stays open if a teammate closes the sprint meanwhile, and says so. Given `open` and `onClose`, the dialog is opened
+ * from elsewhere (the touch sprint header's ⋯) and the button is left out.
  */
-export function CloseSprint({ project, sprint }: { project: ProjectDto; sprint: SprintDto }) {
+export function CloseSprint({
+  project,
+  sprint,
+  open: openFromOutside,
+  onClose,
+}: {
+  project: ProjectDto;
+  sprint: SprintDto;
+  open?: boolean;
+  onClose?: () => void;
+}) {
   useSprintEndRealtime(project.id);
-  const [open, setOpen] = useState(false);
+  const [openHere, setOpenHere] = useState(false);
+  const controlled = openFromOutside !== undefined;
+  const open = controlled ? openFromOutside : openHere;
   const rollover = useRollover(project.id, open ? sprint.id : undefined);
-  const close = () => setOpen(false);
+  const close = () => {
+    if (controlled) onClose?.();
+    else setOpenHere(false);
+  };
   return (
     <>
-      {canCloseSprint(sprint) ? (
+      {!controlled && canCloseSprint(sprint) ? (
         <button
           type="button"
           data-testid={ids.closeSprint}
           className="btn-ghost"
-          onClick={() => setOpen(true)}
+          onClick={() => setOpenHere(true)}
         >
           Close sprint
         </button>

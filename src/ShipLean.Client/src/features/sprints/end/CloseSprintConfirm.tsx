@@ -24,11 +24,11 @@ export function CloseSprintConfirm({
       onClose={onCancel}
       footer={
         <>
-          <span className="flex-1" />
+          <span className="flex-1 touch:hidden" />
           <button
             type="button"
             data-testid={ids.endCancel}
-            className="btn-ghost"
+            className="btn-ghost touch:hidden"
             onClick={onCancel}
           >
             Cancel
@@ -36,7 +36,7 @@ export function CloseSprintConfirm({
           <button
             type="button"
             data-testid={ids.endApply}
-            className="btn-signal"
+            className="btn-signal touch:h-[var(--touch-target)] touch:flex-1"
             disabled={closing}
             onClick={onClose}
           >

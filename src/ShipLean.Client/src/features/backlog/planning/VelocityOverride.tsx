@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { backlogTestIds as ids } from '../testIds';
-import { useVelocityOverride } from './planningApi';
+import { useVelocityDraft } from './useVelocityDraft';
 
 // The Backlog header's forecast line: the velocity it plans at (the override, else the average of the last sprints) and
 // the Override button, which any member may use.
@@ -16,9 +16,11 @@ export function VelocityOverride({
   projectKey: string;
 }) {
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState('');
-  const save = useVelocityOverride(projectId, projectKey);
-  const planned = velocity.override ?? velocity.average;
+  const { planned, text, setText, save, parsed, valid, submit } = useVelocityDraft(
+    velocity,
+    projectId,
+    projectKey,
+  );
   const recent = velocity.sprints.map((s) => s.completed).join(' · ');
 
   function open() {
@@ -26,11 +28,7 @@ export function VelocityOverride({
     save.reset();
     setEditing(true);
   }
-  function submit(value: number | null) {
-    save.mutate(value, { onSuccess: () => setEditing(false) });
-  }
-  const parsed = Number(text);
-  const valid = text.trim() !== '' && Number.isFinite(parsed) && parsed >= 0;
+  const finish = (value: number | null) => submit(value, () => setEditing(false));
   return (
     <span className="inline-flex items-center gap-2 text-[length:var(--text-sm)]">
       <span data-testid={ids.planningVelocity} data-overridden={velocity.override !== null}>
@@ -57,7 +55,7 @@ export function VelocityOverride({
             data-testid={ids.planningOverrideSave}
             className="btn-signal"
             disabled={!valid || save.isPending}
-            onClick={() => submit(parsed)}
+            onClick={() => finish(parsed)}
           >
             Save
           </button>
@@ -67,7 +65,7 @@ export function VelocityOverride({
               data-testid={ids.planningOverrideClear}
               className="btn-ghost"
               disabled={save.isPending}
-              onClick={() => submit(null)}
+              onClick={() => finish(null)}
             >
               Use average
             </button>

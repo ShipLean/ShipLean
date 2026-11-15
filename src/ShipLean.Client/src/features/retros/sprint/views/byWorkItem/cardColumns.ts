@@ -2,6 +2,7 @@ import { RETRO_CATEGORIES } from '@shiplean/core/api/retros';
 import type { AddTarget } from '../../../../retroShared/board/AddTarget';
 import type {
   RetroCardDto,
+  RetroCategory,
   RetroCategoryColumnDto,
   RetroPointDto,
 } from '@shiplean/core/api/retros';
@@ -26,4 +27,14 @@ export function cardAddTarget(card: RetroCardDto, sprintId: string): AddTarget {
     sprintId,
     about: [{ value: '', label: 'The sprint' }],
   };
+}
+
+/** How many points a category has in an item's retros. */
+export function categoryCounts(
+  points: RetroPointDto[],
+): { category: RetroCategory; count: number }[] {
+  return RETRO_CATEGORIES.map((category) => ({
+    category,
+    count: points.filter((point) => point.category === category).length,
+  }));
 }

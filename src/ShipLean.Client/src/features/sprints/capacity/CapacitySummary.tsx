@@ -35,11 +35,15 @@ export function CapacitySummary({
   const capacity = entered ? total : velocity;
   const over = committed > capacity;
   return (
-    <aside aria-label={`${sprintName} as a whole`} className="panel grid content-start gap-3 p-4">
+    <aside
+      data-testid={ids.capacitySummary}
+      aria-label={`${sprintName} as a whole`}
+      className="panel grid content-start gap-3 p-4 touch:order-first touch:gap-2.5 touch:p-3"
+    >
       <div className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         {sprintName} as a whole
       </div>
-      <div className="flex gap-3">
+      <div className="flex gap-3 touch:grid touch:grid-cols-3 touch:gap-1.5">
         <Figure testId={ids.capacityKpiCapacity} value={capacity} label="Team capacity" />
         <Figure testId={ids.capacityKpiCommitted} value={committed} label="Committed" />
         <Figure
@@ -79,11 +83,16 @@ export function CapacitySummary({
 
 function Figure({ testId, value, label }: { testId: string; value: number; label: string }) {
   return (
-    <div className="min-w-0 flex-1">
-      <div data-testid={testId} className="text-[length:var(--text-xl)] font-semibold tabular-nums">
+    <div className="min-w-0 flex-1 touch:grid touch:content-start touch:gap-px touch:rounded-md touch:border touch:border-edge touch:bg-panel touch:px-2 touch:py-[7px]">
+      <div
+        data-testid={testId}
+        className="text-[length:var(--text-xl)] font-semibold tabular-nums touch:text-[19px] touch:leading-tight touch:whitespace-nowrap"
+      >
         {value}
       </div>
-      <div className="text-[length:var(--text-xs)] text-ink-muted">{label}</div>
+      <div className="text-[length:var(--text-xs)] text-ink-muted touch:truncate touch:text-[11.5px]">
+        {label}
+      </div>
     </div>
   );
 }

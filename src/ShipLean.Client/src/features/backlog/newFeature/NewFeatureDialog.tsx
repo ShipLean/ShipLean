@@ -112,7 +112,7 @@ export function NewFeatureDialog({
           <button
             type="button"
             data-testid={ids.newFeatureCancel}
-            className="btn-ghost"
+            className="btn-ghost touch:min-h-[var(--touch-target)]"
             onClick={onClose}
           >
             Cancel
@@ -120,7 +120,7 @@ export function NewFeatureDialog({
           <button
             type="button"
             data-testid={ids.newFeatureCreate}
-            className="btn-signal disabled:opacity-50"
+            className="btn-signal touch:min-h-[var(--touch-target)] disabled:opacity-50"
             disabled={!canCreate}
             onClick={submit}
           >

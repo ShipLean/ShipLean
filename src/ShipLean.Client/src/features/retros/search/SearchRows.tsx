@@ -1,14 +1,66 @@
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { retrosTestIds as ids } from '../testIds';
 import { SearchRow } from './parts/SearchRow';
 import { highlightedRow } from './parts/matches';
 import type { RetrosSearchSlotProps } from './SearchSlotProps';
+import { PhoneSearchRow } from './touch/PhoneSearchRow';
+import { CLEAR_SEARCH_AND_FILTERS, activeFilters } from './touch/searchFilters';
 
 const head = 'border-b border-edge px-2.5 py-1.5 text-left font-medium text-ink-muted';
 
 /** One row per point. The clicked point (else the open retro's first row) is the selected one. */
-export function SearchRows({ query, search, pointId, select }: RetrosSearchSlotProps) {
+export function SearchRows({ query, search, pointId, select, change }: RetrosSearchSlotProps) {
+  const { touch } = useTouchShell();
   const selectedRow = highlightedRow(search, pointId);
   const logMatches = new Set(search.logMatchPointIds);
+  if (touch) {
+    const hasFilters = activeFilters(query, search).length > 0;
+    const anySet = Boolean(query.q) || hasFilters;
+    return (
+      <div data-testid={ids.retrosRows} className="min-w-0">
+        {search.rows.length === 0 ? (
+          <div
+            data-testid={ids.retrosEmpty}
+            className="grid justify-items-center gap-2 px-3 py-8 text-center text-[length:var(--text-sm)] text-ink-muted"
+          >
+            <p className="m-0">
+              {query.q ? (
+                <>
+                  No points match <strong className="break-words text-ink">“{query.q}”</strong>
+                  {hasFilters ? ' with these filters' : ''}.
+                </>
+              ) : (
+                'No points match these filters.'
+              )}
+            </p>
+            {anySet ? (
+              <button
+                type="button"
+                data-testid={ids.retrosEmptyClear}
+                className="btn-ghost min-h-[var(--touch-target)]"
+                onClick={() => change(CLEAR_SEARCH_AND_FILTERS)}
+              >
+                Clear search and filters
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="grid border-t border-edge">
+            {search.rows.map((row) => (
+              <PhoneSearchRow
+                key={row.id}
+                point={row}
+                q={query.q}
+                logOnly={logMatches.has(row.id)}
+                selected={row === selectedRow}
+                onSelect={() => select(row.retroId, row.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div data-testid={ids.retrosRows} className="min-w-0 overflow-auto">
       {search.rows.length === 0 ? (

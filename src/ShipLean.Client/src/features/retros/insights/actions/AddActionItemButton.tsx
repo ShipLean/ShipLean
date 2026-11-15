@@ -8,7 +8,7 @@ export function AddActionItemButton() {
     <button
       type="button"
       data-testid={ids.retroActionsAdd}
-      className="btn-ghost cursor-pointer whitespace-nowrap"
+      className="btn-ghost cursor-pointer whitespace-nowrap touch:min-h-[var(--touch-target)]"
       onClick={() => dialog.open({ scope: { kind: 'project' } })}
     >
       + Action item

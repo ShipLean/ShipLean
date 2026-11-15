@@ -28,7 +28,7 @@ export function GoalSection({ draft, changed, setField, saveError }: FeatureRegi
           <button
             type="button"
             data-testid={ids.goalEdit}
-            className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft"
+            className="ml-auto h-6 rounded-control px-2 text-[length:var(--text-xs)] text-signal hover:bg-signal-soft touch:h-8 touch:min-w-[var(--touch-target)]"
             onClick={() => setEditing(true)}
           >
             Edit
@@ -41,7 +41,7 @@ export function GoalSection({ draft, changed, setField, saveError }: FeatureRegi
           aria-label="Goal"
           aria-invalid={error !== null}
           rows={2}
-          className={`${textareaClass} min-h-0 font-[family-name:var(--font-sans)]`}
+          className={`${textareaClass} min-h-0 font-[family-name:var(--font-sans)] touch:min-h-20 touch:w-full`}
           value={draft.goal}
           onChange={(event) => setField({ goal: event.target.value })}
         />

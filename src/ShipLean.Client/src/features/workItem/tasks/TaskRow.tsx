@@ -27,7 +27,7 @@ export function TaskRow({
     <li
       data-testid={ids.taskRow}
       data-key={task.key}
-      className="flex min-w-0 items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0"
+      className="flex min-w-0 items-center gap-2 border-t border-edge px-2 py-1.5 text-[length:var(--text-sm)] first:border-t-0 touch:grid touch:grid-cols-[auto_auto_minmax(0,1fr)_auto] touch:gap-x-2 touch:gap-y-1"
     >
       <TypeIcon type="task" />
       <ItemLink
@@ -35,17 +35,20 @@ export function TaskRow({
         projectKey={project.key}
         itemKey={task.key}
         title={task.title}
-        className="min-w-0 flex-1 truncate hover:text-signal hover:underline"
+        className="min-w-0 flex-1 truncate hover:text-signal hover:underline touch:col-span-3 touch:col-start-2 touch:flex touch:min-h-[var(--touch-target)] touch:items-center touch:break-words touch:whitespace-normal"
       >
         {task.title}
       </ItemLink>
-      <span data-testid={ids.taskKey} className="w-20 shrink-0 text-ink-muted">
+      <span
+        data-testid={ids.taskKey}
+        className="w-20 shrink-0 text-ink-muted touch:col-span-2 touch:w-auto"
+      >
         {task.key}
       </span>
       <select
         data-testid={ids.taskState}
         aria-label={`State of ${task.key}`}
-        className={`${selectClass} w-32 shrink-0`}
+        className={`${selectClass} w-32 shrink-0 touch:h-[var(--touch-target)] touch:w-full touch:min-w-0`}
         value={task.state.id}
         disabled={move.isPending}
         onChange={(event) => move.mutate({ task, stateId: event.target.value })}
@@ -59,14 +62,14 @@ export function TaskRow({
           </option>
         ))}
       </select>
-      <span className="w-6 shrink-0">
+      <span className="w-6 shrink-0 touch:justify-self-end">
         <Avatar {...(task.assignee ?? {})} />
       </span>
       {move.error ? (
         <span
           data-testid={ids.taskStateError}
           role="alert"
-          className="text-[length:var(--text-xs)] text-alert"
+          className="text-[length:var(--text-xs)] text-alert touch:col-span-4"
         >
           {move.error.message}
         </span>

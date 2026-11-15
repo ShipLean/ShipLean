@@ -48,14 +48,14 @@ export function SprintEndDialog({
       width="720px"
       footer={
         <>
-          <span className="text-[length:var(--text-xs)] text-ink-muted">
+          <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">
             Anyone on the team can do this. Once closed, it&apos;s done for everyone.
           </span>
-          <span className="flex-1" />
+          <span className="flex-1 touch:hidden" />
           <button
             type="button"
             data-testid={ids.endCancel}
-            className="btn-ghost"
+            className="btn-ghost touch:hidden"
             onClick={onCancel}
           >
             Cancel
@@ -63,7 +63,7 @@ export function SprintEndDialog({
           <button
             type="button"
             data-testid={ids.endApply}
-            className="btn-signal"
+            className="btn-signal touch:h-[var(--touch-target)] touch:flex-1"
             disabled={applying}
             onClick={onApply}
           >

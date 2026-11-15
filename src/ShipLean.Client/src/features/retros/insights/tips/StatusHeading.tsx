@@ -15,6 +15,7 @@ export function StatusHeading({ className, mode }: { className: string; mode: Re
   return (
     <th data-testid={ids.retroTipStatusHead} data-mode={mode} className={className}>
       <Tip
+        entry="status"
         tip={
           <DefinitionTip
             intro={statusHeadIntro(mode)}

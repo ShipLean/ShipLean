@@ -23,4 +23,6 @@ export const authTestIds = {
   proxySignIn: 'auth-proxy-sign-in',
   proxyMessage: 'auth-proxy-message',
   proxyRetry: 'auth-proxy-retry',
+  orWithEmail: 'auth-or-with-email',
+  topBar: 'auth-top-bar',
 } as const;

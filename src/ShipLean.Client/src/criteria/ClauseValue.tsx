@@ -60,7 +60,7 @@ export function ClauseValue({
     return (
       <select
         data-testid={criteriaTestIds.value}
-        className="field w-full"
+        className="field w-full touch:min-h-[var(--touch-target)]"
         aria-label="Value"
         {...marks}
         value={current === null ? '' : String(current)}
@@ -84,7 +84,7 @@ export function ClauseValue({
     return (
       <input
         data-testid={criteriaTestIds.value}
-        className="field w-full"
+        className="field w-full touch:min-h-[var(--touch-target)]"
         type="number"
         step={field.kind === 'number' ? 1 : 'any'}
         aria-label="Value"
@@ -103,7 +103,7 @@ export function ClauseValue({
     return (
       <input
         data-testid={criteriaTestIds.value}
-        className="field w-full"
+        className="field w-full touch:min-h-[var(--touch-target)]"
         type="date"
         aria-label="Value"
         {...marks}
@@ -118,7 +118,7 @@ export function ClauseValue({
   return (
     <input
       data-testid={criteriaTestIds.value}
-      className="field w-full"
+      className="field w-full touch:min-h-[var(--touch-target)]"
       aria-label="Value"
       {...marks}
       value={current === null ? '' : String(current)}

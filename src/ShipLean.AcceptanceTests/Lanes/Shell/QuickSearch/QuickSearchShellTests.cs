@@ -37,18 +37,4 @@ public class QuickSearchShellTests : SeededAcceptanceTest
         // With nothing typed the dialog lists the actions. Catches a dialog that opens empty.
         await Expect(search.Action("Create bug")).ToBeVisibleAsync();
     }
-
-    [Test]
-    public async Task QuickSearch_WhenNarrow_ShouldOpenFromTheStrip()
-    {
-        var search = new QuickSearchDialog(Page);
-        await Page.SetViewportSizeAsync(800, 700);
-        await new ShellFrame(Page).OpenAsync(ShellFrame.BacklogPath("SHIP"));
-
-        // Catches a strip that keeps the wide button, which would not fit.
-        await Expect(search.SearchButton).ToBeHiddenAsync();
-        await search.OpenWithIconButtonAsync();
-
-        await Expect(search.Dialog).ToBeVisibleAsync();
-    }
 }

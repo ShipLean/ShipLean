@@ -1,5 +1,8 @@
 import { createContext, useContext } from 'react';
+import type { UserRef } from '@shiplean/core/api/refs';
 import type { CardDto } from '@shiplean/core/api/views';
+import type { MoveMethod, TaskboardGrouping } from '../taskboardApi';
+import type { TaskboardGridView } from '../taskboardGridView';
 import type { DropTarget } from './moveRequests';
 
 /** What a card and a cell need from the board to move cards: set up once by `TaskboardDnd`. */
@@ -10,7 +13,15 @@ export interface TaskboardMoves {
   keyMove: (card: CardDto, rowId: string, key: string) => boolean;
   /** True once, for the card a keyboard move just put down: it takes focus back. */
   takeFocus: (cardKey: string) => boolean;
-  drop: (card: CardDto, fromRowId: string, to: DropTarget) => void;
+  /** Every caller names how the user moved the card. */
+  drop: (card: CardDto, fromRowId: string, to: DropTarget, method: MoveMethod) => void;
+  /** Moves a task to another story (null = Unparented), keeping its state. */
+  reparent: (card: CardDto, fromRowId: string, storyId: string | null, method: MoveMethod) => void;
+  /** Gives a task to a person (null = Unassigned), keeping its state. */
+  assign: (card: CardDto, fromRowId: string, person: UserRef | null, method: MoveMethod) => void;
+  /** The board's states, stories and people, for the task actions. */
+  view: TaskboardGridView;
+  grouping: TaskboardGrouping;
 }
 
 export const TaskboardMovesContext = createContext<TaskboardMoves | null>(null);

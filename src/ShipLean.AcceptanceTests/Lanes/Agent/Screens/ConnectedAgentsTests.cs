@@ -26,6 +26,7 @@ public class ConnectedAgentsTests : SeededAcceptanceTest
         await Expect(panel.Row("Revoked Bot")).ToHaveCountAsync(1);
 
         await panel.Row("Revoked Bot").GetByTestId(AgentsTestIds.ConnectedRevoke).ClickAsync();
+        await Page.GetByTestId(AgentsTestIds.ConnectedRevokeConfirm).ClickAsync();
 
         await Expect(panel.Row("Revoked Bot")).ToHaveCountAsync(0);
         await Expect(listed).ToHaveCountAsync(1);

@@ -14,7 +14,7 @@ import { StatusEditor } from './StatusEditor';
 import { VerifiedChip } from './VerifiedChip';
 
 const buttonClass =
-  'h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-50';
+  'h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal disabled:cursor-not-allowed disabled:opacity-50 touch:h-10 touch:flex-1';
 
 // The Feature's status band: the state, the status line, when it was verified and by whom. Still true confirms it at once
 // (its own revision, so only while the form is clean); Edit status opens the editor, whose changes the form's Save writes.
@@ -75,11 +75,11 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
           onCancel={cancel}
         />
       ) : (
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
+        <div className="flex items-start justify-between gap-4 touch:flex-col touch:items-stretch touch:gap-3">
+          <div className="flex min-w-0 items-start gap-3 touch:flex-col touch:gap-2">
             <span
               data-testid={ids.statusState}
-              className="rounded-full border border-edge bg-signal-soft px-2.5 py-0.5"
+              className="rounded-full border border-edge bg-signal-soft px-2.5 py-0.5 touch:self-start"
             >
               <StateDot category={draft.state.category} name={draft.state.name} />
             </span>
@@ -95,7 +95,7 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
               </div>
             </div>
           </div>
-          <div className="flex flex-none gap-2">
+          <div className="flex flex-none gap-2 touch:flex-auto">
             <button
               type="button"
               data-testid={ids.statusStillTrue}
