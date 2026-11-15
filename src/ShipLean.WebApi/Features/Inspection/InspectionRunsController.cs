@@ -19,8 +19,8 @@ public sealed class InspectionRunsController(InspectionViews views) : ApiControl
     [HttpGet("{runId}")]
     [ProducesResponseType<RunPageDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public Task<RunPageDto> Run(string project, string key, string runId, CancellationToken cancellationToken)
-        => views.RunAsync(project, key, runId, cancellationToken);
+    public Task<RunPageDto> Run(string project, string key, string runId, [FromQuery] bool errorsOnly = false, [FromQuery] int? turn = null, CancellationToken cancellationToken = default)
+        => views.RunAsync(project, key, runId, new RunFilter(errorsOnly, turn), cancellationToken);
 
     [HttpGet("{runId}/rows/{rowId}")]
     [ProducesResponseType<RunRowDetailDto>(StatusCodes.Status200OK)]
