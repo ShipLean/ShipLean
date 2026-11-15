@@ -33,6 +33,10 @@ export const useRunPage = (project: string, itemKey: string, runId: string, erro
   useQuery({
     queryKey: runPageKey(project, itemKey, runId, errorsOnly),
     queryFn: () => fetchRunPage(project, itemKey, runId, { errorsOnly }),
+    // Toggling errors only keeps the page (and the find box) up on the previous data while the new one loads;
+    // another run never borrows the previous run's page.
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[4] === runId ? previous : undefined,
   });
 
 /** One row's detail, fetched when it is selected. */

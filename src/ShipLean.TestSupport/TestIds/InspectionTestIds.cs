@@ -35,6 +35,7 @@ public static class InspectionTestIds
     public const string RunPage = "run-page";
     public const string RunPageNarrow = "run-page-narrow";
     public const string RunPageNarrowBack = "run-page-narrow-back";
+    public const string RunBack = "run-back";
     public const string RunLoading = "run-loading";
     public const string RunLoadFailed = "run-load-failed";
     public const string RunExpired = "run-expired";
