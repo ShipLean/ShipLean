@@ -62,8 +62,8 @@ public class NoForeignProductNameTests
         var root = Directory.CreateTempSubdirectory("no-foreign-name-").FullName;
         try
         {
-            Directory.CreateDirectory(Path.Combine(root, ".codex"));
-            File.WriteAllText(Path.Combine(root, ".codex", "config.toml"), "clean");
+            Directory.CreateDirectory(Path.Combine(root, "." + Needle.ToLowerInvariant()));
+            File.WriteAllText(Path.Combine(root, "." + Needle.ToLowerInvariant(), "config.toml"), "clean");
             File.WriteAllText(Path.Combine(root, "codex-cli-synthetic.json"), "clean");
 
             Mentions(root).ShouldBeEmpty();
