@@ -88,10 +88,12 @@ public sealed class ClickHouseViewSql(ClickHouseNames names)
         }
     }
 
-    // The columns the views read, for the layout check.
-    public static IReadOnlyList<string> TraceColumns { get; } = ["Timestamp", "SpanName", "ServiceName", "ResourceAttributes", "SpanAttributes", "Duration", "StatusCode"];
+    // The columns the views and the reader read, for the layout check. The log's EventName is not among them: older exporter tables lack it,
+    // so the reader takes event.name from the attributes alone.
+    public static IReadOnlyList<string> TraceColumns { get; } = ["Timestamp", "SpanName", "ServiceName", "ResourceAttributes", "SpanAttributes", "Duration", "StatusCode",
+        "TraceId", "SpanId", "ParentSpanId", "SpanKind", "StatusMessage", "Events.Timestamp", "Events.Name", "Events.Attributes"];
 
-    public static IReadOnlyList<string> LogColumns { get; } = ["Timestamp", "ServiceName", "SeverityText", "SeverityNumber", "ResourceAttributes", "LogAttributes"];
+    public static IReadOnlyList<string> LogColumns { get; } = ["Timestamp", "ServiceName", "SeverityText", "SeverityNumber", "ResourceAttributes", "LogAttributes", "Body", "TraceId", "SpanId"];
 
     private string RunsTtl => $"TTL toDateTime(last_seen) + INTERVAL {names.RetentionDays} DAY";
 

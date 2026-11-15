@@ -32,7 +32,7 @@ public sealed class ClickHouseHealth
             }
             return new StoreHealth(true, latency, await ViewLagAsync(ct), null);
         }
-        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ex is ClickHouseLayoutException)
+        catch (Exception ex) when (ClickHouseDb.IsStoreDown(ex, ct) || ClickHouseDb.IsSchemaError(ex) || ex is ClickHouseLayoutException)
         {
             return new StoreHealth(false, null, null, ex.Message);
         }

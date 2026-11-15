@@ -38,13 +38,13 @@ public static class InspectionOptionsReader
             LokiTenant = Text(configuration, "LOKI_TENANT"),
             LokiSelector = Text(configuration, "LOKI_SELECTOR") ?? defaults.LokiSelector,
             Fields = new InspectionFieldNames(
-                Text(configuration, "FIELD_ITEM") ?? fields.Item,
-                Text(configuration, "FIELD_PROJECT") ?? fields.Project,
-                Text(configuration, "FIELD_SESSION") ?? fields.Session,
-                Text(configuration, "FIELD_PROMPT") ?? fields.Prompt,
-                Text(configuration, "FIELD_REPO") ?? fields.Repo,
-                Text(configuration, "FIELD_BRANCH") ?? fields.Branch,
-                Text(configuration, "FIELD_PR") ?? fields.Pr),
+                Field(configuration, "FIELD_ITEM", fields.Item),
+                Field(configuration, "FIELD_PROJECT", fields.Project),
+                Field(configuration, "FIELD_SESSION", fields.Session),
+                Field(configuration, "FIELD_PROMPT", fields.Prompt),
+                Field(configuration, "FIELD_REPO", fields.Repo),
+                Field(configuration, "FIELD_BRANCH", fields.Branch),
+                Field(configuration, "FIELD_PR", fields.Pr)),
             MaxSearchDays = Number(configuration, "MAX_SEARCH_DAYS", defaults.MaxSearchDays),
             GrafanaUrlTemplate = Text(configuration, "GRAFANA_URL_TEMPLATE"),
         };
@@ -80,6 +80,19 @@ public static class InspectionOptionsReader
 
     private static string? Text(IConfiguration configuration, string name)
         => string.IsNullOrWhiteSpace(configuration[Prefix + name]) ? null : configuration[Prefix + name]!.Trim();
+
+    // An attribute name: any text except control characters, which no store query can carry.
+    private static string Field(IConfiguration configuration, string name, string fallback)
+    {
+        var text = Text(configuration, name);
+        if (text is null)
+        {
+            return fallback;
+        }
+        return text.Any(char.IsControl)
+            ? throw new InvalidOperationException($"{Prefix}{name} must not contain control characters.")
+            : text;
+    }
 
     private static string? Auth(IConfiguration configuration, string name)
     {

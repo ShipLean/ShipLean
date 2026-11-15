@@ -15,8 +15,13 @@ public sealed class ClickHouseDb(string connectionString)
     // The store did not answer: refused, a server error, or an HTTP timeout (which surfaces as TaskCanceledException while the
     // caller's own token is not cancelled).
     public static bool IsStoreDown(Exception ex, CancellationToken ct)
-        => ex is HttpRequestException or global::ClickHouse.Client.ClickHouseServerException or TimeoutException
+        => ex is HttpRequestException or TimeoutException
+            || (ex is global::ClickHouse.Client.ClickHouseServerException server && !IsSchemaError(server))
             || (ex is TaskCanceledException && !ct.IsCancellationRequested);
+
+    // The server rejected the statement for a column, table or database it does not have: a layout problem, not a store that is down.
+    public static bool IsSchemaError(Exception ex)
+        => ex is global::ClickHouse.Client.ClickHouseServerException { ErrorCode: 16 or 47 or 60 or 81 };
 
     public async Task ExecuteAsync(string statement, IReadOnlyDictionary<string, object>? parameters, CancellationToken ct)
     {
