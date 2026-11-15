@@ -22,7 +22,8 @@ export function TaskActionsSheet({
   onClose: () => void;
   onOpenItem: () => void;
 }) {
-  const { view, drop } = useTaskboardMoves();
+  const { view, drop, pickUp } = useTaskboardMoves();
+  const canPickUp = pickUp !== null && card.assignee === null && card.state.category === 'proposed';
   return (
     <ActionSheet
       open={open}
@@ -40,6 +41,19 @@ export function TaskActionsSheet({
     >
       {(close) => (
         <>
+          {canPickUp ? (
+            <button
+              type="button"
+              data-testid={ids.actionPickUp}
+              className={`${actionSheetRowClass} font-semibold text-signal`}
+              onClick={() => {
+                pickUp(card, rowId);
+                close();
+              }}
+            >
+              Pick up
+            </button>
+          ) : null}
           <p className="m-0 px-2 pt-2 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
             Move to
           </p>

@@ -5,6 +5,7 @@ import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../realtime';
 import type { Level } from '../../routes';
+import type { MoveMethod } from '../taskboard/taskboardApi';
 import { movesPending } from './moves/pendingMoves';
 
 // A board's react-query keys and reads. Everything is keyed under ['projects', projectId, 'board', boardId, query],
@@ -36,6 +37,8 @@ export interface BoardMoveRequest {
   done: boolean;
   laneId?: string | null;
   beforeItemId?: string | null;
+  /** How the user moved the card (K3); absent for the Move to Done offer. */
+  method?: MoveMethod;
 }
 
 /** The query string of a board read; the same query always gives the same string, so it is also the cache key. */

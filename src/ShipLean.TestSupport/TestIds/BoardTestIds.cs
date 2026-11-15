@@ -61,6 +61,7 @@ public static class BoardTestIds
     public const string CardTag = "board-card-tag";
     public const string CardExtra = "board-card-extra";
     public const string DropLine = "board-drop-line";
+    public const string LiftedCard = "board-lifted-card";
     public const string DoneConfirm = "board-done-confirm";
     public const string DoneConfirmChild = "board-done-confirm-child";
     public const string DoneConfirmMore = "board-done-confirm-more";
@@ -100,6 +101,8 @@ public static class BoardTestIds
     public const string ChildAddSubmit = "board-child-add-submit";
     public const string ChildAddCancel = "board-child-add-cancel";
     public const string ChildAddError = "board-child-add-error";
+    public const string AssignSheet = "board-assign-sheet";
+    public const string AssignOption = "board-assign-option";
     public const string LocationProbe = "board-location-probe";
 
     // SHIP-916 W1

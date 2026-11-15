@@ -10,11 +10,14 @@ export function PhonePersonLane({
   lane,
   stateId,
   meId,
+  emptyLane,
 }: {
   view: TaskboardGridView;
   lane: PersonLane;
   stateId: string;
   meId: string | undefined;
+  /** Say "No tasks in this sprint" for a person with none (the sprint Taskboard lists everyone). */
+  emptyLane: boolean;
 }) {
   const { row, rowId, tasks } = lane;
   return (
@@ -51,10 +54,10 @@ export function PhonePersonLane({
         showParent
         empty={
           <span
-            data-testid={ids.laneNone}
+            data-testid={emptyLane && row.taskCount === 0 ? ids.phonePersonEmpty : ids.laneNone}
             className="px-1 text-[length:var(--text-sm)] text-ink-muted"
           >
-            None
+            {emptyLane && row.taskCount === 0 ? 'No tasks in this sprint' : 'None'}
           </span>
         }
       />

@@ -22,6 +22,8 @@ export const taskboardTestIds = {
   filterSheetClear: 'taskboard-filter-sheet-clear',
   columnHeader: 'taskboard-column-header',
   columnCount: 'taskboard-column-count',
+  // L725c people and pulse
+  phonePersonEmpty: 'taskboard-phone-person-empty',
   row: 'taskboard-row',
   rowHeader: 'taskboard-row-header',
   rowCard: 'taskboard-row-card',
@@ -54,6 +56,9 @@ export const taskboardTestIds = {
   cardTag: 'taskboard-card-tag',
   cardPoints: 'taskboard-card-points',
   cardAssignee: 'taskboard-card-assignee',
+  // L725a pick up
+  actionPickUp: 'taskboard-task-action-pick-up',
+  storyNoParent: 'taskboard-task-story-no-parent',
   cardParent: 'taskboard-card-parent',
   cardParentFeature: 'taskboard-card-parent-feature',
   cardPickUp: 'taskboard-card-pick-up',

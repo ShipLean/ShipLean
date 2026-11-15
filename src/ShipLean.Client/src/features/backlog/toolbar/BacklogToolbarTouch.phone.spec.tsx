@@ -189,7 +189,8 @@ test('MoreSheet_WhenSearchTypedInListMode_ShouldNarrowTheTouchRows', async ({ mo
   await stubBacklog(page, backlogView(ROWS));
   await mount(<ListMode project={PROJECT} />, route);
   await expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
-  await page.getByTestId(touchTestIds.moreButton).tap();
+  // Each row has its own ⋯ (L716f): the toolbar's is the one inside the toolbar row.
+  await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
   await page.locator(actionRow('search')).tap();
   await page.getByTestId(ids.searchBox).fill(ROWS[0].key);
   await expect(page.getByTestId(ids.row)).toHaveCount(1);

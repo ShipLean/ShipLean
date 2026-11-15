@@ -52,7 +52,7 @@ export function BeforeYouPlan({
               aria-pressed={pressed}
               disabled={count === 0 && !pressed}
               onClick={() => queue.open(check.id, check.itemIds)}
-              className={`inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-xs font-medium ${
+              className={`inline-flex h-6 touch:h-auto touch:min-h-[var(--touch-target)] items-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-xs font-medium ${
                 pressed ? 'border-signal bg-signal-soft font-semibold' : 'border-edge bg-panel'
               } ${count === 0 ? 'text-ink-muted' : ''}`}
             >

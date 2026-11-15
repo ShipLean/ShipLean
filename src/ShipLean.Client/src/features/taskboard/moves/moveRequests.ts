@@ -74,6 +74,7 @@ export function pickUpRequest(card: CardDto, stateId: string, meId: string): Tas
     stateId,
     row: { grouping: 'people', target: meId },
     beforeItemId: null,
+    method: 'pick-up',
   };
 }
 

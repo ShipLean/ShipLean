@@ -25,6 +25,8 @@ public static class TaskboardTestIds
     public const string FilterSheetClear = "taskboard-filter-sheet-clear";
     public const string ColumnHeader = "taskboard-column-header";
     public const string ColumnCount = "taskboard-column-count";
+    // L725c people and pulse
+    public const string PhonePersonEmpty = "taskboard-phone-person-empty";
     public const string Row = "taskboard-row";
     public const string RowHeader = "taskboard-row-header";
     public const string RowCard = "taskboard-row-card";
@@ -59,6 +61,9 @@ public static class TaskboardTestIds
     public const string CardTag = "taskboard-card-tag";
     public const string CardPoints = "taskboard-card-points";
     public const string CardAssignee = "taskboard-card-assignee";
+    // L725a pick up
+    public const string ActionPickUp = "taskboard-task-action-pick-up";
+    public const string StoryNoParent = "taskboard-task-story-no-parent";
     public const string CardParent = "taskboard-card-parent";
     public const string CardParentFeature = "taskboard-card-parent-feature";
     public const string CardPickUp = "taskboard-card-pick-up";

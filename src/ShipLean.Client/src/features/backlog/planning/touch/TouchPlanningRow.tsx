@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { BacklogRowDto } from '@shiplean/core/api/views';
+import { useTouchSelectMode } from '../../touch/selectMode';
+import { TouchSelectBox } from '../../touch/TouchSelectBox';
 import { TouchHandle } from '../../touch/TouchHandle';
 import { TouchRow } from '../../touch/TouchRow';
 import { TouchRowGhost } from '../../touch/TouchRowGhost';
@@ -30,6 +32,7 @@ export function TouchPlanningRow({
   onDrop: (rowId: string, targetId: string | null) => void;
 }) {
   const [lifted, setLifted] = useState(false);
+  const { selecting } = useTouchSelectMode();
   return (
     <div data-pull-section={sectionId} className={lifted ? 'opacity-40' : ''}>
       <TouchRow
@@ -38,7 +41,9 @@ export function TouchPlanningRow({
         flash={flash}
         forecast={forecast}
         handle={
-          handle ? (
+          selecting ? (
+            <TouchSelectBox row={row} />
+          ) : handle ? (
             <TouchHandle
               rowId={row.id}
               rank={row.rank ?? ''}

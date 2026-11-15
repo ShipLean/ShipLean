@@ -34,3 +34,12 @@ describe('stateChips', () => {
     expect(stateChips(COLUMNS, ROWS, new Set(['unassigned'])).map((c) => c.count)).toEqual([1, 0]);
   });
 });
+
+describe('stateChips pulses', () => {
+  it('StateChips_WhenStateHasPulseCounter_ShouldCarryItOnItsChipOnly', () => {
+    const chips = stateChips(COLUMNS, ROWS, new Set(), new Map([['active', 2]]));
+
+    expect(chips.find((c) => c.id === 'active')?.pulse).toBe(2);
+    expect(chips.find((c) => c.id === 'new')).not.toHaveProperty('pulse');
+  });
+});

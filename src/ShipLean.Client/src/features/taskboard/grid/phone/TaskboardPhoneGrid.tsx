@@ -8,11 +8,11 @@ import type { TaskboardGridView } from '../../taskboardGridView';
 import type { TaskboardScope } from '../../taskboardScope';
 import { taskboardTestIds as ids } from '../../testIds';
 import { ClosedStoryLine } from './ClosedStoryLine';
-import { PhonePersonLane } from './PhonePersonLane';
+import { FeaturePeopleLanes, SprintPeopleLanes } from './PhonePeopleLanes';
 import { PhoneStoryLane } from './PhoneStoryLane';
 import { phoneLanes } from './phoneLanes';
-import { phonePeopleLanes } from './phonePeopleLanes';
 import { stateChips } from './stateChips';
+import { useTeammatePulses } from './teammateMoves';
 import { TaskboardPagerContext, type TaskboardPager } from './TaskboardPagerContext';
 
 type Row = TaskboardRowDto & { sprint?: SprintRef | null };
@@ -61,10 +61,12 @@ export function TaskboardPhoneGrid({
   onSetState: (parentId: string, key: string, revision: number, stateId: string) => void;
   label: string;
 }) {
+  const pulses = useTeammatePulses(projectId, scope, view);
   const pages = stateChips(
     view.columns,
     grouping === 'stories' ? sections.flatMap((s) => s.rows) : view.peopleRows,
     faces,
+    pulses,
   );
   const [chosen, setChosen] = useState<string | undefined>(undefined);
   const current = pages.some((p) => p.id === chosen) ? chosen! : (pages[0]?.id ?? '');
@@ -106,6 +108,19 @@ export function TaskboardPhoneGrid({
   const sectionBody = (section: PhoneGridSection, stateId: string) =>
     section.rows.length === 0 ? section.empty : storyLanes(section, stateId);
 
+  const peopleLanes = (stateId: string) =>
+    scope.kind === 'sprint' ? (
+      <SprintPeopleLanes
+        projectId={projectId}
+        view={view}
+        stateId={stateId}
+        faces={faces}
+        meId={me?.id}
+      />
+    ) : (
+      <FeaturePeopleLanes view={view} stateId={stateId} faces={faces} meId={me?.id} />
+    );
+
   const renderPage = (stateId: string) => {
     const column = view.columns.find((c) => c.state.id === stateId);
     const page = pages.find((p) => p.id === stateId);
@@ -125,15 +140,7 @@ export function TaskboardPhoneGrid({
                 {section.closed ? null : sectionBody(section, stateId)}
               </Fragment>
             ))
-          : phonePeopleLanes(view.peopleRows, stateId, faces).map((lane) => (
-              <PhonePersonLane
-                key={lane.rowId}
-                view={view}
-                lane={lane}
-                stateId={stateId}
-                meId={me?.id}
-              />
-            ))}
+          : peopleLanes(stateId)}
       </div>
     );
   };

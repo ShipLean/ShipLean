@@ -2,10 +2,11 @@ import { useMemo, useState, type ReactNode } from 'react';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import { useItemPeek } from '../../../itemPeek/useItemPeek';
 import { CardActionsContext, type CardActions } from './CardActionsContext';
+import { AssignSheet } from './AssignSheet';
 import { CardActionsSheet } from './CardActionsSheet';
 import { CardMoveToSheet } from './CardMoveToSheet';
 
-type Picker = { cardId: string; kind: 'column' | 'lane' };
+type Picker = { cardId: string; kind: 'column' | 'lane' | 'assign' };
 
 /** Provides `useCardActions` and holds the sheets the actions open: the actions sheet, then Move to or Lane. */
 export function CardActionsHost({
@@ -40,7 +41,9 @@ export function CardActionsHost({
         actions={value}
         onClose={() => setActionsFor(null)}
       />
-      {picker ? (
+      {picker?.kind === 'assign' ? (
+        <AssignSheet view={view} cardId={picker.cardId} onClose={() => setPicker(null)} />
+      ) : picker ? (
         <CardMoveToSheet
           view={view}
           cardId={picker.cardId}
