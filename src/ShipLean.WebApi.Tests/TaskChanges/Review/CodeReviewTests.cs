@@ -208,7 +208,7 @@ public class CodeReviewTests : ApiFixture
             INSERT INTO code_commit (repository_id, sha, parent_shas, subject, author_name, authored_at, additions, deletions, files_changed, paths, read_at)
             SELECT @repository, sha, parent_shas, subject, author_name, authored_at, additions, deletions, files_changed, paths, read_at FROM code_commit WHERE sha = @sha LIMIT 1;
             INSERT INTO work_item_commit (id, work_item_id, repository_id, sha, position, added_via)
-            VALUES (@id, @item, @repository, @sha, 99, 'addCommits');
+            VALUES (@id, @item, @repository, @sha, 99, 'add_commits');
             """,
             new { repository, sha, id, item });
         return id;
@@ -231,7 +231,7 @@ public class CodeReviewTests : ApiFixture
     private async Task<Guid?> AssigneeOfAsync(Guid item)
     {
         await using var database = await OpenDatabaseAsync();
-        return await database.QuerySingleAsync<Guid?>("SELECT assignee_id FROM work_item WHERE id = @item", new { item });
+        return await database.QuerySingleAsync<Guid?>("SELECT assigned_to FROM work_item WHERE id = @item", new { item });
     }
 
     private async Task<List<string>> CommentBodiesAsync(Guid item)
