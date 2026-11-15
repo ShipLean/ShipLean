@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
-import { Chip, type ChipTone } from '../../../../components/Chip';
+import { Chip } from '../../../../components/Chip';
 import type { RetroInsightsMode } from '@shiplean/core/api/retros';
 import { Sheet } from '../../../../touch/Sheet';
 import { retrosTestIds as ids } from '../../testIds';
+import { STATUS } from '../recurring/StatusChip';
+import { VERDICT } from '../recurring/VerdictChip';
 import {
-  STATUS_CHIPS,
-  VERDICT_CHIPS,
+  STATUS_ORDER,
+  VERDICT_ORDER,
   noSprintWording,
   statusHeadIntro,
   statusWording,
@@ -43,8 +45,6 @@ function Entry({
   );
 }
 
-const tonedChip = (label: string, tone: ChipTone) => <Chip tone={tone}>{label}</Chip>;
-
 /**
  * What these mean (D5): every status and verdict, No sprint and Unthemed. The entry the address names is highlighted and
  * scrolled into view; a group entry (`status`, `verdicts`) scrolls to its group.
@@ -72,18 +72,28 @@ export function DefinitionsSheet({
           Status
         </div>
         <p className={HINT}>{statusHeadIntro(mode)}</p>
-        {STATUS_CHIPS.map((s) => (
-          <Entry key={s.id} id={s.id} entry={entry} chip={tonedChip(s.label, s.tone)}>
-            {statusWording(s.id, mode)}
+        {STATUS_ORDER.map((id) => (
+          <Entry
+            key={id}
+            id={id}
+            entry={entry}
+            chip={<Chip tone={STATUS[id].tone}>{STATUS[id].label}</Chip>}
+          >
+            {statusWording(id, mode)}
           </Entry>
         ))}
         <div data-group="verdicts" className={GROUP}>
           Last change
         </div>
         <p className={HINT}>{verdictHeadIntro}</p>
-        {VERDICT_CHIPS.map((v) => (
-          <Entry key={v.id} id={v.id} entry={entry} chip={tonedChip(v.label, v.tone)}>
-            {verdictWording(v.id, mode)}
+        {VERDICT_ORDER.map((id) => (
+          <Entry
+            key={id}
+            id={id}
+            entry={entry}
+            chip={<Chip tone={VERDICT[id].tone}>{VERDICT[id].label}</Chip>}
+          >
+            {verdictWording(id, mode)}
           </Entry>
         ))}
         <div className={GROUP}>Also</div>
