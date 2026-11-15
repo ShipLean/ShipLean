@@ -1,0 +1,229 @@
+/* Agent runs section of the item page (SHIP-1463, design/screens/agent-runs.html): token colours only. */
+.ar-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 22px;
+  flex-wrap: wrap;
+}
+.ar-head h2 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+.ar-sum {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ar-spacer {
+  flex: 1;
+}
+.ar-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.ar-pill.warn {
+  background: color-mix(in srgb, var(--color-warn) 18%, transparent);
+  color: var(--color-text);
+}
+.ar-pill.ok {
+  background: color-mix(in srgb, var(--color-ok) 18%, transparent);
+  color: var(--color-text);
+}
+.ar-pill.info {
+  background: color-mix(in srgb, var(--color-info) 18%, transparent);
+  color: var(--color-text);
+}
+.ar-pill.danger {
+  background: color-mix(in srgb, var(--color-danger) 16%, transparent);
+  color: var(--color-danger);
+}
+.ar-box {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+.ar-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.ar-table th {
+  height: 26px;
+  padding: 0 var(--space-2);
+  text-align: left;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--color-bg);
+  white-space: nowrap;
+}
+.ar-table th.r,
+.ar-table td.r {
+  text-align: right;
+}
+.ar-table td {
+  height: 44px;
+  padding: 0 var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ar-row {
+  cursor: pointer;
+}
+.ar-row:hover td {
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+}
+.ar-table td.what {
+  width: 100%;
+  max-width: 0;
+}
+.ar-o,
+.ar-s {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ar-s {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.ar-agent {
+  display: grid;
+  line-height: 1.25;
+}
+.ar-agent a {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+.ar-agent a:hover {
+  color: var(--color-accent);
+}
+.ar-agent small {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.ar-mini {
+  position: relative;
+  display: block;
+  width: 100px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.ar-mini i {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-accent) 70%, transparent);
+}
+.ar-mini i.wait {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warn) 75%, transparent) 0 3px,
+    transparent 3px 5px
+  );
+}
+.ar-mini i.error {
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+  background: var(--color-danger);
+}
+.ar-mini i.shipleanTool {
+  top: 5px;
+  bottom: 5px;
+  min-width: 3px;
+  border-radius: 50%;
+  background: var(--color-info);
+}
+.ar-errs {
+  color: var(--color-danger);
+  font-weight: var(--weight-semibold);
+}
+.ar-muted {
+  color: var(--color-muted);
+}
+.ar-note {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+.ar-note.warn {
+  border-style: solid;
+  border-left: 3px solid var(--color-warn);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.ar-note.warn b {
+  display: block;
+}
+.ar-open {
+  color: var(--color-muted);
+  font-size: 16px;
+  text-decoration: none;
+}
+.ar-note code {
+  padding: 0 4px;
+  border-radius: var(--radius-xs);
+  background: var(--color-surface-2);
+  font-size: var(--text-xs);
+}
+.ar-agents {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.ar-agents a,
+.ar-foot a {
+  color: var(--color-accent);
+}
+.ar-agents a {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  text-decoration: none;
+}
+.ar-agents a:hover {
+  border-color: var(--color-accent);
+}
+.ar-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  flex-wrap: wrap;
+}
+.ar-btn {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
