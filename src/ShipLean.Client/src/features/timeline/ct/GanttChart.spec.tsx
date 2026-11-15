@@ -61,6 +61,13 @@ test('GanttChart_WhenBarClicked_ShouldCallOnSelect', async ({ mount, page }) => 
   expect(picks).toEqual(['SHIP-194']);
 });
 
+test('GanttChart_WhenReviewDotClicked_ShouldSelectItsBar', async ({ mount, page }) => {
+  const picks: (string | null)[] = [];
+  await mountChart(mount, FINISHED_TIMELINE, { picks });
+  await page.getByTestId(ids.chartReviewDot).and(page.locator('[data-key="SHIP-191"]')).click();
+  expect(picks).toEqual(['SHIP-191']);
+});
+
 test('GanttChart_WhenEscPressed_ShouldClearSelection', async ({ mount, page }) => {
   const picks: (string | null)[] = [];
   await mountChart(mount, FINISHED_TIMELINE, { picks, selected: 'SHIP-194' });

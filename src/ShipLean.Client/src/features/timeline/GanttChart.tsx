@@ -339,7 +339,10 @@ export function GanttChart({ view, options, selected, onSelect }: GanttChartProp
                     r={4}
                     style={{
                       fill: dot.verdict === 'approved' ? 'var(--color-ok)' : 'var(--color-warn)',
+                      cursor: 'pointer',
                     }}
+                    // A review from an earlier round sits on its bar; clicking it selects the bar it covers.
+                    onClick={select(mark.key)}
                   >
                     <title>{`${dot.verdict === 'approved' ? 'Approved' : 'Changes requested'}, ${dot.atLabel}`}</title>
                   </circle>
