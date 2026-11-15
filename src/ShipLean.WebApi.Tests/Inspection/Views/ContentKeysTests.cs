@@ -23,7 +23,7 @@ public class ContentKeysTests
     }
 
     [Test]
-    public void Visible_WhenContentIsHiddenAndTheKeyIsCodexToolInput_ShouldDropArguments()
+    public void Visible_WhenContentIsHiddenAndTheKeyIsTheCliAgentToolInput_ShouldDropArguments()
     {
         var attributes = new Dictionary<string, string> { ["arguments"] = """{"cmd":"rm -rf x"}""", ["tool_name"] = "shell", ["call_id"] = "c1" };
 
