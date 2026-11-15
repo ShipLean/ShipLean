@@ -113,15 +113,13 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         {
             throw ApiException.Validation($"limit must be 1 to {RunRowsCursor.MaxLimit}.", "limit");
         }
-        var offset = RunRowsCursor.Decode(cursor);
+        var filter = errorsOnly ? "errors" : "all";
+        var position = RunRowsCursor.Decode(cursor, filter);
         var page = await RunAsync(projectKey, itemKey, runId, new RunFilter(errorsOnly, null), ct);
         var ordered = RunRowsCursor.Order(page.Turns.SelectMany(t => t.Rows.Select(r => new RunRowsPageRow(t.Number, r))));
-        if (offset > ordered.Count)
-        {
-            throw ApiException.Validation("cursor is past the last row.", "cursor");
-        }
-        var rows = ordered.Skip(offset).Take(limit).ToList();
-        var next = offset + rows.Count < ordered.Count ? RunRowsCursor.Encode(offset + rows.Count) : null;
+        var rest = RunRowsCursor.After(ordered, position).ToList();
+        var rows = rest.Take(limit).ToList();
+        var next = rows.Count < rest.Count ? RunRowsCursor.Encode(filter, rows[^1]) : null;
         return new RunRowsPage(page.Header, page.LogOnly, page.Banner, page.Truncated, page.GrafanaUrl, page.ContentShown, ordered.Count, ordered.Count(r => r.Row.IsError), next, rows);
     }
 
@@ -170,7 +168,7 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
 
     private string StartedLabel(DateTimeOffset at) => $"{DisplayDate.ShortDay(at, time.GetUtcNow(), time.LocalTimeZone)}, {DisplayDate.Clock(at, time)}";
 
-    private string ClockSeconds(DateTimeOffset at) => TimeZoneInfo.ConvertTime(at, time.LocalTimeZone).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+    private string ClockSeconds(DateTimeOffset at) => DisplayDate.ClockSeconds(at, time);
 
     private static string AgentId(string service) => AgentIds.GetValueOrDefault(service, service);
 

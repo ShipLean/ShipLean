@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ShipLean.Contracts.Inspection;
 using ShipLean.Application.Features.Inspection.Views;
 
 namespace ShipLean.WebApi.Tests.Inspection.Views;
@@ -71,10 +72,29 @@ public class GetRunPagingTests : InspectionViewsFixture
     }
 
     [Test]
-    public void Cursor_WhenEncoded_ShouldDecodeToTheSameOffset()
+    public async Task GetRun_WhenTheCursorCameFromAnotherFilter_ShouldBeAValidationErrorNotASilentSkip()
     {
-        RunRowsCursor.Decode(RunRowsCursor.Encode(37)).ShouldBe(37);
-        RunRowsCursor.Decode(null).ShouldBe(0);
+        var errorsCursor = Next(await PageAsync(null, 1, "errors"))!;
+        var token = await ToolTokenAsync();
+
+        var reply = await CallToolAsync(token, "get_run", $$"""{"item":"{{Item}}","run":"{{RunId}}","filter":"all","cursor":"{{errorsCursor}}"}""");
+
+        reply.IsToolError().ShouldBeTrue();
+        reply.Body.ShouldContain("filter=errors");
+    }
+
+    [Test]
+    public void Cursor_WhenResumed_ShouldContinueAfterTheLastRowSentNotAtAnOffset()
+    {
+        RunPageRowDto Row(string id, long start, bool error) => new(id, null, 0, RowKind.Tool, id, start, null, null, error, false, null, null, 0, false);
+        var rows = RunRowsCursor.Order([new(1, Row("b", 20, false)), new(1, Row("a", 10, false)), new(1, Row("e", 30, true))]);
+        rows.Select(r => r.Row.Id).ShouldBe(["e", "a", "b"]);
+
+        var cursor = RunRowsCursor.Encode("all", rows[1]);
+        var grown = RunRowsCursor.Order([.. rows, new(1, Row("c", 15, false)), new(1, Row("f", 5, true))]);
+
+        RunRowsCursor.After(grown, RunRowsCursor.Decode(cursor, "all")).Select(r => r.Row.Id).ShouldBe(["c", "b"]);
+        RunRowsCursor.Decode(null, "all").ShouldBeNull();
     }
 
     [Test]

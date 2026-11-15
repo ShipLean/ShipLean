@@ -34,12 +34,12 @@ internal sealed class InspectionTools(ItemResolver items, CaptureSupport support
     }
 
     [McpServerTool(Name = "get_run"), McpScope(McpScopes.Read)]
-    [Description("Read one agent run of a work item as rows, errors first and then the rest in run order, a page at a time: pass next_cursor back as cursor for the next page. Quote the run id (and the row names) in log_retrospective failure logs so the next agent can find the run.")]
+    [Description("Read one agent run of a work item as rows, errors first and then the rest in run order, a page at a time: pass nextCursor back as cursor for the next page, with the same filter (a cursor belongs to its filter). Quote the run id (and the row names) in log_retrospective failure logs so the next agent can find the run.")]
     public async Task<CallToolResult> GetRunAsync(
         [Description("The work item's key, such as SHIP-12.")] string item,
         [Description("The run id from list_runs.")] string run,
         [Description("all or errors (error rows and the rows they sit under).")] string? filter = null,
-        [Description("next_cursor from the previous page; leave out for the first.")] string? cursor = null,
+        [Description("nextCursor from the previous page; leave out for the first.")] string? cursor = null,
         [Description("Rows per page, 1 to 200; 50 when left out.")] int? limit = null,
         CancellationToken cancellationToken = default)
     {
