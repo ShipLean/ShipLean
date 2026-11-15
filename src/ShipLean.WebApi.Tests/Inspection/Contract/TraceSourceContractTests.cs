@@ -6,7 +6,8 @@ using ShipLean.TestSupport.Inspection;
 namespace ShipLean.WebApi.Tests.Inspection.Contract;
 
 // What every ITraceSource must do over the synthetic fixtures (K7), loaded through the collector into the shared stack. A subclass
-// supplies the source under test, built directly from the stack's options (no DI).
+// supplies the source under test, built directly from the stack's options (no DI). Lane A must talk to ClickHouse over the HTTP
+// interface (port 8123 inside the container) of the shared stack, not the native protocol.
 public abstract class TraceSourceContractTests
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(StoreTimeouts.WaitSeconds);
@@ -75,14 +76,18 @@ public abstract class TraceSourceContractTests
     public async Task FindRunsAndGetRun_WhenAnotherProjectKeyIsUsed_FindNothing(string name)
     {
         var run = runs[name];
-        var other = run.ProjectKey + "X";
+        await AssertFoundAsync(run);
 
-        var search = await source.FindRunsAsync(Query(run, run.ItemKey) with { ProjectKey = other }, CancellationToken.None);
-        var got = await source.GetRunAsync(Ref(run, run.ItemKey, run.Expected.Summary.RunId) with { ProjectKey = other }, CancellationToken.None);
+        // Longer than the real key (catches a store matching stored.StartsWith(query) in reverse), a prefix of it (catches a prefix match), and unrelated.
+        foreach (var other in new[] { run.ProjectKey + "X", run.ProjectKey[..^1], "ZZZZ-NOPE" })
+        {
+            var search = await source.FindRunsAsync(Query(run, run.ItemKey) with { ProjectKey = other }, CancellationToken.None);
+            var got = await source.GetRunAsync(Ref(run, run.ItemKey, run.Expected.Summary.RunId) with { ProjectKey = other }, CancellationToken.None);
 
-        search.Reachable.ShouldBeTrue($"{Lane}: {search.Problem}");
-        search.Runs.ShouldBeEmpty(Lane);
-        got.ShouldBeNull(Lane);
+            search.Reachable.ShouldBeTrue($"{Lane}: {search.Problem}");
+            search.Runs.ShouldBeEmpty($"{Lane}: project {other}");
+            got.ShouldBeNull($"{Lane}: project {other}");
+        }
     }
 
     [TestCaseSource(nameof(FixtureNames))]
@@ -90,6 +95,7 @@ public abstract class TraceSourceContractTests
     {
         var run = runs[name];
         var (from, to) = (run.Load.StartedAt.AddHours(-3), run.Load.StartedAt.AddHours(-2));
+        await AssertFoundAsync(run);
 
         var search = await source.FindRunsAsync(Query(run, run.ItemKey) with { From = from, To = to }, CancellationToken.None);
         var got = await source.GetRunAsync(Ref(run, run.ItemKey, run.Expected.Summary.RunId) with { From = from, To = to }, CancellationToken.None);
@@ -103,6 +109,7 @@ public abstract class TraceSourceContractTests
     public async Task GetRun_WhenTheRunIsUnknown_IsNull(string name)
     {
         var run = runs[name];
+        await AssertFoundAsync(run);
 
         var got = await source.GetRunAsync(Ref(run, run.ItemKey, "no-such-session"), CancellationToken.None);
 
@@ -114,6 +121,7 @@ public abstract class TraceSourceContractTests
     {
         var run = runs[name];
         const string unlinked = "SHIP-999999";
+        await AssertFoundAsync(run);
 
         var search = await source.FindRunsAsync(Query(run, unlinked), CancellationToken.None);
         var got = await source.GetRunAsync(Ref(run, unlinked, run.Expected.Summary.RunId), CancellationToken.None);
@@ -121,6 +129,14 @@ public abstract class TraceSourceContractTests
         search.Reachable.ShouldBeTrue($"{Lane}: {search.Problem}");
         search.Runs.ShouldBeEmpty(Lane);
         got.ShouldBeNull(Lane);
+    }
+
+    // The positive control for every negative test: the correct query and ref DO find the run, so a store that returns nothing fails.
+    private async Task AssertFoundAsync(LoadedRun run)
+    {
+        var search = await source.FindRunsAsync(Query(run, run.ItemKey), CancellationToken.None);
+        search.Runs.Select(r => r.RunId).ShouldContain(run.Expected.Summary.RunId, $"{Lane}: positive control, find");
+        (await source.GetRunAsync(Ref(run, run.ItemKey, run.Expected.Summary.RunId), CancellationToken.None)).ShouldNotBeNull($"{Lane}: positive control, get");
     }
 
     private static RunQuery Query(LoadedRun run, string itemKey)

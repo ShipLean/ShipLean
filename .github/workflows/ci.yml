@@ -195,7 +195,7 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
           restore-keys: nuget-
-      - run: dotnet test src/ShipLean.UnitTest --configuration Release
+      - run: dotnet test src/ShipLean.UnitTest --configuration Release --filter "TestCategory!=RedUntilLane"
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
@@ -248,7 +248,7 @@ jobs:
         with:
           node-version: 24
       - run: node --test "src/ShipLean.Application/Features/Inspection/AgentSetup/cursor/**/*.test.mjs"
-      - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+      - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search.&TestCategory!=RedUntilLane" -- NUnit.NumberOfTestWorkers=4
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}

@@ -9,7 +9,11 @@ case "${1:-}" in
   up)
     "${compose[@]}" up -d --wait
     for url in http://127.0.0.1:13200/ready http://127.0.0.1:13100/ready; do
-      until curl -sf "$url" >/dev/null; do sleep 1; done
+      deadline=$((SECONDS + 120))
+      until curl -sf "$url" >/dev/null; do
+        if (( SECONDS >= deadline )); then echo "timed out after 120 s waiting for $url" >&2; exit 1; fi
+        sleep 1
+      done
     done
     echo "collector OTLP/HTTP  http://127.0.0.1:14318   (OTEL_EXPORTER_OTLP_ENDPOINT)"
     echo "ClickHouse HTTP      http://127.0.0.1:18123   (user shiplean, password shiplean, database otel)"

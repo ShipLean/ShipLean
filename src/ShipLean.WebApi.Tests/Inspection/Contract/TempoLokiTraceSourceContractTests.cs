@@ -6,6 +6,7 @@ namespace ShipLean.WebApi.Tests.Inspection.Contract;
 
 // Lane B (SHIP-1558): red against the stubs until B1 (find runs) and B2 (get run) land.
 [TestFixture(TestName = "Tempo and Loki store, SHIP-1558")]
+[Category("RedUntilLane")] // Lane B removes this category when the suite goes green, so CI stops excluding it.
 [Category("SHIP-1558")]
 public sealed class TempoLokiTraceSourceContractTests : TraceSourceContractTests
 {
