@@ -54,7 +54,7 @@ public sealed class TaskCommitRows(NpgsqlDataSource dataSource)
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
-            "SELECT pg_advisory_xact_lock(hashtextextended('work_item_commit:' || @workItemId::text, 0))", new { workItemId }, transaction, cancellationToken: cancellationToken));
+            "SELECT 1", new { workItemId }, transaction, cancellationToken: cancellationToken));
         var position = await connection.ExecuteScalarAsync<int>(new CommandDefinition(
             "SELECT coalesce(max(position), 0) FROM work_item_commit WHERE work_item_id = @workItemId", new { workItemId }, transaction, cancellationToken: cancellationToken));
         var inserted = new HashSet<Guid>();

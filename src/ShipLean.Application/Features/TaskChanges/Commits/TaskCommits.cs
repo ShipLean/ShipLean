@@ -45,7 +45,7 @@ public sealed partial class TaskCommits(
 
         if (via != CommitSource.Migration && added.Count > 0)
         {
-            await notes.AddAsync(workItemId, FieldIds.Commits, Label(added), WriteOptions.User, cancellationToken);
+            foreach (var one in added) { await notes.AddAsync(workItemId, FieldIds.Commits, Label([one]), WriteOptions.User, cancellationToken); }
             await events.PublishAsync(new CommitsChanged(item.ProjectId, workItemId));
             await comments.MarkOutdatedAsync(workItemId, added, cancellationToken);
         }
