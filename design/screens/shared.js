@@ -228,7 +228,7 @@
   // The project picker sits outside the side menu so that under 900px it can be a bottom sheet over everything,
   // the drawer included. On a desktop it still opens under the project button.
   const pickerHtml = () => `<div class="proj-picker" role="dialog" aria-label="Switch project" hidden>
-      <header class="sheet-head m-only"><b>Switch project</b><button class="btn ghost sheet-x" type="button">Cancel</button></header>
+      <header class="sheet-head m-only"><b>Switch project</b><button class="btn ghost sheet-x" type="button">Close</button></header>
       <div class="search"><input class="field" type="search" placeholder="Search projects by name or key" aria-label="Search projects"></div>
       <ul role="listbox" aria-label="Projects"></ul>
       <footer><a class="btn ghost" href="new-project.html">+ New project</a><a class="btn ghost" href="import.html">Import from Jira</a></footer>
