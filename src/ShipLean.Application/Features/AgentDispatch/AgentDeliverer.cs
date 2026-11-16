@@ -64,7 +64,7 @@ public sealed class AgentDeliverer(
         var canceled = (await connection.QueryAsync<Guid>(new CommandDefinition(
             $"""
             WITH ended AS (
-                UPDATE agent_session SET state = 'canceled', ended_at = @now
+                UPDATE agent_session SET state = 'canceled', ended_at = @now, end_reason = @reason, end_detail = NULL
                 WHERE state IN {AgentSessionStates.LiveSql} AND stop_requested_at <= @cutoff
                 RETURNING id),
             dropped AS (
@@ -72,7 +72,7 @@ public sealed class AgentDeliverer(
                 FROM ended WHERE d.session_id = ended.id AND d.status = 'pending')
             SELECT id FROM ended
             """,
-            new { now, cutoff = now - StopGrace }, cancellationToken: cancellationToken))).ToList();
+            new { now, cutoff = now - StopGrace, reason = AgentEndReasons.Canceled }, cancellationToken: cancellationToken))).ToList();
         foreach (var id in canceled)
         {
             logger.LogInformation("Agent session {SessionId} was canceled: the agent did not answer Stop in time", id);
@@ -251,8 +251,8 @@ public sealed class AgentDeliverer(
             "UPDATE agent_delivery SET status = 'failed', attempts = @attempts, claimed_until = NULL, last_error = @error WHERE id = @id AND status = 'pending'",
             new { id = row.Id, attempts, error }, transaction, cancellationToken: cancellationToken));
         var failedSessions = await connection.ExecuteAsync(new CommandDefinition(
-            $"UPDATE agent_session SET state = 'failed', ended_at = @now WHERE id = @sessionId AND state IN {AgentSessionStates.LiveSql}",
-            new { sessionId = row.SessionId, now }, transaction, cancellationToken: cancellationToken));
+            $"UPDATE agent_session SET state = 'failed', ended_at = @now, end_reason = @reason, end_detail = @detail WHERE id = @sessionId AND state IN {AgentSessionStates.LiveSql}",
+            new { sessionId = row.SessionId, now, reason = AgentEndReasons.DeliveryFailed, detail = AgentEndDetail.DeliveryFailed(error, attempts) }, transaction, cancellationToken: cancellationToken));
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE agent_delivery SET status = 'failed', claimed_until = NULL, last_error = 'The session failed.' WHERE session_id = @sessionId AND status = 'pending'",
             new { sessionId = row.SessionId }, transaction, cancellationToken: cancellationToken));

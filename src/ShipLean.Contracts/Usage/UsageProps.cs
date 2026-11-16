@@ -44,6 +44,9 @@ public static class UsageProps
     // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.
     public const string ItemType = "item_type";
 
+    // Why an agent session ended, on agent_session.finished: one of AgentEndReasons.
+    public const string EndReason = "end_reason";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)
