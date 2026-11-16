@@ -66,7 +66,7 @@ export function FormField({
             type="button"
             data-testid={revealTestId}
             aria-label={shown ? 'Hide password' : 'Show password'}
-            className="absolute top-1 right-1 h-6 touch:h-8 rounded-sm px-1.5 touch:px-2.5 text-[length:var(--text-xs)] text-ink-muted hover:bg-sunken hover:text-ink"
+            className="absolute top-1 right-1 h-6 touch:h-8 rounded-sm px-1.5 touch:px-2.5 text-[length:var(--text-xs)] touch:text-[length:var(--text-md)] text-ink-muted hover:bg-sunken hover:text-ink"
             onClick={() => setShown(!shown)}
           >
             {shown ? 'Hide' : 'Show'}

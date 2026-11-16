@@ -326,3 +326,33 @@ test('SignInPhone_WhenTheKeyboardCoversTheBottom336px_ShouldKeepSignInVisible', 
     expect(box.y + box.height, id).toBeLessThanOrEqual(844 - 336);
   }
 });
+
+const size = (locator: { evaluate: <T>(fn: (el: Element) => T) => Promise<T> }) =>
+  locator.evaluate((el) => getComputedStyle(el).fontSize);
+
+test('SignInCard_AtTouch_TypeShouldMatchTheDesign', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stubInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  await expect(page.getByTestId(ids.signInForm)).toBeVisible();
+  expect(await size(page.getByTestId(ids.subtitle))).toBe('13px');
+  expect(await size(page.getByTestId(ids.instanceName))).toBe('14px');
+  expect(await size(page.getByTestId(ids.signInSubmit))).toBe('15px');
+  expect(await size(page.getByTestId(ids.revealPassword))).toBe('14px');
+  const help = page.getByText('No account, or forgot your password?');
+  expect(await size(help)).toBe('12px');
+  expect(await help.evaluate((el) => getComputedStyle(el).textAlign)).toBe('center');
+});
+
+test('NoProjectsCard_ShouldShowAvatarAndA40pxSignOut', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stubInstance(page);
+  await stubJson(page, '/api/me', meDto({ hasProjects: false }));
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login?state=no-projects' } });
+  const card = page.getByTestId(ids.noProjects);
+  await expect(card).toBeVisible();
+  await expect(card.getByTestId('avatar')).toBeVisible();
+  const heading = card.getByRole('heading', { name: "You're not in any projects yet" });
+  expect(await heading.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
+  expect((await page.getByTestId(ids.signOut).boundingBox())!.height).toBe(40);
+});
