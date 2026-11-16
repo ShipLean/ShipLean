@@ -13,11 +13,18 @@ public sealed class BoardFilterUsage(IProjectAccess access, ICurrentUser current
 {
     private static readonly HashSet<string> Healths = new(StringComparer.Ordinal) { "onTrack", "atRisk", "blocked", "none", "any" };
 
-    public async Task OpenedAsync(Guid projectId, CancellationToken cancellationToken)
+    private static readonly HashSet<string> Levels = new(StringComparer.Ordinal) { "features", "stories", "epics" };
+
+    public async Task OpenedAsync(Guid projectId, BoardFilterOpenedDto opened, CancellationToken cancellationToken)
     {
         var started = time.GetTimestamp();
         await access.RequireAsync(projectId, ProjectRole.Member, cancellationToken);
-        Track(UsageEventNames.BoardFilterOpened, projectId, started, "api:ProjectUsage.BoardFilterOpened", new Dictionary<string, object>());
+        if (!Levels.Contains(opened.Level))
+        {
+            throw ApiException.Validation("Level must be features, stories or epics.", "level");
+        }
+        Track(UsageEventNames.BoardFilterOpened, projectId, started, "api:ProjectUsage.BoardFilterOpened",
+            new Dictionary<string, object> { [UsageProps.Level] = opened.Level });
     }
 
     public async Task HealthFilteredAsync(Guid projectId, BoardHealthFilteredDto filtered, CancellationToken cancellationToken)

@@ -183,6 +183,11 @@ const samples: {
   projectSettings: {
     params: { ...project, tab: 'states' },
     path: '/p/SHIP/settings/states',
+    crumbs: ['SHIP', 'Settings', 'States'],
+  },
+  projectSettingsIndex: {
+    params: project,
+    path: '/p/SHIP/settings',
     crumbs: ['SHIP', 'Settings'],
   },
 };

@@ -327,7 +327,29 @@ test('BoardFilterSheet_WhenOpened_ShouldReportTheOpening', async ({ mount, page 
 
   await page.getByTestId(ids.filterToggle).tap();
   await expect(page.getByTestId(ids.filterSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ level: 'stories' }]);
   await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(ids.filterSheet)).toBeHidden();
 
-  expect(opened).toEqual([{}]);
+  expect(opened).toHaveLength(1);
+});
+
+test('FeaturesBoard_HealthFilterSheet_WhenCleared_ShouldReportAny', async ({ mount, page }) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  const health: unknown[] = [];
+  await page.route('**/api/projects/p1/usage/board-health-filtered', (route) => {
+    health.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await sheet.getByTestId(ids.filterHealth).selectOption('atRisk');
+  await expect.poll(() => health).toEqual([{ health: 'atRisk' }]);
+
+  await sheet.getByTestId(ids.filterClear).tap();
+
+  await expect.poll(() => health).toEqual([{ health: 'atRisk' }, { health: 'any' }]);
 });

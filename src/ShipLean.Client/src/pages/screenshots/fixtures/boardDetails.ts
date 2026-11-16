@@ -30,6 +30,26 @@ export function boardWithTwoNew(): BoardViewDto {
   };
 }
 
+/** boardWithTwoNew() with an Expedite card in New too, so the first page holds two lanes' cells: lift SHIP-164, hold it over the Expedite cell's end. */
+export function boardWithTwoLanesInNew(): BoardViewDto {
+  const base = boardWithTwoNew();
+  return {
+    ...base,
+    lanes: base.lanes.map((candidate) =>
+      candidate.id !== 'lane-expedite'
+        ? candidate
+        : lane({
+            ...candidate,
+            cardCount: 2,
+            cells: [
+              cell('col-new', [card({ key: 'SHIP-149', title: 'Fix payout rounding', points: 5 })]),
+              ...candidate.cells.slice(1),
+            ],
+          }),
+    ),
+  };
+}
+
 /** storiesBoard() with an Expedite card in Ready's Doing half, so the split column shows two lanes. */
 export function boardWithExpediteInReady(): BoardViewDto {
   const base = storiesBoard();

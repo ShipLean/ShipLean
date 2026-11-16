@@ -204,7 +204,9 @@ test('BoardFilter_WhenOpened_ShouldReportTheOpeningOnceNotTheClosing', async ({ 
 
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toBeVisible();
-  await expect.poll(() => sent).toEqual([{ report: 'board-filter-opened', body: {} }]);
+  await expect
+    .poll(() => sent)
+    .toEqual([{ report: 'board-filter-opened', body: { level: 'stories' } }]);
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toHaveCount(0);
 
@@ -231,6 +233,26 @@ test('FeaturesBoard_HealthFilter_WhenChanged_ShouldReportTheChosenHealth', async
     .toEqual([
       { report: 'board-health-filtered', body: { health: 'atRisk' } },
       { report: 'board-health-filtered', body: { health: 'none' } },
+      { report: 'board-health-filtered', body: { health: 'any' } },
+    ]);
+});
+
+test('FeaturesBoard_HealthFilter_WhenCleared_ShouldReportAny', async ({ mount, page }) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  const sent = await recordUsage(page);
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).click();
+  await page.getByTestId(ids.filterHealth).selectOption('atRisk');
+  await expect.poll(() => sent.filter((r) => r.report === 'board-health-filtered')).toHaveLength(1);
+
+  await page.getByTestId(ids.filterClear).click();
+
+  await expect
+    .poll(() => sent.filter((report) => report.report === 'board-health-filtered'))
+    .toEqual([
+      { report: 'board-health-filtered', body: { health: 'atRisk' } },
       { report: 'board-health-filtered', body: { health: 'any' } },
     ]);
 });

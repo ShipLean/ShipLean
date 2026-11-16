@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Chip } from '../../components/Chip';
 import { formatSize } from '../workItem/side/fileSize';
 import type { DemoProps } from './DemoProps';
@@ -19,7 +19,7 @@ function embedSource(embedUrl: string, start: number | null): string {
  * The 16:9 frame: the YouTube embed when there is one, else the file ShipLean kept. Under it, the watch link, the note
  * for a private video and the file's facts. Nothing when the demo has no video.
  */
-export function DemoPlayer({ demo, player }: DemoProps) {
+export function DemoPlayer({ demo, player, notice }: DemoProps & { notice?: ReactNode }) {
   const { video, youTube } = demo;
   const embedUrl = youTube.embedUrl;
   const [start, setStart] = useState<number | null>(null);
@@ -87,17 +87,23 @@ export function DemoPlayer({ demo, player }: DemoProps) {
           here watches the file ShipLean kept.
         </p>
       )}
-      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--text-sm)] text-ink-muted">
+      {/* The YouTube notice, when the panel places it here: on a phone, under the player and above the facts (P3). */}
+      {notice}
+      {/* On a phone the facts sit in two columns, File and Delivered on lines of their own (SHIP-1810 P3). */}
+      <p
+        data-testid={ids.demoFacts}
+        className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--text-sm)] text-ink-muted touch:grid touch:grid-cols-2"
+      >
         <span>
           Length <b className="font-medium text-ink">{video.durationLabel}</b>
         </span>
         <span>
           Size <b className="font-medium text-ink">{formatSize(video.sizeBytes)}</b>
         </span>
-        <span className="min-w-0 break-all">
+        <span className="min-w-0 break-all touch:col-span-2">
           File <b className="font-medium text-ink">{video.name}</b>
         </span>
-        <span>{video.deliveredLabel}</span>
+        <span className="touch:col-span-2">{video.deliveredLabel}</span>
       </p>
     </div>
   );

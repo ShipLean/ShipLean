@@ -1,15 +1,22 @@
 import type { KeyboardEvent } from 'react';
 import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 import type { BoardColumnJson } from '@shiplean/core/api/persisted';
+import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { boardSettingsTestIds as ids } from '../../testIds';
+import { dropLineCellsClass, type DropLineProps } from '../useDropLine';
+import { useRowTouchDrag } from '../useRowTouchDrag';
 import { liveStates, parseWipLimit, setState, stateOf } from './columnEdits';
 import { DefinitionOfDonePreview } from './DefinitionOfDonePreview';
 import { StateSelect } from './StateSelect';
 
 const iconButton =
-  'inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent';
+  'inline-grid size-6 place-items-center rounded-control text-ink-muted hover:bg-sunken disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent touch:size-[var(--touch-target)]';
 
-/** One column of the board: its name, WIP limit, split, state per type and a toggle for its definition of done. */
+/**
+ * One column of the board: its name, WIP limit, split, state per type and a toggle for its definition of done.
+ * At touch the grip is a long-press drag (K5); the first and last columns neither move nor take a drop.
+ */
 export function ColumnRow({
   column,
   states,
@@ -24,7 +31,11 @@ export function ColumnRow({
   onMove,
   onDragStart,
   onDrop,
-}: {
+  onTouchDrop,
+  dropLine,
+  onTouchOver,
+  onTouchDragEnd,
+}: DropLineProps & {
   column: BoardColumnJson;
   states: BoardTypeStatesDto[];
   fixed: boolean;
@@ -39,7 +50,11 @@ export function ColumnRow({
   onMove(step: number): void;
   onDragStart(): void;
   onDrop(): void;
+  /** At touch: the grip was held, dragged and let go over the column with this id (null: off any movable column). */
+  onTouchDrop(targetId: string | null): void;
 }) {
+  const { touch } = useTouchShell();
+  const drag = useRowTouchDrag({ onOver: onTouchOver, onDrop: onTouchDrop, onEnd: onTouchDragEnd });
   const keyDown = (event: KeyboardEvent) => {
     if (!event.altKey || fixed) return;
     if (event.key === 'ArrowUp') onMove(-1);
@@ -52,7 +67,8 @@ export function ColumnRow({
     <>
       <tr
         data-testid={ids.columnRow}
-        className="border-b border-edge"
+        data-drop-target={fixed ? undefined : column.id}
+        className={`border-b border-edge ${drag.lifted ? 'opacity-40' : ''} ${dropLineCellsClass(dropLine)}`}
         onDragOver={(event) => {
           if (!fixed) event.preventDefault();
         }}
@@ -60,11 +76,11 @@ export function ColumnRow({
           if (!fixed) onDrop();
         }}
       >
-        <td className="w-6 pl-1">
+        <td className="w-6 pl-1 touch:w-8">
           <button
             type="button"
             data-testid={ids.columnGrip}
-            draggable={!fixed && !readOnly}
+            draggable={!fixed && !readOnly && !touch}
             disabled={fixed || readOnly}
             aria-label={`Move column ${column.name} (Alt+Up or Alt+Down)`}
             title={
@@ -75,9 +91,15 @@ export function ColumnRow({
             className={`${iconButton} cursor-grab`}
             onKeyDown={keyDown}
             onDragStart={onDragStart}
+            {...(touch && !fixed && !readOnly ? drag.props : {})}
           >
             ⠿
           </button>
+          {drag.lifted ? (
+            <TouchDragGhost x={drag.x} y={drag.y}>
+              <div className="px-3 py-2 text-[length:var(--text-sm)]">{column.name}</div>
+            </TouchDragGhost>
+          ) : null}
         </td>
         <td className="py-1 pr-2">
           <div className="flex items-center gap-1.5">

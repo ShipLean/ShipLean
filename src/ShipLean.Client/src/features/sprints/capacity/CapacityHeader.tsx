@@ -32,18 +32,18 @@ export function CapacityHeader({
   const names = holidays.map((h) => `${h.name} (${h.label})`).join(', ');
   return (
     <div className="grid gap-x-6 gap-y-3 border-b border-edge p-4 grid-cols-[auto_minmax(0,1fr)] touch:grid-cols-[minmax(0,1fr)] touch:p-3">
-      <div className="grid gap-1">
+      <div className="grid gap-1 touch:grid-cols-[minmax(0,1fr)_6rem] touch:items-center touch:gap-x-3">
         {readOnly ? (
           <span
             id="capacity-velocity-label"
-            className="text-[length:var(--text-sm)] font-medium text-ink"
+            className="text-[length:var(--text-sm)] font-medium text-ink touch:col-start-1 touch:row-start-1"
           >
             Team velocity
           </span>
         ) : (
           <label
             htmlFor="capacity-velocity"
-            className="text-[length:var(--text-sm)] font-medium text-ink"
+            className="text-[length:var(--text-sm)] font-medium text-ink touch:col-start-1 touch:row-start-1"
           >
             Team velocity
           </label>
@@ -53,7 +53,7 @@ export function CapacityHeader({
             role="group"
             aria-labelledby="capacity-velocity-label"
             data-testid={ids.capacityVelocity}
-            className="h-7 text-[length:var(--text-lg)] leading-7 font-semibold tabular-nums"
+            className="h-7 text-[length:var(--text-lg)] leading-7 font-semibold tabular-nums touch:col-start-2 touch:row-span-2 touch:row-start-1 touch:text-right"
           >
             {capacity.velocity ?? '—'}
           </span>
@@ -61,7 +61,7 @@ export function CapacityHeader({
           <input
             id="capacity-velocity"
             data-testid={ids.capacityVelocity}
-            className="field w-28 text-right tabular-nums touch:w-full touch:text-left"
+            className="field w-28 text-right tabular-nums touch:col-start-2 touch:row-span-2 touch:row-start-1 touch:h-10 touch:w-24"
             type="number"
             min={0}
             max={9999.99}
@@ -74,7 +74,10 @@ export function CapacityHeader({
             onChange={(event) => onVelocity(event.target.value)}
           />
         )}
-        <span id="capacity-velocity-hint" className="text-[length:var(--text-xs)] text-ink-muted">
+        <span
+          id="capacity-velocity-hint"
+          className="text-[length:var(--text-xs)] text-ink-muted touch:col-start-1 touch:row-start-2"
+        >
           {needsVelocity
             ? 'Enter a velocity to recompute these points'
             : 'Assumes everyone is in for every working day'}
@@ -83,13 +86,13 @@ export function CapacityHeader({
           <span
             id="capacity-velocity-error"
             data-testid={ids.capacityVelocityError}
-            className="text-[length:var(--text-xs)] text-alert"
+            className="text-[length:var(--text-xs)] text-alert touch:col-span-2"
           >
             Zero or more, up to 9999.99, two decimals at most.
           </span>
         ) : null}
       </div>
-      <div className="grid content-start gap-1 text-[length:var(--text-sm)]">
+      <div className="grid content-start gap-1 text-[length:var(--text-sm)] touch:border-t touch:border-edge touch:pt-3">
         {holidayCountry === null ? (
           <p data-testid={ids.capacityNoCountry} className="m-0">
             {plural(workingDays, 'working day', 'working days')} · No public holidays: pick a

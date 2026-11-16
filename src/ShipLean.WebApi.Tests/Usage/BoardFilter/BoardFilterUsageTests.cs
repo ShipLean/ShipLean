@@ -8,7 +8,7 @@ using ShipLean.TestSupport.Usage;
 
 namespace ShipLean.WebApi.Tests.Usage.BoardFilter;
 
-// The board filter's usage reports: POST api/projects/{id}/usage/board-filter-opened, and board-health-filtered with the chosen
+// The board filter's usage reports: POST api/projects/{id}/usage/board-filter-opened with the board level, and board-health-filtered with the chosen
 // health, for a member of the project. Joel is a member of Ship and not of Part.
 [TestFixture]
 public class BoardFilterUsageTests : ApiFixture
@@ -22,10 +22,12 @@ public class BoardFilterUsageTests : ApiFixture
     [SetUp]
     public void ClearRecordedEvents() => Recorder.Clear();
 
-    [Test]
-    public async Task FilterOpened_WhenMember_ShouldEmitBoardFilterOpened()
+    [TestCase("features")]
+    [TestCase("stories")]
+    [TestCase("epics")]
+    public async Task FilterOpened_WhenMember_ShouldEmitBoardFilterOpenedWithTheLevel(string level)
     {
-        using var response = await Api.PostJsonAsync(Opened(SeedIds.Projects.Ship));
+        using var response = await Api.PostJsonAsync(Opened(SeedIds.Projects.Ship), new BoardFilterOpenedDto(level));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         var tracked = Recorder.Events.ShouldHaveSingleItem();
@@ -33,13 +35,27 @@ public class BoardFilterUsageTests : ApiFixture
         tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
         tracked.Surface.ShouldBe(UsageSurface.Web);
         tracked.Actor.ShouldBe(UsageActor.ForUser(SeedIds.Users.Joel));
-        tracked.Properties.ShouldBeEmpty();
+        tracked.Properties[UsageProps.Level].ShouldBe(level);
+    }
+
+    [TestCase("backlog")]
+    [TestCase("Features")]
+    [TestCase("1")]
+    [TestCase("")]
+    public async Task FilterOpened_WhenLevelIsUnknown_ShouldReturnValidationAndTrackNothing(string level)
+    {
+        using var response = await Api.PostJsonAsync(Opened(SeedIds.Projects.Ship), new BoardFilterOpenedDto(level));
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("level");
+        Recorder.Events.ShouldBeEmpty();
     }
 
     [Test]
     public async Task FilterOpened_WhenNotMember_ShouldReturnNotFoundAndTrackNothing()
     {
-        using var response = await Api.PostJsonAsync(Opened(SeedIds.Projects.Part));
+        using var response = await Api.PostJsonAsync(Opened(SeedIds.Projects.Part), new BoardFilterOpenedDto("features"));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         Recorder.Events.ShouldBeEmpty();

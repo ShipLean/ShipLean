@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { postBoardHealthFiltered } from '@shiplean/core/api/usageApi';
 import type { BoardColumnDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { Sheet } from '../../../touch/Sheet';
@@ -57,6 +58,7 @@ export function BoardFilterSheet({
             onClick={() => {
               draft.current = null;
               setClears((count) => count + 1);
+              if (filter.health) postBoardHealthFiltered(projectId, 'any').catch(() => undefined);
               onChange({});
             }}
           >

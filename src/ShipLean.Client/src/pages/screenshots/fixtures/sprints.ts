@@ -295,7 +295,7 @@ const entry = (
 });
 
 // Velocity 25 over five people is 5 points each for a full sprint; Sam's 8 days and Ana's 5 scale their share.
-const capacitySprint24: SprintCapacityDto = {
+export const capacitySprint24: SprintCapacityDto = {
   sprintId: SPRINT_24,
   members: [
     entry(priya, 5, null, null),
@@ -306,6 +306,20 @@ const capacitySprint24: SprintCapacityDto = {
   ],
   teamTotal: 21.5,
   velocity: 25,
+  velocityDefault: 25,
+  workingDays: 10,
+  defaultDays: 10,
+  holidays: [],
+  holidayCountry: null,
+  ended: false,
+};
+
+/** Sprint 24 with nobody in its capacity table: it plans against velocity. */
+export const emptyCapacity: SprintCapacityDto = {
+  sprintId: SPRINT_24,
+  members: [],
+  teamTotal: 0,
+  velocity: null,
   velocityDefault: 25,
   workingDays: 10,
   defaultDays: 10,
