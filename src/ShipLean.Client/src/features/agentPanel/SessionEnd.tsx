@@ -1,7 +1,38 @@
 import type { AgentSessionDto } from '@shiplean/core/api/agentSessions';
+import { formatSize } from '../workItem/side/fileSize';
+import { agentPanelTestIds as ids } from './testIds';
 
-// TODO: show why the session ended (the end text, the detail when the viewer may see it, the run log link).
-export function SessionEnd(props: { session: AgentSessionDto }) {
-  void props;
-  return null;
+// Why a session that is not live ended: the sentence the server built, the detail when this viewer may see it, and the
+// run log link when there is one. The server already applied who sees what, so this shows exactly what it is given. The
+// detail and the sentence come from agents and receivers, so they render as text.
+export function SessionEnd({ session }: { session: AgentSessionDto }) {
+  if (session.live || !session.endText) return null;
+  const { endText, endDetail, runLog } = session;
+  return (
+    <section
+      data-testid={ids.sessionEnd}
+      data-reason={session.endReason ?? undefined}
+      aria-label="Why it ended"
+      className="grid min-w-0 gap-1 rounded-control border-l-2 border-l-edge bg-sunken px-2 py-1.5 text-[length:var(--text-sm)]"
+    >
+      <div className="text-[length:var(--text-2xs)] font-semibold uppercase tracking-wide text-ink-muted">
+        Why it ended
+      </div>
+      <div className="min-w-0 break-words">{endText}</div>
+      {endDetail ? (
+        <div className="min-w-0 whitespace-pre-wrap break-words text-[length:var(--text-xs)] text-ink-muted">
+          {endDetail}
+        </div>
+      ) : null}
+      {runLog ? (
+        <a
+          data-testid={ids.sessionEndRunLog}
+          href={runLog.url}
+          className="w-fit max-w-full break-all text-signal underline"
+        >
+          Run log ({formatSize(runLog.sizeBytes)})
+        </a>
+      ) : null}
+    </section>
+  );
 }
