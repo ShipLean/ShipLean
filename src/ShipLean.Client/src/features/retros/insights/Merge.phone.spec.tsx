@@ -108,12 +108,16 @@ test('InsightsMerge_TargetThemeRow_ShouldBeGreyedInTheSourceList', async ({ moun
   await mount(inGutter, merge);
   const sources = page.getByTestId(ids.retroMergeSource);
   await expect(sources.first()).toBeVisible();
-  const labelColour = (box: typeof sources) =>
-    box.evaluate((el) => getComputedStyle(el.closest('label')!).color);
-  const normal = await labelColour(sources.first());
+  const rows = page.getByTestId(ids.retroMergeSourceRow);
+  const labelColour = (row: typeof rows) => row.evaluate((el) => getComputedStyle(el).color);
+  const normal = await labelColour(rows.first());
   // The theme chosen under Into can't also be merged away: its row is disabled and greyed.
   await page.getByTestId(ids.retroMergeTarget).selectOption({ index: 2 });
-  const target = page.getByRole('checkbox', { disabled: true });
-  await expect(target).toHaveCount(1);
-  expect(await labelColour(target)).not.toBe(normal);
+  await expect(sources.first()).toBeVisible();
+  const disabled: number[] = [];
+  for (let index = 0; index < (await sources.count()); index += 1) {
+    if (await sources.nth(index).isDisabled()) disabled.push(index);
+  }
+  expect(disabled).toHaveLength(1);
+  expect(await labelColour(rows.nth(disabled[0]))).not.toBe(normal);
 });
