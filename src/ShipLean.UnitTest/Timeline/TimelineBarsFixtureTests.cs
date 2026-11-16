@@ -31,7 +31,7 @@ public class TimelineBarsFixtureTests
     private static void Resolved(TimelineFactsBuilder f, string key, string at) =>
         f.WithMove(key, At(at), "Resolved", StateCategory.Resolved);
 
-    // The delivery the fixture draws, as facts: four stories and bugs, nine tasks, two blocked spells, ten reviews, two sprints.
+    // The delivery the fixture draws, as facts: four stories and bugs, nine tasks, two blocked spells, ten reviews, two sprints, five timed commits.
     private static TimelineBarsPart BuildFixtureView()
     {
         var f = new TimelineFactsBuilder()
@@ -87,6 +87,8 @@ public class TimelineBarsFixtureTests
             .WithReview("SHIP-196", At("10-21T09:40"), ReviewVerdict.Approved, Ana, Agent)
             .WithReview("SHIP-199", At("10-20T14:30"), ReviewVerdict.Approved, Ana, Agent);
         f.WithMove("SHIP-99", At("10-21T10:05"), "Done", StateCategory.Completed, userId: Priya);
+        f.WithCommit("SHIP-191", At("10-05T11:30")).WithCommit("SHIP-192", At("10-06T13:40")).WithCommit("SHIP-192", At("10-07T11:05"))
+            .WithCommit("SHIP-194", At("10-12T15:20")).WithCommit("SHIP-196", At("10-20T15:45"));
 
         var facts = f.Build();
         facts = facts with { Feature = facts.Feature with { Id = new Guid("0b6f3c9e-99a0-4c1e-9d55-000000000099") } };
