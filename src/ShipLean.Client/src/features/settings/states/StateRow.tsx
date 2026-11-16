@@ -1,3 +1,4 @@
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { StateCategory } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
 import { MoreButton } from '../../../touch/MoreButton';
@@ -28,6 +29,7 @@ export function StateRow({
   onDelete,
   onTouchOver,
   onTouchDrop,
+  onTouchDragEnd,
 }: {
   row: StateRowModel;
   position: number;
@@ -50,6 +52,8 @@ export function StateRow({
   onTouchOver(targetId: string | null): void;
   /** At touch: the ⠿ handle was held, dragged and let go over the row with this id (null: off every row). */
   onTouchDrop(targetId: string | null): void;
+  /** At touch: this row's drag ended, let go or cancelled. */
+  onTouchDragEnd(): void;
 }) {
   const items = itemsIn(row);
   const { touch } = useTouchShell();
@@ -58,13 +62,26 @@ export function StateRow({
     onMove: (target) => onTouchOver(target?.dataset.dropTarget ?? null),
     onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
   });
+  // A touchcancel ends the drag with no drop, so the end is the lifted state going away, not onDrop.
+  const wasLifted = useRef(false);
+  const dragEnded = useEffectEvent(onTouchDragEnd);
+  useEffect(() => {
+    if (wasLifted.current && !drag.lifted) dragEnded();
+    wasLifted.current = drag.lifted;
+  }, [drag.lifted]);
+  // Rename focuses the name after the sheet has closed: the sheet's close hands focus back to the ⋯ first.
+  const name = useRef<HTMLInputElement>(null);
+  const [renameAsked, setRenameAsked] = useState(0);
+  useEffect(() => {
+    if (renameAsked > 0) name.current?.focus();
+  }, [renameAsked]);
   const editable = touch && !readOnly;
   // SHIP-1809 P5: at touch the row's actions are one ⋯ sheet; Delete… sits after a divider.
   const actions = [
     {
       id: 'rename',
       label: 'Rename',
-      onSelect: () => document.getElementById(`settings-field-state-${row.id}`)?.focus(),
+      onSelect: () => setRenameAsked((n) => n + 1),
     },
     { id: 'up', label: 'Move up', disabled: position === 0, onSelect: () => onMove(-1) },
     {
@@ -140,6 +157,7 @@ export function StateRow({
           ) : null}
           <StateDot category={row.category} />
           <input
+            ref={name}
             data-testid={settingsTestIds.stateName}
             id={`settings-field-state-${row.id}`}
             aria-label="State name"

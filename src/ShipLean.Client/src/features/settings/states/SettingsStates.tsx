@@ -202,6 +202,7 @@ export function SettingsStates({ projectId }: { projectId: string }) {
                 dropLine={dropLineOf(position, row.id)}
                 onTouchOver={(over) => setDragging({ id: row.id, over })}
                 onTouchDrop={(target) => dropOn(row.id, target)}
+                onTouchDragEnd={() => setDragging((d) => (d?.id === row.id ? undefined : d))}
               />
               {deleting === row.id ? (
                 <tr className="touch:block">

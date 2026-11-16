@@ -108,10 +108,11 @@ interface Point {
 }
 type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 
-// Holds the ⠿ handle for the long press (the shared hook's 450ms) and drags to `to`; lets go unless `hold`.
+// Holds the ⠿ handle for the long press (the shared hook's 450ms) and drags to `to`; lets go unless `hold`. Returns
+// the sender, so a held touch can be cancelled the way the browser does.
 async function touchDrag(page: Page, from: Point, to: Point, hold = false) {
   const cdp = await page.context().newCDPSession(page);
-  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: Point) =>
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd' | 'touchCancel', point?: Point) =>
     cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
@@ -125,6 +126,7 @@ async function touchDrag(page: Page, from: Point, to: Point, hold = false) {
     });
   }
   if (!hold) await send('touchEnd');
+  return send;
 }
 
 const centre = async (locator: {
@@ -255,6 +257,33 @@ test('SettingsStatesPhone_WhenMoreTapped_ShouldOfferTheRowActionsAndMoveUp', asy
     .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`)
     .tap();
   await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
+
+  // D3: a blocked Delete… is a disabled row with the reason as its hint.
+  await panel.getByTestId(ids.stateRow).nth(2).getByTestId(touchTestIds.moreButton).tap();
+  const blocked = page
+    .getByTestId(touchTestIds.sheet)
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`);
+  await expect(blocked).toBeDisabled();
+  await expect(blocked.getByTestId(touchTestIds.actionSheetHint)).toHaveText(
+    'This is the last Completed state. Add or recategorise another first.',
+  );
+});
+
+// ND3a-4 (P5): ⋯ › Rename puts the cursor in the row's name, after the sheet has handed focus back to the ⋯.
+test('SettingsStatesPhone_WhenRenameTapped_ShouldFocusTheRowsName', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const row = view.getByTestId(ids.statesPanel).getByTestId(ids.stateRow).nth(1);
+  await row.getByTestId(touchTestIds.moreButton).tap();
+  await page
+    .getByTestId(touchTestIds.sheet)
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="rename"]`)
+    .tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await expect(row.getByTestId(ids.stateName)).toBeFocused();
 });
 
 // ND3a-3 (P4): hold the ⠿ handle and drag: the row moves where it is dropped.
@@ -281,6 +310,36 @@ test('SettingsStatesPhone_WhenHandleDragged_ShouldMoveTheStateToTheDrop', async 
     await centre(rows.last()),
   );
   await expect.poll(order).toEqual(['Active', 'Closed', 'New']);
+});
+
+// ND3a-3 (P4): a touch the browser cancels mid-drag leaves no drop line and no lifted row, and moves nothing.
+test('SettingsStatesPhone_WhenDragCancelled_ShouldClearTheDropLine', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  const rows = panel.getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(3);
+  const shadow = () => rows.nth(1).evaluate((e) => getComputedStyle(e).boxShadow);
+  expect(await shadow()).toBe('none');
+  const send = await touchDrag(
+    page,
+    await centre(rows.first().getByTestId(ids.stateHandle)),
+    await centre(rows.nth(1)),
+    true,
+  );
+  // The drop line is the signal-coloured inset shadow on the row under the finger.
+  await expect.poll(shadow).not.toBe('none');
+  await send('touchCancel');
+  await expect(rows.first()).not.toHaveAttribute('data-lifted');
+  await expect.poll(shadow).toBe('none');
+  expect(
+    await panel
+      .getByTestId(ids.stateName)
+      .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value)),
+  ).toEqual(['New', 'Active', 'Closed']);
 });
 
 for (const theme of THEMES) {
