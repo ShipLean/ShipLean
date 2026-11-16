@@ -101,3 +101,19 @@ test('InsightsMerge_DisabledMerge_ShouldStillLookLikeAButton', async ({ mount, p
   await expect(save).toBeEnabled();
   await expect(save).toHaveCSS('opacity', '1');
 });
+
+test('InsightsMerge_TargetThemeRow_ShouldBeGreyedInTheSourceList', async ({ mount, page }) => {
+  expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
+  await stubRetros(page);
+  await mount(inGutter, merge);
+  const sources = page.getByTestId(ids.retroMergeSource);
+  await expect(sources.first()).toBeVisible();
+  const labelColour = (box: typeof sources) =>
+    box.evaluate((el) => getComputedStyle(el.closest('label')!).color);
+  const normal = await labelColour(sources.first());
+  // The theme chosen under Into can't also be merged away: its row is disabled and greyed.
+  await page.getByTestId(ids.retroMergeTarget).selectOption({ index: 2 });
+  const target = page.getByRole('checkbox', { disabled: true });
+  await expect(target).toHaveCount(1);
+  expect(await labelColour(target)).not.toBe(normal);
+});
