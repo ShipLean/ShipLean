@@ -5,10 +5,25 @@ namespace ShipLean.Application.Features.InspectionMetrics.Facts.Sql;
 // never a task), and removed tasks are left out.
 internal static class LeadTimeFactsSql
 {
+    // Every live commit of a task with its time: commit-titled url links (committed_at, null until stored) and the commits of a readable
+    // repository (code_commit.authored_at, null until the commit has been read). Both carry the 7-character sha.
+    private const string CommitRows =
+        """
+        SELECT l.source_id AS work_item_id, substring(l.title FROM char_length(@commitPrefix) + 1 FOR 7) AS sha7, l.committed_at AS committed_at,
+               l.created_at AS created_at
+        FROM work_item_link l
+        WHERE l.link_type = 'url' AND l.archived_at IS NULL AND starts_with(l.title, @commitPrefix)
+        UNION ALL
+        SELECT c.work_item_id, left(c.sha, 7), cc.authored_at, c.created_at
+        FROM work_item_commit c
+        LEFT JOIN code_commit cc ON cc.repository_id = c.repository_id AND cc.sha = c.sha
+        WHERE c.archived_at IS NULL
+        """;
+
     // The tasks that could end in [fromDay, toDay + 2 days]: a first move to a Resolved-category state, or a commit time, inside
     // that span. AgentName is the agent of the task's first In-progress move.
     public const string Tasks =
-        """
+        $$"""
         SELECT t.id, t.key, t.title, p.key AS parentKey, p.type AS parentType, f.key AS featureKey, f.title AS featureTitle,
                t.assigned_to AS assigneeId, (
                    SELECT m.agent_name
@@ -34,9 +49,9 @@ internal static class LeadTimeFactsSql
                        WHERE m.work_item_id = t.id AND c.value ->> 'field' = @stateField AND ms.category = @resolved) first_resolved
                    WHERE first_resolved.at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND first_resolved.at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC')
                OR EXISTS (
-                   SELECT 1 FROM work_item_link l
-                   WHERE l.source_id = t.id AND l.link_type = 'url' AND l.archived_at IS NULL AND starts_with(l.title, @commitPrefix)
-                     AND l.committed_at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND l.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
+                   SELECT 1 FROM ({{CommitRows}}) k
+                   WHERE k.work_item_id = t.id
+                     AND k.committed_at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND k.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
         ORDER BY t.key
         """;
 
@@ -80,14 +95,18 @@ internal static class LeadTimeFactsSql
         ORDER BY e.at, e.id
         """;
 
-    // Live commit links: the title is "commit <sha7> <subject>".
+    // One row per sha7 of a task, preferring a row with a time.
     public const string Commits =
-        """
-        SELECT w.key AS itemKey, substring(l.title FROM char_length(@commitPrefix) + 1 FOR 7) AS sha7, l.committed_at AS committedAt
-        FROM work_item_link l
-        JOIN work_item w ON w.id = l.source_id
-        WHERE l.source_id = ANY(@taskIds) AND l.link_type = 'url' AND l.archived_at IS NULL AND starts_with(l.title, @commitPrefix)
-        ORDER BY l.created_at, l.id
+        $$"""
+        SELECT w.key AS itemKey, k.sha7, k.committed_at AS committedAt
+        FROM (
+            SELECT DISTINCT ON (work_item_id, sha7) work_item_id, sha7, committed_at, created_at
+            FROM ({{CommitRows}}) rows
+            WHERE work_item_id = ANY(@taskIds)
+            ORDER BY work_item_id, sha7, committed_at NULLS LAST
+        ) k
+        JOIN work_item w ON w.id = k.work_item_id
+        ORDER BY k.created_at, w.key, k.sha7
         """;
 
     public const string People = "SELECT id, name FROM app_user WHERE id = ANY(@userIds)";
