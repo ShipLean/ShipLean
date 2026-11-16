@@ -17,6 +17,13 @@ public class SprintDemoPromptTests
 
     private static string Template => File.ReadAllText(TemplatePath);
 
+    // The template with the handover channel's blocks spliced in (C4): the source of the text the create_sprint_demo tool hands over.
+    private static string HandoverSource => Template
+        .Replace("{{tools_block}}", Block("sprint-demo-tools-handover.md"), StringComparison.Ordinal)
+        .Replace("{{return_block}}", Block("sprint-demo-return-handover.md"), StringComparison.Ordinal);
+
+    private static string Block(string file) => File.ReadAllText(Path.Combine(Path.GetDirectoryName(TemplatePath)!, file)).TrimEnd('\n');
+
 #pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
     private static readonly DemoUploadTarget Upload = new(UploadUrl, new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), 200L * 1024 * 1024, "BAU-7", "Sprint 24");
 #pragma warning restore AG0051
@@ -28,8 +35,8 @@ public class SprintDemoPromptTests
         ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
 #pragma warning restore AG0051
 
-    private static string Render(SprintDemoData? data = null, DemoBrand? brand = null)
-        => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand);
+    private static string Render(SprintDemoData? data = null, DemoBrand? brand = null, DemoPromptChannel channel = DemoPromptChannel.Handover)
+        => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand, channel);
 
     private static SprintDemoData Data(string environment, IReadOnlyList<SprintDemoFeatureData>? features = null)
         => new(
@@ -193,25 +200,25 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldInstallToolsUnderDemoTools()
     {
-        Template.ShouldContain("under `~/.local/demo-tools`");
+        HandoverSource.ShouldContain("under `~/.local/demo-tools`");
     }
 
     [Test]
     public void Prompt_ShouldInstallKokoroAndItsModel()
     {
-        Template.ShouldContain("kokoro-onnx soundfile imageio-ffmpeg");
+        HandoverSource.ShouldContain("kokoro-onnx soundfile imageio-ffmpeg");
     }
 
     [Test]
     public void Prompt_ShouldSayThereIsNoFfprobe()
     {
-        Template.ShouldContain("**no ffprobe**");
+        HandoverSource.ShouldContain("**no ffprobe**");
     }
 
     [Test]
     public void Prompt_ShouldCommentAndStopWhenAToolCannotBeHad()
     {
-        Template.ShouldContain("If a tool can't be had, `comment` on `{{demo_item}}` with the exact failure and stop.");
+        HandoverSource.ShouldContain("If a tool can't be had, `comment` on `{{demo_item}}` with the exact failure and stop.");
     }
 
     // K11 item 7
@@ -398,19 +405,19 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldCommentOnTheDemoItemWhenDone()
     {
-        Template.ShouldContain("Then `comment` on `{{demo_item}}` with the duration, the size, anything you left out, and any logo fallback reason");
+        HandoverSource.ShouldContain("Then `comment` on `{{demo_item}}` with the duration, the size, anything you left out, and any logo fallback reason");
     }
 
     [Test]
     public void Prompt_ShouldNotAskForARetrospectiveOnTheDemoItem()
     {
-        Template.ShouldContain("Don't call `log_retrospective` on this item: it is refused.");
+        HandoverSource.ShouldContain("Don't call `log_retrospective` on this item: it is refused.");
     }
 
     [Test]
     public void Prompt_ShouldSayToRepeatAFallbackInTheClosingComment()
     {
-        Template.ShouldContain("any logo fallback reason from step 10");
+        HandoverSource.ShouldContain("any logo fallback reason from step 10");
     }
 
     [Test]
@@ -418,8 +425,8 @@ public class SprintDemoPromptTests
     {
         // The real prompt, not a stub: it reaches the upload step.
         Template.ShouldContain("Upload once, with this command");
-        Template.ShouldNotContain("get_work_item");
-        Template.ShouldNotContain("read_attachment");
+        HandoverSource.ShouldNotContain("get_work_item");
+        HandoverSource.ShouldNotContain("read_attachment");
     }
 
     [Test]
@@ -433,9 +440,9 @@ public class SprintDemoPromptTests
     {
         // The real prompt, not a stub: it reaches the upload step.
         Template.ShouldContain("Upload once, with this command");
-        Template.ShouldNotContain("SHIP-");
-        Template.ShouldNotContain("shiplean_");
-        Template.ShouldNotContain("ShipLean");
+        HandoverSource.ShouldNotContain("SHIP-");
+        HandoverSource.ShouldNotContain("shiplean_");
+        HandoverSource.ShouldNotContain("ShipLean");
     }
 
     [Test]
@@ -561,7 +568,7 @@ public class SprintDemoPromptTests
     {
         var upload = new DemoUploadTarget("https://sl.example/u?t={{curl_command}}", Upload.ExpiresAt, Upload.MaxVideoBytes, "BAU-{{demo_item}}", "Sprint {{upload_url}}");
 
-        var text = new SprintDemoPrompt().Render(Data("Run the app with make dev."), upload, DefaultBrand);
+        var text = new SprintDemoPrompt().Render(Data("Run the app with make dev."), upload, DefaultBrand, DemoPromptChannel.Handover);
 
         text.ShouldNotContain("{{");
         CountOf(text, "-F video=@demo.mp4").ShouldBe(1);
@@ -646,8 +653,8 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldTellTheAgentToEndItsRunAfterTheUpload()
     {
-        Template.ShouldContain("**Then end your run.** The Demo tab shows the demo as Ready only once your session has ended");
-        Template.IndexOf("**Then end your run.**", StringComparison.Ordinal).ShouldBeGreaterThan(Template.IndexOf("## 13. Return", StringComparison.Ordinal));
+        HandoverSource.ShouldContain("**Then end your run.** The Demo tab shows the demo as Ready only once your session has ended");
+        HandoverSource.IndexOf("**Then end your run.**", StringComparison.Ordinal).ShouldBeGreaterThan(HandoverSource.IndexOf("## 13. Return", StringComparison.Ordinal));
     }
 
     [Test]
@@ -678,8 +685,8 @@ public class SprintDemoPromptTests
     [Test]
     public void Prompt_ShouldInstallPlaywrightAndChromiumWithTheTools()
     {
-        Template.ShouldContain("kokoro-onnx soundfile imageio-ffmpeg playwright");
-        Template.ShouldContain("venv/bin/playwright install chromium");
+        HandoverSource.ShouldContain("kokoro-onnx soundfile imageio-ffmpeg playwright");
+        HandoverSource.ShouldContain("venv/bin/playwright install chromium");
     }
 
     [Test]

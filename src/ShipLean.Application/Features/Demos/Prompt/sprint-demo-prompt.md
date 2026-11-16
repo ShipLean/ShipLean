@@ -58,25 +58,7 @@ In a Feature's execution section, summarise its `retro` by theme and category (w
 
 ## 6. Tools
 
-Check `ffmpeg`, Playwright and Python 3.10 or later. Install what is missing under `~/.local/demo-tools`:
-
-```bash
-mkdir -p ~/.local/demo-tools && cd ~/.local/demo-tools
-command -v uv >/dev/null || export PATH="$HOME/.local/bin:$PATH"
-if command -v uv >/dev/null; then
-  uv venv venv && uv pip install --python venv/bin/python kokoro-onnx soundfile imageio-ffmpeg playwright
-else
-  rm -rf venv && python3 -m venv venv && venv/bin/pip install kokoro-onnx soundfile imageio-ffmpeg playwright
-fi
-venv/bin/playwright install chromium
-B=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
-curl -sLO $B/kokoro-v1.0.int8.onnx && curl -sLO $B/voices-v1.0.bin
-FF=$(venv/bin/python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')
-```
-
-`$FF` has libx264, aac, loudnorm and overlay, and **no ffprobe**. Read an audio duration with `soundfile` (`soundfile.info(path).duration`) and a video duration by parsing the `Duration:` line of `$FF -hide_banner -i file.mp4 2>&1` (the command exits non-zero without an output; that is fine). The commands above install Playwright for Python and its Chromium; another Playwright you already have works as well. `$FF` is a shell variable: set it again in every new shell. If neither `uv` nor `python3 -m venv` works, that is a tool you can't have: comment and stop.
-
-If a tool can't be had, `comment` on `{{demo_item}}` with the exact failure and stop.
+{{tools_block}}
 
 ## 7. Narration first
 
@@ -206,9 +188,7 @@ Upload once, with this command (the order of the parts matters):
 
 The link is valid until {{upload_expires}} and works once. On a 400 answer, fix the part it names and retry the same link. **Never write the upload link, or the logo link, in a comment, an activity, a slide or the script.**
 
-Then `comment` on `{{demo_item}}` with the duration, the size, anything you left out, and any logo fallback reason from step 10. If you had no way to start a local instance, say so there as well. Don't call `log_retrospective` on this item: it is refused.
-
-**Then end your run.** The Demo tab shows the demo as Ready only once your session has ended; while it is open the tab reads Working. Do nothing after the comment: no second upload, no other work, no waiting for an answer.
+{{return_block}}
 
 ## Data
 

@@ -10,10 +10,12 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
 {
     private const string Resource = "sprint-demo/sprint-demo-prompt.md";
     private const string DefaultLogoResource = "sprint-demo/shiplean-logo-on-light.svg";
+    private const string HandoverToolsResource = "sprint-demo/sprint-demo-tools-handover.md";
+    private const string HandoverReturnResource = "sprint-demo/sprint-demo-return-handover.md";
 
     private static readonly JsonSerializerOptions DataJson = new(JsonSerializerDefaults.Web);
 
-    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand)
+    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel)
     {
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -28,8 +30,9 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
             ["tokens_css"] = InText(brand.TokensCss),
             ["sprint_data_json"] = Fenced(InJson(JsonSerializer.Serialize(data, DataJson)), "json"),
         };
-        // One pass, so a value that happens to hold "{{name}}" is never filled a second time.
-        return Placeholder().Replace(Template(), match => values.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
+        // One pass, so a value that happens to hold "{{name}}" is never filled a second time. The channel blocks are template text, not data:
+        // they are spliced in before the pass and their own placeholders are filled by it.
+        return Placeholder().Replace(Template(channel), match => values.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
     }
 
     // K11: a rendered prompt holds no "{{". Data is escaped, never filled: a pair of braces gets a space between, in a URL a %7B,
@@ -78,7 +81,24 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
         return $"{fence}{language}\n{content}\n{fence}\n";
     }
 
-    private static string Template() => ReadResource(Resource);
+    // C4: step 6's tools and step 13's closing comment differ per channel; the rest of the template is one body.
+    private static string Template(DemoPromptChannel channel)
+    {
+        var (tools, closing) = channel switch
+        {
+            DemoPromptChannel.Handover => (HandoverToolsResource, HandoverReturnResource),
+            // TODO: the session channel renders the handover blocks until the session tools and return blocks replace them (preinstalled
+            // demo-python, ffmpeg and ffprobe with no install step, and the closing comment as the final response the relay posts).
+            DemoPromptChannel.Session => (HandoverToolsResource, HandoverReturnResource),
+            _ => throw new ArgumentOutOfRangeException(nameof(channel), channel, "Unknown demo prompt channel."),
+        };
+        return ReadResource(Resource)
+            .Replace("{{tools_block}}", Block(tools), StringComparison.Ordinal)
+            .Replace("{{return_block}}", Block(closing), StringComparison.Ordinal);
+    }
+
+    // A block file ends with one newline; the template already spaces the block from its neighbours.
+    private static string Block(string name) => ReadResource(name).TrimEnd('\n');
 
     private static string ReadResource(string name)
     {
