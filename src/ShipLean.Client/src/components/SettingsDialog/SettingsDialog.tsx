@@ -64,7 +64,10 @@ export function SettingsDialog<TDoc extends object, TContext>({
   // At touch the header names the project the settings belong to, as the phone design's chip (SHIP-1987). The project
   // is the page's own query, so this reads the cache.
   const key = useParams().key;
-  const project = useQuery({ ...projectByKeyQuery(key ?? ''), enabled: touch && key !== undefined });
+  const project = useQuery({
+    ...projectByKeyQuery(key ?? ''),
+    enabled: touch && key !== undefined,
+  });
   const projectChip =
     touch && project.data !== undefined ? (
       <span

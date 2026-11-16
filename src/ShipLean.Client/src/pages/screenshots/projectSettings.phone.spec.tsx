@@ -37,7 +37,9 @@ phonePageShots([
     arrange,
     ready: async (page) => {
       await expect(page.getByTestId(ids.settingsIndexRow)).toHaveCount(7);
-      await expect(page.getByTestId(ids.settingsIndexCount)).toHaveText(String(SHELL_MEMBERS.length));
+      await expect(page.getByTestId(ids.settingsIndexCount)).toHaveText(
+        String(SHELL_MEMBERS.length),
+      );
       await expect(page.getByTestId(shellTestIds.crumb)).toHaveText(['SHIP', 'Settings']);
     },
   },
@@ -48,7 +50,11 @@ phonePageShots([
     arrange,
     ready: async (page) => {
       await ready(page);
-      await expect(page.getByTestId(shellTestIds.crumb)).toHaveText(['SHIP', 'Settings', 'General']);
+      await expect(page.getByTestId(shellTestIds.crumb)).toHaveText([
+        'SHIP',
+        'Settings',
+        'General',
+      ]);
     },
   },
   {

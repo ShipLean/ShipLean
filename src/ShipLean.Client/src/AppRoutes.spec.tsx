@@ -91,6 +91,8 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
     path: '/p/SHIP/settings/states',
     testId: pagesTestIds.projectSettingsPage,
   },
+  // Above 900px the tab-less address goes to General.
+  projectSettingsIndex: { path: '/p/SHIP/settings', testId: pagesTestIds.projectSettingsPage },
 };
 
 for (const [id, scaffold] of Object.entries(scaffolds)) {
