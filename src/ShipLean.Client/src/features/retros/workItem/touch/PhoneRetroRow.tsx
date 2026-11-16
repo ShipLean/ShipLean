@@ -4,6 +4,7 @@ import { routePath } from '../../../../routes';
 import { AuthorChip } from '../../../retroShared/AuthorChip';
 import { CategoryCount } from '../../features/CategoryCount';
 import { DecidedProgress } from '../../features/DecidedProgress';
+import { RowChevron } from '../../features/touch/RowChevron';
 import { retrosTestIds as ids } from '../../testIds';
 
 /** One retro of the item as a row link of two lines (R8): the author, "partial" and the date; then the counts, what is left to decide and the Decided bar. */
@@ -22,7 +23,7 @@ export function PhoneRetroRow({
       data-testid={ids.workItemRetroRow}
       data-retro-id={row.retroId}
       to={routePath('retroItem', { key: projectKey, itemKey }, { retro: row.retroId })}
-      className="grid min-h-[var(--touch-target)] min-w-0 gap-1 border-t border-edge px-3 py-2.5 text-ink first:border-t-0 active:bg-sunken"
+      className="relative grid min-h-[var(--touch-target)] min-w-0 gap-1 border-t border-edge py-2.5 pr-7 pl-3 text-ink first:border-t-0 active:bg-sunken"
     >
       <span className="flex min-w-0 items-center gap-2">
         <span className="min-w-0 font-medium [&>span]:max-w-full [&_[data-agent]]:min-w-0 [&_[data-agent]]:truncate">
@@ -51,6 +52,7 @@ export function PhoneRetroRow({
           <DecidedProgress totals={totals} />
         </span>
       </span>
+      <RowChevron />
     </Link>
   );
 }

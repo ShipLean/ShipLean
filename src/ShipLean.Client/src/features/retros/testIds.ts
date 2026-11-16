@@ -222,4 +222,6 @@ export const retrosTestIds = {
   retrosFilterNosprint: 'retros-filter-nosprint',
   retrosFilterDecision: 'retros-filter-decision',
   retrosFilterUnthemed: 'retros-filter-unthemed',
+  retroRowChevron: 'retro-row-chevron',
+  retroFeaturesSearchIcon: 'retro-features-search-icon',
 } as const;
