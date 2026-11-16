@@ -138,6 +138,8 @@ test('PhoneChildRow_ShouldShowAChevron', async ({ mount, page }) => {
     expect(arrow.width).toBeGreaterThan(0);
     expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
     expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
+    expect(arrow.y).toBeGreaterThanOrEqual(row.y);
+    expect(arrow.y + arrow.height).toBeLessThanOrEqual(row.y + row.height);
   }
 });
 
