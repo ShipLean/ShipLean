@@ -45,7 +45,8 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         var totals = await Build(stack.Options("clickhouse")).ReadAsync(Query(run), CancellationToken.None);
 
         totals.Available.ShouldBeTrue(totals.Problem);
-        var tokens = totals.ByItem.ShouldContainKeyAndReturnValue(Tagged(run));
+        totals.ByItem.ShouldContainKey(Tagged(run));
+        var tokens = totals.ByItem[Tagged(run)];
         tokens.Runs.ShouldBe(1);
         tokens.Total.ShouldBe(summary.TokensIn.ShouldNotBeNull() + summary.TokensOut.ShouldNotBeNull());
         tokens.Models.ShouldBe(summary.Models, ignoreOrder: true);
@@ -137,7 +138,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         var services = new ServiceCollection();
         new InspectionServices().AddServices(services, new ConfigurationBuilder().Build());
         services.AddSingleton(options);
-        var provider = services.BuildServiceProvider();
+        var provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
         providers.Add(provider);
         var source = provider.GetRequiredService<ITaskTokenTotals>();
         source.ShouldBeOfType<ClickHouseTaskTokenTotals>();
