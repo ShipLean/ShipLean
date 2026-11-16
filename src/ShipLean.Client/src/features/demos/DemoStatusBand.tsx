@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { SprintDemoDto, SprintDemoStatus } from '@shiplean/core/api/demos';
 import { Chip, type ChipTone } from '../../components/Chip';
 import { showToast } from '../../components/toastStore';
+import { TypeIcon } from '../../components/TypeIcon';
 import { useTouchShell } from '../../touch/useTouchShell';
 import { useCreateSprintDemo } from './demosApi';
 import type { DemoProps } from './DemoProps';
@@ -60,11 +61,12 @@ function detail(demo: SprintDemoDto): string | null {
   return null;
 }
 
-function runLabels(demo: SprintDemoDto): string[] {
+// On a phone the requested label names who asked (SHIP-1810 P2); the desktop band keeps the plain label.
+function runLabels(demo: SprintDemoDto, touch: boolean): string[] {
   const { run, video } = demo;
   if (run === null) return [];
   if (demo.status === 'ready') return video === null ? [] : [video.deliveredLabel];
-  const labels = [run.requestedLabel];
+  const labels = [touch ? (run.requestedByLabel ?? run.requestedLabel) : run.requestedLabel];
   if (demo.status === 'working' || demo.status === 'requested') {
     if (run.sessionState !== null) labels.push(`Agent session: ${run.sessionState}`);
     if (run.uploadExpiresLabel !== null) labels.push(run.uploadExpiresLabel);
@@ -79,20 +81,23 @@ function createLabel(status: SprintDemoStatus): string {
 }
 
 const buttonClass =
-  'h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 touch:order-4 touch:col-span-2 touch:h-[var(--touch-target)] touch:w-full';
+  'h-7 rounded-control bg-signal px-3 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-signal-ink hover:brightness-[1.08] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100 touch:order-5 touch:col-span-2 touch:h-[var(--touch-target)] touch:w-full';
 
 /**
  * The tab's status band: the status chip, what it means, the run's labels with the BAU item's link, and Create demo.
- * On a phone it stacks (SHIP-1810 P2): the chip with the Working pulse at its right, the message, the line under it, the
- * BAU item as its own row, then the action across the width; a disabled action keeps its place, the line above says why.
+ * On a phone it stacks (SHIP-1810 P2): the chip with the Working pulse at its right, the message, the line under it, what the
+ * agent said when its session ended (P5), the BAU item as its own row with its type icon and title, then the action across
+ * the width; a disabled action keeps its place, the line above says why.
  */
 export function DemoStatusBand({ demo }: DemoProps) {
   const { touch } = useTouchShell();
   const create = useCreateSprintDemo(demo.sprintId);
   const look = LOOKS[demo.status];
   const note = detail(demo);
-  const labels = runLabels(demo);
+  const labels = runLabels(demo, touch);
   const { actions, run } = demo;
+  // On a phone the agent's words leave the message for a block of their own (P5); the desktop keeps the one sentence.
+  const said = touch ? demo.agentSaid : null;
   const blocked = !actions.canCreate && actions.createBlockedMessage !== null;
   return (
     <div
@@ -106,7 +111,7 @@ export function DemoStatusBand({ demo }: DemoProps) {
           data-testid={ids.demoStatusMessage}
           className="text-[length:var(--text-base)] touch:order-1 touch:col-span-2"
         >
-          {headline(demo)}
+          {said !== null ? said.message : headline(demo)}
         </b>
         {note !== null && (
           <span
@@ -122,13 +127,20 @@ export function DemoStatusBand({ demo }: DemoProps) {
               <span className="touch:order-2 touch:col-span-2">{labels.join(' · ')}</span>
             )}
             {run !== null && (
-              // TODO: the phone row also shows the item's type icon and title once the run DTO carries them.
               <Link
                 data-testid={ids.demoItemLink}
                 to={run.itemUrl}
-                className="text-signal touch:order-3 touch:col-span-2 touch:flex touch:min-h-[var(--touch-target)] touch:w-full touch:items-center touch:justify-between touch:gap-2 touch:font-mono touch:text-ink"
+                className="text-signal touch:order-4 touch:col-span-2 touch:flex touch:min-h-[var(--touch-target)] touch:w-full touch:items-center touch:justify-between touch:gap-2 touch:font-mono touch:text-ink"
               >
-                {run.itemKey}
+                {touch ? (
+                  <span className="flex min-w-0 items-center gap-2">
+                    <TypeIcon type={run.itemType} />
+                    <span className="flex-none">{run.itemKey}</span>
+                    <span className="truncate text-ink-muted">{run.itemTitle}</span>
+                  </span>
+                ) : (
+                  run.itemKey
+                )}
                 {touch && (
                   <span aria-hidden="true" className="text-ink-muted">
                     ›
@@ -137,6 +149,15 @@ export function DemoStatusBand({ demo }: DemoProps) {
               </Link>
             )}
           </span>
+        )}
+        {said !== null && (
+          <blockquote
+            data-testid={ids.demoAgentSaid}
+            className="m-0 rounded-r-control border-l-[3px] border-edge bg-sunken px-2.5 py-1.5 text-ink [overflow-wrap:anywhere] touch:order-3 touch:col-span-2 touch:w-full"
+          >
+            <span className="block font-semibold text-ink-muted">It said</span>
+            {said.text}
+          </blockquote>
         )}
       </div>
       {demo.status === 'working' && (
