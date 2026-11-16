@@ -203,6 +203,51 @@ test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader',
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
+// ND3a-9 (SHIP-1809 P3): the Save bar's message is a soft chip, ● count ▾, at least one touch target tall.
+test('SettingsPhone_WhenEdited_ShouldShowTheCountAsAChipWithADotAndCaret', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('general'));
+  await page.getByTestId(ids.generalName).fill('Shop');
+  const chip = page.getByTestId(ids.unsavedChip);
+  await expect(chip).toHaveText('1 unsaved change▾');
+  await expect(chip).toHaveAttribute('aria-haspopup', 'dialog');
+  await expect(chip).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  expect((await chip.boundingBox())?.height).toBeGreaterThanOrEqual(32);
+  await chip.tap();
+  await expect(page.getByTestId(touchTestIds.sheet).getByTestId(ids.changeItem)).toHaveCount(1);
+});
+
+// ND3a-10 (SHIP-1809 P3): each change names its pane in a column of its own, then the change.
+test('SettingsPhone_WhenChangesOpened_ShouldNameThePaneBesideEachChange', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('general'));
+  await page.getByTestId(ids.generalName).fill('Shop');
+  await openPane(page, /^Sprints & forecast/);
+  await page.getByTestId(ids.velocityWindow).fill('4');
+  await page.getByTestId(ids.unsaved).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.changePane)).toHaveText(['General', 'Sprints & forecast']);
+  const items = sheet.getByTestId(ids.changeItem);
+  await expect(items).toHaveText(['GeneralName', 'Sprints & forecastVelocity window']);
+  const panes = sheet.getByTestId(ids.changePane);
+  const [short, long, row] = await Promise.all([
+    panes.first().boundingBox(),
+    panes.last().boundingBox(),
+    items.first().boundingBox(),
+  ]);
+  if (!short || !long || !row) throw new Error('change row part not drawn');
+  // The pane sits beside the change on one line, and both panes take one column's width, so the changes line up.
+  expect(Math.abs(short.y + short.height / 2 - (row.y + row.height / 2))).toBeLessThanOrEqual(4);
+  expect(Math.abs(short.width - long.width)).toBeLessThanOrEqual(1);
+  expect(short.x + short.width).toBeLessThan(row.x + row.width / 2);
+});
+
 test('SettingsPhone_WhenChangesTapped_ShouldJumpToTheTab', async ({ mount, page }) => {
   await stub(page);
   await mount(<SettingsDraftHarness role="admin" />, route('general'));

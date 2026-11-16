@@ -331,4 +331,6 @@ export const settingsTestIds = {
   settingsIndex: 'settings-index',
   settingsIndexRow: 'settings-index-row',
   settingsIndexCount: 'settings-index-count',
+  unsavedChip: 'settings-unsaved-chip',
+  changePane: 'settings-change-pane',
 } as const;

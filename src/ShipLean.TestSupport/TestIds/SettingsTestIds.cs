@@ -339,4 +339,6 @@ public static class SettingsTestIds
     public const string SettingsIndex = "settings-index";
     public const string SettingsIndexRow = "settings-index-row";
     public const string SettingsIndexCount = "settings-index-count";
+    public const string UnsavedChip = "settings-unsaved-chip";
+    public const string ChangePane = "settings-change-pane";
 }
