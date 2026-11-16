@@ -1,10 +1,13 @@
 using System.Globalization;
+using System.Net;
+using System.Text.Json;
 using Dapper;
 using ShipLean.Contracts.Users.Admin;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Identity;
+using ShipLean.WebApi.Tests.Auth;
 
 namespace ShipLean.WebApi.Tests.Users.Admin;
 
@@ -19,7 +22,9 @@ public class UsersAdminViewerZoneApiTests : ApiFixture
             await connection.ExecuteAsync("UPDATE app_user SET last_sign_in_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = SeedIds.Users.Tom });
         }
 
-        var users = await Api.ActingAs(TestUser.Joel).GetJsonAsync<AdminUsersDto>("api/admin/users");
+        using var response = await Api.ActingAs(TestUser.Joel).GetAsync("api/admin/users");
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var users = JsonSerializer.Deserialize<AdminUsersDto>(await response.Content.ReadAsStringAsync(), AuthClient.Json)!;
 
         return users.Users.Single(u => u.Id == SeedIds.Users.Tom).LastSignIn;
     }
