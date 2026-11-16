@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,6 +9,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Contracts.Users;
 using ShipLean.TestSupport.Hosting;
@@ -51,7 +53,7 @@ public class AgentSessionsReadTests : ApiFixture
             "INSERT INTO agent_activity (id, session_id, type, body, ephemeral, created_at) VALUES (@id, @sessionId, @type, @body, @ephemeral, @at)",
             new { id = Guid.CreateVersion7(), sessionId, type, body, ephemeral, at });
 
-    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to the Relative calls in AgentPanelReader. 2024-03-02 20:00 UTC is 3 Mar 03:00 in Bangkok.
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to the Relative calls in AgentPanelReader. LateEveningUtc is 20:00 UTC, the next day in Bangkok; the expected day is plain arithmetic on it, not DisplayDate.
     [Test]
     public async Task Panel_WhenViewerIsInBangkok_ShouldLabelASessionByTheBangkokDay()
     {
@@ -61,7 +63,7 @@ public class AgentSessionsReadTests : ApiFixture
             "INSERT INTO project_member (id, project_id, user_id, role) VALUES (@id, @projectId, @userId, 'admin')",
             new { id = Guid.NewGuid(), projectId = arranged.Project.Id, userId = SeedIds.Users.Mei });
         var item = await arranged.CreateItemAsync(Api);
-        var at = new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero);
+        var at = ViewerZoneTestData.LateEveningUtc;
         var session = await InsertSessionAsync(database, arranged, item.Id, "completed", at);
         await InsertActivityAsync(database, session, "response", "Done.", ephemeral: false, at);
         await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
@@ -69,24 +71,25 @@ public class AgentSessionsReadTests : ApiFixture
         var panel = await PanelAsync(item.Id, TestUser.Mei);
 
         var shown = panel.Sessions.ShouldHaveSingleItem();
-        shown.StartedLabel.ShouldBe("3 Mar 2024");
-        shown.LastActivityLabel.ShouldBe("3 Mar 2024");
-        shown.EndedLabel.ShouldBe("3 Mar 2024");
-        shown.Activities.ShouldHaveSingleItem().CreatedLabel.ShouldBe("3 Mar 2024");
+        var expected = at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+        shown.StartedLabel.ShouldBe(expected);
+        shown.LastActivityLabel.ShouldBe(expected);
+        shown.EndedLabel.ShouldBe(expected);
+        shown.Activities.ShouldHaveSingleItem().CreatedLabel.ShouldBe(expected);
     }
 
-    // The fallback: a user with no zone (Joel here) reads UTC labels. 2024-03-02 20:00 UTC reads 2 Mar 2024.
+    // The fallback: a user with no zone (Joel here) reads UTC labels.
     [Test]
     public async Task Panel_WhenViewerHasNoZone_ShouldLabelASessionByTheUtcDay()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
         var item = await arranged.CreateItemAsync(Api);
-        await InsertSessionAsync(database, arranged, item.Id, "completed", new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero));
+        await InsertSessionAsync(database, arranged, item.Id, "completed", ViewerZoneTestData.LateEveningUtc);
 
         var panel = await PanelAsync(item.Id);
 
-        panel.Sessions.ShouldHaveSingleItem().StartedLabel.ShouldBe("2 Mar 2024");
+        panel.Sessions.ShouldHaveSingleItem().StartedLabel.ShouldBe(ViewerZoneTestData.LateEveningUtc.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
 
     [Test]

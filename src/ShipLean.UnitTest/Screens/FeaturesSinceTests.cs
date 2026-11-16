@@ -48,18 +48,17 @@ public class FeaturesSinceTests
         label.ShouldBe("since yesterday");
     }
 
-    // Mutation: pass TimeZoneInfo.Utc to FeaturesSince's DaysUntil, Time or ShortWeekday. Now is Mon 2026-11-16 10:00 UTC; the change
-    // was Thu 2026-11-12 20:00 UTC, which is Fri 03:00 in Bangkok.
+    // Mutation: pass TimeZoneInfo.Utc to FeaturesSince's DaysUntil, Time or ShortWeekday. The change was at 20:00 UTC four days ago, which is
+    // 03:00 the next day in Bangkok: its weekday and clock differ. Expectations are plain arithmetic on the instant, not DisplayDate.
     [Test]
     public void Since_WhenViewerIsInBangkok_ShouldNameTheBangkokTimeAndWeekday()
     {
-        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 16, 10, 0, 0, TimeSpan.Zero));
-        var seenAt = new DateTimeOffset(2026, 11, 12, 20, 0, 0, TimeSpan.Zero);
+        var seenAt = TestDates.Today.AddDays(-4).AddHours(20);
 
-        var (_, bangkok) = FeaturesSince.Of(seenAt, clock, ViewerZoneTestData.Bangkok);
-        var (_, utc) = FeaturesSince.Of(seenAt, clock, TimeZoneInfo.Utc);
+        var (_, bangkok) = FeaturesSince.Of(seenAt, Clock(), ViewerZoneTestData.Bangkok);
+        var (_, utc) = FeaturesSince.Of(seenAt, Clock(), TimeZoneInfo.Utc);
 
-        bangkok.ShouldBe("since Fri 03:00");
-        utc.ShouldBe("since Thu 20:00");
+        bangkok.ShouldBe($"since {seenAt.AddHours(7).ToString("ddd", CultureInfo.InvariantCulture)} 03:00");
+        utc.ShouldBe($"since {seenAt.ToString("ddd", CultureInfo.InvariantCulture)} 20:00");
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -90,14 +91,13 @@ public class FeatureDigestApiTests : ApiFixture
 
     private static string Health(string from, string to) => $$"""[{"field":"health","from":"{{from}}","to":"{{to}}","fromLabel":null,"toLabel":null}]""";
 
-    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone in DigestLines or FeatureDigest. 2024-03-02 20:00 UTC (a Saturday) is
-    // Sunday 3 Mar 03:00 in Bangkok; the person last saw the digest an hour earlier. The brief names LateEveningUtc; a fixed instant
-    // lets the expected labels be literals.
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone in DigestLines or FeatureDigest. LateEveningUtc is 20:00 UTC, 03:00 the next day in Bangkok; the person
+    // last saw the digest an hour earlier. Expected labels are plain arithmetic on the instant, not DisplayDate.
     [Test]
     public async Task Digest_WhenViewerIsInBangkok_ShouldLabelChangesByTheBangkokDay()
     {
         var mei = TestUser.Of(await MemberAsync());
-        var at = new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero);
+        var at = ViewerZoneTestData.LateEveningUtc;
         var item = await FeatureAsync();
         await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
         await using (var connection = await OpenDatabaseAsync())
@@ -109,15 +109,15 @@ public class FeatureDigestApiTests : ApiFixture
 
         var pages = await PagesAsync(mei);
 
-        pages[0].SinceLabel.ShouldBe("since Sun 02:00");
-        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe("3 Mar 2024");
+        pages[0].SinceLabel.ShouldBe($"since {at.AddHours(6).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
+        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe(at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
 
     [Test]
     public async Task Digest_WhenViewerHasNoZone_ShouldLabelChangesByTheUtcDay()
     {
         var mei = TestUser.Of(await MemberAsync());
-        var at = new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero);
+        var at = ViewerZoneTestData.LateEveningUtc;
         var item = await FeatureAsync();
         await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
         await using (var connection = await OpenDatabaseAsync())
@@ -127,8 +127,8 @@ public class FeatureDigestApiTests : ApiFixture
 
         var pages = await PagesAsync(mei);
 
-        pages[0].SinceLabel.ShouldBe("since Sat 19:00");
-        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe("2 Mar 2024");
+        pages[0].SinceLabel.ShouldBe($"since {at.AddHours(-1).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
+        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe(at.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
 
     [Test]
