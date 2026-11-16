@@ -26,7 +26,8 @@ public class AgentDeliveryAttemptsReadTests : ApiFixture
         var secondDelivery = await AgentDeliveryAttemptRows.InsertDeliveryAsync(database, second, status: "sent");
         var otherDelivery = await AgentDeliveryAttemptRows.InsertDeliveryAsync(database, other, status: "sent");
         var now = Host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
-        var t0 = now.AddDays(-3);
+        // Whole seconds: Postgres keeps microseconds, so finer ticks would not round-trip.
+        var t0 = DateTimeOffset.FromUnixTimeSeconds(now.AddDays(-3).ToUnixTimeSeconds());
         // Inserted newest first, so only the read's order can put them oldest first.
         await AgentDeliveryAttemptRows.InsertAsync(database, new(prompted, connection, 1, t0.AddHours(2), null, "No answer within 5 seconds.", 5000, null));
         await AgentDeliveryAttemptRows.InsertAsync(database, new(created, connection, 2, t0.AddHours(1), 502, "Bad gateway.", 40, null));
