@@ -95,9 +95,13 @@ public sealed class ClickHouseViewSql(ClickHouseNames names)
 
     public static IReadOnlyList<string> LogColumns { get; } = ["Timestamp", "ServiceName", "SeverityText", "SeverityNumber", "ResourceAttributes", "LogAttributes", "Body", "TraceId", "SpanId"];
 
-    private string RunsTtl => $"TTL toDateTime(last_seen) + INTERVAL {names.RetentionDays} DAY";
+    // Both tables outlive the exporter's own rows (its retention) by this many days, so a run whose spans are gone stays listed for its item
+    // and the run page can say it expired instead of not found. The backfill still reads only rows inside retention.
+    public const int ExpiredKeepDays = 30;
 
-    private string ItemsTtl => $"TTL seen_at + INTERVAL {names.RetentionDays} DAY";
+    private string RunsTtl => $"TTL toDateTime(last_seen) + INTERVAL {names.RetentionDays + ExpiredKeepDays} DAY";
+
+    private string ItemsTtl => $"TTL seen_at + INTERVAL {names.RetentionDays + ExpiredKeepDays} DAY";
 
     private static string RunsFromTraces(ClickHouseNames n, string bound) => $"""
         WITH mapUpdate(ResourceAttributes, SpanAttributes) AS a
