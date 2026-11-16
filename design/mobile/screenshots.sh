@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives › Features (SHIP-728: retros-features-*), Your profile (SHIP-733: profile-*), Retrospectives search (SHIP-730: retro-search-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*) and All sprints (SHIP-1807: sprints-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives › Features (SHIP-728: retros-features-*), Your profile (SHIP-733: profile-*), Retrospectives search (SHIP-730: retro-search-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*) and All sprints (SHIP-1807: sprints-*), Sprint capacity (SHIP-1808: capacity-*), Project settings (SHIP-1809: settings-*, with the Stories board settings) and the Sprint demo tab (SHIP-1810: demo-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -317,7 +317,7 @@ for name in "${names[@]}"; do
   if [[ "$url" == ./* ]]; then base="$PWD"; url="${url#./}"; fi
   sep='?'; [[ "$url" == *\?* ]] && sep='&'
   for theme in light dark; do
-    "$chrome" --headless=new --no-sandbox --hide-scrollbars --force-device-scale-factor=2 \
+    "$chrome" --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --force-device-scale-factor=2 \
       --window-size=390,844 --virtual-time-budget=4000 \
       --screenshot="$PWD/images/$name.$theme.png" "file://$base/$url${sep}shot&theme=$theme" >/dev/null 2>&1
     echo "wrote mobile/images/$name.$theme.png"

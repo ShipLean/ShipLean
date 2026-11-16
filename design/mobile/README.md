@@ -349,6 +349,34 @@ The All sprints list (`/p/:key/sprints`) at 900px and below, inside the touch sh
 
 The phone rules: a head row with the project and count, Plan sprints and + New sprint, no separate heading; the velocity chart above the list, redrawn with every bar labelled; sections Current, Future (soonest first) and Past (newest first); a row shows name, dates, the goal up to two lines, and Capacity · Committed · Completed with labels, and opens the sprint's Backlog; ⋯ opens a K1 sheet (Open: Backlog, Taskboard, Capacity, and Retro and Demo on current and past sprints; then Edit sprint, and Close sprint on the current sprint only); New sprint is full screen with ✕ top left and the Save bar (Discard · Create sprint); a project with no sprints gets one panel and no chart.
 
+## Sprint capacity on a phone (SHIP-726, SHIP-1808)
+
+The sprint Capacity tab at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/capacity-touch.css` and `../screens/capacity-touch.js`, which `capacity.html` loads. The plain page is over capacity (the desktop's data); `?at=people`, `?sheet=days&p=<person>`, `?dirty`, `?sheet=more`, `?sheet=add` (with `?rm=<person>`) and `?empty` open its states.
+
+| File | What it is |
+|---|---|
+| `capacity.html` | The desktop screen, with the phone layer included. |
+| `capacity-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions. |
+| `images/capacity*.png` | `capacity.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `capacity`, `capacity-people`, `capacity-days`, `capacity-dirty`, `capacity-dirty-people`, `capacity-more`, `capacity-add`, `capacity-empty`. |
+
+## Project settings on a phone (SHIP-732, SHIP-1809)
+
+Project settings (`/p/:key/settings`) and the Stories board settings at 900px and below, inside the touch shell. Desktop is unchanged. A phone opens an index of the tabs (General, States, Members, Sprints & forecast, Integrations, Demos); a tab opens as a pane with ‹ back in the top bar. It is built in `../screens/settings-touch.css` and `../screens/settings-touch.js` (which `settings.html` loads) and `../screens/board-settings-touch.css` and `board-settings-touch.js` (which `board-settings.html` loads); `?tab=<tab>` opens a pane, and `?dirty`, `?changes`, `?drag=<state>`, `?menu=<state>`, `?yt=connected&at=yt` open its states.
+
+| File | What it is |
+|---|---|
+| `settings-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions for Joel. |
+| `images/settings*.png` | `settings.html` and `board-settings.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `settings` (the index), `settings-general`, `settings-general-dirty`, `settings-changes`, `settings-states`, `settings-states-drag`, `settings-states-menu`, `settings-members`, `settings-sprints`, `settings-integrations`, `settings-demos`, `settings-demos-yt`, and the Stories board `settings-board-styles`, `settings-board-styles-drag`, `settings-board-styles-dirty`. |
+
+## Sprint demo on a phone (SHIP-889, SHIP-1810)
+
+The sprint Demo tab (`/p/:key/sprints/:id/demo`) at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/demo-touch.css` and `../screens/demo-touch.js`, which `sprint-demo.html` loads. `?state=<state>` opens a state (the plain page is Ready, the desktop's default); `?at=chapters`, `?at=script`, `?said` and `?sheet=sprint` open parts of it.
+
+| File | What it is |
+|---|---|
+| `demo-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions for Joel. |
+| `images/demo*.png` | `sprint-demo.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `demo-closable`, `demo-none`, `demo-requested`, `demo-blocked`, `demo-working`, `demo-failed`, `demo-failed-said`, `demo-ready`, `demo-ready-chapters`, `demo-ready-script`, `demo-youtube-unlisted`, `demo-youtube-private`, `demo-youtube-failed`, `demo-sprint`. |
+
 ## Sprint retro on a phone (SHIP-727)
 
 The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unchanged.
