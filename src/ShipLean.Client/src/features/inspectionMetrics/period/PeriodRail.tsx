@@ -71,6 +71,10 @@ function eventBody(event: InspectionEventDto, counted: boolean) {
       <>
         <b>Commit</b> <code className="font-mono text-[length:var(--text-xs)]">{event.text}</code>
       </>
+    ) : event.kind === 'started' ? (
+      <>
+        <b>Started</b>: first move to {event.text}
+      </>
     ) : (
       <b className={counted ? undefined : 'font-normal'}>{event.text}</b>
     );

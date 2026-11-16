@@ -67,8 +67,8 @@ export function PeriodTasks({
                 </span>
               )}
             </td>
-            <td className={cell}>{task.featureTitle ?? '—'}</td>
-            <td className={cell}>
+            <td className={`${cell} whitespace-nowrap`}>{task.featureTitle ?? '—'}</td>
+            <td className={`${cell} whitespace-nowrap`}>
               {task.who}
               {task.agent && <span className="text-ink-muted"> (agent)</span>}
             </td>
