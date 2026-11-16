@@ -1,6 +1,7 @@
 import { expect } from '@playwright/experimental-ct-react';
 import { connection, jiraProjects } from '../../features/import/ct/fixtures';
 import { importTestIds } from '../../features/import/testIds';
+import { issueIntakeSample } from '../../features/settings/issueIntake/ct/issueIntakeStub';
 import { settingsTestIds as ids } from '../../features/settings/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { projectSettings } from './fixtures/workItemSettings';
@@ -77,11 +78,15 @@ phonePageShots([
         route.fulfill({ json: jiraProjects }),
       );
       await page.route('**/api/projects/p1/import/jobs', (route) => route.fulfill({ json: [] }));
+      await page.route('**/api/projects/p1/settings/issue-intake', (route) =>
+        route.fulfill({ json: issueIntakeSample }),
+      );
     },
     ready: async (page) => {
       await ready(page);
       await expect(page.getByTestId(importTestIds.jobsEmpty)).toBeVisible();
       await expect(page.getByTestId(importTestIds.test)).toBeVisible();
+      await expect(page.getByTestId(ids.issueIntakeRepository)).toBeVisible();
     },
   },
 ]);
