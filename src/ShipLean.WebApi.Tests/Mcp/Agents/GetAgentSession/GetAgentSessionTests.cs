@@ -142,6 +142,30 @@ public class GetAgentSessionTests : McpFixture
         first.Bodies.Concat(second.Bodies).Concat(third.Bodies).Order().ShouldBe(Enumerable.Range(1, 7).Select(n => $"same {n}"));
     }
 
+    // The cursor names its session: paging by item after someone restarts the agent must not read the new session's (empty) older page as the
+    // end of the old one. Mutation: ignore the session in the cursor.
+    [Test]
+    public async Task GetAgentSession_WhenTheItemsNewestSessionChangesBetweenPages_ShouldRefuseTheCursorOfTheOldOne()
+    {
+        var (key, session) = await ArrangeSessionWithActivitiesAsync(60);
+        var first = await PageAsync($$"""{"item":"{{key}}"}""");
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM agent_session WHERE id = @session", new { session });
+            await new AgentSessionSeeds(item, await AgentSessionSeeds.InsertConnectionAsync(connection)).WithState("working").WithCreatedAt(Now.AddMinutes(5))
+                .InsertAsync(connection);
+        }
+
+        var byItem = await CallAsync(TestUser.Joel, $$"""{"item":"{{key}}","before":"{{first.Next}}"}""");
+        var bySession = await PageAsync($$"""{"session":"{{session}}","before":"{{first.Next}}"}""");
+
+        byItem.IsToolError().ShouldBeTrue(byItem.Body);
+        var error = byItem.Structured().GetProperty("error");
+        error.GetProperty("code").GetString().ShouldBe("validation");
+        error.GetProperty("field").GetString().ShouldBe("before");
+        bySession.Bodies.ShouldBe(Enumerable.Range(1, 10).Reverse().Select(i => $"activity {i}"), "the old session still pages by its id");
+    }
+
     [Test]
     public async Task GetAgentSession_WhenBeforeIsNotACursor_ShouldBeAValidationErrorNamingBefore()
     {
