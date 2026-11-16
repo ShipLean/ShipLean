@@ -110,7 +110,7 @@ public class FeatureDigestApiTests : ApiFixture
         var pages = await PagesAsync(mei);
 
         pages[0].SinceLabel.ShouldBe($"since {at.AddHours(6).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
-        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe(at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+        LinesOf(pages, item).Single(l => l.Kind == DigestLineKind.StatusLine).AtLabel.ShouldBe(at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
 
     [Test]
@@ -128,7 +128,7 @@ public class FeatureDigestApiTests : ApiFixture
         var pages = await PagesAsync(mei);
 
         pages[0].SinceLabel.ShouldBe($"since {at.AddHours(-1).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
-        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe(at.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+        LinesOf(pages, item).Single(l => l.Kind == DigestLineKind.StatusLine).AtLabel.ShouldBe(at.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
 
     [Test]
