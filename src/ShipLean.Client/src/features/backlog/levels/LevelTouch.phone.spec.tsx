@@ -169,7 +169,7 @@ test('LevelRow_ProgressBar_ShouldBeWiderThanZero', async ({ mount, page }) => {
   await stubLevel(page, levelView('features', FEATURE_ROWS));
   await mount(<LevelHarness project={PROJECT} level="features" />, features);
 
-  const bar = rowOf(page, 'SHIP-101').getByTestId(ids.levelProgress).locator('span').first();
+  const bar = rowOf(page, 'SHIP-101').getByTestId(ids.levelProgressBar);
   const box = await bar.boundingBox();
   expect(box!.width).toBeGreaterThan(40);
 });
@@ -189,6 +189,18 @@ test('LevelRow_ShouldShowRankAndMore', async ({ mount, page }) => {
       page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`),
     ).toBeVisible();
   }
+});
+
+// Catches: removing the `contains` guard from TouchLevelRow's tap (the sheet scrim's tap bubbles to the row and opens the item).
+test('LevelRowMore_WhenScrimTapped_ShouldNotOpenTheRow', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-101').getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(touchTestIds.sheetScrim).tap({ position: { x: 20, y: 20 } });
+
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/features');
 });
 
 // Catches: sending slot 'last' (or no placement) for Move to top.

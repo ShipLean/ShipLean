@@ -32,6 +32,8 @@ export function TouchLevelRow({
   const featureCount = countUnder(row, 'feature').total;
   const closed = row.state?.category === 'completed';
   const tap = (event: MouseEvent<HTMLDivElement>) => {
+    // The ⋯ sheet is a portal inside this row: React bubbles its taps here, so only taps on the row's own DOM open it.
+    if (!event.currentTarget.contains(event.target as Node)) return;
     if (event.target instanceof Element && event.target.closest(inside) !== null) return;
     peek.open(row.key);
   };
@@ -49,7 +51,7 @@ export function TouchLevelRow({
       }}
       className={`flex min-h-[var(--touch-target)] items-stretch border-b border-edge text-[length:var(--text-sm)] ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
-      <div className="flex w-9 flex-none items-center justify-center self-stretch text-[length:var(--text-xs)] text-ink-muted tabular-nums">
+      <div className="flex w-9 flex-none items-start justify-center pt-2.5 text-[length:var(--text-xs)] text-ink-muted tabular-nums">
         <span data-testid={ids.rank}>{row.rank}</span>
       </div>
       <div className="min-w-0 flex-1 py-2">
@@ -97,7 +99,9 @@ export function TouchLevelRow({
           <LevelPoints row={row} />
         </div>
       </div>
-      <LevelRowMore row={row} />
+      <div className="flex flex-none items-center">
+        <LevelRowMore row={row} />
+      </div>
     </div>
   );
 }

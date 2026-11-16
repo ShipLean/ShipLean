@@ -48,8 +48,8 @@ export function TouchTreeGroup({
       >
         {open ? '▼' : '▶'}
       </button>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 py-1.5 pr-3">
-        <div className="min-w-0 basis-full">
+      <div className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-3">
+        <div className="min-w-0 flex-1">
           {parents !== '' ? (
             <div
               data-testid={ids.treeGroupPath}
@@ -77,7 +77,7 @@ export function TouchTreeGroup({
         <span
           data-testid={ids.treeRollup}
           data-warn={row.sumWarn}
-          className={`ml-auto text-[length:var(--text-xs)] ${row.sumWarn ? 'text-caution' : 'text-ink-muted'}`}
+          className={`flex-none text-right text-[length:var(--text-xs)] ${row.sumWarn ? 'text-caution' : 'text-ink-muted'}`}
         >
           {rollup}
         </span>
