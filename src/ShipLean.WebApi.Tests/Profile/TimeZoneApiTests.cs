@@ -55,6 +55,12 @@ public class TimeZoneApiTests : ApiFixture
     private Task<HttpResponseMessage> PutZoneAsync(TestUser user, string zone, string source)
         => Api.ActingAs(user).PutJsonAsync("/api/me/time-zone", new { timeZone = zone, source });
 
+    private async Task PutZoneOkAsync(TestUser user, string zone, string source)
+    {
+        using var response = await PutZoneAsync(user, zone, source);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
     private static string LabelOf(string zone) =>
         DisplayDate.ZoneLabel(DisplayDate.TryZone(zone, out var found) ? found : throw new ArgumentException(zone, nameof(zone)), TimeProvider.System.GetUtcNow());
 
@@ -214,12 +220,8 @@ public class TimeZoneApiTests : ApiFixture
     {
         var user = await ArrangeUserAsync();
 
-        using (await PutZoneAsync(user, London, "browser"))
-        {
-        }
-        using (await PutZoneAsync(user, ViewerZoneTestData.BangkokId, "profile"))
-        {
-        }
+        await PutZoneOkAsync(user, London, "browser");
+        await PutZoneOkAsync(user, ViewerZoneTestData.BangkokId, "profile");
 
         var tracked = Usage.Events.Where(e => e.Name == UsageEventNames.ProfileTimeZoneSet).ToList();
         tracked.Select(e => e.Properties[UsageProps.From]).ShouldBe(["browser", "profile"]);
@@ -233,12 +235,8 @@ public class TimeZoneApiTests : ApiFixture
         var user = await ArrangeUserAsync();
         await StoreZoneAsync(user, London);
 
-        using (await PutZoneAsync(user, London, "profile"))
-        {
-        }
-        using (await PutZoneAsync(user, ViewerZoneTestData.BangkokId, "browser"))
-        {
-        }
+        await PutZoneOkAsync(user, London, "profile");
+        await PutZoneOkAsync(user, ViewerZoneTestData.BangkokId, "browser");
 
         Usage.Events.Where(e => e.Name == UsageEventNames.ProfileTimeZoneSet).ShouldBeEmpty();
     }
