@@ -12,7 +12,12 @@ interface CapacityToolbarProps {
   copyBlocked: string | undefined;
   dirty: boolean;
   saving: boolean;
+  /** The sprint's name and what it plans against once cleared, for the ⋯ sheet's Clear line. */
+  sprintName: string;
+  velocity: number;
   onAdd: (userId: string) => void;
+  /** At touch: open the Add member sheet. */
+  onAddMember: () => void;
   onCopy: () => void;
   onClear: () => void;
   onSave: () => void;
@@ -28,7 +33,10 @@ export function CapacityToolbar({
   copyBlocked,
   dirty,
   saving,
+  sprintName,
+  velocity,
   onAdd,
+  onAddMember,
   onCopy,
   onClear,
   onSave,
@@ -57,13 +65,23 @@ export function CapacityToolbar({
           </button>
           <MoreButton
             variant="bordered"
+            label="Capacity"
             actions={[
-              { id: 'clear', label: 'Clear', tone: 'danger', onSelect: onClear },
-              ...addable.map((user) => ({
-                id: `add-${user.id}`,
-                label: `Add ${user.name}`,
-                onSelect: () => onAdd(user.id),
-              })),
+              {
+                id: 'add',
+                label: 'Add member',
+                trailing: 'chevron',
+                disabled: addable.length === 0,
+                hint: addable.length === 0 ? 'Everyone on the project is in the table' : undefined,
+                onSelect: onAddMember,
+              },
+              {
+                id: 'clear',
+                label: 'Clear',
+                tone: 'danger',
+                hint: `Remove everyone; ${sprintName} plans against velocity (${velocity})`,
+                onSelect: onClear,
+              },
             ]}
           />
         </div>

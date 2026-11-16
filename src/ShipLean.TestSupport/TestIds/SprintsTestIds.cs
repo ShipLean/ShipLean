@@ -158,4 +158,6 @@ public static class SprintsTestIds
     public const string CapacityDaysLess = "sprints-capacity-days-less";
     public const string CapacityDaysMore = "sprints-capacity-days-more";
     public const string CapacitySheetPoints = "sprints-capacity-sheet-points";
+    public const string CapacityAddMember = "sprints-capacity-add-member";
+    public const string CapacitySheetFormula = "sprints-capacity-sheet-formula";
 }

@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../../../../AppRoutes';
-import { stubShell } from '../../../../pages/screenshots/shellStub';
+import { PEOPLE, stubShell } from '../../../../pages/screenshots/shellStub';
 import {
   SPRINT_24,
+  capacitySprint24,
+  emptyCapacity,
   sprintsWithGoals,
   stubCapacity,
 } from '../../../../pages/screenshots/fixtures/sprints';
@@ -12,18 +14,6 @@ import { sprintsTestIds as ids } from '../../testIds';
 
 // Sprint Capacity on a phone (SHIP-726, L726a). Runs in the CT phone project.
 
-const emptyCapacity = {
-  sprintId: '',
-  members: [],
-  teamTotal: 0,
-  velocity: null,
-  velocityDefault: 25,
-  workingDays: 10,
-  defaultDays: 10,
-  holidays: [],
-  holidayCountry: null,
-  ended: false,
-};
 const route = `/p/SHIP/sprints/${SPRINT_24}/capacity`;
 
 const open = async (
@@ -206,9 +196,20 @@ test('Capacity_WhenMoreTapped_ShouldOfferClear', async ({ mount, page }) => {
 
   await page.getByTestId(ids.capacityPhoneToolbar).getByTestId(touchTestIds.moreButton).tap();
 
-  const rows = page.getByTestId(touchTestIds.sheet).getByTestId(touchTestIds.actionSheetRow);
-  await expect(rows.first()).toHaveAttribute('data-action-id', 'clear');
-  await rows.first().tap();
+  // ND2-8 (SHIP-1808 P5, capacity-more): one Add member row, off while everyone is in the table, then Clear.
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Capacity');
+  const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows).toHaveCount(2);
+  await expect(rows.first()).toHaveAttribute('data-action-id', 'add');
+  await expect(rows.first()).toHaveText('Add memberEveryone on the project is in the table›');
+  await expect(rows.first()).toBeDisabled();
+  await expect(rows.nth(1)).toHaveAttribute('data-action-id', 'clear');
+  await expect(rows.nth(1)).toHaveText(
+    'ClearRemove everyone; Sprint 24 plans against velocity (21)',
+  );
+  await expect(page.getByTestId(ids.capacityAddMember)).toHaveCount(0);
+  await rows.nth(1).tap();
   await expect(page.getByTestId(ids.capacityRow)).toHaveCount(0);
   await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
 });
@@ -290,3 +291,149 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+const withoutMei = {
+  ...capacitySprint24,
+  members: capacitySprint24.members.filter((m) => m.user.id !== PEOPLE.mei.id),
+};
+
+test('Capacity_WhenAddMemberPickedOnPhone_ShouldAddThemAndOpenTheirDaysSheet', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page, { sprints: sprintsWithGoals });
+  await stubCapacity(page);
+  await page.route(`**/api/sprints/${SPRINT_24}/capacity`, (r) => r.fulfill({ json: withoutMei }));
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(4);
+
+  // ND2-8: the toolbar ⋯ has one Add member row that opens a sheet of the members not in the table.
+  await page.getByTestId(ids.capacityPhoneToolbar).getByTestId(touchTestIds.moreButton).tap();
+  const add = page.getByTestId(touchTestIds.sheet).getByTestId(touchTestIds.actionSheetRow).first();
+  await expect(add).toHaveText('Add member›');
+  await add.tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Add member');
+  const people = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(people).toHaveCount(1);
+  await expect(people).toHaveText('MLMei LinStarts at the default, 10 days');
+
+  // Picking her adds her row and opens her days sheet (SHIP-1808 capacity-add).
+  await people.tap();
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Mei Lin');
+  await expect(sheet.getByTestId(ids.capacityDays)).toHaveValue('');
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(5);
+  await expect(page.getByTestId(ids.capacityUnsaved)).toHaveCount(1);
+  await sheet.getByTestId(touchTestIds.sheetClose).tap();
+  // ND2-9: once nobody is left out, the foot of People has no + Add member.
+  await expect(page.getByTestId(ids.capacityAddMember)).toHaveCount(0);
+});
+
+test('Capacity_WhenSomeoneIsOutOfTheTableOnPhone_ShouldOfferAddMemberAtTheFootOfPeople', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page, { sprints: sprintsWithGoals });
+  await stubCapacity(page);
+  await page.route(`**/api/sprints/${SPRINT_24}/capacity`, (r) => r.fulfill({ json: withoutMei }));
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(4);
+
+  // ND2-9 (P5): + Add member at the foot of People while anyone is out of the table.
+  const foot = page.getByTestId(ids.capacityAddMember);
+  await expect(foot).toHaveText('+ Add member');
+  await foot.tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Add member');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveText(
+    'MLMei LinStarts at the default, 10 days',
+  );
+});
+
+test('Capacity_WhenNobodyIsInTheTableOnPhone_ShouldShowTheEmptyStateWithAddMember', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page, { sprints: sprintsWithGoals });
+  await stubCapacity(page);
+  await page.route(`**/api/sprints/${SPRINT_24}/capacity`, (r) =>
+    r.fulfill({ json: emptyCapacity }),
+  );
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+
+  // ND2-9 (capacity-empty): the People card says so, and + Add member offers everyone.
+  await expect(page.getByTestId(ids.capacityPeopleHead)).toContainText('People 0');
+  await expect(page.getByTestId(ids.capacityEmpty)).toHaveText(
+    "No capacity enteredSprint 24 plans against velocity (21). Add the people who are in, or copy Sprint 23's table.",
+  );
+  await page.getByTestId(ids.capacityAddMember).tap();
+  await expect(
+    page.getByTestId(touchTestIds.sheet).getByTestId(touchTestIds.actionSheetRow),
+  ).toHaveCount(5);
+});
+
+test('Capacity_WhenDraftChangedOnPhone_ShouldSayUnsavedCapacityChangesInTheSaveBar', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  await page.getByTestId(ids.capacityRow).nth(4).tap();
+  await page.getByTestId(touchTestIds.sheet).getByTestId(ids.capacityDaysMore).tap();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  // SHIP-1808 P4: Unsaved capacity changes · Discard · Save.
+  await expect(page.getByTestId(touchTestIds.saveBarMessage)).toHaveText(
+    'Unsaved capacity changes',
+  );
+});
+
+test('Capacity_WhenOnPhone_ShouldNameEachRowForScreenReadersWithoutABlockInsideAButton', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  const row = await page
+    .getByTestId(ids.capacityRow)
+    .nth(4)
+    .evaluate((el) => {
+      const buttons = el.querySelectorAll('button');
+      return {
+        name: buttons[0]?.getAttribute('aria-label'),
+        buttons: buttons.length,
+        blocksInButtons: el.querySelectorAll('button div').length,
+        coverHidden: [...el.children]
+          .filter((child) => child.tagName !== 'BUTTON')
+          .every((child) => child.getAttribute('aria-hidden') === 'true'),
+      };
+    });
+  expect(row).toEqual({
+    name: 'Ana Costa, 5 / 10 days, 2.5 pts, Part-time this sprint, edit days',
+    buttons: 1,
+    blocksInButtons: 0,
+    coverHidden: true,
+  });
+});
+
+test('Capacity_WhenTypedDaysAreInvalidInTheSheet_ShouldHideTheSumAndTurnOffTheSteps', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  await page.getByTestId(ids.capacityRow).nth(4).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  const days = sheet.getByTestId(ids.capacityDays);
+
+  await days.fill('11');
+  await expect(sheet.getByTestId(ids.capacitySheetPoints)).toHaveText('—');
+  await expect(sheet.getByTestId(ids.capacitySheetFormula)).toHaveCount(0);
+  await expect(sheet.getByTestId(ids.capacityDaysLess)).toBeDisabled();
+  await expect(sheet.getByTestId(ids.capacityDaysMore)).toBeDisabled();
+  await expect(days).toHaveAttribute('aria-invalid', 'true');
+  await expect(days).toHaveValue('11');
+
+  await days.fill('6');
+  await expect(sheet.getByTestId(ids.capacitySheetFormula)).toHaveText(
+    '25 velocity ÷ 5 people × 6 ÷ 10 days',
+  );
+  await expect(sheet.getByTestId(ids.capacityDaysMore)).toBeEnabled();
+});
