@@ -2,18 +2,22 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using ShipLean.Application.Features.AgentDispatch;
+using System.Security.Cryptography;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 
 namespace ShipLean.Application.Features.Agents.Test;
 
 // Test connection: a signed ping with no item data, sent with the deliverer's signing and named HttpClient (5 s timeout, no redirects).
+// A feature may not reference another (ArchitectureTests), so the client name and the signature are written out here the way the dispatch code has them;
+// AgentConnectionTesterParityTests fails when either drifts.
 // Any HTTP answer counts as reached, because even a 4xx for a type the relay does not know proves the address and the signature got there.
 // Nothing is stored: a test is not a delivery attempt.
 public sealed class AgentConnectionTester(IAgentConnections connections, IHttpClientFactory httpClients, TimeProvider time) : IAgentConnectionTester
 {
     public const string PingType = "ping";
+    public const string HttpClientName = "agent-delivery";
+    public const string SignatureHeader = "Linear-Signature";
 
     public async Task<AgentConnectionTestDto> TestAsync(Guid connectionId, CancellationToken cancellationToken)
     {
@@ -32,7 +36,7 @@ public sealed class AgentConnectionTester(IAgentConnections connections, IHttpCl
         try
         {
             using var request = Ping(agent, url);
-            using var response = await httpClients.CreateClient(AgentDeliverer.HttpClientName).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await httpClients.CreateClient(HttpClientName).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             return new AgentConnectionTestDto(true, (int)response.StatusCode, null, Elapsed(started));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -63,7 +67,7 @@ public sealed class AgentConnectionTester(IAgentConnections connections, IHttpCl
         request.Headers.AcceptCharset.Add(new StringWithQualityHeaderValue("utf-8"));
         request.Headers.TryAddWithoutValidation("Linear-Delivery", Guid.CreateVersion7().ToString());
         request.Headers.TryAddWithoutValidation("Linear-Event", PingType);
-        request.Headers.TryAddWithoutValidation(LinearSignature.Header, LinearSignature.Sign(agent.SigningSecret, bytes));
+        request.Headers.TryAddWithoutValidation(SignatureHeader, Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(agent.SigningSecret), bytes)));
         request.Headers.TryAddWithoutValidation("Linear-Timestamp", sentAt.ToString(System.Globalization.CultureInfo.InvariantCulture));
         request.Headers.UserAgent.ParseAdd("Linear-Webhook");
         return request;
