@@ -31,6 +31,9 @@ public class PhoneContextTests : SeededAcceptanceTest
         await Page.GotoAsync(Links.WorkItem("SHIP", "SHIP-101"));
         var key = Page.GetByTestId(WorkItemTestIds.Key);
         await Expect(key).ToBeVisibleAsync();
+        // The desktop-sized control the whole-page check finds is a child row's link, and the child list loads after the
+        // key shows, so measuring at the key alone raced it.
+        await Expect(Page.GetByTestId(ItemPeekTestIds.Link).First).ToBeVisibleAsync();
 
         var page = await TouchRules.ViolationsAsync(Page);
         var region = await TouchRules.ViolationsAsync(Page, key);

@@ -21,6 +21,7 @@ public sealed class McpServerServices : IServiceModule
         + "its size (when asked to break down, do a breakdown, plan this or split into tasks), call planning_guide first and "
         + "follow it: it picks the mode, even for one story, and the plan goes in with capture_plan. To run a captured plan, call get_brief on the Feature for its waves, then get_brief on each task "
         + "and give that brief to the agent doing it, and have each agent call report_task when it is done. "
+        + "When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else. Each commit is its repository, as `git remote get-url origin` prints it, and its full sha (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch). Commits go on Tasks and Bugs only, never a Story or Feature. When one comes back with open_code_comments, fix each one and answer it in answered_comments. "
         + "When you stop work on an item, done or not (on its story, bug, action item or Feature, not a task), log what happened with log_retrospective, truthfully and with a raw failure log; list_retrospectives reads what others logged, and decide_retro_actions turns undecided points into action items on request. "
         + "Every result is one summary line, then the Markdown for a brief or a guide part, then a JSON object with the full "
         + "result (the same object as the structured content). If you see only the summary line, your client is hiding the "

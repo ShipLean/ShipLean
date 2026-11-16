@@ -1,0 +1,8 @@
+diff --git a/README.md b/README.md
+index 68b4bf197857b14dfee6ca62684de0f56d062672..741da14ecaeccfe2411d455f5d8c91fef36c2cc7 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,3 @@
+ # Storefront
++
++Docs for contributors.

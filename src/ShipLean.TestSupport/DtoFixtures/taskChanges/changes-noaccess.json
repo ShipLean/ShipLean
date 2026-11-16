@@ -1,0 +1,35 @@
+{
+  "changesNoAccess": {
+    "workItemId": "00000005-0000-4000-8001-000000000142",
+    "itemKey": "SHIP-142",
+    "itemTitle": "Saved-card picker",
+    "itemType": "task",
+    "stateCategory": "inProgress",
+    "commits": [
+      {
+        "id": "0000000c-0000-4000-8001-000000000004",
+        "repo": "acme/secret",
+        "repoUrl": "https://github.com/acme/secret",
+        "provider": "github",
+        "sha": "9e07b5d2c1a64f38e0b7d9a2c5f1e834b6a07d3c",
+        "shortSha": "9e07b5d",
+        "subject": "Add a missing commit",
+        "authorName": "Priya Nair",
+        "authoredAtLabel": "Today",
+        "addedBy": "Claude Code",
+        "addedByAgent": true,
+        "additions": 0,
+        "deletions": 0,
+        "filesChanged": 0,
+        "commitUrl": "https://github.com/acme/secret/commit/9e07b5d2c1a64f38e0b7d9a2c5f1e834b6a07d3c",
+        "access": "unreadable"
+      }
+    ],
+    "selected": "all",
+    "mode": "single",
+    "headCommitId": "0000000c-0000-4000-8001-000000000004",
+    "parts": [],
+    "comments": [],
+    "openComments": 0
+  }
+}

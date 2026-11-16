@@ -8,6 +8,7 @@ using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -23,7 +24,7 @@ public sealed partial class WorkItemStore(
     IProjectEvents events,
     MarkdownRenderer renderer,
     TimeProvider time,
-    ICurrentAgent currentAgent) : IWorkItemStore
+    ICurrentAgent currentAgent) : IWorkItemStore, IRevisionNotes
 {
     // The store reads only conflict bodies (inside its transaction), which never apply the extras.
     private readonly WorkItemReads _reads = new(dataSource, renderer, time, IWorkItemExtras.None);
@@ -274,6 +275,22 @@ public sealed partial class WorkItemStore(
             """,
             parameters, scope.Transaction, cancellationToken: cancellationToken));
     }
+
+    // A revision that changes no column (IRevisionNotes): the next revision number, one FieldChange whose ToLabel is the history line.
+    public async Task AddAsync(Guid workItemId, string field, string toLabel, WriteOptions options, CancellationToken cancellationToken = default)
+        => await WriteAsync<object?>(options, async scope =>
+        {
+            var row = (await LockAsync(scope, [workItemId], cancellationToken))[workItemId];
+            var revision = row.Revision + 1;
+            await scope.Connection.ExecuteAsync(new CommandDefinition(
+                "UPDATE work_item SET revision = @revision, changed_by = @actor, changed_at = @at WHERE id = @workItemId",
+                new { revision, actor = ActorOf(scope), at = scope.At, workItemId }, scope.Transaction, cancellationToken: cancellationToken));
+            var none = JsonSerializer.SerializeToElement<string?>(null, PersistedJson.Options);
+            FieldChange[] changes = [new FieldChange(field, none, JsonSerializer.SerializeToElement(toLabel, PersistedJson.Options), null, toLabel)];
+            await InsertRevisionAsync(scope, workItemId, revision, changes, cancellationToken);
+            scope.Publish([new WorkItemUpdated(row.ProjectId, workItemId, revision, [field], false)]);
+            return (null, true);
+        }, cancellationToken);
 
     private async Task InsertRevisionAsync(WriteScope scope, Guid id, int revision, IReadOnlyList<FieldChange> changes, CancellationToken cancellationToken)
         => await scope.Connection.ExecuteAsync(new CommandDefinition(
