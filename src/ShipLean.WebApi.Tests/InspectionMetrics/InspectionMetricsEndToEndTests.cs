@@ -96,9 +96,9 @@ public class InspectionMetricsEndToEndTests : ApiFixture
         (s2.Tasks, s2.MeanHours, s2.EndedAtResolved, s2.ChangePctVsPrevious).ShouldBe((2, 8d, 1, -20));
         (s2.MeanActiveHours, s2.MeanBlockedHours, s2.MeanReworkHours).ShouldBe((5d, 1d, 2d));
         (s3.Tasks, s3.MeanHours, s3.EndedAtResolved).ShouldBe((2, 2d, 0));
-        view.Periods[1].Dots.Select(d => (d.Key, d.LeadHours, d.EndedBy)).ShouldBe(
+        view.Periods[1].Dots.Select(d => (d.TaskKey, d.LeadHours, d.EndedBy)).ShouldBe(
             [(_t2, 10d, LeadTimeEndedBy.LastCommit), (_t3, 6d, LeadTimeEndedBy.Resolved)], ignoreOrder: true);
-        view.Periods[2].Dots.Select(d => d.Key).ShouldBe([_t4, _t5], ignoreOrder: true);
+        view.Periods[2].Dots.Select(d => d.TaskKey).ShouldBe([_t4, _t5], ignoreOrder: true);
 
         view.Headline.Finished.ShouldNotBeNull().Name.ShouldBe("Sprint 2");
         view.Headline.Finished.LeadTime.MeanHours.ShouldBe(8d);
@@ -131,10 +131,9 @@ public class InspectionMetricsEndToEndTests : ApiFixture
             [InspectionSegmentKind.Active, InspectionSegmentKind.Blocked, InspectionSegmentKind.Active, InspectionSegmentKind.Rework, InspectionSegmentKind.UnresolvedTail]);
     }
 
-    // Known edge (B2/B3): a commit dated before the start. The lead time is clamped at 0 h, and no part of it may read negative or
-    // more than the lead time itself.
+    // Known edge (B2/B3): a commit dated before the start. The lead time is clamped at 0 h, and none of its parts reads negative.
     [Test]
-    public async Task Get_WhenCommitBeforeStart_ShouldShowZeroLeadWithNoParts()
+    public async Task Get_WhenCommitBeforeStart_ShouldShowZeroLeadAndZeroParts()
     {
         var view = await GetAsync($"?period={_sprints["Sprint 3"]}&select={_t5}");
 
