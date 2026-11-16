@@ -131,9 +131,8 @@ export function PointsBody({
               type="button"
               data-testid={ids.pointsSheetClear}
               aria-label="Not estimated"
-              aria-pressed={estimate.shown === null}
               disabled={off}
-              className={`${buttonClass} aria-pressed:border-signal aria-pressed:bg-signal-soft`}
+              className={buttonClass}
               onClick={() => void save(null)}
             >
               ?
