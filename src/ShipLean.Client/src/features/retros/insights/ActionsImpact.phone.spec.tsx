@@ -186,6 +186,28 @@ test('ActionItemsPhone_WhenOpened_ShouldBeFlatWithADoneHeadingAndTheDesignsCardD
   await expect(page.locator('[data-recurring]').first()).toContainText('Recurring');
 });
 
+test('ActionItemsPhone_WhenACardHasThePullButton_ShouldKeepImpactWhenDoneRightAlignedOnTheOwnerRow', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await stubSprints(page);
+  await mount(<ActionsImpactHarness view="actions" insights={retroInsights} />, route('actions'));
+  const card = page
+    .getByTestId(ids.retroActionCard)
+    .filter({ has: page.getByTestId(ids.retroActionPull) })
+    .first();
+  await expect(card).toBeVisible();
+  const impact = (await card.getByTestId(ids.retroActionImpactPending).boundingBox())!;
+  const owner = (await card.locator('[data-cell="owner"]').boundingBox())!;
+  const outer = (await card.boundingBox())!;
+  // Same row as the owner, flush with the card's right padding, below (not beside) the pull button.
+  expect(Math.abs(impact.y + impact.height / 2 - (owner.y + owner.height / 2))).toBeLessThan(4);
+  expect(outer.x + outer.width - (impact.x + impact.width)).toBeLessThanOrEqual(14);
+  const pull = (await card.getByTestId(ids.retroActionPull).boundingBox())!;
+  expect(pull.y + pull.height).toBeLessThanOrEqual(owner.y + 1);
+});
+
 test('ImpactPhone_WhenOpened_ShouldShowOneCardARow', async ({ mount, page }) => {
   await stubRetros(page);
   await mount(<ActionsImpactHarness view="impact" insights={retroInsights} />, route('impact'));
