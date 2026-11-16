@@ -119,6 +119,17 @@ public class AgentConnectionHealthTests : ApiFixture
         await AddAsync(database, delivery, connection, at, 202, Accepted);
 
         (await HealthAsync(connection)).ShouldBe(new AgentConnectionHealthDto(null, null, 1, at, DisplayDate.Relative(at, Clock), Accepted));
+    }
+
+    [Test]
+    public async Task Warning_WhenTheNewestAttemptIsA202TheDelivererRejected_ShouldWarnEvenAfterAnEarlierSuccess()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var connection = await AgentSessionSeeds.InsertConnectionAsync(database);
+        var delivery = await NewDeliveryAsync(database, connection);
+        await AddAsync(database, delivery, connection, Ago(TimeSpan.FromHours(5)), 200, null);
+        await AddAsync(database, delivery, connection, Ago(TimeSpan.FromHours(1)), 202, Accepted);
+
         (await WarningAsync(connection)).ShouldBe("The last delivery to this connection failed 1h ago.");
     }
 
