@@ -92,6 +92,10 @@ export interface VelocityOverridePut {
 
 export interface BurndownPoint {
   date: string;
+  /** The day as the server prints it ("2 Nov"). */
+  label: string;
+  /** The day of the month ("2"), for the chart axis. */
+  day: string;
   remaining: number;
   ideal: number;
 }

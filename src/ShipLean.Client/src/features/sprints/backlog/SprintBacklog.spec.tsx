@@ -133,9 +133,9 @@ const metrics: SprintMetricsDto = {
   completed: 2,
   remaining: 5,
   burndown: [
-    { date: '2026-10-19', remaining: 7, ideal: 7 },
-    { date: '2026-10-20', remaining: 7, ideal: 5.25 },
-    { date: '2026-10-21', remaining: 5, ideal: 3.5 },
+    { date: '2026-10-19', label: '19 Oct', day: '19', remaining: 7, ideal: 7 },
+    { date: '2026-10-20', label: '20 Oct', day: '20', remaining: 7, ideal: 5.25 },
+    { date: '2026-10-21', label: '21 Oct', day: '21', remaining: 5, ideal: 3.5 },
   ],
 };
 
