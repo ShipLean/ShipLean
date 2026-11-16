@@ -40,6 +40,8 @@
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--color-info); animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+/* Screenshots (?shot) freeze the pulse on its first frame, so renders are byte-identical (SHIP-1898). */
+:root[data-shot] .pulse { animation-play-state: paused; }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-4); align-items: start; }
 .player { position: relative; aspect-ratio: 16 / 9; width: 100%; background: var(--color-surface-2); color: var(--color-text); border-radius: var(--radius-md); overflow: hidden; display: grid; place-items: center; border: 1px solid var(--color-border); }
 .player .poster { text-align: center; display: grid; gap: var(--space-2); justify-items: center; }

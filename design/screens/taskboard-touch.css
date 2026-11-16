@@ -62,6 +62,8 @@
   .tbt-strip button[aria-current="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
   .tbt-strip button.bump { animation: tbt-bump 1.6s ease-out; }
   @keyframes tbt-bump { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent); } 100% { box-shadow: none; } }
+  /* Screenshots (?shot) hold the pulse on its first frame (the ring at full strength), so renders are byte-identical (SHIP-1898). */
+  :root[data-shot] .tbt-strip button.bump { animation-play-state: paused; }
 
   /* Pager: each task state is a page, the next one peeks. */
   .tbt-pager { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3) var(--space-3) calc(var(--space-6, 32px) + env(safe-area-inset-bottom)); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
