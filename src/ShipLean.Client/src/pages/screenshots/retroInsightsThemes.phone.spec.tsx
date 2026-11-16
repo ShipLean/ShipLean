@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../../AppRoutes';
+import {
+  afterTheNextPaint,
+  holdWhatTheSheetLoads,
+} from '../../features/retros/insights/ct/holdWhatTheSheetLoads';
 import { retroInsights, stubRetros } from '../../features/retros/ct/retroFixtures';
 import { retrosTestIds as ids } from '../../features/retros/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -39,9 +43,15 @@ for (const theme of THEMES) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await stubShell(page);
     await stubRetros(page);
+    // What the sheet loads always arrives after it has painted, as on a real network (see holdWhatTheSheetLoads).
+    const answer = await holdWhatTheSheetLoads(page);
     await mount(<AppRoutes />, {
       hooksConfig: { route: `/p/SHIP/retros/insights?sheet=theme:${helped.theme.id}` },
     });
+    await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+    await afterTheNextPaint(page);
+    answer();
+    // Everything the sheet loads is in before the shot: the bottom-anchored sheet grows as it arrives.
     await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
     await expect(page.getByTestId(ids.retroThemeSheetAddAction)).toContainText('open point');
     await expect(page.getByTestId(touchTestIds.sheet)).toHaveScreenshot(
