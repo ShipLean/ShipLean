@@ -353,7 +353,7 @@ test('inspectionMetricsSlots_WhenViewMissingOrUnknown_ShouldMountOverview', () =
   ).toEqual(['overview']);
   expect(
     Object.keys(
-      inspectionMetricsSlots(project, metricsView, new URLSearchParams('view=quality'), vi.fn()),
+      inspectionMetricsSlots(project, metricsView, new URLSearchParams('view=cost'), vi.fn()),
     ),
   ).toEqual(['overview']);
 });
