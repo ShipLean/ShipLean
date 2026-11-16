@@ -114,7 +114,18 @@ public class LeadTimeAggregatorTests
         var detail = view.PeriodDetail.ShouldNotBeNull();
         detail.Tasks.Select(t => t.Key).ShouldBe(["SHIP-2", "SHIP-3", "SHIP-1"]);
         (detail.Quarter, detail.Previous?.ShortName, detail.Next?.ShortName, detail.InProgress).ShouldBe(("Q4 2026", "S2", "S4", false));
-        detail.Selected.ShouldBeNull();
+    }
+
+    // Mutation: select nothing when select is absent, or select the first task whatever the key.
+    [Test]
+    public void Build_WhenPeriodGivenWithOrWithoutSelect_ShouldSelectSlowestNamedOrNothing()
+    {
+        var facts = new LeadTimeFactsBuilder().WithTask("SHIP-1").WithTask("SHIP-2").WithTask("SHIP-3");
+        TaskLeadTime[] tasks = [Task("SHIP-1", At(10, 6, 12), 10), Task("SHIP-2", At(10, 7, 12), 70), Task("SHIP-3", At(10, 8, 12), 30)];
+
+        string?[] selects = [null, "SHIP-3", "SHIP-404"];
+        selects.Select(select => Build([S3], facts, tasks, period: S3, select: select).PeriodDetail.ShouldNotBeNull().Selected?.Task.Key)
+            .ShouldBe(["SHIP-2", "SHIP-3", null]);
     }
 
     // Mutation: round each part on its own (the active mean no longer the remainder).

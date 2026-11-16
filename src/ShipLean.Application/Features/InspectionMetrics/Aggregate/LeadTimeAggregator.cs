@@ -186,7 +186,8 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             var tasks = TasksIn(period);
             var previous = _started.LastOrDefault(sprint => sprint.StartDate < period.StartDate && sprint.Id != period.Id);
             var next = _started.FirstOrDefault(sprint => sprint.StartDate > period.StartDate && sprint.Id != period.Id);
-            var selected = select is null ? null : tasks.FirstOrDefault(task => string.Equals(task.Key, select, StringComparison.Ordinal));
+            var slowest = Slowest(tasks);
+            var selected = select is null ? slowest.FirstOrDefault() : tasks.FirstOrDefault(task => string.Equals(task.Key, select, StringComparison.Ordinal));
             return new InspectionPeriodDetailDto(
                 period.Id,
                 period.Name,
@@ -196,7 +197,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                 next is null ? null : new InspectionPeriodRefDto(next.Id, ShortName(next)),
                 IsRunning(period),
                 PeriodStats(period),
-                [.. Slowest(tasks).Select(TaskDto)],
+                [.. slowest.Select(TaskDto)],
                 Features(period, tasks),
                 selected is null ? null : Measurement(selected));
         }
