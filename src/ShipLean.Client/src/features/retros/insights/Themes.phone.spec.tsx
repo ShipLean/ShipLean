@@ -407,7 +407,7 @@ test('InsightsUnthemedCard_WhenTapped_ShouldOpenTheUnthemedSheet', async ({ moun
   );
   // Its latest mentions are the unthemed points, from Search.
   await expect(body.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
-  expect(stub.reads('/retros/search').map((c) => c.query)).toContainEqual(
+  expect(stub.reads(`/projects/${insightsProject.id}/retros`).map((c) => c.query)).toContainEqual(
     expect.stringContaining('unthemed=true'),
   );
   await expect(body.getByTestId(ids.retroThemeSheetAllInSearch)).toHaveAttribute(
@@ -492,7 +492,7 @@ test('ThemeCards_WhenAChangeShipped_ShouldLabelItsVerdictLastChange', async ({ m
     .getByTestId(ids.retroThemeCard)
     .and(page.locator(`[data-theme-id="${helped.theme.id}"]`));
   const lastChange = card.getByTestId(ids.retroThemeCardLastChange);
-  await expect(lastChange).toHaveText('Last change Helped');
+  await expect(lastChange).toHaveText(/^Last change\s*Helped$/);
   // A theme with no shipped change has no Last change line.
   const none = page
     .getByTestId(ids.retroThemeCard)
