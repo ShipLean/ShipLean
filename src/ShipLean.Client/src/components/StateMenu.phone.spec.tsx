@@ -123,9 +123,10 @@ for (const theme of THEMES) {
     );
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(ids.stateMenuOption)).toHaveCount(6);
-    // Mounted with no input, script focus counts as keyboard focus and draws the highlight. On a phone the sheet opens
-    // from a tap, so focus the list by a tap (on the current state, which picks nothing new) to shoot it as a phone sees it.
-    await sheet.getByTestId(ids.stateMenuOption).nth(2).tap();
+    // Mounted with no input, the list's script focus counts as keyboard focus and draws the keyboard highlight. On a
+    // phone the sheet opens from a tap and shows none (item-state-sheet), so tap the title to shoot it as a phone sees it.
+    await sheet.getByTestId(touchTestIds.sheetTitle).tap();
+    await expect(sheet.getByTestId(ids.stateMenu)).not.toBeFocused();
     await expect(sheet).toHaveScreenshot(`state-menu-sheet.${theme}.png`, {
       animations: 'disabled',
     });
