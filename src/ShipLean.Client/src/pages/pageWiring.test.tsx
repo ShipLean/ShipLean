@@ -322,7 +322,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
 
 const metricsView = inspectionView as InspectionMetricsViewDto;
 
-test.each(['overview', 'leadtime', 'period', 'quality', 'json'] as const)(
+test.each(['overview', 'leadtime', 'period', 'quality', 'cost', 'json'] as const)(
   'inspectionMetricsSlots_WhenViewIs_%s_ShouldMountOnlyThatSlot',
   (name) => {
     const slots = inspectionMetricsSlots(

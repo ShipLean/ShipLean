@@ -21,6 +21,7 @@ import { JsonView } from '../features/inspectionMetrics/json/JsonView';
 import { LeadTimeView } from '../features/inspectionMetrics/leadtime/LeadTimeView';
 import { OverviewView } from '../features/inspectionMetrics/overview/OverviewView';
 import { PeriodView } from '../features/inspectionMetrics/period/PeriodView';
+import { CostView } from '../features/inspectionMetrics/cost/CostView';
 import { QualityView } from '../features/inspectionMetrics/quality/QualityView';
 import { inspectionMetricsTestIds as ids } from '../features/inspectionMetrics/testIds';
 import { inspectionMetricsSlots } from './inspectionMetricsSlots';
@@ -34,6 +35,7 @@ const VIEWS: Record<InspectionView, ComponentType<InspectionViewProps>> = {
   leadtime: LeadTimeView,
   period: PeriodView,
   quality: QualityView,
+  cost: CostView,
   json: JsonView,
 };
 

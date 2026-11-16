@@ -194,4 +194,12 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(view.periodDetail?.quality?.foundBeforeRelease).toBe(
     bugs.filter((b) => b.foundBeforeRelease).length,
   );
+
+  // Cost (CK2): every period by id, one before the store kept runs, one with no merged PR, a person's task and a task with no Feature.
+  const cost = view.cost;
+  expect(cost?.periods.map((p) => p.periodId)).toEqual(view.periods.map((p) => p.id));
+  expect(cost?.periods.some((p) => !p.stats.kept && p.stats.tokensPerTask === null)).toBe(true);
+  expect(cost?.periods.some((p) => p.stats.kept && p.stats.tokensPerMergedPr === null)).toBe(true);
+  expect(cost?.mostTokens.some((t) => !t.agent)).toBe(true);
+  expect(cost?.byFeature.some((f) => f.key === null)).toBe(true);
 });

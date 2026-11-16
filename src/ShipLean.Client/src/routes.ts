@@ -377,7 +377,9 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
         ? 'Lead time'
         : q.view === 'quality'
           ? 'Quality'
-          : 'Overview',
+          : q.view === 'cost'
+            ? 'Cost'
+            : 'Overview',
     ],
   },
   jiraImport: {
