@@ -27,7 +27,9 @@ for (const { name, variant, shot } of CASES) {
     test(`${name}_WhenDisabled_ShouldLookDisabled_${theme}`, async ({ mount, page }) => {
       await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
       await mount(<ButtonStatesHarness variant={variant} />);
-      await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
+      await page.addStyleTag({
+        content: '*, *::before, *::after { transition: none !important; }',
+      });
 
       await expect(page.getByTestId(ids.ctButtonEnabled)).toHaveCSS('opacity', '1');
       await expect(page.getByTestId(ids.ctButtonDisabled)).toBeDisabled();

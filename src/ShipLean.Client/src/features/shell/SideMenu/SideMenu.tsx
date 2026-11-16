@@ -76,7 +76,10 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
       aria-label="Project navigation"
       className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
     >
-      <div data-testid={ids.sideMenuWordmark} className="flex min-h-[26px] items-center justify-between">
+      <div
+        data-testid={ids.sideMenuWordmark}
+        className="flex min-h-[26px] items-center justify-between"
+      >
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
           <i className="inline-block size-3.5 rounded-[4px] bg-signal" />
           ShipLean
