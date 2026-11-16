@@ -215,7 +215,10 @@ test('TouchPager_OnTheTaskboardPage_ShouldPeekTheNextPage', async ({ mount, page
   expect(peek).toBeGreaterThanOrEqual(30);
   expect(peek).toBeLessThanOrEqual(36);
   // And nothing clips it: 15px in from the screen edge is the second page itself.
-  const secondId = await page.getByTestId(touchTestIds.pagerPage).nth(1).getAttribute('data-page-id');
+  const secondId = await page
+    .getByTestId(touchTestIds.pagerPage)
+    .nth(1)
+    .getAttribute('data-page-id');
   const hit = await page.evaluate(
     ({ x, y, pageTestId }) =>
       document
