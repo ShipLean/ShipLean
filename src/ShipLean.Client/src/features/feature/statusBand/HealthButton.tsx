@@ -76,7 +76,9 @@ export function HealthButton({
         title="Health"
         actions={actions}
         onClose={() => setOpen(false)}
-        footer={<span data-testid={ids.healthSheetFootnote}>Saved with the Feature. Save writes it.</span>}
+        footer={
+          <span data-testid={ids.healthSheetFootnote}>Saved with the Feature. Save writes it.</span>
+        }
       />
     </>
   );

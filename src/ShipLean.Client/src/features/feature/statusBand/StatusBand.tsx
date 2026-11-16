@@ -139,7 +139,11 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
             {healthSet.atLabel}
           </span>
         ) : null}
-        {touch ? (editing ? healthButton : null) : (
+        {touch ? (
+          editing ? (
+            healthButton
+          ) : null
+        ) : (
           <HealthSelect health={draft.health} onChange={(health) => setField({ health })} />
         )}
       </div>
