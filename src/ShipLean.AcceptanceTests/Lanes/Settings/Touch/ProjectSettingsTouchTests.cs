@@ -109,7 +109,8 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
     {
         var settings = new ProjectSettingsTouch(Page);
         await settings.OpenAsync();
-        await settings.Name.FillAsync("Storefront Two");
+        // Not "Storefront Two": the General test saves that name on the class's shared seed.
+        await settings.Name.FillAsync("Storefront Draft");
 
         await settings.Back.TapAsync();
 
@@ -118,7 +119,7 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
         await Expect(settings.Unsaved).ToHaveTextAsync("1 unsaved change");
 
         await settings.IndexRow("General").TapAsync();
-        await Expect(settings.Name).ToHaveValueAsync("Storefront Two");
+        await Expect(settings.Name).ToHaveValueAsync("Storefront Draft");
     }
 
     [Test]
@@ -149,7 +150,9 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
     {
         await Page.GotoAsync(Links.BoardSettings("SHIP", "stories", "styles"));
 
-        await Expect(Page.GetByTestId(SettingsDialogTestIds.ProjectChip)).ToHaveTextAsync("Storefront · SHIP");
+        // The class shares one seed, and the General test saves the name "Storefront Two".
+        await Expect(Page.GetByTestId(SettingsDialogTestIds.ProjectChip))
+            .ToHaveTextAsync(new Regex("^Storefront( Two)? · SHIP$"));
     }
 
     [Test]
