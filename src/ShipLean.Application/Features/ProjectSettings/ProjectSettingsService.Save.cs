@@ -1,4 +1,7 @@
+using System.Collections.ObjectModel;
 using System.Data.Common;
+using System.Globalization;
+using System.Text.Json;
 using Dapper;
 using Microsoft.Extensions.Logging;
 using ShipLean.Application.Integrations;
@@ -162,7 +165,28 @@ public sealed partial class ProjectSettingsService
         }
 
         return new ProjectGeneralPut(
-            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.HolidayCountry, general.Provided);
+            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.HolidayCountry, general.Provided, CheckWeights(general.BugSeverityWeights));
+    }
+
+    // Exactly the severities 1 (critical) to 4 (low), each a positive whole number: Inspection's weighted count reads all four.
+    private static ReadOnlyDictionary<int, int>? CheckWeights(IReadOnlyDictionary<int, int>? weights)
+    {
+        if (weights is null)
+        {
+            return null;
+        }
+
+        if (weights.Count != 4 || !Enumerable.Range(1, 4).All(weights.ContainsKey))
+        {
+            throw ApiException.Validation("Give a weight for each severity, 1 to 4.", "bugSeverityWeights");
+        }
+
+        if (weights.Values.Any(w => w < 1))
+        {
+            throw ApiException.Validation("A severity weight is a whole number of at least 1.", "bugSeverityWeights");
+        }
+
+        return new ReadOnlyDictionary<int, int>(weights.ToDictionary(w => w.Key, w => w.Value));
     }
 
     // An agent field the body left out keeps its saved value (already valid, so it is not checked again).
@@ -174,6 +198,7 @@ public sealed partial class ProjectSettingsService
             RepoBaseBranch = general.Provided.HasFlag(ProvidedAgentFields.RepoBaseBranch) ? general.RepoBaseBranch : current.RepoBaseBranch,
             HolidayCountry = general.Provided.HasFlag(ProvidedAgentFields.HolidayCountry) ? general.HolidayCountry : current.HolidayCountry,
             Provided = ProvidedAgentFields.All,
+            BugSeverityWeights = general.BugSeverityWeights ?? current.Weights,
         };
 
     // A connection can be picked only while it is not archived; keeping the one already chosen is always allowed.
@@ -311,12 +336,14 @@ public sealed partial class ProjectSettingsService
             """
             UPDATE project SET name = @name, description = @description, working_days = @days::smallint[],
                                velocity_window = @window, velocity_override = @override, sprint_naming = @naming, updated_at = @now,
-                               agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch, holiday_country = @holidayCountry::char(2)
+                               agent_connection_id = @agentConnectionId, repo_url = @repoUrl, repo_base_branch = @repoBaseBranch, holiday_country = @holidayCountry::char(2),
+                               bug_severity_weights = @weights::jsonb
             WHERE id = @projectId
             """,
             new { projectId, name = general.Name, description = general.Description, days = general.WorkingDays.ToArray(), window = forecast.VelocityWindow, @override = forecast.VelocityOverride,
                 naming = forecast.SprintNaming == SprintNaming.YearQuarterNumber ? "yearQuarterNumber" : "number",
-                general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, general.HolidayCountry, now = clock.GetUtcNow() },
+                general.AgentConnectionId, general.RepoUrl, general.RepoBaseBranch, general.HolidayCountry, now = clock.GetUtcNow(),
+                weights = JsonSerializer.Serialize(general.BugSeverityWeights!.ToDictionary(w => w.Key.ToString(CultureInfo.InvariantCulture), w => w.Value)) },
             transaction, cancellationToken: cancellationToken));
         if (updated == 0)
         {
