@@ -7,7 +7,8 @@ import { retroSharedTestIds as ids } from '../testIds';
 import { NoteDecision } from './NoteDecision';
 import { NoteMeta } from './NoteMeta';
 import { NoteMore } from './NoteMore';
-import { NoteThemeLine, NoteThemeSheet } from './NoteThemeLine';
+import { NoteThemeLine } from './NoteThemeLine';
+import { NoteThemeSheet } from './NoteThemeSheet';
 import { useRetroNoteWrites } from './useRetroNoteWrites';
 
 /**
@@ -54,7 +55,7 @@ export function RetroNote({
       className="paper paper-postit paper-sheet relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5 rounded-[2px] border px-2.5 py-2 text-[length:var(--text-sm)] touch:gap-2 touch:px-3 touch:py-2.5 touch:text-[length:var(--text-base)] [overflow-wrap:anywhere] [&[data-decision=notNeeded]>:not([data-testid=retro-note-none])]:opacity-[0.62] data-[highlighted=true]:outline-2 data-[highlighted=true]:outline-offset-1 data-[highlighted=true]:outline-[var(--theme-accent)]"
     >
       {point.canArchive ? (
-        <NoteMore pointId={point.id} writes={writes} onMoveTheme={openThemeSheet} />
+        <NoteMore point={point} writes={writes} onMoveTheme={openThemeSheet} />
       ) : null}
       <p className={`m-0 ${point.canArchive ? 'pr-4 touch:pr-[30px]' : ''}`}>{point.text}</p>
       {point.rootCause ? (

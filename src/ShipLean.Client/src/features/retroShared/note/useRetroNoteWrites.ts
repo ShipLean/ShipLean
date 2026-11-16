@@ -14,12 +14,12 @@ export function useRetroNoteWrites(projectId: string) {
   const refresh = () => queryClient.invalidateQueries({ queryKey: retrosRootKey(projectId) });
   const notify = (failure: Error) => showToast(failure.message, { tone: 'danger' });
   const moveTheme = useMutation({
-    mutationFn: (v: { pointId: string; pick: string | { name: string } }) =>
+    mutationFn: (v: { pointId: string; pick: string | { name: string } | null }) =>
       putRetroPointTheme(
         v.pointId,
         typeof v.pick === 'string'
           ? { themeId: v.pick, themeName: null }
-          : { themeId: null, themeName: v.pick.name },
+          : { themeId: null, themeName: v.pick?.name ?? null },
       ),
     onSettled: refresh,
     onError: notify,
