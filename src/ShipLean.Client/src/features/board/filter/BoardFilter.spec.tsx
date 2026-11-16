@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import { BoardHarness } from '../ct/BoardHarness';
 import { COLUMNS, TOM, column, featuresBoard, storiesBoard } from '../ct/fixtures';

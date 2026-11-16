@@ -303,7 +303,9 @@ test('BoardMoreSheet_WhenStories_ShouldHintTheLaneOrderAndOfferFullOrCompact', a
   await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
 
-  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText('Expedite above Default lane');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText(
+    'Expedite above Default lane',
+  );
   await expect(sheet.getByTestId(ids.cardsOption)).toHaveText(['Full', 'Compact']);
   // One row: the label and the segmented control share a line.
   const [label, full] = await Promise.all([

@@ -19,7 +19,10 @@ export function postBacklogSort(
 
 /** POST api/projects/{id}/usage/board-filter-opened: the board's Filter control opened (the sheet on a phone, the bar elsewhere). The server answers 204. */
 export function postBoardFilterOpened(projectId: string): Promise<void> {
-  return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/board-filter-opened`, {});
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/board-filter-opened`,
+    {},
+  );
 }
 
 /** POST api/projects/{id}/usage/board-health-filtered: the Features board's Health filter changed to this ('none' = Not set, 'any' = cleared). The server answers 204. */

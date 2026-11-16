@@ -82,11 +82,7 @@ export function BoardToolbar({
           <div className="flex flex-nowrap items-center gap-2 pt-2">
             <LevelSwitch level={level} projectKey={projectKey} />
             <span className="flex-1" />
-            <FilterToggle
-              filter={filter}
-              open={filterOpen}
-              onToggle={toggleFilter}
-            />
+            <FilterToggle filter={filter} open={filterOpen} onToggle={toggleFilter} />
             <BoardMoreSheet
               level={level}
               laneCount={view.lanes.length}
@@ -141,11 +137,7 @@ export function BoardToolbar({
             onChoose={lanes.choose}
           />
           <CardsSwitch compact={compact} onCompact={onCompact} />
-          <FilterToggle
-            filter={filter}
-            open={filterOpen}
-            onToggle={toggleFilter}
-          />
+          <FilterToggle filter={filter} open={filterOpen} onToggle={toggleFilter} />
           <SettingsOpener />
         </div>
       </div>
