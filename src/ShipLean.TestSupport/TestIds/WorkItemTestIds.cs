@@ -165,4 +165,10 @@ public static class WorkItemTestIds
     public const string CommentVia = "work-item-comment-via";
     public const string CommentActionError = "work-item-comment-action-error";
     public const string ParentOpen = "work-item-parent-open";
+
+    // Quality (QT0, SHIP-1398 QK6): a Bug's Found before release checkbox and the Caused by link
+    public const string FoundBeforeRelease = "work-item-found-before-release";
+    public const string FoundBeforeReleaseInput = "work-item-found-before-release-input";
+    public const string LinkAddCausedBy = "work-item-link-add-caused-by";
+    public const string LinkCausedByRow = "work-item-link-caused-by-row";
 }

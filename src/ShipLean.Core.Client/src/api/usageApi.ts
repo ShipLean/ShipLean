@@ -35,7 +35,7 @@ export function postTimelineBarSelected(projectId: string): Promise<void> {
 /** POST api/projects/{id}/usage/inspection-metrics-viewed: an Inspection view shown. The server answers 204. */
 export function postInspectionMetricsViewed(
   projectId: string,
-  view: 'overview' | 'leadtime' | 'period' | 'json',
+  view: 'overview' | 'leadtime' | 'period' | 'quality' | 'json',
 ): Promise<void> {
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-viewed`,

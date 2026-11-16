@@ -21,6 +21,7 @@ import { JsonView } from '../features/inspectionMetrics/json/JsonView';
 import { LeadTimeView } from '../features/inspectionMetrics/leadtime/LeadTimeView';
 import { OverviewView } from '../features/inspectionMetrics/overview/OverviewView';
 import { PeriodView } from '../features/inspectionMetrics/period/PeriodView';
+import { QualityView } from '../features/inspectionMetrics/quality/QualityView';
 import { inspectionMetricsTestIds as ids } from '../features/inspectionMetrics/testIds';
 import { inspectionMetricsSlots } from './inspectionMetricsSlots';
 import { routePath } from '../routes';
@@ -32,6 +33,7 @@ const VIEWS: Record<InspectionView, ComponentType<InspectionViewProps>> = {
   overview: OverviewView,
   leadtime: LeadTimeView,
   period: PeriodView,
+  quality: QualityView,
   json: JsonView,
 };
 

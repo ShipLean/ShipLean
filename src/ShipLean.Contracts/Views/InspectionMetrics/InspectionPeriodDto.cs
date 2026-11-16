@@ -1,7 +1,8 @@
 namespace ShipLean.Contracts.Views.InspectionMetrics;
 
 // One shown sprint, oldest first: its days, calendar quarter (by end date), whether it is running (drawn dashed, so far), its
-// lead-time numbers over the tasks whose lead time ended in it, and a dot per such task for the chart.
+// lead-time numbers over the tasks whose lead time ended in it, a dot per such task for the chart, and its escaping bugs (QK3: null
+// exactly when the project has no live bug at all).
 public sealed record InspectionPeriodDto(
     Guid Id,
     string Name,
@@ -12,4 +13,5 @@ public sealed record InspectionPeriodDto(
     string Quarter,
     bool InProgress,
     LeadTimeStatsDto LeadTime,
-    IReadOnlyList<InspectionDotDto> Dots);
+    IReadOnlyList<InspectionDotDto> Dots,
+    InspectionQualityStatsDto? Quality);

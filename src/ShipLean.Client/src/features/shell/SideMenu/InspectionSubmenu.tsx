@@ -2,7 +2,7 @@ import { routePath, type MatchedRoute } from '../../../routes';
 import { inspectionMetricsTestIds as ids } from '../../inspectionMetrics/testIds';
 import { NavItem } from './NavItem';
 
-// Under Inspection: Overview and Lead time (Quality and Cost join in their waves). A sprint stays under Lead time and the
+// Under Inspection: Overview, Lead time and Quality (Cost joins in its wave). A sprint stays under Lead time and the
 // JSON under Overview, as the design's side menu lights them.
 export function InspectionSubmenu({
   projectKey,
@@ -13,13 +13,14 @@ export function InspectionSubmenu({
 }) {
   const view = route?.id === 'inspectionMetrics' ? (route.query.view ?? 'overview') : undefined;
   const onLeadTime = view === 'leadtime' || view === 'period';
+  const onQuality = view === 'quality';
   return (
     <>
       <NavItem
         sub
         testId={ids.menuOverview}
         to={routePath('inspectionMetrics', { key: projectKey })}
-        active={view !== undefined && !onLeadTime}
+        active={view !== undefined && !onLeadTime && !onQuality}
       >
         Overview
       </NavItem>
@@ -30,6 +31,14 @@ export function InspectionSubmenu({
         active={onLeadTime}
       >
         Lead time
+      </NavItem>
+      <NavItem
+        sub
+        testId={ids.menuQuality}
+        to={routePath('inspectionMetrics', { key: projectKey }, { view: 'quality' })}
+        active={onQuality}
+      >
+        Quality
       </NavItem>
     </>
   );

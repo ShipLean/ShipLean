@@ -7,6 +7,8 @@ export const linkTypeLabels: Record<LinkType, string> = {
   related: 'Related',
   duplicate: 'Duplicate',
   url: 'External URL',
+  // TODO: offered for any item pair, and the server accepts it on any pair; the Bug-to-Task rule in Features/Links replaces it.
+  causedBy: 'Caused by',
 };
 
 const WEB_URL = /^https?:\/\/[^\s/]+\.[^\s]+$/;

@@ -122,6 +122,7 @@ export const crashBug: WorkItemDto = {
   reproStepsHtml:
     '<ol><li>Open the app on Android 14</li><li>Start a saved-card payment</li><li>Cancel the biometric prompt</li></ol>',
   severity: 2,
+  foundBeforeRelease: false,
   state: { id: 's-b-triaged', name: 'Triaged', category: 'proposed' },
   assignee: PEOPLE.sam,
   tags: ['Mobile', 'Payments'],

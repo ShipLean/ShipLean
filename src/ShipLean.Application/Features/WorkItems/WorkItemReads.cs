@@ -153,6 +153,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             repro.Markdown,
             repro.Html,
             row.Severity,
+            row.FoundBeforeRelease,
             states[row.StateId],
             Lookup(users, row.AssigneeId),
             Lookup(users, row.CreatedBy),

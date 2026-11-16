@@ -76,6 +76,8 @@ export interface ProjectGeneralSettings {
   /** ISO code of the country whose public holidays the project skips; null means None. */
   holidayCountry: string | null;
   agentConnections: AgentConnectionOption[];
+  /** A bug's severity (1 critical to 4 low) to its weight in Inspection's weighted escaping-bug count (SHIP-1398 item D16), keyed '1' to '4'. */
+  bugSeverityWeights: Record<string, number>;
 }
 
 /** How the project names the sprints it makes by default; changing it renames nothing. */

@@ -87,6 +87,8 @@ export interface WorkItemDto {
   reproSteps: string;
   reproStepsHtml: string;
   severity: number | null;
+  /** A Bug's Found before release (SHIP-1398 item D17); false on every other type. */
+  foundBeforeRelease: boolean;
   state: StateRef;
   assignee: UserRef | null;
   createdBy: UserRef | null;
@@ -148,6 +150,8 @@ export interface WorkItemChanges {
   acceptanceCriteria: FieldSet<ChecklistItem[]> | null;
   reproSteps: FieldSet<string> | null;
   severity: FieldSet<number | null> | null;
+  /** Bug only (SHIP-1398 item D17); optional so existing writers that never send it stay as they are. */
+  foundBeforeRelease?: FieldSet<boolean> | null;
   state: FieldSet<string> | null;
   assignee: FieldSet<string | null> | null;
   sprint: FieldSet<string | null> | null;

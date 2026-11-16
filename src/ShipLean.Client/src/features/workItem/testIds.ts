@@ -160,4 +160,9 @@ export const workItemTestIds = {
   commentVia: 'work-item-comment-via',
   commentActionError: 'work-item-comment-action-error',
   parentOpen: 'work-item-parent-open',
+  // Quality (QT0, SHIP-1398 QK6): a Bug's Found before release checkbox and the Caused by link
+  foundBeforeRelease: 'work-item-found-before-release',
+  foundBeforeReleaseInput: 'work-item-found-before-release-input',
+  linkAddCausedBy: 'work-item-link-add-caused-by',
+  linkCausedByRow: 'work-item-link-caused-by-row',
 } as const;
