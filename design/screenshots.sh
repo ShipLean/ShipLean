@@ -17,6 +17,7 @@ fi
 declare -A variants=(
   [taskboard-people]="taskboard.html?view=people"
   [taskboard-settings]="taskboard.html?dialog=settings"
+  [taskboard-settings-story]="taskboard.html?dialog=settings&ftype=story"
   [taskboard-styles]="taskboard.html?dialog=settings&pane=styles"
   [backlog-tree]="backlog.html?tree"
   [backlog-selected]="backlog.html?state=selected"

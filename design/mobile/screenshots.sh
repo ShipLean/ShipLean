@@ -303,6 +303,8 @@ declare -A shots=(
   [settings-board-styles-dirty]="board-settings.html?pane=styles&dirty"
   # Sprint demo: the requested status (SHIP-1908); Remake demo shows on every Ready state (demo-ready*, demo-youtube-*)
   [demo-requested]="sprint-demo.html?state=requested"
+  # Taskboard settings › Fields on row headers (SHIP-1868): User Story picked, Tags gone, Task progress under the groups
+  [tboard-settings-fields-story]="taskboard.html?dialog=settings&ftype=story"
 )
 
 names=("$@")
