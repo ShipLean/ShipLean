@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.DeviceSessions;
@@ -10,6 +11,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.DeviceSessions;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Features.DeviceSessions;
 using ShipLean.WebApi.Tests.Auth;
@@ -207,6 +209,29 @@ public class DeviceSessionsApiTests : ApiFixture
         fromFirst.Single(s => s.Id == second.Id).Current.ShouldBeFalse();
         fromBrowser.ShouldAllBe(s => !s.Current);
         fromBrowser.Select(s => s.Id).ShouldContain(first.Id);
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to ShortDay in DeviceSessionDtos.
+    [Test]
+    public async Task DeviceSessions_WhenViewerIsInBangkok_ShouldDateASessionByTheBangkokDay()
+    {
+        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, "Zone phone");
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE device_session SET created_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = phone.Id });
+        }
+        using (var put = await _browser.PutAsJsonAsync("/api/me/time-zone", new { timeZone = ViewerZoneTestData.BangkokId, source = "profile" }))
+        {
+            put.StatusCode.ShouldBe(HttpStatusCode.OK);
+        }
+
+        var list = (await _browser.GetFromJsonAsync<List<DeviceSessionDto>>(Base, AuthClient.Json))!;
+
+        // 20:00 UTC is 03:00 the next day in Bangkok; two years old, so the label is the short day with its year.
+        var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var utcDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        bangkokDay.ShouldNotBe(utcDay);
+        list.Single(s => s.Id == phone.Id).CreatedLabel.ShouldBe(bangkokDay);
     }
 
     [Test]

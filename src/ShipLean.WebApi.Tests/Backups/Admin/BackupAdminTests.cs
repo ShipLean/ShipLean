@@ -16,6 +16,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Backups;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Backups.Admin;
 
@@ -492,6 +493,31 @@ public class BackupAdminTests
         config.IncludeAttachments.ShouldBeTrue();
         config.AttachmentsInDatabase.ShouldBeFalse();
         config.UpdatedAt.ShouldBe(Start);
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative call in BackupRunLabels.
+    [Test]
+    public async Task BackupRuns_WhenViewerIsInBangkok_ShouldDateARunByTheBangkokDay()
+    {
+        await SaveAsync(SaveBody());
+        var log = _host.Services.GetRequiredService<IBackupRunLog>();
+        await using (var run = await StartManualAsync(log))
+        {
+            (await log.SucceedAsync(run.Run.Id, new BackupOutcome("shiplean/database/one.dump.slbk", 10, 0, 0))).ShouldBeTrue();
+        }
+        await using (var connection = await _database.OpenAsync())
+        {
+            await connection.ExecuteAsync("UPDATE backup_run SET started_at = @at", new { at = ViewerZoneTestData.LateEveningUtc });
+        }
+        await ViewerZoneArrange.SetAsync(_api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+
+        var label = (await GetAsync())["runs"]![0]!["startedLabel"]!.GetValue<string>();
+
+        // 20:00 UTC is 03:00 the next day in Bangkok; two years old, so the label is the short day with its year.
+        var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var utcDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        bangkokDay.ShouldNotBe(utcDay);
+        label.ShouldBe(bangkokDay);
     }
 
     private static JsonObject SaveBody()
