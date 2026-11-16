@@ -83,15 +83,7 @@ const expectMarked = (names: string[]) => vi.waitFor(() => expect(marked()).toEq
 
 test('RetroChanged_WhenEventIsForAnotherSprintAndItem_ShouldMarkOnlyTheProjectWideReads', async () => {
   deliver(['s23'], ['w-other']);
-  await expectMarked([
-    'search',
-    'insights',
-    'themes',
-    'features',
-    'retroItem',
-    'dialog',
-    'action',
-  ]);
+  await expectMarked(['search', 'insights', 'themes', 'features', 'retroItem', 'dialog', 'action']);
 });
 
 test('RetroChanged_WhenEventIsForThisSprintAndItem_ShouldMarkThemAndTheProjectReads', async () => {
