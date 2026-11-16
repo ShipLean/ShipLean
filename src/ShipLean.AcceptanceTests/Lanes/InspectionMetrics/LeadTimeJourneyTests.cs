@@ -98,7 +98,7 @@ public class LeadTimeJourneyTests : SeededAcceptanceTest
         var periodId = period.GetProperty("id").GetString()!;
         var detail = await CallAsync(mcp, "inspection_metrics", new() { ["project"] = Project, ["period"] = periodId });
         var task = detail.GetProperty("period_detail").GetProperty("tasks").EnumerateArray().Single(t => t.GetProperty("key").GetString() == _task);
-        task.GetProperty("ended_by").GetString().ShouldBe("lastCommit");
+        task.GetProperty("ended_by").GetString().ShouldBe("last_commit");
         task.GetProperty("ended_at").GetDateTimeOffset().ShouldBe(committedAt);
         task.GetProperty("lead_hours").GetDouble().ShouldBe(5d);
         var endedLabel = task.GetProperty("ended_label").GetString()!;
