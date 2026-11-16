@@ -7,9 +7,14 @@ const path = require('node:path');
 // getTimezoneOffset, getUTC*) and the date libraries. Date.now(), Date.parse() and Date.UTC() stay allowed (epoch
 // numbers for timers and comparisons), and so does a number's toLocaleString.
 //
+// Static computed access (`Intl['DateTimeFormat']`, `at['getHours']()`) and the globals' Date and Intl
+// (`new globalThis.Date()`, `window.Intl.DateTimeFormat`) count too. A non-Date `getHours`, or a non-number
+// `toLocaleString`, is not told apart (no type information).
+//
 // Options: `allowlist`, files (from the package root) the rule skips while their lane fixes them
 // (eslint/dates-allowlist.json); `exceptions`, permanent `{ file, allow }` entries that allow only the named constructs
-// in that one file (e.g. `{ file: 'src/actions/clock.ts', allow: ['new Date'] }`).
+// in that one file (e.g. `{ file: 'src/actions/clock.ts', allow: ['new Date'] }`). An allowed 'Intl.DateTimeFormat'
+// covers only one read of the browser's zone, `Intl.DateTimeFormat().resolvedOptions().timeZone`, once in the file.
 
 const GETTERS = new Set([
   'getHours',
@@ -34,15 +39,52 @@ const GETTERS = new Set([
 const LOCALE_FORMATS = new Set(['toLocaleDateString', 'toLocaleTimeString']);
 const INTL_FORMATS = new Set(['DateTimeFormat', 'RelativeTimeFormat']);
 const LIBRARIES = /^(dayjs|date-fns|moment|luxon)(\/|$)/;
+const GLOBALS = new Set(['globalThis', 'window', 'self', 'global']);
 
 function relativeToPackage(context) {
   return path.relative(context.cwd, context.filename).split(path.sep).join('/');
 }
 
+// The property's name for `a.name`, `a['name']` and a template literal without holes; undefined when computed.
 function propertyName(member) {
-  return !member.computed && member.property.type === 'Identifier'
-    ? member.property.name
-    : undefined;
+  const property = member.property;
+  if (!member.computed) return property.type === 'Identifier' ? property.name : undefined;
+  if (property.type === 'Literal' && typeof property.value === 'string') return property.value;
+  if (property.type === 'TemplateLiteral' && property.expressions.length === 0)
+    return property.quasis[0].value.cooked;
+  return undefined;
+}
+
+// `name`, or the global object's `name` (`globalThis.Date`, `window['Intl']`).
+function isGlobal(node, name) {
+  if (node.type === 'Identifier') return node.name === name;
+  return (
+    node.type === 'MemberExpression' &&
+    node.object.type === 'Identifier' &&
+    GLOBALS.has(node.object.name) &&
+    propertyName(node) === name
+  );
+}
+
+// True for the `Intl.DateTimeFormat` of `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+function isZoneRead(node) {
+  const call = node.parent;
+  if (call?.type !== 'CallExpression' || call.callee !== node || call.arguments.length > 0)
+    return false;
+  const options = call.parent;
+  if (
+    options?.type !== 'MemberExpression' ||
+    options.object !== call ||
+    propertyName(options) !== 'resolvedOptions'
+  )
+    return false;
+  const read = options.parent;
+  if (read?.type !== 'CallExpression' || read.callee !== options || read.arguments.length > 0)
+    return false;
+  const zone = read.parent;
+  return (
+    zone?.type === 'MemberExpression' && zone.object === read && propertyName(zone) === 'timeZone'
+  );
 }
 
 const noClientDates = {
@@ -77,8 +119,17 @@ const noClientDates = {
         .flatMap((entry) => entry.allow),
     );
 
+    let zoneReads = 0;
+    function isAllowed(node, construct) {
+      if (!allowed.has(construct)) return false;
+      if (construct !== 'Intl.DateTimeFormat') return true;
+      if (!isZoneRead(node)) return false;
+      zoneReads += 1;
+      return zoneReads === 1;
+    }
+
     function report(node, construct) {
-      if (!allowed.has(construct))
+      if (!isAllowed(node, construct))
         context.report({ node, messageId: 'banned', data: { construct } });
     }
 
@@ -88,18 +139,11 @@ const noClientDates = {
 
     return {
       NewExpression(node) {
-        if (node.callee.type === 'Identifier' && node.callee.name === 'Date')
-          report(node, 'new Date');
+        if (isGlobal(node.callee, 'Date')) report(node, 'new Date');
       },
       MemberExpression(node) {
         const name = propertyName(node);
-        if (
-          node.object.type === 'Identifier' &&
-          node.object.name === 'Intl' &&
-          INTL_FORMATS.has(name)
-        ) {
-          report(node, `Intl.${name}`);
-        }
+        if (isGlobal(node.object, 'Intl') && INTL_FORMATS.has(name)) report(node, `Intl.${name}`);
       },
       CallExpression(node) {
         if (node.callee.type === 'MemberExpression') {
