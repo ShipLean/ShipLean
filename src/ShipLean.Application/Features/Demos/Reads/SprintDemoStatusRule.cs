@@ -46,6 +46,19 @@ internal static class SprintDemoStatusRule
         return (SprintDemoStatus.Requested, null);
     }
 
+    // P5: the session-ended Failed message split into ShipLean's sentence and the agent's words; null when Decide gives anything else.
+    public static SprintDemoAgentSaidDto? Said(SprintDemoFacts facts, DateTimeOffset now)
+    {
+        var (status, message) = Decide(facts, now);
+        if (status != SprintDemoStatus.Failed || facts.LatestSessionState is not { } state || SprintDemoAgentMessage.Excerpt(facts.LatestSessionMessage) is not { } excerpt)
+        {
+            return null;
+        }
+
+        var ended = SessionEnded(state);
+        return message == ended + Quote(facts.LatestSessionMessage) ? new SprintDemoAgentSaidDto(ended, excerpt) : null;
+    }
+
     // C5 (D8): any terminal state of a session that ended at or after the request with no video since is Failed.
     private static string SessionEnded(string state)
         => state == "completed" ? CompletedWithoutVideo : $"The agent session ended as {state} before a video came back.";

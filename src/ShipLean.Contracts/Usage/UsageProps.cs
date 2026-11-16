@@ -14,6 +14,12 @@ public static class UsageProps
     public const string Column = "column";
     public const string Direction = "direction";
 
+    // The Health a board was filtered to, on board.health_filtered: onTrack, atRisk, blocked, none (Not set) or any (the filter cleared).
+    public const string Health = "health";
+
+    // The board a Filter control was opened on, on board.filter_opened: features, stories or epics.
+    public const string Level = "level";
+
     // The backlog mode (list, planning or tree) on screen.viewed for a backlog screen, so a mode's views compare with the page's.
     public const string Mode = "mode";
 

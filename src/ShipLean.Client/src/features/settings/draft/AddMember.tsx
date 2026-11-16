@@ -39,13 +39,13 @@ export function AddMember({ draft, setDraft }: Pick<TabProps, 'draft' | 'setDraf
 
   return (
     <div>
-      <div className="flex gap-2 touch:flex-col">
+      <div className="flex gap-2">
         <input
           type="email"
           data-testid={settingsTestIds.memberAddEmail}
           aria-label="Email of the person to add"
           placeholder="Add a member by their full email"
-          className="h-7 w-72 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink touch:min-h-[var(--touch-target)] touch:w-full"
+          className="h-7 w-72 rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink touch:min-h-[var(--touch-target)] touch:w-auto touch:min-w-0 touch:flex-1"
           value={email}
           autoComplete="off"
           onChange={(e) => setEmail(e.target.value)}
@@ -57,7 +57,7 @@ export function AddMember({ draft, setDraft }: Pick<TabProps, 'draft' | 'setDraf
           type="button"
           data-testid={settingsTestIds.memberAdd}
           disabled={busy || email.trim() === ''}
-          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink disabled:opacity-50 touch:min-h-[var(--touch-target)] touch:w-full"
+          className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] font-medium text-ink disabled:opacity-50 touch:min-h-[var(--touch-target)] touch:flex-none"
           onClick={() => void add()}
         >
           Add

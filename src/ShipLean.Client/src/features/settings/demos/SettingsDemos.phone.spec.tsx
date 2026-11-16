@@ -71,12 +71,9 @@ for (const theme of THEMES) {
       }),
     );
     expect(segments).toHaveLength(3);
-    expect(new Set(segments.map((s) => s.width)).size).toBe(1);
     for (const segment of segments) expect(segment.height).toBeGreaterThanOrEqual(32);
-    // Side by side: one row, each a third of the group.
+    // Side by side: one row.
     expect(new Set(segments.map((s) => s.y)).size).toBe(1);
-    const group = (await visibility.boundingBox())!;
-    for (const segment of segments) expect(segment.width).toBeLessThan(group.width / 3 + 1);
     // The untouched connected panel, before any tap changes the visibility or opens the disconnect confirm.
     await expect(youtube).toHaveScreenshot(`settings-demos-youtube-phone.${theme}.png`, {
       animations: 'disabled',
@@ -101,3 +98,29 @@ for (const theme of THEMES) {
     expect(confirm.width).toBeGreaterThan((await youtube.boundingBox())!.width - 40);
   });
 }
+
+// ND3a-11 (SHIP-1809 P7): the visibility is one row of plain radios packed to the left, not three boxed cards with notes.
+test('DemosPhone_WhenYouTubeConnected_ShouldShowVisibilityAsOneRowOfPlainRadios', async ({
+  mount,
+  page,
+}) => {
+  await page.route('**/api/projects/*/demo-settings', (route) =>
+    route.fulfill({ json: { ...settings, youTube: connected } }),
+  );
+  await mount(<SettingsDemosHarness project={admin} />, hooks);
+  const visibility = page.getByTestId(ids.youtubeVisibility);
+  await expect(visibility).toBeVisible();
+  const segments = visibility.locator('> span');
+  await expect(segments).toHaveCount(3);
+  await expect(segments.first()).toHaveCSS('border-top-width', '0px');
+  const [group, first, last] = await Promise.all([
+    visibility.boundingBox(),
+    segments.first().boundingBox(),
+    segments.last().boundingBox(),
+  ]);
+  if (!group || !first || !last) throw new Error('visibility not drawn');
+  // One line, and the three take well under the row: no notes beside each radio and no equal thirds.
+  expect(Math.abs(last.y - first.y)).toBeLessThanOrEqual(1);
+  expect(last.x + last.width - first.x).toBeLessThan(group.width * 0.8);
+  await expect(visibility.getByLabel('Unlisted', { exact: true })).toBeChecked();
+});

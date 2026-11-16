@@ -17,6 +17,28 @@ export function postBacklogSort(
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/backlog-sort`, body);
 }
 
+/** POST api/projects/{id}/usage/board-filter-opened: the Filter control of this board level opened (the sheet on a phone, the bar elsewhere). The server answers 204. */
+export function postBoardFilterOpened(
+  projectId: string,
+  level: 'features' | 'stories' | 'epics',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/board-filter-opened`,
+    { level },
+  );
+}
+
+/** POST api/projects/{id}/usage/board-health-filtered: the Features board's Health filter changed to this ('none' = Not set, 'any' = cleared). The server answers 204. */
+export function postBoardHealthFiltered(
+  projectId: string,
+  health: 'onTrack' | 'atRisk' | 'blocked' | 'none' | 'any',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/board-health-filtered`,
+    { health },
+  );
+}
+
 /** POST api/projects/{id}/usage/timeline-opened: a Feature timeline opened, from the Feature page ('feature') or a link. The server answers 204. */
 export function postTimelineOpened(projectId: string, from: 'feature' | 'link'): Promise<void> {
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/timeline-opened`, {

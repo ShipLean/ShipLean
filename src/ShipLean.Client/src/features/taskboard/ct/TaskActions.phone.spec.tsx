@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import type { TaskboardMoveRequest } from '../taskboardApi';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { taskboardTestIds as ids } from '../testIds';
 import { AddressProbe } from './AddressProbe';
@@ -116,6 +117,48 @@ test('TaskActions_WhenCardSwiped_ShouldNotStartAPointerDrag', async ({ mount, pa
   );
   expect(touchAction).not.toBe('none');
 });
+
+test('TaskMore_StateRows_ShouldMarkTheCurrentState', async ({ mount, page }) => {
+  await mount(<PhoneGridHarness board="feature" />, route);
+
+  await card(page, 'SHIP-173').getByTestId(ids.cardActions).tap();
+  const rows = sheet(page).getByTestId(ids.actionState);
+  await expect(rows).toHaveCount(3);
+  for (const row of await rows.all()) {
+    await expect(row.getByTestId(componentTestIds.stateDot)).toHaveCount(1);
+  }
+  const current = sheet(page).locator(`[data-testid="${ids.actionState}"][aria-current="true"]`);
+  await expect(current).toHaveCount(1);
+  await expect(current).toContainText('New');
+  await expect(current).toContainText('✓');
+  await expect(rows.filter({ hasText: '✓' })).toHaveCount(1);
+});
+
+test('AssigneeSheet_ShouldPutUnassignedLast', async ({ mount, page }) => {
+  await mount(<PhoneGridHarness board="feature" />, route);
+
+  await card(page, 'SHIP-173').getByTestId(ids.cardActions).tap();
+  await sheet(page).locator('[data-action-id="assignee"]').tap();
+  const options = sheet(page).getByTestId(ids.assigneeOption);
+  await expect(options.last()).toContainText('Unassigned');
+  await expect(options.last()).toHaveAttribute('data-person-id', '');
+  await expect(options.first()).not.toContainText('Unassigned');
+  await expect(options.getByTestId(componentTestIds.avatar)).toHaveCount(await options.count());
+});
+
+for (const theme of THEMES) {
+  test(`TaskActions_WhenAssigneeSheetOpen_ShouldMatchTheScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await mount(<PhoneGridHarness board="parent" />, route);
+    await card(page, 'SHIP-173').getByTestId(ids.cardActions).tap();
+    await sheet(page).locator('[data-action-id="assignee"]').tap();
+    await expect(sheet(page).getByTestId(ids.assigneeOption).first()).toBeVisible();
+    await expect(sheet(page)).toHaveScreenshot(`task-assignee-sheet-${theme}.png`);
+  });
+}
 
 for (const theme of THEMES) {
   test(`TaskActions_WhenSheetsOpen_ShouldMatchTheScreenshots_${theme}`, async ({ mount, page }) => {

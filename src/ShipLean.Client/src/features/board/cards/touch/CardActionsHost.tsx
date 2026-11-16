@@ -4,11 +4,10 @@ import { useItemPeek } from '../../../itemPeek/useItemPeek';
 import { CardActionsContext, type CardActions } from './CardActionsContext';
 import { AssignSheet } from './AssignSheet';
 import { CardActionsSheet } from './CardActionsSheet';
-import { CardMoveToSheet } from './CardMoveToSheet';
 
-type Picker = { cardId: string; kind: 'column' | 'lane' | 'assign' };
+type Picker = { cardId: string; kind: 'assign' };
 
-/** Provides `useCardActions` and holds the sheets the actions open: the actions sheet, then Move to or Lane. */
+/** Provides `useCardActions` and holds the sheets the actions open: the actions sheet, then Assign. */
 export function CardActionsHost({
   view,
   onRollupClick,
@@ -41,15 +40,8 @@ export function CardActionsHost({
         actions={value}
         onClose={() => setActionsFor(null)}
       />
-      {picker?.kind === 'assign' ? (
+      {picker ? (
         <AssignSheet view={view} cardId={picker.cardId} onClose={() => setPicker(null)} />
-      ) : picker ? (
-        <CardMoveToSheet
-          view={view}
-          cardId={picker.cardId}
-          kind={picker.kind}
-          onClose={() => setPicker(null)}
-        />
       ) : null}
     </CardActionsContext.Provider>
   );

@@ -5,6 +5,7 @@ import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/c
 import { stubTaskboard } from '../../features/taskboard/ct/stubApi';
 import { sprintHeaderTestIds as headerIds } from '../../features/sprintHeader/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
+import { componentTestIds } from '../../components/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import {
   TASKBOARD_CARD_FIELDS,
@@ -132,18 +133,32 @@ phonePageShots([
         },
       ],
       [
-        // Closed stories come after Unparented today (TBOARD-1): this shoots that order, not the designed one.
+        // Backlog order: the closed lines sit where their rows are, and Unparented is the last lane (TBOARD-1).
         'taskboard-end',
         async (page: Page) => {
-          const last = page
+          const entries = page
             .getByTestId(touchTestIds.pagerPage)
             .first()
-            .getByTestId(taskboardTestIds.closedLine)
-            .last();
-          await last.evaluate((el) =>
-            el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
-          );
-          await expect(last).toBeInViewport({ ratio: 0.9 });
+            .locator(
+              `[data-testid="${taskboardTestIds.lane}"],[data-testid="${taskboardTestIds.closedLine}"]`,
+            );
+          await expect(entries.last()).toHaveAttribute('data-row', 'unparented');
+          await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+          await entries
+            .last()
+            .evaluate((el) =>
+              el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+            );
+          await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
+        },
+      ],
+      [
+        // The lane card's state opens the K1b StateMenu in a sheet, not a native select (SHIP-1830).
+        'taskboard-lane-state',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.rowState).first().tap();
+          await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+          await expect(page.getByTestId(componentTestIds.stateMenu)).toBeVisible();
         },
       ],
       [
@@ -158,7 +173,7 @@ phonePageShots([
         async (page: Page) => {
           await page.getByTestId(taskboardTestIds.filterButton).tap();
           await page.getByTestId(taskboardTestIds.filterSheetRow).nth(1).tap();
-          await expect(page.getByTestId(taskboardTestIds.filterButton)).toHaveText('Filter (1)');
+          await expect(page.getByTestId(taskboardTestIds.filterButton)).toContainText('Filter1');
           await page.getByTestId(touchTestIds.sheetClose).tap();
           await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
           await expect(page.getByTestId(taskboardTestIds.laneHidden).first()).toBeVisible();
@@ -233,4 +248,80 @@ test('TouchPager_OnTheTaskboardPage_ShouldPeekTheNextPage', async ({ mount, page
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
   expect(sideways).toBe(false);
+});
+
+const addBox = async (page: Page) => {
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  await expect(page.getByTestId(taskboardTestIds.addStoryBox)).toBeVisible();
+};
+
+test('AddStoryBox_OnTheTaskboard_ShouldNameTheSprintInItsHelperLine', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  await expect(page.getByTestId(taskboardTestIds.addStoryHelp)).toContainText(
+    'Adds it to Sprint 24, at the bottom.',
+  );
+});
+
+test('AddStoryBox_AtPhoneWidth_ShouldShowTheWholePlaceholderAndOneHelperLine', async ({
+  mount,
+  page,
+}) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  const title = page.getByTestId(taskboardTestIds.addStoryTitle);
+  const cut = await title.evaluate((el) => {
+    // The placeholder's own width: a span in the input's font, since an input can't be asked how much it hides.
+    const probe = document.createElement('span');
+    const style = getComputedStyle(el);
+    const ph = getComputedStyle(el, '::placeholder');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:${ph.fontSize};font-family:${ph.fontFamily};font-weight:${ph.fontWeight}`;
+    probe.textContent = (el as HTMLInputElement).placeholder;
+    document.body.append(probe);
+    const text = probe.getBoundingClientRect().width;
+    probe.remove();
+    const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { text, room };
+  });
+  expect(cut.text, 'the placeholder fits inside the title field').toBeLessThanOrEqual(cut.room);
+  const help = await page.getByTestId(taskboardTestIds.addStoryHelp).evaluate((el) => {
+    const line = parseFloat(getComputedStyle(el).lineHeight);
+    return el.getBoundingClientRect().height / line;
+  });
+  expect(help, 'the helper line is one line').toBeLessThan(1.5);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(sideways).toBe(false);
+});
+
+test('AddStoryBox_AtPhoneWidth_ShouldFitEveryTypeLabelInTheSelect', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  const fit = await page.getByTestId(taskboardTestIds.addStoryType).evaluate((el) => {
+    const select = el as HTMLSelectElement;
+    const style = getComputedStyle(select);
+    const probe = document.createElement('span');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${style.font}`;
+    document.body.append(probe);
+    // Room for the text: the box less its padding and the native chevron (about 20px).
+    const room =
+      select.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 20;
+    const labels = [...select.options].map((option) => {
+      probe.textContent = option.text;
+      return { label: option.text, width: probe.getBoundingClientRect().width, room };
+    });
+    probe.remove();
+    return { labels, clipped: select.scrollWidth > select.clientWidth };
+  });
+  expect(fit.labels.map((l) => l.label)).toEqual(['Story', 'Bug', 'Action']);
+  for (const l of fit.labels)
+    expect(l.width, `${l.label} fits the select`).toBeLessThanOrEqual(l.room);
+  expect(fit.clipped).toBe(false);
 });

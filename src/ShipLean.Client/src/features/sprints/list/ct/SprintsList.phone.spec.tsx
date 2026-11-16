@@ -1,14 +1,16 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectDto } from '@shiplean/core/api/projects';
-import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
+import type { RolloverDto, SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
+import { componentTestIds } from '../../../../components/testIds';
 import { touchTestIds } from '../../../../touch/testIds';
 import { sprintsTestIds as ids } from '../../testIds';
 import { NewSprintRail } from '../../newSprint/NewSprintRail';
 import { SprintsList } from '../SprintsList';
+import { SprintsTouchHead } from '../SprintsTouchHead';
 
 // All sprints on a phone (SHIP-723, L723a): rows with a ⋯ sheet, capacity notes as text and the full-width velocity chart.
-// Runs in the CT phone project.
+// Runs in the CT phone project. ND1 (SHIP-1846): sections, labelled figures, the K1 ⋯ sheet, the empty panel and the head.
 
 const THEMES = ['light', 'dark'] as const;
 
@@ -94,23 +96,172 @@ async function stub(page: Page) {
   });
 }
 
+const rollover: RolloverDto = {
+  sprint: { id: 's24', name: 'Sprint 24', status: 'current' },
+  status: 'pending',
+  items: [
+    {
+      workItemId: 'w1',
+      key: 'SHIP-141',
+      title: 'Pay with saved card',
+      type: 'story',
+      state: { id: 'st', name: 'Active', category: 'inProgress' },
+      assignee: null,
+      points: 5,
+      openTasks: 3,
+      totalTasks: 3,
+      defaultTargetSprintId: 's25',
+    },
+  ],
+  nextSprint: { id: 's25', name: 'Sprint 25', status: 'future' },
+  nextSprintCapacity: 25,
+  nextSprintPoints: 29,
+  endsEarly: false,
+};
+
 const rowOf = (page: Page, name: string) =>
   page
     .getByTestId(ids.listRow)
     .filter({ has: page.getByTestId(ids.rowLink).filter({ hasText: new RegExp(`^${name}$`) }) });
 
-test('SprintsList_WhenRowMoreTapped_ShouldOfferOpenAndEditSprint', async ({ mount, page }) => {
+const sheetActionIds = (page: Page) =>
+  page
+    .getByTestId(touchTestIds.actionSheetRow)
+    .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-action-id')));
+
+// ND1-5 (SHIP-1807 P6). Mutation: dropping the hint from Edit sprint failed the row-text check below.
+test('SprintsList_WhenRowMoreTapped_ShouldOfferTheSprintPagesThenEditAndCloseSprint', async ({
+  mount,
+  page,
+}) => {
   await stub(page);
   await mount(<SprintsList project={project} sprints={sprints} />);
 
   await rowOf(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
 
-  const rows = page.getByTestId(touchTestIds.actionSheetRow);
-  await expect(rows).toHaveText(['Open', 'Edit sprint']);
+  await expect(page.getByTestId(touchTestIds.actionSheetRow).first()).toBeVisible();
+  expect(await sheetActionIds(page)).toEqual([
+    'backlog',
+    'taskboard',
+    'capacity',
+    'retro',
+    'demo',
+    'edit-sprint',
+    'close-sprint',
+  ]);
+  await expect(page.getByTestId(touchTestIds.actionSheetGroup)).toContainText(['Open']);
+  await expect(page.getByTestId(touchTestIds.actionSheetFooter)).toHaveCount(0);
+  await expect(
+    page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="edit-sprint"]`),
+  ).toContainText('Name, dates and goal');
   await page
     .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="edit-sprint"]`)
     .tap();
   await expect(page.getByTestId(ids.editSprint)).toBeVisible();
+});
+
+// ND1-5. Mutation: dropping the status check on Close sprint put close-sprint on Sprint 23's sheet.
+test('SprintsList_WhenFutureOrPastRowMoreTapped_ShouldLeaveOutWhatDoesNotApply', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await rowOf(page, 'Sprint 25').getByTestId(touchTestIds.moreButton).tap();
+  await expect(page.getByTestId(touchTestIds.actionSheetRow).first()).toBeVisible();
+  expect(await sheetActionIds(page)).toEqual(['backlog', 'taskboard', 'capacity', 'edit-sprint']);
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await rowOf(page, 'Sprint 23').getByTestId(touchTestIds.moreButton).tap();
+  await expect(page.getByTestId(touchTestIds.actionSheetRow).first()).toBeVisible();
+  expect(await sheetActionIds(page)).toEqual([
+    'backlog',
+    'taskboard',
+    'capacity',
+    'retro',
+    'demo',
+    'edit-sprint',
+  ]);
+  await expect(page.getByTestId(touchTestIds.actionSheetFooter)).toContainText('Ended.');
+});
+
+// ND1-2 (P2). Mutation: rendering every sprint in one section put all six rows under Current.
+test('SprintsList_WhenOpenedOnPhone_ShouldGroupSprintsUnderCurrentFuturePastHeadings', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  const sections = page.getByTestId(ids.listSection);
+  await expect(sections.locator('h2')).toHaveText(['Current', 'Future · 1', 'Past · 1']);
+  await expect(sections.nth(1).getByTestId(ids.listRow)).toHaveAttribute(
+    'data-sprint',
+    'Sprint 25',
+  );
+  await expect(page.getByTestId(ids.rowStatus)).toHaveCount(0);
+});
+
+// ND1-3 (P4). Mutation: removing the Completed label left "Committed 20 9 so far".
+test('SprintsList_WhenRowShownOnPhone_ShouldLabelCapacityCommittedAndCompleted', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await expect(rowOf(page, 'Sprint 24')).toContainText('Capacity 21Committed 20Completed 9 so far');
+  await expect(rowOf(page, 'Sprint 25')).toContainText(
+    'Capacity 19 · velocityCommitted 20Completed —',
+  );
+});
+
+// ND1-4 (P4). Mutation: removing after:inset-0 from the name link made the goal's centre hit the li, not the link.
+test('SprintsList_WhenRowTappedAwayFromTheName_ShouldHitTheBacklogLink', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  const goal = rowOf(page, 'Sprint 23').getByTestId(ids.rowGoal);
+  await expect(goal).toBeVisible();
+  const box = (await goal.boundingBox())!;
+  const hit = await page.evaluate(
+    ([x, y]) => document.elementFromPoint(x!, y!)?.closest('a')?.getAttribute('data-testid'),
+    [box.x + box.width / 2, box.y + box.height / 2],
+  );
+  expect(hit).toBe(ids.rowLink);
+});
+
+// ND1-6 (P7). Mutation: dropping the empty early return showed the velocity card over an empty list.
+test('SprintsList_WhenNoSprintsOnPhone_ShouldShowOnlyTheEmptyPanel', async ({ mount, page }) => {
+  await stub(page);
+  await page.route('**/api/projects/p1/sprints/next', (route) =>
+    route.fulfill({ json: { name: 'Sprint 1', startDate: '', endDate: '', goal: '' } }),
+  );
+  await mount(<SprintsList project={project} sprints={[]} />);
+
+  await expect(page.getByTestId(ids.listEmpty)).toContainText('No sprints yet');
+  await expect(page.getByTestId(ids.velocity)).toHaveCount(0);
+  await expect(page.getByTestId(ids.listTouch)).toHaveCount(0);
+  await page.getByTestId(ids.listEmptyNew).tap();
+  await expect(page.getByTestId(ids.newSprintName)).toHaveValue('Sprint 1');
+});
+
+// ND1-1 (P1). Mutation: dropping the planning mode from the link sent Plan sprints to the plain Stories list.
+test('SprintsTouchHead_WhenSprintsExist_ShouldShowTheCountAndPlanSprints', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SprintsTouchHead project={project} count={8} />);
+
+  await expect(page.getByTestId(ids.listHead)).toContainText('Storefront · 8 sprints');
+  await expect(page.getByTestId(ids.planSprints)).toHaveAttribute(
+    'href',
+    '/p/SHIP/backlogs/stories?mode=planning',
+  );
 });
 
 test('SprintsList_WhenCapacityHasNotes_ShouldShowThemWithoutHover', async ({ mount, page }) => {
@@ -130,6 +281,39 @@ test('SprintsList_WhenVelocityDrawn_ShouldShowEveryBarsValueAsText', async ({ mo
   // Two sprints ended: the older one's bars are valued by velocityValue, the latest's by velocityLatest.
   await expect(page.getByTestId(ids.velocityValue)).toHaveText(['18', '16']);
   await expect(page.getByTestId(ids.velocityLatest)).toHaveText(['20', '21']);
+});
+
+// Review round 1, finding 1. The stub's window is 3 but only two sprints have ended, so the average covers two.
+// Mutation: counting velocity.window in the caption again said "the last 3 sprints".
+test('SprintsList_WhenFewerSprintsEndedThanTheWindow_ShouldCaptionTheNumberAveraged', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await expect(page.getByTestId(ids.velocityLabel)).toHaveText(
+    'Velocity 19 (dashed): the average completed over the last 2 sprints.',
+  );
+});
+
+// Review round 1, finding 2. Mutation: dropping the CloseSprintSlot render in SprintsList left no dialog after the tap.
+test('SprintsList_WhenCloseSprintTappedInTheSheet_ShouldOpenTheCloseSprintDialog', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await page.route('**/api/sprints/s24/rollover', (route) => route.fulfill({ json: rollover }));
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await rowOf(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
+  await page
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="close-sprint"]`)
+    .tap();
+
+  const dialog = page.getByTestId(componentTestIds.dialog);
+  await expect(dialog).toContainText('Close Sprint 24');
+  await expect(dialog.getByTestId(ids.endRow)).toHaveCount(1);
 });
 
 test('SprintsList_WhenEditSprintClosed_ShouldReturnFocusToTheRowMore', async ({ mount, page }) => {

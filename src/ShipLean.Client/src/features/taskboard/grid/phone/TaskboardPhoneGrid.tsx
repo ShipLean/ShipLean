@@ -10,7 +10,7 @@ import { taskboardTestIds as ids } from '../../testIds';
 import { ClosedStoryLine } from './ClosedStoryLine';
 import { FeaturePeopleLanes, SprintPeopleLanes } from './PhonePeopleLanes';
 import { PhoneStoryLane } from './PhoneStoryLane';
-import { phoneLanes } from './phoneLanes';
+import { phoneLanes, type StoryLane } from './phoneLanes';
 import { stateChips } from './stateChips';
 import { useTeammatePulses } from './teammateMoves';
 import { TaskboardPagerContext, type TaskboardPager } from './TaskboardPagerContext';
@@ -77,30 +77,41 @@ export function TaskboardPhoneGrid({
   };
 
   const storyLanes = (section: PhoneGridSection, stateId: string) => {
-    const { lanes, closed } = phoneLanes(section.rows, stateId, faces);
+    const { entries } = phoneLanes(section.rows, stateId, faces);
+    const laneFor = (lane: StoryLane<Row>, completed: boolean) => (
+      <PhoneStoryLane
+        key={lane.rowId}
+        projectKey={projectKey}
+        projectId={projectId}
+        scope={scope}
+        view={view}
+        lane={lane}
+        stateId={stateId}
+        first={stateId === pages[0]?.id}
+        collapsed={isCollapsed(lane.rowId, completed)}
+        onToggle={() => onToggle(lane.rowId, completed)}
+        onSetState={(next) =>
+          lane.row.parent &&
+          onSetState(lane.row.parent.id, lane.row.parent.key, lane.row.parent.revision, next)
+        }
+      />
+    );
     return (
       <>
-        {lanes.map((lane) => (
-          <PhoneStoryLane
-            key={lane.rowId}
-            projectKey={projectKey}
-            projectId={projectId}
-            scope={scope}
-            view={view}
-            lane={lane}
-            stateId={stateId}
-            first={stateId === pages[0]?.id}
-            collapsed={isCollapsed(lane.rowId, false)}
-            onToggle={() => onToggle(lane.rowId, false)}
-            onSetState={(next) =>
-              lane.row.parent &&
-              onSetState(lane.row.parent.id, lane.row.parent.key, lane.row.parent.revision, next)
-            }
-          />
-        ))}
-        {closed.map((story) => (
-          <ClosedStoryLine key={story.rowId} projectKey={projectKey} story={story} />
-        ))}
+        {entries.map((entry) =>
+          entry.kind === 'lane' ? (
+            laneFor(entry.lane, false)
+          ) : isCollapsed(entry.story.rowId, true) ? (
+            <ClosedStoryLine
+              key={entry.story.rowId}
+              projectKey={projectKey}
+              story={entry.story}
+              onToggle={() => onToggle(entry.story.rowId, true)}
+            />
+          ) : (
+            laneFor(entry.story.lane, true)
+          ),
+        )}
       </>
     );
   };

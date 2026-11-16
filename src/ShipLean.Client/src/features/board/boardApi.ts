@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@shiplean/core/api/client';
+import type { FeatureHealth } from '@shiplean/core/api/screens';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { WorkItemCreate, WriteResult } from '@shiplean/core/api/workItems';
 import { registerInvalidation } from '../../realtime';
@@ -23,6 +24,8 @@ export interface BoardFilterQuery {
   owner?: string[];
   sprint?: string;
   epic?: string;
+  /** One Feature health, or `none` for a Feature with none set (Features board only). */
+  health?: FeatureHealth | 'none';
 }
 
 export interface BoardQuery extends BoardFilterQuery {
@@ -49,6 +52,7 @@ export function boardSearch(query: BoardQuery): string {
   for (const id of query.owner ?? []) params.append('owner', id);
   if (query.sprint) params.set('sprint', query.sprint);
   if (query.epic) params.set('epic', query.epic);
+  if (query.health) params.set('health', query.health);
   for (const cursor of [...(query.older ?? [])].sort()) params.append('older', cursor);
   return params.toString();
 }

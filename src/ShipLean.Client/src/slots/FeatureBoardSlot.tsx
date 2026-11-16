@@ -96,22 +96,28 @@ function LoadedBoard({
   const more: SheetAction[] = [
     {
       id: 'collapse-all',
-      label: 'Collapse all',
+      label: 'Collapse all stories',
       onSelect: () => setToggled(collapseAllMap(view, true)),
     },
     {
       id: 'expand-all',
-      label: 'Expand all',
+      label: 'Expand all stories',
       onSelect: () => setToggled(collapseAllMap(view, false)),
     },
     {
       id: 'card-settings',
       label: 'Card settings',
+      hint: 'Shared with the Taskboard',
+      trailing: 'chevron',
+      group: '',
       onSelect: openCardSettings,
     },
     {
       id: 'open-feature',
-      label: 'Open the Feature',
+      label: `Open ${view.header.key}`,
+      hint: view.header.title,
+      detail: '↗',
+      group: '',
       onSelect: () =>
         void navigate(routePath('workItem', { key: project.key, itemKey: view.header.key })),
     },
@@ -130,10 +136,16 @@ function LoadedBoard({
         onFaceToggle={toggleFace}
         onFacesClear={() => setFaces(new Set())}
         more={more}
+        moreLabel="Feature board"
         onAddStory={() => setAdding(true)}
       />
       {adding ? (
-        <AddStoryBox projectId={project.id} scope={scope} onClose={() => setAdding(false)} />
+        <AddStoryBox
+          projectId={project.id}
+          scope={scope}
+          destination={view.header.key}
+          onClose={() => setAdding(false)}
+        />
       ) : null}
       {!loaded ? (
         <p data-testid={boardIds.loading} className="p-4 text-ink-muted">

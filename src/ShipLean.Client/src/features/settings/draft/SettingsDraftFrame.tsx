@@ -17,7 +17,7 @@ export function SettingsDraftFrame({
   inspection = null,
 }: {
   project: ProjectDto;
-  tab: ProjectSettingsTab;
+  tab: ProjectSettingsTab | undefined;
   states: ReactNode;
   integrations: ReactNode;
   demos: ReactNode;
