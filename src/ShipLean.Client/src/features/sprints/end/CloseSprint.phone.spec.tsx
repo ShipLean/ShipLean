@@ -70,7 +70,8 @@ async function openDialog(mount: (c: React.JSX.Element) => Promise<unknown>, pag
   await expect(page.getByTestId(ids.endRow)).toHaveCount(2);
 }
 
-// Mutation: restoring the desktop row (truncated title beside a 220px select) fails the title and width checks.
+// Mutation: restoring the desktop row (truncated title beside a 220px select) fails the title and width checks;
+// dropping touch:h-10 from the per-item select (.field's 28px) fails the height check.
 test('CloseSprint_AtTouch_UnfinishedItemsShouldBeReadableCards', async ({ mount, page }) => {
   await openDialog(mount, page);
 
@@ -89,9 +90,11 @@ test('CloseSprint_AtTouch_UnfinishedItemsShouldBeReadableCards', async ({ mount,
   const titleBox = (await title.boundingBox())!;
   expect(select.y, 'the select sits under the title').toBeGreaterThan(titleBox.y + titleBox.height);
   expect(select.width, 'the select spans the card').toBeGreaterThan(260);
+  expect(select.height, 'the select is a touch target').toBeGreaterThanOrEqual(32);
 });
 
-// Mutation: rendering the Set all to buttons at touch (dropping touch:hidden) or moving the select under the list fails.
+// Mutation: rendering the Set all to buttons at touch (dropping touch:hidden) or moving the select under the list fails;
+// dropping touch:h-10 from it fails the height check.
 test('CloseSprint_SetAllTo_ShouldBeASelectAtTheTop', async ({ mount, page }) => {
   await openDialog(mount, page);
 
@@ -99,6 +102,7 @@ test('CloseSprint_SetAllTo_ShouldBeASelectAtTheTop', async ({ mount, page }) => 
   await expect(setAll).toHaveValue('next');
   await expect(page.getByTestId(ids.endSetAll).first()).toBeHidden();
   const setAllBox = (await setAll.boundingBox())!;
+  expect(setAllBox.height, 'Set all to is a touch target').toBeGreaterThanOrEqual(32);
   const firstRow = (await page.getByTestId(ids.endRow).first().boundingBox())!;
   expect(setAllBox.y + setAllBox.height).toBeLessThanOrEqual(firstRow.y);
 

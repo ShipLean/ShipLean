@@ -21,7 +21,8 @@ const sprint: SprintDto = {
 };
 
 // Mutations: hideSubmit={false} at touch (Save stays in the form, no Save bar), or the stacked desktop grid (Start above
-// End), or rows={2} or a Goal without min-h (one line, as .field sets the height): each fails a check below.
+// End), or rows={2} or a Goal without min-h (one line, as .field sets the height), or Name/Start/End without touch:h-10
+// (.field's 28px control height): each fails a check below.
 test('EditSprint_AtTouch_ShouldUseTheSaveBar', async ({ mount, page }) => {
   const patched: SprintUpdate[] = [];
   let done = 0;
@@ -41,6 +42,14 @@ test('EditSprint_AtTouch_ShouldUseTheSaveBar', async ({ mount, page }) => {
   const end = (await page.getByTestId(ids.editSprintEnd).boundingBox())!;
   expect(end.y, 'Start and End share a row').toBe(start.y);
   expect(end.x).toBeGreaterThan(start.x + start.width);
+  const name = (await page.getByTestId(ids.editSprintName).boundingBox())!;
+  for (const [label, box] of [
+    ['Name', name],
+    ['Start', start],
+    ['End', end],
+  ] as const) {
+    expect(box.height, `${label} is a touch target`).toBeGreaterThanOrEqual(32);
+  }
   await expect(page.getByTestId(ids.editSprintGoal)).toHaveAttribute('rows', '3');
   const goal = (await page.getByTestId(ids.editSprintGoal).boundingBox())!;
   expect(goal.height, 'Goal shows several lines').toBeGreaterThanOrEqual(76);

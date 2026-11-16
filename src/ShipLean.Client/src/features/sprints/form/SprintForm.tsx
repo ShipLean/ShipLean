@@ -46,45 +46,26 @@ interface SprintFormProps {
 const LABEL = 'text-[length:var(--text-sm)] text-ink-muted';
 
 /** Name, Start, End and Goal with the submit button and the error line: the body of the New sprint and Edit sprint rails. */
-export function SprintForm({
-  idPrefix,
-  ids,
-  values,
-  nameRef,
-  onChange,
-  onSubmit,
-  submitLabel,
-  pending,
-  error,
-  datesLocked = false,
-  datesHint,
-  onCancel,
-  hideSubmit = false,
-  datesError = false,
-  datesNote,
-}: SprintFormProps) {
+export function SprintForm(props: SprintFormProps) {
   const { touch } = useTouchShell();
   if (touch) {
-    return (
-      <TouchSprintForm
-        idPrefix={idPrefix}
-        ids={ids}
-        values={values}
-        nameRef={nameRef}
-        onChange={onChange}
-        onSubmit={onSubmit}
-        submitLabel={submitLabel}
-        pending={pending}
-        error={error}
-        datesLocked={datesLocked}
-        datesHint={datesHint}
-        onCancel={onCancel}
-        hideSubmit={hideSubmit}
-        datesError={datesError}
-        datesNote={datesNote}
-      />
-    );
+    return <TouchSprintForm {...props} />;
   }
+  const {
+    idPrefix,
+    ids,
+    values,
+    nameRef,
+    onChange,
+    onSubmit,
+    submitLabel,
+    pending,
+    error,
+    datesLocked = false,
+    datesHint,
+    onCancel,
+    hideSubmit = false,
+  } = props;
   return (
     <form
       className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2"
@@ -211,7 +192,7 @@ function TouchSprintForm({
   datesNote,
 }: SprintFormProps) {
   const invalidDates = datesError && error !== '';
-  const dateField = `field w-full min-w-0 ${invalidDates ? 'border-alert' : ''}`;
+  const dateField = `field w-full min-w-0 touch:h-10 ${invalidDates ? 'border-alert' : ''}`;
   const note =
     datesLocked && datesHint !== undefined ? (
       <p data-testid={ids.datesHint} className={`${NOTE} order-3`}>
@@ -228,7 +209,7 @@ function TouchSprintForm({
           id={`${idPrefix}-name`}
           ref={nameRef}
           data-testid={ids.name}
-          className="field w-full text-ink"
+          className="field w-full text-ink touch:h-10"
           value={values.name}
           onChange={(event) => onChange('name', event.target.value)}
         />

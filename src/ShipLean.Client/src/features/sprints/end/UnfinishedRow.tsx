@@ -72,7 +72,7 @@ export function UnfinishedRow({
           <span>{`${item.points ?? 0} pts`}</span>
           <span>{`${item.openTasks} of ${item.totalTasks} tasks open`}</span>
         </span>
-        <div className="col-start-2 mt-1">{select('field w-full')}</div>
+        <div className="col-start-2 mt-1">{select('field w-full touch:h-10')}</div>
       </div>
     );
   }

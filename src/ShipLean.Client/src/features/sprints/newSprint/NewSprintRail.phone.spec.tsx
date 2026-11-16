@@ -7,7 +7,8 @@ import { NewSprintRail } from './NewSprintRail';
 // textarea, and a refused date range said under the dates with the dates marked.
 
 // Mutations: the stacked desktop grid (Start above End) fails the shared-row check; dropping datesError for a
-// validation refusal leaves the dates unmarked and the error under Goal.
+// validation refusal leaves the dates unmarked and the error under Goal; Name/Start/End without touch:h-10 (.field's
+// 28px control height) fail the touch-target check.
 test('NewSprint_AtTouch_ShouldShowAnOverlapUnderTheSideBySideDates', async ({ mount, page }) => {
   await page.route('**/api/projects/p1/sprints/next', (route) =>
     route.fulfill({
@@ -28,6 +29,14 @@ test('NewSprint_AtTouch_ShouldShowAnOverlapUnderTheSideBySideDates', async ({ mo
   const start = (await page.getByTestId(ids.newSprintStart).boundingBox())!;
   const end = (await page.getByTestId(ids.newSprintEnd).boundingBox())!;
   expect(end.y, 'Start and End share a row').toBe(start.y);
+  const name = (await page.getByTestId(ids.newSprintName).boundingBox())!;
+  for (const [label, box] of [
+    ['Name', name],
+    ['Start', start],
+    ['End', end],
+  ] as const) {
+    expect(box.height, `${label} is a touch target`).toBeGreaterThanOrEqual(32);
+  }
   await expect(page.getByTestId(ids.newSprintGoal)).toHaveAttribute('rows', '3');
   const goal = (await page.getByTestId(ids.newSprintGoal).boundingBox())!;
   expect(goal.height, 'Goal shows several lines').toBeGreaterThanOrEqual(76);

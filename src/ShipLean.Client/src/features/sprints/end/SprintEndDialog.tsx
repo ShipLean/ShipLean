@@ -106,7 +106,7 @@ export function SprintEndDialog({
           <select
             id="sprint-end-set-all"
             data-testid={ids.endSetAllSelect}
-            className="field w-full"
+            className="field w-full touch:h-10"
             value={common}
             onChange={(event) => everyChoice(event.target.value as Destination)}
           >
