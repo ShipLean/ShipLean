@@ -57,7 +57,7 @@ public class AnsweredReaderTests : ApiFixture
         row.Labels.ShouldBe("D1–D8");
         row.Summary.ShouldBe("Approved D1–D8");
         row.AnsweredAt.ShouldBe(at);
-        row.AnsweredAtLabel.ShouldBe(DisplayDate.Relative(at, Now, TimeZoneInfo.Utc));
+        row.AnsweredAtLabel.ShouldBe("3h ago");
         row.Next.ShouldBeNull();
     }
 
@@ -165,7 +165,7 @@ public class AnsweredReaderTests : ApiFixture
         next.AgentName.ShouldBe(OtherAgent);
         next.By!.Id.ShouldBe(SeedIds.Users.Priya);
         next.At.ShouldBe(pickedUpAt);
-        next.AtLabel.ShouldBe(DisplayDate.Relative(pickedUpAt, Now, TimeZoneInfo.Utc));
+        next.AtLabel.ShouldBe("4h ago");
     }
 
     [Test]
@@ -380,6 +380,8 @@ public class AnsweredReaderTests : ApiFixture
         var answered = await GetAsync(me);
 
         answered.Rows.Count.ShouldBe(4);
+        // 00:01 Bangkok is 17:01 UTC yesterday, with the clock at 12:00 UTC (19:00 Bangkok): 18 hours ago the same Bangkok day, but yesterday by UTC.
+        answered.Rows.Single(r => r.ItemId == pickedUp).AnsweredAtLabel.ShouldBe("18h ago");
         answered.AnsweredToday.ShouldBe(3);
         answered.PickedUpToday.ShouldBe(1);
     }
