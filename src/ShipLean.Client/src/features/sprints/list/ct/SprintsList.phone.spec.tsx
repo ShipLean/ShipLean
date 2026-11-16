@@ -105,7 +105,7 @@ const sheetActionIds = (page: Page) =>
     .getByTestId(touchTestIds.actionSheetRow)
     .evaluateAll((rows) => rows.map((row) => row.getAttribute('data-action-id')));
 
-// ND1-5 (SHIP-1807 P6). Mutation: dropping the status check on Close sprint put close-sprint on Sprint 23's sheet.
+// ND1-5 (SHIP-1807 P6). Mutation: dropping the hint from Edit sprint failed the row-text check below.
 test('SprintsList_WhenRowMoreTapped_ShouldOfferTheSprintPagesThenEditAndCloseSprint', async ({
   mount,
   page,
@@ -127,12 +127,16 @@ test('SprintsList_WhenRowMoreTapped_ShouldOfferTheSprintPagesThenEditAndCloseSpr
   ]);
   await expect(page.getByTestId(touchTestIds.actionSheetGroup)).toContainText(['Open']);
   await expect(page.getByTestId(touchTestIds.actionSheetFooter)).toHaveCount(0);
+  await expect(
+    page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="edit-sprint"]`),
+  ).toContainText('Name, dates and goal');
   await page
     .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="edit-sprint"]`)
     .tap();
   await expect(page.getByTestId(ids.editSprint)).toBeVisible();
 });
 
+// ND1-5. Mutation: dropping the status check on Close sprint put close-sprint on Sprint 23's sheet.
 test('SprintsList_WhenFutureOrPastRowMoreTapped_ShouldLeaveOutWhatDoesNotApply', async ({
   mount,
   page,
