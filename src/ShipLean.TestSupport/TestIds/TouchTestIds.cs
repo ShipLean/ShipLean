@@ -45,4 +45,11 @@ public static class TouchTestIds
     public const string ImageViewer = "touch-image-viewer";
     public const string ImageViewerImage = "touch-image-viewer-image";
     public const string ImageViewerClose = "touch-image-viewer-close";
+
+    // K1 action sheet anatomy (SHIP-1626)
+    public const string ActionSheetGroup = "touch-action-sheet-group";
+    public const string ActionSheetHint = "touch-action-sheet-hint";
+    public const string ActionSheetDetail = "touch-action-sheet-detail";
+    public const string ActionSheetFooter = "touch-action-sheet-footer";
+    public const string ActionSheetToggle = "touch-action-sheet-toggle";
 }

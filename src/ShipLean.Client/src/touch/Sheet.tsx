@@ -7,23 +7,26 @@ import { useSwipeToClose } from './useSwipeToClose';
 type SheetProps = {
   open: boolean;
   title: string;
+  /** A muted line under the title. */
+  subtitle?: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
 };
 
 /**
- * The bottom sheet (K5, SHIP-805 C4): grab bar, title on the left, Close on the right, a scrolling body and an optional
- * footer, over a scrim. Scrim tap, Esc, Close and a swipe down on the grab bar or head call `onClose`. Closed, it renders
+ * The bottom sheet (K5, SHIP-805 C4): grab bar, title on the left (with an optional muted subtitle under it), Close on the
+ * right, a scrolling body and an optional footer, over a scrim. Scrim tap, Esc, Close and a swipe down on the grab bar or head call `onClose`. Closed, it renders
  * nothing.
  */
 export function Sheet({ open, ...panel }: SheetProps) {
   return open ? <SheetPanel {...panel} /> : null;
 }
 
-function SheetPanel({ title, onClose, children, footer }: Omit<SheetProps, 'open'>) {
+function SheetPanel({ title, subtitle, onClose, children, footer }: Omit<SheetProps, 'open'>) {
   const sheet = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const subtitleId = useId();
   // Focuses the sheet itself, not its first field: a search field stays unfocused (no keyboard) until tapped (C4).
   useModalFocus(sheet);
   const { offset, handlers } = useSwipeToClose(onClose);
@@ -54,6 +57,7 @@ function SheetPanel({ title, onClose, children, footer }: Omit<SheetProps, 'open
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         onKeyDown={onKeyDown}
         className={`fixed inset-x-0 bottom-0 z-[70] flex max-h-[85dvh] flex-col rounded-t-frame border-t border-edge bg-panel pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_32px_rgb(0_0_0/0.22)] outline-none ${offset === 0 ? 'transition-transform duration-150' : ''}`}
@@ -66,13 +70,19 @@ function SheetPanel({ title, onClose, children, footer }: Omit<SheetProps, 'open
             className="mx-auto mt-1.5 h-1 w-9 rounded-sm bg-edge"
           />
           <div className="flex items-center gap-2 py-1 pr-1 pl-3">
-            <h2
-              id={titleId}
-              data-testid={touchTestIds.sheetTitle}
-              className="m-0 min-w-0 flex-1 truncate text-[length:var(--text-md)] font-semibold text-ink"
-            >
-              {title}
-            </h2>
+            {subtitle ? (
+              <div className="grid min-w-0 flex-1">
+                <SheetTitle id={titleId} title={title} />
+                <p
+                  id={subtitleId}
+                  className="m-0 truncate text-[length:var(--text-sm)] text-ink-muted"
+                >
+                  {subtitle}
+                </p>
+              </div>
+            ) : (
+              <SheetTitle id={titleId} title={title} />
+            )}
             <button
               type="button"
               data-testid={touchTestIds.sheetClose}
@@ -100,5 +110,17 @@ function SheetPanel({ title, onClose, children, footer }: Omit<SheetProps, 'open
       </div>
     </>,
     document.body,
+  );
+}
+
+function SheetTitle({ id, title }: { id: string; title: string }) {
+  return (
+    <h2
+      id={id}
+      data-testid={touchTestIds.sheetTitle}
+      className="m-0 min-w-0 flex-1 truncate text-[length:var(--text-md)] font-semibold text-ink"
+    >
+      {title}
+    </h2>
   );
 }
