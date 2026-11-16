@@ -208,5 +208,6 @@ test('TouchPager_OnTheTaskboardPage_ShouldPeekTheNextPage', async ({ mount, page
   const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
   expect(second.x).toBeGreaterThanOrEqual(354);
   expect(second.x).toBeLessThan(390);
-  expect(second.x).toBeLessThan(track.x + track.width);
+  // At least 12px of it shows (the design's ~30px less the page gutter), not a sliver.
+  expect(second.x).toBeLessThanOrEqual(track.x + track.width - 12);
 });
