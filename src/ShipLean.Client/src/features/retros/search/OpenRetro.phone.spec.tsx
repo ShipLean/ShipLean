@@ -42,7 +42,7 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteTheme).tap();
     await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
-    await expect(page.getByTestId(shared.retroThemePicker)).toBeVisible();
+    await expect(page.getByTestId(shared.retroNotePreview)).toBeVisible();
     await expect(page).toHaveScreenshot(`retro-search-theme-phone.${theme}.png`, {
       animations: 'disabled',
     });

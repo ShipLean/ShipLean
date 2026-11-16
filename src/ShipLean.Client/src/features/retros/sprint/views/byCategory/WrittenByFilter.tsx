@@ -14,17 +14,17 @@ export function WrittenByFilter({
       role="group"
       aria-label="Written by"
       data-testid={ids.retroWrittenByFilter}
-      className="flex items-center gap-2 text-[length:var(--text-sm)] text-ink-muted"
+      className="flex items-center gap-2 text-[length:var(--text-sm)] text-ink-muted touch:grid touch:gap-1"
     >
       <span>Written by</span>
-      <div className="inline-flex overflow-hidden rounded-control border border-edge">
+      <div className="inline-flex overflow-hidden rounded-control border border-edge touch:flex touch:w-full">
         {WRITTEN_BY_OPTIONS.map((option) => (
           <button
             key={option.id}
             type="button"
             data-value={option.id}
             aria-pressed={value === option.id}
-            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold touch:min-h-[var(--touch-target)]"
+            className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold touch:min-h-[var(--touch-target)] touch:flex-1"
             onClick={() => onChange(option.id)}
           >
             {option.label}

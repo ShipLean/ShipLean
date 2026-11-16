@@ -46,4 +46,7 @@ export const retroSharedTestIds = {
   retroActionCreate: 'retro-action-create',
   retroActionStartsNote: 'retro-action-starts-note',
   retroThemeSheetNew: 'retro-theme-sheet-new',
+  retroThemeSheetName: 'retro-theme-sheet-name',
+  retroThemeSheetAdd: 'retro-theme-sheet-add',
+  retroNotePreview: 'retro-note-preview',
 } as const;

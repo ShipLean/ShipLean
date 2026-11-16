@@ -90,6 +90,78 @@ test('SprintBacklog_WhenReadyRowTapped_ShouldListUnassignedItemsAndOpenOneInTheM
   await expect(page.getByTestId(itemPeekTestIds.dialog)).toBeVisible();
 });
 
+// SPRINT-6: the axis runs to the sprint's last working day, not only the days with a point.
+test('Burndown_ShouldDrawEverySprintDay', async ({ mount, page }) => {
+  await open(page, mount);
+  await expect(page.getByTestId(ids.burndownDay)).toHaveText([
+    '19',
+    '20',
+    '21',
+    '22',
+    '23',
+    '26',
+    '27',
+    '28',
+    '29',
+    '30',
+  ]);
+});
+
+// SPRINT-6: the Committed tile is a link to Capacity and says so with a ›.
+test('SprintBacklog_CommittedTile_ShouldEndWithAChevron', async ({ mount, page }) => {
+  await open(page, mount);
+  const tile = page.getByTestId(ids.kpiCapacityEdit);
+  await expect(tile).toContainText(/Committed( \(vel\.\))? ›/);
+  // SHIP-2028: the › sits outside the truncated label, so the whole word shows at 390px (no "Committe…").
+  const clipped = await tile.evaluate((root) => {
+    const cut: string[] = [];
+    const walk = (el: Element) => {
+      if (el.scrollWidth > el.clientWidth) cut.push(el.textContent ?? '');
+      Array.from(el.children).forEach(walk);
+    };
+    Array.from(root.children).forEach(walk);
+    return cut;
+  });
+  expect(clipped).toEqual([]);
+});
+
+// SPRINT-5: an idle member says so, every item carries its key, and the rows are touch targets.
+test('GlanceRows_WhenNothingActive_ShouldSayNothingActive', async ({ mount, page }) => {
+  await open(page, mount);
+  await page.getByTestId(ids.glanceActive).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('In progress now');
+  await expect(sheet).toContainText('Who is working on what right now.');
+  const idle = sheet.getByTestId(ids.glanceIdle);
+  await expect(idle.first()).toHaveText('Nothing active');
+  const items = sheet.getByTestId(ids.glancePersonItem);
+  const count = await items.count();
+  expect(count).toBeGreaterThan(0);
+  await expect(sheet.getByTestId(ids.glanceItemKey)).toHaveCount(count);
+  for (let i = 0; i < count; i++) {
+    expect((await items.nth(i).boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  }
+});
+
+test('GlanceRows_WhenReadyOpened_ShouldShowKeysAndTheTapHint', async ({ mount, page }) => {
+  await open(page, mount);
+  await expect(page.getByTestId(ids.glanceRows).getByTestId(ids.glanceIcon)).toHaveCount(2);
+  await page.getByTestId(ids.glanceReady).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  // The hint wraps in the sheet body; nothing of it is clipped at 390px (the one-line Sheet subtitle cut it short).
+  const hint = sheet.getByTestId(ids.glanceReadyHint);
+  await expect(hint).toHaveText(
+    'Unassigned and not started, in backlog order. Tap one to open it.',
+  );
+  expect(await hint.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  expect(await hint.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
+  await expect(sheet.getByTestId(ids.glanceItemKey)).toHaveText([
+    /^SHIP-\d+$/,
+    /^SHIP-\d+$/,
+    /^SHIP-\d+$/,
+  ]);
+});
+
 for (const theme of THEMES) {
   test(`SprintBacklogFigures_WhenOpened_ShouldMatchItsScreenshot_sprint-backlog-figures-phone_${theme}`, async ({
     mount,

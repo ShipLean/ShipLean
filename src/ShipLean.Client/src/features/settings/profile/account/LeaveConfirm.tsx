@@ -53,11 +53,11 @@ export function LeaveConfirm({
       <button
         type="button"
         data-testid={settingsTestIds.myProjectLeaveConfirm}
-        className="btn-signal disabled:opacity-50 touch:border touch:border-transparent touch:h-[var(--touch-target)] touch:flex-1"
+        className="btn-danger-ghost touch:h-[var(--touch-target)] touch:flex-1"
         disabled={leaving}
         onClick={onConfirm}
       >
-        Leave project
+        Leave
       </button>
     </li>
   );

@@ -4,12 +4,13 @@ import { Avatar } from '../../../../components/Avatar';
 import { useMe } from '../../../shell/useShellQueries';
 import { useProjectMembers } from '../../../workItem/workItemApi';
 import { sprintsTestIds as ids } from '../../testIds';
+import { HandIcon, PeopleIcon } from './GlanceIcons';
 import { InProgressSheet } from './InProgressSheet';
 import type { RailSummary } from './railSummary';
 import { ReadySheet } from './ReadySheet';
 
 const ROW =
-  'grid min-h-12 w-full grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-2.5 border-0 border-b border-edge bg-transparent px-3 py-1.5 text-left last:border-b-0';
+  'grid min-h-12 w-full grid-cols-[20px_minmax(0,1fr)_auto_14px] items-center gap-2.5 border-0 border-b border-edge bg-transparent px-3 py-1.5 text-left last:border-b-0';
 
 /** The rail at 900px and below (SHIP-724 D1): two rows above the list, Ready to pick up and In progress now, each opening a sheet. */
 export function GlanceRows({ projectId, summary }: { projectId: string; summary: RailSummary }) {
@@ -28,6 +29,9 @@ export function GlanceRows({ projectId, summary }: { projectId: string; summary:
         className={ROW}
         onClick={() => setOpen('ready')}
       >
+        <span className="text-ink-muted">
+          <HandIcon />
+        </span>
         <span className="grid min-w-0">
           <b className="text-[length:var(--text-base)] font-semibold">
             Ready to pick up · {ready.length}
@@ -47,6 +51,9 @@ export function GlanceRows({ projectId, summary }: { projectId: string; summary:
         className={ROW}
         onClick={() => setOpen('active')}
       >
+        <span className="text-ink-muted">
+          <PeopleIcon />
+        </span>
         <span className="grid min-w-0">
           <b className="text-[length:var(--text-base)] font-semibold">In progress now</b>
           <span className="truncate text-[length:var(--text-sm)] text-ink-muted">
