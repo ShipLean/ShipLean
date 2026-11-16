@@ -137,7 +137,7 @@ test('BacklogMoreSheet_OnStoriesList_ShouldGiveEachRowItsIconAndHint', async ({ 
   ).toHaveText('1');
   await expect(sheet.locator(`${actionRow('search')} svg`)).toBeVisible();
   await sheet.locator(actionRow('add-many')).tap();
-  await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+  await expect(page.getByTestId(ids.pasteSource)).toBeVisible();
 });
 
 test('BacklogMoreSheet_ShowCompleted_ShouldToggleWithoutClosing', async ({ mount, page }) => {

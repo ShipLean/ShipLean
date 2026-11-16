@@ -1,6 +1,6 @@
 import { expect } from '@playwright/experimental-ct-react';
 import { criteriaTestIds } from '../../features/criteria/testIds';
-import { backlogView, review, ROWS } from '../../features/backlog/ct/fixtures';
+import { backlogView, itemRow, review, ROWS } from '../../features/backlog/ct/fixtures';
 import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { backlogTestIds as ids } from '../../features/backlog/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -23,6 +23,10 @@ const arrangeUnestimated = async (page: Parameters<typeof stubShell>[0]) => {
     review: review({ unestimated: [ROWS[0].id] }),
   });
 };
+// Four more items the unfiltered list holds beyond the two the filter keeps.
+const WHOLE_EXTRA = ['SHIP-201', 'SHIP-202', 'SHIP-203', 'SHIP-204'].map((key) =>
+  itemRow({ key, points: 2 }),
+);
 const ready = (page: Parameters<typeof stubShell>[0]) =>
   expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
 
@@ -43,15 +47,15 @@ phonePageShots([
     name: 'backlogs-filter',
     route,
     shell: true,
-    // The filtered read answers with two rows, the unfiltered one with the whole list: "Showing 2 of n".
+    // The filtered read answers with two rows, the unfiltered one with the whole list: "Showing 2 of 6".
     arrange: async (page) => {
       await stubShell(page);
-      await stubBacklog(page, backlogView(ROWS), {
+      await stubBacklog(page, backlogView([...ROWS, ...WHOLE_EXTRA]), {
         answer: (search) =>
-          search.get('filter') ? { status: 200, body: backlogView(ROWS.slice(0, 2)) } : undefined,
+          search.get('filter') ? { status: 200, body: backlogView(ROWS) } : undefined,
       });
     },
-    ready,
+    ready: (page) => expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length + WHOLE_EXTRA.length),
     act: async (page) => {
       await page.getByTestId(ids.filterButton).tap();
       await expect(page.getByTestId(criteriaTestIds.clause)).toHaveCount(1);
