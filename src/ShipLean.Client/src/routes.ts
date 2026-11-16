@@ -48,6 +48,10 @@ export type Level = 'stories' | 'features' | 'epics';
 export const NEW_ITEM_KINDS = ['epic', 'feature', 'story', 'bug', 'action'] as const;
 export type NewItemKind = (typeof NEW_ITEM_KINDS)[number];
 
+// The link types the work item page can open its link picker preset to (?addLink=).
+export const ADD_LINK_TYPES = ['causedBy'] as const;
+export type AddLinkType = (typeof ADD_LINK_TYPES)[number];
+
 export const projectSettingsTabs = [
   'general',
   'states',
@@ -128,7 +132,7 @@ export interface RouteQuery {
   // A work item open in a modal over a project page (its key, like SHIP-12). Only project-level routes carry it.
   item?: string;
   // The work item page opens its link picker preset to this link type (SHIP-1398 QK6: 'causedBy', from Inspection's bug list).
-  addLink?: string;
+  addLink?: AddLinkType;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
   new?: NewItemKind;
   // The Changes page: the commit shown (a work_item_commit id; all commits when absent), the file open, and the diff layout ('split'; unified when absent).
@@ -473,6 +477,9 @@ function parseQuery(def: AnyDef, search: string): RouteQuery {
     } else if (name === 'new') {
       const kind = oneOf(NEW_ITEM_KINDS, value);
       if (kind !== undefined) query.new = kind;
+    } else if (name === 'addLink') {
+      const type = oneOf(ADD_LINK_TYPES, value);
+      if (type !== undefined) query.addLink = type;
     } else query[name] = value;
   }
   return query;

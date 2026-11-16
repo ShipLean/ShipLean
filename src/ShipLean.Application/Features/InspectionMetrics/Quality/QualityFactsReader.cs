@@ -6,5 +6,5 @@ namespace ShipLean.Application.Features.InspectionMetrics.Quality;
 public sealed class QualityFactsReader : IQualityFactsReader
 {
     public Task<BugFacts> ReadAsync(Guid projectId, DateOnly fromDay, DateOnly toDay, CancellationToken ct)
-        => Task.FromResult(new BugFacts([], [], new Dictionary<int, int>(), LeadTimeFacts.Empty));
+        => Task.FromResult(new BugFacts(AnyBugs: false, [], [], new Dictionary<int, int>(), LeadTimeFacts.Empty));
 }

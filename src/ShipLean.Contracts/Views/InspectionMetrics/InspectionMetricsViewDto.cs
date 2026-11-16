@@ -5,7 +5,9 @@ namespace ShipLean.Contracts.Views.InspectionMetrics;
 // Headline is the last finished sprint with the running one as so far (item D1). Quarters sum every sprint of each quarter the
 // shown sprints fall in (design D7). Cuts is null when Cut is None. Longest is the range's slowest 6 tasks. LeftOut lists the tasks
 // closed with no start recorded (design D9). PeriodDetail is null unless the query names a period. Quality (QK3) is the escaping
-// bugs over the shown sprints; it, and every other Quality and Bugs in the view, is null when the project has no bugs at all.
+// bugs over the shown sprints. Bugs lists every bug counted in the shown sprints, found before release ones included, oldest filed
+// first. Quality and Bugs, and every other Quality and Bugs in the view, are null exactly when the project has no live bug at all
+// (BugFacts.AnyBugs false), whatever the window.
 public sealed record InspectionMetricsViewDto(
     InspectionProjectDto Project,
     InspectionCadence Cadence,
@@ -22,4 +24,5 @@ public sealed record InspectionMetricsViewDto(
     IReadOnlyList<InspectionTaskDto> Longest,
     IReadOnlyList<InspectionLeftOutDto> LeftOut,
     InspectionPeriodDetailDto? PeriodDetail,
-    InspectionQualityStatsDto? Quality);
+    InspectionQualityStatsDto? Quality,
+    IReadOnlyList<InspectionBugDto>? Bugs);

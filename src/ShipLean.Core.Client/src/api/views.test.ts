@@ -180,6 +180,11 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(bugs.some((b) => b.causedByKey !== null)).toBe(true);
   expect(bugs.some((b) => b.foundBeforeRelease)).toBe(true);
   expect(bugs.some((b) => b.severity === null)).toBe(true);
+  const range = view.bugs ?? [];
+  expect(range.length).toBeGreaterThan(bugs.length);
+  expect(range.every((b) => view.periods.some((p) => p.id === b.periodId))).toBe(true);
+  const split = view.quality?.escapingBySeverity;
+  expect(split && split.sev1 + split.sev2 + split.sev3 + split.sev4 + split.unset).toBe(view.quality?.escaping);
   expect(view.periodDetail?.quality?.foundBeforeRelease).toBe(
     bugs.filter((b) => b.foundBeforeRelease).length,
   );

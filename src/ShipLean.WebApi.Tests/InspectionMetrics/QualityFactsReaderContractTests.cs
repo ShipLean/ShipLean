@@ -72,6 +72,14 @@ public class QualityFactsReaderContractTests : ApiFixture
         _facts.Causes.Tasks.Single(t => t.Key == _task).Title.ShouldBe("Report date filter");
     }
 
+    // AnyBugs is an EXISTS over the project's live bugs, whatever their date, so quality shows zeros rather than "No bugs yet" when
+    // every bug is older than the window. Mutation: set AnyBugs from the window's bugs only (then filter the window to miss them).
+    [Test]
+    public void Read_WhenProjectHasLiveBugs_ShouldSetAnyBugsTurnedGreenByQT4()
+    {
+        _facts.AnyBugs.ShouldBeTrue();
+    }
+
     // Mutation: read link_state.as_of instead of merged_at.
     [Test]
     public void Read_WhenPrLinkedAndMergedInTheWindow_ShouldReturnItTurnedGreenByQT4()

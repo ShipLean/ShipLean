@@ -543,6 +543,15 @@ export interface LeadTimeStatsDto {
   changePctVsPrevious: number | null;
 }
 
+/** Escaping bugs split by severity (sev1 critical to sev4 low, unset without one); they sum to escaping. */
+export interface InspectionSeverityCountsDto {
+  sev1: number;
+  sev2: number;
+  sev3: number;
+  sev4: number;
+  unset: number;
+}
+
 /**
  * Escaping bugs over a period, quarter or the range (SHIP-1398 QK3): every Bug not found before release, in the sprint it was
  * filed (or its cause's sprint once it has a Caused by link). mergedPrs and per100Prs are null when no linked PR merged.
@@ -553,9 +562,13 @@ export interface InspectionQualityStatsDto {
   foundBeforeRelease: number;
   mergedPrs: number | null;
   per100Prs: number | null;
+  escapingBySeverity: InspectionSeverityCountsDto;
 }
 
-/** A bug counted in the opened period; severity 1 (critical) to 4 (low) or null; causedBy* name the Task that introduced it. */
+/**
+ * A bug counted in a shown sprint; severity 1 (critical) to 4 (low) or null; causedBy* name the Task that introduced it;
+ * periodId is the sprint it counts in (filed, or its cause's sprint).
+ */
 export interface InspectionBugDto {
   key: string;
   title: string;
@@ -565,13 +578,14 @@ export interface InspectionBugDto {
   foundBeforeRelease: boolean;
   causedByKey: string | null;
   causedByTitle: string | null;
+  periodId: string;
 }
 
 export interface InspectionHeadlinePeriodDto {
   periodId: string;
   name: string;
   leadTime: LeadTimeStatsDto;
-  /** Null when the project has no bugs at all; so is every other quality and bugs in the view. */
+  /** Null exactly when the project has no live bug at all; so is every other quality and bugs in the view. */
   quality: InspectionQualityStatsDto | null;
 }
 
@@ -739,6 +753,8 @@ export interface InspectionMetricsViewDto {
   leftOut: InspectionLeftOutDto[];
   /** Null unless the query names a period. */
   periodDetail: InspectionPeriodDetailDto | null;
-  /** Escaping bugs over the shown sprints; null when the project has no bugs at all. */
+  /** Escaping bugs over the shown sprints; null exactly when the project has no live bug at all. */
   quality: InspectionQualityStatsDto | null;
+  /** Every bug counted in the shown sprints, found before release ones included, oldest filed first; null as quality. */
+  bugs: InspectionBugDto[] | null;
 }

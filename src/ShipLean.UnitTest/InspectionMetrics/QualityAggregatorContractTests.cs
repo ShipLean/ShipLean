@@ -35,8 +35,8 @@ public class QualityAggregatorContractTests
     private static BugFact Bug(string key, int? severity, DateTimeOffset filed, bool foundBeforeRelease = false, string? causedBy = null)
         => new(key, $"Bug {key}", severity, filed, foundBeforeRelease, causedBy);
 
-    private static BugFacts Facts(BugFact[] bugs, MergedPrFact[]? prs = null, LeadTimeFacts? causes = null)
-        => new(bugs, prs ?? [], Weights, causes ?? LeadTimeFacts.Empty);
+    private static BugFacts Facts(BugFact[] bugs, MergedPrFact[]? prs = null, LeadTimeFacts? causes = null, bool? anyBugs = null)
+        => new(anyBugs ?? bugs.Length > 0, bugs, prs ?? [], Weights, causes ?? LeadTimeFacts.Empty);
 
     private static MergedPrFact[] Prs(int count, DateTimeOffset mergedAt)
         => [.. Enumerable.Range(1, count).Select(n => new MergedPrFact($"https://github.com/ShipLean/ShipLean/pull/{n}{mergedAt:MMdd}", mergedAt))];
@@ -53,7 +53,7 @@ public class QualityAggregatorContractTests
         return provider.GetRequiredService<IQualityAggregator>().Apply(view, sprints, window, facts, Now, TimeZoneInfo.Utc);
     }
 
-    // Mutation: count found before release bugs as escaping.
+    // Mutations: count found before release bugs as escaping; swap the severity 1 and 2 counts.
     [Test]
     public void Apply_WhenBugsFiled_ShouldCountEscapingAndWeightedPerPeriodTurnedGreenByQT4()
     {
@@ -67,6 +67,7 @@ public class QualityAggregatorContractTests
 
         view.Periods.Select(p => (p.Id, p.Quality?.Escaping, p.Quality?.Weighted, p.Quality?.FoundBeforeRelease))
             .ShouldBe([(S3.Id, (int?)2, (int?)10, (int?)1), (S4.Id, 1, 0, 0)]);
+        view.Periods.Select(p => p.Quality?.EscapingBySeverity).ShouldBe([new InspectionSeverityCountsDto(1, 0, 1, 0, 0), new InspectionSeverityCountsDto(0, 0, 0, 0, 1)]);
         view.Headline.Finished.ShouldNotBeNull().Quality.ShouldNotBeNull().Escaping.ShouldBe(2);
         view.Quality.ShouldNotBeNull().Escaping.ShouldBe(3);
     }
@@ -132,14 +133,54 @@ public class QualityAggregatorContractTests
         detail.Quality.ShouldNotBeNull().Escaping.ShouldBe(2);
     }
 
-    // The no-bugs rule (QK3): with no bugs every Quality and Bugs stays null, so the page shows "No bugs yet". Green with the stub;
-    // it keeps QT4's aggregator from filling zeros. Mutation (for QT4): return zero stats when there are no bugs.
+    // A project whose bugs are all older than the window still has bugs (AnyBugs): quality is zeros, not "No bugs yet".
+    // Mutation: decide null from facts.Bugs being empty instead of AnyBugs.
+    [Test]
+    public void Apply_WhenProjectHasBugsOnlyOutsideTheWindow_ShouldGiveZerosTurnedGreenByQT4()
+    {
+        var view = Apply([S3, S4], Facts([], anyBugs: true), period: S3);
+
+        view.Quality.ShouldNotBeNull().Escaping.ShouldBe(0);
+        view.Periods.ShouldAllBe(p => p.Quality != null && p.Quality.Escaping == 0);
+        view.Bugs.ShouldNotBeNull().ShouldBeEmpty();
+        view.PeriodDetail.ShouldNotBeNull().Bugs.ShouldNotBeNull().ShouldBeEmpty();
+    }
+
+    // The range's bug list (QK3): every bug counted in the shown sprints, found before release ones included, oldest filed first,
+    // each with the sprint it counts in (a Caused by bug in its cause's sprint); bugs counted in a sprint not shown are left out.
+    // Mutation: give a Caused by bug its filed sprint as PeriodId.
+    [Test]
+    public void Apply_WhenBugsInRange_ShouldListThemWithTheirPeriodTurnedGreenByQT4()
+    {
+        var causes = new LeadTimeFactsBuilder()
+            .WithTask("SHIP-10", title: "Report date filter")
+            .WithStart("SHIP-10", At(10, 5, 9))
+            .WithCommit("SHIP-10", "abc1234", At(10, 6, 15))
+            .Build();
+
+        var view = Apply([S3, S4], Facts(
+        [
+            Bug("SHIP-5", 2, At(9, 23, 9)),
+            Bug("SHIP-1", 2, At(10, 7, 9)),
+            Bug("SHIP-2", 3, At(10, 9, 9), foundBeforeRelease: true),
+            Bug("SHIP-3", 2, At(10, 20, 9), causedBy: "SHIP-10"),
+            Bug("SHIP-4", null, At(10, 21, 9)),
+        ], causes: causes));
+
+        view.Bugs.ShouldNotBeNull().Select(b => (b.Key, b.PeriodId, b.FoundBeforeRelease))
+            .ShouldBe([("SHIP-1", S3.Id, false), ("SHIP-2", S3.Id, true), ("SHIP-3", S3.Id, false), ("SHIP-4", S4.Id, false)]);
+    }
+
+    // The no-bugs rule (QK3): with no live bug in the project (AnyBugs false) every Quality and Bugs stays null, so the page shows
+    // "No bugs yet". Green with the stub; it keeps QT4's aggregator from filling zeros. Mutation (for QT4): return zero stats when
+    // there are no bugs.
     [Test]
     public void Apply_WhenProjectHasNoBugs_ShouldLeaveEveryQualityNull()
     {
         var view = Apply([S3, S4], Facts([], Prs(3, At(10, 12, 9))), period: S3);
 
         view.Quality.ShouldBeNull();
+        view.Bugs.ShouldBeNull();
         view.Periods.ShouldAllBe(p => p.Quality == null);
         view.Quarters.ShouldAllBe(q => q.Quality == null);
         view.PeriodDetail.ShouldNotBeNull().Bugs.ShouldBeNull();

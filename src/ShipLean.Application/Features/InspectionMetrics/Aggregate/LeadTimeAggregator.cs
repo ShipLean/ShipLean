@@ -50,7 +50,8 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             [.. run.InRange.OrderByDescending(task => task.LeadHours).ThenBy(task => task.Key, StringComparer.Ordinal).Take(LongestCount).Select(run.TaskDto)],
             run.LeftOut(),
             selection.Period is null ? null : run.PeriodDetail(selection.Period, selection.Select),
-            Quality: null);
+            Quality: null,
+            Bugs: null);
     }
 
     private sealed class Run

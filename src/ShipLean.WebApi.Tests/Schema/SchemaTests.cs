@@ -163,7 +163,8 @@ public class SchemaTests
         column.IsNullable.ShouldBe("YES");
     }
 
-    // SHIP-1398 QK1. Mutations: default found_before_release to true; leave causedBy out of the CHECK; change a default weight.
+    // SHIP-1398 QK1. Mutations: default found_before_release to true; leave causedBy out of the CHECK; drop blockedBy from the
+    // re-added CHECK; change a default weight.
     [Test]
     public async Task InspectionQuality_WhenApplied_ShouldAddBugFieldLinkTypeAndWeights()
     {
@@ -174,6 +175,8 @@ public class SchemaTests
         (await connection.ExecuteScalarAsync<bool>("SELECT found_before_release FROM work_item WHERE id = @bug", new { bug })).ShouldBeFalse();
         await connection.ExecuteAsync(
             "INSERT INTO work_item_link (id, source_id, target_id, link_type) VALUES (gen_random_uuid(), @bug, @task, 'causedBy')", new { bug, task });
+        await connection.ExecuteAsync(
+            "INSERT INTO work_item_link (id, source_id, target_id, link_type) VALUES (gen_random_uuid(), @bug, @task, 'blockedBy')", new { bug, task });
         var ex = await Should.ThrowAsync<PostgresException>(async () => await connection.ExecuteAsync(
             "INSERT INTO work_item_link (id, source_id, target_id, link_type) VALUES (gen_random_uuid(), @bug, @task, 'causes')", new { bug, task }));
         ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);

@@ -5,5 +5,11 @@ namespace ShipLean.Contracts.Views.InspectionMetrics;
 // ended in (design D11). Weighted sums the project's severity weights over the escaping bugs (item D16; a bug with no severity
 // weighs 0). FoundBeforeRelease counts the bugs left out of Escaping. MergedPrs counts pull requests linked to an item of the
 // project that merged in the span (unlinked PRs are left out); Per100Prs is Escaping per 100 of them to one decimal, and both are
-// null when no PR merged in the span.
-public sealed record InspectionQualityStatsDto(int Escaping, int Weighted, int FoundBeforeRelease, int? MergedPrs, double? Per100Prs);
+// null when no PR merged in the span. EscapingBySeverity splits Escaping by severity.
+public sealed record InspectionQualityStatsDto(
+    int Escaping,
+    int Weighted,
+    int FoundBeforeRelease,
+    int? MergedPrs,
+    double? Per100Prs,
+    InspectionSeverityCountsDto EscapingBySeverity);
