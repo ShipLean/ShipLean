@@ -10,6 +10,7 @@
 # (today-attachment-*.png, today-fboard*.png and today-tboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
 # fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
+# --disable-dev-shm-usage below: in Docker (64 MB /dev/shm) Chrome --screenshot never exits without it (SHIP-1893). In the Playwright image: CHROME=/ms-playwright/chromium-1234/chrome-linux64/chrome (path moves with the image).
 set -euo pipefail
 cd "$(dirname "$0")"
 screens="$(cd ../screens && pwd)"
