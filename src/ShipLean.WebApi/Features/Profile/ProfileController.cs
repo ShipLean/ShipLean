@@ -42,7 +42,7 @@ public sealed class ProfileController(ProfileEndpoints endpoints, IUsageEvents e
         if (changed)
         {
             SelfEmittedUsage.TrackOk(events, scope, time, started, UsageEventNames.ProfileTimeZoneSet, me.Id, "api:Profile.SetTimeZone",
-                properties: new Dictionary<string, object> { [UsageProps.From] = request.Source == TimeZoneSource.Profile ? "profile" : "browser" });
+                properties: new Dictionary<string, object> { [UsageProps.ZoneSource] = request.Source == TimeZoneSource.Profile ? "profile" : "browser" });
         }
         return me;
     }
