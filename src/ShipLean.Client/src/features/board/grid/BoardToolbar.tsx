@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { postBoardFilterOpened } from '@shiplean/core/api/usageApi';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { useTouchShell } from '../../../touch/useTouchShell';
@@ -28,7 +29,7 @@ function lanesLabel(level: Level, value: string | null, laneCount: number): stri
 }
 
 // The rows over the grid: the level switch, what is open, the lane and Full / Compact choices, Filter and Board
-// settings; under them the filter bar while it is open. At 900px and below it is one row (level switch, Filter, ⋯ More)
+// settings; under them the filter bar while it is open. At 900px and below it is one row (level switch on the left, Filter and a bordered ⋯ More on the right)
 // with the summary on a meta line under it, and Filter opens a sheet.
 export function BoardToolbar({
   view,
@@ -52,6 +53,10 @@ export function BoardToolbar({
   onFilter: (filter: BoardFilterQuery) => void;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const toggleFilter = () => {
+    if (!filterOpen) postBoardFilterOpened(projectId, level).catch(() => undefined);
+    setFilterOpen(!filterOpen);
+  };
   const lanes = useBoardLanes(projectId, boardId);
   const { touch } = useTouchShell();
   if (touch) {
@@ -76,15 +81,12 @@ export function BoardToolbar({
         <div data-testid={ids.toolbar} className="flex-none">
           <div className="flex flex-nowrap items-center gap-2 pt-2">
             <LevelSwitch level={level} projectKey={projectKey} />
-            <FilterToggle
-              filter={filter}
-              open={filterOpen}
-              onToggle={() => setFilterOpen(!filterOpen)}
-            />
             <span className="flex-1" />
+            <FilterToggle filter={filter} open={filterOpen} onToggle={toggleFilter} />
             <BoardMoreSheet
               level={level}
               laneCount={view.lanes.length}
+              laneNames={view.lanes.map((lane) => lane.name)}
               lanesValue={lanes.value}
               onChooseLanes={lanes.choose}
               compact={compact}
@@ -107,6 +109,7 @@ export function BoardToolbar({
           open={filterOpen}
           projectId={projectId}
           level={level}
+          columns={view.columns}
           filter={filter}
           onChange={onFilter}
           onClose={() => setFilterOpen(false)}
@@ -134,11 +137,7 @@ export function BoardToolbar({
             onChoose={lanes.choose}
           />
           <CardsSwitch compact={compact} onCompact={onCompact} />
-          <FilterToggle
-            filter={filter}
-            open={filterOpen}
-            onToggle={() => setFilterOpen(!filterOpen)}
-          />
+          <FilterToggle filter={filter} open={filterOpen} onToggle={toggleFilter} />
           <SettingsOpener />
         </div>
       </div>

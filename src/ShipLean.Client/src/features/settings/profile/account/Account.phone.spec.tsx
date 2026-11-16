@@ -185,6 +185,16 @@ for (const theme of THEMES) {
   });
 }
 
+test('LeaveConfirm_ShouldUseTheDangerStyle', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<AccountPanelsHarness />);
+  await view.locator('[data-key="PAY"]').getByTestId(ids.myProjectLeave).tap();
+  const leave = view.getByTestId(ids.myProjectLeaveConfirm);
+  await expect(leave).toHaveText('Leave');
+  await expect(leave).toHaveClass(/btn-danger-ghost/);
+  expect((await box(leave)).height).toBeGreaterThanOrEqual(32);
+});
+
 test('AccountPhone_WhenCopyTapped_ShouldPutTheLineOnTheClipboardAndToast', async ({
   mount,
   page,

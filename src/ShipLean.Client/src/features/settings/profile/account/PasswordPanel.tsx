@@ -88,7 +88,7 @@ export function PasswordPanel() {
           <button
             type="button"
             data-testid={settingsTestIds.passwordOpen}
-            className="btn-ghost h-9 touch:order-2 touch:ml-auto"
+            className="btn-ghost h-9"
             onClick={() => setOpen(true)}
           >
             Change password

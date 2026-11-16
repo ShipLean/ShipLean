@@ -8,9 +8,7 @@ export function sprintRetroSlots(
   project: ProjectDto,
   sprint: SprintDto,
   sprints: SprintDto[],
-): { header: SprintHeaderProps; sprintRetro: SprintRetroSlotProps } {
-  return {
-    header: { variant: 'full', project, sprint, sprints, tab: 'retro' },
-    sprintRetro: { project, sprint, sprints },
-  };
+): { sprintRetro: SprintRetroSlotProps } {
+  const header: SprintHeaderProps = { variant: 'full', project, sprint, sprints, tab: 'retro' };
+  return { sprintRetro: { project, sprint, header } };
 }

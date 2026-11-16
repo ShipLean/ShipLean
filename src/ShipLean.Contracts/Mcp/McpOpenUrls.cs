@@ -38,6 +38,10 @@ public static class McpOpenUrls
     public static string FeatureBoard(string baseUrl, string projectKey, string itemKey)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/items/{Segment(itemKey)}/board");
 
+    // Inspection (SHIP-1398): the page opens on its Overview.
+    public static string InspectionMetrics(string baseUrl, string projectKey)
+        => Join(baseUrl, $"/p/{Segment(projectKey)}/inspection");
+
     // The planning view of the stories backlog.
     public static string Planning(string baseUrl, string projectKey)
         => Backlog(baseUrl, projectKey, "stories", "planning");

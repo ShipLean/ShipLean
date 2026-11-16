@@ -8,7 +8,7 @@ namespace ShipLean.WebApi.Features.Usage;
 
 // What the SPA reports about how a project's screens are used, where no write already tells the server.
 [Route("api/projects/{id:guid}/usage")]
-public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline) : ApiControllerBase
+public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline, BoardFilterUsage boardFilter, InspectionMetricsUsage inspectionMetrics) : ApiControllerBase
 {
     [HttpPost("backlog-sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -36,6 +36,56 @@ public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage tim
     public async Task<NoContentResult> TimelineBarSelected(Guid id, CancellationToken cancellationToken)
     {
         await timeline.BarSelectedAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("board-filter-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> BoardFilterOpened(Guid id, BoardFilterOpenedDto request, CancellationToken cancellationToken)
+    {
+        await boardFilter.OpenedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("board-health-filtered")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> BoardHealthFiltered(Guid id, BoardHealthFilteredDto request, CancellationToken cancellationToken)
+    {
+        await boardFilter.HealthFilteredAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("inspection-metrics-viewed")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> InspectionMetricsViewed(Guid id, InspectionMetricsViewedDto request, CancellationToken cancellationToken)
+    {
+        await inspectionMetrics.ViewedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("inspection-metrics-period-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> InspectionMetricsPeriodOpened(Guid id, InspectionMetricsPeriodOpenedDto request, CancellationToken cancellationToken)
+    {
+        await inspectionMetrics.PeriodOpenedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("inspection-metrics-task-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> InspectionMetricsTaskOpened(Guid id, InspectionMetricsTaskOpenedDto request, CancellationToken cancellationToken)
+    {
+        await inspectionMetrics.TaskOpenedAsync(id, request, cancellationToken);
         return NoContent();
     }
 }

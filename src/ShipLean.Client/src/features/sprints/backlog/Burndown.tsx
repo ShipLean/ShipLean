@@ -138,11 +138,32 @@ export function Burndown({ metrics }: { metrics: SprintMetricsDto }) {
                     <title>{`Day ${dot.day}: ${dot.remaining} pts left (ideal ${dot.ideal})`}</title>
                   )}
                 </circle>
-                <text x={dot.x} y={height - 4} textAnchor="middle">
-                  {dot.day}
-                </text>
+                {touch ? null : (
+                  <text x={dot.x} y={height - 4} textAnchor="middle">
+                    {dot.day}
+                  </text>
+                )}
               </g>
             ))}
+            {/* At touch the axis names every working day of the sprint and the baseline's 0 (SHIP-724 design). */}
+            {touch ? (
+              <>
+                <text x={2} y={shape.baselineY + 3}>
+                  0
+                </text>
+                {shape.axis.map((day) => (
+                  <text
+                    key={day.date}
+                    data-testid={ids.burndownDay}
+                    x={day.x}
+                    y={height - 4}
+                    textAnchor="middle"
+                  >
+                    {day.day}
+                  </text>
+                ))}
+              </>
+            ) : null}
           </svg>
         </div>
       )}

@@ -1,37 +1,49 @@
 import { useState } from 'react';
+import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { MoreButton } from '../../../touch/MoreButton';
 import { retroSharedTestIds as ids } from '../testIds';
+import { NotePreview } from './NotePreview';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
 
 /**
  * The ⋯ menu; it shows only where the server says the point can be archived. With `onMoveTheme` (the touch layout) it is
- * K5's MoreButton (a 32px ⋯ opening an action sheet of Move to theme and Archive); without it, the desktop popover with Archive.
+ * K5's MoreButton (a 32px ⋯ opening a sheet titled Point: the point, Move to theme… and Archive point); without it, the desktop popover with Archive.
  */
 export function NoteMore({
-  pointId,
+  point,
   writes,
   onMoveTheme,
 }: {
-  pointId: string;
+  point: RetroPointDto;
   writes: RetroNoteWrites;
   onMoveTheme?: () => void;
 }) {
+  const pointId = point.id;
   const [open, setOpen] = useState(false);
   if (onMoveTheme) {
     return (
       <span className="absolute top-0.5 right-0.5">
         <MoreButton
+          label="Point"
+          footer="Only your own points can be archived. An agent's points are never edited or archived."
           actions={[
-            { id: 'theme', label: 'Move to theme', onSelect: onMoveTheme },
+            {
+              id: 'theme',
+              label: 'Move to theme…',
+              detail: `# ${point.theme?.name ?? 'Unthemed'}`,
+              onSelect: onMoveTheme,
+            },
             {
               id: 'archive',
-              label: 'Archive',
+              label: 'Archive point',
               tone: 'danger',
               disabled: writes.archive.isPending,
               onSelect: () => writes.archive.mutate(pointId),
             },
           ]}
-        />
+        >
+          <NotePreview point={point} meta="your point" />
+        </MoreButton>
       </span>
     );
   }

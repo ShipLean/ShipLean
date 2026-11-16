@@ -22,11 +22,23 @@ export function StoryWithTasks({ entry, changer, open, onToggle }: StoryWithTask
   );
 }
 
-/** A story's two-line row followed by its tasks while it is open, at touch. */
-export function TouchStoryWithTasks({ entry, changer, open, onToggle }: StoryWithTasksProps) {
+/** A story's two-line row followed by its tasks while it is open, at touch. `tasksShown` is the list's Tasks switch. */
+export function TouchStoryWithTasks({
+  entry,
+  changer,
+  open,
+  onToggle,
+  tasksShown,
+}: StoryWithTasksProps & { tasksShown: boolean }) {
   return (
     <>
-      <TouchStoryRow entry={entry} changer={changer} open={open} onToggle={onToggle} />
+      <TouchStoryRow
+        entry={entry}
+        changer={changer}
+        open={open}
+        onToggle={onToggle}
+        tasksShown={tasksShown}
+      />
       {open
         ? entry.tasks.map((task) => <TouchTaskRow key={task.id} task={task} changer={changer} />)
         : null}

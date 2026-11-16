@@ -92,6 +92,17 @@ test('ConnectedAgentsPanel_WhenRevokeClicked_ShouldDeleteThatAgentAndReload', as
   expect(deleted).toEqual(['/api/me/agents/a-2']);
 });
 
+test('RevokeConfirm_ShouldUseTheDangerStyle', async ({ mount, page }) => {
+  await stubList(page, agents);
+  await mount(<ConnectedAgentsPanel />);
+
+  await page.getByTestId(ids.connectedRow).nth(1).getByTestId(ids.connectedRevoke).click();
+  const confirm = page.getByTestId(ids.connectedRevokeConfirm);
+  await expect(confirm).toHaveText('Revoke');
+  await expect(confirm).toHaveClass(/btn-danger-ghost/);
+  await expect(confirm).not.toHaveClass(/btn-signal/);
+});
+
 test('ConnectedAgentsPanel_WhenRevokeCancelled_ShouldKeepTheAgentAndDeleteNothing', async ({
   mount,
   page,

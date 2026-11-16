@@ -4,7 +4,7 @@ import type { BoardFilterQuery } from '../boardApi';
 /** The value that stands for "no one" (assignee, owner) or "none" (sprint, epic) in a filter. */
 export const NONE = 'none';
 
-/** How many parts of the filter are set (keyword, people, sprint, epic each count once). */
+/** How many parts of the filter are set (keyword, people, sprint, epic, health each count once). */
 export function filterCount(filter: BoardFilterQuery): number {
   return [
     filter.q,
@@ -12,6 +12,7 @@ export function filterCount(filter: BoardFilterQuery): number {
     filter.owner?.length,
     filter.sprint,
     filter.epic,
+    filter.health,
   ].filter(Boolean).length;
 }
 

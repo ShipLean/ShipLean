@@ -26,8 +26,12 @@ for arg in "$@"; do
     --verify) mode=verify ;;
     -*) echo "unknown option $arg" >&2; exit 2 ;;
     */*) specs+=("$arg") ;;
-    *) specs+=("src/pages/screenshots/${arg%.spec.tsx}.spec.tsx") ;;
+    *) name=${arg%.tsx}; name=${name%.spec}; specs+=("src/pages/screenshots/$name.spec.tsx") ;;
   esac
+done
+# A path that matches nothing would be skipped silently by Playwright, and --verify would pass on the rest.
+for spec in "${specs[@]}"; do
+  [ -e "$client_dir/$spec" ] || { echo "no such spec: $spec" >&2; exit 2; }
 done
 [ ${#specs[@]} -gt 0 ] || specs=(src/pages/screenshots)
 

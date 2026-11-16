@@ -233,4 +233,6 @@ export const retrosTestIds = {
   retroThemesHeadingSummary: 'retro-themes-heading-summary',
   retroThemeRenameHelper: 'retro-theme-rename-helper',
   retroThemeCardLastChange: 'retro-theme-card-last-change',
+  retroRailRow: 'retro-rail-row',
+  retroRecurringOpenInsights: 'retro-recurring-open-insights',
 } as const;

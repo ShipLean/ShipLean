@@ -38,27 +38,39 @@ test('Card_WhenTouch_ShouldShowMoreWithoutHover', async ({ mount, page }) => {
   await expect(more).toHaveCSS('opacity', '1');
 });
 
-test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount, page }) => {
-  const server = await stubBoard(page, storiesBoard());
+test('CardMore_ShouldShowTheCardHeaderAndWipOverColour', async ({ mount, page }) => {
+  await stubBoard(page, storiesBoard());
   await mount(<BoardHarness />, route);
 
   await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('SHIP-160 actions');
-  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(6);
-  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Open',
-    'Assign',
+  const header = sheet(page).getByTestId(ids.cardSheetHeader);
+  await expect(header).toContainText('SHIP-160 · New');
+  await expect(header).toContainText('Biometric sign-in');
+  // One sheet: Move to, Lane and Order in are groups of it, not sheets of their own.
+  await expect(sheet(page).getByTestId(touchTestIds.actionSheetGroup)).toHaveText([
     'Move to',
     'Lane',
-    'Move to top',
-    'Move to bottom',
+    'Order in New',
   ]);
-  await row(page, 'move-to').tap();
-
-  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to');
+  // The column the card is in is ticked "here"; the one over its WIP limit is in the danger tone.
+  await expect(row(page, 'column:col-new:false')).toHaveAttribute('aria-current', 'true');
+  await expect(row(page, 'column:col-new:false')).toContainText('here');
+  await expect(
+    row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail),
+  ).toHaveText('3/2');
+  await expect(row(page, 'column:col-prog:false').getByTestId(ids.cardMoveWip)).toHaveClass(
+    /text-alert/,
+  );
   await expect(row(page, 'column:col-ready:true')).toContainText('Ready · Done');
-  await expect(row(page, 'column:col-prog:false')).toContainText('3 of 2 (over)');
   await expect(row(page, 'column:col-new:false')).toBeDisabled();
+});
+
+test('CardActionsSheet_WhenColumnPicked_ShouldMoveToEndOfColumn', async ({ mount, page }) => {
+  const server = await stubBoard(page, storiesBoard());
+  await mount(<BoardHarness />, route);
+
+  await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
   await row(page, 'column:col-prog:false').tap();
 
   await expect.poll(() => server.moves.length).toBe(1);
@@ -75,14 +87,63 @@ test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount
   await expect(sheet(page)).toHaveCount(0);
 });
 
+test('CardMore_OnAFeatureWithNoPoints_ShouldSitAtTheRight', async ({ mount, page }) => {
+  const board = featuresBoard();
+  const view: BoardViewDto = {
+    ...board,
+    lanes: board.lanes.map((l) => ({
+      ...l,
+      cells: l.cells.map((c) => ({
+        ...c,
+        cards: c.cards.map((x) => (x.key === 'SHIP-104' ? { ...x, points: null } : x)),
+      })),
+    })),
+  };
+  await stubBoard(page, view, { level: 'features' });
+  await mount(<BoardHarness level="features" />, {
+    hooksConfig: { route: '/p/SHIP/boards/features' },
+  });
+
+  const feature = cardKeyed(page, 'SHIP-104');
+  const more = (await feature.getByTestId(touchTestIds.moreButton).boundingBox())!;
+  const box = (await feature.boundingBox())!;
+  // The warn ? shows and the ⋯ is at the card's right edge (inside its padding), not beside the key.
+  await expect(feature.getByTestId(ids.cardPoints)).toHaveText('?');
+  expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
+  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so a `display: contents` wrapper goes red here.
+  // The ⋯ sits at the right because Card.tsx puts a flex-1 spacer after the key, not because of the "?" chip's ml-auto:
+  // CardMore_WhenPointsHidden_ShouldStillSitAtTheRight holds that with no chip at all.
+  const wrapper = await feature.getByTestId(ids.cardMore).boundingBox();
+  expect(wrapper?.width ?? 0).toBeGreaterThan(0);
+});
+
+test('CardMore_WhenPointsHidden_ShouldStillSitAtTheRight', async ({ mount, page }) => {
+  // A board style that hides points on stories: no "?" chip and no points pill to push the ⋯ along.
+  const board = storiesBoard();
+  const view: BoardViewDto = {
+    ...board,
+    cardFields: board.cardFields.map((f) => ({ ...f, showPoints: false })),
+  };
+  await stubBoard(page, view);
+  await mount(<BoardHarness />, route);
+
+  const story = cardKeyed(page, 'SHIP-160');
+  await expect(story.getByTestId(ids.cardKey)).toBeVisible();
+  await expect(story.getByTestId(ids.cardPoints)).toHaveCount(0);
+  const more = (await story.getByTestId(touchTestIds.moreButton).boundingBox())!;
+  const key = (await story.getByTestId(ids.cardKey).boundingBox())!;
+  const box = (await story.boundingBox())!;
+  // At the card's right edge (inside its padding), and far from the key it would otherwise sit beside.
+  expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
+  expect(more.x - (key.x + key.width)).toBeGreaterThan(100);
+});
+
 test('CardActionsSheet_WhenLanePicked_ShouldMoveToLane', async ({ mount, page }) => {
   const server = await stubBoard(page, storiesBoard());
   await mount(<BoardHarness />, route);
 
   await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
-  await row(page, 'lane').tap();
-  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Lane');
-  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(1);
+  await expect(row(page, 'lane:lane-default')).toContainText('here');
   await row(page, 'lane:lane-expedite').tap();
 
   await expect.poll(() => server.moves.length).toBe(1);
@@ -112,7 +173,7 @@ test('CardActionsSheet_WhenFeature_ShouldOfferWhatIsUnderIt', async ({ mount, pa
   });
 
   await cardKeyed(page, 'SHIP-104').getByTestId(touchTestIds.moreButton).tap();
-  await expect(row(page, 'below')).toHaveText("Show what's under it");
+  await expect(row(page, 'below')).toContainText("Show what's under it");
 });
 
 test('Card_WhenTappedOnPhone_ShouldOpenItemModal', async ({ mount, page }) => {

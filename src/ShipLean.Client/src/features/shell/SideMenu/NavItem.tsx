@@ -31,7 +31,7 @@ export function NavItem({
       to={to}
       data-testid={testId}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-2 rounded-control px-2 no-underline ${shape} ${state}`}
+      className={`flex flex-none items-center gap-2 rounded-control px-2 no-underline ${shape} ${state}`}
     >
       {icon ? (
         <span aria-hidden="true" className="w-4 flex-none text-center">

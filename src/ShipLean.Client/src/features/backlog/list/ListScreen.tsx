@@ -3,7 +3,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 import { NEW_ITEM_KINDS, type NewItemKind } from '../../../routes';
 import { AddBelowProvider } from '../add/AddBelowProvider';
-import { AddManyButton } from '../add/AddManyButton';
+import { AddManyAction, AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
 import { BulkBar } from '../bulk/BulkBar';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
@@ -44,8 +44,12 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const { reorder } = touchReorder;
   const queue = useCheckQueue();
   const search = useBacklogSearch();
+  // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
+  const { touch } = useTouchShell();
+  // At touch the queue lives in the Estimate sheet, so the list behind it keeps every row (SHIP-1626 BACKLOG-3).
+  const queueNarrows = queue.active && !touch;
   const items = useMemo(() => state.rows.filter((row) => row.kind === 'item'), [state.rows]);
-  const queued = useMemo(() => queue.apply(items), [queue, items]);
+  const queued = useMemo(() => (touch ? items : queue.apply(items)), [touch, queue, items]);
   const searched = useMemo(() => search.apply(queued), [search, queued]);
   const shown = useMemo(
     () => BACKLOG_COLUMNS.filter((c) => !state.view.hidden.includes(c.id)).map((c) => c.id),
@@ -57,10 +61,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   // Drag stops for a filter, a search, a check queue or a column sort; adding stops for a filter or a search only
   // (a sort stops adding below a row, which ListTable handles).
   const addingOff = state.filtering || search.active;
-  const narrowed = addingOff || queue.active;
+  const narrowed = addingOff || queueNarrows;
   const filtering = narrowed || sort.sorted;
-  // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
-  const { touch } = useTouchShell();
   const { selecting } = useTouchSelectMode();
   const selectActions = useSelectMoreActions(queue, state.backlog.data?.review ?? null);
   useReconnectSummary(state.queryKey);
@@ -73,94 +75,112 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
         <OpenCommandHost rows={rows} projectKey={project.key} />
         <AddBelowProvider projectId={project.id} projectKey={project.key}>
           <PasteHost projectId={project.id} projectKey={project.key}>
-            <BacklogFrame
-              project={project}
-              mode="list"
-              state={state}
-              reorder={reorder}
-              rowCount={rows.length}
-              filtering={filtering}
-              options={() => <AddManyButton />}
-              search={() => <BacklogSearchBox search={search} />}
-              keys={() => <KeysButton />}
-              moreActions={selectActions}
-              sort={
-                sort.sort
-                  ? {
-                      label: `${BACKLOG_COLUMNS.find((c) => c.id === sort.sort?.column)?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
-                      onClear: sort.clear,
-                    }
-                  : undefined
-              }
-              movingOffText={
-                narrowed
-                  ? "Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
-                  : 'Reordering is off while the list is sorted by a column. Click the sorted title until the arrow goes to get rank order back.'
-              }
-            >
-              {(columns) => (
-                <>
-                  <div className="sticky top-0 z-[5] flex-none touch:static">
-                    <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
-                  </div>
-                  <BulkOutcomeHost projectId={project.id} />
-                  <SelectBar />
-                  {touch ? (
-                    <TouchRowList
-                      rows={rows}
-                      projectKey={project.key}
-                      handles={!filtering && !selecting}
-                      onHandleDrop={touchReorder.drop}
-                      flashing={flashing}
-                      filtered={addingOff}
-                      searched={search.active ? search.query.trim() : ''}
-                      addRow={
-                        state.adding ? (
-                          <NewItemRow
+            <AddManyAction>
+              {(addMany) => (
+                <BacklogFrame
+                  project={project}
+                  mode="list"
+                  state={state}
+                  reorder={reorder}
+                  rowCount={rows.length}
+                  shownRows={rows}
+                  quietBanner={
+                    touch && search.active && !state.filtering && !queueNarrows && !sort.sorted
+                  }
+                  filtering={filtering}
+                  options={touch ? undefined : () => <AddManyButton />}
+                  banner={
+                    touch ? (
+                      <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                    ) : undefined
+                  }
+                  search={() => <BacklogSearchBox search={search} />}
+                  keys={() => <KeysButton />}
+                  moreActions={addMany ? [addMany, ...selectActions] : selectActions}
+                  sort={
+                    sort.sort
+                      ? {
+                          label: `${BACKLOG_COLUMNS.find((c) => c.id === sort.sort?.column)?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
+                          onClear: sort.clear,
+                        }
+                      : undefined
+                  }
+                  movingOffText={
+                    narrowed
+                      ? "Moving is off while a filter is on. # still shows each item's place in the whole backlog."
+                      : 'Moving is off while the list is sorted by a column. Click the sorted title until the arrow goes to get rank order back.'
+                  }
+                >
+                  {(columns) => (
+                    <>
+                      {touch ? null : (
+                        <div className="sticky top-0 z-[5] flex-none">
+                          <BeforeYouPlan
+                            review={state.backlog.data?.review ?? null}
+                            queue={queue}
+                          />
+                        </div>
+                      )}
+                      <BulkOutcomeHost projectId={project.id} />
+                      <SelectBar />
+                      {touch ? (
+                        <TouchRowList
+                          rows={rows}
+                          projectKey={project.key}
+                          handles={!filtering && !selecting}
+                          onHandleDrop={touchReorder.drop}
+                          flashing={flashing}
+                          filtered={addingOff}
+                          searched={search.active ? search.query.trim() : ''}
+                          addRow={
+                            state.adding ? (
+                              <NewItemRow
+                                projectId={project.id}
+                                projectKey={project.key}
+                                columnCount={columns.length}
+                                onClose={() => state.setAdding(false)}
+                                initialType={state.addType}
+                                request={state.addRequest}
+                              />
+                            ) : undefined
+                          }
+                        />
+                      ) : (
+                        <ListDnd
+                          rows={rows}
+                          filtering={filtering}
+                          onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
+                        >
+                          <ListTable
+                            rows={rows}
+                            columns={columns}
                             projectId={project.id}
                             projectKey={project.key}
-                            columnCount={columns.length}
-                            onClose={() => state.setAdding(false)}
-                            initialType={state.addType}
-                            request={state.addRequest}
+                            adding={state.adding}
+                            addType={state.addType}
+                            addRequest={state.addRequest}
+                            onCloseAdd={() => state.setAdding(false)}
+                            dragDisabled={filtering}
+                            flashing={flashing}
+                            filtered={addingOff}
+                            searched={search.active ? search.query.trim() : ''}
+                            sort={sort.sort}
+                            onSort={sort.onSort}
                           />
-                        ) : undefined
-                      }
-                    />
-                  ) : (
-                    <ListDnd
-                      rows={rows}
-                      filtering={filtering}
-                      onReorder={(row, move) => void reorder.drop(row, move.beforeItemId)}
-                    >
-                      <ListTable
-                        rows={rows}
-                        columns={columns}
+                        </ListDnd>
+                      )}
+                      <BulkBar
+                        mode="list"
                         projectId={project.id}
                         projectKey={project.key}
-                        adding={state.adding}
-                        addType={state.addType}
-                        addRequest={state.addRequest}
-                        onCloseAdd={() => state.setAdding(false)}
-                        dragDisabled={filtering}
-                        flashing={flashing}
-                        filtered={addingOff}
-                        searched={search.active ? search.query.trim() : ''}
-                        sort={sort.sort}
-                        onSort={sort.onSort}
+                        view={state.backlog.data}
                       />
-                    </ListDnd>
+                      <KeysDialog />
+                    </>
                   )}
-                  <BulkBar
-                    mode="list"
-                    projectId={project.id}
-                    projectKey={project.key}
-                    view={state.backlog.data}
-                  />
-                  <KeysDialog />
-                </>
+                </BacklogFrame>
               )}
-            </BacklogFrame>
+            </AddManyAction>
           </PasteHost>
         </AddBelowProvider>
       </SelectionProvider>

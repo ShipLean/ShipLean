@@ -23,6 +23,9 @@ public sealed class SprintDemoTab(IPage page)
     // The visible reason beside a blocked Create button (the phone layout shows it under the full-width action).
     public ILocator CreateReason => page.GetByTestId(DemosTestIds.DemoCreateReason);
 
+    // The warning beside Create demo when the last delivery to the agent connection failed.
+    public ILocator CreateWarning => page.GetByTestId(DemosTestIds.DemoCreateWarning);
+
     public ILocator ItemLink => page.GetByTestId(DemosTestIds.DemoItemLink);
 
     public ILocator Player => page.GetByTestId(DemosTestIds.DemoPlayer);
@@ -48,6 +51,21 @@ public sealed class SprintDemoTab(IPage page)
     public ILocator YouTubeNotice => page.GetByTestId(DemosTestIds.DemoYoutubeNotice);
 
     public ILocator YouTubeRetry => page.GetByTestId(DemosTestIds.DemoYoutubeRetry);
+
+    // SHIP-1936: the sprint's numbers (committed, completed, Features moved) above the video.
+    public ILocator Numbers => page.GetByTestId(DemosTestIds.DemoNumbers);
+
+    public ILocator NumberCommitted => page.GetByTestId(DemosTestIds.DemoNumberCommitted);
+
+    public ILocator NumberCompleted => page.GetByTestId(DemosTestIds.DemoNumberCompleted);
+
+    public ILocator NumberFeaturesMoved => page.GetByTestId(DemosTestIds.DemoNumberFeaturesMoved);
+
+    // SHIP-1936: the agent's last words, split from ShipLean's sentence on a Failed band.
+    public ILocator AgentSaid => page.GetByTestId(DemosTestIds.DemoAgentSaid);
+
+    // SHIP-1810: the video's facts (Length, File, Delivered) under the player.
+    public ILocator Facts => page.GetByTestId(DemosTestIds.DemoFacts);
 
     public async Task GotoAsync(string projectKey, Guid sprintId)
     {

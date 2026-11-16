@@ -32,7 +32,7 @@ for (const theme of THEMES) {
     });
     const group = screen
       .getByTestId(ids.treeGroup)
-      .filter({ has: page.getByTestId(ids.treeGroupPath).getByText('Receipts') });
+      .filter({ has: page.getByTestId(ids.title).getByText('Receipts', { exact: true }) });
     await expect(group).toBeVisible();
 
     await expect(group).toHaveScreenshot(`backlogs-tree-group.${theme}.png`, {

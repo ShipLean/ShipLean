@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import type { BacklogCheckId, BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { useListCommand } from '../commands/listCommands';
 import { backlogTestIds as ids } from '../testIds';
 import { useQueueFixed } from './queueFixed';
-import { TouchQueueBanner } from './TouchQueueBanner';
+import { NotEstimatedBanner } from './NotEstimatedBanner';
+import { TouchEstimateQueue } from './TouchEstimateQueue';
 import type { CheckQueue } from './useCheckQueue';
 
 const LABELS: Record<BacklogCheckId, string> = {
@@ -20,6 +22,32 @@ function QueueEscape({ exit }: { exit: () => void }) {
   return null;
 }
 
+// At touch only the unestimated check shows, as the design's banner (SHIP-1626 D5); Estimate opens its queue as a sheet,
+// and closing the sheet leaves the queue.
+function TouchBeforeYouPlan({ review, queue }: { review: BacklogReviewDto; queue: CheckQueue }) {
+  // A queue opened for another check above 900px has no sheet here, so leave it rather than keep it open unseen.
+  const otherCheck = queue.active && queue.checkId !== 'unestimated';
+  const { exit } = queue;
+  useEffect(() => {
+    if (otherCheck) exit();
+  }, [otherCheck, exit]);
+  const unestimated = review.checks.find((check) => check.id === 'unestimated')?.itemIds ?? [];
+  return (
+    <>
+      {unestimated.length > 0 ? (
+        <NotEstimatedBanner
+          count={unestimated.length}
+          top={review.top}
+          onEstimate={() => queue.open('unestimated', unestimated)}
+        />
+      ) : null}
+      {queue.active && queue.checkId === 'unestimated' ? (
+        <TouchEstimateQueue review={review} frozenIds={queue.frozenIds} onClose={queue.exit} />
+      ) : null}
+    </>
+  );
+}
+
 // The strip of the five backlog checks above the list. A count opens the queue of its rows; it never blocks anything.
 export function BeforeYouPlan({
   review,
@@ -31,6 +59,7 @@ export function BeforeYouPlan({
   const tally = useQueueFixed();
   const { touch } = useTouchShell();
   if (!review) return null;
+  if (touch) return <TouchBeforeYouPlan review={review} queue={queue} />;
   const fixed = tally.fixed.size;
   return (
     <>
@@ -78,9 +107,6 @@ export function BeforeYouPlan({
           </>
         ) : null}
       </div>
-      {touch && queue.active && queue.checkId === 'unestimated' ? (
-        <TouchQueueBanner review={review} frozenIds={queue.frozenIds} />
-      ) : null}
     </>
   );
 }

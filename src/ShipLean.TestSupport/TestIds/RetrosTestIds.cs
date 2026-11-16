@@ -238,4 +238,6 @@ public static class RetrosTestIds
     public const string RetroThemesHeadingSummary = "retro-themes-heading-summary";
     public const string RetroThemeRenameHelper = "retro-theme-rename-helper";
     public const string RetroThemeCardLastChange = "retro-theme-card-last-change";
+    public const string RetroRailRow = "retro-rail-row";
+    public const string RetroRecurringOpenInsights = "retro-recurring-open-insights";
 }

@@ -106,4 +106,12 @@ export const boardTestIds = {
 
   // SHIP-916 W1
   cardHealth: 'board-card-health',
+
+  // SHIP-1826
+  cardSheetHeader: 'board-card-sheet-header',
+  cardMoveWip: 'board-card-move-wip',
+
+  // SHIP-1827
+  filterHealth: 'board-filter-health',
+  filterCount: 'board-filter-count',
 } as const;

@@ -62,3 +62,21 @@ test('sameScreenIn_WhenRetroItemRoute_ShouldFallBackToTheRetroFeatures', () => {
   );
   expect(sameScreenIn(matchRoute('/p/SHIP/retros/features'), 'PAY')).toBe('/p/PAY/retros/features');
 });
+
+test('sameScreenIn_WhenInspection_ShouldKeepViewRangeAndCutAndDropTheSprint', () => {
+  expect(
+    sameScreenIn(
+      matchRoute('/p/SHIP/inspection', '?view=leadtime&range=all&cut=who&item=SHIP-1'),
+      'PAY',
+    ),
+  ).toBe('/p/PAY/inspection?view=leadtime&range=all&cut=who');
+  expect(
+    sameScreenIn(
+      matchRoute(
+        '/p/SHIP/inspection',
+        '?view=period&range=quarter&p=s-23&select=SHIP-194&tab=features',
+      ),
+      'PAY',
+    ),
+  ).toBe('/p/PAY/inspection?view=leadtime&range=quarter');
+});

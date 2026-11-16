@@ -179,6 +179,19 @@ const samples: {
     path: '/p/SHIP/retros/insights?view=impact&range=w6',
     crumbs: ['SHIP', 'Retrospectives', 'Insights'],
   },
+  inspectionMetrics: {
+    params: project,
+    query: {
+      view: 'period',
+      range: 'quarter',
+      cut: 'who',
+      p: 's-23',
+      select: 'SHIP-194',
+      tab: 'features',
+    },
+    path: '/p/SHIP/inspection?view=period&range=quarter&cut=who&p=s-23&select=SHIP-194&tab=features',
+    crumbs: ['SHIP', 'Inspection', 'Lead time'],
+  },
   jiraImport: { params: project, path: '/p/SHIP/import', crumbs: ['SHIP', 'Jira import'] },
   projectSettings: {
     params: { ...project, tab: 'states' },
@@ -343,4 +356,9 @@ test('routes_SprintRetro_ShouldKeepDecidePointViewAndWrittenBy', () => {
   expect(path).toBe('/p/SHIP/sprints/s%2024/retro?decide=open&point=p1&view=item&writtenBy=agents');
   const [pathname, search] = path.split('?');
   expect(matchRoute(pathname, `?${search}`)?.query).toEqual(query);
+});
+
+test('routes_WhenInspectionHasNoView_ShouldCrumbOverview', () => {
+  expect(crumbTrail('inspectionMetrics', project)).toEqual(['SHIP', 'Inspection', 'Overview']);
+  expect(matchRoute('/p/SHIP/inspection')?.id).toBe('inspectionMetrics');
 });

@@ -10,6 +10,7 @@ namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 // implement one with Mode set to Demo (the demo prompt is its Guidance). Propose is set exactly when Mode is
 // Propose: the loader then builds an allowlisted input (AgentContextLoader.LoadProposeAsync) and the promptContext is AgentProposePromptContext.
 // In propose mode Repository is the GitHub issue's repository (rendered as shipleanRepository, not in promptContext) and Project.Name is blank.
+// RunLogUrl is the session's one-use agent-log upload link (C10): RenderCreated adds it to the guidance as one line; null leaves the guidance as it is.
 public sealed record AgentContextInput(
     string SessionId,
     string AppUserId,
@@ -26,4 +27,5 @@ public sealed record AgentContextInput(
     AgentTransitionInput? Transition = null,
     IReadOnlyList<AgentRelatedItemInput>? Ancestors = null,
     AgentSessionMode Mode = AgentSessionMode.Implement,
-    AgentProposeInput? Propose = null);
+    AgentProposeInput? Propose = null,
+    string? RunLogUrl = null);

@@ -36,6 +36,7 @@ public sealed record WorkItemResult(
     [property: JsonPropertyName("questions")] IReadOnlyList<WorkItemResult.QuestionView> Questions,
     [property: JsonPropertyName("open_questions")] int OpenQuestions,
     [property: JsonPropertyName("open_decisions")] int OpenDecisions,
+    [property: JsonPropertyName("agent_sessions")] IReadOnlyList<WorkItemResult.AgentSessionLine> AgentSessions,
     [property: JsonPropertyName("commits")] IReadOnlyList<ItemCommit> Commits,
     [property: JsonPropertyName("open_code_comments")] IReadOnlyList<OpenCodeComment> OpenCodeComments,
     [property: JsonPropertyName("goal")] string? Goal = null,
@@ -123,6 +124,17 @@ public sealed record WorkItemResult(
         [property: JsonPropertyName("asked_at")] string AskedAt,
         [property: JsonPropertyName("answer")] QuestionAnswer? Answer,
         [property: JsonPropertyName("withdrawn_at")] string? WithdrawnAt);
+
+    // The item's newest agent sessions, newest first. ended is null for a live or stale session; end_text is what the caller's
+    // project role may see of how it ended (AgentSessionVisibility); read the rest with get_agent_session.
+    public sealed record AgentSessionLine(
+        [property: JsonPropertyName("id")] Guid Id,
+        [property: JsonPropertyName("connection")] string Connection,
+        [property: JsonPropertyName("state")] string State,
+        [property: JsonPropertyName("started")] string Started,
+        [property: JsonPropertyName("ended")] string? Ended,
+        [property: JsonPropertyName("end_reason")] string? EndReason,
+        [property: JsonPropertyName("end_text")] string? EndText);
 
     public sealed record QuestionAnswer(
         [property: JsonPropertyName("body")] string Body,

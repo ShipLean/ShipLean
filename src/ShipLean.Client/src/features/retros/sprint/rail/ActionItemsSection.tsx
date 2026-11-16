@@ -3,22 +3,30 @@ import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroActionRowDto } from '@shiplean/core/api/retros';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { retrosTestIds as ids } from '../../testIds';
-import { RailSection } from './RailSection';
+import { RailSection, sheetRowClass } from './RailSection';
 
 /** Action items: each with its key (opens the item), state, the sprint it is planned in or "Not planned", where it was raised. */
-export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
+export function ActionItemsSection({
+  rows,
+  sheet = false,
+}: {
+  rows: RetroActionRowDto[];
+  sheet?: boolean;
+}) {
   return (
     <RailSection
       testId={ids.retroRailActions}
       title="Action items"
       hint="Action items raised from this sprint's points, plus other open ones on the same themes, and where they are planned."
       empty={rows.length === 0}
+      sheet={sheet}
     >
       {rows.map(({ action, raisedIn }) => (
         <div
           key={action.workItemId}
+          data-testid={ids.retroRailRow}
           data-item-key={action.key}
-          className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 border-b border-edge/60 pb-1.5"
+          className={`grid min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 ${sheet ? `${sheetRowClass} py-1.5` : 'border-b border-edge/60 pb-1.5'}`}
         >
           <div className="flex items-center gap-1.5">
             <TypeIcon type="action" />
@@ -30,7 +38,7 @@ export function ActionItemsSection({ rows }: { rows: RetroActionRowDto[] }) {
             <ItemLink
               itemKey={action.key}
               title={action.title}
-              className="font-mono text-ink-muted no-underline"
+              className={`font-mono text-ink-muted no-underline ${sheet ? 'inline-flex min-h-8 items-center' : ''}`}
             >
               {action.key}
             </ItemLink>
