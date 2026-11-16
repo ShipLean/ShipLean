@@ -21,7 +21,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Feature;
 [McpServerToolType]
 internal sealed class FeatureTools(
     ProjectResolver projects, ItemResolver itemResolver, StateResolver states, IProjectAccess access, IWorkItemStore store,
-    StaleWrites writes, OrientReads reads, CaptureSupport support, TimeProvider clock)
+    StaleWrites writes, OrientReads reads, CaptureSupport support, TimeProvider clock, IViewerZone viewerZone)
 {
     private const string SetStatusVia = "set_status";
     private const string CreateFeatureVia = "create_feature";
@@ -54,7 +54,7 @@ internal sealed class FeatureTools(
         var names = await reads.NamesAsync(resolved.Id, after.StatusVerifiedBy is { } by ? [by] : [], cancellationToken);
         var result = new SetStatusResult(
             project.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), project.Key, resolved.Key), resolved.Key,
-            after.StatusLine, names.StateName, VerifiedLine.Of(after, ByName(names, after), clock), written.Revision);
+            after.StatusLine, names.StateName, VerifiedLine.Of(after, ByName(names, after), clock, viewerZone), written.Revision);
         return CaptureSupport.Reply(result, $"{resolved.Key} status is \"{result.Status}\", verified {result.Verified?.Label}, revision {result.Revision}.");
     }
 
@@ -99,7 +99,7 @@ internal sealed class FeatureTools(
         var names = await reads.NamesAsync(written.Id, after.StatusVerifiedBy is { } by ? [by] : [], cancellationToken);
         var result = new CreateFeatureResult(
             resolved.Key, McpOpenUrls.WorkItem(await support.BaseUrlAsync(cancellationToken), resolved.Key, written.Key), written.Key,
-            after.Title, after.Slug, names.StateName, after.StatusLine, VerifiedLine.Of(after, ByName(names, after), clock), written.Revision);
+            after.Title, after.Slug, names.StateName, after.StatusLine, VerifiedLine.Of(after, ByName(names, after), clock, viewerZone), written.Revision);
         return CaptureSupport.Reply(result, $"Created Feature {written.Key} \"{result.Title}\" with slug {result.Slug}.");
     }
 

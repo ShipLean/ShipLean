@@ -43,18 +43,18 @@ internal sealed record CommentRow(
     public const string From = "FROM comment c LEFT JOIN app_user u ON u.id = c.author_id LEFT JOIN app_user s ON s.id = c.superseded_by"
         + " LEFT JOIN comment_ask_tag t ON t.comment_id = c.id LEFT JOIN decision d ON d.id = t.decision_id LEFT JOIN question q ON q.id = t.question_id";
 
-    public CommentDto ToDto(Markdown.MarkdownRenderer renderer, TimeProvider clock)
+    public CommentDto ToDto(Markdown.MarkdownRenderer renderer, DateTimeOffset now, TimeZoneInfo zone)
     {
         var rendered = renderer.Render(Body);
         var edited = UpdatedAt > CreatedAt ? UpdatedAt : (DateTimeOffset?)null;
         UserRef? author = AuthorId is { } id ? new UserRef(id, AuthorName!, AuthorInitials!, AuthorColour!, AuthorPhotoUrl) : null;
         var superseded = SupersededAt is { } markedAt && SupersededById is { } by
-            ? new CommentSuperseded(markedAt, DisplayDate.Relative(markedAt, clock), new UserRef(by, SupersededByName!, SupersededByInitials!, SupersededByColour!, SupersededByPhotoUrl))
+            ? new CommentSuperseded(markedAt, DisplayDate.Relative(markedAt, now, zone), new UserRef(by, SupersededByName!, SupersededByInitials!, SupersededByColour!, SupersededByPhotoUrl))
             : null;
         return new CommentDto(
             Id, WorkItemId, author, rendered.Markdown, rendered.Html,
-            CreatedAt, DisplayDate.Relative(CreatedAt, clock),
-            edited, edited is { } at ? DisplayDate.Relative(at, clock) : null,
+            CreatedAt, DisplayDate.Relative(CreatedAt, now, zone),
+            edited, edited is { } at ? DisplayDate.Relative(at, now, zone) : null,
             AgentName, superseded,
             AskTag: TagKind is { } kind
                 ? new CommentAskTagDto(Enum.Parse<AskTagKind>(kind, ignoreCase: true), TagLabel!)

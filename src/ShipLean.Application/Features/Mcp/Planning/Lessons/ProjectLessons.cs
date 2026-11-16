@@ -5,15 +5,17 @@ using Npgsql;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.WorkItems.Reads.Tree;
 using ShipLean.Application.Plans;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Mcp.Planning.Lessons;
 
 // The "What to change next time" sections of a project's newest retros, from both places a retro lives: a live retro-*.md
 // attachment and a live, not superseded "Retro · " comment on one of the project's Features. The stores list per work item
 // only, so this reads across the project in SQL. Callers check project access first.
-public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore attachments)
+public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore attachments, IViewerZone viewerZone)
 {
     public const int Newest = 3;
 
@@ -31,7 +33,7 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
             {
                 continue;
             }
-            var retro = candidate.Source ?? "comment " + candidate.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var retro = candidate.Source ?? "comment " + DisplayDate.DayOf(candidate.CreatedAt, viewerZone.Zone).ToString("O", CultureInfo.InvariantCulture);
             lessons.Add(new RetroLesson(candidate.Feature, retro, text));
             if (lessons.Count == Newest)
             {
@@ -67,7 +69,7 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
         return [.. rows.GroupBy(row => row.RetroId).Select(group =>
         {
             var first = group.First();
-            var date = first.CreatedAt.ToUniversalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var date = DisplayDate.DayOf(first.CreatedAt, viewerZone.Zone).ToString("O", CultureInfo.InvariantCulture);
             return new RetroLesson(first.Feature, "retrospective " + date, string.Join("\n", group.Select(row => "- " + row.Text)));
         })];
     }

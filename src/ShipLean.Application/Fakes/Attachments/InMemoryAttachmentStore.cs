@@ -13,7 +13,7 @@ namespace ShipLean.Application.Fakes.Attachments;
 // Attachment rows in memory, bytes in the injected IBlobStore under an opaque ref the store makes up (a re-import writes a new ref and swaps to it once the put succeeds). Arrange the work
 // items and users it knows with AddWorkItem and AddUser before use. Archiving marks the entry and leaves the blob.
 // Publishes no events. An import never changes the archived mark.
-public sealed class InMemoryAttachmentStore(ICurrentUser currentUser, IBlobStore blobs, TimeProvider time) : IAttachmentStore
+public sealed class InMemoryAttachmentStore(ICurrentUser currentUser, IBlobStore blobs, TimeProvider time, IViewerZone viewerZone) : IAttachmentStore
 {
     private readonly object _gate = new();
     private readonly SemaphoreSlim _commits = new(1, 1);
@@ -234,7 +234,7 @@ public sealed class InMemoryAttachmentStore(ICurrentUser currentUser, IBlobStore
         => new(
             entry.Id, entry.WorkItemId, entry.Name, entry.ContentType, entry.SizeBytes,
             entry.UploadedById is { } id && _users.TryGetValue(id, out var user) ? user : null,
-            entry.CreatedAt, DisplayDate.Relative(entry.CreatedAt, time), $"/api/attachments/{entry.Id}/content",
+            entry.CreatedAt, DisplayDate.Relative(entry.CreatedAt, time.GetUtcNow(), viewerZone.Zone), $"/api/attachments/{entry.Id}/content",
             AttachmentKinds.Of(entry.Name, entry.ContentType), 0, entry.Source?.AgentName, entry.Source?.Via);
 
     private sealed class Entry(Guid id, Guid workItemId, string name, string contentType, long sizeBytes, string storageRef, Guid? uploadedById, DateTimeOffset createdAt, int sequence)

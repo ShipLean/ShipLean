@@ -5,6 +5,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Attachments;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.LocalEnvironment.Database;
@@ -39,7 +40,7 @@ public class AttachmentImportNameApiTests
     {
         await using var connection = await _database.OpenAsync();
         var workItem = await new WorkItemBuilder(SeedIds.Projects.Ship).InsertAsync(connection);
-        var store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), new InMemoryBlobStore(), TimeProvider.System, new DiscardingProjectEvents(), new AttachmentLimits(1024));
+        var store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), new InMemoryBlobStore(), TimeProvider.System, new DiscardingProjectEvents(), new AttachmentLimits(1024), new FixedViewerZone());
 
         var first = await store.ImportAsync(workItem, new ImportedAttachment("jira", "40001", "same.txt", "text/plain", 0, null, DateTimeOffset.UnixEpoch), new MemoryStream([1]));
         var second = await store.ImportAsync(workItem, new ImportedAttachment("jira", "40002", "same.txt", "text/plain", 0, null, DateTimeOffset.UnixEpoch), new MemoryStream([2]));
