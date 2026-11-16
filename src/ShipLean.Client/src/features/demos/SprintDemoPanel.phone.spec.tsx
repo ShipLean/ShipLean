@@ -154,7 +154,12 @@ test('DemoStatusBand_WhenClosableOnAPhone_ShouldKeepCreateOffInItsPlace', async 
   const closable: SprintDemoDto = {
     ...(none as unknown as SprintDemoDto),
     status: 'closable',
-    actions: { canCreate: false, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: false,
+      createBlockedMessage: null,
+      canRetryYouTube: false,
+      createWarning: null,
+    },
   };
   await stubDemo(page, closable);
   await mount(view);
@@ -242,7 +247,12 @@ test('DemoStatusBand_WhenTheSessionEndedWithWordsOnAPhone_ShouldQuoteThemUnderTh
       text: 'No seeded copy.',
     },
     run: { ...base.run!, sessionState: 'ended' },
-    actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      canRetryYouTube: false,
+      createWarning: null,
+    },
   };
   await stubDemo(page, demo);
   await mount(view);
