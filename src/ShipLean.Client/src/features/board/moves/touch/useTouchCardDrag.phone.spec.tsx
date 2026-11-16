@@ -12,8 +12,6 @@ type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 const route = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
 
 async function liftFirstCard(page: Page) {
-  await page.clock.install({ time: 0 });
-  await page.clock.pauseAt(1000);
   const cdp = await page.context().newCDPSession(page);
   const box = (await page.getByTestId(ids.card).first().boundingBox())!;
   const from = { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
@@ -31,8 +29,11 @@ const hint = (page: Page, edge: 'left' | 'right') =>
   page.getByTestId(touchTestIds.dragEdgeHint).and(page.locator(`[data-edge="${edge}"]`));
 
 test('CardDrag_WhileLifted_ShouldShowBothEdgeHints', async ({ mount, page }) => {
+  // The clock goes in before the mount (as TouchDrag.phone.spec.tsx does); the 450ms lift is moved by hand.
+  await page.clock.install({ time: 0 });
   await stubBoard(page, storiesBoard());
   await mount(<BoardHarness />, route);
+  await expect(page.getByTestId(ids.card).first()).toBeVisible();
   const drop = await liftFirstCard(page);
 
   await expect(hint(page, 'left')).toBeVisible();
@@ -45,8 +46,11 @@ test('CardDrag_WhileLifted_ShouldShowBothEdgeHints', async ({ mount, page }) => 
 });
 
 test('CardDrag_AfterDrop_ShouldHideThem', async ({ mount, page }) => {
+  // The clock goes in before the mount (as TouchDrag.phone.spec.tsx does); the 450ms lift is moved by hand.
+  await page.clock.install({ time: 0 });
   await stubBoard(page, storiesBoard());
   await mount(<BoardHarness />, route);
+  await expect(page.getByTestId(ids.card).first()).toBeVisible();
   const drop = await liftFirstCard(page);
   await expect(page.getByTestId(touchTestIds.dragEdgeHint)).toHaveCount(2);
 
