@@ -18,6 +18,7 @@ using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Agents;
 using ShipLean.WebApi.Features.Mcp.Tools.Feature;
 using ShipLean.WebApi.Features.Mcp.Usage;
 
@@ -33,15 +34,17 @@ internal sealed class GetWorkItemTool(
     OrientReads reads,
     IAgentAddresses addresses,
     IItemAsks asks,
+    AgentSessionMcpReads agentSessions,
     TimeProvider clock,
     McpItemTypeSlot itemType)
 {
     private const int CommentCount = 5;
     private const int HistoryCount = 10;
+    private const int AgentSessionCount = 5;
     private const int ChangeTextLength = 200;
 
     [McpServerTool(Name = "get_work_item"), McpScope(McpScopes.Read)]
-    [Description("Everything about one work item by key, like SHIP-123: its fields, revision, the parents above it, its children with their states, links, its attachments, the last 5 comments (or the 5 before comments_before) and the last 10 history entries (with the agent's name when an agent made the change). Keep the revision if you mean to change the item.")]
+    [Description("Everything about one work item by key, like SHIP-123: its fields, revision, the parents above it, its children with their states, links, its attachments, the last 5 comments (or the 5 before comments_before) and the last 10 history entries (with the agent's name when an agent made the change) and its 5 newest agent sessions (agent_sessions: state and why each ended; get_agent_session reads one). Keep the revision if you mean to change the item.")]
     public async Task<CallToolResult> GetWorkItemAsync(
         [Description("The work item key, like SHIP-123.")] string key,
         [Description("ISO 8601 time of the oldest comment you already have; returns the 5 comments before it.")] string? comments_before = null,
@@ -60,6 +63,7 @@ internal sealed class GetWorkItemTool(
             [.. revisions.Where(r => r.ChangedBy is not null).Select(r => r.ChangedBy!.Value).Concat(isFeature && snapshot.StatusVerifiedBy is { } verifier ? [verifier] : []).Distinct()],
             cancellationToken);
         var itemAsks = await asks.GetAsync(item.Id, cancellationToken);
+        var sessions = await agentSessions.NewestAsync(item.Id, AgentSessionCount, cancellationToken);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
 
         var result = new WorkItemResult(
@@ -101,6 +105,7 @@ internal sealed class GetWorkItemTool(
                 q.WithdrawnAt?.ToString("O")))],
             itemAsks.OpenQuestions,
             itemAsks.OpenDecisions,
+            [.. sessions.Select(s => AgentSessionLineOf(s, item.Role))],
             isFeature ? snapshot.Goal : null,
             isFeature ? snapshot.StatusLine : null,
             isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock) : null,
@@ -123,6 +128,15 @@ internal sealed class GetWorkItemTool(
             text += $" · {going} {Plural(going, "decision")} going with recommended";
         }
         return text;
+    }
+
+    private static WorkItemResult.AgentSessionLine AgentSessionLineOf(AgentSessionRow session, ProjectRole role)
+    {
+        var end = AgentSessionVisibility.Apply(session.EndReason, session.EndDetail, null, role);
+        return new WorkItemResult.AgentSessionLine(
+            session.Id, session.Connection, session.State, session.Started.ToString("O"),
+            session.State == "stale" ? null : session.Ended?.ToString("O"),
+            end.EndReason, end.EndText);
     }
 
     private static string Plural(int count, string noun) => count == 1 ? noun : noun + "s";

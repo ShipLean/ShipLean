@@ -1,0 +1,35 @@
+{
+  "admin": {
+    "session": {
+      "id": "0000000e-0000-4000-8001-0000000000a1",
+      "item": "SHIP-124",
+      "connection": "Home relay",
+      "state": "failed",
+      "started": "2026-11-15T09:00:00.0000000+00:00",
+      "ended": "2026-11-15T09:00:10.0000000+00:00",
+      "end_reason": "deliveryFailed",
+      "end_text": "<AgentEndText.For(end_reason, end_detail), filled in by the test>",
+      "end_detail": "No answer within 5 seconds. (2 tries)",
+      "run_log": { "attachment": "agent-run-0000000e-0000-4000-8001-0000000000a1.log", "size_bytes": 18432 }
+    },
+    "activities": [
+      {
+        "id": "0000000f-0000-4000-8001-0000000000a1",
+        "type": "error",
+        "body": "Fake activity body.",
+        "truncated": false,
+        "at": "2026-11-15T09:00:05.0000000+00:00"
+      }
+    ],
+    "deliveries": [
+      {
+        "action": "created",
+        "attempt": 1,
+        "at": "2026-11-15T09:00:00.0000000+00:00",
+        "error": "No answer within 5 seconds.",
+        "duration_ms": 5000,
+        "next_attempt_at": "2026-11-15T09:00:05.0000000+00:00"
+      }
+    ]
+  }
+}
