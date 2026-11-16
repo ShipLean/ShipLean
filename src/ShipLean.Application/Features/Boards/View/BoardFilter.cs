@@ -1,4 +1,6 @@
+using ShipLean.Application.WorkItems.History;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Screens;
 
 namespace ShipLean.Application.Features.Boards.View;
 
@@ -10,6 +12,7 @@ public sealed class BoardFilter
     private readonly IdMatch? _owner;
     private readonly IdMatch? _sprint;
     private readonly IdMatch? _epic;
+    private readonly HealthMatch? _health;
 
     private BoardFilter(BoardViewQuery query)
     {
@@ -18,6 +21,7 @@ public sealed class BoardFilter
         _owner = IdMatch.Parse(query.Owner, "owner");
         _sprint = IdMatch.Parse(Single(query.Sprint), "sprint");
         _epic = IdMatch.Parse(Single(query.Epic), "epic");
+        _health = HealthMatch.Parse(query.Health);
     }
 
     public static BoardFilter From(BoardViewQuery query) => new(query);
@@ -27,9 +31,34 @@ public sealed class BoardFilter
         && (_assignee?.Matches(card.AssigneeId) ?? true)
         && (_owner?.Matches(card.AssigneeId) ?? true)
         && (_sprint?.Matches(card.SprintId) ?? true)
-        && (_epic?.Matches(epicId) ?? true);
+        && (_epic?.Matches(epicId) ?? true)
+        && (_health?.Matches(WorkItemFieldView.ParseHealth(card.Health)) ?? true);
 
     private static string[] Single(string? value) => value is null ? [] : [value];
+
+    // One health (onTrack, atRisk, blocked, any case) matches a Feature with it; "none" matches a card with no health set.
+    private sealed record HealthMatch(FeatureHealth? Health)
+    {
+        public static HealthMatch? Parse(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var text = value.Trim();
+            if (text.Equals("none", StringComparison.OrdinalIgnoreCase))
+            {
+                return new HealthMatch((FeatureHealth?)null);
+            }
+
+            return Enum.TryParse<FeatureHealth>(text, ignoreCase: true, out var health) && Enum.IsDefined(health)
+                ? new HealthMatch(health)
+                : throw ApiException.Validation("The health filter must be onTrack, atRisk, blocked or none.", "health");
+        }
+
+        public bool Matches(FeatureHealth? value) => value == Health;
+    }
 
     // "none" matches a card with no value; an id matches that value; several values match a card with any of them.
     private sealed record IdMatch(HashSet<Guid?> Ids)

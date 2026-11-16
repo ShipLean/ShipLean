@@ -3,6 +3,7 @@ import type { BoardViewDto } from '@shiplean/core/api/views';
 import { BoardHarness } from '../ct/BoardHarness';
 import { COLUMNS, TOM, column, featuresBoard, storiesBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';
+import { featuresWithHealth, filteredByHealth } from './ct/healthBoard';
 import { boardTestIds as ids } from '../testIds';
 
 const stories = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
@@ -137,4 +138,49 @@ test('BoardFilter_WhenOnEpics_ShouldOfferNeitherSprintNorEpic', async ({ mount, 
   await expect(page.getByTestId(ids.filterKeyword)).toBeVisible();
   await expect(page.getByTestId(ids.filterSprint)).toHaveCount(0);
   await expect(page.getByTestId(ids.filterEpic)).toHaveCount(0);
+});
+
+test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
+  const server = await stubBoard(
+    page,
+    (search) => filteredByHealth(featuresWithHealth(), search),
+    { level: 'features' },
+  );
+  await mount(<BoardHarness level="features" />, features);
+  await expect(page.getByTestId(ids.card)).toHaveCount(3);
+  await page.getByTestId(ids.filterToggle).click();
+  await expect(page.getByTestId(ids.filterHealth).locator('option')).toHaveText([
+    'Any',
+    'On track',
+    'At risk',
+    'Blocked',
+    'Not set',
+  ]);
+
+  await page.getByTestId(ids.filterHealth).selectOption('atRisk');
+  await expect.poll(() => server.reads.at(-1)).toBe('?health=atRisk');
+  await expect(page.getByTestId(ids.card)).toHaveCount(1);
+  await expect(page.getByTestId(ids.cardKey)).toHaveText('SHIP-104');
+  await expect(page.getByTestId(ids.filterToggle)).toHaveText('Filter (1)');
+
+  await page.getByTestId(ids.filterHealth).selectOption('none');
+  await expect.poll(() => server.reads.at(-1)).toBe('?health=none');
+  await expect(page.getByTestId(ids.cardKey)).toHaveText('SHIP-90');
+});
+
+test('FeaturesBoard_HealthFilter_WhenTheBoardFailsToLoad_ShouldShowTheError', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).click();
+  await expect(page.getByTestId(ids.card)).toHaveCount(3);
+  await page.route(/\/api\/boards\/[^/?]+\?health=/, (route) => route.fulfill({ status: 500 }));
+
+  await page.getByTestId(ids.filterHealth).selectOption('blocked');
+
+  await expect(page.getByTestId(ids.loadFailed)).toBeVisible();
 });

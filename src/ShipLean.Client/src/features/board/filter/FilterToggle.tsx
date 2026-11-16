@@ -2,7 +2,7 @@ import type { BoardFilterQuery } from '../boardApi';
 import { boardTestIds as ids } from '../testIds';
 import { filterCount } from './filterQuery';
 
-// The Filter button: opens and closes the filter bar, and says how many parts of the filter are set.
+// The Filter button: opens and closes the filter bar, and says how many parts of the filter are set; at touch widths a filter that is on gives it the accent border.
 export function FilterToggle({
   filter,
   open,
@@ -17,7 +17,8 @@ export function FilterToggle({
     <button
       type="button"
       data-testid={ids.filterToggle}
-      className="btn-ghost touch:min-h-[var(--touch-target)] touch:flex-none"
+      data-active={count > 0}
+      className={`btn-ghost touch:min-h-[var(--touch-target)] touch:flex-none${count > 0 ? ' touch:border touch:border-signal touch:bg-signal-soft touch:text-ink' : ''}`}
       aria-expanded={open}
       onClick={onToggle}
     >

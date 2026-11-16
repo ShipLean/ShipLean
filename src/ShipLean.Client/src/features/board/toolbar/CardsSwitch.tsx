@@ -2,12 +2,12 @@ import { actionSheetRowClass } from '../../../touch/ActionSheet';
 import { boardTestIds as ids } from '../testIds';
 
 const OPTIONS = [
-  { id: 'full', label: 'Full cards' },
-  { id: 'compact', label: 'Compact' },
+  { id: 'full', label: 'Full cards', short: 'Full' },
+  { id: 'compact', label: 'Compact', short: 'Compact' },
 ] as const;
 
-// Full or compact cards (a per-user choice, saved by the board). In the touch More sheet (`onPicked` given) the two are
-// rows, and picking one applies it and closes the sheet.
+// Full or compact cards (a per-user choice, saved by the board). In the touch More sheet (`onPicked` given) it is one row,
+// "Cards" with a Full | Compact segmented control, and picking one applies it and closes the sheet.
 export function CardsSwitch({
   compact,
   onCompact,
@@ -19,27 +19,33 @@ export function CardsSwitch({
 }) {
   if (onPicked) {
     return (
-      <div role="group" aria-label="Cards" className="grid gap-1">
-        {OPTIONS.map((option) => {
-          const chosen = compact === (option.id === 'compact');
-          return (
-            <button
-              key={option.id}
-              type="button"
-              data-testid={ids.cardsOption}
-              data-option={option.id}
-              aria-pressed={chosen}
-              className={`${actionSheetRowClass} gap-2 ${chosen ? 'bg-signal-soft font-medium' : ''} text-ink`}
-              onClick={() => {
-                onCompact(option.id === 'compact');
-                onPicked();
-              }}
-            >
-              <span className="flex-1">{option.label}</span>
-              {chosen ? <span aria-hidden="true">✓</span> : null}
-            </button>
-          );
-        })}
+      <div className={`${actionSheetRowClass} justify-between gap-3 text-ink`}>
+        <span id="board-cards-label">Cards</span>
+        <div
+          role="group"
+          aria-labelledby="board-cards-label"
+          className="inline-flex overflow-hidden rounded-control border border-edge"
+        >
+          {OPTIONS.map((option) => {
+            const chosen = compact === (option.id === 'compact');
+            return (
+              <button
+                key={option.id}
+                type="button"
+                data-testid={ids.cardsOption}
+                data-option={option.id}
+                aria-pressed={chosen}
+                className={`min-h-[var(--touch-target)] px-4 font-medium ${chosen ? 'bg-signal-soft text-ink' : 'text-ink-muted'}`}
+                onClick={() => {
+                  onCompact(option.id === 'compact');
+                  onPicked();
+                }}
+              >
+                {option.short}
+              </button>
+            );
+          })}
+        </div>
       </div>
     );
   }

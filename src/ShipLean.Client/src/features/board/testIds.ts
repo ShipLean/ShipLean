@@ -76,6 +76,9 @@ export const boardTestIds = {
   filterPerson: 'board-filter-person',
   filterSprint: 'board-filter-sprint',
   filterEpic: 'board-filter-epic',
+  lanesHint: 'board-lanes-hint',
+  filterHealth: 'board-filter-health',
+  filterCount: 'board-filter-count',
   filterClear: 'board-filter-clear',
   filterNote: 'board-filter-note',
   // SHIP-719 L719b: the toolbar, Filter, More and ⓘ sheets on a phone

@@ -3,6 +3,7 @@ import type { Level } from '../../../routes';
 import { useProjectMembers, useProjectSprints } from '../../workItem/workItemApi';
 import type { BoardFilterQuery } from '../boardApi';
 import { EpicFilter } from './EpicFilter';
+import { HealthFilter } from './HealthFilter';
 import { KeywordInput } from './KeywordInput';
 import { PeopleFilter } from './PeopleFilter';
 import { SprintFilter } from './SprintFilter';
@@ -21,7 +22,7 @@ function Labelled({ label, children }: { label: string | null; children: ReactNo
 }
 
 // The filter's controls, shared by the bar (desktop) and the Filter sheet (touch). Stories: keyword, people (or
-// Unassigned), sprint. Features: keyword, owner (or No owner), Epic. Epics: keyword, owner. `labelled` puts a label
+// Unassigned), sprint. Features: keyword, owner (or No owner), Epic, Health. Epics: keyword, owner. `labelled` puts a label
 // over each control, `keywordClass` sizes the keyword box, `onKeywordDraft` hears every keystroke.
 export function BoardFilterFields({
   projectId,
@@ -90,13 +91,21 @@ export function BoardFilterFields({
             />
           </Labelled>
           {level === 'features' ? (
-            <Labelled label={label('Epic')}>
-              <EpicFilter
-                epics={epics}
-                value={filter.epic}
-                onChange={(epic) => onChange({ ...filter, epic })}
-              />
-            </Labelled>
+            <>
+              <Labelled label={label('Epic')}>
+                <EpicFilter
+                  epics={epics}
+                  value={filter.epic}
+                  onChange={(epic) => onChange({ ...filter, epic })}
+                />
+              </Labelled>
+              <Labelled label={label('Health')}>
+                <HealthFilter
+                  value={filter.health}
+                  onChange={(health) => onChange({ ...filter, health })}
+                />
+              </Labelled>
+            </>
           ) : null}
         </>
       )}

@@ -1,18 +1,21 @@
 import { useRef, useState } from 'react';
+import type { BoardColumnDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { Sheet } from '../../../touch/Sheet';
 import type { BoardFilterQuery } from '../boardApi';
 import { boardTestIds as ids } from '../testIds';
 import { BoardFilterFields } from './BoardFilterFields';
-import { filterCount } from './filterQuery';
+import { filterCount, hiddenCards } from './filterQuery';
 
 // The filter at 900px and below: a bottom sheet with the keyword, people (or owner), and Sprint or Epic as a native select.
 // A change applies as it is made; Show cards (and Close) put the sheet away, and apply a keyword typed in the last moment.
+// A line at the end says how many cards match (the same count as the meta line).
 // The keyword box is not focused until it is tapped (C4).
 export function BoardFilterSheet({
   open,
   projectId,
   level,
+  columns,
   filter,
   onChange,
   onClose,
@@ -20,12 +23,15 @@ export function BoardFilterSheet({
   open: boolean;
   projectId: string;
   level: Level;
+  columns: BoardColumnDto[];
   filter: BoardFilterQuery;
   onChange: (filter: BoardFilterQuery) => void;
   onClose: () => void;
 }) {
   const [clears, setClears] = useState(0);
   const draft = useRef<string | null>(null);
+  const total = columns.reduce((sum, column) => sum + column.count, 0);
+  const shown = total - hiddenCards(columns);
 
   function close() {
     const text = draft.current?.trim();
@@ -80,6 +86,9 @@ export function BoardFilterSheet({
             draft.current = text;
           }}
         />
+        <p data-testid={ids.filterCount} data-shown={shown} data-total={total} className="text-[length:var(--text-xs)] text-ink-muted">
+          Showing {shown} of {total} cards · WIP counts include hidden cards
+        </p>
       </div>
     </Sheet>
   );

@@ -28,7 +28,7 @@ function lanesLabel(level: Level, value: string | null, laneCount: number): stri
 }
 
 // The rows over the grid: the level switch, what is open, the lane and Full / Compact choices, Filter and Board
-// settings; under them the filter bar while it is open. At 900px and below it is one row (level switch, Filter, ⋯ More)
+// settings; under them the filter bar while it is open. At 900px and below it is one row (level switch on the left, Filter and a bordered ⋯ More on the right)
 // with the summary on a meta line under it, and Filter opens a sheet.
 export function BoardToolbar({
   view,
@@ -76,15 +76,16 @@ export function BoardToolbar({
         <div data-testid={ids.toolbar} className="flex-none">
           <div className="flex flex-nowrap items-center gap-2 pt-2">
             <LevelSwitch level={level} projectKey={projectKey} />
+            <span className="flex-1" />
             <FilterToggle
               filter={filter}
               open={filterOpen}
               onToggle={() => setFilterOpen(!filterOpen)}
             />
-            <span className="flex-1" />
             <BoardMoreSheet
               level={level}
               laneCount={view.lanes.length}
+              laneNames={view.lanes.map((lane) => lane.name)}
               lanesValue={lanes.value}
               onChooseLanes={lanes.choose}
               compact={compact}
@@ -107,6 +108,7 @@ export function BoardToolbar({
           open={filterOpen}
           projectId={projectId}
           level={level}
+          columns={view.columns}
           filter={filter}
           onChange={onFilter}
           onClose={() => setFilterOpen(false)}

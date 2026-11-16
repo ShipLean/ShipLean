@@ -2,6 +2,8 @@ import { actionSheetRowClass } from '../../../touch/ActionSheet';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 
+const hintClass = 'text-[length:var(--text-xs)] text-ink-muted';
+
 const FEATURE_OPTIONS = [
   { id: 'none', label: 'None' },
   { id: 'on', label: 'Swimlanes' },
@@ -26,6 +28,7 @@ export function LanesSwitch({
   value,
   onChoose,
   onPicked,
+  laneNames = [],
 }: {
   level: Level;
   /** The lanes the board shows now. */
@@ -33,14 +36,17 @@ export function LanesSwitch({
   value: string | null;
   onChoose: (value: string) => void;
   onPicked?: () => void;
+  /** The lanes' names, top first; in the touch sheet they say which lane sits above which. */
+  laneNames?: string[];
 }) {
+  const hint = laneNames.length > 1 ? laneNames.join(' above ') : null;
   if (level === 'stories') {
     if (laneCount <= 1 && value !== 'off') return null;
     return (
       <label
         className={
           onPicked
-            ? `${actionSheetRowClass} gap-3 text-ink`
+            ? `${actionSheetRowClass} flex-row-reverse gap-3 text-ink`
             : 'inline-flex items-center gap-1.5 text-ink-muted'
         }
       >
@@ -50,7 +56,18 @@ export function LanesSwitch({
           checked={value !== 'off'}
           onChange={(event) => onChoose(event.target.checked ? 'on' : 'off')}
         />
-        Swimlanes
+        {onPicked ? (
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span>Swimlanes</span>
+            {hint === null ? null : (
+              <span data-testid={ids.lanesHint} className={hintClass}>
+                {hint}
+              </span>
+            )}
+          </span>
+        ) : (
+          'Swimlanes'
+        )}
       </label>
     );
   }
@@ -73,7 +90,14 @@ export function LanesSwitch({
               onPicked();
             }}
           >
-            <span className="flex-1">{option.label}</span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span>{option.label}</span>
+              {option.id === 'on' && hint !== null ? (
+                <span data-testid={ids.lanesHint} className={hintClass}>
+                  {hint}
+                </span>
+              ) : null}
+            </span>
             {choice === option.id ? <span aria-hidden="true">✓</span> : null}
           </button>
         ))}
