@@ -1,0 +1,619 @@
+{
+  "feature": {
+    "id": "0b6f3c9e-99a0-4c1e-9d55-000000000101",
+    "key": "SHIP-101",
+    "title": "Checkout v2",
+    "state": "Active",
+    "stateCategory": "inProgress",
+    "epic": {
+      "key": "SHIP-80",
+      "title": "Checkout conversion"
+    }
+  },
+  "asOf": "2026-10-24T14:00:00+00:00",
+  "finished": false,
+  "keyDates": [
+    {
+      "point": "added",
+      "at": "2026-09-21T10:00:00+00:00",
+      "dayLabel": "Mon 21 Sep",
+      "by": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000005",
+        "name": "Ana Costa",
+        "agent": false
+      },
+      "source": "Feature created"
+    },
+    {
+      "point": "planned",
+      "at": "2026-09-21T15:30:00+00:00",
+      "dayLabel": "Mon 21 Sep",
+      "by": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "source": "First story added"
+    },
+    {
+      "point": "executionStarted",
+      "at": "2026-09-22T10:00:00+00:00",
+      "dayLabel": "Tue 22 Sep",
+      "by": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "source": "SHIP-121 moved to Active"
+    },
+    {
+      "point": "finished",
+      "at": null,
+      "dayLabel": null,
+      "by": null,
+      "source": null
+    }
+  ],
+  "gaps": [
+    {
+      "from": "added",
+      "to": "planned",
+      "days": 0.2,
+      "label": "6 hours",
+      "soFar": false
+    },
+    {
+      "from": "planned",
+      "to": "executionStarted",
+      "days": 0.8,
+      "label": "19 hours",
+      "soFar": false
+    },
+    {
+      "from": "executionStarted",
+      "to": "finished",
+      "days": 32.2,
+      "label": "32 days",
+      "soFar": true
+    }
+  ],
+  "execution": {
+    "start": "2026-09-22T10:00:00+00:00",
+    "end": null,
+    "calendarDays": 32.2
+  },
+  "scale": {
+    "start": "2026-09-22T00:00:00+00:00",
+    "endHours": 792,
+    "nowHours": 782,
+    "days": [
+      {
+        "startHours": 0,
+        "label": "Tue 22 Sep",
+        "dayOfMonth": "22",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 24,
+        "label": "Wed 23 Sep",
+        "dayOfMonth": "23",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 48,
+        "label": "Thu 24 Sep",
+        "dayOfMonth": "24",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 72,
+        "label": "Fri 25 Sep",
+        "dayOfMonth": "25",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 96,
+        "label": "Sat 26 Sep",
+        "dayOfMonth": "26",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 120,
+        "label": "Sun 27 Sep",
+        "dayOfMonth": "27",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 144,
+        "label": "Mon 28 Sep",
+        "dayOfMonth": "28",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 168,
+        "label": "Tue 29 Sep",
+        "dayOfMonth": "29",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 192,
+        "label": "Wed 30 Sep",
+        "dayOfMonth": "30",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 216,
+        "label": "Thu 1 Oct",
+        "dayOfMonth": "1",
+        "weekend": false,
+        "monthStart": true
+      },
+      {
+        "startHours": 240,
+        "label": "Fri 2 Oct",
+        "dayOfMonth": "2",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 264,
+        "label": "Sat 3 Oct",
+        "dayOfMonth": "3",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 288,
+        "label": "Sun 4 Oct",
+        "dayOfMonth": "4",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 312,
+        "label": "Mon 5 Oct",
+        "dayOfMonth": "5",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 336,
+        "label": "Tue 6 Oct",
+        "dayOfMonth": "6",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 360,
+        "label": "Wed 7 Oct",
+        "dayOfMonth": "7",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 384,
+        "label": "Thu 8 Oct",
+        "dayOfMonth": "8",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 408,
+        "label": "Fri 9 Oct",
+        "dayOfMonth": "9",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 432,
+        "label": "Sat 10 Oct",
+        "dayOfMonth": "10",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 456,
+        "label": "Sun 11 Oct",
+        "dayOfMonth": "11",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 480,
+        "label": "Mon 12 Oct",
+        "dayOfMonth": "12",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 504,
+        "label": "Tue 13 Oct",
+        "dayOfMonth": "13",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 528,
+        "label": "Wed 14 Oct",
+        "dayOfMonth": "14",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 552,
+        "label": "Thu 15 Oct",
+        "dayOfMonth": "15",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 576,
+        "label": "Fri 16 Oct",
+        "dayOfMonth": "16",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 600,
+        "label": "Sat 17 Oct",
+        "dayOfMonth": "17",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 624,
+        "label": "Sun 18 Oct",
+        "dayOfMonth": "18",
+        "weekend": true,
+        "monthStart": false
+      },
+      {
+        "startHours": 648,
+        "label": "Mon 19 Oct",
+        "dayOfMonth": "19",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 672,
+        "label": "Tue 20 Oct",
+        "dayOfMonth": "20",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 696,
+        "label": "Wed 21 Oct",
+        "dayOfMonth": "21",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 720,
+        "label": "Thu 22 Oct",
+        "dayOfMonth": "22",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 744,
+        "label": "Fri 23 Oct",
+        "dayOfMonth": "23",
+        "weekend": false,
+        "monthStart": false
+      },
+      {
+        "startHours": 768,
+        "label": "Sat 24 Oct",
+        "dayOfMonth": "24",
+        "weekend": true,
+        "monthStart": false
+      }
+    ],
+    "sprints": [
+      {
+        "name": "Sprint 40",
+        "startHours": 0,
+        "endHours": 144
+      },
+      {
+        "name": "Sprint 41",
+        "startHours": 144,
+        "endHours": 480
+      },
+      {
+        "name": "Sprint 42",
+        "startHours": 480,
+        "endHours": 792
+      }
+    ]
+  },
+  "criticalPath": [],
+  "stories": [
+    {
+      "key": "SHIP-120",
+      "type": "story",
+      "title": "Guest checkout",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "start": "2026-09-22T10:00:00+00:00",
+      "end": "2026-09-28T12:00:00+00:00",
+      "startHours": 10,
+      "endHours": 156,
+      "hours": 146,
+      "startLabel": "Tue 22 Sep, 10:00",
+      "endLabel": "Mon 28 Sep, 12:00",
+      "durationLabel": "6.1 days",
+      "tasks": [
+        "SHIP-121",
+        "SHIP-122"
+      ]
+    },
+    {
+      "key": "SHIP-141",
+      "type": "story",
+      "title": "Pay with saved card",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "start": "2026-10-20T09:00:00+00:00",
+      "end": null,
+      "startHours": 681,
+      "endHours": null,
+      "hours": 101,
+      "startLabel": "Tue 20 Oct, 09:00",
+      "endLabel": null,
+      "durationLabel": "4.2 days",
+      "tasks": [
+        "SHIP-171",
+        "SHIP-172"
+      ]
+    }
+  ],
+  "bars": [
+    {
+      "key": "SHIP-121",
+      "type": "task",
+      "title": "Guest session and cart merge",
+      "parent": "SHIP-120",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "state": "resolved",
+      "start": "2026-09-22T10:00:00+00:00",
+      "end": "2026-09-24T14:00:00+00:00",
+      "startHours": 10,
+      "endHours": 62,
+      "hours": 52,
+      "startLabel": "Tue 22 Sep, 10:00",
+      "endLabel": "Thu 24 Sep, 14:00",
+      "durationLabel": "2.2 days",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-09-22T10:00:00+00:00",
+          "to": "2026-09-24T14:00:00+00:00",
+          "fromLabel": "Tue 22 Sep, 10:00",
+          "hours": 52,
+          "durationLabel": "2.2 days"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-09-24T14:00:00+00:00",
+          "to": null,
+          "fromLabel": "Thu 24 Sep, 14:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-09-25T16:00:00+00:00",
+          "atHours": 88,
+          "atLabel": "Fri 25 Sep, 16:00",
+          "verdict": "approved",
+          "by": {
+            "userId": "6f1c2a10-0000-4000-8000-000000000002",
+            "name": "Tom Okafor",
+            "agent": false
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-122",
+      "type": "task",
+      "title": "Guest order lookup page",
+      "parent": "SHIP-120",
+      "assignee": {
+        "userId": null,
+        "name": "Claude Code",
+        "agent": true
+      },
+      "state": "resolved",
+      "start": "2026-09-28T09:30:00+00:00",
+      "end": "2026-09-28T12:00:00+00:00",
+      "startHours": 153.5,
+      "endHours": 156,
+      "hours": 2.5,
+      "startLabel": "Mon 28 Sep, 09:30",
+      "endLabel": "Mon 28 Sep, 12:00",
+      "durationLabel": "2.5 h",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-09-28T09:30:00+00:00",
+          "to": "2026-09-28T12:00:00+00:00",
+          "fromLabel": "Mon 28 Sep, 09:30",
+          "hours": 2.5,
+          "durationLabel": "2.5 h"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-09-28T12:00:00+00:00",
+          "to": null,
+          "fromLabel": "Mon 28 Sep, 12:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": [
+        {
+          "at": "2026-09-30T11:00:00+00:00",
+          "atHours": 203,
+          "atLabel": "Wed 30 Sep, 11:00",
+          "verdict": "approved",
+          "by": {
+            "userId": null,
+            "name": "Claude Code",
+            "agent": true
+          },
+          "note": null
+        }
+      ]
+    },
+    {
+      "key": "SHIP-171",
+      "type": "task",
+      "title": "API: tokenised card lookup",
+      "parent": "SHIP-141",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000001",
+        "name": "Priya Shah",
+        "agent": false
+      },
+      "state": "resolved",
+      "start": "2026-10-20T09:00:00+00:00",
+      "end": "2026-10-22T15:00:00+00:00",
+      "startHours": 681,
+      "endHours": 735,
+      "hours": 54,
+      "startLabel": "Tue 20 Oct, 09:00",
+      "endLabel": "Thu 22 Oct, 15:00",
+      "durationLabel": "2.3 days",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-20T09:00:00+00:00",
+          "to": "2026-10-22T15:00:00+00:00",
+          "fromLabel": "Tue 20 Oct, 09:00",
+          "hours": 54,
+          "durationLabel": "2.3 days"
+        },
+        {
+          "state": "resolved",
+          "stateName": "Resolved",
+          "from": "2026-10-22T15:00:00+00:00",
+          "to": null,
+          "fromLabel": "Thu 22 Oct, 15:00",
+          "hours": null,
+          "durationLabel": null
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "key": "SHIP-172",
+      "type": "task",
+      "title": "UI: saved card picker",
+      "parent": "SHIP-141",
+      "assignee": {
+        "userId": "6f1c2a10-0000-4000-8000-000000000003",
+        "name": "Mei Lin",
+        "agent": false
+      },
+      "state": "inFlight",
+      "start": "2026-10-22T16:00:00+00:00",
+      "end": null,
+      "startHours": 736,
+      "endHours": null,
+      "hours": 46,
+      "startLabel": "Thu 22 Oct, 16:00",
+      "endLabel": null,
+      "durationLabel": "1.9 days",
+      "inferred": false,
+      "onCriticalPath": false,
+      "history": [
+        {
+          "state": "active",
+          "stateName": "Active",
+          "from": "2026-10-22T16:00:00+00:00",
+          "to": "2026-10-24T14:00:00+00:00",
+          "fromLabel": "Thu 22 Oct, 16:00",
+          "hours": 46,
+          "durationLabel": "1.9 days"
+        }
+      ],
+      "reviews": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "SHIP-121",
+      "to": "SHIP-122",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 91.5,
+      "waitLabel": "3.8 days",
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    },
+    {
+      "from": "SHIP-171",
+      "to": "SHIP-172",
+      "kind": "depends",
+      "source": "link",
+      "waitHours": 1,
+      "waitLabel": null,
+      "unblockedAt": null,
+      "unblockedHours": null,
+      "onCriticalPath": false
+    }
+  ],
+  "notStarted": [
+    {
+      "key": "SHIP-158",
+      "type": "story",
+      "title": "Gift card balance check",
+      "parent": null
+    },
+    {
+      "key": "SHIP-173",
+      "type": "task",
+      "title": "E2E test",
+      "parent": "SHIP-141"
+    }
+  ],
+  "links": {
+    "ui": "/p/SHIP/items/SHIP-101/timeline"
+  }
+}

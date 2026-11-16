@@ -28,6 +28,15 @@ const nothingToDecide: RetroFeaturesDto = {
   loose: [],
 };
 
+const waitingFeatures: RetroFeaturesDto = {
+  features: [
+    featureRow({ id: 'f1', key: 'SHIP-180', title: 'Saved cards', toDecide: 2 }),
+    featureRow({ id: 'f2', key: 'SHIP-181', title: 'Receipts', noFeatureRetro: true }),
+    featureRow({ id: 'f3', key: 'SHIP-182', title: 'Mobile sign-in', noFeatureRetro: true }),
+  ],
+  loose: [],
+};
+
 for (const theme of THEMES) {
   test(`RetroFeaturesPhone_WhenOpened_ShouldMatchItsScreenshot_retro-features-phone_${theme}`, async ({
     mount,
@@ -66,6 +75,48 @@ for (const theme of THEMES) {
     const screen = await mount(<RetroFeaturesPanel project={project} />, route('?show=open'));
     await expect(page.getByTestId(ids.retroFeaturesEmpty)).toHaveText('Nothing left to decide.');
     await expect(screen).toHaveScreenshot(`retro-features-phone-empty.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`RetroFeaturesPhone_WhenShowingToDecide_ShouldMatchItsScreenshot_retro-features-phone-decide_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await serve(page, sampleFeatures);
+    const screen = await mount(<RetroFeaturesPanel project={project} />, route('?show=open'));
+    await expect(page.getByTestId(ids.retroFeaturesRow)).toHaveCount(3);
+    await expect(page.getByTestId(ids.retroFeaturesToDecide).first()).toBeVisible();
+    await expect(screen).toHaveScreenshot(`retro-features-phone-decide.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`RetroFeaturesPhone_WhenShowingNoFeatureRetroYet_ShouldMatchItsScreenshot_retro-features-phone-waiting_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await serve(page, waitingFeatures);
+    const screen = await mount(<RetroFeaturesPanel project={project} />, route('?show=waiting'));
+    await expect(page.getByTestId(ids.retroFeaturesRow)).toHaveCount(2);
+    await expect(page.getByTestId(ids.retroFeaturesNoFeatureChip)).toHaveCount(2);
+    await expect(screen).toHaveScreenshot(`retro-features-phone-waiting.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`RetroFeaturesPhone_WhenNothingMatchesTheSearch_ShouldMatchItsScreenshot_retro-features-phone-no-match_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await serve(page, sampleFeatures);
+    const screen = await mount(<RetroFeaturesPanel project={project} />, route('?q=zzz'));
+    await expect(page.getByTestId(ids.retroFeaturesEmpty)).toContainText('No Feature matches');
+    await expect(page.getByTestId(ids.retroFeaturesClearSearch)).toBeVisible();
+    await expect(screen).toHaveScreenshot(`retro-features-phone-no-match.${theme}.png`, {
       animations: 'disabled',
     });
   });

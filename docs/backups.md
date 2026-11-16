@@ -175,8 +175,10 @@ Use a bucket in another account or region when you can.
 
 ## Restore runbook
 
-You need: Docker, the passphrase (the one for the generation in the file name), the bucket's access, and a Postgres 18
-server or newer that you can reach. Everything below runs in a shell, from an empty working folder.
+You need: Docker, the AWS CLI, the passphrase (the one for the generation in the file name), the bucket's access, and a Postgres 18
+server or newer that you can reach. Everything below runs in a shell, from an empty working folder, except the two
+`docker compose` commands (steps 1 and 6). Their path is relative to the ShipLean repo root, so run them there, or give
+the path to your own compose file.
 
 ### 1. Stop ShipLean
 
@@ -243,6 +245,8 @@ DB_NAME=shiplean
 ADMIN_URL=postgresql://postgres:secret@postgres:5432/postgres
 DATABASE_URL=postgresql://postgres:secret@postgres:5432/shiplean
 ```
+
+Use your own user and password. The password in the compose file in `src/` is `postgres`.
 
 Restore into an **empty** database. The dump has no `DROP` statements, so a database that already has ShipLean tables
 (ShipLean started once and migrated it) fails with "already exists" errors. If it has, drop it first:
@@ -345,6 +349,9 @@ Now delete the decrypted file: `shred -u shiplean.dump` (or `rm`). It holds the 
 
 Because the restore brings back the old schedule, ShipLean may start a backup within a minute or so if one is overdue.
 That is expected.
+
+The restored run history also shows the run that made the dump as still running, and the health line may say the last
+backup failed. The next run marks it abandoned (see [An abandoned run](#an-abandoned-run)) and clears it.
 
 ## Troubleshooting
 

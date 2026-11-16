@@ -273,6 +273,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     workItemAttachment: 'workItemAttachment',
     taskChanges: 'taskChanges',
     featureBoard: 'featureBoard',
+    featureTimeline: 'featureTimeline',
     sprints: 'sprints',
     sprintBacklog: 'sprintBacklog',
     taskboard: 'taskboard',

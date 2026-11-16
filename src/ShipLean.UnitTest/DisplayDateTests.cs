@@ -13,6 +13,48 @@ public class DisplayDateTests
         DisplayDate.WeekdayDay(DateOnly.Parse(day, System.Globalization.CultureInfo.InvariantCulture)).ShouldBe(expected);
     }
 
+    [TestCase("2026-10-05T09:10:00+00:00", "Mon 5 Oct, 09:10")]
+    [TestCase("2026-10-05T23:30:00+00:00", "Tue 6 Oct, 06:30")]
+    public void DayTime_WhenInstant_ShouldReadInTheZone(string instant, string expected)
+    {
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Test+07", TimeSpan.FromHours(instant.Contains("23:30") ? 7 : 0), "Test", "Test");
+
+        DisplayDate.DayTime(DateTimeOffset.Parse(instant, System.Globalization.CultureInfo.InvariantCulture), zone).ShouldBe(expected);
+    }
+
+    [Test]
+    public void DayLabel_WhenInstant_ShouldNameTheWeekdayAndDay()
+    {
+        DisplayDate.DayLabel(new DateTimeOffset(2026, 8, 18, 10, 20, 0, TimeSpan.Zero), TimeZoneInfo.Utc).ShouldBe("Tue 18 Aug");
+    }
+
+    [TestCase(0.75, "45 min")]
+    [TestCase(2.5, "2.5 h")]
+    [TestCase(23, "23 h")]
+    [TestCase(1.3, "1.3 h")]
+    [TestCase(24.8, "1 day")]
+    [TestCase(25.1667, "1 day")]
+    [TestCase(46, "1.9 days")]
+    [TestCase(103, "4.3 days")]
+    [TestCase(244.5, "10.2 days")]
+    public void Duration_WhenHours_ShouldPickTheUnit(double hours, string expected)
+    {
+        DisplayDate.Duration(hours).ShouldBe(expected);
+    }
+
+    [TestCase(0.25, "6 hours")]
+    [TestCase(0.04, "1 hour")]
+    [TestCase(0.8, "19 hours")]
+    [TestCase(1.0, "1 day")]
+    [TestCase(3.7, "3.7 days")]
+    [TestCase(9.96, "10 days")]
+    [TestCase(16.04, "16 days")]
+    [TestCase(44.3, "44 days")]
+    public void Gap_WhenDays_ShouldPickTheUnit(double days, string expected)
+    {
+        DisplayDate.Gap(days).ShouldBe(expected);
+    }
+
     // 20:00 UTC is 03:00 the next day at +07:00, so the weekday is the next day's.
     [Test]
     public void Weekday_WhenTheZoneIsOnTheNextDay_ShouldNameTheLocalWeekday()

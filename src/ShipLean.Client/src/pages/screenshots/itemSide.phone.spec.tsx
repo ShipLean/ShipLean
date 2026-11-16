@@ -10,7 +10,13 @@ import { WorkItemFormHarness } from '../../features/workItem/ct/WorkItemFormHarn
 import { workItemTestIds as ids } from '../../features/workItem/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { stubProjectApi } from '../pagesFixtures';
+import { backlogView, ROWS } from '../../features/backlog/ct/fixtures';
+import { stubBacklog } from '../../features/backlog/ct/stubApi';
+import { backlogTestIds } from '../../features/backlog/testIds';
+import { comments as savedCardComments, savedCardStory, workItemStates } from './fixtures/workItem';
+import { SHELL_MEMBERS, SHELL_SPRINTS, stubShell } from './shellStub';
 import type { Page } from './shoot';
+import { phonePageShots } from './shootPhone';
 
 // The work item's Links, Attachments and History on a phone and the item modal's bar (SHIP-714, L714d), as element shots
 // of this task's regions only, so the other 714 tasks' merges don't move them.
@@ -162,3 +168,37 @@ for (const theme of THEMES) {
     await expect(bar).toHaveScreenshot(`item-modal-bar.${theme}.png`, { animations: 'disabled' });
   });
 }
+
+// The item modal itself, whole screen over the shell and the stories backlog it was opened from (K5's full-screen Dialog).
+phonePageShots([
+  {
+    name: 'item-modal',
+    route: '/p/SHIP/backlogs/stories?item=SHIP-141',
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubBacklog(page, backlogView(ROWS));
+      await stubApi(page, savedCardStory);
+      // The form fixture's states, members and sprints are registered last and win; put the shell's back.
+      await page.route('**/api/projects/p1/states', (route) =>
+        route.fulfill({ json: workItemStates }),
+      );
+      await page.route('**/api/projects/p1/members', (route) =>
+        route.fulfill({ json: SHELL_MEMBERS }),
+      );
+      await page.route('**/api/projects/p1/sprints', (route) =>
+        route.fulfill({ json: SHELL_SPRINTS }),
+      );
+      await page.route('**/api/work-items/*/comments', (route) =>
+        route.fulfill({ json: savedCardComments }),
+      );
+      await stubSide(page, mei, files, revisions);
+    },
+    ready: async (page) => {
+      await expect(page.getByTestId(backlogTestIds.row).first()).toBeAttached();
+      const dialog = page.getByTestId(itemPeekTestIds.dialog);
+      await expect(dialog.getByTestId(ids.title)).toBeVisible();
+      await expect(dialog.getByTestId(ids.history)).toBeVisible();
+    },
+  },
+]);

@@ -87,6 +87,7 @@ export interface RouteParams {
   workItemAttachment: ProjectParams & { itemKey: string; attachmentId: string };
   taskChanges: ProjectParams & { itemKey: string };
   featureBoard: ProjectParams & { itemKey: string };
+  featureTimeline: ProjectParams & { itemKey: string };
   storiesBoard: ProjectParams;
   featuresBoard: ProjectParams;
   epicsBoard: ProjectParams;
@@ -148,6 +149,13 @@ export interface RouteQuery {
   point?: string;
   // The sprint Retro tab's Written by filter (all | agents | people).
   writtenBy?: string;
+  // The Feature timeline's options: grouping, zoom, dependency arrows, critical path, the selected item, and where it was opened from.
+  group?: string;
+  zoom?: string;
+  deps?: string;
+  cp?: string;
+  select?: string;
+  from?: string;
   // The sprint Retro tab's category tile at touch (wentWell | wentBadly | improve | notInPlan).
   cat?: string;
 }
@@ -231,6 +239,12 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['settings', 'item'],
     installLevel: false,
     crumbs: (p, q) => withSettings(['Backlogs', p.itemKey, 'Feature board'], q),
+  },
+  featureTimeline: {
+    pattern: '/p/:key/items/:itemKey/timeline',
+    query: ['group', 'zoom', 'deps', 'cp', 'select', 'view', 'from'],
+    installLevel: false,
+    crumbs: (p) => ['Backlogs', p.itemKey, 'Timeline'],
   },
   storiesBoard: {
     pattern: '/p/:key/boards/stories',

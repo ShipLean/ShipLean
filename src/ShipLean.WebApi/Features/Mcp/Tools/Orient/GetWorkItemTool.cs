@@ -20,6 +20,7 @@ using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Feature;
+using ShipLean.WebApi.Features.Mcp.Usage;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
@@ -35,7 +36,8 @@ internal sealed class GetWorkItemTool(
     IItemAsks asks,
     ITaskCommits taskCommits,
     ICodeComments codeComments,
-    TimeProvider clock)
+    TimeProvider clock,
+    McpItemTypeSlot itemType)
 {
     private const int CommentCount = 5;
     private const int HistoryCount = 10;
@@ -55,6 +57,7 @@ internal sealed class GetWorkItemTool(
         var listed = await attachments.ListAsync(item.Id, cancellationToken);
         var children = (await tree.DescendantsAsync(item.ProjectId, item.Id, null, cancellationToken)).Where(c => c.Depth == 1).ToList();
         var isFeature = snapshot.Type == WorkItemTypeId.Feature;
+        itemType.Value = snapshot.Type.ToString().ToLowerInvariant();
         var names = await reads.NamesAsync(
             item.Id,
             [.. revisions.Where(r => r.ChangedBy is not null).Select(r => r.ChangedBy!.Value).Concat(isFeature && snapshot.StatusVerifiedBy is { } verifier ? [verifier] : []).Distinct()],

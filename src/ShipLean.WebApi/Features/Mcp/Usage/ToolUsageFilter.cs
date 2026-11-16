@@ -70,6 +70,7 @@ public static class ToolUsageFilter
             var agent = services.GetRequiredService<ICurrentAgent>();
             var scope = services.GetRequiredService<IUsageScope>();
             var time = services.GetRequiredService<TimeProvider>();
+            var itemType = services.GetService<McpItemTypeSlot>()?.Value;
             var payloadUsed = services.GetService<IHttpContextAccessor>()?.HttpContext?.Items.TryGetValue(McpPayloadTargets.UsedItem, out var used) == true
                 && used is true;
 
@@ -84,7 +85,7 @@ public static class ToolUsageFilter
                 (long)elapsed.TotalMilliseconds,
                 $"tool:{matched.ProtocolTool.Name}",
                 time.GetUtcNow(),
-                ToolUsageProps.For(McpPayloadTargets.For(matched) is not null, payloadUsed)));
+                ToolUsageProps.For(McpPayloadTargets.For(matched) is not null, payloadUsed, itemType)));
         }
         catch (Exception e)
         {

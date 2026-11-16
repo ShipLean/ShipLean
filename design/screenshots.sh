@@ -133,6 +133,17 @@ declare -A variants=(
   [feature-timeline-people]="feature-timeline.html?key=SHIP-101&group=people"
   [feature-timeline-days]="feature-timeline.html?zoom=days&select=SHIP-198"
   [feature-timeline-json]="feature-timeline.html?view=json"
+  # SHIP-1398: Inspection (lead time, escaping bugs, cost)
+  [inspection-leadtime]="inspection.html?view=leadtime"
+  [inspection-leadtime-feature]="inspection.html?view=leadtime&cut=feature"
+  [inspection-period]="inspection.html?view=period&p=s23"
+  [inspection-period-features]="inspection.html?view=period&p=s23&tab=features"
+  [inspection-quality]="inspection.html?view=quality"
+  [inspection-cost]="inspection.html?view=cost"
+  [inspection-weeks]="inspection.html?view=leadtime&cadence=weeks"
+  [inspection-no-backfill]="inspection.html?coverage=low"
+  [inspection-wave1]="inspection.html?wave=1"
+  [inspection-json]="inspection.html?view=json"
 )
 
 names=("$@")

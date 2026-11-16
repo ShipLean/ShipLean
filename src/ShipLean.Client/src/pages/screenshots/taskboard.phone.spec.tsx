@@ -2,6 +2,7 @@ import { expect } from '@playwright/experimental-ct-react';
 import type { MemberDto } from '@shiplean/core/api/projects';
 import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/ct/stubSettings';
 import { stubTaskboard } from '../../features/taskboard/ct/stubApi';
+import { sprintHeaderTestIds as headerIds } from '../../features/sprintHeader/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import {
@@ -52,6 +53,16 @@ async function arrange(page: Page, saved?: unknown) {
   );
 }
 
+const chip = (page: Page, name: string) =>
+  page
+    .getByTestId(touchTestIds.pagerChip)
+    .filter({ hasText: new RegExp(`^\\s*${name}(?![A-Za-z])`) });
+
+const openCardActions = async (page: Page) => {
+  await page.getByTestId(taskboardTestIds.cardActions).first().tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+};
+
 const ready = (page: Page) => expect(page.getByTestId(taskboardTestIds.card).first()).toBeVisible();
 
 phonePageShots([
@@ -80,4 +91,109 @@ phonePageShots([
       await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
     },
   },
+  ...(
+    [
+      [
+        'taskboard-active',
+        async (page: Page) => {
+          await chip(page, 'Active').tap();
+          await expect(chip(page, 'Active')).toHaveAttribute('aria-current', 'true');
+          // The smooth scroll has settled once the Active page's header is wholly on screen.
+          await expect(
+            page
+              .getByTestId(taskboardTestIds.phonePageHead)
+              .filter({ hasText: /^\s*Active/ })
+              .first(),
+          ).toBeInViewport({ ratio: 1 });
+        },
+      ],
+      [
+        'taskboard-add',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.addStory).tap();
+          await expect(page.getByTestId(taskboardTestIds.addStoryBox)).toBeVisible();
+        },
+      ],
+      [
+        'taskboard-assign',
+        async (page: Page) => {
+          await openCardActions(page);
+          await page.locator('[data-action-id="assignee"]').tap();
+          await expect(page.getByTestId(taskboardTestIds.assigneeOption).first()).toBeVisible();
+        },
+      ],
+      [
+        'taskboard-move-to-story',
+        async (page: Page) => {
+          await openCardActions(page);
+          await page.locator('[data-action-id="story"]').tap();
+          await expect(page.getByTestId(taskboardTestIds.storySearch)).toBeVisible();
+        },
+      ],
+      [
+        // Closed stories come after Unparented today (TBOARD-1): this shoots that order, not the designed one.
+        'taskboard-end',
+        async (page: Page) => {
+          const last = page
+            .getByTestId(touchTestIds.pagerPage)
+            .first()
+            .getByTestId(taskboardTestIds.closedLine)
+            .last();
+          await last.evaluate((el) =>
+            el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+          );
+          await expect(last).toBeInViewport({ ratio: 0.9 });
+        },
+      ],
+      [
+        'taskboard-filter',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.filterButton).tap();
+          await expect(page.getByTestId(taskboardTestIds.filterSheetRow).first()).toBeVisible();
+        },
+      ],
+      [
+        'taskboard-filtered',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.filterButton).tap();
+          await page.getByTestId(taskboardTestIds.filterSheetRow).nth(1).tap();
+          await expect(page.getByTestId(taskboardTestIds.filterButton)).toHaveText('Filter (1)');
+          await page.getByTestId(touchTestIds.sheetClose).tap();
+          await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+          await expect(page.getByTestId(taskboardTestIds.laneHidden).first()).toBeVisible();
+        },
+      ],
+      [
+        'taskboard-more',
+        async (page: Page) => {
+          await page
+            .getByTestId(taskboardTestIds.toolbar)
+            .getByTestId(touchTestIds.moreButton)
+            .tap();
+          await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(3);
+        },
+      ],
+      [
+        'taskboard-sprint-picker',
+        async (page: Page) => {
+          await page.getByTestId(headerIds.picker).tap();
+          await expect(page.getByTestId(headerIds.pickerSheetTick)).toBeVisible();
+        },
+      ],
+      [
+        'taskboard-sprint-more',
+        async (page: Page) => {
+          await page.getByTestId(headerIds.header).getByTestId(touchTestIds.moreButton).tap();
+          await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
+        },
+      ],
+    ] as const
+  ).map(([name, act]) => ({
+    name,
+    route: ROUTE,
+    shell: true,
+    arrange: (p: Page) => arrange(p),
+    ready,
+    act,
+  })),
 ]);

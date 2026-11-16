@@ -1,6 +1,6 @@
 import { expect } from '@playwright/experimental-ct-react';
 import { criteriaTestIds } from '../../features/criteria/testIds';
-import { backlogView, ROWS } from '../../features/backlog/ct/fixtures';
+import { backlogView, review, ROWS } from '../../features/backlog/ct/fixtures';
 import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { backlogTestIds as ids } from '../../features/backlog/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -15,6 +15,14 @@ const arrange = async (page: Parameters<typeof stubShell>[0]) => {
   await stubShell(page);
   await stubBacklog(page, backlogView(ROWS));
 };
+// SHIP-160 has no points: with the check on, ⋯ More offers "Estimate what has no points".
+const arrangeUnestimated = async (page: Parameters<typeof stubShell>[0]) => {
+  await stubShell(page);
+  await stubBacklog(page, {
+    ...backlogView(ROWS),
+    review: review({ unestimated: [ROWS[0].id] }),
+  });
+};
 const ready = (page: Parameters<typeof stubShell>[0]) =>
   expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
 
@@ -24,7 +32,7 @@ phonePageShots([
     name: 'backlogs-more',
     route,
     shell: true,
-    arrange,
+    arrange: arrangeUnestimated,
     ready,
     act: async (page) => {
       await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
@@ -53,8 +61,9 @@ phonePageShots([
       await page
         .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="search"]`)
         .tap();
-      await page.getByTestId(ids.searchBox).fill('checkout');
-      await expect(page.getByTestId(ids.searchBox)).toHaveValue('checkout');
+      await page.getByTestId(ids.searchBox).fill('SHIP-1');
+      await expect(page.getByTestId(ids.searchBox)).toHaveValue('SHIP-1');
+      await expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length);
     },
   },
 ]);

@@ -4,7 +4,10 @@ import type { TaskboardMoveRequest } from '../taskboardApi';
 import { touchTestIds } from '../../../touch/testIds';
 import { taskboardTestIds as ids } from '../testIds';
 import { AddressProbe } from './AddressProbe';
+import { TaskboardSlot } from '../../../slots/TaskboardSlot';
 import { PhoneGridHarness } from './PhoneGridHarness';
+import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
+import { stubTaskboard } from './stubApi';
 
 // A task card lifted by a long press on the phone grid (SHIP-722): the drag half of D2. Real touch input through CDP and a
 // paused Playwright clock, as touch/useLongPressDrag.phone.spec.tsx does. Runs in the CT phone project.
@@ -138,3 +141,56 @@ test('TaskCard_WhenLiftedTouchIsCancelled_ShouldClearTheDropActiveMark', async (
   await expect(lane).not.toHaveAttribute('data-drop-active', '');
   expect(sent).toHaveLength(0);
 });
+
+const THEMES = ['light', 'dark'] as const;
+
+for (const theme of THEMES) {
+  test(`TaskCard_WhenLiftedOverALane_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await arrange(page);
+    await mount(<PhoneGridHarness board="parent" />, route);
+    const touch = await touchInput(page);
+    const from = await centreOf(card(page, 'SHIP-173').getByTestId(ids.cardKey));
+    const lane = laneTasks(page, 'id-SHIP-150');
+    const over = await centreOf(lane);
+
+    await touch.start(from);
+    await page.clock.runFor(450);
+    await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+    await touch.move(from, over);
+    await expect(lane).toHaveAttribute('data-drop-active', '');
+
+    await expect(page).toHaveScreenshot(`taskboard-touch-drag.${theme}.png`);
+    await touch.cancel();
+  });
+
+  test(`TaskCard_WhenLiftedAtTheRightEdgeOfTheSprintBoard_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    // The Taskboard reads its view over the (fake) clock: let it load, then pause.
+    await page.clock.install();
+    await stubTaskboard(page, VIEW, { holdLaterReads: true });
+    await mount(<TaskboardSlot project={PROJECT} sprint={SPRINT} sprints={SPRINTS} />, {
+      hooksConfig: { route: '/p/SHIP/sprints/s24/taskboard' },
+    });
+    await expect(page.getByTestId(ids.card).first()).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1000);
+    const touch = await touchInput(page);
+    const from = await centreOf(page.getByTestId(ids.card).first().getByTestId(ids.cardKey));
+    const edge = { x: 384, y: from.y };
+
+    await touch.start(from);
+    await page.clock.runFor(450);
+    await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+    await touch.move(from, edge);
+
+    await expect(page).toHaveScreenshot(`taskboard-touch-drag-edge.${theme}.png`);
+    await touch.cancel();
+  });
+}

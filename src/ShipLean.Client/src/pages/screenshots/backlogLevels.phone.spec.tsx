@@ -4,9 +4,11 @@ import { LevelHarness } from '../../features/backlog/ct/LevelHarness';
 import { PROJECT } from '../../features/backlog/ct/fixtures';
 import { stubLevel } from '../../features/backlog/ct/stubLevels';
 import { backlogTestIds as ids } from '../../features/backlog/testIds';
+import { stubShell } from './shellStub';
+import { phonePageShots } from './shootPhone';
 
 // The Features and Epics backlogs on a phone (SHIP-716 D1, D8), as element shots of the rows list only, so the toolbar
-// task's merges don't move them. Regenerate with scripts/update-page-shots.sh src/pages/screenshots/backlogLevels.phone.spec.tsx.
+// task's merges don't move them, and as whole pages (toolbar and rows). Regenerate with scripts/update-page-shots.sh src/pages/screenshots/backlogLevels.phone.spec.tsx.
 
 const THEMES = ['light', 'dark'] as const;
 
@@ -36,3 +38,16 @@ for (const shot of SHOTS) {
     });
   }
 }
+
+phonePageShots(
+  SHOTS.map((shot) => ({
+    name: shot.name.replace('-rows', ''),
+    route: `/p/SHIP/backlogs/${shot.level}`,
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubLevel(page, levelView(shot.level, shot.rows));
+    },
+    ready: (page) => expect(page.getByTestId(ids.row)).toHaveCount(shot.rows.length),
+  })),
+);

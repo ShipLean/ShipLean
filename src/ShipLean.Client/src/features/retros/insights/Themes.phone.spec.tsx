@@ -8,6 +8,7 @@ import {
   retroSearch,
   stubRetros,
 } from '../ct/retroFixtures';
+import { retroSharedTestIds as shared } from '../../retroShared/testIds';
 import { retrosTestIds as ids } from '../testIds';
 import { ThemesAddressHarness } from './ct/ThemesAddressHarness';
 
@@ -85,6 +86,21 @@ for (const colour of THEMES) {
     await expect(sheet).toHaveScreenshot(`retro-insights-theme.${colour}.png`, {
       animations: 'disabled',
       maxDiffPixels: 1500,
+    });
+  });
+
+  test(`ThemeSheet_WhenAddActionIsTapped_ShouldMatchItsScreenshot_retro-insights-action-phone_${colour}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
+    await stubRetros(page);
+    await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
+    await page.getByTestId(ids.retroThemeSheetAddAction).tap();
+    await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+    await expect(page.getByTestId(shared.retroActionCreate)).toBeVisible();
+    await expect(page).toHaveScreenshot(`retro-insights-action-phone.${colour}.png`, {
+      animations: 'disabled',
     });
   });
 
