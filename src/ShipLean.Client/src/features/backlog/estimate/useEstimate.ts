@@ -111,7 +111,11 @@ export function useEstimate(row: BacklogRowDto): Estimate {
   // One save at a time per row: an edit made while one is pending waits in `queued` and goes out the moment that save
   // is answered, from the answer's value and revision, so it never depends on the backlog being read again.
   // `explicitRevision` is the conflict's, for Use mine.
-  async function send(value: number | null, explicitRevision?: number, answered: Answered = ignore) {
+  async function send(
+    value: number | null,
+    explicitRevision?: number,
+    answered: Answered = ignore,
+  ) {
     const cached = latest();
     const base = cached?.row ?? row;
     // What the row holds now: our own last write, until a backlog read at or after its revision shows it.

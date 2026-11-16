@@ -116,10 +116,7 @@ const openQueue = async (page: Page) => {
   await expect(page.getByTestId(ids.pointsSheet)).toBeVisible();
 };
 
-test('PointsSheet_WhenAScaleButtonIsTapped_ShouldSaveAndStepToTheNext', async ({
-  mount,
-  page,
-}) => {
+test('PointsSheet_WhenAScaleButtonIsTapped_ShouldSaveAndStepToTheNext', async ({ mount, page }) => {
   const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
   await mount(<ListMode project={PROJECT} />, route);
   await openQueue(page);
