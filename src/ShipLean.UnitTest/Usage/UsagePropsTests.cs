@@ -11,7 +11,7 @@ public class UsagePropsTests
     {
         UsageProps.All.Order(StringComparer.Ordinal).ShouldBe(
             [
-                "agent_name", "answer_kind", "board", "column", "count", "direction", "from", "input", "item_type", "method",
+                "agent_name", "answer_kind", "board", "column", "count", "direction", "end_reason", "from", "input", "item_type", "method",
                 "mode", "provider", "reason", "screen", "trigger", "viewport"
             ]);
     }

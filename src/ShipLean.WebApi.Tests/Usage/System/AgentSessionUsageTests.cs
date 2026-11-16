@@ -1,5 +1,7 @@
 using System.Net;
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport.Fixtures;
@@ -61,6 +63,50 @@ public class AgentSessionUsageTests : ApiFixture
         var tracked = Recorder.Events.Where(e => e.Name == UsageEventNames.AgentSessionFinished).ShouldHaveSingleItem();
         tracked.Outcome.ShouldBe(UsageOutcome.Error);
         tracked.ProjectId.ShouldBe(arranged.Project.Id);
+    }
+
+    // C12: each terminal session is counted once with the end_reason its writer recorded, so the share of each reason (and of
+    // unknown) over a release is the measure.
+    [TestCase("response", AgentEndReasons.Completed)]
+    [TestCase("error", AgentEndReasons.AgentError)]
+    public async Task AgentSession_WhenItEnds_ShouldTrackFinishedOnceWithItsEndReason(string type, string endReason)
+    {
+        var (arranged, sessionId) = await OpenSessionAsync();
+
+        await ReportAsync(arranged, sessionId, type);
+
+        var tracked = Recorder.Events.Where(e => e.Name == UsageEventNames.AgentSessionFinished).ShouldHaveSingleItem();
+        tracked.Properties[UsageProps.EndReason].ShouldBe(endReason);
+    }
+
+    [Test]
+    public async Task AgentSession_WhenStoppedAndTheGraceExpires_ShouldTrackFinishedWithCanceled()
+    {
+        var (_, sessionId) = await OpenSessionAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE agent_session SET stop_requested_at = @at WHERE id = @sessionId", new { sessionId, at = TimeProvider.System.GetUtcNow().AddHours(-1) });
+        }
+
+        await Host.Services.GetRequiredService<AgentDeliverer>().CancelUnansweredStopsAsync(CancellationToken.None);
+
+        var tracked = Recorder.Events.Where(e => e.Name == UsageEventNames.AgentSessionFinished).ShouldHaveSingleItem();
+        (tracked.Outcome, tracked.Properties[UsageProps.EndReason]).ShouldBe((UsageOutcome.Cancelled, AgentEndReasons.Canceled));
+    }
+
+    // D8: stale is not terminal (a later activity revives it), so the sweep tracks nothing.
+    [Test]
+    public async Task AgentSession_WhenSweptStale_ShouldNotTrackFinished()
+    {
+        var (_, sessionId) = await OpenSessionAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await database.ExecuteAsync("UPDATE agent_session SET last_activity_at = @at WHERE id = @sessionId", new { sessionId, at = TimeProvider.System.GetUtcNow().AddHours(-2) });
+        }
+
+        (await Host.Services.GetRequiredService<AgentStaleSweeper>().SweepAsync(CancellationToken.None)).ShouldBeGreaterThanOrEqualTo(1);
+
+        Recorder.Events.ShouldNotContain(e => e.Name == UsageEventNames.AgentSessionFinished);
     }
 
     [Test]

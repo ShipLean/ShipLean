@@ -191,6 +191,14 @@ public sealed class AgentReports(
             _ => AgentSessionStates.Working,
         };
         var ended = AgentSessionStates.IsTerminal(next) ? now : (DateTimeOffset?)null;
+        // Why it ended (C2), in the same UPDATE as the state; a live state (which revives a stale session) clears both columns.
+        (string? Reason, string? Detail) end = next switch
+        {
+            AgentSessionStates.Completed => (AgentEndReasons.Completed, null),
+            AgentSessionStates.Canceled => (AgentEndReasons.Canceled, null),
+            AgentSessionStates.Failed => (AgentEndReasons.AgentError, AgentEndDetail.AgentError(create.Body)),
+            _ => (null, null),
+        };
         // A stale session whose item has started another one stays stale (the unique index allows one live session), but still records the activity time.
         // A concurrent start can still take the live slot between that check and this update (the unique index refuses the revival):
         // the activity is kept and the session stays stale. A savepoint keeps the refusal from poisoning the transaction.
@@ -200,12 +208,12 @@ public sealed class AgentReports(
         {
             moved = await connection.ExecuteAsync(new CommandDefinition(
                 $"""
-                UPDATE agent_session SET state = @next, last_activity_at = @now, ended_at = @ended
+                UPDATE agent_session SET state = @next, last_activity_at = @now, ended_at = @ended, end_reason = @reason, end_detail = @detail
                 WHERE id = @id
                   AND (state <> 'stale' OR @next NOT IN ('working', 'inputRequired')
                        OR NOT EXISTS (SELECT 1 FROM agent_session o WHERE o.work_item_id = @workItemId AND o.id <> @id AND o.state IN {AgentSessionStates.LiveSql}))
                 """,
-                new { id = create.SessionId, workItemId = session.WorkItemId, next, now, ended }, transaction, cancellationToken: cancellationToken));
+                new { id = create.SessionId, workItemId = session.WorkItemId, next, now, ended, reason = end.Reason, detail = end.Detail }, transaction, cancellationToken: cancellationToken));
         }
         catch (PostgresException refused) when (refused.SqlState == PostgresErrorCodes.UniqueViolation)
         {
@@ -237,12 +245,18 @@ public sealed class AgentReports(
         return true;
     }
 
-    // Ends the session as failed (terminal, so its item can start another); returns the new state for the changed event.
+    // Ends the session as failed (terminal, so its item can start another) with end reason proposalWithoutIssue, overwriting the
+    // completed that MoveStateAsync wrote for the response; returns the new state for the changed event. Its one caller is a propose
+    // session whose item has no GitHub issue.
     private static async Task<string> FailAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid sessionId, DateTimeOffset now, CancellationToken cancellationToken)
     {
         await connection.ExecuteAsync(new CommandDefinition(
-            "UPDATE agent_session SET state = @failed, ended_at = coalesce(ended_at, @now), last_activity_at = @now WHERE id = @sessionId",
-            new { sessionId, failed = AgentSessionStates.Failed, now }, transaction, cancellationToken: cancellationToken));
+            """
+            UPDATE agent_session
+            SET state = @failed, ended_at = coalesce(ended_at, @now), last_activity_at = @now, end_reason = @reason, end_detail = @detail
+            WHERE id = @sessionId
+            """,
+            new { sessionId, failed = AgentSessionStates.Failed, now, reason = AgentEndReasons.ProposalWithoutIssue, detail = AgentEndDetail.ProposalWithoutIssue }, transaction, cancellationToken: cancellationToken));
         return AgentSessionStates.Failed;
     }
 
