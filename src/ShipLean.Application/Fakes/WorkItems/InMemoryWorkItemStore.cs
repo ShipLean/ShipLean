@@ -15,7 +15,7 @@ namespace ShipLean.Application.Fakes.WorkItems;
 // The work item store in memory: thread-safe, no I/O, publishes no events. Every write runs on a copy of the data that
 // replaces the real data only when the whole write (rules, the InTransaction hook) succeeded, which is its transaction.
 // Arrange it with AddProject, AddUser and AddSprint before use. Board and backlog order are sortable strings computed before the rules run; the rules may amend them.
-public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent) : IWorkItemStore, IWorkItemTreeWriter
+public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent, IViewerZone viewerZone) : IWorkItemStore, IWorkItemTreeWriter
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentDictionary<Guid, UserRef> _users = new();
@@ -282,7 +282,7 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
     private WriteOutcome StaleOutcome(InMemoryWorld world, WorkItemSnapshot current, int expectedRevision)
         => new(null, BuilderFor(world).Conflict(current, expectedRevision));
 
-    private InMemoryDtoBuilder BuilderFor(InMemoryWorld world) => new(world, _users, _sprints, renderer, time);
+    private InMemoryDtoBuilder BuilderFor(InMemoryWorld world) => new(world, _users, _sprints, renderer, time, viewerZone);
 
     private static WorkItemSnapshot NewSnapshot(InMemoryProject project, Guid projectId, int number, WorkItemTypeId type, Guid stateId, InMemoryStamp stamp) => new(
         Guid.NewGuid(), projectId, number, $"{project.Key}-{number}", type, "", "", [], "", null, stateId, null, null, 2, null, "", null, null, [],

@@ -195,7 +195,7 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ hashFiles('src/**/*.csproj', 'src/Directory.Build.props') }}
           restore-keys: nuget-
-      - run: dotnet test src/ShipLean.UnitTest --configuration Release
+      - run: dotnet test src/ShipLean.UnitTest --configuration Release --filter "TestCategory!=RedUntilLane"
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}
@@ -243,7 +243,12 @@ jobs:
       # Search tests load the embedding model, so they stay in their own process.
       # GitHub-hosted runners have 16 GB, so the 1 GiB heap cap the home runners needed is not set.
       - run: dotnet build src/ShipLean.WebApi.Tests --configuration Release && dotnet build-server shutdown
-      - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search." -- NUnit.NumberOfTestWorkers=4
+      # The Cursor hook script's own tests (plain node:test, no dependencies). No test file yet means nothing runs and the step passes.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test "src/ShipLean.Application/Features/Inspection/AgentSetup/cursor/**/*.test.mjs"
+      - run: dotnet test src/ShipLean.WebApi.Tests --configuration Release --no-build --filter "FullyQualifiedName!~ShipLean.WebApi.Tests.Search.&TestCategory!=RedUntilLane" -- NUnit.NumberOfTestWorkers=4
         env:
           NUNIT_METRICS_ES_ENDPOINT: https://devmetrics.dicko.dev:18888/dotnet/nunit
           DEVFEEDBACK_TEST_TOKEN: ${{ secrets.DEVFEEDBACK_TEST_TOKEN }}

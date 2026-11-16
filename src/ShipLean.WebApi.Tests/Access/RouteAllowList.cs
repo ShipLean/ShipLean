@@ -48,6 +48,8 @@ public static class RouteAllowList
         new("PUT", "api/me/profile", "The caller's own display name and avatar colour."),
         new("PUT", "api/me/photo", "The caller's own photo."),
         new("DELETE", "api/me/photo", "The caller's own photo."),
+        new("PUT", "api/me/time-zone", "The caller's own time zone."),
+        new("GET", "api/me/time-zones", "The caller's own time zone: the zones to choose from, not project data."),
         new("GET", "api/users/{id:guid}/photo", "Any signed-in user may read any user's photo: it is what every card and presence stack shows, and it reveals nothing a UserRef does not."),
         new("DELETE", "api/me/agents/{id:guid}", "Revokes one of the caller's own connected agents; another user's id is not_found."),
         new("GET", "api/agents/consent/{id:guid}", "A pending authorize request is the caller's own; another user's is not_found."),

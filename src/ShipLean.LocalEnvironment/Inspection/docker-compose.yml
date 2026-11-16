@@ -1,0 +1,40 @@
+# The Inspection test stack by compose, for scripts/inspection-stack.sh (manual checks, real agent runs). The same images, memory limits
+# and configs as InspectionStack. Ports are published on 127.0.0.1 only: collector OTLP/HTTP 14318, ClickHouse HTTP 18123,
+# Tempo 13200, Loki 13100.
+name: shiplean-inspection
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.3.63
+    mem_limit: 1g
+    environment:
+      CLICKHOUSE_USER: shiplean
+      CLICKHOUSE_PASSWORD: shiplean
+    volumes: ["./clickhouse-memory.xml:/etc/clickhouse-server/config.d/clickhouse-memory.xml:ro"]
+    ports: ["127.0.0.1:18123:8123"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
+      interval: 2s
+      retries: 60
+  tempo:
+    image: grafana/tempo:2.10.10
+    mem_limit: 512m
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./tempo.yaml:/etc/tempo.yaml:ro"]
+    ports: ["127.0.0.1:13200:3200"]
+  loki:
+    image: grafana/loki:3.7.10
+    mem_limit: 512m
+    command: ["-config.file=/etc/loki.yaml"]
+    volumes: ["./loki.yaml:/etc/loki.yaml:ro"]
+    ports: ["127.0.0.1:13100:3100"]
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.165.0
+    mem_limit: 256m
+    command: ["--config=/etc/collector.yaml"]
+    volumes: ["./collector.yaml:/etc/collector.yaml:ro"]
+    ports: ["127.0.0.1:14318:4318"]
+    depends_on:
+      clickhouse: { condition: service_healthy }
+      tempo: { condition: service_started }
+      loki: { condition: service_started }

@@ -132,5 +132,6 @@
     "questions": 1,
     "decisions": 2,
     "onChildren": true
-  }
+  },
+  "inspectionEnabled": false
 }

@@ -17,7 +17,7 @@ namespace ShipLean.Application.Features.Inbox;
 // comment or a non-bulk revision with an agent name is agentPickedUp, a live comment by another person without one is
 // personReplied. Archived comments, comments mirrored from GitHub, the comments an answer posts itself, bulk revisions and the
 // user's own plain comments don't count. One query finds every row's next event.
-public sealed class AnsweredReader(NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock) : IAnsweredReader
+public sealed class AnsweredReader(NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock, IViewerZone viewerZone) : IAnsweredReader
 {
     public async Task<AnsweredDto> GetAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
@@ -65,11 +65,11 @@ public sealed class AnsweredReader(NpgsqlDataSource dataSource, ICurrentUser cur
             new { itemIds }, cancellationToken: cancellationToken))).ToDictionary(i => i.Id);
         var nexts = await NextsAsync(connection, answers, userId, cancellationToken);
 
-        var today = DisplayDate.StartOfDay(DisplayDate.Today(now, clock.LocalTimeZone), clock.LocalTimeZone);
+        var today = DisplayDate.StartOfDay(DisplayDate.Today(now, viewerZone.Zone), viewerZone.Zone);
         var rows = answers
             .Select((a, index) => new AnsweredRowDto(
                 a.WorkItemId, items[a.WorkItemId].Key, items[a.WorkItemId].Type, items[a.WorkItemId].Title, a.Kind, a.Labels, a.Summary,
-                a.At, DisplayDate.Relative(a.At, clock), nexts.GetValueOrDefault(index)))
+                a.At, DisplayDate.Relative(a.At, clock.GetUtcNow(), viewerZone.Zone), nexts.GetValueOrDefault(index)))
             .OrderByDescending(r => r.AnsweredAt).ThenBy(r => r.Key, StringComparer.Ordinal).ThenBy(r => r.Labels, StringComparer.Ordinal)
             .ToList();
         var todays = rows.Where(r => r.AnsweredAt >= today).ToList();
@@ -155,7 +155,7 @@ public sealed class AnsweredReader(NpgsqlDataSource dataSource, ICurrentUser cur
             n => new AnsweredNextDto(
                 n.Kind == "agentPickedUp" ? AnsweredNextKind.AgentPickedUp : AnsweredNextKind.PersonReplied,
                 n.ByUserId is null ? null : new UserRef(n.Id!.Value, n.Name!, n.Initials!, n.AvatarColour!, n.PhotoUrl),
-                n.AgentName, n.At, DisplayDate.Relative(n.At, clock)));
+                n.AgentName, n.At, DisplayDate.Relative(n.At, clock.GetUtcNow(), viewerZone.Zone)));
     }
 
     private sealed record Answer(Guid WorkItemId, InboxAskKind Kind, string Labels, string Summary, DateTimeOffset At);

@@ -8,7 +8,8 @@ namespace ShipLean.Contracts.WorkItems;
 // Everything the work item form, backlog and board cards show for one item. Markdown fields come with their rendered HTML.
 // Goal, StatusLine, StatusVerified, Slug and StartedOn are a Feature's: Goal and StatusLine are "" and the rest null on other types.
 // Health and HealthSet are a Feature's too (null elsewhere). Rollups and NeedsYou are set on Epics, Features and Stories (a Story's
-// tasks); [] and null on the rest. NeedsYou is null when nothing waits on the caller.
+// tasks); [] and null on the rest. NeedsYou is null when nothing waits on the caller. InspectionEnabled is whether the item
+// page shows its Agent runs section (Inspection is on for the instance and the project).
 public sealed record WorkItemDto(
     Guid Id,
     Guid ProjectId,
@@ -50,4 +51,5 @@ public sealed record WorkItemDto(
     FeatureHealth? Health,
     HealthSetDto? HealthSet,
     IReadOnlyList<RollupCountDto> Rollups,
-    NeedsYouDto? NeedsYou);
+    NeedsYouDto? NeedsYou,
+    bool InspectionEnabled);

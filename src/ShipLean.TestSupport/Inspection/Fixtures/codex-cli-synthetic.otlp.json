@@ -1,0 +1,463 @@
+{
+  "resourceSpans": [],
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "codex_cli_rs"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1794304800000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "user_prompt"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.user_prompt"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Fix the failing test"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304805000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "api_request"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.api_request"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-5"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "4200"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "900"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "200"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304806000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shiplean__pick_up"
+                  }
+                },
+                {
+                  "key": "tool_input",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-1\"}"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "800"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "picked up"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304812000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shell"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "ok"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304820000000000",
+              "severityNumber": 17,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "apply_patch"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "300"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "patch failed"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304830000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "user_prompt"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-2"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.user_prompt"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Try again and report"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304836000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "api_request"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-2"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.api_request"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-5"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "1100"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "350"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304838000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-2"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shiplean__comment"
+                  }
+                },
+                {
+                  "key": "tool_input",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-3\",\"text\":\"fixed\"}"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "700"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "commented"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304840000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cx-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "q-2"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "codex.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shiplean__report_task"
+                  }
+                },
+                {
+                  "key": "tool_input",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-1\",\"status\":\"partial\",\"commits\":[\"d4e5f6a\",\"b7c8d9e\"]}"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "900"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "reported"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

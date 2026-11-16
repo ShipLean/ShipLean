@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "beforeShellExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "afterShellExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "beforeMCPExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "afterMCPExecution": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "afterFileEdit": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }],
+    "stop": [{ "command": "node .cursor/hooks/shiplean-cursor-hook.mjs", "timeout": 5 }]
+  }
+}

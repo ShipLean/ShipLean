@@ -2,6 +2,7 @@ using ShipLean.Application.Fakes.Attachments;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Refs;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Attachments;
 using ShipLean.TestSupport.Contracts.Users;
@@ -17,7 +18,7 @@ public class InMemoryAttachmentStoreContractTests : AttachmentStoreContract
     [SetUp]
     public void CreateWorld()
     {
-        _store = new InMemoryAttachmentStore(_user, new InMemoryBlobStore(), TimeProvider.System);
+        _store = new InMemoryAttachmentStore(_user, new InMemoryBlobStore(), TimeProvider.System, new FixedViewerZone());
         _store.AddUser(new UserRef(SeedIds.Users.Joel, "Joel Dickson", "JD", "#5b6b8c", null));
         _store.AddUser(new UserRef(SeedIds.Users.Priya, "Priya Shah", "PS", "#2f7fd8", null));
     }

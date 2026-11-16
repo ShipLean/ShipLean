@@ -1,0 +1,141 @@
+namespace ShipLean.TestSupport.TestIds;
+
+public static class InspectionTestIds
+{
+    // Item page slot
+    public const string AgentRunsSlot = "slot-agent-runs";
+    public const string AgentRunsSection = "agent-runs-section";
+    public const string AgentRunsHeader = "agent-runs-header";
+    public const string AgentRunsTotalRuns = "agent-runs-total-runs";
+    public const string AgentRunsTotalTook = "agent-runs-total-took";
+    public const string AgentRunsTotalTokens = "agent-runs-total-tokens";
+    public const string AgentRunsTotalErrors = "agent-runs-total-errors";
+    public const string AgentRunsTotalWait = "agent-runs-total-wait";
+    public const string AgentRunsRow = "agent-runs-row";
+    public const string AgentRunsRowAgent = "agent-runs-row-agent";
+    public const string AgentRunsRowStarted = "agent-runs-row-started";
+    public const string AgentRunsRowWhatItDid = "agent-runs-row-what-it-did";
+    public const string AgentRunsRowLinkSource = "agent-runs-row-link-source";
+    public const string AgentRunsRowMeta = "agent-runs-row-meta";
+    public const string AgentRunsRowTook = "agent-runs-row-took";
+    public const string AgentRunsRowTimeline = "agent-runs-row-timeline";
+    public const string AgentRunsRowTokens = "agent-runs-row-tokens";
+    public const string AgentRunsRowErrors = "agent-runs-row-errors";
+    public const string AgentRunsFooter = "agent-runs-footer";
+    public const string AgentRunsStore = "agent-runs-store";
+    public const string AgentRunsContentNote = "agent-runs-content-note";
+    public const string AgentRunsSetupLink = "agent-runs-setup-link";
+    public const string AgentRunsEmpty = "agent-runs-empty";
+    public const string AgentRunsEmptySetupLink = "agent-runs-empty-setup-link";
+    public const string AgentRunsDown = "agent-runs-down";
+    public const string AgentRunsLoading = "agent-runs-loading";
+    public const string AgentRunsLoadFailed = "agent-runs-load-failed";
+
+    // Run page
+    public const string RunPage = "run-page";
+    public const string RunPageNarrow = "run-page-narrow";
+    public const string RunPageNarrowBack = "run-page-narrow-back";
+    public const string RunBack = "run-back";
+    public const string RunLoading = "run-loading";
+    public const string RunLoadFailed = "run-load-failed";
+    public const string RunExpired = "run-expired";
+    public const string RunHeader = "run-header";
+    public const string RunAgent = "run-agent";
+    public const string RunStarted = "run-started";
+    public const string RunLinkSource = "run-link-source";
+    public const string RunOlder = "run-older";
+    public const string RunNewer = "run-newer";
+    public const string RunAllRows = "run-all-rows";
+    public const string RunErrorsOnly = "run-errors-only";
+    public const string RunFind = "run-find";
+    public const string RunTotalTook = "run-total-took";
+    public const string RunTotalTurns = "run-total-turns";
+    public const string RunTotalSpans = "run-total-spans";
+    public const string RunTotalTokens = "run-total-tokens";
+    public const string RunTotalErrors = "run-total-errors";
+    public const string RunTotalWait = "run-total-wait";
+    public const string RunOverview = "run-overview";
+    public const string RunOverviewTurn = "run-overview-turn";
+    public const string RunOverviewWait = "run-overview-wait";
+    public const string RunWholeRun = "run-whole-run";
+    public const string RunWaterfall = "run-waterfall";
+    public const string RunAxis = "run-axis";
+    public const string RunTurn = "run-turn";
+    public const string RunTurnPrompt = "run-turn-prompt";
+    public const string RunTurnPromptHidden = "run-turn-prompt-hidden";
+    public const string RunRow = "run-row";
+    public const string RunRowBar = "run-row-bar";
+    public const string RunRowWait = "run-row-wait";
+    public const string RunRowError = "run-row-error";
+    public const string RunRowRetry = "run-row-retry";
+    public const string RunRowCollapsed = "run-row-collapsed";
+    public const string RunRowEvent = "run-row-event";
+    public const string RunRowDiamond = "run-row-diamond";
+    public const string RunEvents = "run-events";
+    public const string RunBanner = "run-banner";
+    public const string RunTruncated = "run-truncated";
+    public const string RunGrafanaLink = "run-grafana-link";
+
+    // Row detail panel
+    public const string RunPanel = "run-panel";
+    public const string RunPanelEmpty = "run-panel-empty";
+    public const string RunPanelLoading = "run-panel-loading";
+    public const string RunPanelLoadFailed = "run-panel-load-failed";
+    public const string RunPanelKind = "run-panel-kind";
+    public const string RunPanelStart = "run-panel-start";
+    public const string RunPanelDuration = "run-panel-duration";
+    public const string RunPanelOffset = "run-panel-offset";
+    public const string RunPanelWait = "run-panel-wait";
+    public const string RunPanelCopyLink = "run-panel-copy-link";
+    public const string RunPanelGrafana = "run-panel-grafana";
+    public const string RunPanelFilePath = "run-panel-file-path";
+    public const string RunPanelCommit = "run-panel-commit";
+    public const string RunPanelContentHidden = "run-panel-content-hidden";
+    public const string RunPanelInput = "run-panel-input";
+    public const string RunPanelOutput = "run-panel-output";
+    public const string RunPanelOutputTruncated = "run-panel-output-truncated";
+    public const string RunPanelAttributes = "run-panel-attributes";
+    public const string RunPanelAttribute = "run-panel-attribute";
+    public const string RunPanelLogs = "run-panel-logs";
+    public const string RunPanelLog = "run-panel-log";
+
+    // Project settings: Inspection tab
+    public const string SettingsTabInspection = "settings-tab-inspection";
+    public const string InspectionSettings = "inspection-settings";
+    public const string InspectionSubTabs = "inspection-sub-tabs";
+    public const string InspectionSubTabGeneral = "inspection-sub-tab-general";
+    public const string InspectionSubTabAgentSetup = "inspection-sub-tab-agent-setup";
+    public const string InspectionGeneral = "inspection-general";
+    public const string InspectionSettingsSave = "inspection-settings-save";
+    public const string InspectionSettingsSaveError = "inspection-settings-save-error";
+    public const string InspectionSettingsLoading = "inspection-settings-loading";
+    public const string InspectionSettingsLoadFailed = "inspection-settings-load-failed";
+    public const string InspectionEnabled = "inspection-enabled";
+    public const string InspectionShowContent = "inspection-show-content";
+    public const string InspectionContentWarning = "inspection-content-warning";
+    public const string InspectionStoreMode = "inspection-store-mode";
+    public const string InspectionTenantOverride = "inspection-tenant-override";
+    public const string InspectionSelectorOverride = "inspection-selector-override";
+    public const string InspectionContentConfirm = "inspection-content-confirm";
+    public const string InspectionReadOnly = "inspection-read-only";
+    public const string InspectionAgentSetup = "inspection-agent-setup";
+    public const string InspectionAgentPick = "inspection-agent-pick";
+    public const string InspectionItemInput = "inspection-item-input";
+    public const string InspectionSetupFile = "inspection-setup-file";
+    public const string InspectionSetupCopy = "inspection-setup-copy";
+    public const string InspectionSetupNotes = "inspection-setup-notes";
+    public const string InspectionDocsLink = "inspection-docs-link";
+
+    // Instance settings: Inspection health panel
+    public const string InspectionHealth = "inspection-health";
+    public const string InspectionHealthLoading = "inspection-health-loading";
+    public const string InspectionHealthLoadFailed = "inspection-health-load-failed";
+    public const string InspectionHealthOff = "inspection-health-off";
+    public const string InspectionHealthMode = "inspection-health-mode";
+    public const string InspectionHealthReachable = "inspection-health-reachable";
+    public const string InspectionHealthLatency = "inspection-health-latency";
+    public const string InspectionHealthLag = "inspection-health-lag";
+    public const string InspectionHealthProblem = "inspection-health-problem";
+    public const string InspectionHealthCheckFields = "inspection-health-check-fields";
+    public const string InspectionHealthField = "inspection-health-field";
+}

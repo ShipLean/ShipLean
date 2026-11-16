@@ -13,6 +13,7 @@ using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Sprints;
 using ShipLean.Contracts.WorkItems;
 using Npgsql;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 
@@ -27,7 +28,7 @@ public class SprintRolloverApiTests : ApiFixture
         services.RemoveAll<IWorkItemStore>();
         services.AddSingleton<IWorkItemStore>(sp => new WorkItemStore(
             sp.GetRequiredService<NpgsqlDataSource>(), sp.GetRequiredService<ICurrentUser>(), new PassThroughWorkItemRules(),
-            sp.GetRequiredService<IProjectEvents>(), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None));
+            sp.GetRequiredService<IProjectEvents>(), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None, new FixedViewerZone()));
     };
 
     [Test]

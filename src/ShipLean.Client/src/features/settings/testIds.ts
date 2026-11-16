@@ -320,4 +320,10 @@ export const settingsTestIds = {
   issueIntakeMembersLoading: 'settings-issue-intake-members-loading',
   issueIntakeMembersError: 'settings-issue-intake-members-error',
   issueIntakeMembersRetry: 'settings-issue-intake-members-retry',
+  timeZonePanel: 'settings-time-zone-panel',
+  timeZoneSelect: 'settings-time-zone-select',
+  timeZoneCurrent: 'settings-time-zone-current',
+  timeZoneUseDevice: 'settings-time-zone-use-device',
+  timeZoneError: 'settings-time-zone-error',
+  timeZoneChoicesError: 'settings-time-zone-choices-error',
 } as const;

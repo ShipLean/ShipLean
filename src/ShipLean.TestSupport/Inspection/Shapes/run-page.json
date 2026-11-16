@@ -1,0 +1,114 @@
+{
+  "expired": false,
+  "header": {
+    "agent": "claude-code",
+    "agentLabel": "Claude Code",
+    "startedLabel": "10 Nov, 10:00",
+    "startedBy": "dev@example.com",
+    "linkSource": "fromToolCall",
+    "olderRunId": "sess-cc-0",
+    "newerRunId": null,
+    "tookMs": 85000,
+    "turns": 2,
+    "spansOrEvents": 23,
+    "tokensIn": 7000,
+    "tokensOut": 1470,
+    "errors": 4,
+    "waitMs": 3000
+  },
+  "logOnly": false,
+  "banner": null,
+  "truncated": false,
+  "grafanaUrl": "https://grafana.example.com/explore?traceId=abc",
+  "contentShown": true,
+  "overview": [
+    {
+      "turn": 1,
+      "startPct": 0.0,
+      "endPct": 70.5,
+      "hasError": true,
+      "waits": [
+        {
+          "startPct": 14.1,
+          "endPct": 17.6
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "startPct": 82.3,
+      "endPct": 100.0,
+      "hasError": false,
+      "waits": []
+    }
+  ],
+  "axis": {
+    "startMs": 0,
+    "endMs": 85000
+  },
+  "turns": [
+    {
+      "number": 1,
+      "label": "Turn 1",
+      "prompt": "Implement the thing in SHIP-1",
+      "promptHidden": false,
+      "rows": [
+        {
+          "id": "0000000000001002",
+          "parentId": null,
+          "depth": 0,
+          "kind": "modelCall",
+          "name": "claude_code.llm_request",
+          "startMs": 1000,
+          "endMs": 8000,
+          "durationMs": 7000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 0,
+          "hasLogs": false
+        },
+        {
+          "id": "0000000000001005",
+          "parentId": null,
+          "depth": 0,
+          "kind": "tool",
+          "name": "Edit",
+          "startMs": 12000,
+          "endMs": 20000,
+          "durationMs": 8000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": 12000,
+          "waitEndMs": 15000,
+          "collapsedChildCount": 0,
+          "hasLogs": true
+        },
+        {
+          "id": "000000000000100b",
+          "parentId": null,
+          "depth": 0,
+          "kind": "subagent",
+          "name": "Agent",
+          "startMs": 40000,
+          "endMs": 55000,
+          "durationMs": 15000,
+          "isError": false,
+          "isRetry": false,
+          "waitStartMs": null,
+          "waitEndMs": null,
+          "collapsedChildCount": 2,
+          "hasLogs": false
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "label": "Turn 2",
+      "prompt": null,
+      "promptHidden": true,
+      "rows": []
+    }
+  ]
+}

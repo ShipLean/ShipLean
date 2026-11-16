@@ -38,6 +38,7 @@ public static class ToolUsageMap
         ["read_attachment"] = UsageEventNames.AttachmentViewed,
         ["create_payload_upload"] = UsageEventNames.PayloadUploadIssued,
         ["link"] = UsageEventNames.LinkAdded,
+        ["add_commits"] = UsageEventNames.TaskCommitsAdded,
         ["report_link_state"] = UsageEventNames.LinkStateReported,
         ["create_sprint"] = UsageEventNames.SprintCreated,
         ["plan_sprint"] = UsageEventNames.SprintPlanned,
@@ -51,6 +52,9 @@ public static class ToolUsageMap
         ["record_decisions"] = UsageEventNames.DecisionRecorded,
         ["ask"] = UsageEventNames.QuestionAsked,
         ["answer_decision"] = UsageEventNames.DecisionAnswered,
+        ["list_runs"] = UsageEventNames.InspectionRunsListed,
+        ["get_run"] = UsageEventNames.InspectionRunViewed,
+        ["agent_setup"] = UsageEventNames.InspectionAgentSetupViewed,
         ["answer_question"] = UsageEventNames.QuestionAnswered,
     };
 }

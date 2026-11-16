@@ -4,6 +4,7 @@ using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Asks;
+using ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 
@@ -90,6 +91,22 @@ public static class BriefMarkdown
             }
         }
         return sections.Count == 0 ? null : "## Decisions and questions\n\n" + string.Join("\n\n", sections);
+    }
+
+    // What the reviewer asked for on the task's code, so the agent fixes each and answers it. Null when none is open.
+    public static string? OpenCodeComments(IReadOnlyList<OpenCodeComment> comments)
+    {
+        if (comments.Count == 0)
+        {
+            return null;
+        }
+        var text = new StringBuilder("## Open code comments\n\nFix each one, then answer it in `answered_comments` on report_task with its id and a reply.\n");
+        foreach (var comment in comments)
+        {
+            text.Append("\n- ").Append(comment.Id).Append(" · ").Append(comment.Repo).Append(' ').Append(comment.Path).Append(':').Append(comment.Line)
+                .Append(" (").Append(comment.Side).Append(" side, commit ").Append(comment.Sha).Append(") by ").Append(Line(comment.By)).Append(": ").Append(Line(comment.Body));
+        }
+        return text.ToString();
     }
 
     private static string DecisionLine(DecisionDto d)

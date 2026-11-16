@@ -68,6 +68,8 @@ export async function stubComments(page: Page, me: UserRef, initial: CommentDto[
         canCreateProjects: true,
         theme: 'os',
         density: 'comfortable',
+        timeZone: null,
+        timeZoneLabel: 'Not set: times show in UTC',
       }),
     ),
   );

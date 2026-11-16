@@ -9,6 +9,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.Mcp;
 using ShipLean.TestSupport.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Store;
 
@@ -53,7 +54,7 @@ public class WorkItemStoreCreateManyTests : PostgresWorkItemStoreTestBase
         agent.ActAs("Claude Code", "claude.ai", true);
         await using var dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(Arrangement.Database.ConnectionString));
         var store = new WorkItemStore(
-            dataSource, new FixedCurrentUser(Actor), new ShipLean.Application.Fakes.WorkItems.PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), TimeProvider.System, agent);
+            dataSource, new FixedCurrentUser(Actor), new ShipLean.Application.Fakes.WorkItems.PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), TimeProvider.System, agent, new FixedViewerZone());
         var project = await Arrangement.ArrangeProjectAsync();
 
         var outcomes = await store.CreateManyAsync([Create(project, "A"), Create(project, "B")], WriteOptions.User);

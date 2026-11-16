@@ -1,0 +1,1201 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "claude-code"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          },
+          {
+            "key": "team",
+            "value": {
+              "stringValue": "platform"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "dev-box"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "spans": [
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001001",
+              "parentSpanId": "",
+              "name": "claude_code.interaction",
+              "kind": 1,
+              "startTimeUnixNano": "1794304800000000000",
+              "endTimeUnixNano": "1794304860000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001002",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.llm_request",
+              "kind": 3,
+              "startTimeUnixNano": "1794304801000000000",
+              "endTimeUnixNano": "1794304808000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-sonnet-5-5"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "1200"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "300"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "temperature",
+                  "value": {
+                    "doubleValue": 1.5
+                  }
+                },
+                {
+                  "key": "allowed_tools",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "Read"
+                        },
+                        {
+                          "stringValue": "Edit"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              },
+              "events": [
+                {
+                  "timeUnixNano": "1794304801420000000",
+                  "name": "first_token",
+                  "attributes": [
+                    {
+                      "key": "ttft_ms",
+                      "value": {
+                        "intValue": "420"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001003",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304808000000000",
+              "endTimeUnixNano": "1794304809000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "mcp__shiplean__pick_up"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-1\"}"
+                  }
+                },
+                {
+                  "key": "team",
+                  "value": {
+                    "stringValue": "infra"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001004",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304809000000000",
+              "endTimeUnixNano": "1794304810000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "mcp__shiplean__get_brief"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-2\"}"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001005",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304812000000000",
+              "endTimeUnixNano": "1794304820000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Edit"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"file_path\":\"src/App/Foo.cs\"}"
+                  }
+                },
+                {
+                  "key": "file_path",
+                  "value": {
+                    "stringValue": "src/App/Foo.cs"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001006",
+              "parentSpanId": "0000000000001005",
+              "name": "claude_code.tool.blocked_on_user",
+              "kind": 1,
+              "startTimeUnixNano": "1794304812000000000",
+              "endTimeUnixNano": "1794304815000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001007",
+              "parentSpanId": "0000000000001005",
+              "name": "claude_code.tool.execution",
+              "kind": 1,
+              "startTimeUnixNano": "1794304815000000000",
+              "endTimeUnixNano": "1794304820000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001008",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.llm_request",
+              "kind": 3,
+              "startTimeUnixNano": "1794304820000000000",
+              "endTimeUnixNano": "1794304826000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-sonnet-5-5"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "1500"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "team",
+                  "value": {
+                    "stringValue": "api"
+                  }
+                }
+              ],
+              "status": {
+                "code": 2,
+                "message": "overloaded_error 529"
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001009",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.llm_request",
+              "kind": 3,
+              "startTimeUnixNano": "1794304827000000000",
+              "endTimeUnixNano": "1794304833000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-sonnet-5-5"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "1500"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "450"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "2"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100a",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304835000000000",
+              "endTimeUnixNano": "1794304838000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Bash"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"command\":\"dotnet build\"}"
+                  }
+                }
+              ],
+              "status": {
+                "code": 2,
+                "message": "exit code 1"
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100b",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.subagent",
+              "kind": 1,
+              "startTimeUnixNano": "1794304840000000000",
+              "endTimeUnixNano": "1794304855000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Agent"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100c",
+              "parentSpanId": "000000000000100b",
+              "name": "claude_code.llm_request",
+              "kind": 3,
+              "startTimeUnixNano": "1794304841000000000",
+              "endTimeUnixNano": "1794304847000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-haiku-4-5"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "800"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "120"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100d",
+              "parentSpanId": "000000000000100b",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304848000000000",
+              "endTimeUnixNano": "1794304850000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Read"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"file_path\":\"src/App/Bar.cs\"}"
+                  }
+                },
+                {
+                  "key": "file_path",
+                  "value": {
+                    "stringValue": "src/App/Bar.cs"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100e",
+              "parentSpanId": "0000000000001001",
+              "name": "claude_code.tool",
+              "kind": 1,
+              "startTimeUnixNano": "1794304856000000000",
+              "endTimeUnixNano": "1794304858000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "mcp__shiplean__report_task"
+                  }
+                },
+                {
+                  "key": "tool_parameters",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-1\",\"status\":\"done\",\"commits\":[\"a1b2c3d\"]}"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "claude-code"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          },
+          {
+            "key": "team",
+            "value": {
+              "stringValue": "platform"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "dev-box"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "spans": [
+            {
+              "traceId": "00000000000000000000000000abc002",
+              "spanId": "0000000000001015",
+              "parentSpanId": "",
+              "name": "claude_code.interaction",
+              "kind": 1,
+              "startTimeUnixNano": "1794304870000000000",
+              "endTimeUnixNano": "1794304885000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-2"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            },
+            {
+              "traceId": "00000000000000000000000000abc002",
+              "spanId": "0000000000001016",
+              "parentSpanId": "0000000000001015",
+              "name": "claude_code.llm_request",
+              "kind": 3,
+              "startTimeUnixNano": "1794304871000000000",
+              "endTimeUnixNano": "1794304880000000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-2"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-sonnet-5-5"
+                  }
+                },
+                {
+                  "key": "input_tokens",
+                  "value": {
+                    "intValue": "2000"
+                  }
+                },
+                {
+                  "key": "output_tokens",
+                  "value": {
+                    "intValue": "600"
+                  }
+                },
+                {
+                  "key": "attempt",
+                  "value": {
+                    "intValue": "1"
+                  }
+                }
+              ],
+              "status": {
+                "code": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "claude-code"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          },
+          {
+            "key": "team",
+            "value": {
+              "stringValue": "platform"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "dev-box"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1794304800000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "user_prompt"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.user_prompt"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Implement the thing in SHIP-1"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001001"
+            },
+            {
+              "timeUnixNano": "1794304809000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "mcp__shiplean__pick_up"
+                  }
+                },
+                {
+                  "key": "success",
+                  "value": {
+                    "boolValue": true
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "1000"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "picked up"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001003"
+            },
+            {
+              "timeUnixNano": "1794304820000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Edit"
+                  }
+                },
+                {
+                  "key": "success",
+                  "value": {
+                    "boolValue": true
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "edited Foo.cs"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001005"
+            },
+            {
+              "timeUnixNano": "1794304826000000000",
+              "severityText": "ERROR",
+              "severityNumber": 17,
+              "body": {
+                "stringValue": "api_error"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.api_error"
+                  }
+                },
+                {
+                  "key": "status_code",
+                  "value": {
+                    "intValue": "529"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-sonnet-5-5"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "0000000000001008"
+            },
+            {
+              "timeUnixNano": "1794304838000000000",
+              "severityText": "ERROR",
+              "severityNumber": 17,
+              "body": {
+                "stringValue": "tool_result"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.tool_result"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "Bash"
+                  }
+                },
+                {
+                  "key": "success",
+                  "value": {
+                    "boolValue": false
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "3000"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "error CS1002"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc001",
+              "spanId": "000000000000100a"
+            },
+            {
+              "timeUnixNano": "1794304844000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "api_request"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.api_request"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "claude-haiku-4-5"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "6000"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "claude-code"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          },
+          {
+            "key": "team",
+            "value": {
+              "stringValue": "platform"
+            }
+          },
+          {
+            "key": "host.name",
+            "value": {
+              "stringValue": "dev-box"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1794304870000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "user_prompt"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cc-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "p-2"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "claude_code.user_prompt"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Now run the tests"
+                  }
+                }
+              ],
+              "traceId": "00000000000000000000000000abc002",
+              "spanId": "0000000000001015"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

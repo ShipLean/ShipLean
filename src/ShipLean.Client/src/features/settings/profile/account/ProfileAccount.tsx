@@ -6,8 +6,9 @@ import { AppearancePanel } from './AppearancePanel';
 import { MyProjectsPanel } from './MyProjectsPanel';
 import { PasswordPanel } from './PasswordPanel';
 import { SessionsPanel } from './SessionsPanel';
+import { TimeZonePanel } from './TimeZonePanel';
 
-/** The account half of Your profile: password, appearance, your projects, sessions and saved views. */
+/** The account half of Your profile: password, appearance, time zone, your projects, sessions and saved views. */
 export function ProfileAccount() {
   const { proxy } = useSignInMode();
   const status = useQuery({ queryKey: meKey, queryFn: fetchMe }).data?.status;
@@ -17,6 +18,7 @@ export function ProfileAccount() {
     <div data-testid={settingsTestIds.accountPanel} className="grid content-start gap-3">
       {proxy || googleOnly ? null : <PasswordPanel />}
       <AppearancePanel />
+      <TimeZonePanel />
       <MyProjectsPanel />
       <SessionsPanel />
     </div>

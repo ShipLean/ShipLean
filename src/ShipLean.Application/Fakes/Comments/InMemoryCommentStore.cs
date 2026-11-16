@@ -10,7 +10,7 @@ namespace ShipLean.Application.Fakes.Comments;
 
 // Comments in memory, one lock around everything. Arrange the work items and users it knows with AddWorkItem and AddUser
 // before use. Archiving marks the entry; nothing is removed. Publishes no events. An import never changes the archived mark.
-public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent) : ICommentStore
+public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider time, ICurrentAgent currentAgent, IViewerZone viewerZone) : ICommentStore
 {
     private readonly object _gate = new();
     private readonly HashSet<Guid> _workItems = [];
@@ -171,12 +171,12 @@ public sealed class InMemoryCommentStore(ICurrentUser currentUser, MarkdownRende
         var rendered = renderer.Render(entry.Body);
         UserRef? author = entry.AuthorId is { } id && _users.TryGetValue(id, out var user) ? user : null;
         var superseded = entry.SupersededAt is { } at && entry.SupersededBy is { } by && _users.TryGetValue(by, out var marker)
-            ? new CommentSuperseded(at, DisplayDate.Relative(at, time), marker)
+            ? new CommentSuperseded(at, DisplayDate.Relative(at, time.GetUtcNow(), viewerZone.Zone), marker)
             : null;
         return new CommentDto(
             entry.Id, entry.WorkItemId, author, rendered.Markdown, rendered.Html,
-            entry.CreatedAt, DisplayDate.Relative(entry.CreatedAt, time),
-            entry.EditedAt, entry.EditedAt is { } edited ? DisplayDate.Relative(edited, time) : null,
+            entry.CreatedAt, DisplayDate.Relative(entry.CreatedAt, time.GetUtcNow(), viewerZone.Zone),
+            entry.EditedAt, entry.EditedAt is { } edited ? DisplayDate.Relative(edited, time.GetUtcNow(), viewerZone.Zone) : null,
             entry.AgentName, superseded);
     }
 

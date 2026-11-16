@@ -48,6 +48,12 @@ public sealed class ApiException(string code, string message) : Exception(messag
 
     public static ApiException IntakeOn(string message) => new(ApiErrorCodes.IntakeOn, message) { Field = "repoUrl" };
 
+    public static ApiException NotTaskOrBug(string message) => new(ApiErrorCodes.NotTaskOrBug, message);
+
+    public static ApiException RepoUnreadable(string message) => new(ApiErrorCodes.RepoUnreadable, message) { Field = "repo" };
+
+    public static ApiException BadSha(string message) => new(ApiErrorCodes.BadSha, message) { Field = "sha" };
+
     public static ApiException Ambiguous(string message) => new(ApiErrorCodes.Ambiguous, message);
 
     public static ApiException Ambiguous(string message, string field, IReadOnlyList<string> candidates)

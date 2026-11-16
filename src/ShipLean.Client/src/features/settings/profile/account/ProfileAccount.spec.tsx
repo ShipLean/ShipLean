@@ -17,6 +17,8 @@ const me: MeDto = {
   canCreateProjects: true,
   theme: 'os',
   density: 'compact',
+  timeZone: null,
+  timeZoneLabel: 'Not set: times show in UTC',
 };
 
 const projectOf = (
@@ -31,6 +33,8 @@ const projectOf = (
   memberCount: 3,
   isOnlyAdmin,
 });
+
+const timeZones = { choices: [{ id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' }] };
 
 interface Calls {
   list: string[];
@@ -62,6 +66,7 @@ const stub = async (
     const request = route.request();
     const method = request.method();
     const path = new URL(request.url()).pathname;
+    if (path === '/api/me/time-zones') return route.fulfill({ json: timeZones });
     if (method === 'GET') {
       return route.fulfill({ json: path === '/api/me' ? current : projects });
     }
@@ -300,6 +305,9 @@ test('Appearance_WhenFirstPickRefusedAfterSecondSaved_ShouldKeepTheSecond', asyn
   let saved = me.theme;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
+    if (new URL(request.url()).pathname === '/api/me/time-zones') {
+      return route.fulfill({ json: timeZones });
+    }
     if (request.method() === 'GET') {
       const isMe = new URL(request.url()).pathname === '/api/me';
       return route.fulfill({ json: isMe ? { ...me, theme: saved } : [] });

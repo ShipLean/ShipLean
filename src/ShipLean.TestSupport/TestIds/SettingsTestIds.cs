@@ -328,4 +328,10 @@ public static class SettingsTestIds
     public const string IssueIntakeMembersLoading = "settings-issue-intake-members-loading";
     public const string IssueIntakeMembersError = "settings-issue-intake-members-error";
     public const string IssueIntakeMembersRetry = "settings-issue-intake-members-retry";
+    public const string TimeZonePanel = "settings-time-zone-panel";
+    public const string TimeZoneSelect = "settings-time-zone-select";
+    public const string TimeZoneCurrent = "settings-time-zone-current";
+    public const string TimeZoneUseDevice = "settings-time-zone-use-device";
+    public const string TimeZoneError = "settings-time-zone-error";
+    public const string TimeZoneChoicesError = "settings-time-zone-choices-error";
 }

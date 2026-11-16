@@ -1,6 +1,7 @@
 using ShipLean.Application.Fakes.Attachments;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Refs;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Users;
 
@@ -13,7 +14,7 @@ public class RecordingAttachmentStoreTests
     public async Task StageAndCommit_WhenCalled_ShouldGoToTheInnerStore()
     {
         var user = new SettableCurrentUser { Id = SeedIds.Users.Joel };
-        var inner = new InMemoryAttachmentStore(user, new InMemoryBlobStore(), TimeProvider.System);
+        var inner = new InMemoryAttachmentStore(user, new InMemoryBlobStore(), TimeProvider.System, new FixedViewerZone());
         var workItem = Guid.NewGuid();
         inner.AddWorkItem(workItem);
         inner.AddUser(new UserRef(SeedIds.Users.Joel, "Joel Dickson", "JD", "#5b6b8c", null));

@@ -6,6 +6,7 @@ import { QuickSearchProvider } from './features/quickSearch/host/QuickSearchProv
 import { SideMenu } from './features/shell/SideMenu/SideMenu';
 import { Crumbs } from './features/shell/TopBar/Crumbs';
 import { useAppearanceOnLoad } from './features/shell/useAppearanceOnLoad';
+import { useBrowserZoneOnLoad } from './features/shell/timeZone/useBrowserZoneOnLoad';
 import { useRememberProject } from './features/shell/useRememberProject';
 import { useShellProject } from './features/shell/useShellProject';
 import { TopBarRealtime } from './shell/slots/TopBarRealtime';
@@ -23,6 +24,7 @@ export function Shell() {
   const { key, project, onProjectRoute } = useShellProject();
   const { touch } = useTouchShell();
   useAppearanceOnLoad();
+  useBrowserZoneOnLoad();
   useRememberProject(onProjectRoute ? project : undefined);
   useProjectRealtime(onProjectRoute ? key : undefined);
   return (

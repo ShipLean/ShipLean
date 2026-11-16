@@ -72,6 +72,18 @@ const samples: {
     path: '/p/SHIP/items/SHIP-101/attachments/a%201',
     crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Attachment'],
   },
+  agentRun: {
+    params: { ...project, itemKey: 'SHIP-101', runId: 'sess-1' },
+    query: { turn: '1', errorsOnly: 'true' },
+    path: '/p/SHIP/items/SHIP-101/runs/sess-1?turn=1&errorsOnly=true',
+    crumbs: ['SHIP', 'Backlogs', 'SHIP-101', 'Agent run'],
+  },
+  taskChanges: {
+    params: { ...project, itemKey: 'SHIP-142' },
+    query: { commit: 'c-1', file: 'src/a b.ts', layout: 'split' },
+    path: '/p/SHIP/items/SHIP-142/changes?commit=c-1&file=src%2Fa+b.ts&layout=split',
+    crumbs: ['SHIP', 'Backlogs', 'SHIP-142', 'Changes'],
+  },
   featureBoard: {
     params: { key: 'SHIP', itemKey: 'SHIP-101' },
     query: { settings: 'fields' },
@@ -229,8 +241,35 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
 
 test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
   expect(matchRoute('/p/SHIP/settings/demos')?.id).toBe('projectSettings');
-  expect(projectSettingsTabs.at(-1)).toBe('demos');
-  expect(projectSettingsTabs.at(-2)).toBe('integrations');
+  expect(projectSettingsTabs.at(-2)).toBe('demos');
+  expect(projectSettingsTabs.at(-3)).toBe('integrations');
+});
+
+test('routes_WhenSettingsTabIsInspection_ShouldMatchItLast', () => {
+  expect(matchRoute('/p/SHIP/settings/inspection')?.id).toBe('projectSettings');
+  expect(projectSettingsTabs.at(-1)).toBe('inspection');
+});
+
+test('routes_WhenAgentRunAddress_ShouldMatchWithItsParamsAndQuery', () => {
+  const path = routePath(
+    'agentRun',
+    { key: 'SHIP', itemKey: 'SHIP-171', runId: 'sess 1' },
+    { turn: '2', errorsOnly: 'true', row: 'r1', q: 'test' },
+  );
+  expect(path).toBe('/p/SHIP/items/SHIP-171/runs/sess%201?turn=2&errorsOnly=true&row=r1&q=test');
+  const [pathname, search] = path.split('?');
+  expect(matchRoute(pathname, search)).toEqual({
+    id: 'agentRun',
+    params: { key: 'SHIP', itemKey: 'SHIP-171', runId: 'sess 1' },
+    query: { turn: '2', errorsOnly: 'true', row: 'r1', q: 'test' },
+  });
+  expect(crumbTrail('agentRun', { key: 'SHIP', itemKey: 'SHIP-171', runId: 'a' })).toEqual([
+    'SHIP',
+    'Backlogs',
+    'SHIP-171',
+    'Agent run',
+  ]);
+  expect(isInstanceLevel('agentRun')).toBe(false);
 });
 
 test('routes_WhenInstanceTabIsAgents_ShouldMatchIt', () => {

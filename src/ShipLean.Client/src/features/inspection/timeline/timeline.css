@@ -1,0 +1,28 @@
+/* Log-only timeline and run banners (SHIP-1463 D13, D19): token colours only; rows reuse the Waterfall's .rw classes. */
+.rb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-4);
+  background: color-mix(in srgb, var(--color-info) 9%, var(--color-surface));
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-info);
+  font-size: var(--text-sm);
+}
+.rb.warn {
+  background: color-mix(in srgb, var(--color-warn) 10%, var(--color-surface));
+  border-left-color: var(--color-warn);
+}
+.rb-spacer {
+  flex: 1;
+}
+.rb a {
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+.rw-legend .rw-lg-pt {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}

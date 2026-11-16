@@ -1,0 +1,13 @@
+diff --git a/src/cart.ts b/src/basket.ts
+similarity index 100%
+rename from src/cart.ts
+rename to src/basket.ts
+diff --git a/src/checkout.ts b/src/checkout.ts
+index 44f987599d4d2c296cb2260c868fabcf87db9016..92669c0089ec5228043a436345634d8791b2502d 100644
+--- a/src/checkout.ts
++++ b/src/checkout.ts
+@@ -1,3 +1,3 @@
+ export function checkout() {
+-  return 1;
++  return total();
+ }

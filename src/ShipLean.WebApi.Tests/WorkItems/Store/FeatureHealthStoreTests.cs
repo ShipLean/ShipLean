@@ -8,6 +8,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Screens;
 using ShipLean.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.WorkItems;
@@ -29,7 +30,7 @@ public class FeatureHealthStoreTests : PostgresWorkItemStoreTestBase
     public async Task CloseDataSource() => await _dataSource.DisposeAsync();
 
     private WorkItemStore StoreAt(FakeTimeProvider clock, AgentIdentity agent)
-        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent);
+        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent, new FixedViewerZone());
 
     [Test]
     public async Task Patch_WhenAnAgentSetsHealth_ShouldStampTheAgentName()

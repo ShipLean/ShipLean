@@ -22,10 +22,10 @@ public class SchemaTests
     {
         string[] expected =
         [
-            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
-            "import_mapping", "instance_settings", "issue_job", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
+            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "code_comment", "code_commit", "code_repository", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
+            "import_mapping", "inspection_project_settings", "inspection_run_links", "instance_settings", "issue_job", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
             "oauth_request", "oauth_token", "project", "project_demo_settings", "project_issue_intake", "project_member", "project_youtube_channel", "public_holiday", "question", "retro_action", "retro_action_point", "retro_failure_log", "retro_point", "retro_point_support", "retro_theme", "retro_theme_merge_proposal", "retrospective", "retrospective_source", "review_event", "revision", "search_doc", "sprint",
-            "sprint_capacity", "state", "tool_payload", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_link",
+            "sprint_capacity", "state", "tool_payload", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_commit", "work_item_link",
         ];
         await using var connection = await _database.OpenAsync();
 
@@ -129,5 +129,24 @@ public class SchemaTests
                 "INSERT INTO project (id, key, name) VALUES (gen_random_uuid(), @key, 'x')", new { key }));
             ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
         }
+    }
+
+    // Mutations: make the column NOT NULL; drop the CHECK; widen the pattern so "Not a zone" passes.
+    [Test]
+    public async Task AppUserTimeZone_WhenShapedWrong_ShouldBeRejectedAndTheColumnStayNullable()
+    {
+        await using var connection = await _database.OpenAsync();
+        var id = await new AppUserBuilder().WithEmail("zone-shape@example.test").InsertAsync(connection);
+
+        (await connection.ExecuteScalarAsync<string>(
+            "SELECT is_nullable FROM information_schema.columns WHERE table_name = 'app_user' AND column_name = 'time_zone'")).ShouldBe("YES");
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*) FROM pg_constraint WHERE conname = 'app_user_time_zone_check'")).ShouldBe(1);
+        foreach (var zone in new[] { "Not a zone", "Asia/Bangkok/", new string('a', 65) })
+        {
+            var ex = await Should.ThrowAsync<PostgresException>(async () => await connection.ExecuteAsync(
+                "UPDATE app_user SET time_zone = @zone WHERE id = @id", new { zone, id }));
+            ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
+        }
+        await connection.ExecuteAsync("UPDATE app_user SET time_zone = 'Asia/Bangkok' WHERE id = @id", new { id });
     }
 }

@@ -9,6 +9,8 @@ internal static class SprintDemoStatusRule
 
     public const string LinkExpired = "The upload link expired before a video came back.";
 
+    public const string CompletedWithoutVideo = "The agent session ended without uploading a video.";
+
     public static (SprintDemoStatus Status, string? Message) Decide(SprintDemoFacts facts, DateTimeOffset now)
     {
         if (facts.RequestedAt is not { } requested)
@@ -36,11 +38,18 @@ internal static class SprintDemoStatusRule
             return (SprintDemoStatus.Failed, LinkExpired);
         }
 
-        if (facts.LatestSessionState is "failed" or "canceled" or "stale" && facts.LatestSessionEndedAt >= requested)
+        if (facts.LatestSessionState is { } state and ("completed" or "failed" or "canceled" or "stale") && facts.LatestSessionEndedAt >= requested)
         {
-            return (SprintDemoStatus.Failed, $"The agent session ended as {facts.LatestSessionState} before a video came back.");
+            return (SprintDemoStatus.Failed, SessionEnded(state) + Quote(facts.LatestSessionMessage));
         }
 
         return (SprintDemoStatus.Requested, null);
     }
+
+    // C5 (D8): any terminal state of a session that ended at or after the request with no video since is Failed.
+    private static string SessionEnded(string state)
+        => state == "completed" ? CompletedWithoutVideo : $"The agent session ended as {state} before a video came back.";
+
+    private static string Quote(string? message)
+        => SprintDemoAgentMessage.Excerpt(message) is { } excerpt ? $" It said: \"{excerpt}\"" : "";
 }

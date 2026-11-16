@@ -7,6 +7,7 @@ public static class PagesTestIds
     public const string BacklogPage = "page-backlog";
     public const string WorkItemPage = "page-work-item";
     public const string AttachmentPage = "page-attachment";
+    public const string AgentRunPage = "page-agent-run";
     public const string BoardPage = "page-board";
     public const string SprintsPage = "page-sprints";
     public const string SprintBacklogPage = "page-sprint-backlog";
@@ -39,6 +40,7 @@ public static class PagesTestIds
     public const string SlotInstanceAnalytics = "slot-instanceAnalytics";
     public const string SlotInstanceAgents = "slot-instanceAgents";
     public const string SlotInstanceBackups = "slot-instanceBackups";
+    public const string SlotInstanceInspection = "slot-instanceInspection";
     public const string SlotInstanceProjects = "slot-instanceProjects";
     public const string SlotInstanceUsers = "slot-instanceUsers";
     public const string SlotLevelBacklog = "slot-levelBacklog";

@@ -9,7 +9,7 @@ namespace ShipLean.Application.Features.Asks.Waiting;
 // The open asks on the items the signed-in person owns, across their projects. The owner is coalesce(assigned_to, created_by),
 // never "assigned to or created by". Neither work items nor projects are archived; a removed item and a project the person has
 // left (project_member.archived_at) drop out. Items are ordered by their oldest open ask.
-public sealed class WaitingOnMe(NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock) : IWaitingOnMe
+public sealed class WaitingOnMe(NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock, IViewerZone viewerZone) : IWaitingOnMe
 {
     public async Task<WaitingDto> GetAsync(CancellationToken cancellationToken = default)
     {
@@ -34,7 +34,7 @@ public sealed class WaitingOnMe(NpgsqlDataSource dataSource, ICurrentUser curren
             new { me = currentUser.Id }, cancellationToken: cancellationToken))).ToList();
         var items = rows.Select(r => new WaitingItemDto(
             r.ProjectId, r.ProjectKey, r.ProjectName, r.Id, r.Key, r.Type, r.Title, r.OpenQuestions, r.OpenDecisions, r.OldestAt,
-            DisplayDate.Relative(r.OldestAt, clock))).ToList();
+            DisplayDate.Relative(r.OldestAt, clock.GetUtcNow(), viewerZone.Zone))).ToList();
         return new WaitingDto(items.Sum(i => i.OpenQuestions), items.Sum(i => i.OpenDecisions), items);
     }
 

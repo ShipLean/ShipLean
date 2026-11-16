@@ -45,6 +45,10 @@ public static class DisplayDate
     public static string Clock(DateTimeOffset value, TimeProvider clock) =>
         TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm", CultureInfo.InvariantCulture);
 
+    // The time of day with seconds in the clock's local time zone ("14:02:09"), for log and row times.
+    public static string ClockSeconds(DateTimeOffset value, TimeProvider clock) =>
+        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
     // The weekday in the clock's local time zone ("Mon"), for lines such as "since Mon 09:12".
     public static string Weekday(DateTimeOffset value, TimeProvider clock) =>
         TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("ddd", CultureInfo.InvariantCulture);
@@ -116,6 +120,65 @@ public static class DisplayDate
     // An instant as a day and time in the viewer's zone ("Mon 5 Oct, 09:10"), for the timeline's starts, ends and periods.
     public static string DayTime(DateTimeOffset value, TimeZoneInfo zone) =>
         $"{DayLabel(value, zone)}, {TimeZoneInfo.ConvertTime(value, zone).ToString("HH:mm", CultureInfo.InvariantCulture)}";
+
+    // The time of day in the viewer's zone ("07:02"), for lines such as "the version from 07:02".
+    public static string Time(DateTimeOffset value, TimeZoneInfo zone) =>
+        TimeZoneInfo.ConvertTime(value, zone).ToString("HH:mm", CultureInfo.InvariantCulture);
+
+    // The time of day with seconds in the viewer's zone ("07:02:05"), for log lines such as an import's.
+    public static string LogTime(DateTimeOffset value, TimeZoneInfo zone) =>
+        TimeZoneInfo.ConvertTime(value, zone).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
+    // The weekday in the viewer's zone ("Mon"), for lines such as "since Mon 09:12".
+    public static string ShortWeekday(DateTimeOffset value, TimeZoneInfo zone) =>
+        TimeZoneInfo.ConvertTime(value, zone).ToString("ddd", CultureInfo.InvariantCulture);
+
+    // A day and time in the viewer's zone, relative to today there: "today at 07:02", "yesterday at 07:02",
+    // "tomorrow at 07:02", else the short day ("2 Mar at 07:02", "2 Mar 2025 at 07:02").
+    public static string DayAt(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)
+    {
+        var days = DaysUntil(value, now, zone);
+        var day = days switch
+        {
+            0 => "today",
+            -1 => "yesterday",
+            1 => "tomorrow",
+            _ => ShortDay(value, now, zone),
+        };
+        return $"{day} at {Time(value, zone)}";
+    }
+
+    // A zone as the Profile page names it, with its offset now: "Asia/Bangkok (UTC+07:00)", "UTC (UTC+00:00)".
+    public static string ZoneLabel(TimeZoneInfo zone, DateTimeOffset now)
+    {
+        var offset = zone.GetUtcOffset(now);
+        var sign = offset < TimeSpan.Zero ? "-" : "+";
+        return $"{zone.Id} (UTC{sign}{offset.Duration().ToString(@"hh\:mm", CultureInfo.InvariantCulture)})";
+    }
+
+    // Every IANA zone this host knows, as (id, label) pairs ordered by the offset in force now, then by id: the one
+    // listing of zones, which the Profile page's time-zone choices come from.
+    public static IReadOnlyList<(string Id, string Label)> ZoneChoices(DateTimeOffset now) =>
+        TimeZoneInfo.GetSystemTimeZones()
+            .Where(zone => zone.HasIanaId)
+            .OrderBy(zone => zone.GetUtcOffset(now))
+            .ThenBy(zone => zone.Id, StringComparer.Ordinal)
+            .Select(zone => (zone.Id, ZoneLabel(zone, now)))
+            .ToList();
+
+    // A stored or entered zone id read as a zone: true only for an IANA id this host knows ("Asia/Bangkok"); a Windows
+    // id ("SE Asia Standard Time"), an offset ("+07:00"), an unknown name or anything over 64 characters is refused.
+    public static bool TryZone(string? id, out TimeZoneInfo zone)
+    {
+        zone = TimeZoneInfo.Utc;
+        if (string.IsNullOrWhiteSpace(id) || id.Length > 64
+            || !TimeZoneInfo.TryFindSystemTimeZoneById(id, out var found) || !found.HasIanaId)
+        {
+            return false;
+        }
+        zone = found;
+        return true;
+    }
 
     // How long a stretch of work took ("45 min", "3.5 h", "23 h", "1 day", "2.3 days"): minutes under an hour, hours under a day
     // and days after that, one decimal with a trailing .0 dropped.

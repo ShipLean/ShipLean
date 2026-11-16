@@ -23,7 +23,8 @@ public sealed class CommentStore(
     MarkdownRenderer renderer,
     TimeProvider clock,
     IProjectEvents events,
-    IMentionRecorder mentions) : ICommentStore
+    IMentionRecorder mentions,
+    IViewerZone viewerZone) : ICommentStore
 {
     private static readonly string SelectLive = $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id AND c.archived_at IS NULL";
 
@@ -35,7 +36,7 @@ public sealed class CommentStore(
             $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.work_item_id = @workItemId AND c.archived_at IS NULL ORDER BY c.created_at, c.id",
             new { workItemId },
             cancellationToken: cancellationToken));
-        return [.. rows.Select(r => r.ToDto(renderer, clock))];
+        return [.. rows.Select(r => r.ToDto(renderer, clock.GetUtcNow(), viewerZone.Zone))];
     }
 
     public Task<CommentDto> AddAsync(Guid workItemId, CommentCreate create, CancellationToken cancellationToken = default)
@@ -106,7 +107,7 @@ public sealed class CommentStore(
         var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(
             $"SELECT {CommentRow.Columns} {CommentRow.From} WHERE c.id = @id", new { id }, transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
-        var edited = row.ToDto(renderer, clock);
+        var edited = row.ToDto(renderer, clock.GetUtcNow(), viewerZone.Zone);
         await PublishChangedAsync(connection, edited.WorkItemId, cancellationToken);
         return edited;
     }
@@ -209,7 +210,7 @@ public sealed class CommentStore(
     private async Task<CommentDto> ReadAsync(NpgsqlConnection connection, Guid id, CancellationToken cancellationToken, NpgsqlTransaction? transaction = null)
     {
         var row = await connection.QuerySingleAsync<CommentRow>(new CommandDefinition(SelectLive, new { id }, transaction, cancellationToken: cancellationToken));
-        return row.ToDto(renderer, clock);
+        return row.ToDto(renderer, clock.GetUtcNow(), viewerZone.Zone);
     }
 
     private sealed record EditedComment(Guid WorkItemId, Guid? AuthorId, string? AgentName);

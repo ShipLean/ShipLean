@@ -7,6 +7,8 @@ import {
   type CommentsChanged,
   type AttachmentsChanged,
   type AsksChanged,
+  type CodeCommentsChanged,
+  type CommitsChanged,
   type LinksChanged,
   type AgentSessionChanged,
   type PresenceChanged,
@@ -76,6 +78,8 @@ const examples = {
   sprintClosed: typed<SprintClosed>()(events.sprintClosed),
   sprintDemoChanged: typed<SprintDemoChanged>()(events.sprintDemoChanged),
   asksChanged: typed<AsksChanged>()(events.asksChanged),
+  commitsChanged: typed<CommitsChanged>()(events.commitsChanged),
+  codeCommentsChanged: typed<CodeCommentsChanged>()(events.codeCommentsChanged),
 };
 
 // Compile-time: every union member is covered by a case, so a new event type fails the typecheck until it is handled.
@@ -100,6 +104,8 @@ function typeOf(event: ProjectEvent): string {
     case 'sprintClosed':
     case 'sprintDemoChanged':
     case 'asksChanged':
+    case 'commitsChanged':
+    case 'codeCommentsChanged':
       return event.type;
   }
 }

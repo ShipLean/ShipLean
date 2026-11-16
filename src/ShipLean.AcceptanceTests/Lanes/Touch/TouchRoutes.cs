@@ -26,6 +26,8 @@ public static class TouchRoutes
         ["workItem"] = new(_ => Links.WorkItem(Project, "SHIP-141"), [WorkItemTestIds.Key]),
         ["workItemAttachment"] = new(
             attachment => $"{Links.WorkItem(Project, "SHIP-101")}/attachments/{attachment}", [ComponentTestIds.Markdown]),
+        ["agentRun"] = new(_ => $"{Links.WorkItem(Project, "SHIP-141")}/runs/touch-sweep-run", [InspectionTestIds.RunPageNarrow]),
+        ["taskChanges"] = new(_ => Links.TaskChanges(Project, "SHIP-172"), [TaskChangesTestIds.NarrowNotice]),
         ["featureBoard"] = new(_ => Links.FeatureBoard(Project, "SHIP-101"), [TaskboardTestIds.Card]),
         ["featureTimeline"] = new(_ => $"{Links.WorkItem(Project, "SHIP-101")}/timeline", [PagesTestIds.FeatureTimelinePage]),
         ["storiesBoard"] = new(_ => Links.Board(Project, "stories"), [BoardTestIds.Card]),

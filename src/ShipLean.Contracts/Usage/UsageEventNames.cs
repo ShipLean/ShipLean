@@ -66,6 +66,13 @@ public static class UsageEventNames
     public const string LinkCardEdited = "link_card.edited";
     public const string LinkCardArchived = "link_card.archived";
     public const string LinkCardRefreshed = "link_card.refreshed";
+    public const string TaskChangesViewed = "task_changes.viewed";
+    public const string TaskCommitsAdded = "task_commits.added";
+    public const string CodeCommentAdded = "code_comment.added";
+    public const string CodeCommentReplied = "code_comment.replied";
+    public const string CodeCommentResolved = "code_comment.resolved";
+    public const string TaskChangesApproved = "task_changes.approved";
+    public const string TaskChangesRequested = "task_changes.requested";
     public const string SprintCreated = "sprint.created";
     public const string SprintPlanned = "sprint.planned";
     public const string SprintUpdated = "sprint.updated";
@@ -126,6 +133,7 @@ public static class UsageEventNames
     public const string WebhookReceived = "webhook.received";
     public const string ProfileUpdated = "profile.updated";
     public const string ProfilePhotoChanged = "profile.photo_changed";
+    public const string ProfileTimeZoneSet = "profile.time_zone_set";
     public const string InstanceSettingsChanged = "instance.settings_changed";
     public const string InstanceIntegrationsChanged = "instance.integrations_changed";
     public const string InstanceAnalyticsChanged = "instance.analytics_changed";
@@ -135,6 +143,14 @@ public static class UsageEventNames
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";
     public const string ScreenViewed = "screen.viewed";
+    public const string InspectionSectionSeen = "inspection.section_seen";
+    public const string InspectionRunOpened = "inspection.run_opened";
+    public const string InspectionRowSelected = "inspection.row_selected";
+    public const string InspectionZoomed = "inspection.zoomed";
+    public const string InspectionErrorsOnly = "inspection.errors_only";
+    public const string InspectionAgentSetupViewed = "inspection.agent_setup_viewed";
+    public const string InspectionRunsListed = "inspection.runs_listed";
+    public const string InspectionRunViewed = "inspection.run_viewed";
     public const string SprintDemoCreated = "sprint_demo.created";
     public const string SprintDemoYouTubeRetried = "sprint_demo.youtube_retried";
     public const string ProjectDemoSettingsChanged = "project_demo.settings_changed";

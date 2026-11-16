@@ -7,7 +7,8 @@ using ShipLean.Core;
 namespace ShipLean.Application.Features.Inbox;
 
 public sealed class InboxReader(
-    NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock, IEnumerable<IInboxAskSource> sources) : IInboxReader
+    NpgsqlDataSource dataSource, ICurrentUser currentUser, TimeProvider clock, IViewerZone viewerZone,
+    IEnumerable<IInboxAskSource> sources) : IInboxReader
 {
     private const int MaxWaitedOnBy = 3;
 
@@ -55,7 +56,7 @@ public sealed class InboxReader(
         }).ToList();
 
         return new InboxDto(
-            projectId, rows.Count, dtos.Count, ever, DisplayDate.Clock(now, clock), dtos,
+            projectId, rows.Count, dtos.Count, ever, DisplayDate.Time(now, viewerZone.Zone), dtos,
             [.. otherProjectKeys.OrderBy(p => p.ProjectKey, StringComparer.Ordinal)]);
     }
 

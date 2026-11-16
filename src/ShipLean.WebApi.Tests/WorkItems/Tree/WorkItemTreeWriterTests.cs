@@ -7,6 +7,7 @@ using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 using ShipLean.WebApi.Tests.WorkItems.Store;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Tree;
@@ -101,7 +102,7 @@ public class WorkItemTreeWriterTests : PostgresWorkItemStoreTestBase
     public async Task CreateTree_InMemory_ShouldMatchStore()
     {
         var project = await Arrangement.ArrangeProjectAsync();
-        var memory = new InMemoryWorkItemStore(new PassThroughWorkItemRules(), new FixedCurrentUser(Actor), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None);
+        var memory = new InMemoryWorkItemStore(new PassThroughWorkItemRules(), new FixedCurrentUser(Actor), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None, new FixedViewerZone());
         memory.AddProject(project.ProjectId, project.Key, 1, project.States);
         IWorkItemStore[] stores = [PassThroughStore(), memory];
         var shapes = new List<IReadOnlyList<string>>();

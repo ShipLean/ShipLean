@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.WorkItemDetails.History;
 
 // A work item's field changes, newest first, from its revisions. Any member reads them. An agent's change shows the agent's name.
 [RegisterPerRequest]
-public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items, IAskHistory askHistory, NpgsqlDataSource dataSource, TimeProvider clock)
+public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items, IAskHistory askHistory, NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone)
 {
     public async Task<HistoryDto> GetAsync(Guid workItemId, CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ public sealed class HistoryEndpoints(IProjectAccess access, IWorkItemStore items
             r.Rev,
             r.ChangedBy is { } by ? users.GetValueOrDefault(by) : null,
             r.ChangedAt,
-            DisplayDate.Relative(r.ChangedAt, clock),
+            DisplayDate.Relative(r.ChangedAt, clock.GetUtcNow(), viewerZone.Zone),
             r.Origin,
             r.Changes,
             r.AgentName,

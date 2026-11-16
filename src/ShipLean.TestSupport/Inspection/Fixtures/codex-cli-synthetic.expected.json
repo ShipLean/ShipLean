@@ -1,0 +1,245 @@
+{
+  "compareKeys": [
+    "duration_ms",
+    "input_tokens",
+    "model",
+    "output_tokens",
+    "prompt.id",
+    "session.id",
+    "shiplean.item",
+    "shiplean.project",
+    "tool_input",
+    "tool_name"
+  ],
+  "run": {
+    "summary": {
+      "runId": "sess-cx-1",
+      "sessionId": "sess-cx-1",
+      "agent": "codex_cli_rs",
+      "startedBy": "dev@example.com",
+      "models": [
+        "gpt-5"
+      ],
+      "startedAt": "2026-11-10T10:00:00Z",
+      "endedAt": "2026-11-10T10:00:40Z",
+      "spanCount": 0,
+      "logCount": 9,
+      "errorCount": 1,
+      "tokensIn": 2000,
+      "tokensOut": 550,
+      "links": [
+        {
+          "itemKey": "SHIP-1",
+          "source": "tagged"
+        },
+        {
+          "itemKey": "SHIP-3",
+          "source": "fromToolCall"
+        }
+      ]
+    },
+    "spans": [],
+    "logs": [
+      {
+        "time": "2026-11-10T10:00:00Z",
+        "severity": "INFO",
+        "body": "user_prompt",
+        "attributes": {
+          "event.name": "codex.user_prompt",
+          "prompt": "Fix the failing test",
+          "prompt.id": "q-1",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-1",
+        "eventName": "codex.user_prompt"
+      },
+      {
+        "time": "2026-11-10T10:00:05Z",
+        "severity": "INFO",
+        "body": "api_request",
+        "attributes": {
+          "duration_ms": "4200",
+          "event.name": "codex.api_request",
+          "input_tokens": "900",
+          "model": "gpt-5",
+          "output_tokens": "200",
+          "prompt.id": "q-1",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-1",
+        "eventName": "codex.api_request"
+      },
+      {
+        "time": "2026-11-10T10:00:06Z",
+        "severity": "INFO",
+        "body": "tool_result",
+        "attributes": {
+          "duration_ms": "800",
+          "event.name": "codex.tool_result",
+          "output": "picked up",
+          "prompt.id": "q-1",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "tool_input": "{\"item\":\"SHIP-1\"}",
+          "tool_name": "shiplean__pick_up",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-1",
+        "eventName": "codex.tool_result"
+      },
+      {
+        "time": "2026-11-10T10:00:12Z",
+        "severity": "INFO",
+        "body": "tool_result",
+        "attributes": {
+          "duration_ms": "5000",
+          "event.name": "codex.tool_result",
+          "output": "ok",
+          "prompt.id": "q-1",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "tool_name": "shell",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-1",
+        "eventName": "codex.tool_result"
+      },
+      {
+        "time": "2026-11-10T10:00:20Z",
+        "severity": "ERROR",
+        "body": "tool_result",
+        "attributes": {
+          "duration_ms": "300",
+          "event.name": "codex.tool_result",
+          "output": "patch failed",
+          "prompt.id": "q-1",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "tool_name": "apply_patch",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-1",
+        "eventName": "codex.tool_result"
+      },
+      {
+        "time": "2026-11-10T10:00:30Z",
+        "severity": "INFO",
+        "body": "user_prompt",
+        "attributes": {
+          "event.name": "codex.user_prompt",
+          "prompt": "Try again and report",
+          "prompt.id": "q-2",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-2",
+        "eventName": "codex.user_prompt"
+      },
+      {
+        "time": "2026-11-10T10:00:36Z",
+        "severity": "INFO",
+        "body": "api_request",
+        "attributes": {
+          "duration_ms": "5000",
+          "event.name": "codex.api_request",
+          "input_tokens": "1100",
+          "model": "gpt-5",
+          "output_tokens": "350",
+          "prompt.id": "q-2",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-2",
+        "eventName": "codex.api_request"
+      },
+      {
+        "time": "2026-11-10T10:00:38Z",
+        "severity": "INFO",
+        "body": "tool_result",
+        "attributes": {
+          "duration_ms": "700",
+          "event.name": "codex.tool_result",
+          "output": "commented",
+          "prompt.id": "q-2",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "tool_input": "{\"item\":\"SHIP-3\",\"text\":\"fixed\"}",
+          "tool_name": "shiplean__comment",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-2",
+        "eventName": "codex.tool_result"
+      },
+      {
+        "time": "2026-11-10T10:00:40Z",
+        "severity": "INFO",
+        "body": "tool_result",
+        "attributes": {
+          "duration_ms": "900",
+          "event.name": "codex.tool_result",
+          "output": "reported",
+          "prompt.id": "q-2",
+          "service.name": "codex_cli_rs",
+          "session.id": "sess-cx-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.project": "SHIP",
+          "tool_input": "{\"item\":\"SHIP-1\",\"status\":\"partial\",\"commits\":[\"d4e5f6a\",\"b7c8d9e\"]}",
+          "tool_name": "shiplean__report_task",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cx-1",
+        "promptId": "q-2",
+        "eventName": "codex.tool_result"
+      }
+    ],
+    "truncated": false
+  }
+}

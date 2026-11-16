@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ShipLean.Contracts;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Core;
 
@@ -12,8 +13,8 @@ public sealed record VerifiedLine(
     [property: JsonPropertyName("agent")] string? Agent,
     [property: JsonPropertyName("via")] string? Via)
 {
-    public static VerifiedLine? Of(WorkItemSnapshot snapshot, string? byName, TimeProvider clock)
+    public static VerifiedLine? Of(WorkItemSnapshot snapshot, string? byName, TimeProvider clock, IViewerZone viewerZone)
         => snapshot.StatusVerifiedAt is { } at
-            ? new VerifiedLine(DisplayDate.Relative(at, clock), StatusVerifiedDto.IsStale(at, clock.GetUtcNow()), byName, snapshot.StatusVerifiedAgent, snapshot.StatusVerifiedVia)
+            ? new VerifiedLine(DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone), StatusVerifiedDto.IsStale(at, clock.GetUtcNow()), byName, snapshot.StatusVerifiedAgent, snapshot.StatusVerifiedVia)
             : null;
 }

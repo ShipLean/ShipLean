@@ -10,9 +10,13 @@ internal sealed class UploadUrlPrompt : ISprintDemoPrompt
     // The brand the last render was given.
     public volatile DemoBrand? LastBrand;
 
-    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand)
+    // The channel the last render was given (null before any render).
+    public DemoPromptChannel? LastChannel { get; private set; }
+
+    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel)
     {
         LastBrand = brand;
+        LastChannel = channel;
         return Fail ? throw new InvalidOperationException("The prompt failed.") : $"Upload to {upload.Url}";
     }
 }

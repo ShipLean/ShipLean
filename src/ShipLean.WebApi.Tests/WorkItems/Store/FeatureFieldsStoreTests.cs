@@ -8,6 +8,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Store;
 
@@ -26,7 +27,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
     public async Task CloseDataSource() => await _dataSource.DisposeAsync();
 
     private WorkItemStore StoreAt(FakeTimeProvider clock, AgentIdentity? agent = null)
-        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent ?? AgentIdentity.None);
+        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent ?? AgentIdentity.None, new FixedViewerZone());
 
     [TestCase(14, 0, false)]
     [TestCase(14, 1, true)]
@@ -41,7 +42,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
         await PatchAsync(store, feature.Id, 1, new WorkItemChanges { StatusLine = new("Going well") });
         clock.Advance(TimeSpan.FromDays(days) + TimeSpan.FromMinutes(minutes));
 
-        var dto = await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, IWorkItemExtras.None).GetAsync(feature.Id);
+        var dto = await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, IWorkItemExtras.None, new FixedViewerZone()).GetAsync(feature.Id);
 
         var verified = dto.StatusVerified.ShouldNotBeNull();
         verified.Stale.ShouldBe(stale);
@@ -80,7 +81,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
         WorkItemContractSupport.Written(await store.PatchAsync(
             feature.Id, new WorkItemPatch(1, new WorkItemChanges { StatusLine = new("Agent says so") }), new WriteOptions(null, RevisionOrigin.User, Via: "set_status")));
 
-        var verified = (await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, IWorkItemExtras.None).GetAsync(feature.Id)).StatusVerified.ShouldNotBeNull();
+        var verified = (await new WorkItemReads(_dataSource, new MarkdownRenderer(), clock, IWorkItemExtras.None, new FixedViewerZone()).GetAsync(feature.Id)).StatusVerified.ShouldNotBeNull();
         verified.Agent.ShouldBe("Claude Code (claude.ai)");
         verified.Via.ShouldBe("set_status");
         verified.AtLabel.ShouldBe("just now");

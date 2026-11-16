@@ -2,6 +2,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { ProjectSettingsTab } from '../routes';
 import type { SettingsDraftSlotProps } from '../slots/SettingsDraftSlot';
 import { SettingsDemosSlot } from '../slots/SettingsDemosSlot';
+import { SettingsInspectionSlot } from '../slots/SettingsInspectionSlot';
 import { SettingsIntegrationsSlot } from '../slots/SettingsIntegrationsSlot';
 import { SettingsStatesSlot } from '../slots/SettingsStatesSlot';
 
@@ -18,6 +19,7 @@ export function projectSettingsSlots(
       states: <SettingsStatesSlot project={project} tab={tab} />,
       integrations: <SettingsIntegrationsSlot project={project} tab={tab} />,
       demos: <SettingsDemosSlot project={project} tab={tab} />,
+      inspection: <SettingsInspectionSlot project={project} tab={tab} />,
     },
   };
 }
