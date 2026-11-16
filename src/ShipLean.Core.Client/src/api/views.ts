@@ -474,3 +474,208 @@ export interface FeatureTimelineViewDto {
   notStarted: TimelineNotStartedDto[];
   links: TimelineLinksDto;
 }
+
+// Inspection's lead time (SHIP-1398 K2): InspectionMetricsViewDto and its parts, pinned by inspection-metrics-view.json.
+
+export const INSPECTION_RANGES = ['last6', 'quarter', 'lastQuarter', 'all'] as const;
+export type InspectionRange = (typeof INSPECTION_RANGES)[number];
+
+export const INSPECTION_CUTS = ['none', 'feature', 'who'] as const;
+export type InspectionCut = (typeof INSPECTION_CUTS)[number];
+
+export const INSPECTION_CADENCES = ['sprints', 'weeks'] as const;
+export type InspectionCadence = (typeof INSPECTION_CADENCES)[number];
+
+export const INSPECTION_AGGREGATES = ['mean'] as const;
+export type InspectionAggregate = (typeof INSPECTION_AGGREGATES)[number];
+
+export const LEAD_TIME_ENDED_BY = ['lastCommit', 'resolved'] as const;
+export type LeadTimeEndedBy = (typeof LEAD_TIME_ENDED_BY)[number];
+
+export const INSPECTION_SEGMENT_KINDS = ['active', 'blocked', 'rework', 'unresolvedTail'] as const;
+export type InspectionSegmentKind = (typeof INSPECTION_SEGMENT_KINDS)[number];
+
+export const INSPECTION_EVENT_KINDS = [
+  'started',
+  'commit',
+  'resolved',
+  'blocked',
+  'unblocked',
+  'reviewApproved',
+  'reviewChangesRequested',
+] as const;
+export type InspectionEventKind = (typeof INSPECTION_EVENT_KINDS)[number];
+
+export interface InspectionProjectDto {
+  id: string;
+  key: string;
+  name: string;
+}
+
+/** Tasks of the range that ended at a commit time; percent is null with no tasks. Below 100 the page shows a banner. */
+export interface InspectionCoverageDto {
+  tasks: number;
+  withCommitTime: number;
+  percent: number | null;
+}
+
+/** One group of tasks' lead time: means in hours to one decimal (null with no tasks), each with its server label. */
+export interface LeadTimeStatsDto {
+  tasks: number;
+  meanHours: number | null;
+  meanLabel: string | null;
+  meanActiveHours: number | null;
+  meanActiveLabel: string | null;
+  meanBlockedHours: number | null;
+  meanBlockedLabel: string | null;
+  meanReworkHours: number | null;
+  meanReworkLabel: string | null;
+  meanUnresolvedTailHours: number | null;
+  endedAtResolved: number;
+  changePctVsPrevious: number | null;
+}
+
+export interface InspectionHeadlinePeriodDto {
+  periodId: string;
+  name: string;
+  leadTime: LeadTimeStatsDto;
+}
+
+/** The last finished sprint, and the running one so far; either null when there is none. */
+export interface InspectionHeadlineDto {
+  finished: InspectionHeadlinePeriodDto | null;
+  soFar: InspectionHeadlinePeriodDto | null;
+}
+
+export interface InspectionDotDto {
+  taskKey: string;
+  leadHours: number;
+  leadLabel: string;
+  overTwoDays: boolean;
+  longest: boolean;
+}
+
+export interface InspectionPeriodDto {
+  id: string;
+  name: string;
+  shortName: string;
+  startDate: string;
+  endDate: string;
+  datesLabel: string;
+  quarter: string;
+  inProgress: boolean;
+  leadTime: LeadTimeStatsDto;
+  dots: InspectionDotDto[];
+}
+
+export interface InspectionQuarterDto {
+  quarter: string;
+  toDate: boolean;
+  periodIds: string[];
+  leadTime: LeadTimeStatsDto;
+}
+
+/** One row of the cut table; cells has one entry per period, in periods order. */
+export interface InspectionCutRowDto {
+  key: string;
+  label: string;
+  agent: boolean;
+  cells: LeadTimeStatsDto[];
+  all: LeadTimeStatsDto;
+}
+
+export interface InspectionTaskDto {
+  key: string;
+  title: string;
+  storyKey: string | null;
+  featureKey: string | null;
+  featureTitle: string | null;
+  who: string;
+  agent: boolean;
+  startedAt: string;
+  startedLabel: string;
+  endedAt: string;
+  endedLabel: string;
+  endedBy: LeadTimeEndedBy;
+  leadHours: number;
+  leadLabel: string;
+  activeHours: number;
+  blockedHours: number;
+  reworkHours: number;
+  unresolvedTailHours: number;
+  periodId: string | null;
+}
+
+export interface InspectionLeftOutDto {
+  key: string;
+  title: string;
+  featureKey: string | null;
+  reason: string;
+  at: string;
+  atLabel: string;
+}
+
+export interface InspectionPeriodFeatureDto {
+  key: string;
+  title: string;
+  tasksEnded: number;
+  tasksTotal: number;
+  meanLeadHours: number | null;
+  meanLeadLabel: string | null;
+}
+
+export interface InspectionSegmentDto {
+  kind: InspectionSegmentKind;
+  from: string;
+  to: string;
+  fromHours: number;
+  hours: number;
+  label: string;
+  counted: boolean;
+}
+
+export interface InspectionEventDto {
+  kind: InspectionEventKind;
+  at: string;
+  atLabel: string;
+  hours: number;
+  text: string;
+}
+
+export interface InspectionTaskMeasurementDto {
+  task: InspectionTaskDto;
+  segments: InspectionSegmentDto[];
+  events: InspectionEventDto[];
+}
+
+export interface InspectionPeriodDetailDto {
+  periodId: string;
+  name: string;
+  datesLabel: string;
+  inProgress: boolean;
+  leadTime: LeadTimeStatsDto;
+  tasks: InspectionTaskDto[];
+  features: InspectionPeriodFeatureDto[];
+  selected: InspectionTaskMeasurementDto | null;
+}
+
+/** GET of a project's Inspection lead time; the MCP tool inspection_metrics sends the same fields in snake_case. */
+export interface InspectionMetricsViewDto {
+  project: InspectionProjectDto;
+  cadence: InspectionCadence;
+  range: InspectionRange;
+  cut: InspectionCut;
+  aggregate: InspectionAggregate;
+  generatedAt: string;
+  caveat: string;
+  coverage: InspectionCoverageDto;
+  headline: InspectionHeadlineDto;
+  periods: InspectionPeriodDto[];
+  quarters: InspectionQuarterDto[];
+  /** Null when cut is none. */
+  cuts: InspectionCutRowDto[] | null;
+  longest: InspectionTaskDto[];
+  leftOut: InspectionLeftOutDto[];
+  /** Null unless the query names a period. */
+  periodDetail: InspectionPeriodDetailDto | null;
+}

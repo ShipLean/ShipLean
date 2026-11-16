@@ -40,14 +40,8 @@ public sealed record InspectionMetricsSelection(InspectionRange Range, Inspectio
         {
             return absent;
         }
-        foreach (var candidate in Enum.GetValues<T>())
-        {
-            if (string.Equals(WireName(candidate), value, StringComparison.Ordinal))
-            {
-                return candidate;
-            }
-        }
-        throw ApiException.Validation(message, field);
+        var matches = Enum.GetValues<T>().Where(candidate => string.Equals(WireName(candidate), value, StringComparison.Ordinal)).ToList();
+        return matches.Count == 1 ? matches[0] : throw ApiException.Validation(message, field);
     }
 
     private static string WireName<T>(T value)

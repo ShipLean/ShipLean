@@ -24,9 +24,11 @@ public sealed record InspectionWindow(DateOnly From, DateOnly To, IReadOnlyList<
             _ => throw new ArgumentOutOfRangeException(nameof(range), range, null),
         };
 
-        var from = shown.Count == 0
-            ? lastQuarter
-            : range == InspectionRange.All ? shown[0].StartDate : QuarterStart(shown[0].EndDate).AddMonths(-3);
+        var from = lastQuarter;
+        if (shown.Count > 0)
+        {
+            from = range == InspectionRange.All ? shown[0].StartDate : QuarterStart(shown[0].EndDate).AddMonths(-3);
+        }
         if (period is not null)
         {
             var periodFrom = QuarterStart(period.EndDate).AddMonths(-3);
