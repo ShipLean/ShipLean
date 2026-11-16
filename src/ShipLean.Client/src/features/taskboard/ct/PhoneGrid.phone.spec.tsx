@@ -69,7 +69,7 @@ test('PhoneGrid_WhenStoryClosed_ShouldShowOneLine', async ({ mount, page }) => {
   await expect(page.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`)).toHaveCount(0);
   const first = lines.first();
   await expect(first.getByTestId(ids.rowTitle)).toHaveText('Story SHIP-138');
-  await expect(first.getByTestId(ids.closedLineDone)).toHaveText('1/1');
+  await expect(first.getByTestId(ids.closedLineDone)).toHaveText('☑ 1/1');
   await expect(first).toContainText('Closed');
   expect((await first.boundingBox())!.height).toBe(40);
   await expect(first.getByTestId(ids.rowToggle)).toHaveAttribute('aria-expanded', 'false');

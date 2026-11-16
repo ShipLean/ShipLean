@@ -5,6 +5,7 @@ import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/c
 import { stubTaskboard } from '../../features/taskboard/ct/stubApi';
 import { sprintHeaderTestIds as headerIds } from '../../features/sprintHeader/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
+import { componentTestIds } from '../../components/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import {
   TASKBOARD_CARD_FIELDS,
@@ -149,6 +150,15 @@ phonePageShots([
               el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
             );
           await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
+        },
+      ],
+      [
+        // The lane card's state opens the K1b StateMenu in a sheet, not a native select (SHIP-1830).
+        'taskboard-lane-state',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.rowState).first().tap();
+          await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+          await expect(page.getByTestId(componentTestIds.stateMenu)).toBeVisible();
         },
       ],
       [
