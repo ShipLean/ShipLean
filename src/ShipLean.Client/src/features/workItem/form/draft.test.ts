@@ -33,6 +33,12 @@ describe('draft', () => {
     expect(changes.removeLinkIds).toEqual([]);
   });
 
+  it('changesOf_WhenFoundBeforeReleaseChecked_ShouldSendTrue', () => {
+    const changes = changesOf(draftOf(bug), { ...draftOf(bug), foundBeforeRelease: true });
+    expect(changes.foundBeforeRelease).toEqual({ value: true });
+    expect(changes.severity).toBeNull();
+  });
+
   it('changesOf_WhenParentAndSprintCleared_ShouldSendNullIds', () => {
     const base = {
       ...draftOf(story),

@@ -16,8 +16,7 @@ public sealed record WorkItemChanges
 
     public FieldSet<int?>? Severity { get; init; }
 
-    // Bug only (SHIP-1398 item D17).
-    // TODO: the stores do not write it yet, so a sent value is ignored; the work item write path for the field replaces this.
+    // Bug only (SHIP-1398 item D17): the bug was found before the release it belonged to went out, so it did not escape.
     public FieldSet<bool>? FoundBeforeRelease { get; init; }
 
     public FieldSet<Guid>? State { get; init; }

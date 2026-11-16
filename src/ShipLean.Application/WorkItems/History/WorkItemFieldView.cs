@@ -24,7 +24,8 @@ public sealed record WorkItemFieldView(
     string? Goal = null,
     string? StatusLine = null,
     string? StatusVerifiedAt = null,
-    string? Health = null)
+    string? Health = null,
+    bool FoundBeforeRelease = false)
 {
     public static WorkItemFieldView Blank { get; } = new(null, null, null, null, null, null, [], null, null, null, null, [], null, []);
 

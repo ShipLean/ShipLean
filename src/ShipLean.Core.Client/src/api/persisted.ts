@@ -427,6 +427,16 @@ export const FIELD_IDS = [
     ],
   },
   {
+    id: 'foundBeforeRelease',
+    label: 'Found before release',
+    kind: 'text',
+    appliesTo: ['bug'],
+    nullable: false,
+    usedIn: ['history'],
+    ops: [],
+    values: null,
+  },
+  {
     id: 'description',
     label: 'Description',
     kind: 'markdown',

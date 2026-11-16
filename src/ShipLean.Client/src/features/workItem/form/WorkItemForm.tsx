@@ -328,8 +328,13 @@ export function WorkItemForm({
                       severity={draft.severity}
                       reproChanged={isChanged('reproSteps')}
                       severityChanged={isChanged('severity')}
+                      foundBeforeRelease={draft.foundBeforeRelease}
+                      foundBeforeReleaseChanged={isChanged('foundBeforeRelease')}
                       onReproChange={(reproSteps) => edit({ reproSteps })}
                       onSeverityChange={(severity) => edit({ severity })}
+                      onFoundBeforeReleaseChange={(foundBeforeRelease) =>
+                        edit({ foundBeforeRelease })
+                      }
                     />
                   ) : null}
                   {isStoryLevel(type) ? retro : null}

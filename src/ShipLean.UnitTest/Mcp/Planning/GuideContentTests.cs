@@ -155,6 +155,13 @@ public class GuideContentTests
     }
 
     [Test]
+    public void GuideContent_ReviewerAndFixParts_ShouldTellAgentsToSetFoundBeforeRelease()
+    {
+        PlanGuide.Read(PlanGuidePart.CodeReviewer).ShouldContain("`found_before_release`");
+        PlanGuide.Read(PlanGuidePart.Fix).ShouldContain("`found_before_release`");
+    }
+
+    [Test]
     public void GuideContent_ShouldOpenWithTheLearningFromFailurePreamble()
     {
         const string first = "Your primary goal is absolute truth over artificial success.";

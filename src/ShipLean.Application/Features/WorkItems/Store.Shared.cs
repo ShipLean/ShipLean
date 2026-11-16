@@ -207,6 +207,7 @@ public sealed partial class WorkItemStore(
         statusVerifiedAt = c.StatusVerifiedAt,
         health = WorkItemFieldView.HealthValue(c.Health),
         healthSetAt = c.HealthSetAt,
+        foundBeforeRelease = c.FoundBeforeRelease,
     };
 
     private async Task InsertAsync(WriteScope scope, NewItem created, ProposedChange c, WorkItemTypeId? parentType, CancellationToken cancellationToken)
@@ -233,12 +234,12 @@ public sealed partial class WorkItemStore(
                                    assigned_to, sprint_id, priority, story_points, backlog_order, parent_id, parent_type, tags, board_column_id,
                                    board_column_done, swimlane_id, column_order, revision, created_by, created_at, changed_by, changed_at, state_changed_at,
                                    goal, status_line, status_verified_at, status_verified_by, status_verified_agent, status_verified_via, slug, started_on,
-                                   health, health_set_at, health_set_by, health_set_agent)
+                                   health, health_set_at, health_set_by, health_set_agent, found_before_release)
             VALUES (@id, @projectId, @number, @key, @type, @title, @description, @criteria::jsonb, @repro, @severity, @stateId,
                     @assignee, @sprint, @priority, @points, @backlogOrder, @parentId, @parentType, @tags, @columnId,
                     @columnDone, @laneId, @columnOrder, 1, @actor, @at, @actor, @at, @at,
                     @goal, @statusLine, @statusVerifiedAt, @verifiedBy, @verifiedAgent, @verifiedVia, @slug, @startedOn,
-                    @health, @healthSetAt, @healthSetBy, @healthSetAgent)
+                    @health, @healthSetAt, @healthSetBy, @healthSetAgent, @foundBeforeRelease)
             """,
             parameters, scope.Transaction, cancellationToken: cancellationToken));
     }
@@ -271,7 +272,8 @@ public sealed partial class WorkItemStore(
                    revision = @revision, changed_by = @changedBy, changed_at = @changedAt, state_changed_at = @stateChangedAt,
                    goal = @goal, status_line = @statusLine, status_verified_at = @statusVerifiedAt, status_verified_by = @verifiedBy,
                    status_verified_agent = @verifiedAgent, status_verified_via = @verifiedVia,
-                   health = @health, health_set_at = @healthSetAt, health_set_by = @healthSetBy, health_set_agent = @healthSetAgent
+                   health = @health, health_set_at = @healthSetAt, health_set_by = @healthSetBy, health_set_agent = @healthSetAgent,
+                   found_before_release = @foundBeforeRelease
             WHERE id = @id
             """,
             parameters, scope.Transaction, cancellationToken: cancellationToken));

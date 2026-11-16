@@ -19,18 +19,25 @@ export function ReproSection({
   severity,
   reproChanged,
   severityChanged,
+  foundBeforeRelease,
+  foundBeforeReleaseChanged,
   onReproChange,
   onSeverityChange,
+  onFoundBeforeReleaseChange,
 }: {
   item: WorkItemDto;
   repro: string;
   severity: number | null;
   reproChanged: boolean;
   severityChanged: boolean;
+  foundBeforeRelease: boolean;
+  foundBeforeReleaseChanged: boolean;
   onReproChange: (reproSteps: string) => void;
   onSeverityChange: (severity: number | null) => void;
+  onFoundBeforeReleaseChange: (foundBeforeRelease: boolean) => void;
 }) {
   const severityId = useId();
+  const foundId = useId();
   return (
     <div data-testid={ids.reproBlock} className="grid gap-3">
       <MarkdownSection
@@ -87,6 +94,36 @@ export function ReproSection({
         </select>
         <span className="text-[length:var(--text-xs)] text-ink-muted touch:basis-full">
           How bad it is for the people it hits. Priority is when we fix it.
+        </span>
+      </div>
+      <div
+        data-field="foundBeforeRelease"
+        data-testid={ids.foundBeforeRelease}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <input
+          id={foundId}
+          type="checkbox"
+          data-testid={ids.foundBeforeReleaseInput}
+          className="size-4 accent-signal"
+          checked={foundBeforeRelease}
+          onChange={(event) => onFoundBeforeReleaseChange(event.target.checked)}
+        />
+        <label
+          htmlFor={foundId}
+          className="flex items-center gap-1 text-[length:var(--text-sm)] font-semibold"
+        >
+          Found before release
+          {foundBeforeReleaseChanged ? (
+            <span
+              role="img"
+              aria-label="Unsaved change"
+              className="size-1.5 rounded-full bg-signal"
+            />
+          ) : null}
+        </label>
+        <span className="text-[length:var(--text-xs)] text-ink-muted touch:basis-full">
+          Caught before the release it belonged to went out, so it did not escape.
         </span>
       </div>
     </div>

@@ -24,6 +24,9 @@ public sealed record CaptureItem
     [JsonPropertyName("severity"), Description("A bug's severity, 1 (critical) to 4 (low).")]
     public int? Severity { get; init; }
 
+    [JsonPropertyName("found_before_release"), Description("A bug only: true when it was found before the release it belonged to went out, for example by your own review. Leave out for a bug found after release.")]
+    public bool? FoundBeforeRelease { get; init; }
+
     [JsonPropertyName("points"), Description("Story points.")]
     public decimal? Points { get; init; }
 
