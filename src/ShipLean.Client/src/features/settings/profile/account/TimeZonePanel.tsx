@@ -4,7 +4,6 @@ import { fetchMe, meKey } from '../../../../queries/shared';
 import { browserZone } from '../../../shell/timeZone/browserZone';
 import { settingsTestIds } from '../../testIds';
 import { FormRow } from '../identity/FormRow';
-import { errorText } from './errorText';
 import { PanelFrame } from './PanelFrame';
 import { useTimeZoneSave } from './useTimeZoneSave';
 
@@ -38,7 +37,7 @@ export function TimeZonePanel() {
               role="alert"
               className="text-[length:var(--text-xs)] text-alert"
             >
-              {errorText(choices.error, 'The list of time zones could not be loaded.')}
+              The list of time zones could not be loaded. Reload the page to try again.
             </span>
           ) : (
             <select
