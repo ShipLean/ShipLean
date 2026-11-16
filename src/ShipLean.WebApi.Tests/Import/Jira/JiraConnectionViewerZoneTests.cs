@@ -33,7 +33,7 @@ public sealed class JiraConnectionViewerZoneTests : ApiFixture
 
         using var read = await Api.GetAsync(Connection);
         read.EnsureSuccessStatusCode();
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
         return JsonSerializer.Deserialize<JiraConnectionDto>(await read.Content.ReadAsStringAsync(), options)!.CreatedLabel;
     }
 

@@ -14,7 +14,7 @@ namespace ShipLean.WebApi.Tests.Import.Jobs;
 [TestFixture]
 public class ImportJobViewerZoneTests : ImportJobsFixture
 {
-    protected override IReadOnlyList<JiraIssue> Issues { get; } = [JiraWorld.Issue("ZONE-1")];
+    protected override IReadOnlyList<JiraIssue> Issues { get; } = [JiraWorld.Issue("PLAT-1")];
 
     // Three seconds past two minutes after midnight UTC on the day LateEveningUtc falls on.
     private static DateTimeOffset LoggedAt => ViewerZoneTestData.LateEveningUtc.AddHours(-20).AddMinutes(2).AddSeconds(5);
@@ -32,7 +32,7 @@ public class ImportJobViewerZoneTests : ImportJobsFixture
     [Test, Order(1)]
     public async Task ImportJob_WhenViewerHasNoZone_ShouldStampLogLinesInUtc()
     {
-        (await FirstLogTimeAsync("ZONEA")).ShouldBe("00:02:05");
+        (await FirstLogTimeAsync("ZNAA")).ShouldBe("00:02:05");
     }
 
     // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to LogTime in ImportJobRows.
@@ -41,6 +41,6 @@ public class ImportJobViewerZoneTests : ImportJobsFixture
     {
         await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
 
-        (await FirstLogTimeAsync("ZONEB")).ShouldBe("07:02:05");
+        (await FirstLogTimeAsync("ZNAB")).ShouldBe("07:02:05");
     }
 }
