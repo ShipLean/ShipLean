@@ -102,14 +102,15 @@ public sealed partial class LokiRunFinder(IHttpClientFactory clients, Inspection
             labels.GetValueOrDefault(options.Fields.Prompt),
             labels.GetValueOrDefault("event.name"));
 
-    // The OTel severity text in upper case, else derived from the OTel severity number (17 and above is an error).
+    // The OTel severity text in upper case, else derived from the OTel severity number (17 and above is an error; 0, or no number, is UNSPECIFIED, D33).
     private static string Severity(Dictionary<string, string> labels)
     {
         if (labels.TryGetValue("severity_text", out var text) && text.Length > 0)
         {
             return text.ToUpperInvariant();
         }
-        return labels.TryGetValue("severity_number", out var number) && int.TryParse(number, out var n) ? n switch { >= 21 => "FATAL", >= 17 => "ERROR", >= 13 => "WARN", >= 9 => "INFO", >= 5 => "DEBUG", _ => "TRACE" } : "INFO";
+        // Loki drops a severity number of 0 (and an empty text) on ingest, so no label at all also means UNSPECIFIED (D33).
+        return labels.TryGetValue("severity_number", out var number) && int.TryParse(number, out var n) ? n switch { <= 0 => "UNSPECIFIED", >= 21 => "FATAL", >= 17 => "ERROR", >= 13 => "WARN", >= 9 => "INFO", >= 5 => "DEBUG", _ => "TRACE" } : "UNSPECIFIED";
     }
 
     // Label names back to the OTel dotted form for the K1 fields and the few other names the rules read; any other name stays as Loki has it.
