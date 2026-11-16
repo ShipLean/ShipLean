@@ -48,6 +48,8 @@
     { "value": "blocked", "label": "Blocked" }
   ] },
   { "id": "links", "label": "Links", "kind": "links", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "commits", "label": "Commits", "kind": "text", "appliesTo": ["bug", "task"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
+  { "id": "review", "label": "Review", "kind": "text", "appliesTo": ["bug", "task"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "createdAt", "label": "Created", "kind": "date", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": false, "usedIn": ["criteria", "cardField"], "ops": [">", "<"], "values": null },
   { "id": "createdBy", "label": "Created by", "kind": "user", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": true, "usedIn": ["criteria", "cardField"], "ops": ["=", "<>", "in", "isEmpty", "isNotEmpty"], "values": null },
   { "id": "changedAt", "label": "Changed", "kind": "date", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": false, "usedIn": ["criteria", "cardField"], "ops": [">", "<"], "values": null },

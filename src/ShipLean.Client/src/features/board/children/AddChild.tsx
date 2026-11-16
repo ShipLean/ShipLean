@@ -56,7 +56,7 @@ export function AddChild({
             type="button"
             data-testid={ids.childAdd}
             data-type={option.type}
-            className="btn-ghost h-[22px] border-0 px-1.5 text-[length:var(--text-xs)] text-ink-muted"
+            className="btn-ghost h-[22px] touch:h-[var(--touch-target)] border-0 px-1.5 text-[length:var(--text-xs)] text-ink-muted"
             onClick={() => setAdding(option)}
           >
             + {option.label}

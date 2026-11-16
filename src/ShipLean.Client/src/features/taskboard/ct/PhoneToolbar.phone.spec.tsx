@@ -111,3 +111,20 @@ for (const theme of THEMES) {
     );
   });
 }
+
+for (const theme of THEMES) {
+  test(`PhoneToolbar_WhenMoreOpenedOnTheFeatureBoard_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+    await page.getByTestId(touchTestIds.moreButton).tap();
+    await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
+    await expect(page.getByTestId(touchTestIds.sheet)).toHaveScreenshot(
+      `phone-toolbar-more.${theme}.png`,
+    );
+  });
+}

@@ -1,5 +1,6 @@
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Settings;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Settings.Profile.Account;
 
@@ -8,17 +9,14 @@ namespace ShipLean.AcceptanceTests.Lanes.Settings.Profile.Account;
 public class ProfileLeaveTests : SeededAcceptanceTest
 {
     [Test]
-    public async Task Profile_WhenOnlyAdminLeaves_ShouldRefuse()
+    public async Task Profile_WhenOnlyAdmin_ShouldSayOnlyAdminInsteadOfLeave()
     {
         var account = new ProfileAccountPage(Page);
         await account.OpenAsync();
 
-        await account.LeaveAsync("SHIP");
-
-        await Expect(account.LeaveConfirmError).ToHaveTextAsync("You are the only admin. Make someone else an admin before you leave.");
-        await Expect(account.ProjectRow("SHIP")).ToBeVisibleAsync();
-        var projects = await Page.Context.APIRequest.GetAsync("/api/projects");
-        (await projects.TextAsync()).ShouldContain("\"SHIP\"");
+        // The server still refuses an only admin's leave (ProjectSettingsApiTests.Leave_WhenOnlyAdmin_ShouldBeValidation).
+        await Expect(account.ProjectRow("SHIP").GetByTestId(SettingsTestIds.MyProjectOnlyAdmin)).ToHaveTextAsync("Only admin");
+        await Expect(account.ProjectRow("SHIP").GetByTestId(SettingsTestIds.MyProjectLeave)).ToHaveCountAsync(0);
     }
 
     [Test]

@@ -63,6 +63,35 @@ for (const colour of THEMES) {
     });
   });
 
+  test(`SearchPhone_WhenTheWordIsInTheTextAndTheTheme_ShouldMatchItsScreenshot_retro-search-phone-q_${colour}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
+    await stubRetros(page);
+    const screen = await mount(<RetrosSearchPanel project={project} />, route('?q=screenshot'));
+    await expect(page.getByTestId(ids.retrosRow)).toHaveCount(retroSearch.rows.length);
+    await expect(page.locator('mark').first()).toBeVisible();
+    await expect(screen).toHaveScreenshot(`retro-search-phone-q.${colour}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`SearchPhone_WhenTheWordIsOnlyInARootCause_ShouldMatchItsScreenshot_retro-search-phone-cause_${colour}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
+    await stubRetros(page);
+    await serveRows(page, [retroSearch.rows[0]]);
+    const screen = await mount(<RetrosSearchPanel project={project} />, route('?q=brief'));
+    await expect(page.getByTestId(ids.retrosRow)).toHaveCount(1);
+    await expect(page.getByTestId(ids.retrosRowRootCause)).toContainText('Root cause:');
+    await expect(screen).toHaveScreenshot(`retro-search-phone-cause.${colour}.png`, {
+      animations: 'disabled',
+    });
+  });
+
   test(`SearchPhone_WhenNothingMatches_ShouldMatchItsScreenshot_retro-search-phone-empty_${colour}`, async ({
     mount,
     page,
@@ -93,6 +122,13 @@ for (const colour of THEMES) {
       animations: 'disabled',
     });
   });
+}
+
+async function serveRows(page: Parameters<typeof stubRetros>[0], rows: typeof retroSearch.rows) {
+  const only = { ...retroSearch, rows, total: rows.length, logMatchPointIds: [], selected: null };
+  await page.route(/\/api\/projects\/[^/]+\/retros(\?.*)?$/, (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(only) }),
+  );
 }
 
 async function serveEmpty(page: Parameters<typeof stubRetros>[0]) {

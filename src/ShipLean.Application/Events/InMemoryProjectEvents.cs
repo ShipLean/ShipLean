@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using System.Threading.Channels;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using ShipLean.Application.Requests;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Events;
 
 namespace ShipLean.Application.Events;
@@ -10,14 +10,14 @@ namespace ShipLean.Application.Events;
 // The production bus (one process): one unbounded channel and one pump task per subscriber, so Publish only enqueues and
 // never waits for a handler. Disposing a subscription removes it before the next publish and stops its pump.
 // The bus is a singleton and IRequestOrigin is scoped, so it reads the request's client header itself on every publish.
-public sealed class InMemoryProjectEvents(ILogger<InMemoryProjectEvents> logger, IHttpContextAccessor? httpContext = null)
+public sealed class InMemoryProjectEvents(ILogger<InMemoryProjectEvents> logger, ICurrentRequest? request = null)
     : IProjectEvents, IDisposable
 {
     private ImmutableList<Subscription> _subscriptions = [];
 
     public Task PublishAsync(ProjectEvent projectEvent)
     {
-        var stamped = projectEvent with { ClientId = projectEvent.ClientId ?? new RequestOrigin(() => httpContext?.HttpContext).ClientId };
+        var stamped = projectEvent with { ClientId = projectEvent.ClientId ?? (request is null ? null : new RequestOrigin(request).ClientId) };
         foreach (var subscription in _subscriptions.Where(s => s.Wants(stamped)))
         {
             subscription.Enqueue(stamped);

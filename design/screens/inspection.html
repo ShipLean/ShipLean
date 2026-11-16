@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Inspection (SHIP-1398 mockup)</title>
+<!--
+  SHIP-1398 mockup, not built: Inspection, a new top-level menu after Retrospectives. How the team is going on velocity
+  (lead time), quality (escaping bugs) and cost (tokens), and a way down from each number to the work behind it:
+  a period → its tasks or Features → the Feature timeline (SHIP-1465) or the task's agent runs (SHIP-1463).
+  Decided 15 Nov (Joel, Q1–Q5 on SHIP-1398): lead time ends at the last commit (committed_at on report_task, with a
+  one-off backfill), the headline is the mean, every Bug escapes unless marked Found before release, the period is a
+  sprint (weeks once sprints can be turned off), and it is one Feature: wave 1 lead time, wave 2 bugs, wave 3 cost.
+  Uses ../tokens.css, shiplean.css, shared.js and inspection-data.js; no build step.
+    ?view=overview|leadtime|period|quality|cost|json   the screen (default overview)
+    ?range=6|q|lq|all        last 6 periods (default), this quarter, last quarter, everything
+    ?cut=feature|who         Lead time split by Feature, or by who did the work (agent or person)
+    ?p=s23                   the period opened by view=period (default the last finished one)
+    ?tab=features            the period's Features tab (default Tasks)
+    ?select=SHIP-194         the task in the period view's rail (default the slowest)
+    ?cadence=weeks           weeks instead of sprints, for a project with sprints turned off (future setting)
+    ?coverage=low            the commit-time backfill hasn't run, so older tasks end at Resolved
+    ?wave=1                  the Overview as wave 1 ships it: lead time only
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<script src="inspection-data.js"></script>
+<style>
+:root { --in-active: var(--chart-completed); --in-blocked: var(--color-danger); --in-rework: var(--color-warn); --in-tail: var(--color-muted); --in-dot: var(--color-text); }
+[hidden] { display: none !important; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.back { color: var(--color-muted); font-size: var(--text-sm); text-decoration: none; }
+.back:hover { color: var(--color-accent); text-decoration: underline; }
+.caveat { font-size: var(--text-xs); color: var(--color-muted); display: inline-flex; gap: 5px; align-items: center; }
+.caveat i { font-style: normal; display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid currentColor; font-size: 9px; font-weight: 700; }
+.cov { cursor: help; }
+.wave { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border: 1px dashed var(--color-border); border-radius: 999px; font-size: var(--text-2xs); color: var(--color-muted); white-space: nowrap; font-weight: var(--weight-medium); }
+.body { padding: var(--space-3) var(--space-4) var(--space-5); display: grid; gap: var(--space-3); align-content: start; }
+.panel { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; min-width: 0; }
+.panel > header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); flex-wrap: wrap; min-height: 40px; }
+.panel > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.panel .pad { padding: var(--space-2) var(--space-3); }
+.cols2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-3); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card { display: grid; gap: 6px; align-content: start; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); text-decoration: none; color: inherit; min-width: 0; }
+a.card:hover { border-color: var(--color-accent); }
+.card .top { display: flex; align-items: center; gap: var(--space-2); }
+.card .big { display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+.card .big b { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.card .big .of { font-size: var(--text-sm); color: var(--color-muted); }
+.card .sub { font-size: var(--text-xs); color: var(--color-muted); display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.card .sub b { color: var(--color-text); font-weight: var(--weight-semibold); }
+.card svg { display: block; width: 100%; height: 34px; }
+.delta { display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 999px; font-size: var(--text-xs); font-weight: var(--weight-semibold); white-space: nowrap; }
+.delta.good { background: color-mix(in srgb, var(--color-ok) 18%, transparent); }
+.delta.bad { background: color-mix(in srgb, var(--color-danger) 16%, transparent); }
+.delta.flat { background: var(--color-surface-2); }
+svg.chart { display: block; width: 100%; }
+svg.chart text { font-size: 10.5px; fill: var(--color-muted); font-family: var(--font-sans); }
+svg.chart text.v { fill: var(--color-text); font-weight: 600; }
+svg.chart text.lbl { paint-order: stroke; stroke: var(--color-surface); stroke-width: 4px; stroke-linejoin: round; }
+svg.chart .hit { cursor: pointer; }
+svg.chart .hit:hover + .bar, svg.chart .bar:hover { filter: brightness(1.08); }
+.legend { display: flex; gap: var(--space-3); font-size: var(--text-xs); color: var(--color-muted); flex-wrap: wrap; }
+.legend span { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.legend i.dot { border-radius: 50%; width: 7px; height: 7px; background: var(--in-dot); opacity: .45; }
+.legend i.hatch, .split-bar .tail { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--in-tail) 55%, transparent) 0 2px, transparent 2px 4px); }
+.split-bar { display: flex; height: 8px; border-radius: 2px; overflow: hidden; min-width: 2px; }
+.split-bar i { display: block; height: 100%; }
+.split-bar .a { background: var(--in-active); } .split-bar .b { background: var(--in-blocked); } .split-bar .r { background: var(--in-rework); }
+.lt { display: grid; grid-template-columns: 54px minmax(60px, 1fr); align-items: center; gap: 8px; }
+.lt b { font-variant-numeric: tabular-nums; text-align: right; font-size: var(--text-sm); }
+table.list th { position: static; }
+table.list td { white-space: nowrap; }
+table.list td.t { max-width: 0; width: 34%; overflow: hidden; text-overflow: ellipsis; }
+table.list td.n, table.list th.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.list tr.item { cursor: pointer; }
+table.list tr.item[aria-selected="true"] td { background: var(--color-accent-soft); }
+table.list tr.q td { background: var(--color-surface-2); font-weight: var(--weight-semibold); }
+table.list tr.cur td:first-child::after { content: " · so far"; font-weight: 400; color: var(--color-muted); font-size: var(--text-xs); }
+.who { display: inline-flex; align-items: center; gap: 6px; }
+.av.agent { background: var(--color-surface-2); color: var(--color-text); border: 1px solid var(--color-border); font-size: 9px; }
+.end-chip { font-size: var(--text-2xs); color: var(--color-muted); }
+.end-chip.res { color: var(--color-warn); font-weight: var(--weight-semibold); }
+.heat { text-align: center !important; font-variant-numeric: tabular-nums; }
+.heat small { display: block; font-size: var(--text-2xs); color: var(--color-muted); line-height: 1; }
+.heat.zero { color: var(--color-muted); }
+.kpis { padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.kpi .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+.subtabs { display: flex; gap: 2px; padding: var(--space-2) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; }
+.split.wide { grid-template-columns: minmax(0, 1fr) 340px; }
+.rail h3 { margin: 0; font-size: var(--text-md); line-height: 1.35; }
+.parts { display: grid; grid-template-columns: 10px 1fr auto; gap: 4px 8px; align-items: center; font-size: var(--text-sm); }
+.parts i { width: 10px; height: 10px; border-radius: 2px; }
+.parts .n { font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); }
+.parts .muted { font-weight: 400; }
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; font-size: var(--text-sm); }
+.events li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; position: relative; padding-bottom: 9px; }
+.events li::before { content: ""; position: absolute; left: 6px; top: 12px; bottom: -2px; width: 1px; background: var(--color-border); }
+.events li:last-child::before { display: none; }
+.events .m { width: 9px; height: 9px; margin: 3px 0 0 2px; border-radius: 50%; background: var(--color-muted); position: relative; z-index: 1; box-shadow: 0 0 0 2px var(--color-bg); }
+.events .m.start { background: var(--in-active); } .events .m.end { background: var(--color-text); border-radius: 2px; } .events .m.blocked { background: var(--in-blocked); } .events .m.review { background: var(--in-rework); } .events .m.commit { background: var(--color-surface); border: 2px solid var(--in-active); width: 7px; height: 7px; } .events .m.res { background: var(--state-resolved); }
+.events .w { font-size: var(--text-xs); color: var(--color-muted); }
+.events code { font-family: var(--font-mono); font-size: var(--text-xs); }
+.events .after { opacity: .65; }
+.rail .btns { display: flex; flex-direction: column; gap: 6px; }
+.rail .btns .btn { justify-content: space-between; }
+.field-demo { display: grid; gap: 6px; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.field-demo label { display: flex; gap: 8px; align-items: flex-start; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.field-demo label input { margin-top: 2px; accent-color: var(--color-accent); }
+.sev { display: inline-grid; place-items: center; min-width: 22px; height: 18px; padding: 0 5px; border-radius: var(--radius-xs); font-size: var(--text-2xs); font-weight: 700; color: #fff; }
+.sev.s1 { background: var(--type-bug); } .sev.s2 { background: color-mix(in srgb, var(--type-bug) 72%, var(--color-surface)); } .sev.s3 { background: color-mix(in srgb, var(--type-bug) 45%, var(--color-surface)); color: var(--color-text); } .sev.s4 { background: color-mix(in srgb, var(--type-bug) 22%, var(--color-surface)); color: var(--color-text); }
+details.rule > summary { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); cursor: pointer; list-style: none; }
+details.rule > summary h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+details.rule > summary::before { content: '▸'; color: var(--color-muted); }
+details.rule[open] > summary::before { content: '▾'; }
+details.rule[open] > summary { border-bottom: 1px solid var(--color-border); }
+.mini { height: 20px; padding: 0 6px; border: 1px dashed var(--color-border); border-radius: var(--radius-xs); background: transparent; color: var(--color-muted); font-size: var(--text-2xs); cursor: pointer; white-space: nowrap; }
+pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono); overflow: auto; max-height: calc(100vh - 230px); background: var(--color-bg); }
+.callout code { font-family: var(--font-mono); font-size: var(--text-xs); }
+@media (max-width: 1200px) { .cols2 { grid-template-columns: minmax(0, 1fr); } .cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .cards { grid-template-columns: minmax(0, 1fr); } .split.wide { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" id="head"></section>
+<div class="toolbar" id="toolbar"></div>
+<div id="page" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+
+<script>
+(() => {
+  const { esc, tIcon, people, hover, toast } = SL;
+  const { build, toJson, dur, r1, when, dm, day, agents, isAgent, FEATURES, TASKS, BUGS, SEV_WEIGHT, MERGED_PRS, H, NOW } = INS;
+  document.getElementById('appbar').outerHTML = SL.appBar('inspection');
+
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view') || 'overview';
+  const range = params.get('range') || '6';
+  const cadence = params.get('cadence') === 'weeks' ? 'weeks' : 'sprints';
+  const cut = ['feature', 'who'].includes(params.get('cut')) ? params.get('cut') : 'none';
+  const wave1 = params.get('wave') === '1';
+  const vm = build({ range, cadence, cut });
+  const unit = cadence === 'weeks' ? 'week' : 'sprint';
+  const done = vm.rows.filter(r => !r.period.current);
+  const last = done[done.length - 1], prev = done[done.length - 2], cur = vm.rows.find(r => r.period.current);
+  const qNow = vm.quarters.find(q => q.to_date), qLast = vm.quarters.find(q => q.q === 'Q3 2026');
+
+  const href = (o = {}) => {
+    const p = new URLSearchParams(location.search);
+    Object.entries(o).forEach(([k, v]) => (v == null ? p.delete(k) : p.set(k, v)));
+    ['shot', 'theme'].forEach(k => p.delete(k));
+    const s = p.toString();
+    return 'inspection.html' + (s ? '?' + s : '');
+  };
+  const keep = o => href({ select: null, tab: null, p: null, ...o });
+  const who = w => (isAgent(w) ? `<span class="who"><span class="av agent" title="Agent">${agents[w].initials}</span>${agents[w].name}</span>` : `<span class="who">${SL.av(w)}${people[w].name}</span>`);
+  const fkey = k => `<a class="key" href="feature-timeline.html?key=${k === 'SHIP-99' ? 'SHIP-99' : 'SHIP-101'}" title="Open the Feature timeline">${k}</a>`;
+  const fname = k => `${tIcon('feature')} <span class="sm">${esc(FEATURES[k])}</span>`;
+  const delta = (pct, lowerIsBetter = true) => {
+    if (pct == null) return '';
+    if (Math.abs(pct) < 3) return `<span class="delta flat">≈ same</span>`;
+    const good = lowerIsBetter ? pct < 0 : pct > 0;
+    return `<span class="delta ${good ? 'good' : 'bad'}" title="Against the ${unit} before">${pct < 0 ? '▼' : '▲'} ${Math.abs(pct)}%</span>`;
+  };
+  const pctChange = (a, b) => (a == null || !b ? null : Math.round(((a - b) / b) * 100));
+  const tok = n => (n == null ? '—' : n >= 1e6 ? `${r1(n / 1e6)} M` : `${Math.round(n / 1000)} k`);
+  const splitBar = (k, max) => {
+    const w = h => `${(h / max) * 100}%`;
+    return `<span class="split-bar" style="width:${Math.max(2, ((k.lead_hours ?? k.lead) / max) * 100)}%"><i class="a" style="width:${((k.active_hours ?? k.active) / (k.lead_hours ?? k.lead)) * 100}%"></i><i class="b" style="width:${((k.blocked_hours ?? k.blocked) / (k.lead_hours ?? k.lead)) * 100}%"></i><i class="r" style="width:${((k.rework_hours ?? k.rework) / (k.lead_hours ?? k.lead)) * 100}%"></i></span>`;
+  };
+  const coverage = (() => {
+    const list = vm.rows.flatMap(r => r.list), withC = list.filter(k => k.lastCommit != null).length;
+    return { n: list.length, withC, pct: Math.round((withC / list.length) * 100) };
+  })();
+  const rangeSelect = () => `<select class="field" id="range" aria-label="Range">
+      <option value="6"${range === '6' ? ' selected' : ''}>Last 6 ${unit}s</option><option value="q"${range === 'q' ? ' selected' : ''}>This quarter (Q4)</option>
+      <option value="lq"${range === 'lq' ? ' selected' : ''}>Last quarter (Q3)</option><option value="all"${range === 'all' ? ' selected' : ''}>All ${unit}s</option></select>`;
+  const caveat = `<span class="caveat"><i>i</i>These numbers tell you where to look, not what caused a change.</span>`;
+  const covChip = `<span class="chip cov ${coverage.pct < 70 ? 'warn' : ''}" id="cov" tabindex="0">Commit times: ${coverage.withC} of ${coverage.n} tasks</span>`;
+
+  /* ---------- Charts (SVG, drawn here; the app would use the same view model) ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  // Charts are drawn at their real width, after shared.js has moved the page into the shell.
+  const later = f => setTimeout(f, 0);
+  const widthOf = (svg, fallback = 900) => Math.max(320, Math.round(svg.getBoundingClientRect().width) || fallback);
+  function svgEl(svg) { return (tag, a, text) => { const el = document.createElementNS(NS, tag); for (const k in a) el.setAttribute(k, a[k]); if (text != null) el.textContent = text; svg.append(el); return el; }; }
+
+  // Lead time per period: a bar for the mean, a dot per task. Dots above the axis top sit on it with their value.
+  function leadChart(svg, rows, { H: HH = 220, dots = true, link = true } = {}) {
+    const W = widthOf(svg), L = 38, B = 34, T = 16, mk = svgEl(svg);
+    svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+    const maxH = 48; // the axis tops out at 2 days; the long tail sits on the top edge, labelled
+    const y = h => T + (1 - Math.min(h, maxH) / maxH) * (HH - T - B), gw = (W - L) / rows.length, bw = Math.min(46, gw * 0.5);
+    [0, 12, 24, 36, 48].forEach(v => { mk('line', { x1: L, y1: y(v), x2: W, y2: y(v), stroke: 'var(--color-border)', 'stroke-width': v ? .6 : 1 }); mk('text', { x: L - 6, y: y(v) + 3, 'text-anchor': 'end' }, v ? (v % 24 ? `${v} h` : `${v / 24} d`) : '0'); });
+    let qPrev = null;
+    rows.forEach((r, i) => {
+      const cx = L + gw * i + gw / 2, x = cx - bw / 2;
+      if (qPrev && r.period.q !== qPrev) { mk('line', { x1: L + gw * i, y1: T - 6, x2: L + gw * i, y2: HH - 4, stroke: 'var(--color-muted)', 'stroke-dasharray': '2 3' }); mk('text', { x: L + gw * i + 4, y: T - 2 }, r.period.q.replace(' 2026', '')); }
+      if (i === 0) mk('text', { x: L + 4, y: T - 2 }, r.period.q.replace(' 2026', ''));
+      qPrev = r.period.q;
+      if (r.lead_hours != null) {
+        const top = y(r.lead_hours);
+        mk('rect', { x, y: top, width: bw, height: y(0) - top, rx: 3, class: 'bar', fill: r.period.current ? 'none' : 'color-mix(in srgb, var(--in-active) 30%, transparent)', stroke: 'var(--in-active)', 'stroke-width': 1.2, 'stroke-dasharray': r.period.current ? '4 3' : '' });
+        mk('line', { x1: x - 3, x2: x + bw + 3, y1: top, y2: top, stroke: 'var(--in-active)', 'stroke-width': 2.4 });
+      }
+      const longest = r.list.reduce((a, k) => (k.lead > (a?.lead ?? 0) ? k : a), null);
+      if (dots) r.list.forEach((k, j) => {
+        const jitter = ((j * 37) % 11 - 5) / 5 * bw * 0.42;
+        const off = k.lead > maxH;
+        const c = mk('circle', { cx: cx + jitter, cy: off ? T + 2 : y(k.lead), r: off ? 3.6 : 2.6, fill: off ? 'var(--color-danger)' : 'var(--in-dot)', 'fill-opacity': off ? .9 : .38 });
+        hover(c, `${k.key} ${k.title} · ${dur(k.lead)}${k.lastCommit == null ? ' (to Resolved)' : ''}`);
+        if (off && k === longest) mk('text', { x: cx + jitter + 6, y: T + 4, class: 'lbl', style: 'fill:var(--color-danger);font-weight:600' }, `${k.key} ${dur(k.lead)}`);
+      });
+      if (r.lead_hours != null) mk('text', { x: cx, y: y(r.lead_hours) - 6, 'text-anchor': 'middle', class: 'v lbl' }, dur(r.lead_hours));
+      mk('text', { x: cx, y: HH - B + 15, 'text-anchor': 'middle', class: 'v', style: 'font-weight:500' }, r.period.short);
+      mk('text', { x: cx, y: HH - B + 28, 'text-anchor': 'middle' }, `${r.tasks} task${r.tasks === 1 ? '' : 's'}`);
+      if (link) {
+        const hit = mk('rect', { x: cx - gw / 2 + 2, y: T, width: gw - 4, height: HH - T - 4, fill: 'transparent', class: 'hit' });
+        hit.addEventListener('click', () => { location.href = keep({ view: 'period', p: r.period.id }); });
+        hover(hit, `${r.period.name}: mean ${dur(r.lead_hours)} over ${r.tasks} tasks. Click to open.`);
+        svg.insertBefore(hit, svg.firstChild);
+      }
+    });
+  }
+
+  function spark(svg, vals, color = 'var(--in-active)') {
+    const W = 240, HH = 34, mk = svgEl(svg); svg.setAttribute('viewBox', `0 0 ${W} ${HH}`); svg.setAttribute('preserveAspectRatio', 'none');
+    const v = vals.map(x => x ?? 0), max = Math.max(...v, 1), gw = W / v.length;
+    v.forEach((x, i) => mk('rect', { x: i * gw + 2, y: HH - (x / max) * (HH - 4), width: gw - 4, height: (x / max) * (HH - 4), rx: 2, fill: color, 'fill-opacity': i === v.length - 1 ? .35 : i === v.length - 2 ? .9 : .5 }));
+  }
+
+  function bugChart(svg, rows, HH = 200) {
+    const W = widthOf(svg), L = 30, B = 34, T = 14, mk = svgEl(svg); svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+    const max = 5, y = n => T + (1 - n / max) * (HH - T - B), gw = (W - L) / rows.length, bw = Math.min(40, gw * 0.45);
+    [0, 2, 4].forEach(v => { mk('line', { x1: L, y1: y(v), x2: W, y2: y(v), stroke: 'var(--color-border)', 'stroke-width': v ? .6 : 1 }); mk('text', { x: L - 6, y: y(v) + 3, 'text-anchor': 'end' }, v); });
+    const fills = { 1: 'var(--type-bug)', 2: 'color-mix(in srgb, var(--type-bug) 72%, var(--color-surface))', 3: 'color-mix(in srgb, var(--type-bug) 45%, var(--color-surface))', 4: 'color-mix(in srgb, var(--type-bug) 22%, var(--color-surface))' };
+    rows.forEach((r, i) => {
+      const cx = L + gw * i + gw / 2; let acc = 0;
+      [1, 2, 3, 4].forEach(sev => { const n = r.bugList.filter(b => !b.fbr && b.sev === sev).length; if (!n) return; mk('rect', { x: cx - bw / 2, y: y(acc + n), width: bw, height: y(acc) - y(acc + n) - 1, fill: fills[sev], rx: 2 }); acc += n; });
+      const fbr = r.bugs.found_before_release;
+      if (fbr) mk('rect', { x: cx - bw / 2, y: y(acc + fbr), width: bw, height: y(acc) - y(acc + fbr) - 1, fill: 'none', stroke: 'var(--color-muted)', 'stroke-dasharray': '3 2', rx: 2 });
+      mk('text', { x: cx, y: y(acc + fbr) - 5, 'text-anchor': 'middle', class: 'v lbl' }, r.bugs.escaping);
+      mk('text', { x: cx, y: HH - B + 15, 'text-anchor': 'middle', class: 'v', style: 'font-weight:500' }, r.period.short);
+      mk('text', { x: cx, y: HH - B + 28, 'text-anchor': 'middle' }, r.bugs.per_100_prs != null ? `${r.bugs.per_100_prs}` : '');
+    });
+  }
+
+  function costChart(svg, rows, HH = 200) {
+    const W = widthOf(svg), L = 40, B = 34, T = 14, mk = svgEl(svg); svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+    const max = 2.4e6, y = n => T + (1 - n / max) * (HH - T - B), gw = (W - L) / rows.length, bw = Math.min(40, gw * 0.45);
+    [0, 1e6, 2e6].forEach(v => { mk('line', { x1: L, y1: y(v), x2: W, y2: y(v), stroke: 'var(--color-border)', 'stroke-width': v ? .6 : 1 }); mk('text', { x: L - 6, y: y(v) + 3, 'text-anchor': 'end' }, v ? `${v / 1e6} M` : '0'); });
+    rows.forEach((r, i) => {
+      const cx = L + gw * i + gw / 2, v = r.cost.tokens_per_task ?? 0;
+      mk('rect', { x: cx - bw / 2, y: y(v), width: bw, height: y(0) - y(v), rx: 3, fill: r.period.current ? 'none' : 'color-mix(in srgb, var(--type-feature) 45%, transparent)', stroke: 'var(--type-feature)', 'stroke-dasharray': r.period.current ? '4 3' : '' });
+      mk('text', { x: cx, y: y(v) - 5, 'text-anchor': 'middle', class: 'v' }, tok(v));
+      mk('text', { x: cx, y: HH - B + 15, 'text-anchor': 'middle', class: 'v', style: 'font-weight:500' }, r.period.short);
+      mk('text', { x: cx, y: HH - B + 28, 'text-anchor': 'middle' }, `${r.cost.tasks_with_runs} with runs`);
+    });
+  }
+
+  /* ---------- Shared pieces ---------- */
+  const legendLead = `<div class="legend"><span><i style="background:color-mix(in srgb, var(--in-active) 30%, transparent);border:1px solid var(--in-active)"></i>Mean lead time</span><span><i class="dot"></i>A task</span><span><i style="background:var(--color-danger);border-radius:50%;width:7px;height:7px"></i>Over 2 days, on the top edge</span><span><i style="border:1px dashed var(--in-active)"></i>${unit === 'week' ? 'Week' : 'Sprint'} still running</span></div>`;
+  const legendSplit = `<div class="legend"><span><i style="background:var(--in-active)"></i>Active</span><span><i style="background:var(--in-blocked)"></i>Blocked</span><span><i style="background:var(--in-rework)"></i>Rework</span></div>`;
+  const covCallout = () => (params.get('coverage') === 'low'
+    ? `<div class="callout warn"><b>${coverage.n - coverage.withC} of ${coverage.n} tasks have no commit time, so their lead time ends at Resolved</b>Agents send <code>committed_at</code> with each commit on <code>report_task</code> from Sprint 22. Tasks reported before that get commit times from the one-off backfill, which hasn't run on this install yet. Until it does, those ${unit}s read longer than they were.</div>`
+    : '');
+  const cadenceNote = cadence === 'weeks' ? `<div class="callout"><b>By week</b>This project has sprints turned off (the project setting from the sprints-off Feature), so every number here is per week, Monday to Sunday. A task falls in the week its lead time ended.</div>` : '';
+
+  const head = document.getElementById('head'), toolbar = document.getElementById('toolbar'), page = document.getElementById('page');
+
+  /* ---------- Overview ---------- */
+  function overview() {
+    head.innerHTML = `<h1>Inspection</h1><span class="sm muted">Storefront · how we're going on velocity, quality and cost</span><span class="spacer"></span><a class="btn" href="${keep({ view: 'json' })}">JSON for agents</a>`;
+    toolbar.innerHTML = `${rangeSelect()}<span class="sm muted">by ${unit}</span>${covChip}<span class="spacer"></span>${caveat}`;
+    const leadCard = `<a class="card" href="${keep({ view: 'leadtime' })}">
+      <div class="top"><span class="overline">Velocity · lead time per task</span><span class="spacer"></span>${delta(last.change_pct)}</div>
+      <div class="big"><b>${dur(last.lead_hours)}</b><span class="of">mean, ${last.period.name} · ${last.tasks} tasks</span></div>
+      <svg class="sp-lead" aria-hidden="true"></svg>
+      <div class="sub"><span>${cur ? `${cur.period.name} so far <b>${dur(cur.lead_hours)}</b>` : ''}</span><span>Q4 to date <b>${dur(qNow.lead_hours)}</b></span><span>Q3 <b>${dur(qLast.lead_hours)}</b></span></div></a>`;
+    const bugCard = `<a class="card" href="${keep({ view: 'quality' })}">
+      <div class="top"><span class="overline">Quality · escaping bugs</span><span class="wave">Wave 2</span><span class="spacer"></span>${delta(pctChange(last.bugs.per_100_prs, prev.bugs.per_100_prs))}</div>
+      <div class="big"><b>${last.bugs.escaping}</b><span class="of">in ${last.period.name} · ${last.bugs.per_100_prs} per 100 merged PRs</span></div>
+      <svg class="sp-bug" aria-hidden="true"></svg>
+      <div class="sub"><span>Severity-weighted <b>${last.bugs.weighted}</b></span><span>Q4 to date <b>${qNow.bugs.escaping}</b></span><span>Q3 <b>${qLast.bugs.escaping}</b></span></div></a>`;
+    const costCard = `<a class="card" href="${keep({ view: 'cost' })}">
+      <div class="top"><span class="overline">Cost · tokens per task</span><span class="wave" title="Needs SHIP-1463 agent runs">Wave 3</span><span class="spacer"></span>${delta(pctChange(last.cost.tokens_per_task, prev.cost.tokens_per_task))}</div>
+      <div class="big"><b>${tok(last.cost.tokens_per_task)}</b><span class="of">mean, ${last.period.name} · ${last.cost.tasks_with_runs} tasks with agent runs</span></div>
+      <svg class="sp-cost" aria-hidden="true"></svg>
+      <div class="sub"><span>Q4 to date <b>${tok(qNow.cost.tokens_per_task)}</b></span><span>Q3 <b>${tok(qLast.cost.tokens_per_task)}</b></span><span>Tokens only, no money yet</span></div></a>`;
+    const maxLead = Math.max(...vm.slowest.map(k => k.lead));
+    page.innerHTML = `<div class="scroll"><div class="body">
+      ${cadenceNote}${covCallout()}
+      <div class="cards">${leadCard}${wave1 ? '' : bugCard + costCard}</div>
+      <section class="panel"><header><h2>Lead time by ${unit}</h2><span class="sm muted">from first Active to last commit · click a ${unit} for its tasks</span><span class="spacer"></span>${legendLead}</header>
+        <div class="pad"><svg class="chart" id="lead" role="img" aria-label="Mean lead time per ${unit} with one dot per task"></svg></div></section>
+      <div class="${wave1 ? '' : 'cols2'}">
+        <section class="panel"><header><h2>Longest tasks</h2><span class="sm muted">${vm.rows[0].period.name} – ${vm.rows[vm.rows.length - 1].period.name}</span><span class="spacer"></span>${legendSplit}</header>
+          <table class="list"><thead><tr><th>Task</th><th>Feature</th><th>Who</th><th>${unit === 'week' ? 'Week' : 'Sprint'}</th><th style="width:34%">Lead time</th></tr></thead>
+          <tbody>${vm.slowest.map(k => `<tr class="item" data-go="${keep({ view: 'period', p: k.sprint, select: k.key })}"><td class="t">${tIcon('task')} <span class="key">${k.key}</span> ${esc(k.title)}</td><td>${fname(k.feature)}</td><td>${who(k.who)}</td><td class="sm">${esc(vm.rows.find(r => r.list.includes(k)).period.short)}</td>
+            <td><div class="lt"><b>${dur(k.lead)}</b>${splitBar(k, maxLead)}</div></td></tr>`).join('')}</tbody></table></section>
+        ${wave1 ? '' : `<section class="panel"><header><h2>Escaping bugs by ${unit}</h2><span class="wave">Wave 2</span><span class="spacer"></span><a class="sm" href="${keep({ view: 'quality' })}">Quality →</a></header>
+          <div class="pad"><svg class="chart" id="bugs" role="img" aria-label="Escaping bugs per ${unit} by severity"></svg></div></section>`}
+      </div>
+    </div></div>`;
+    later(() => leadChart(document.getElementById('lead'), vm.rows, { H: 200 }));
+    spark(page.querySelector('.sp-lead'), vm.rows.map(r => r.lead_hours));
+    if (!wave1) {
+      spark(page.querySelector('.sp-bug'), vm.rows.map(r => r.bugs.escaping), 'var(--type-bug)');
+      spark(page.querySelector('.sp-cost'), vm.rows.map(r => r.cost.tokens_per_task), 'var(--type-feature)');
+      later(() => bugChart(document.getElementById('bugs'), vm.rows, 250));
+    }
+  }
+
+  /* How one task's lead time is measured, drawn: start → blocked → first resolve → review → rework → last commit,
+     then the part that isn't counted (last commit → Resolved). Collapsible; open by default. */
+  function ruleStrip() {
+    return `<details class="panel rule" open><summary><h2>How a task's lead time is measured</h2><span class="sm muted">the same rule for every number on this page</span></summary>
+      <div class="pad"><svg class="chart" id="rule" role="img" aria-label="Lead time runs from the first move to Active to the last commit; time after the last commit is not counted"></svg>
+      <p class="xs muted" style="margin:2px 0 0">No commit time reported → the end is the first move to Resolved, and the task says <span class="end-chip res">to Resolved</span>. A task with no start is left out.</p></div></details>`;
+  }
+  function drawRule(svg) {
+    const W = widthOf(svg), HH = 74, mk = svgEl(svg), L = 8, R = W - 8, u = (R - L) / 100, x = p => L + p * u;
+    svg.setAttribute('viewBox', `0 0 ${W} ${HH}`);
+    const pat = mk('defs', {}); pat.innerHTML = '<pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="5" fill="color-mix(in srgb, var(--in-tail) 60%, transparent)"/></pattern>';
+    const seg = (a, b, fill, label) => { mk('rect', { x: x(a), y: 22, width: x(b) - x(a) - 1, height: 12, rx: 2, fill }); if (label) mk('text', { x: (x(a) + x(b)) / 2, y: 48, 'text-anchor': 'middle' }, label); };
+    seg(0, 20, 'var(--in-active)', 'Active'); seg(20, 34, 'var(--in-blocked)', 'Blocked'); seg(34, 44, 'var(--in-active)', 'Active');
+    seg(44, 70, 'var(--in-rework)', 'Rework: after a review asked for changes'); seg(70, 78, 'var(--in-active)', '');
+    seg(78, 96, 'url(#hatch)', 'Not counted');
+    const tick = (p, label, anchor, strong) => { mk('line', { x1: x(p), x2: x(p), y1: 16, y2: 36, stroke: 'var(--color-text)', 'stroke-width': strong ? 2 : 1 }); mk('text', { x: x(p) + (anchor === 'start' ? 2 : anchor === 'end' ? -2 : 0), y: 12, 'text-anchor': anchor, class: strong ? 'v' : '' }, label); };
+    tick(0, 'Start: first Active or pick_up', 'start', true); tick(44, 'First Resolved', 'middle'); tick(78, 'End: last commit (committed_at)', 'end', true); tick(96, 'Resolved', 'middle');
+    mk('line', { x1: x(0), x2: x(78), y1: 62, y2: 62, stroke: 'var(--color-text)', 'stroke-width': 1, 'marker-end': '' });
+    mk('line', { x1: x(0), x2: x(0), y1: 57, y2: 67, stroke: 'var(--color-text)' }); mk('line', { x1: x(78), x2: x(78), y1: 57, y2: 67, stroke: 'var(--color-text)' });
+    mk('text', { x: x(39), y: 66, 'text-anchor': 'middle', class: 'v lbl' }, 'lead time');
+  }
+
+  /* ---------- Lead time ---------- */
+  function leadtime() {
+    head.innerHTML = `<h1>Lead time</h1><span class="sm muted">per task, from its first move to Active (or pick_up) to its last commit · mean per ${unit}</span><span class="spacer"></span><a class="btn" href="${keep({ view: 'json' })}">JSON for agents</a>`;
+    toolbar.innerHTML = `${rangeSelect()}<div class="seg" role="group" aria-label="Split by">${[['none', 'All tasks'], ['feature', 'By Feature'], ['who', 'By who']].map(([k, l]) => `<button type="button" data-cut="${k}" aria-pressed="${cut === k}">${l}</button>`).join('')}</div>${covChip}<span class="spacer"></span>${caveat}`;
+    const max = Math.max(...vm.rows.map(r => r.lead_hours ?? 0), ...vm.quarters.map(q => q.lead_hours ?? 0));
+    let table;
+    if (cut === 'none') {
+      const rowsHtml = [];
+      vm.rows.forEach((r, i) => {
+        rowsHtml.push(`<tr class="item${r.period.current ? ' cur' : ''}" data-go="${keep({ view: 'period', p: r.period.id })}"><td><b>${esc(r.period.name)}</b></td><td class="sm muted">${dm(r.period.start)} – ${dm(r.period.end)}</td><td class="n">${r.tasks}</td>
+          <td><div class="lt"><b>${dur(r.lead_hours)}</b>${splitBar(r, max)}</div></td><td class="n sm">${dur(r.active_hours)}</td><td class="n sm">${dur(r.blocked_hours)}</td><td class="n sm">${dur(r.rework_hours)}</td><td>${delta(r.change_pct)}</td>
+          <td class="n sm">${r.ended_at_resolved ? `<span class="end-chip res" title="No commit time: lead time ends at the first move to Resolved">${r.ended_at_resolved}</span>` : '<span class="muted">0</span>'}</td></tr>`);
+        const next = vm.rows[i + 1];
+        if (!next || next.period.q !== r.period.q) {
+          const q = vm.quarters.find(x => x.q === r.period.q);
+          rowsHtml.push(`<tr class="q"><td>${q.q}${q.to_date ? ' to date' : ''}</td><td class="sm muted" style="font-weight:400">all ${q.periods.length} ${unit}s in the quarter</td><td class="n">${q.tasks}</td><td><div class="lt"><b>${dur(q.lead_hours)}</b>${splitBar(q, max)}</div></td><td class="n sm">${dur(q.active_hours)}</td><td class="n sm">${dur(q.blocked_hours)}</td><td class="n sm">${dur(q.rework_hours)}</td><td></td><td class="n sm">${q.ended_at_resolved}</td></tr>`);
+        }
+      });
+      table = `<section class="panel"><header><h2>By ${unit}</h2><span class="sm muted">each part is a mean too, so active + blocked + rework = the lead time</span><span class="spacer"></span>${legendSplit}</header>
+        <table class="list"><thead><tr><th>${unit === 'week' ? 'Week' : 'Sprint'}</th><th>Dates</th><th class="n">Tasks</th><th style="width:30%">Mean lead time</th><th class="n">Active</th><th class="n">Blocked</th><th class="n">Rework</th><th>vs previous</th><th class="n" title="Tasks with no commit time, whose lead time ends at Resolved">Ended at Resolved</th></tr></thead>
+        <tbody>${rowsHtml.join('')}</tbody></table></section>`;
+    } else {
+      const all = vm.cuts.flatMap(c => c.cells.map(x => x.lead_hours ?? 0)), hmax = Math.max(...all);
+      const cell = x => (x.tasks ? `<td class="heat" style="background:color-mix(in srgb, var(--in-active) ${Math.round(6 + (x.lead_hours / hmax) * 44)}%, transparent)">${dur(x.lead_hours)}<small>${x.tasks}</small></td>` : '<td class="heat zero">·</td>');
+      table = `<section class="panel"><header><h2>By ${cut === 'feature' ? 'Feature' : 'who did the work'}</h2><span class="sm muted">mean lead time per ${unit}; the small number is how many tasks${cut === 'who' ? '. Agents are listed by connection, people together' : ''}</span></header>
+        <div style="overflow-x:auto"><table class="list"><thead><tr><th>${cut === 'feature' ? 'Feature' : 'Who'}</th>${vm.rows.map(r => `<th class="heat">${esc(r.period.short)}</th>`).join('')}<th class="n">Tasks</th><th class="n">Mean</th></tr></thead>
+        <tbody>${vm.cuts.map(c => `<tr><td>${cut === 'feature' ? fname(c.key) : isAgent(c.key) ? who(c.key) : `<span class="who"><span class="av" style="background:var(--color-muted)">5</span>People</span>`}</td>${c.cells.map(cell).join('')}<td class="n">${c.all.tasks}</td><td class="n"><b>${dur(c.all.lead_hours)}</b></td></tr>`).join('')}</tbody></table></div></section>`;
+    }
+    page.innerHTML = `<div class="scroll"><div class="body">${cadenceNote}${covCallout()}
+      ${ruleStrip()}
+      <section class="panel"><header><h2>Mean lead time and every task</h2><span class="sm muted">click a ${unit} to see its tasks</span><span class="spacer"></span>${legendLead}</header>
+        <div class="pad"><svg class="chart" id="lead" role="img" aria-label="Mean lead time per ${unit}"></svg></div></section>
+      ${table}
+      ${vm.left_out.length ? `<p class="sm muted" style="margin:0">Left out: ${vm.left_out.map(x => `<span class="key">${x.key}</span> ${esc(x.title)} (${esc(x.why.toLowerCase())})`).join('; ')}. A task with no start has no lead time; the timeline shows it as a diamond.</p>` : ''}
+    </div></div>`;
+    later(() => leadChart(document.getElementById('lead'), vm.rows, { H: 230 }));
+    later(() => drawRule(document.getElementById('rule')));
+    toolbar.querySelectorAll('[data-cut]').forEach(b => b.addEventListener('click', () => { location.href = keep({ view: 'leadtime', cut: b.dataset.cut === 'none' ? null : b.dataset.cut }); }));
+  }
+
+  /* ---------- One period ---------- */
+  function events(k) {
+    // What the lead time is measured from, in order. The real page reads state history and commits.
+    const ev = [];
+    const hand = TASKS.indexOf(k) < 8;
+    ev.push([k.start, 'start', `<b>Started</b>: first move to Active${isAgent(k.who) ? ' (pick_up)' : ''}`]);
+    if (k.blocked) { const b0 = k.start + Math.min(6, k.active / 2) * H; ev.push([b0, 'blocked', `<b>Blocked</b> for ${dur(k.blocked)}${k.blockedWhy ? `: ${esc(k.blockedWhy)}` : ''}`]); }
+    if (k.rework) { const r0 = k.end - k.rework * H; ev.push([r0, 'res', '<b>Resolved</b> the first time']); ev.push([r0 + Math.min(3, k.rework / 3) * H, 'review', '<b>Review: changes requested</b> · rework starts']); }
+    k.commits.forEach(([sha, at], i) => { if (at != null) ev.push([at, 'commit', `<b>Commit</b> <code>${sha}</code>${i === 0 && k.commits.length > 1 ? '' : ''} · <span class="muted">committed_at from ${k.src === 'backfilled' ? 'the backfill' : 'report_task'}</span>`]); });
+    if (k.lastCommit != null) ev.push([k.lastCommit + 1, 'end', `<b>Lead time ends</b> at the last commit: <b>${dur(k.lead)}</b>`]);
+    if (k.lastCommit == null) ev.push([k.resolved, 'end', `<b>Lead time ends</b> at Resolved: <b>${dur(k.lead)}</b> · <span class="muted">no commit time was reported</span>`]);
+    if (k.reviews && !k.rework) ev.push([k.resolved + 3 * H, 'review after', `Review: approved · <span class="muted">after the end, not counted</span>`]);
+    if (k.lastCommit != null) ev.push([k.resolved, 'res after', `Resolved · <span class="muted">${dur(k.tail)} later, not counted</span>`]);
+    return ev.sort((a, b) => a[0] - b[0]).map(([at, cls, html]) => `<li class="${cls.includes('after') ? 'after' : ''}"><span class="m ${cls.split(' ')[0]}"></span><div>${html}<div class="w">${when(at)}</div></div></li>`).join('');
+  }
+
+  function period() {
+    const r = vm.rows.find(x => x.period.id === params.get('p')) || build({ range: 'all', cadence }).rows.find(x => x.period.id === params.get('p')) || last;
+    const all = build({ range: 'all', cadence }).rows, idx = all.findIndex(x => x.period.id === r.period.id);
+    const prevP = all[idx - 1], nextP = all[idx + 1];
+    const tab = params.get('tab') === 'features' ? 'features' : 'tasks';
+    const list = [...r.list].sort((a, b) => b.lead - a.lead);
+    const sel = list.find(k => k.key === params.get('select')) || list[0];
+    const max = Math.max(...list.map(k => k.lead));
+    head.innerHTML = `<a class="back" href="${keep({ view: 'leadtime' })}">← Lead time</a><h1>${esc(r.period.name)}</h1><span class="sm muted">${dm(r.period.start)} – ${dm(r.period.end)}${r.period.current ? ' · still running' : ''}</span><span class="chip">${r.period.q}</span><span class="spacer"></span>
+      ${prevP ? `<a class="btn" href="${keep({ view: 'period', p: prevP.period.id })}">‹ ${esc(prevP.period.short)}</a>` : ''}${nextP ? `<a class="btn" href="${keep({ view: 'period', p: nextP.period.id })}">${esc(nextP.period.short)} ›</a>` : ''}`;
+    toolbar.hidden = true;
+    const left = vm.left_out.filter(x => r.period.start <= x.at && x.at <= r.period.end + 2 * INS.DAY);
+    const kpis = `<div class="kpis"><div class="kpi"><div class="v">${dur(r.lead_hours)} ${delta(r.change_pct)}</div><div class="l">Mean lead time</div></div>
+      <div class="kpi"><div class="v">${r.tasks}</div><div class="l">Tasks ended</div></div>
+      <div class="kpi"><div class="v"><span class="sw" style="background:var(--in-active)"></span>${dur(r.active_hours)}</div><div class="l">Active (mean)</div></div>
+      <div class="kpi"><div class="v"><span class="sw" style="background:var(--in-blocked)"></span>${dur(r.blocked_hours)}</div><div class="l">Blocked (mean)</div></div>
+      <div class="kpi"><div class="v"><span class="sw" style="background:var(--in-rework)"></span>${dur(r.rework_hours)}</div><div class="l">Rework (mean)</div></div>
+      <div class="kpi"><div class="v">${r.ended_at_resolved}</div><div class="l">Ended at Resolved</div></div>
+      ${left.length ? `<div class="kpi"><div class="v">${left.length}</div><div class="l">Left out (no start)</div></div>` : ''}</div>`;
+    const tabs = `<nav class="subtabs" aria-label="Period"><a class="tab" href="${keep({ view: 'period', p: r.period.id })}"${tab === 'tasks' ? ' aria-current="page"' : ''}>Tasks ${r.tasks}</a><a class="tab" href="${keep({ view: 'period', p: r.period.id, tab: 'features' })}"${tab === 'features' ? ' aria-current="page"' : ''}>Features ${new Set(list.map(k => k.feature)).size}</a></nav>`;
+    let main;
+    if (tab === 'tasks') {
+      main = `<table class="list"><thead><tr><th>Task</th><th>Feature</th><th>Who</th><th style="width:24%">Lead time</th><th class="n" title="Reviews">Rev.</th><th class="n">Commits</th><th class="n">Runs</th></tr></thead>
+        <tbody>${list.map(k => `<tr class="item" data-sel="${k.key}" aria-selected="${k === sel}"><td class="t">${tIcon('task')} <span class="key">${k.key}</span> ${esc(k.title)}</td><td>${fname(k.feature)}</td><td>${who(k.who)}</td>
+          <td><div class="lt"><b>${dur(k.lead)}</b><span class="row" style="gap:6px;flex-wrap:nowrap">${splitBar(k, max)}${k.lastCommit == null ? '<span class="end-chip res" title="No commit time was reported, so the lead time ends at Resolved">to Resolved</span>' : ''}</span></div></td><td class="n sm">${k.reviews}</td><td class="n sm">${k.commits.length}</td><td class="n sm">${k.runs || '<span class="muted">0</span>'}</td></tr>`).join('')}</tbody></table>
+        ${left.length ? `<p class="sm muted" style="margin:var(--space-2) var(--space-3)">Left out: ${left.map(x => `<span class="key">${x.key}</span> ${esc(x.title)}, ${esc(x.why.toLowerCase())}`).join('; ')}.</p>` : ''}`;
+    } else {
+      const feats = [...new Set(list.map(k => k.feature))].map(f => {
+        const ks = list.filter(k => k.feature === f), total = TASKS.filter(k => k.feature === f).length, before = TASKS.filter(k => k.feature === f && k.end < r.period.start).length;
+        return { f, ks, total: Math.max(total, ks.length) + (f === 'SHIP-99' ? 1 : 3), before, mean: INS.mean(ks.map(k => k.lead)), longest: ks[0] };
+      }).sort((a, b) => b.ks.length - a.ks.length);
+      main = `<table class="list"><thead><tr><th>Feature</th><th>Tasks ended this ${unit}</th><th style="width:22%">Mean lead time</th><th>Longest task</th><th class="n">Execution so far</th><th></th></tr></thead>
+        <tbody>${feats.map(x => `<tr><td>${fname(x.f)} <span class="key">${x.f}</span></td><td class="sm"><b>${x.ks.length}</b> of ${x.total} <span class="muted">· ${x.before} before</span>
+          <span class="split-bar" style="width:120px;display:inline-flex;vertical-align:middle;margin-left:6px;background:var(--color-surface-2)"><i class="a" style="width:${(x.before / x.total) * 100}%;opacity:.35"></i><i class="a" style="width:${(x.ks.length / x.total) * 100}%"></i></span></td>
+          <td><div class="lt"><b>${dur(x.mean)}</b>${splitBar({ lead: x.mean, active: INS.mean(x.ks.map(k => k.active)), blocked: INS.mean(x.ks.map(k => k.blocked)), rework: INS.mean(x.ks.map(k => k.rework)) }, max)}</div></td>
+          <td class="sm"><span class="key">${x.longest.key}</span> ${dur(x.longest.lead)}</td><td class="n sm">${x.f === 'SHIP-99' ? '16 d' : x.f === 'SHIP-101' ? '26 d' : '11 d'}</td>
+          <td><a class="btn tiny" href="feature-timeline.html?key=${x.f === 'SHIP-99' ? 'SHIP-99' : 'SHIP-101'}">Timeline</a></td></tr>`).join('')}</tbody></table>
+        <p class="sm muted" style="margin:var(--space-2) var(--space-3)">Features don't belong to sprints. A Feature shows here when any of its tasks ended in this ${unit}; the bar is how much of it had ended before (pale) and during this ${unit}.</p>`;
+    }
+    const tl = sel.feature === 'SHIP-99' ? `feature-timeline.html?key=SHIP-99&select=${sel.key}` : 'feature-timeline.html?key=SHIP-101';
+    const rail = `<aside class="rail">
+      <section><div class="row" style="gap:6px">${tIcon('task')}<span class="key">${sel.key}</span>${who(sel.who)}</div><h3>${esc(sel.title)}</h3><div class="sm muted">${fname(sel.feature)} · under ${tIcon(sel.parentType)} <span class="key">${sel.parentKey}</span></div></section>
+      <section><div class="overline">Lead time</div><div style="font-size:24px;font-weight:700">${dur(sel.lead)}</div>
+        <div class="parts"><i style="background:var(--in-active)"></i><span>Active</span><span class="n">${dur(sel.active)}</span>
+          <i style="background:var(--in-blocked)"></i><span>Blocked</span><span class="n">${dur(sel.blocked)}</span>
+          <i style="background:var(--in-rework)"></i><span>Rework</span><span class="n">${dur(sel.rework)}</span>
+          <i class="tail" style="background:repeating-linear-gradient(135deg, color-mix(in srgb, var(--in-tail) 55%, transparent) 0 2px, transparent 2px 4px)"></i><span class="muted">Commit to Resolved, not counted</span><span class="n muted">${sel.lastCommit != null ? dur(sel.tail) : '—'}</span></div></section>
+      <section><div class="overline">How it was measured</div><ol class="events">${events(sel)}</ol></section>
+      <section class="btns"><a class="btn" href="work-item.html">Open ${sel.key} <span class="muted">↗</span></a><a class="btn" href="${tl}">Feature timeline <span class="muted">${sel.feature}</span></a>${sel.runs ? `<a class="btn" href="agent-runs.html?view=task">Agent runs <span class="muted">${sel.runs}</span></a>` : ''}</section>
+    </aside>`;
+    page.innerHTML = `${kpis}${tabs}<div class="split wide" style="flex:1;min-height:0"><div class="scroll">${main}</div>${tab === 'tasks' ? rail : `<aside class="rail"><section><div class="overline">This ${unit}</div><p class="sm" style="margin:0">${new Set(list.map(k => k.feature)).size} Features had tasks end. Open a Feature's timeline to see where its time went: blocked bars, review rounds and what waited on what.</p></section></aside>`}</div>`;
+    page.querySelectorAll('tr[data-sel]').forEach(tr => tr.addEventListener('click', () => { history.replaceState(null, '', keep({ view: 'period', p: r.period.id, select: tr.dataset.sel })); render(); }));
+  }
+
+  /* ---------- Quality (wave 2) ---------- */
+  function quality() {
+    head.innerHTML = `<h1>Quality</h1><span class="wave">Wave 2</span><span class="sm muted">escaping bugs: every Bug, unless it is marked Found before release</span><span class="spacer"></span><a class="btn" href="${keep({ view: 'json' })}">JSON for agents</a>`;
+    toolbar.innerHTML = `${rangeSelect()}<span class="sm muted">by ${unit}, counted when the bug was filed</span><span class="spacer"></span>${caveat}`;
+    const bugs = vm.rows.flatMap(r => r.bugList.map(b => ({ ...b, period: r.period }))).sort((a, b) => b.filed - a.filed);
+    const pp = vm.rows.reduce((a, r) => a + (r.bugs.merged_prs ?? 0), 0), esc_ = bugs.filter(b => !b.fbr).length;
+    page.innerHTML = `<div class="split wide" style="flex:1;min-height:0"><div class="scroll"><div class="body">
+      <div class="cards four">
+        <div class="card"><span class="overline">Escaping bugs</span><div class="big"><b>${last.bugs.escaping}</b><span class="of">${last.period.name}</span>${delta(pctChange(last.bugs.escaping, prev.bugs.escaping))}</div><div class="sub"><span>Q4 to date <b>${qNow.bugs.escaping}</b></span><span>Q3 <b>${qLast.bugs.escaping}</b></span></div></div>
+        <div class="card"><span class="overline">Per 100 merged PRs</span><div class="big"><b>${last.bugs.per_100_prs}</b><span class="of">${last.bugs.merged_prs} PRs merged</span></div><div class="sub"><span>Over the range <b>${r1((esc_ / pp) * 100)}</b></span><span>PRs linked to an item only</span></div></div>
+        <div class="card"><span class="overline">Severity-weighted</span><div class="big"><b>${last.bugs.weighted}</b><span class="of">sev 1 = 8, 2 = 4, 3 = 2, 4 = 1</span></div><div class="sub"><span>Weights are a project setting</span></div></div>
+        <div class="card"><span class="overline">Found before release</span><div class="big"><b>${bugs.filter(b => b.fbr).length}</b><span class="of">in the range, not counted</span></div><div class="sub"><span>Mostly filed by agents in their own review</span></div></div>
+      </div>
+      <section class="panel"><header><h2>Escaping bugs by ${unit}</h2><span class="sm muted">small number: per 100 merged PRs</span><span class="spacer"></span><div class="legend"><span><i style="background:var(--type-bug)"></i>Sev 1</span><span><i style="background:color-mix(in srgb, var(--type-bug) 72%, var(--color-surface))"></i>Sev 2</span><span><i style="background:color-mix(in srgb, var(--type-bug) 45%, var(--color-surface))"></i>Sev 3</span><span><i style="background:color-mix(in srgb, var(--type-bug) 22%, var(--color-surface))"></i>Sev 4</span><span><i style="border:1px dashed var(--color-muted)"></i>Found before release</span></div></header>
+        <div class="pad"><svg class="chart" id="bugs" role="img" aria-label="Escaping bugs per ${unit}"></svg></div></section>
+      <section class="panel"><header><h2>Bugs in the range</h2><span class="sm muted">${esc_} escaping · ${bugs.length - esc_} found before release</span></header>
+        <table class="list"><thead><tr><th>Bug</th><th>Sev</th><th>Filed</th><th>Feature</th><th>Caused by</th><th class="n">Fix lead time</th><th>Counted</th></tr></thead>
+        <tbody>${bugs.map(b => `<tr class="item"${b.fbr ? ' style="opacity:.6"' : ''}><td class="t">${tIcon('bug')} <span class="key">${b.key}</span> ${esc(b.title)}</td><td><span class="sev s${b.sev}">S${b.sev}</span></td><td class="sm">${day(b.filed)} <span class="muted">· ${esc(b.period.short)}</span></td><td>${fname(b.feature)}</td>
+          <td>${b.causedBy ? `<span class="chip">${tIcon('task')} <span class="key">${b.causedBy}</span></span>` : '<button class="mini" type="button">+ Caused by</button>'}</td><td class="n sm">${b.fixedHours != null ? dur(b.fixedHours) : '<span class="muted">open</span>'}</td>
+          <td>${b.fbr ? '<span class="chip">Found before release</span>' : '<span class="chip danger">Escaped</span>'}</td></tr>`).join('')}</tbody></table></section>
+    </div></div>
+    <aside class="rail">
+      <section><div class="overline">On the Bug form</div>
+        <div class="field-demo"><label><input type="checkbox"> Found before release</label><span class="xs muted">Tick when the bug was caught before its change reached users: in review, in testing, by the agent that wrote it. A ticked bug isn't counted as escaping.</span></div>
+        <p class="hint">New optional field on Bug, off by default. Agents set it with <code>found_before_release: true</code> when they file a bug during their own review (capture_work, report_task's left-undone bugs).</p></section>
+      <section><div class="overline">Caused by</div><p class="sm" style="margin:0">A link from a bug to the task that introduced it. Optional: set by hand, or proposed by a triage agent. Built in wave 2 (D14). Once bugs carry it, a bug can count against the ${unit} its cause shipped in instead of the ${unit} it was filed (D11).</p></section>
+      <section><div class="overline">Per 100 merged PRs</div><p class="sm" style="margin:0">Pull requests linked to an item in this project, by the ${unit} they merged. GitLab merge requests need <code>merged_at</code> stored as GitHub's are. Unlinked PRs are left out.</p></section>
+    </aside></div>`;
+    later(() => bugChart(document.getElementById('bugs'), vm.rows));
+  }
+
+  /* ---------- Cost (wave 3) ---------- */
+  function cost() {
+    head.innerHTML = `<h1>Cost</h1><span class="wave">Wave 3 · needs SHIP-1463 agent runs</span><span class="sm muted">tokens from the agents' traces; money once runs report it</span><span class="spacer"></span><a class="btn" href="${keep({ view: 'json' })}">JSON for agents</a>`;
+    toolbar.innerHTML = `${rangeSelect()}<span class="sm muted">by ${unit}</span><span class="spacer"></span>${caveat}`;
+    const list = vm.rows.flatMap(r => r.list).filter(k => k.tokens).sort((a, b) => b.tokens - a.tokens);
+    const byF = [...new Set(list.map(k => k.feature))].map(f => ({ f, n: list.filter(k => k.feature === f).length, total: list.filter(k => k.feature === f).reduce((a, k) => a + k.tokens, 0) })).sort((a, b) => b.total - a.total);
+    const fmax = byF[0].total;
+    const prs = MERGED_PRS[last.period.id];
+    page.innerHTML = `<div class="scroll"><div class="body">
+      <div class="callout"><b>Tokens only in v1</b>Read from each task's agent runs (SHIP-1463, D21: no money in v1). A run's tokens count towards the task it ran on. Tasks people did without an agent have no runs and are left out of the mean, not counted as zero.</div>
+      <div class="cards">
+        <div class="card"><span class="overline">Tokens per task</span><div class="big"><b>${tok(last.cost.tokens_per_task)}</b><span class="of">mean, ${last.period.name}</span>${delta(pctChange(last.cost.tokens_per_task, prev.cost.tokens_per_task))}</div><div class="sub"><span>Q4 to date <b>${tok(qNow.cost.tokens_per_task)}</b></span><span>Q3 <b>${tok(qLast.cost.tokens_per_task)}</b></span></div></div>
+        <div class="card"><span class="overline">Tokens per merged PR</span><div class="big"><b>${tok(last.cost.tokens_total / prs)}</b><span class="of">${prs} PRs merged in ${last.period.name}</span></div><div class="sub"><span>Total ${tok(last.cost.tokens_total)}</span></div></div>
+        <div class="card"><span class="overline">Tasks with agent runs</span><div class="big"><b>${Math.round((last.cost.tasks_with_runs / last.tasks) * 100)}%</b><span class="of">${last.cost.tasks_with_runs} of ${last.tasks} in ${last.period.name}</span></div><div class="sub"><span>The rest were done without an agent</span></div></div>
+      </div>
+      <section class="panel"><header><h2>Tokens per task by ${unit}</h2></header><div class="pad"><svg class="chart" id="cost" role="img" aria-label="Mean tokens per task per ${unit}"></svg></div></section>
+      <div class="cols2">
+        <section class="panel"><header><h2>Most tokens</h2><span class="sm muted">the tasks to read the traces of</span></header>
+          <table class="list"><thead><tr><th>Task</th><th>Who</th><th>Model</th><th class="n">Runs</th><th class="n">Tokens</th><th class="n">Lead time</th></tr></thead>
+          <tbody>${list.slice(0, 8).map(k => `<tr class="item" data-go="agent-runs.html?view=task"><td class="t">${tIcon('task')} <span class="key">${k.key}</span> ${esc(k.title)}</td><td>${who(k.who)}</td><td>${k.model ? `<span class="chip">model:${k.model}</span>` : '<span class="muted sm">—</span>'}</td><td class="n sm">${k.runs}</td><td class="n"><b>${tok(k.tokens)}</b></td><td class="n sm">${dur(k.lead)}</td></tr>`).join('')}</tbody></table></section>
+        <section class="panel"><header><h2>By Feature</h2><span class="sm muted">tokens in the range</span></header>
+          <table class="list"><tbody>${byF.map(x => `<tr><td>${fname(x.f)}</td><td class="n sm">${x.n} tasks</td><td style="width:40%"><div class="lt"><b>${tok(x.total)}</b><span class="split-bar" style="width:${(x.total / fmax) * 100}%"><i style="width:100%;background:var(--type-feature)"></i></span></div></td></tr>`).join('')}</tbody></table></section>
+      </div>
+    </div></div>`;
+    later(() => costChart(document.getElementById('cost'), vm.rows));
+  }
+
+  /* ---------- JSON for agents ---------- */
+  function json() {
+    head.innerHTML = `<a class="back" href="${keep({ view: 'overview' })}">← Overview</a><h1>JSON for agents</h1><span class="sm muted">what the MCP tool returns for the same view</span>`;
+    toolbar.innerHTML = `<code class="sm" style="font-family:var(--font-mono)">inspection_metrics(project: "SHIP", range: "${range}", cadence: "${cadence}")</code><span class="spacer"></span>${caveat}`;
+    page.innerHTML = `<div class="split wide" style="flex:1;min-height:0"><div class="scroll"><pre class="json">${esc(JSON.stringify(toJson(vm), null, 2))}</pre></div>
+      <aside class="rail"><section><div class="overline">Who reads it</div><p class="sm" style="margin:0">Retro and planning agents: they can quote the numbers, find the slowest tasks and open each one's timeline with <code>feature_timeline</code>.</p></section>
+      <section><div class="overline">Same model as the page</div><p class="sm" style="margin:0">The page and the tool share one view model, so a person and an agent never see different numbers. <code>aggregate</code> says the headline is a mean.</p></section></aside></div>`;
+  }
+
+  function render() {
+    toolbar.hidden = false;
+    ({ overview, leadtime, period, quality, cost, json }[view] || overview)();
+    const r = document.getElementById('range');
+    if (r) r.addEventListener('change', () => { location.href = keep({ view: view === 'period' ? 'leadtime' : view, range: r.value === '6' ? null : r.value }); });
+    page.querySelectorAll('[data-go]').forEach(el => el.addEventListener('click', () => { location.href = el.dataset.go; }));
+    const cov = document.getElementById('cov');
+    if (cov) hover(cov, `Lead time ends at the last commit. ${coverage.n - coverage.withC} tasks in the range have no commit time (reported before committed_at, or not backfilled), so theirs ends at Resolved.`);
+  }
+  render();
+  SL.preview([
+    { label: 'Weeks', run: () => { location.href = href({ cadence: cadence === 'weeks' ? null : 'weeks' }); } },
+    { label: 'No backfill', run: () => { location.href = href({ coverage: params.get('coverage') ? null : 'low' }); } },
+  ]);
+})();
+</script>
+</body>
+</html>

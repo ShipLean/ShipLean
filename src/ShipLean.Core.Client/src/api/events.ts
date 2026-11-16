@@ -23,6 +23,8 @@ export const PROJECT_EVENT_TYPES = [
   'sprintClosed',
   'sprintDemoChanged',
   'asksChanged',
+  'commitsChanged',
+  'codeCommentsChanged',
 ] as const;
 export type ProjectEventType = (typeof PROJECT_EVENT_TYPES)[number];
 
@@ -133,6 +135,14 @@ export interface AsksChanged extends ProjectEventBase<'asksChanged'> {
   workItemId: string;
 }
 
+export interface CommitsChanged extends ProjectEventBase<'commitsChanged'> {
+  workItemId: string;
+}
+
+export interface CodeCommentsChanged extends ProjectEventBase<'codeCommentsChanged'> {
+  workItemId: string;
+}
+
 export interface AgentSessionChanged extends ProjectEventBase<'agentSessionChanged'> {
   workItemId: string;
   sessionId: string;
@@ -157,4 +167,6 @@ export type ProjectEvent =
   | RetroChanged
   | SprintClosed
   | SprintDemoChanged
-  | AsksChanged;
+  | AsksChanged
+  | CommitsChanged
+  | CodeCommentsChanged;

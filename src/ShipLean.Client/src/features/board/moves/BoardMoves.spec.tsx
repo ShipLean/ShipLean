@@ -105,6 +105,7 @@ test('BoardMove_WhenDroppedInColumnOfOtherLane_ShouldSendColumnHalfAndLane', asy
     done: false,
     laneId: 'lane-expedite',
     beforeItemId: null,
+    method: 'drag',
   });
 });
 
@@ -220,6 +221,23 @@ test('BoardMove_WhenAltUpPressed_ShouldPutTheCardAboveItsNeighbour', async ({ mo
   const newCell = cellsOf(page, 'Default lane').nth(NEW);
   await expect(newCell.getByTestId(ids.cardKey)).toHaveText(['SHIP-164', 'SHIP-163']);
   await expect(cardKeyed(page, 'SHIP-164')).toBeFocused();
+});
+
+test('Drop_WhenAltArrowPressed_ShouldSendKeyboardMethod', async ({ mount, page }) => {
+  const server = await stubBoard(page, boardWithTwoNew(), { holdMoves: true });
+  await mount(<BoardHarness />, route);
+  await cardKeyed(page, 'SHIP-164').focus();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]?.method).toBe('keyboard');
+});
+
+test('Drop_WhenDraggedWithThePointer_ShouldSendDragMethod', async ({ mount, page }) => {
+  const server = await stubBoard(page, boardWithTwoNew(), { holdMoves: true });
+  await mount(<BoardHarness />, route);
+  await drag(page, cardKeyed(page, 'SHIP-164'), cellsOf(page, 'Default lane').nth(READY));
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]?.method).toBe('drag');
 });
 
 test('BoardMove_WhenAltDownPressed_ShouldPutTheCardBelowItsNeighbour', async ({ mount, page }) => {

@@ -22,7 +22,7 @@ export function meDto(overrides: Partial<MeDto> = {}): MeDto {
 }
 
 export function projectSummary(key: string): ProjectSummaryDto {
-  return { id: `id-${key}`, key, name: key, role: 'member', memberCount: 3 };
+  return { id: `id-${key}`, key, name: key, role: 'member', memberCount: 3, isOnlyAdmin: false };
 }
 
 // The two things the helpers need of a Playwright page (its own type is not importable here).

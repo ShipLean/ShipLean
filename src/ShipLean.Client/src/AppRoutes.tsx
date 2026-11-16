@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AttachmentPage } from './pages/AttachmentPage';
 import { MobileSignInPage } from './features/mobileSignIn/MobileSignInPage';
@@ -8,6 +9,7 @@ import { BacklogPage } from './pages/BacklogPage';
 import { BoardPage } from './pages/BoardPage';
 import { CapacityPage } from './pages/CapacityPage';
 import { FeatureBoardPage } from './pages/FeatureBoardPage';
+import { FeatureTimelinePage } from './pages/FeatureTimelinePage';
 import { ImportPage } from './pages/ImportPage';
 import { InstanceSettingsPage } from './pages/InstanceSettingsPage';
 import { NewProjectPage } from './pages/NewProjectPage';
@@ -28,6 +30,11 @@ import { WorkItemPage } from './pages/WorkItemPage';
 import { routePattern } from './routes';
 import { Shell } from './Shell';
 import { ImageViewerHost } from './touch/imageViewer';
+
+// The Changes page loads on its own: the diff renderer comes with it and only there.
+const TaskChangesPage = lazy(() =>
+  import('./pages/TaskChangesPage').then((m) => ({ default: m.TaskChangesPage })),
+);
 
 // The full route table, separate from main.tsx (which owns the router) so component tests can mount the exact routing
 // the real app uses. Paths and ids are in routes.ts; docs/navigation.md lists the pages and their slots.
@@ -52,7 +59,16 @@ export function AppRoutes() {
           <Route path={routePattern('workItem')} element={<WorkItemPage />} />
           <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
           <Route path={routePattern('agentRun')} element={<AgentRunPage />} />
+          <Route
+            path={routePattern('taskChanges')}
+            element={
+              <Suspense fallback={null}>
+                <TaskChangesPage />
+              </Suspense>
+            }
+          />
           <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
+          <Route path={routePattern('featureTimeline')} element={<FeatureTimelinePage />} />
           <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />
           <Route path={routePattern('featuresBoard')} element={<BoardPage level="features" />} />
           <Route path={routePattern('epicsBoard')} element={<BoardPage level="epics" />} />

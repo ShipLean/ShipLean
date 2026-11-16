@@ -49,4 +49,14 @@ public class McpServerInstructionsTests
         McpServerServices.Instructions.ShouldContain("with ask");
         McpServerServices.Instructions.ShouldContain("never wait");
     }
+
+    [Test]
+    public void McpServerInstructions_ShouldTellAgentsToSendCommits()
+    {
+        McpServerServices.Instructions.ShouldContain("When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else.");
+        McpServerServices.Instructions.ShouldContain("Each commit is its repository, as `git remote get-url origin` prints it, and its full sha (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch).");
+        McpServerServices.Instructions.ShouldContain("Commits go on Tasks and Bugs only, never a Story or Feature.");
+        McpServerServices.Instructions.ShouldContain("When one comes back with open_code_comments, fix each one and answer it in answered_comments.");
+        GuideScan.RegisteredNames().ShouldContain("add_commits");
+    }
 }

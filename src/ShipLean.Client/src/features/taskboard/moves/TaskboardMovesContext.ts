@@ -3,6 +3,7 @@ import type { UserRef } from '@shiplean/core/api/refs';
 import type { CardDto } from '@shiplean/core/api/views';
 import type { MoveMethod, TaskboardGrouping } from '../taskboardApi';
 import type { TaskboardGridView } from '../taskboardGridView';
+import type { TaskboardScope } from '../taskboardScope';
 import type { DropTarget } from './moveRequests';
 
 /** What a card and a cell need from the board to move cards: set up once by `TaskboardDnd`. */
@@ -22,6 +23,8 @@ export interface TaskboardMoves {
   /** The board's states, stories and people, for the task actions. */
   view: TaskboardGridView;
   grouping: TaskboardGrouping;
+  /** Which board this is: only the sprint Taskboard has a No parent row to move a task to. */
+  scope: TaskboardScope;
 }
 
 export const TaskboardMovesContext = createContext<TaskboardMoves | null>(null);

@@ -11,8 +11,11 @@ export interface FormSlotProps {
   links: ReactNode;
   // The item's retrospective section; null shows none. It sits after the Repro steps and before `tasks`.
   retro?: ReactNode;
+  // The Changes section of a Task or Bug (commits, totals, Review changes); null shows none. It sits after the Description and
+  // Repro steps and before `tasks` and `discussion`.
+  changes?: ReactNode;
   tasks: ReactNode;
-  // The Agent runs section: above Discussion (under Changes once it exists). Null shows none.
+  // The Agent runs section: directly under Changes (D14), above Tasks and Discussion. Null shows none.
   agentRuns?: ReactNode;
   discussion: ReactNode;
   side: ReactNode;

@@ -14,6 +14,7 @@ using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Inspection.Wiring;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
 using ShipLean.WebApi.Tests.Retros.Api;
+using ShipLean.WebApi.Tests.TaskChanges.Http;
 
 namespace ShipLean.WebApi.Tests.Access;
 
@@ -92,6 +93,14 @@ public class AllowedSweepTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         await RetroSweepData.InsertAsync(connection);
+    }
+
+    // The code comment reply and resolve rows need a real comment on their Task.
+    [OneTimeSetUp]
+    public async Task InsertTaskChangesSweepRows()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await TaskChangesSweepData.InsertAsync(connection);
     }
 
     [TestCaseSource(typeof(SweepCalls), nameof(SweepCalls.AllRows))]

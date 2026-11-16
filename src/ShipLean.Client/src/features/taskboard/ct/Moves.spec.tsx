@@ -225,8 +225,20 @@ test('Taskboard_WhenPickedUp_ShouldPostMeAndTheFirstInProgressState', async ({ m
     stateId: 't-active',
     row: { grouping: 'people', target: 'u-priya' },
     beforeItemId: null,
+    method: 'pick-up',
   });
   await expect(cell(page, 0, 1).getByTestId(ids.card)).toHaveCount(2);
+});
+
+test('Moves_WhenPickUpClicked_ShouldSendMethodPickUp', async ({ mount, page }) => {
+  const server = await stubTaskboard(page, VIEW, hold);
+  await mount(slot, route);
+
+  await card(page, 'SHIP-173').hover();
+  await card(page, 'SHIP-173').getByTestId(ids.cardPickUp).click();
+
+  await expect.poll(() => server.moves.length).toBe(1);
+  expect(server.moves[0]).toMatchObject({ method: 'pick-up' });
 });
 
 test('Taskboard_WhenPickedUpInPeopleRows_ShouldMoveToMyRow', async ({ mount, page }) => {

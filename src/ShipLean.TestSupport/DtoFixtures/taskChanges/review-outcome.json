@@ -1,0 +1,10 @@
+{
+  "approved": {
+    "state": "Closed",
+    "openComments": 1
+  },
+  "requested": {
+    "state": "New",
+    "openComments": 1
+  }
+}

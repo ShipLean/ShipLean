@@ -49,6 +49,10 @@ export function StylesPane({
           onDelete={() => setRules(draft.styleRules.filter((r) => r.id !== rule.id))}
           onMove={(step) => setRules(moveRule(draft.styleRules, index, index + step))}
           onDragStart={() => setDragFrom(index)}
+          onTouchDrop={(targetId) => {
+            const to = draft.styleRules.findIndex((r) => r.id === targetId);
+            if (to >= 0) setRules(moveRule(draft.styleRules, index, to));
+          }}
           onDrop={() => {
             if (dragFrom !== undefined) setRules(moveRule(draft.styleRules, dragFrom, index));
             setDragFrom(undefined);

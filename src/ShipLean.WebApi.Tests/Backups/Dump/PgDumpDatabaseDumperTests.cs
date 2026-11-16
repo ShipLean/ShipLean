@@ -41,7 +41,7 @@ public class PgDumpDatabaseDumperTests
         {
             await using (var output = File.Create(file))
             {
-                await Dumper(source.ConnectionString).DumpAsync(output, CancellationToken.None);
+                await Bounded.WithinAsync(Dumper(source.ConnectionString).DumpAsync(output, CancellationToken.None), "the dump to finish");
                 output.CanWrite.ShouldBeTrue();
             }
 
@@ -74,7 +74,7 @@ public class PgDumpDatabaseDumperTests
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
         var thrown = await Should.ThrowAsync<DatabaseDumpException>(
-            () => Dumper(ConnectionOnly, script).DumpAsync(new MemoryStream(), CancellationToken.None));
+            () => Bounded.WithinAsync(Dumper(ConnectionOnly, script).DumpAsync(new MemoryStream(), CancellationToken.None), "the dump to fail"));
 
         thrown.Message.ShouldContain("pg_dump: error: connection to server failed: password authentication failed");
         thrown.Message.ShouldContain("exit code 1");
@@ -92,7 +92,7 @@ public class PgDumpDatabaseDumperTests
         var connection = $"Host={real.Host};Port={real.Port};Database={real.Database};Username=shiplean_no_such_role_{Guid.NewGuid():N};Password={password}";
 
         var thrown = await Should.ThrowAsync<DatabaseDumpException>(
-            () => Dumper(connection).DumpAsync(new MemoryStream(), CancellationToken.None));
+            () => Bounded.WithinAsync(Dumper(connection).DumpAsync(new MemoryStream(), CancellationToken.None), "the dump to fail"));
 
         thrown.Message.ShouldContain("pg_dump:");
         thrown.Message.ShouldNotContain(password);
@@ -106,8 +106,9 @@ public class PgDumpDatabaseDumperTests
         await File.WriteAllTextAsync(script, "#!/bin/sh\nhead -c 1048576 /dev/zero\n");
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
-        // Without the fix this hangs (AG0032 bans Task.Wait*/WaitAsync, so the test cannot bound it itself).
-        await Should.ThrowAsync<IOException>(() => Dumper(ConnectionOnly, script).DumpAsync(new FailingStream(), CancellationToken.None));
+        // Without the fix this hangs, so the wait is bounded at 30 s.
+        await Should.ThrowAsync<IOException>(
+            () => Bounded.WithinAsync(Dumper(ConnectionOnly, script).DumpAsync(new FailingStream(), CancellationToken.None), "the dump to stop on a failed write"));
     }
 
     [Test]
@@ -116,7 +117,7 @@ public class PgDumpDatabaseDumperTests
         var missing = Path.Combine(NewFolder(), "no-such-pg_dump");
 
         var thrown = await Should.ThrowAsync<DatabaseDumpException>(
-            () => Dumper(ConnectionOnly, missing).DumpAsync(new MemoryStream(), CancellationToken.None));
+            () => Bounded.WithinAsync(Dumper(ConnectionOnly, missing).DumpAsync(new MemoryStream(), CancellationToken.None), "the dump to fail"));
 
         thrown.Message.ShouldBe(
             $"pg_dump was not found at '{missing}'. The image includes it; on a source build set SHIPLEAN_BACKUP_PG_DUMP.");
@@ -133,10 +134,10 @@ public class PgDumpDatabaseDumperTests
         using var cancel = new CancellationTokenSource();
 
         var dump = Dumper(ConnectionOnly, script).DumpAsync(output, cancel.Token);
-        await output.Written;
+        await Bounded.WithinAsync(output.Written, "the dumper to write its first output");
         await cancel.CancelAsync();
 
-        await Should.ThrowAsync<OperationCanceledException>(() => dump);
+        await Should.ThrowAsync<OperationCanceledException>(() => Bounded.WithinAsync(dump, "the dump to stop after cancellation"));
         var pids = output.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(int.Parse).ToList();
         pids.Count.ShouldBe(2);
         foreach (var pid in pids)
@@ -288,9 +289,10 @@ public class PgDumpDatabaseDumperTests
         start.Environment["PGUSER"] = builder.Username;
         start.Environment["PGPASSWORD"] = builder.Password;
         using var process = Process.Start(start)!;
-        var errors = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        process.ExitCode.ShouldBe(0, errors);
+        var errors = process.StandardError.ReadToEndAsync();
+        await Bounded.WithinAsync(process.WaitForExitAsync(), "pg_restore to exit");
+        await Bounded.WithinAsync(errors, "pg_restore's stderr to close");
+        process.ExitCode.ShouldBe(0, await errors);
     }
 
     // A killed process may stay a zombie until its parent reaps it; that counts as gone.

@@ -14,7 +14,6 @@ public sealed class LinearApiServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpContextAccessor();
         services.AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, LinearTokenHandler>(LinearApiPolicy.Scheme, _ => { });
         services.AddAuthorizationBuilder()

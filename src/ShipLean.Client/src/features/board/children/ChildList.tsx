@@ -97,7 +97,7 @@ export function ChildList({
           type="button"
           data-testid={ids.childClose}
           aria-label="Close"
-          className="btn-ghost ml-auto size-5 p-0"
+          className="btn-ghost ml-auto size-5 touch:size-[var(--touch-target)] p-0"
           onClick={() => onClose(true)}
         >
           ×

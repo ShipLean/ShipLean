@@ -20,6 +20,8 @@ export interface ProjectSummaryDto {
   name: string;
   role: ProjectRole;
   memberCount: number;
+  /** The caller is the project's only admin, so leaving is refused. */
+  isOnlyAdmin: boolean;
 }
 
 export interface ProjectDto {

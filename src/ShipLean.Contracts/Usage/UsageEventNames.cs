@@ -66,6 +66,13 @@ public static class UsageEventNames
     public const string LinkCardEdited = "link_card.edited";
     public const string LinkCardArchived = "link_card.archived";
     public const string LinkCardRefreshed = "link_card.refreshed";
+    public const string TaskChangesViewed = "task_changes.viewed";
+    public const string TaskCommitsAdded = "task_commits.added";
+    public const string CodeCommentAdded = "code_comment.added";
+    public const string CodeCommentReplied = "code_comment.replied";
+    public const string CodeCommentResolved = "code_comment.resolved";
+    public const string TaskChangesApproved = "task_changes.approved";
+    public const string TaskChangesRequested = "task_changes.requested";
     public const string SprintCreated = "sprint.created";
     public const string SprintPlanned = "sprint.planned";
     public const string SprintUpdated = "sprint.updated";
@@ -110,6 +117,13 @@ public static class UsageEventNames
     public const string FeatureDigestSeen = "feature.digest_seen";
     public const string MentionSeen = "mention.seen";
     public const string MentionReplied = "mention.replied";
+
+    // The Feature timeline (SHIP-1465 D14, D20). timeline.opened and timeline.bar_selected are self-emitted by the page's reports;
+    // feature.timeline_viewed is the MCP tool feature_timeline and review.logged the MCP tool log_review.
+    public const string TimelineOpened = "timeline.opened";
+    public const string TimelineBarSelected = "timeline.bar_selected";
+    public const string FeatureTimelineViewed = "feature.timeline_viewed";
+    public const string ReviewLogged = "review.logged";
 
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";

@@ -44,7 +44,15 @@ test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount
 
   await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('SHIP-160 actions');
-  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(5);
+  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveCount(6);
+  await expect(sheet(page).getByTestId(touchTestIds.actionSheetRow)).toHaveText([
+    'Open',
+    'Assign',
+    'Move to',
+    'Lane',
+    'Move to top',
+    'Move to bottom',
+  ]);
   await row(page, 'move-to').tap();
 
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to');
@@ -61,6 +69,7 @@ test('CardActionsSheet_WhenMoveToPicked_ShouldMoveToEndOfColumn', async ({ mount
     done: false,
     laneId: 'lane-default',
     beforeItemId: null,
+    method: 'sheet',
   });
   await expect(toasts(page)).toContainText('SHIP-160 → In progress');
   await expect(sheet(page)).toHaveCount(0);

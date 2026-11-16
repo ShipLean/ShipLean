@@ -8,6 +8,7 @@ const project = (key: string, name: string): ProjectSummaryDto => ({
   name,
   role: 'member',
   memberCount: 3,
+  isOnlyAdmin: false,
 });
 const all = [project('SHIP', 'Shipping'), project('PAY', 'Payments'), project('MOB', 'Mobile')];
 

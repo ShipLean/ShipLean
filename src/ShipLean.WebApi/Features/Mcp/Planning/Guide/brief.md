@@ -37,6 +37,8 @@ If the common brief says the costly CI variant applies, never pull from or push 
 - Diff the configuration files (compiler, linter, test runner, CI, project files) against the shared branch and list every change in the report.
 - Every red test is yours or traced to a named owner.
 
+When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else. Each commit is its repository, as `git remote get-url origin` prints it, and its full sha (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch). Commits go on Tasks and Bugs only, never a Story or Feature. When one comes back with open_code_comments, fix each one and answer it in answered_comments.
+
 When you stop, done or not, hand in your report once with `report_task` on your task, in this shape:
 
 {{report_template}}

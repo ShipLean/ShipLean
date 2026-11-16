@@ -1,6 +1,7 @@
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { AttachmentSlotProps } from '../slots/AttachmentSlot';
 import { AgentRunsSlot } from '../slots/AgentRunsSlot';
+import { ChangesSlot } from '../slots/ChangesSlot';
 import { DiscussionSlot } from '../slots/DiscussionSlot';
 import type { FormSlotProps } from '../slots/FormSlot';
 import { LinksSlot } from '../slots/LinksSlot';
@@ -17,6 +18,7 @@ export function workItemSlots(project: ProjectDto, itemKey: string): { form: For
       itemKey,
       links: <LinksSlot project={project} itemKey={itemKey} />,
       retro: <WorkItemRetroSlot project={project} itemKey={itemKey} />,
+      changes: <ChangesSlot project={project} itemKey={itemKey} />,
       tasks: <TasksSlot project={project} itemKey={itemKey} />,
       agentRuns: <AgentRunsSlot project={project} itemKey={itemKey} />,
       discussion: <DiscussionSlot project={project} itemKey={itemKey} />,

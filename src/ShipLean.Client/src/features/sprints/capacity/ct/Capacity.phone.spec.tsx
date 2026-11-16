@@ -132,7 +132,7 @@ test('Capacity_WhenOnPhone_ShouldMatchItsScreenshot_capacity-phone', async ({ mo
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
   await open(page, mount);
 
-  await expect(page.getByTestId(ids.capacity)).toHaveScreenshot('capacity-phone.png', {
+  await expect(page.getByTestId(ids.capacity)).toHaveScreenshot('capacity-phone.light.png', {
     animations: 'disabled',
   });
 });
@@ -147,5 +147,5 @@ test('Capacity_WhenDirtyOnPhone_ShouldMatchItsScreenshot_capacity-phone-dirty', 
   await page.getByTestId(ids.capacityDays).first().fill('6');
 
   await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
-  await expect(page).toHaveScreenshot('capacity-phone-dirty.png', { animations: 'disabled' });
+  await expect(page).toHaveScreenshot('capacity-phone-dirty.light.png', { animations: 'disabled' });
 });

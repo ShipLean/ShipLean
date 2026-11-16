@@ -57,6 +57,13 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardEdited), "LinkCards.Edit");
         Add(ActionUsage.Track(UsageEventNames.LinkCardArchived), "LinkCards.Archive");
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesViewed), "TaskChanges.Page");
+        Add(ActionUsage.Track(UsageEventNames.TaskCommitsAdded), "TaskChanges.AddCommit");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentAdded), "TaskChanges.AddComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentReplied), "TaskChanges.ReplyToComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentResolved), "TaskChanges.ResolveComment");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesApproved), "TaskChanges.Approve");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesRequested), "TaskChanges.RequestChanges");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
         Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
@@ -137,7 +144,7 @@ public static class ActionUsageMap
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
-            "ProjectUsage.BacklogSort");
+            "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected");
 
         // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
         Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");
@@ -199,6 +206,7 @@ public static class ActionUsageMap
             "ConnectedAgents.List",
             "Consent.Get",
             "FeatureBoardRead.Get",
+            "FeatureTimeline.Get",
             "Holidays.Countries",
             "ImportJobs.Errors",
             "ImportJobs.Get",
@@ -242,6 +250,7 @@ public static class ActionUsageMap
             "SprintRetro.Get",
             "SprintRollover.Get",
             "StoriesBacklog.Get",
+            "TaskChanges.Section",
             "Taskboard.Get",
             "UserPhoto.Get",
             "Users.ByEmail",

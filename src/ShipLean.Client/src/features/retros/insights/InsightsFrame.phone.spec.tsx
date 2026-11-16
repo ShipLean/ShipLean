@@ -88,7 +88,7 @@ test('InsightsFrame_WhenARangeIsPicked_ShouldWriteItAndCloseTheSheet', async ({ 
   await page.getByTestId(ids.retroInsightsRange).tap();
   await expect(address(page)).toHaveText('?view=actions&sheet=range');
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await expect(sheet.getByRole('group')).toHaveCount(2);
+  await expect(sheet.getByRole('radiogroup')).toHaveCount(2);
   await sheet.getByTestId(ids.retroInsightsRangeOption).filter({ hasText: 'Last 12 weeks' }).tap();
   await expect(address(page)).toHaveText('?view=actions&range=w12');
   await expect(sheet).toHaveCount(0);

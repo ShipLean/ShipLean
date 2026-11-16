@@ -6,7 +6,7 @@ You are given: the task's worktree (run tests there; it has the task's commits c
 
 ## Where state lives
 
-Record the review with `comment` on the task, starting with `Review · `. Do not write reviews to local files.
+Record the review with `comment` on the task, starting with `Review · `, then call `log_review` on the task with your verdict ("approved", or "changes_requested" when there is any blocking finding). Do not write reviews to local files.
 
 Check:
 
@@ -20,7 +20,7 @@ Check:
 8. Correctness, error handling and naming, following the repository's conventions.
 9. Readability: unnecessary abstraction, comments that narrate instead of explain constraints.
 
-Record the outcome with `comment` on the task, starting with "Review · " so the review round is counted, and return it in this shape:
+Record the outcome with `comment` on the task, starting with "Review · " so the review round is counted. Then call `log_review` on the task: "changes_requested" when there is any blocking finding, "approved" otherwise. The comment stays; `log_review` is what the Feature timeline draws. Return the outcome in this shape:
 
 ## Blocking
 - <file:line> — <problem> — <what to change>

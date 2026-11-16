@@ -17,6 +17,7 @@
 //     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141
 //     /p/:key/items/:itemKey/attachments/:attachmentId   one attachment of that item, opened on its own page
 //     /p/:key/items/:itemKey/runs/:runId   one agent run of that item, full width   ?turn=&errorsOnly=&row=&q=
+//     /p/:key/items/:itemKey/changes   ?commit=<commitId>&file=<path>&layout=split  (a Task or Bug's commits, diff and code comments)
 //     /p/:key/items/:itemKey/board   ?settings=   (the Feature board of a Feature; the Taskboard settings dialog's section)
 //     /p/:key/boards/stories      ?settings=        (the board settings dialog's section, closed when absent)
 //     /p/:key/boards/features     ?settings=
@@ -88,7 +89,9 @@ export interface RouteParams {
   workItem: ProjectParams & { itemKey: string };
   workItemAttachment: ProjectParams & { itemKey: string; attachmentId: string };
   agentRun: ProjectParams & { itemKey: string; runId: string };
+  taskChanges: ProjectParams & { itemKey: string };
   featureBoard: ProjectParams & { itemKey: string };
+  featureTimeline: ProjectParams & { itemKey: string };
   storiesBoard: ProjectParams;
   featuresBoard: ProjectParams;
   epicsBoard: ProjectParams;
@@ -124,6 +127,10 @@ export interface RouteQuery {
   item?: string;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
   new?: NewItemKind;
+  // The Changes page: the commit shown (a work_item_commit id; all commits when absent), the file open, and the diff layout ('split'; unified when absent).
+  commit?: string;
+  file?: string;
+  layout?: string;
   // Retrospective search filters (all text; the panel validates them), the open retro, and the insights view and range.
   q?: string;
   sprint?: string;
@@ -150,6 +157,13 @@ export interface RouteQuery {
   point?: string;
   // The sprint Retro tab's Written by filter (all | agents | people).
   writtenBy?: string;
+  // The Feature timeline's options: grouping, zoom, dependency arrows, critical path, the selected item, and where it was opened from.
+  group?: string;
+  zoom?: string;
+  deps?: string;
+  cp?: string;
+  select?: string;
+  from?: string;
   // The sprint Retro tab's category tile at touch (wentWell | wentBadly | improve | notInPlan).
   cat?: string;
 }
@@ -230,11 +244,23 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey, 'Attachment'],
   },
+  taskChanges: {
+    pattern: '/p/:key/items/:itemKey/changes',
+    query: ['commit', 'file', 'layout', 'item'],
+    installLevel: false,
+    crumbs: (p) => ['Backlogs', p.itemKey, 'Changes'],
+  },
   featureBoard: {
     pattern: '/p/:key/items/:itemKey/board',
     query: ['settings', 'item'],
     installLevel: false,
     crumbs: (p, q) => withSettings(['Backlogs', p.itemKey, 'Feature board'], q),
+  },
+  featureTimeline: {
+    pattern: '/p/:key/items/:itemKey/timeline',
+    query: ['group', 'zoom', 'deps', 'cp', 'select', 'view', 'from'],
+    installLevel: false,
+    crumbs: (p) => ['Backlogs', p.itemKey, 'Timeline'],
   },
   storiesBoard: {
     pattern: '/p/:key/boards/stories',

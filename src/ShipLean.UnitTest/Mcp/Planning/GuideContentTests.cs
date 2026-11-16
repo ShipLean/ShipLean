@@ -28,6 +28,40 @@ public class GuideContentTests
     }
 
     [Test]
+    public void CodeReviewer_ShouldTellReviewerToLogReview()
+    {
+        var reviewer = PlanGuide.Read(PlanGuidePart.CodeReviewer);
+
+        reviewer.ShouldContain("call `log_review` on the task");
+        reviewer.ShouldContain("\"changes_requested\"");
+        reviewer.ShouldContain("starting with \"Review · \"");
+    }
+
+    [Test]
+    public void Guide_Step7_ShouldNameLogReview()
+    {
+        var step7 = Guide[Guide.IndexOf("## Step 7", StringComparison.Ordinal)..Guide.IndexOf("## Step 9", StringComparison.Ordinal)];
+
+        step7.ShouldContain("`log_review`");
+        var start = Guide.IndexOf("## Where state lives", StringComparison.Ordinal);
+        Guide[start..Guide.IndexOf("\n## ", start + 1, StringComparison.Ordinal)].ShouldContain("`log_review`");
+    }
+
+    [Test]
+    public void Guide_Step9_ShouldNameFeatureTimeline()
+    {
+        var step9 = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
+
+        step9.ShouldContain("`feature_timeline`");
+    }
+
+    [Test]
+    public void Lead_ShouldNameLogReview()
+    {
+        PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_review`");
+    }
+
+    [Test]
     public void GuideContent_ShouldMapModesToStories()
     {
         Guide.ShouldContain("| Direct |");
@@ -136,6 +170,17 @@ public class GuideContentTests
         Work.ShouldContain("`log_retrospective`");
         PlanGuide.Read(PlanGuidePart.Report).ShouldContain("`log_retrospective`");
         PlanGuide.Read(PlanGuidePart.Lead).ShouldContain("`log_retrospective`");
+    }
+
+    [Test]
+    public void GuideContent_ShouldTellAgentsToSendCommitsAndAnswerComments()
+    {
+        const string line = "When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else.";
+        PlanGuide.Read(PlanGuidePart.Brief).ShouldContain(line);
+        Guide.ShouldContain(line);
+        var report = PlanGuide.Read(PlanGuidePart.Report);
+        report.ShouldContain("full `sha`");
+        report.ShouldContain("`answered_comments`");
     }
 
     [Test]

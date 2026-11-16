@@ -11,7 +11,8 @@ import { useReorder } from '../drag/useReorder';
  * `drop(rowId, targetId)`: `targetId` is what TouchHandle's onDrop reports. The row's key and revision come from the
  * backlog read under `queryKey`. `conflict`, `useMine` and `keepTheirs` are useReorder's, for the screen's
  * ReorderConflict banner; a screen that already owns a useReorder must use this hook's instead of a second one, or
- * the conflict would sit in a state the banner doesn't read.
+ * the conflict would sit in a state the banner doesn't read. `reorder` is that useReorder object itself, for the
+ * screen's frame.
  */
 export function useTouchReorder(projectId: string, queryKey: QueryKey) {
   const queryClient = useQueryClient();
@@ -31,6 +32,7 @@ export function useTouchReorder(projectId: string, queryKey: QueryKey) {
 
   return {
     drop,
+    reorder,
     conflict: reorder.conflict,
     useMine: reorder.useMine,
     keepTheirs: reorder.keepTheirs,

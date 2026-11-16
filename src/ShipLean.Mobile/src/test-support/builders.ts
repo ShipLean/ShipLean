@@ -30,6 +30,7 @@ export function aProject(overrides: Partial<ProjectSummaryDto> = {}): ProjectSum
     name: 'ShipLean',
     role: 'member',
     memberCount: 3,
+    isOnlyAdmin: false,
     ...overrides,
   };
 }

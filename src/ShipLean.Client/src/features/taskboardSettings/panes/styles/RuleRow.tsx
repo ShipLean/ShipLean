@@ -6,6 +6,9 @@ import { checkCriteria } from '../../../../criteria/validate';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { taskboardSettingsTestIds as ids } from '../../testIds';
 import { withCriteria } from '../../../boardSettings/panes/styles/ruleEdits';
+import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
+import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
+import { useTouchShell } from '../../../../touch/useTouchShell';
 import { useHeldRules } from './HeldRulesContext';
 
 const iconButton =
@@ -27,6 +30,7 @@ export function RuleRow({
   onMove,
   onDragStart,
   onDrop,
+  onTouchDrop,
 }: {
   rule: StyleRuleJson;
   lists: PickLists;
@@ -37,7 +41,14 @@ export function RuleRow({
   onMove(step: number): void;
   onDragStart(): void;
   onDrop(): void;
+  /** At touch: the grip was held, dragged and let go over the rule with this id (null: off any rule). */
+  onTouchDrop(targetId: string | null): void;
 }) {
+  const { touch } = useTouchShell();
+  const drag = useLongPressDrag({
+    handle: true,
+    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
+  });
   const held = useHeldRules();
   const [name, setName] = useState(rule.name);
   const [seenName, setSeenName] = useState(rule.name);
@@ -93,7 +104,8 @@ export function RuleRow({
   return (
     <div
       data-testid={ids.styleRow}
-      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'}`}
+      data-drop-target={rule.id}
+      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
@@ -102,16 +114,22 @@ export function RuleRow({
           <button
             type="button"
             data-testid={ids.styleGrip}
-            draggable={!readOnly}
+            draggable={!readOnly && !touch}
             disabled={readOnly}
             aria-label={`Move rule ${rule.name} (Alt+Up or Alt+Down)`}
             title="Drag, or press Alt+Up or Alt+Down"
             className={`${iconButton} cursor-grab`}
             onKeyDown={keyDown}
             onDragStart={onDragStart}
+            {...(touch && !readOnly ? drag.props : {})}
           >
             ⠿
           </button>
+          {drag.lifted ? (
+            <TouchDragGhost x={drag.x} y={drag.y}>
+              <div className="px-3 py-2 text-[length:var(--text-sm)]">{rule.name}</div>
+            </TouchDragGhost>
+          ) : null}
           <input
             data-testid={ids.styleName}
             className="field h-[26px] min-w-20 flex-1 touch:h-[var(--touch-target)]"

@@ -17,7 +17,7 @@ export function MoveToStorySheet({
   onClose: () => void;
   onBack: () => void;
 }) {
-  const { view, reparent } = useTaskboardMoves();
+  const { view, reparent, scope } = useTaskboardMoves();
   const [query, setQuery] = useState('');
   const needle = query.trim().toLowerCase();
   const stories = view.rows
@@ -47,6 +47,20 @@ export function MoveToStorySheet({
         onChange={(event) => setQuery(event.target.value)}
         className="m-2 min-h-[var(--touch-target)] rounded-control border border-edge bg-panel px-3"
       />
+      {scope.kind === 'sprint' ? (
+        <button
+          type="button"
+          data-testid={ids.storyNoParent}
+          aria-current={!card.parent ? 'true' : undefined}
+          className={`${actionSheetRowClass} text-ink ${!card.parent ? 'bg-signal-soft' : ''}`}
+          onClick={() => {
+            if (card.parent) reparent(card, rowId, null, 'sheet');
+            onClose();
+          }}
+        >
+          No parent
+        </button>
+      ) : null}
       {stories.map((story) => {
         const here = story.id === card.parent?.id;
         return (

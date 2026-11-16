@@ -137,10 +137,12 @@ export function TaskCardFace({
           <button
             type="button"
             data-testid={id(ids.cardPickUp)}
-            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex"
+            className="hidden h-5 items-center rounded-full border border-signal bg-panel px-[7px] text-[length:var(--text-2xs)] font-semibold whitespace-nowrap text-signal group-focus-within:inline-flex group-hover:inline-flex touch:inline-flex touch:h-8 touch:min-w-8 touch:justify-center touch:border-transparent touch:bg-transparent touch:px-0"
             onClick={pickUp}
           >
-            Pick up
+            <span className="touch:inline-flex touch:h-7 touch:items-center touch:rounded-full touch:border touch:border-signal touch:bg-panel touch:px-2.5">
+              Pick up
+            </span>
           </button>
         ) : null}
         {fields.showAssignee ? (

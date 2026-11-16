@@ -1,4 +1,5 @@
 using System.Net;
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
@@ -76,6 +77,24 @@ public class ToolUsageTests : McpFixture
         tracked.Outcome.ShouldBe(UsageOutcome.Error);
         tracked.ErrorCode.ShouldBe("not_found");
         CallsOf("tool:get_work_item").ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task GetWorkItem_WhenFeature_ShouldSendItemTypeFeature()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var feature = await new ShipLean.TestSupport.Builders.WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Typed feature").InsertAsync(connection);
+            key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @feature", new { feature });
+        }
+
+        var reply = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{key}}"}""");
+
+        reply.IsToolError().ShouldBeFalse();
+        var tracked = await NextAsync("tool:get_work_item");
+        tracked.Properties[UsageProps.ItemType].ShouldBe("feature");
     }
 
     [Test]

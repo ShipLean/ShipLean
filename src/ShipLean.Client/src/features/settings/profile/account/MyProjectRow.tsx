@@ -34,15 +34,24 @@ export function MyProjectRow({
       >
         {ROLE_LABELS[project.role]}
       </span>
-      <button
-        type="button"
-        data-testid={settingsTestIds.myProjectLeave}
-        className="btn-ghost touch:h-[var(--touch-target)] touch:col-start-3 touch:row-span-2 touch:row-start-1"
-        disabled={confirming}
-        onClick={onLeave}
-      >
-        Leave
-      </button>
+      {project.isOnlyAdmin ? (
+        <span
+          data-testid={settingsTestIds.myProjectOnlyAdmin}
+          className="px-3 text-ink-muted touch:col-start-3 touch:row-span-2 touch:row-start-1 touch:self-center"
+        >
+          Only admin
+        </span>
+      ) : (
+        <button
+          type="button"
+          data-testid={settingsTestIds.myProjectLeave}
+          className="btn-ghost touch:h-[var(--touch-target)] touch:col-start-3 touch:row-span-2 touch:row-start-1"
+          disabled={confirming}
+          onClick={onLeave}
+        >
+          Leave
+        </button>
+      )}
     </li>
   );
 }

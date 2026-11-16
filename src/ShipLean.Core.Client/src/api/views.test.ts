@@ -3,9 +3,28 @@ import backlogTree from '../../../ShipLean.TestSupport/DtoFixtures/views/backlog
 import boardFeatures from '../../../ShipLean.TestSupport/DtoFixtures/views/board-view.features.json';
 import boardStories from '../../../ShipLean.TestSupport/DtoFixtures/views/board-view.stories.json';
 import featureBoard from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-board-view.json';
+import timelineRunning from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-timeline-running-view.json';
+import timelineFinished from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-timeline-view.json';
 import taskboard from '../../../ShipLean.TestSupport/DtoFixtures/views/taskboard-view.json';
-import { BACKLOG_MODES, BACKLOG_ROW_KINDS, BOARD_LANE_KINDS } from './views';
-import type { BacklogViewDto, BoardViewDto, FeatureBoardViewDto, TaskboardViewDto } from './views';
+import { STATE_CATEGORIES } from './refs';
+import {
+  BACKLOG_MODES,
+  BACKLOG_ROW_KINDS,
+  BOARD_LANE_KINDS,
+  KEY_DATE_POINTS,
+  REVIEW_VERDICTS,
+  TIMELINE_BAR_STATES,
+  TIMELINE_EDGE_KINDS,
+  TIMELINE_EDGE_SOURCES,
+  TIMELINE_PERIOD_STATES,
+} from './views';
+import type {
+  BacklogViewDto,
+  BoardViewDto,
+  FeatureBoardViewDto,
+  FeatureTimelineViewDto,
+  TaskboardViewDto,
+} from './views';
 
 // Literal unions widened to their base type, recursively: what a JSON import looks like.
 type DeepWiden<T> = T extends string
@@ -62,4 +81,44 @@ test('views_ShouldTypeEveryFixture', () => {
     true,
   );
   expect(feature.rows.some((row) => row.sprint === null)).toBe(true);
+});
+
+test('views_ShouldTypeTheTimelineFixtures', () => {
+  const finished = typed<FeatureTimelineViewDto>()(timelineFinished);
+  const running = typed<FeatureTimelineViewDto>()(timelineRunning);
+
+  // JSON imports widen literal unions to string, so check every enum value against its union.
+  for (const view of [finished, running]) {
+    expect(STATE_CATEGORIES).toContain(view.feature.stateCategory);
+    expect(view.keyDates.map((k) => k.point)).toEqual([...KEY_DATE_POINTS]);
+    for (const gap of view.gaps) {
+      expect(KEY_DATE_POINTS).toContain(gap.from);
+      expect(KEY_DATE_POINTS).toContain(gap.to);
+    }
+    for (const story of view.stories) expect(['story', 'bug']).toContain(story.type);
+    for (const bar of view.bars) {
+      expect(bar.type).toBe('task');
+      expect(TIMELINE_BAR_STATES).toContain(bar.state);
+      for (const period of bar.history) expect(TIMELINE_PERIOD_STATES).toContain(period.state);
+      for (const review of bar.reviews) expect(REVIEW_VERDICTS).toContain(review.verdict);
+    }
+    for (const edge of view.edges) {
+      expect(TIMELINE_EDGE_KINDS).toContain(edge.kind);
+      expect(TIMELINE_EDGE_SOURCES).toContain(edge.source);
+    }
+  }
+
+  expect(finished.finished).toBe(true);
+  expect(finished.scale.nowHours).toBeNull();
+  expect(finished.criticalPath.length).toBeGreaterThan(0);
+  expect(finished.bars.find((b) => b.key === 'SHIP-198')?.inferred).toBe(true);
+  expect(finished.bars.find((b) => b.key === 'SHIP-192')?.reviews.map((r) => r.verdict)).toEqual([
+    'changesRequested',
+    'approved',
+  ]);
+  expect(running.finished).toBe(false);
+  expect(running.criticalPath).toEqual([]);
+  expect(running.keyDates[3]?.at).toBeNull();
+  expect(running.gaps.at(-1)?.soFar).toBe(true);
+  expect(running.bars.some((b) => b.state === 'inFlight' && b.end === null)).toBe(true);
 });

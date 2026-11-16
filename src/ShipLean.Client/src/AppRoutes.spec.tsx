@@ -8,6 +8,7 @@ import { validQuery } from './features/mobileSignIn/fixtures';
 import { mobileSignInTestIds } from './features/mobileSignIn/testIds';
 import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
 import { settingsTestIds } from './features/settings/testIds';
+import { taskChangesTestIds } from './features/taskChanges/testIds';
 import { pagesTestIds } from './features/pages/testIds';
 import { stubProjectApi } from './pages/pagesFixtures';
 import type { RouteId } from './routes';
@@ -60,9 +61,14 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
     path: '/p/SHIP/items/SHIP-101/attachments/a1',
     testId: pagesTestIds.attachmentPage,
   },
+  taskChanges: { path: '/p/SHIP/items/SHIP-142/changes', testId: taskChangesTestIds.page },
   featureBoard: {
     path: '/p/SHIP/items/SHIP-101/board',
     testId: pagesTestIds.featureBoardPage,
+  },
+  featureTimeline: {
+    path: '/p/SHIP/items/SHIP-99/timeline',
+    testId: pagesTestIds.featureTimelinePage,
   },
   storiesBoard: { path: '/p/SHIP/boards/stories', testId: pagesTestIds.boardPage },
   featuresBoard: { path: '/p/SHIP/boards/features', testId: pagesTestIds.boardPage },

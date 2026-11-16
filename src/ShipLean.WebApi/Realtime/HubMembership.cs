@@ -5,8 +5,8 @@ using ShipLean.Contracts.Errors;
 
 namespace ShipLean.WebApi.Realtime;
 
-// The hub's own membership check, for a user named explicitly. IProjectAccess reads the user from the request's
-// IHttpContextAccessor, which SignalR does not guarantee inside a hub, so the hub takes the user from Context.User
+// The hub's own membership check, for a user named explicitly. IProjectAccess reads the user from the current request
+// (ICurrentRequest), which SignalR does not guarantee inside a hub, so the hub takes the user from Context.User
 // and asks here. The rule is ProjectAccess's: a live project_member row of any role; a non-member and an unknown
 // project get the same not_found.
 [RegisterSingleton]

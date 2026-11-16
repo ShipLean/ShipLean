@@ -14,7 +14,7 @@ namespace ShipLean.WebApi.Realtime;
 //
 // A failure is a HubException carrying "<code>: <message>"; SignalR wraps it for the client (docs/events.md). Access is
 // checked on every JoinProject and JoinScreen call, so a member removed since the last call is refused. The user is
-// always Context.User, never the request's IHttpContextAccessor. Who may connect at all (signed in, not on a one-time
+// always Context.User, never ICurrentRequest. Who may connect at all (signed in, not on a one-time
 // password, same-origin) is ProjectHubRequirement; a session that ends while the socket is open is HubSessionFilter
 // and HubSessionSweep.
 [Authorize]

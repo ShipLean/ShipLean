@@ -1,0 +1,50 @@
+namespace ShipLean.TestSupport.TestIds;
+
+public static class TimelineTestIds
+{
+    public const string Loading = "timeline-loading";
+    public const string LoadFailed = "timeline-load-failed";
+    public const string Header = "timeline-header";
+    public const string HeaderBack = "timeline-header-back";
+    public const string HeaderTitle = "timeline-header-title";
+    public const string HeaderState = "timeline-header-state";
+    public const string HeaderEpic = "timeline-header-epic";
+    public const string KeyDates = "timeline-key-dates";
+    public const string KeyDatePoint = "timeline-key-date-point";
+    public const string KeyDateGap = "timeline-key-date-gap";
+    public const string Toolbar = "timeline-toolbar";
+    public const string ToolbarGroup = "timeline-toolbar-group";
+    public const string ToolbarZoom = "timeline-toolbar-zoom";
+    public const string ToolbarDeps = "timeline-toolbar-deps";
+    public const string ToolbarCp = "timeline-toolbar-cp";
+    public const string ToolbarView = "timeline-toolbar-view";
+    public const string ToolbarLegend = "timeline-toolbar-legend";
+    public const string Chart = "timeline-chart";
+    public const string ChartScroll = "timeline-chart-scroll";
+    public const string ChartLeft = "timeline-chart-left";
+    public const string ChartRow = "timeline-chart-row";
+    public const string ChartBar = "timeline-chart-bar";
+    public const string ChartBracket = "timeline-chart-bracket";
+    public const string ChartDiamond = "timeline-chart-diamond";
+    public const string ChartReviewDot = "timeline-chart-review-dot";
+    public const string ChartNowLine = "timeline-chart-now-line";
+    public const string ChartWeekend = "timeline-chart-weekend";
+    public const string ChartSprintBand = "timeline-chart-sprint-band";
+    public const string ChartDayLabel = "timeline-chart-day-label";
+    public const string Edges = "timeline-edges";
+    public const string Edge = "timeline-edge";
+    public const string EdgeWaitLabel = "timeline-edge-wait-label";
+    public const string EdgeCritical = "timeline-edge-critical";
+    public const string Rail = "timeline-rail";
+    public const string RailOverview = "timeline-rail-overview";
+    public const string RailNotStarted = "timeline-rail-not-started";
+    public const string RailSelected = "timeline-rail-selected";
+    public const string RailHistoryRow = "timeline-rail-history-row";
+    public const string RailReviewRow = "timeline-rail-review-row";
+    public const string RailWaitedOn = "timeline-rail-waited-on";
+    public const string RailHeldUp = "timeline-rail-held-up";
+    public const string RailClose = "timeline-rail-close";
+    public const string Json = "timeline-json";
+    public const string JsonCopy = "timeline-json-copy";
+    public const string JsonFieldGuide = "timeline-json-field-guide";
+}

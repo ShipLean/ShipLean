@@ -1,8 +1,6 @@
 using HotChocolate.Resolvers;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Options;
 using ShipLean.Application.Features.LinearApi;
-using ShipLean.WebApi.Infrastructure;
+using ShipLean.Contracts;
 
 namespace ShipLean.WebApi.Features.LinearApi;
 
@@ -18,11 +16,12 @@ public sealed class LinearRequest(LinearCaller caller, LinearReads reads, string
 
     public static LinearRequest Of(IResolverContext context)
     {
-        var http = context.Service<IHttpContextAccessor>().HttpContext ?? throw new InvalidOperationException("The Linear-compatible endpoint ran outside a request.");
-        return new LinearRequest(
-            LinearCaller.Of(http.User),
-            context.Service<LinearReads>(),
-            RequestOrigin.Of(http.Request, context.Service<IOptions<ForwardedHeadersOptions>>().Value));
+        var request = context.Service<ICurrentRequest>();
+        if (request.User is not { } user)
+        {
+            throw new InvalidOperationException("The Linear-compatible endpoint ran outside a request.");
+        }
+        return new LinearRequest(LinearCaller.Of(user), context.Service<LinearReads>(), request.Origin);
     }
 
     public async ValueTask<string> BaseUrlAsync(CancellationToken cancellationToken)

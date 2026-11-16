@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react';
 import { showToast } from '../../../components/toastStore';
-import type { SprintRef, WorkItemTypeId } from '@shiplean/core/api/refs';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { BULK_MAX_ROWS } from '@shiplean/core/api/backlogWrites';
-import type { BacklogRowDto, BacklogSectionDto, BacklogViewDto } from '@shiplean/core/api/views';
+import type { BacklogRowDto, BacklogViewDto } from '@shiplean/core/api/views';
 import { useProjectSprints, useProjectStates } from '../../workItem/workItemApi';
 import { parentTypesOf } from '../../workItem/form/ParentField';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { useListCommand } from '../commands/listCommands';
 import { CANCEL } from '../commands/useListKeys';
 import { useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { BulkMenu } from './BulkMenus';
+import type { MoveTarget } from './BulkSprintSheet';
+import { TouchBulkBar } from './TouchBulkBar';
 import { ParentMenuBody } from './ParentMenuBody';
 import { PointsMenuBody } from './PointsMenuBody';
 import { SprintMoveButton } from './SprintMoveButton';
@@ -37,11 +40,6 @@ export interface BulkBarProps {
   view: BacklogViewDto | undefined;
 }
 
-interface MoveTarget {
-  sprint: SprintRef;
-  section: BacklogSectionDto;
-}
-
 const rankOf = (row: BacklogRowDto) => row.rank ?? Number.MAX_SAFE_INTEGER;
 
 function allRows(view: BacklogViewDto | undefined): BacklogRowDto[] {
@@ -61,6 +59,7 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
   const states = useProjectStates(projectId).data ?? [];
   const sprints = useProjectSprints(projectId).data ?? [];
   const [moving, setMoving] = useState(false);
+  const { touch } = useTouchShell();
 
   const rows = useMemo(() => allRows(view), [view]);
   const selected = selection.selectedRows(rows);
@@ -143,7 +142,25 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
       <span role="status" aria-live="polite" className="sr-only">
         {count === 0 ? '' : `${count} selected`}
       </span>
-      {count === 0 ? null : (
+      {count > 0 && touch ? (
+        <TouchBulkBar
+          count={count}
+          selected={selected}
+          projectId={projectId}
+          targets={targets}
+          velocity={view?.velocity ?? null}
+          states={states}
+          stateNames={stateNamesFor(selected, states)}
+          parentTypes={parentTypes ?? []}
+          onMoveTo={(target) => void moveTo(target)}
+          onMoveToEdge={(slot) => void moveToEdge(slot)}
+          onSetPoints={(points) => void apply(setPointsPlan(selected, points))}
+          onSetState={(name) => void apply(setStatePlan(selected, states, name))}
+          onSetParent={(parent) => void apply(setParentPlan(selected, parent))}
+          onAddTag={(tag) => void apply(setTagPlan(selected, tag))}
+        />
+      ) : null}
+      {count === 0 || touch ? null : (
         <div
           data-testid={ids.bulkBar}
           role="toolbar"

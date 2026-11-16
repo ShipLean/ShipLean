@@ -9,7 +9,7 @@ import { StatusChip } from '../recurring/StatusChip';
 import { ThemeActionButton } from '../recurring/ThemeActionButton';
 import { VerdictChip } from '../recurring/VerdictChip';
 import { ACTION_CHIPS_AT_TOUCH } from './actionChips';
-import { HeatStrip } from './HeatStrip';
+import { StripAndTotal } from './StripAndTotal';
 
 /**
  * One theme as a card (D1): its name and status, the heat strip with Total and "n no sprint", its action items and its last
@@ -51,23 +51,17 @@ export function ThemeCard({
         </button>
         <StatusChip status={row.status} mode={mode} />
       </header>
-      <div className="grid grid-cols-[minmax(0,1fr)_52px] items-center">
-        <HeatStrip counts={row.counts} columns={columns} max={max} label={theme.name} />
-        <div className="grid justify-items-end leading-tight">
-          <b data-testid={ids.retroHeatTotal} className="text-[length:var(--text-md)] tabular-nums">
-            {row.total}
-          </b>
-          {mode === 'sprint' ? (
-            <small
-              data-testid={ids.retroHeatNoSprint}
-              data-count={row.noSprint}
-              className="text-[length:var(--text-2xs)] whitespace-nowrap text-ink-muted"
-            >
-              {row.noSprint} no sprint
-            </small>
-          ) : null}
-        </div>
-      </div>
+      <StripAndTotal
+        counts={row.counts}
+        columns={columns}
+        max={max}
+        label={theme.name}
+        total={row.total}
+        noSprint={row.noSprint}
+        mode={mode}
+        totalTestId={ids.retroHeatTotal}
+        noSprintTestId={ids.retroHeatNoSprint}
+      />
       <footer className="flex flex-wrap items-center gap-1.5">
         <div className={`flex flex-wrap items-center gap-1.5 ${ACTION_CHIPS_AT_TOUCH}`}>
           {row.actionItems.map((action) => (

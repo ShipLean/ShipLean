@@ -7,7 +7,7 @@ import type {
 import { routePath } from '../../../../routes';
 import { retrosTestIds as ids } from '../../testIds';
 import { UnthemedTip } from '../tips/UnthemedTip';
-import { HeatStrip } from './HeatStrip';
+import { StripAndTotal } from './StripAndTotal';
 
 /** Points with no theme as the last, dashed card at touch (D1): its counts, "not judged", and the link to give them themes. */
 export function UnthemedCard({
@@ -34,23 +34,17 @@ export function UnthemedCard({
         </span>
         <span className="text-[length:var(--text-xs)] text-ink-muted">not judged</span>
       </header>
-      <div className="grid grid-cols-[minmax(0,1fr)_52px] items-center">
-        <HeatStrip counts={unthemed.counts} columns={columns} max={max} label="Unthemed" />
-        <div className="grid justify-items-end leading-tight">
-          <b
-            data-testid={ids.retroTotalCell}
-            data-cell="total"
-            className="text-[length:var(--text-md)] tabular-nums"
-          >
-            {unthemed.total}
-          </b>
-          {mode === 'sprint' ? (
-            <small className="text-[length:var(--text-2xs)] whitespace-nowrap text-ink-muted">
-              {unthemed.noSprint} no sprint
-            </small>
-          ) : null}
-        </div>
-      </div>
+      <StripAndTotal
+        counts={unthemed.counts}
+        columns={columns}
+        max={max}
+        label="Unthemed"
+        total={unthemed.total}
+        noSprint={unthemed.noSprint}
+        mode={mode}
+        totalTestId={ids.retroTotalCell}
+        totalDataCell="total"
+      />
       <Link
         data-testid={ids.retroUnthemedLink}
         to={routePath('retros', { key: projectKey }, { unthemed: 'true' })}

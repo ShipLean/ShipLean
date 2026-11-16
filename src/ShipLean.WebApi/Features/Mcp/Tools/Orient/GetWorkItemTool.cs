@@ -13,12 +13,14 @@ using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Feature;
+using ShipLean.WebApi.Features.Mcp.Usage;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
@@ -32,7 +34,10 @@ internal sealed class GetWorkItemTool(
     OrientReads reads,
     IAgentAddresses addresses,
     IItemAsks asks,
-    TimeProvider clock)
+    ITaskCommits taskCommits,
+    ICodeComments codeComments,
+    TimeProvider clock,
+    McpItemTypeSlot itemType)
 {
     private const int CommentCount = 5;
     private const int HistoryCount = 10;
@@ -52,11 +57,13 @@ internal sealed class GetWorkItemTool(
         var listed = await attachments.ListAsync(item.Id, cancellationToken);
         var children = (await tree.DescendantsAsync(item.ProjectId, item.Id, null, cancellationToken)).Where(c => c.Depth == 1).ToList();
         var isFeature = snapshot.Type == WorkItemTypeId.Feature;
+        itemType.Value = snapshot.Type.ToString().ToLowerInvariant();
         var names = await reads.NamesAsync(
             item.Id,
             [.. revisions.Where(r => r.ChangedBy is not null).Select(r => r.ChangedBy!.Value).Concat(isFeature && snapshot.StatusVerifiedBy is { } verifier ? [verifier] : []).Distinct()],
             cancellationToken);
         var itemAsks = await asks.GetAsync(item.Id, cancellationToken);
+        var (commits, openComments) = await ItemCodeReads.ReadAsync(taskCommits, codeComments, snapshot.Type, item.Id, cancellationToken);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
 
         var result = new WorkItemResult(
@@ -98,6 +105,8 @@ internal sealed class GetWorkItemTool(
                 q.WithdrawnAt?.ToString("O")))],
             itemAsks.OpenQuestions,
             itemAsks.OpenDecisions,
+            commits,
+            openComments,
             isFeature ? snapshot.Goal : null,
             isFeature ? snapshot.StatusLine : null,
             isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock) : null,

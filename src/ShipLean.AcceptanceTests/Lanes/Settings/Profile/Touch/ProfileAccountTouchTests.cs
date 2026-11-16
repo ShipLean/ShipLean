@@ -61,11 +61,10 @@ public class ProfileAccountTouchTests : SeededAcceptanceTest
         cancel.Y.ShouldBeGreaterThan(text!.Y + 20);
         (await TouchRules.ViolationsAsync(Page, ProjectsPanel)).ShouldBeEmpty();
 
-        // SHIP has no other admin, so the server refuses and its message shows in the row.
+        // SHIP has no other admin, so it says so up front instead of offering Leave.
         await Page.GetByTestId(SettingsTestIds.MyProjectLeaveCancel).TapAsync();
-        await account.ProjectRow("SHIP").GetByTestId(SettingsTestIds.MyProjectLeave).TapAsync();
-        await Page.GetByTestId(SettingsTestIds.MyProjectLeaveConfirm).TapAsync();
-        await Expect(account.LeaveConfirmError).ToHaveTextAsync("You are the only admin. Make someone else an admin before you leave.");
+        await Expect(account.ProjectRow("SHIP").GetByTestId(SettingsTestIds.MyProjectOnlyAdmin)).ToHaveTextAsync("Only admin");
+        await Expect(account.ProjectRow("SHIP").GetByTestId(SettingsTestIds.MyProjectLeave)).ToHaveCountAsync(0);
     }
 
     [Test]

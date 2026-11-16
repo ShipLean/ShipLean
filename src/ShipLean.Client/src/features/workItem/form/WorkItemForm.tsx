@@ -58,6 +58,7 @@ export function WorkItemForm({
   project,
   links,
   retro = null,
+  changes = null,
   tasks,
   agentRuns = null,
   discussion,
@@ -67,6 +68,7 @@ export function WorkItemForm({
   project: ProjectDto;
   links: ReactNode;
   retro?: ReactNode;
+  changes?: ReactNode;
   tasks: ReactNode;
   agentRuns?: ReactNode;
   discussion: ReactNode;
@@ -331,8 +333,9 @@ export function WorkItemForm({
                     />
                   ) : null}
                   {isStoryLevel(type) ? retro : null}
-                  {tasks}
+                  {type === 'task' || type === 'bug' ? changes : null}
                   {agentRuns}
+                  {tasks}
                   {discussion}
                 </div>
                 <aside className="grid grid-cols-[minmax(0,1fr)] content-start gap-4">

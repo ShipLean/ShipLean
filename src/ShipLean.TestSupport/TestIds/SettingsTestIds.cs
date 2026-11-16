@@ -233,6 +233,8 @@ public static class SettingsTestIds
     public const string MyProjectLeaveError = "settings-my-project-leave-error";
     // SHIP-733 projects touch
     public const string MyProjectLeaveRow = "settings-my-project-leave-row";
+    // SHIP-1517 only admin
+    public const string MyProjectOnlyAdmin = "settings-my-project-only-admin";
     public const string MyProjectsList = "settings-my-projects-list";
     public const string SessionsPanel = "settings-sessions-panel";
     public const string SignOutOthers = "settings-sign-out-others";

@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
-using Microsoft.AspNetCore.Http;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Usage;
@@ -70,7 +69,8 @@ public static class ToolUsageFilter
             var agent = services.GetRequiredService<ICurrentAgent>();
             var scope = services.GetRequiredService<IUsageScope>();
             var time = services.GetRequiredService<TimeProvider>();
-            var payloadUsed = services.GetService<IHttpContextAccessor>()?.HttpContext?.Items.TryGetValue(McpPayloadTargets.UsedItem, out var used) == true
+            var itemType = services.GetService<McpItemTypeSlot>()?.Value;
+            var payloadUsed = services.GetService<ICurrentRequest>()?.Items?.TryGetValue(McpPayloadTargets.UsedItem, out var used) == true
                 && used is true;
 
             services.GetRequiredService<IUsageEvents>().Track(new UsageEvent(
@@ -84,7 +84,7 @@ public static class ToolUsageFilter
                 (long)elapsed.TotalMilliseconds,
                 $"tool:{matched.ProtocolTool.Name}",
                 time.GetUtcNow(),
-                ToolUsageProps.For(McpPayloadTargets.For(matched) is not null, payloadUsed)));
+                ToolUsageProps.For(McpPayloadTargets.For(matched) is not null, payloadUsed, itemType)));
         }
         catch (Exception e)
         {
