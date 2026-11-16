@@ -38,7 +38,10 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
         stories and bugs. It sits in the Stories backlog, carries points and is pulled into a sprint
         like any story; it also links to the theme it addresses.
       </p>
-      <section className="rounded-frame border border-edge bg-panel touch:rounded-none touch:border-0 touch:bg-transparent">
+      <section
+        data-testid={ids.retroActionsSection}
+        className="rounded-frame border border-edge bg-panel touch:rounded-none touch:border-0 touch:bg-transparent"
+      >
         <header className="flex items-baseline gap-3 px-4 py-3 touch:px-0">
           <h2 className="m-0 text-[length:var(--text-md)] font-semibold touch:sr-only">
             Action items

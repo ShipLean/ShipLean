@@ -137,7 +137,9 @@ test('ImpactPhone_WhenOpened_ShouldKeepTheNumbersAndPutHowVerdictsWorkInTheIntro
   const how = page.getByTestId(ids.retroImpactHowVerdicts);
   expect((await how.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   // Inline: it sits inside the intro paragraph, not in a row of its own.
-  await expect(page.locator('p', { has: how })).toContainText('before and after it shipped.');
+  await expect(page.getByTestId(ids.retroImpactIntro)).toContainText(
+    'before and after it shipped.',
+  );
   await how.tap();
   await expect(page.getByTestId('location-probe')).toContainText('sheet=defs');
   await expect(page.getByTestId('location-probe')).toContainText('view=impact');
@@ -166,7 +168,7 @@ test('ActionItemsPhone_WhenOpened_ShouldBeFlatWithADoneHeadingAndTheDesignsCardD
   const cards = page.getByTestId(ids.retroActionCard);
   await expect(cards).toHaveCount(retroInsights.actionItems.length);
   // No nested panel: the cards' container sits directly in a section with no border.
-  await expect(page.locator('section')).toHaveCSS('border-top-width', '0px');
+  await expect(page.getByTestId(ids.retroActionsSection)).toHaveCSS('border-top-width', '0px');
   const done = retroInsights.actionItems.filter((r) => !isOpen(r.action.state.category));
   expect(done.length).toBeGreaterThan(0);
   await expect(page.getByTestId(ids.retroActionDoneHeading)).toHaveText('Done');

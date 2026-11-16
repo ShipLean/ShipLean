@@ -70,11 +70,11 @@ public class RetroInsightsFrameTouchTests : SeededAcceptanceTest
         await touch.More.TapAsync();
         await Expect(touch.MoreRows).ToHaveTextAsync(
         [
-            new Regex("^Merge themes… Fold one theme into another$"),
-            new Regex("^What the statuses and verdicts mean$"),
-            new Regex(@"^Give unthemed points themes \d+ ›$"),
-            new Regex("^Search retrospectives ›$"),
-            new Regex("^Retrospectives by Feature ›$"),
+            new Regex("^Merge themes…fold one theme into another$"),
+            new Regex(@"^Give unthemed points themes\d+›$"),
+            new Regex("^What the statuses and verdicts mean›$"),
+            new Regex("^Search retrospectives›$"),
+            new Regex("^Retrospectives by Feature›$"),
         ]);
         (await TouchRules.ViolationsAsync(Page, touch.Sheet)).ShouldBeEmpty();
 

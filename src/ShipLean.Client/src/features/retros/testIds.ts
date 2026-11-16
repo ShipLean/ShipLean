@@ -231,4 +231,6 @@ export const retrosTestIds = {
   retroActionUnassigned: 'retro-action-unassigned',
   retroActionImpactPending: 'retro-action-impact-pending',
   retroImpactHint: 'retro-impact-hint',
+  retroImpactIntro: 'retro-impact-intro',
+  retroActionsSection: 'retro-actions-section',
 } as const;

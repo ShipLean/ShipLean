@@ -236,4 +236,6 @@ public static class RetrosTestIds
     public const string RetroActionUnassigned = "retro-action-unassigned";
     public const string RetroActionImpactPending = "retro-action-impact-pending";
     public const string RetroImpactHint = "retro-impact-hint";
+    public const string RetroImpactIntro = "retro-impact-intro";
+    public const string RetroActionsSection = "retro-actions-section";
 }

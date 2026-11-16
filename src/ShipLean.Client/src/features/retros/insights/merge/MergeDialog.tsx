@@ -56,7 +56,7 @@ export function MergeDialog({
       type="button"
       data-testid={ids.retroMergeSave}
       disabled={!ready || merge.isPending}
-      className="h-[var(--touch-target)] cursor-pointer rounded-control border border-signal bg-signal px-3 text-[length:var(--text-base)] font-semibold text-signal-ink disabled:cursor-default disabled:opacity-50"
+      className="btn-signal h-[var(--touch-target)]"
       onClick={() => merge.mutate()}
     >
       Merge
@@ -98,7 +98,7 @@ export function MergeDialog({
         {options.map((o) => (
           <label
             key={o.theme.id}
-            className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-10"
+            className="flex items-center gap-2 text-[length:var(--text-sm)] has-[:disabled]:text-ink-muted touch:min-h-10"
           >
             <input
               type="checkbox"
