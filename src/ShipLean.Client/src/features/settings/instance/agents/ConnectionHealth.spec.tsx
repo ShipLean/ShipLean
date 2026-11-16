@@ -5,6 +5,16 @@ import { failingConnection, healthyConnection, testReached, testUnreachable } fr
 import { ConnectionHealth } from './ConnectionHealth';
 import type { AgentConnectionDto, AgentConnectionHealth, AgentConnectionTest } from './model';
 
+// The colour a theme token resolves to, so a dead utility class (which falls back to body ink) turns the test red.
+async function tokenColour(page: Page, token: string) {
+  return page.evaluate((name) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${name})`;
+    document.body.append(probe);
+    return getComputedStyle(probe).color;
+  }, token);
+}
+
 const relay: AgentConnectionDto = {
   id: 'c-1',
   type: 'linear-compatible',
@@ -83,7 +93,9 @@ test('ConnectionHealth_WhenTesting_ShouldBeBusyAndDisabledThenShowTheAnswer', as
   await expect(view.getByTestId(ids.agentsConnectionTestResult)).toHaveCount(0);
 
   server.release();
-  await expect(view.getByTestId(ids.agentsConnectionTestResult)).toHaveText('Answered 200 OK');
+  const answered = view.getByTestId(ids.agentsConnectionTestResult);
+  await expect(answered).toHaveText('Answered 200 OK');
+  await expect(answered).toHaveCSS('color', await tokenColour(page, '--color-ok'));
   await expect(button).toBeEnabled();
   expect(server.calls).toEqual(['POST']);
 });
@@ -101,6 +113,8 @@ test('ConnectionHealth_WhenTheReceiverAnswersBadGateway_ShouldShowTheStatusAsRea
   const result = view.getByTestId(ids.agentsConnectionTestResult);
   await expect(result).toHaveText('Answered 502 BadGateway');
   await expect(result).not.toContainText('Connection OK');
+  // Reached, but not a 2xx: neither the success colour nor the alert colour, just the muted ink.
+  await expect(result).toHaveCSS('color', await tokenColour(page, '--color-muted'));
 });
 
 test('ConnectionHealth_WhenNothingAnswers_ShouldShowTheError', async ({ mount, page }) => {
@@ -110,9 +124,9 @@ test('ConnectionHealth_WhenNothingAnswers_ShouldShowTheError', async ({ mount, p
 
   await view.getByTestId(ids.agentsConnectionTest).click();
 
-  await expect(view.getByTestId(ids.agentsConnectionTestResult)).toHaveText(
-    'No answer within 5 seconds.',
-  );
+  const result = view.getByTestId(ids.agentsConnectionTestResult);
+  await expect(result).toHaveText('No answer within 5 seconds.');
+  await expect(result).toHaveCSS('color', await tokenColour(page, '--color-danger'));
 });
 
 test('ConnectionHealth_WhenTheConnectionIsArchived_ShouldNotOfferTheTest', async ({

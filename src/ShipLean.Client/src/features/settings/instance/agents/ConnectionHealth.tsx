@@ -34,7 +34,7 @@ export function ConnectionHealth({ connection }: { connection: AgentConnectionDt
             <span
               role={test.data.reached ? 'status' : 'alert'}
               data-testid={ids.agentsConnectionTestResult}
-              className={test.data.reached ? 'text-good' : 'text-alert'}
+              className={answerClass(test.data)}
             >
               {testAnswerText(test.data)}
             </span>
@@ -48,6 +48,13 @@ export function ConnectionHealth({ connection }: { connection: AgentConnectionDt
       )}
     </div>
   );
+}
+
+// Success colour only for a 2xx. Any other answer reached the receiver, which is neither good nor a failure (D6), so it is muted.
+function answerClass(result: AgentConnectionTest): string {
+  if (!result.reached) return 'min-w-0 break-words text-alert';
+  const ok = result.httpStatus !== null && result.httpStatus >= 200 && result.httpStatus < 300;
+  return ok ? 'min-w-0 break-words text-good' : 'min-w-0 break-words text-ink-muted';
 }
 
 function HealthLines({ health }: { health: AgentConnectionHealth }) {
