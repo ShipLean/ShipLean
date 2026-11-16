@@ -132,7 +132,7 @@ export function StateMenu({
         ref={sheetList}
         {...listProps}
         aria-describedby={subtitle ? subtitleId : undefined}
-        className="group/list grid gap-1 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-signal"
+        className="group/list grid gap-1 rounded-control focus-visible:outline-2 focus-visible:outline-signal"
       >
         {subtitle ? (
           <p id={subtitleId} className="m-0 px-2 text-[length:var(--text-sm)] text-ink-muted">

@@ -111,6 +111,8 @@ for (const theme of THEMES) {
     page,
   }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    // A tap first, as a phone opens the sheet: the list's focus is then not keyboard focus, so no highlight is drawn.
+    await page.touchscreen.tap(5, 5);
     await mount(
       <Sheet open title="State" onClose={() => undefined}>
         <StateMenu
