@@ -1,5 +1,6 @@
 using System.Globalization;
 using Agoda.IoC.Core;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Application.Features.Inspection.Settings;
 using ShipLean.Contracts.Errors;
 using ShipLean.Core;
@@ -171,8 +172,25 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         {
             return (settings, run, null, ordered);
         }
-        // The store answers null for an expired or unknown run and also when it is down; an outage must not read as "no longer available".
+        // The store answers null for an expired or unknown run, and also when a read fails or times out; only a run past retention reads as expired.
         var listed = ordered.FirstOrDefault(r => r.RunId == runId);
+        var all = ordered;
+        if (listed is null && found.Reachable)
+        {
+            // The listing window stops at MaxSearchDays, but an expired run ended before retention: look again, wider, for this item only.
+            var widest = time.GetUtcNow().AddDays(-(gate.Instance.RetentionDays + ClickHouseViewSql.ExpiredKeepDays));
+            var from = item.CreatedAt > widest ? item.CreatedAt : widest;
+            if (from < window.From)
+            {
+                var wider = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, from, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+                listed = wider.Runs.FirstOrDefault(r => r.RunId == runId);
+                found = wider.Reachable ? found : wider;
+                if (listed is not null)
+                {
+                    all = wider.Runs.OrderBy(r => r.StartedAt).ToList();
+                }
+            }
+        }
         var health = listed is null ? null : await source.CheckAsync(ct);
         if (!found.Reachable || health is { Reachable: false })
         {
@@ -180,8 +198,16 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
             var why = problem is null ? "" : ": " + problem;
             throw ApiException.Conflict($"The trace store is unreachable{why}. The run may still exist; try again shortly.");
         }
-        // Expired (D31): listed for the item, and the store is reachable, yet its data is gone. Anything else is not found.
-        return listed is null ? throw ApiException.NotFound("Run not found.") : (settings, null, listed, ordered);
+        if (listed is null)
+        {
+            throw ApiException.NotFound("Run not found.");
+        }
+        // Expired (D31): listed for the item and ended before the store's retention. A listed run that ended recently was a failed read.
+        if (listed.EndedAt >= time.GetUtcNow().AddDays(-gate.Instance.RetentionDays))
+        {
+            throw ApiException.Conflict("The store didn't return this run. It may still exist; try again shortly.");
+        }
+        return (settings, null, listed, all);
     }
 
     private RunPageDto ExpiredPage(RunSummary summary, string itemKey, IReadOnlyList<RunSummary> runs)
