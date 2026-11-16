@@ -45,20 +45,14 @@
               "notNeeded": null,
               "supporters": [],
               "supportedByMe": false
-            }
-          ]
-        },
-        {
-          "theme": {"id": "00000010-0000-4000-8001-000000000007", "name": "Slices sized well", "tone": "good"},
-          "recurring": false,
-          "points": [
+            },
             {
               "id": "00000011-0000-4000-8001-000000000007",
               "retroId": "00000012-0000-4000-8001-000000000305",
               "category": "wentWell",
               "text": "Every slice fit one context window; no lane needed a handoff mid-task.",
               "rootCause": null,
-              "theme": {"id": "00000010-0000-4000-8001-000000000007", "name": "Slices sized well", "tone": "good"},
+              "theme": {"id": "00000010-0000-4000-8001-000000000006", "name": "Contracts first worked", "tone": "good"},
               "themeSetBy": "auto",
               "author": {
                 "user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"},
@@ -480,7 +474,7 @@
           "category": "wentWell",
           "text": "Every slice fit one context window; no lane needed a handoff mid-task.",
           "rootCause": null,
-          "theme": {"id": "00000010-0000-4000-8001-000000000007", "name": "Slices sized well", "tone": "good"},
+          "theme": {"id": "00000010-0000-4000-8001-000000000006", "name": "Contracts first worked", "tone": "good"},
           "themeSetBy": "auto",
           "author": {
             "user": {"id": "00000001-0000-4000-8000-000000000002", "name": "Priya Shah", "initials": "PS", "avatarColour": "#2f7fd8", "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"},
