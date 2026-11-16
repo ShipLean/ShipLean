@@ -12,6 +12,7 @@ export function FilterPanel({
   error,
   lists,
   onClose,
+  count,
 }: {
   criteria: CriteriaJson;
   onChange: (criteria: CriteriaJson) => void;
@@ -20,6 +21,8 @@ export function FilterPanel({
   lists: PickLists;
   // Puts the panel away. At 900px and below it is what lets the filter be a bottom sheet; without it the panel stays inline.
   onClose?: () => void;
+  // At 900px and below: the sheet's footer count (shown and whole).
+  count?: { shown: number; whole: number };
 }) {
   const { touch } = useTouchShell();
   if (touch && onClose) {
@@ -30,6 +33,7 @@ export function FilterPanel({
         error={error}
         lists={lists}
         onClose={onClose}
+        count={count}
       />
     );
   }

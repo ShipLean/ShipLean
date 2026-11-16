@@ -13,10 +13,12 @@ function TouchListHandle({
   row,
   onDrop,
   onLiftedChange,
+  onOver,
 }: {
   row: BacklogRowDto;
   onDrop: (rowId: string, targetId: string | null) => void;
   onLiftedChange: (lifted: boolean) => void;
+  onOver: (targetId: string | null) => void;
 }) {
   return (
     <TouchHandle
@@ -24,6 +26,7 @@ function TouchListHandle({
       rank={row.rank ?? ''}
       onDrop={(target) => onDrop(row.id, target)}
       onLiftedChange={onLiftedChange}
+      onOver={onOver}
       ghost={<TouchRowGhost row={row} />}
     />
   );
@@ -65,6 +68,8 @@ export function TouchRowList({
   const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
   useSelection(rowIds);
   const [liftedId, setLiftedId] = useState<string | null>(null);
+  // The row the finger is over: the lifted row lands just above it, so the insertion line sits there.
+  const [overId, setOverId] = useState<string | null>(null);
   const handleOf = (row: BacklogRowDto): ReactNode => {
     if (selecting) return <TouchSelectBox row={row} />;
     if (!handles) return undefined;
@@ -74,17 +79,39 @@ export function TouchRowList({
       <TouchListHandle
         row={row}
         onDrop={onHandleDrop}
-        onLiftedChange={(lifted) => setLiftedId(lifted ? row.id : null)}
+        // Every handle reports its own state after each render: a row that is not lifted must not clear another's lift.
+        onLiftedChange={(lifted) =>
+          setLiftedId((current) => {
+            if (lifted) return row.id;
+            return current === row.id ? null : current;
+          })
+        }
+        onOver={setOverId}
       />
     );
   };
+  // A lifted row that left the list (a teammate's change) never reports the end of its drag: ignore ids that are gone.
+  const lifted = liftedId !== null && rowIds.includes(liftedId) ? liftedId : null;
+  const over = overId !== null && rowIds.includes(overId) ? overId : null;
+  // The line sits above the row the finger is over, except on the lifted row itself and the row just below it, where a
+  // drop changes nothing.
+  const liftedIndex = lifted === null ? -1 : rowIds.indexOf(lifted);
+  const showsLine = (id: string, index: number) =>
+    lifted !== null && over === id && id !== lifted && index !== liftedIndex + 1;
   let emptyText = `Nothing matches "${searched}"`;
   if (searched === '') emptyText = filtered ? 'Nothing matches this filter' : 'Nothing to show';
   return (
     <div data-testid={ids.touchRowList} className="min-w-0 flex-1">
       {addRow}
-      {rows.map((row) => (
-        <div key={row.id} className={liftedId === row.id ? 'opacity-40' : ''}>
+      {rows.map((row, index) => (
+        <div key={row.id} className={`relative ${lifted === row.id ? 'opacity-40' : ''}`}>
+          {showsLine(row.id, index) ? (
+            <div
+              data-testid={ids.touchDropLine}
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 bg-signal before:absolute before:-top-[3px] before:left-1.5 before:size-2 before:rounded-full before:bg-signal"
+            />
+          ) : null}
           <TouchRow
             row={row}
             projectKey={projectKey}

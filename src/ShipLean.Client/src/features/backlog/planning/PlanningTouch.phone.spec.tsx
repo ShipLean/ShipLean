@@ -43,10 +43,7 @@ test('TouchSprintBlock_WhenOverCapacity_ShouldShowOver', async ({ mount, page })
   ).toBe(0);
 });
 
-test('TouchSprintBlock_WhenMoreTapped_ShouldOfferAddCapacityOpenSprint', async ({
-  mount,
-  page,
-}) => {
+test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({ mount, page }) => {
   await stubBacklog(page, planningView(), { saved });
   await mount(<PlanningMode project={PROJECT} />, route);
   // Nothing of the desktop header is left in the block.
@@ -56,7 +53,7 @@ test('TouchSprintBlock_WhenMoreTapped_ShouldOfferAddCapacityOpenSprint', async (
   await section(page, 'Sprint 25').getByTestId(touchTestIds.moreButton).tap();
   await expect(page.locator(actionRow('add'))).toHaveText('+ Add');
   await expect(page.locator(actionRow('capacity'))).toHaveText('Capacity');
-  await expect(page.locator(actionRow('open-sprint'))).toHaveCount(0);
+  await expect(page.locator(actionRow('open-sprint'))).toHaveText('Open sprint');
   await page.getByTestId(touchTestIds.sheetClose).tap();
 
   await section(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
@@ -64,6 +61,26 @@ test('TouchSprintBlock_WhenMoreTapped_ShouldOfferAddCapacityOpenSprint', async (
   await expect(page.locator(actionRow('capacity'))).toHaveCount(0);
   await page.locator(actionRow('add')).tap();
   await expect(page.getByTestId(ids.addRow)).toBeVisible();
+});
+
+test('PlanningAddInSection_AtTouch_ShouldUseASegmentedSwitchHelpLineAndClose', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await section(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
+  await page.locator(actionRow('add')).tap();
+
+  const switchButtons = page.getByTestId(ids.addRow).getByTestId(ids.addType);
+  await expect(switchButtons).toHaveText(['Story', 'Bug']);
+  await expect(switchButtons.first()).toHaveAttribute('aria-pressed', 'true');
+  await switchButtons.nth(1).tap();
+  await expect(switchButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
 });
 
 test('PullLine_WhenUpTapped_ShouldMoveOneItem', async ({ mount, page }) => {
@@ -91,9 +108,10 @@ test('PlanningScreen_WhenTouchMoreTapped_ShouldOfferOverrideVelocityAndCreateSpr
   await mount(<PlanningMode project={PROJECT} />, route);
 
   await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.locator(actionRow('override-velocity'))).toHaveText('Override velocity');
+  await expect(page.locator(actionRow('override-velocity'))).toContainText('Override velocity');
   await expect(page.locator(actionRow('create-sprint'))).toHaveText('Create sprint');
-  await expect(page.getByTestId(ids.planningForecastToggle)).toBeVisible();
+  await expect(page.locator(actionRow('override-velocity'))).toContainText('21');
+  await expect(page.getByTestId(ids.planningForecastToggle)).toHaveCount(0);
 
   await page.locator(actionRow('override-velocity')).tap();
   await page.getByTestId(ids.planningOverrideInput).fill('30');
@@ -158,4 +176,48 @@ test('PlanningTouch_WhenRowLiftedOverSprintHeader_ShouldLightItAndMoveOnDrop', a
   await expect.poll(() => server.patches.length).toBe(1);
   expect(server.patches[0].body).toMatchObject({ changes: { sprint: { value: 'sp25' } } });
   expect(server.reorders).toHaveLength(0);
+});
+
+test('PlanningMore_Forecast_ShouldToggleWithoutClosing', async ({ mount, page }) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.planningVelocity)).toBeVisible();
+
+  await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
+  const forecast = page.locator(
+    `[data-testid="${touchTestIds.actionSheetToggle}"][data-action-id="forecast"]`,
+  );
+  await expect(forecast).toHaveAttribute('aria-checked', 'true');
+  await forecast.tap();
+  // The switch flips and the sheet stays open; the forecast line leaves the Backlog header behind it.
+  await expect(forecast).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByTestId(touchTestIds.sheetClose)).toBeVisible();
+  await expect(page.locator(actionRow('override-velocity'))).toHaveCount(0);
+});
+
+test('PlanningMore_AddMany_ShouldBeASheetAction', async ({ mount, page }) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
+  await expect(page.locator(actionRow('add-many'))).toContainText('Add many');
+  await expect(page.getByTestId(ids.addMany)).toHaveCount(0);
+});
+
+test('PlanningTouchRow_InItsOwnSprintSection_ShouldHideTheSprintChipAndStackPointsOverTheAvatar', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  // SHIP-158 is the Sprint 25 row.
+  const row = page.locator(`[data-testid="${ids.row}"][data-key="SHIP-158"]`);
+  await expect(row).toBeVisible();
+  await expect(row.getByTestId(ids.sprintChip)).toHaveCount(0);
+  const points = await row.getByTestId(ids.points).boundingBox();
+  const avatar = await row.getByTestId(ids.assignee).boundingBox();
+  expect(points).not.toBeNull();
+  expect(avatar).not.toBeNull();
+  expect(points!.y + points!.height).toBeLessThanOrEqual(avatar!.y + 1);
 });

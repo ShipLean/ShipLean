@@ -83,11 +83,12 @@ for (const theme of THEMES) {
       review: review({ unestimated: [ROWS[1].id, ROWS[2].id] }),
     });
     await mount(<ListMode project={PROJECT} />, route);
-    await page.getByTestId(ids.planCheck).and(page.locator('[data-check="unestimated"]')).tap();
-    const banner = page.getByTestId(ids.queueBanner);
-    await expect(banner.getByTestId(ids.queueStepKey)).toHaveText('SHIP-160');
+    await page.getByTestId(ids.notEstimatedEstimate).tap();
+    const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.getByTestId(ids.queueStepKey)).toHaveText('SHIP-160');
 
-    await expect(banner).toHaveScreenshot(`backlogs-queue.${theme}.png`, {
+    // The whole page, as the design: the list behind the Estimate sheet keeps every row (SHIP-1991).
+    await expect(page).toHaveScreenshot(`backlogs-queue.${theme}.png`, {
       animations: 'disabled',
     });
   });
