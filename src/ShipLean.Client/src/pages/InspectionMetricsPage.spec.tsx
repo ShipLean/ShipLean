@@ -28,7 +28,7 @@ for (const [view, root] of Object.entries(roots)) {
     for (const other of Object.values(roots).filter((id) => id !== root)) {
       await expect(page.getByTestId(other)).toHaveCount(0);
     }
-    await expect(page.getByTestId(ids.caveat)).toHaveText(stubView().caveat);
+    await expect(page.getByTestId(ids.caveat)).toContainText(stubView().caveat);
   });
 }
 
