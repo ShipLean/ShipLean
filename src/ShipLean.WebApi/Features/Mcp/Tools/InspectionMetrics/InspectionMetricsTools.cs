@@ -14,7 +14,8 @@ using ShipLean.WebApi.Features.Mcp.Transport;
 namespace ShipLean.WebApi.Features.Mcp.Tools.InspectionMetrics;
 
 // inspection_metrics (K4): the Inspection page's view model for the same query, serialised with InspectionMetricsJson.McpOptions
-// (snake_case names and enum values). It has no logic of its own: IInspectionMetrics checks access and validates the query.
+// (snake_case names and enum values) plus open_url. The view already carries `project` ({id, key, name}), so the envelope's own
+// project key is that object and not a second string. It has no logic of its own: IInspectionMetrics checks access and validates the query.
 [McpServerToolType]
 internal sealed class InspectionMetricsTools(ProjectResolver projects, IInspectionMetrics metrics, IAgentAddresses addresses)
 {
@@ -34,7 +35,6 @@ internal sealed class InspectionMetricsTools(ProjectResolver projects, IInspecti
         var body = JsonSerializer.SerializeToNode(view, InspectionMetricsJson.McpOptions)!.AsObject();
         var result = new JsonObject
         {
-            ["project"] = resolved.Key,
             ["open_url"] = issuer.TrimEnd('/') + $"/p/{Uri.EscapeDataString(resolved.Key)}/inspection",
         };
         foreach (var property in body.ToList())

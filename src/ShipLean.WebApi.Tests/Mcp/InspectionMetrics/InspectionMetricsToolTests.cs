@@ -25,10 +25,9 @@ public class InspectionMetricsToolTests : McpFixture
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
         var body = JsonNode.Parse(reply.Structured().GetRawText()).ShouldNotBeNull().AsObject();
-        body["project"]!.GetValue<string>().ShouldBe("SHIP");
+        body["project"]!["key"]!.GetValue<string>().ShouldBe("SHIP");
         body["open_url"]!.GetValue<string>().ShouldEndWith("/p/SHIP/inspection");
         body.ContainsKey("generated_at").ShouldBeTrue();
-        body.Remove("project");
         body.Remove("open_url");
         var fromTool = body.Deserialize<InspectionMetricsViewDto>(InspectionMetricsJson.McpOptions)!;
 
