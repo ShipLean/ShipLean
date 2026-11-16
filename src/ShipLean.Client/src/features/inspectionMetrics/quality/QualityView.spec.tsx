@@ -187,6 +187,51 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.getByTestId(ids.quality)).toBeVisible();
     });
 
+    test(`OverviewQualityCard_WhenEscapingChanged_ShouldShowTheServersChangeChip_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      const view = stubView();
+      const finished = view.headline.finished!;
+      await open(
+        mount,
+        page,
+        {
+          ...view,
+          headline: {
+            ...view.headline,
+            finished: { ...finished, quality: { ...finished.quality!, changePctVsPrevious: 50 } },
+          },
+        },
+        '/p/SHIP/inspection',
+      );
+      const card = page.getByTestId(ids.overviewQualityCard);
+      await expect(card.getByTestId(ids.overviewQualityCardChange)).toHaveText('▲ 50%');
+    });
+
+    test(`OverviewQualityCard_WhenNoSprintBeforeToCompare_ShouldShowNoChip_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      const view = stubView();
+      const finished = view.headline.finished!;
+      await open(
+        mount,
+        page,
+        {
+          ...view,
+          headline: {
+            ...view.headline,
+            finished: { ...finished, quality: { ...finished.quality!, changePctVsPrevious: null } },
+          },
+        },
+        '/p/SHIP/inspection',
+      );
+      const card = page.getByTestId(ids.overviewQualityCard);
+      await expect(card.getByTestId(ids.overviewQualityCardValue)).toBeVisible();
+      await expect(card.getByTestId(ids.overviewQualityCardChange)).toHaveCount(0);
+    });
+
     test(`OverviewQualityCard_WhenTheProjectHasNoBugs_ShouldSaySo_${theme}`, async ({
       mount,
       page,

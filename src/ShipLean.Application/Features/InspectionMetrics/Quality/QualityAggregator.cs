@@ -63,21 +63,29 @@ public sealed class QualityAggregator(ITaskLeadTimeMeasure measure) : IQualityAg
         InspectionQualityStatsDto Stats(IReadOnlyCollection<Guid> periodIds)
             => StatsOf(BugsIn(periodIds), prSprints.Count(periodIds.Contains), facts.SeverityWeights);
 
+        // One sprint's numbers, with the change in escaping bugs against the started sprint before it.
+        InspectionQualityStatsDto SprintStats(Guid periodId)
+        {
+            var stats = Stats([periodId]);
+            var previous = started.FirstOrDefault(sprint => sprint.Id == periodId) is { } sprint ? InspectionPeriods.Previous(started, sprint) : null;
+            return previous is null ? stats : stats with { ChangePctVsPrevious = ChangePct(stats.Escaping, Stats([previous.Id]).Escaping) };
+        }
+
         var headline = view.Headline;
         Guid[] shown = [.. window.Shown.Select(sprint => sprint.Id)];
         return view with
         {
             Headline = headline with
             {
-                Finished = headline.Finished is { } finished ? finished with { Quality = Stats([finished.PeriodId]) } : null,
-                SoFar = headline.SoFar is { } soFar ? soFar with { Quality = Stats([soFar.PeriodId]) } : null,
+                Finished = headline.Finished is { } finished ? finished with { Quality = SprintStats(finished.PeriodId) } : null,
+                SoFar = headline.SoFar is { } soFar ? soFar with { Quality = SprintStats(soFar.PeriodId) } : null,
                 QuarterToDate = headline.QuarterToDate is { } toDate ? toDate with { Quality = Stats(toDate.PeriodIds) } : null,
                 LastQuarter = headline.LastQuarter is { } lastQuarter ? lastQuarter with { Quality = Stats(lastQuarter.PeriodIds) } : null,
             },
-            Periods = [.. view.Periods.Select(period => period with { Quality = Stats([period.Id]) })],
+            Periods = [.. view.Periods.Select(period => period with { Quality = SprintStats(period.Id) })],
             Quarters = [.. view.Quarters.Select(quarter => quarter with { Quality = Stats(quarter.PeriodIds) })],
             PeriodDetail = view.PeriodDetail is { } detail
-                ? detail with { Quality = Stats([detail.PeriodId]), Bugs = BugsIn([detail.PeriodId]) }
+                ? detail with { Quality = SprintStats(detail.PeriodId), Bugs = BugsIn([detail.PeriodId]) }
                 : null,
             Quality = Stats(shown),
             Bugs = BugsIn(shown),
@@ -103,6 +111,11 @@ public sealed class QualityAggregator(ITaskLeadTimeMeasure measure) : IQualityAg
                 escaping.Count(bug => bug.Severity == 2),
                 escaping.Count(bug => bug.Severity == 3),
                 escaping.Count(bug => bug.Severity == 4),
-                escaping.Count(bug => bug.Severity is not (1 or 2 or 3 or 4))));
+                escaping.Count(bug => bug.Severity is not (1 or 2 or 3 or 4))),
+            ChangePctVsPrevious: null);
     }
+
+    // The whole-percent change in escaping bugs, as lead time's change; null when the sprint before had none.
+    private static int? ChangePct(int escaping, int before)
+        => before == 0 ? null : (int)Math.Round((escaping - before) * PerHundred / before, MidpointRounding.AwayFromZero);
 }

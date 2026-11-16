@@ -555,6 +555,8 @@ export interface InspectionSeverityCountsDto {
 /**
  * Escaping bugs over a period, quarter or the range (SHIP-1398 QK3): every Bug not found before release, in the sprint it was
  * filed (or its cause's sprint once it has a Caused by link). mergedPrs and per100Prs are null when no linked PR merged.
+ * changePctVsPrevious is the whole-percent change in escaping against the sprint before, for a single sprint only; null for a
+ * quarter, the range, the first sprint and when the sprint before had none.
  */
 export interface InspectionQualityStatsDto {
   escaping: number;
@@ -563,6 +565,7 @@ export interface InspectionQualityStatsDto {
   mergedPrs: number | null;
   per100Prs: number | null;
   escapingBySeverity: InspectionSeverityCountsDto;
+  changePctVsPrevious: number | null;
 }
 
 /**
