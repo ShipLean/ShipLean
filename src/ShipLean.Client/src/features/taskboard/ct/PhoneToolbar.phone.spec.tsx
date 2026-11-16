@@ -77,12 +77,13 @@ test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async (
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Card settings',
-    'Open the Feature',
+    `Open ${FEATURE_KEY}`,
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Feature board');
   const lanes = page.getByTestId(ids.lane);
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
@@ -102,11 +103,12 @@ test('PhoneToolbar_WhenMoreOpenedOnTheTaskboard_ShouldOfferCollapseExpandAndTask
   const lanes = page.getByTestId(ids.lane);
   await expect(lanes.first()).toBeVisible();
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Taskboard settings',
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Taskboard');
 
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');

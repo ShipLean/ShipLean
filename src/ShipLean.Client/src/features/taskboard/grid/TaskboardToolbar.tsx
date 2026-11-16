@@ -58,10 +58,10 @@ export function TaskboardToolbar({
       <button
         type="button"
         data-testid={ids.filterButton}
-        className={`btn-ghost hidden gap-1.5 touch:inline-flex touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)] ${faces.size > 0 ? 'border-signal text-ink' : ''}`}
+        className={`btn-ghost hidden gap-1.5 touch:inline-flex touch:px-2 touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)] ${faces.size > 0 ? 'border-signal text-ink' : ''}`}
         onClick={() => setFilterOpen(true)}
       >
-        <FunnelIcon />
+        {faces.size === 0 ? <FunnelIcon /> : null}
         {faces.size > 0 ? (
           <span data-testid={ids.filterFaces} className="flex -space-x-1">
             {[...faces].slice(0, 3).map((id) => (
@@ -93,7 +93,7 @@ export function TaskboardToolbar({
       <button
         type="button"
         data-testid={ids.addStory}
-        className="btn-signal touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+        className="btn-signal whitespace-nowrap touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
         onClick={onAddStory}
       >
         <span className="touch:hidden">+ Add story or bug</span>
