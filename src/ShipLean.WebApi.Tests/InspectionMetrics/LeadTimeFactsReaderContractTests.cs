@@ -89,15 +89,14 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
         (task?.ParentKey, task?.ParentType, task?.FeatureKey, task?.AssigneeId, task?.Title, task?.StateName)
             .ShouldBe((_story, InspectionParentType.Story, _feature, SeedIds.Users.Joel, _title, _state));
         _facts.People.ContainsKey(SeedIds.Users.Joel).ShouldBeTrue();
-        task?.AssigneeName.ShouldNotBeNullOrWhiteSpace();
-        task?.AssigneeName.ShouldBe(_facts.People[SeedIds.Users.Joel]);
+        _facts.Tasks.Where(t => t.Key == _task).Select(t => t.AssigneeName).ShouldBe([_facts.People.GetValueOrDefault(SeedIds.Users.Joel)]);
     }
 
     // Mutation: take the agent from the task's last In-progress move (Cursor) instead of its first (Claude Code).
     [Test]
     public void Read_WhenTaskStartedByAnAgent_ShouldReturnTheAgentOfTheFirstInProgressMoveTurnedGreenByB1()
     {
-        _facts.Tasks.SingleOrDefault(t => t.Key == _task)?.AgentName.ShouldBe("Claude Code");
+        _facts.Tasks.Where(t => t.Key == _task).Select(t => t.AgentName).ShouldBe(["Claude Code"]);
     }
 
     // Mutation: take the revision's creation time as the move's time.
