@@ -6,7 +6,7 @@
  *   - the sprint tabs on their own row, the current one underlined; no toolbar row, the tab has no other controls
  *   - the three numbers as one row of tiles under the tabs, as on the Sprint backlog (P7)
  *   - the status band stacks: chip, message, the line under it, the BAU item as its own row, the action full width (P2);
- *     Requested has no action, Ready's action is Remake demo (SHIP-1908)
+ *     Requested offers Create demo, Ready's action is Remake demo, as built (SHIP-1908)
  *   - Ready: player, YouTube line or notice, facts in two columns, Chapters, Features covered, Script (P3, P4)
  * Above 900px nothing changes; ?notouch shows the desktop page at any width.
  * Review states (add ?shot for screenshots), on top of the page's own ?state=:
