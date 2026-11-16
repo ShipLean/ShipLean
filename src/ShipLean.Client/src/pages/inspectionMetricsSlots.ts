@@ -9,7 +9,8 @@ import {
 import type { SetSearchParams } from './settingsDialogProps';
 
 // Inspection mounts one slot, the view the address names (overview when absent or unknown). A view's change to the query
-// keeps the open item (`item`) and replaces the history entry.
+// keeps the open item (`item`). A new view or sprint is a new history entry, so Back undoes a drill-down; anything else
+// (range, split, the selected task, the tab) replaces the current one.
 export function inspectionMetricsSlots(
   project: ProjectDto,
   view: InspectionMetricsViewDto,
@@ -22,10 +23,11 @@ export function inspectionMetricsSlots(
     view,
     query,
     onQueryChange: (patch) => {
-      const next = queryToSearch({ ...query, ...patch });
+      const merged = { ...query, ...patch };
+      const next = queryToSearch(merged);
       const item = params.get('item');
       if (item !== null) next.set('item', item);
-      setParams(next, { replace: true });
+      setParams(next, { replace: merged.view === query.view && merged.period === query.period });
     },
   };
   return { [query.view]: props };

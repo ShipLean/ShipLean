@@ -358,7 +358,7 @@ test('inspectionMetricsSlots_WhenViewMissingOrUnknown_ShouldMountOverview', () =
   ).toEqual(['overview']);
 });
 
-test('inspectionMetricsSlots_WhenQueryChanged_ShouldWriteTheAddressKeepingTheItemAndReplacing', () => {
+test('inspectionMetricsSlots_WhenViewChanged_ShouldWriteTheAddressKeepingTheItemAsANewEntry', () => {
   const setParams = vi.fn();
   const slots = inspectionMetricsSlots(
     project,
@@ -369,5 +369,24 @@ test('inspectionMetricsSlots_WhenQueryChanged_ShouldWriteTheAddressKeepingTheIte
   slots.leadtime?.onQueryChange({ view: 'period', period: 's-23', select: 'SHIP-194' });
   const [next, options] = setParams.mock.calls[0] as [URLSearchParams, { replace: boolean }];
   expect(next.toString()).toBe('view=period&cut=who&p=s-23&select=SHIP-194&item=SHIP-7');
-  expect(options).toEqual({ replace: true });
+  expect(options).toEqual({ replace: false });
+});
+
+test.each([
+  ['a new period', { period: 's-24' }, false],
+  ['a new view', { view: 'leadtime' }, false],
+  ['a selected task only', { select: 'SHIP-200' }, true],
+  ['a range and tab only', { range: 'all', tab: 'features' }, true],
+] as const)('inspectionMetricsSlots_WhenPatchIs_%s_ShouldReplace_%s', (_name, patch, replace) => {
+  const setParams = vi.fn();
+  const slots = inspectionMetricsSlots(
+    project,
+    metricsView,
+    new URLSearchParams('view=period&p=s-23&select=SHIP-194&item=SHIP-7'),
+    setParams,
+  );
+  slots.period?.onQueryChange(patch);
+  const [next, options] = setParams.mock.calls[0] as [URLSearchParams, { replace: boolean }];
+  expect(next.get('item')).toBe('SHIP-7');
+  expect(options).toEqual({ replace });
 });

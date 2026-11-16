@@ -12,9 +12,17 @@ import fixtureJson from '../../../../../ShipLean.TestSupport/DtoFixtures/views/i
 
 const fixture = fixtureJson as InspectionMetricsViewDto;
 
-/** The pinned view model with `patch` over its top-level fields (a fresh copy each call). */
+/**
+ * The pinned view model with `patch` over its top-level fields (a fresh copy each call). Its split is none (cuts null), as
+ * an address with no `cut` asks for; stubCut gives the split tables.
+ */
 export function stubView(patch: Partial<InspectionMetricsViewDto> = {}): InspectionMetricsViewDto {
-  return { ...(structuredClone(fixture) as InspectionMetricsViewDto), ...patch };
+  return {
+    ...(structuredClone(fixture) as InspectionMetricsViewDto),
+    cut: 'none',
+    cuts: null,
+    ...patch,
+  };
 }
 
 const noTasks: LeadTimeStatsDto = {
@@ -79,7 +87,7 @@ export function stubNoTasks(): InspectionMetricsViewDto {
 /** The split table by Feature (the fixture's rows) or by who (the same cells, one person and one agent). */
 export function stubCut(cut: Exclude<InspectionCut, 'none'>): InspectionMetricsViewDto {
   const view = stubView();
-  const rows = view.cuts ?? [];
+  const rows = structuredClone(fixture.cuts) ?? [];
   if (cut === 'feature') return { ...view, cut, cuts: rows };
   const who = [
     { key: 'Priya Shah', label: 'Priya Shah', agent: false },
@@ -131,14 +139,14 @@ export interface InspectionMetricsRequests {
  */
 export async function routeInspectionMetrics(
   page: Page,
-  answer: InspectionMetricsViewDto | { status: 404 | 500 } = stubView(),
+  answer: InspectionMetricsViewDto | { status: 400 | 404 | 500 } = stubView(),
 ): Promise<InspectionMetricsRequests> {
   const seen: InspectionMetricsRequests = { reads: [], usage: [] };
   await page.route('**/api/projects/*/inspection-metrics*', (route) => {
     const url = new URL(route.request().url());
     seen.reads.push(url.pathname + url.search);
     if ('status' in answer) {
-      const code = answer.status === 404 ? 'not_found' : 'internal_error';
+      const code = { 400: 'validation', 404: 'not_found', 500: 'internal_error' }[answer.status];
       return route.fulfill({ status: answer.status, json: { error: 'x', code } });
     }
     return route.fulfill({ json: answer });

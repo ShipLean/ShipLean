@@ -5,6 +5,7 @@ import {
   stubView,
 } from '../features/inspectionMetrics/ct/stubInspectionMetrics';
 import { inspectionMetricsTestIds as ids } from '../features/inspectionMetrics/testIds';
+import { AppRoutesWithGo, goTestId } from '../features/inspectionMetrics/ct/AppRoutesWithGo';
 import { stubProjectApi } from './pagesFixtures';
 
 const roots = {
@@ -98,4 +99,45 @@ test('InspectionMetricsPage_WhenViewChanges_ShouldPostViewedOncePerView', async 
     { path: 'inspection-metrics-viewed', body: { view: 'leadtime' } },
     { path: 'inspection-metrics-viewed', body: { view: 'overview' } },
   ]);
+});
+
+test('InspectionMetricsPage_WhenSelectChangesOnAPeriod_ShouldKeepThePeriodViewMounted', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await routeInspectionMetrics(page, stubView());
+  const reads: string[] = [];
+  // The first read answers; the one for the new task never does, so only placeholder data can keep the view up.
+  await page.route('**/api/projects/*/inspection-metrics*', (route) => {
+    const url = new URL(route.request().url());
+    reads.push(url.search);
+    return reads.length === 1 ? route.fulfill({ json: stubView() }) : undefined;
+  });
+  await mount(<AppRoutesWithGo to="/p/SHIP/inspection?view=period&p=s-23&select=SHIP-200" />, {
+    hooksConfig: { route: '/p/SHIP/inspection?view=period&p=s-23&select=SHIP-194' },
+  });
+  await expect(page.getByTestId(ids.period)).toBeAttached();
+
+  await page.getByTestId(goTestId).click();
+  await expect.poll(() => reads.length).toBe(2);
+  expect(reads[1]).toContain('select=SHIP-200');
+  await expect(page.getByTestId(ids.period)).toBeAttached();
+  await expect(page.getByTestId(ids.loading)).toHaveCount(0);
+});
+
+test('InspectionMetricsPage_WhenTheSprintIsNotTheProjects_ShouldOfferLeadTimeAndNoRetry', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await routeInspectionMetrics(page, { status: 400 });
+  await mount(<AppRoutes />, { hooksConfig: { route: '/p/SHIP/inspection?view=period&p=gone' } });
+
+  await expect(page.getByTestId(ids.error)).toBeVisible();
+  await expect(page.getByTestId(ids.errorRetry)).toHaveCount(0);
+  await expect(page.getByTestId(ids.periodBack)).toHaveAttribute(
+    'href',
+    '/p/SHIP/inspection?view=leadtime',
+  );
 });
