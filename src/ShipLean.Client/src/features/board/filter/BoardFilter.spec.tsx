@@ -204,7 +204,9 @@ test('BoardFilter_WhenOpened_ShouldReportTheOpeningOnceNotTheClosing', async ({ 
 
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toBeVisible();
-  await expect.poll(() => sent).toEqual([{ report: 'board-filter-opened', body: { level: 'stories' } }]);
+  await expect
+    .poll(() => sent)
+    .toEqual([{ report: 'board-filter-opened', body: { level: 'stories' } }]);
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toHaveCount(0);
 

@@ -154,7 +154,10 @@ test('BoardDrag_WhileOverACell_ShouldOutlineIt', async ({ mount, page }) => {
 
 // BACKLOG-21: over the end of another cell (below its last card, or in an empty one) that cell is outlined, and the cell the
 // card was lifted from is not.
-test('BoardDrag_WhileOverTheEndOfAnotherCell_ShouldOutlineThatCellOnly', async ({ mount, page }) => {
+test('BoardDrag_WhileOverTheEndOfAnotherCell_ShouldOutlineThatCellOnly', async ({
+  mount,
+  page,
+}) => {
   await page.clock.install({ time: 0 });
   await stubShell(page);
   await stubBoard(page, boardWithTwoNew());
