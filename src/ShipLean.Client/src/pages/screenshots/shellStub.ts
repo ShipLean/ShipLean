@@ -1,4 +1,4 @@
-import type { MeDto } from '@shiplean/core/api/me';
+import type { MeDto, TimeZoneChoicesDto } from '@shiplean/core/api/me';
 import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { meDto } from '../../features/auth/authFixtures';
@@ -72,6 +72,16 @@ export const SHELL_MEMBERS: MemberDto[] = Object.values(PEOPLE).map((user) => ({
   status: 'active',
 }));
 
+// GET /api/me/time-zones, what the profile's Time zone card lists (the server answers every IANA zone; a short list is enough).
+export const TIME_ZONES: TimeZoneChoicesDto = {
+  choices: [
+    { id: 'Europe/London', label: 'Europe/London (UTC+00:00)' },
+    { id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' },
+    { id: 'Asia/Singapore', label: 'Asia/Singapore (UTC+08:00)' },
+    { id: 'Australia/Sydney', label: 'Australia/Sydney (UTC+11:00)' },
+  ],
+};
+
 /** Each field replaces the default whole (an array is not merged); `me` and `project` are merged over the default. */
 export interface ShellOverrides {
   /** The signed-in caller (default: Priya Shah, a project admin). */
@@ -122,6 +132,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
         ? json({ key, json: preferences[key] })
         : route.fulfill({ status: 204 });
     }
+    if (path === '/api/me/time-zones') return json(TIME_ZONES);
     if (path === '/api/auth/instance') return json({ name: overrides.instanceName ?? 'Larkspur' });
     return json({ error: `Unstubbed ${path}`, code: 'internal_error' }, 500);
   });
