@@ -43,7 +43,11 @@ async function arrangeBacklog(page: Page) {
 }
 
 async function backlogReady(page: Page) {
-  await expect(page.getByTestId(backlogTestIds.row).first()).toBeVisible();
+  await expect(page.getByTestId(backlogTestIds.row)).toHaveCount(ROWS.length);
+  // The rows' ⋯ comes last; before it shows, the points and avatar sit further right, under the drawer's edge.
+  await expect(
+    page.getByTestId(backlogTestIds.row).last().getByTestId(touchTestIds.moreButton),
+  ).toBeVisible();
   await expect(page.getByTestId(realtimeTestIds.liveDot)).toHaveAttribute('data-state', 'offline');
 }
 
