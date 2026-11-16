@@ -92,6 +92,10 @@ export interface VelocityOverridePut {
 
 export interface BurndownPoint {
   date: string;
+  /** The day as the server prints it ("2 Nov"). */
+  label: string;
+  /** The day of the month ("2"), for the chart axis. */
+  day: string;
   remaining: number;
   ideal: number;
 }
@@ -102,6 +106,8 @@ export interface SprintMetricsDto {
   completed: number;
   remaining: number;
   burndown: BurndownPoint[];
+  /** Every working day of the sprint (yyyy-MM-dd, the sprint's UTC calendar days), the burndown's x-axis. */
+  workingDays: string[];
 }
 
 export interface VelocityEntryDto {

@@ -72,14 +72,19 @@ export const SHELL_MEMBERS: MemberDto[] = Object.values(PEOPLE).map((user) => ({
   status: 'active',
 }));
 
-// GET /api/me/time-zones, what the profile's Time zone card lists (the server answers every IANA zone; a short list is enough).
-export const TIME_ZONES: TimeZoneChoicesDto = {
+// The zones GET /api/me/time-zones answers, for the Profile Time zone panel.
+export const SHELL_TIME_ZONES: TimeZoneChoicesDto = {
   choices: [
     { id: 'Europe/London', label: 'Europe/London (UTC+00:00)' },
     { id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' },
-    { id: 'Asia/Singapore', label: 'Asia/Singapore (UTC+08:00)' },
-    { id: 'Australia/Sydney', label: 'Australia/Sydney (UTC+11:00)' },
+    { id: 'America/New_York', label: 'America/New_York (UTC-05:00)' },
   ],
+};
+
+/** The viewer's saved zone for shots that show the Profile Time zone panel. */
+export const SHELL_ZONE: Pick<MeDto, 'timeZone' | 'timeZoneLabel'> = {
+  timeZone: 'Asia/Bangkok',
+  timeZoneLabel: 'Asia/Bangkok (UTC+07:00)',
 };
 
 /** Each field replaces the default whole (an array is not merged); `me` and `project` are merged over the default. */
@@ -122,6 +127,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/me') return json(meDto(overrides.me));
+    if (path === '/api/me/time-zones') return json(SHELL_TIME_ZONES);
     if (path === '/api/projects') return json(projects);
     if (path === `/api/projects/by-key/${project.key}`) return json(project);
     if (path === `/api/projects/${project.id}/sprints`) return json(sprints);
@@ -132,7 +138,6 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
         ? json({ key, json: preferences[key] })
         : route.fulfill({ status: 204 });
     }
-    if (path === '/api/me/time-zones') return json(TIME_ZONES);
     if (path === '/api/auth/instance') return json({ name: overrides.instanceName ?? 'Larkspur' });
     return json({ error: `Unstubbed ${path}`, code: 'internal_error' }, 500);
   });

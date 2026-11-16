@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using ShipLean.Contracts.IssueIntake;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.IssueIntake.ShippedIn;
 
@@ -84,7 +85,8 @@ public static class ShippedInSection
         return check.Append('.').ToString();
     }
 
-    private static string Time(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture);
+    // Public GitHub issue posts have no viewer, so their times stay UTC and say so (SHIP-1702 D5).
+    private static string Time(DateTimeOffset at) => DisplayDate.Format(at);
 
     // A condition stays one list item: line breaks can't start a heading or a new block.
     private static string OneLine(string condition) => string.Join(' ', condition.Split(['\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries)).Trim();

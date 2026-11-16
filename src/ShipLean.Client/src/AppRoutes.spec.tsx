@@ -215,12 +215,14 @@ test('InstanceSettings_WhenOpened_ShouldLinkEveryTabAndMarkTheCurrentOne', async
     'Projects',
     'Integrations',
     'Analytics',
+    'Inspection',
     'Agents',
     'Backups',
   ]);
   await expect(tabs.nth(4)).toHaveAttribute('href', '/instance/analytics');
-  await expect(tabs.nth(5)).toHaveAttribute('href', '/instance/agents');
-  await expect(tabs.nth(6)).toHaveAttribute('href', '/instance/backups');
+  await expect(tabs.nth(5)).toHaveAttribute('href', '/instance/inspection');
+  await expect(tabs.nth(6)).toHaveAttribute('href', '/instance/agents');
+  await expect(tabs.nth(7)).toHaveAttribute('href', '/instance/backups');
   await expect(tabs.nth(1)).toHaveAttribute('aria-current', 'page');
 });
 

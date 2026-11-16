@@ -35,10 +35,11 @@ internal static class TimelineScaleBuilder
 
         var endHours = lens.HoursAt(DisplayDate.StartOfDay(last.AddDays(1), zone));
         var sprints = new List<TimelineSprintDto>();
+        // D8: a sprint runs on UTC days, so its band edges stay on UTC midnight; only the axis labels above use the viewer's zone.
         foreach (var sprint in facts.Sprints)
         {
-            var lo = Math.Max(0, lens.HoursAt(DisplayDate.StartOfDay(sprint.StartDate, zone)));
-            var hi = Math.Min(endHours, lens.HoursAt(DisplayDate.StartOfDay(sprint.EndDate.AddDays(1), zone)));
+            var lo = Math.Max(0, lens.HoursAt(DisplayDate.StartOfDay(sprint.StartDate, TimeZoneInfo.Utc)));
+            var hi = Math.Min(endHours, lens.HoursAt(DisplayDate.StartOfDay(sprint.EndDate.AddDays(1), TimeZoneInfo.Utc)));
             if (hi > lo)
             {
                 sprints.Add(new TimelineSprintDto(sprint.Name, lo, hi));

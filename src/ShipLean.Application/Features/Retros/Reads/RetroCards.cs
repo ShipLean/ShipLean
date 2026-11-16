@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.Retros.Reads;
 
 // Retros as cards. A person's point (a point of a retro whose role is person) can be archived; an agent's never can.
 // Recurring is false here, because the views that know the sprint history set it.
-public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, ICurrentUser currentUser) : IRetroCards
+public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, ICurrentUser currentUser, IViewerZone viewerZone) : IRetroCards
 {
     public async Task<IReadOnlyList<RetroCardDto>> LoadAsync(IReadOnlyList<Guid> retroIds, CancellationToken cancellationToken)
     {
@@ -24,6 +24,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, 
         var ids = retroIds.ToArray();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var today = SprintLabels.Today(clock);
+        var zone = viewerZone.Zone;
         var retros = (await connection.QueryAsync<RetroRow>(new CommandDefinition(RetroSql, new { ids }, cancellationToken: cancellationToken))).ToDictionary(row => row.Id);
         var points = (await connection.QueryAsync<PointRow>(new CommandDefinition(PointSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
         var pointIds = points.SelectMany(group => group).Select(row => row.Id).ToArray();
@@ -34,17 +35,17 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, 
         var sources = (await connection.QueryAsync<SourceRow>(new CommandDefinition(SourceSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
         var failures = (await connection.QueryAsync<FailureRow>(new CommandDefinition(FailureSql, new { ids }, cancellationToken: cancellationToken))).ToLookup(row => row.RetroId);
 
-        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], supporters, sources[id], failures[id], today, clock, callerId))];
+        return [.. retroIds.Where(retros.ContainsKey).Select(id => ToCard(retros[id], points[id], supporters, sources[id], failures[id], today, clock, zone, callerId))];
     }
 
-    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, ILookup<Guid, SupporterRow> supporters, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today, TimeProvider clock, Guid callerId)
+    private static RetroCardDto ToCard(RetroRow retro, IEnumerable<PointRow> points, ILookup<Guid, SupporterRow> supporters, IEnumerable<SourceRow> sources, IEnumerable<FailureRow> failures, DateOnly today, TimeProvider clock, TimeZoneInfo zone, Guid callerId)
     {
         var role = ParseEnum<RetroRole>(retro.Role);
         var workItem = retro.ItemId is { } itemId ? new RetroItemRefDto(itemId, retro.ItemKey!, ToTypeRef(retro.ItemType!), retro.ItemTitle!) : null;
         var sprint = ToSprint(retro.SprintId, retro.SprintName, retro.SprintStart, retro.SprintEnd, today);
         var author = new RetroAuthorDto(new UserRef(retro.UserId, retro.UserName, retro.UserInitials, retro.UserColour, retro.UserPhotoUrl), retro.AgentName, role);
         var isFeature = retro.ItemType == "feature";
-        var dtos = points.Select(point => ToPoint(point, supporters[point.Id], role, workItem, sprint, isFeature, today, clock, callerId)).ToList();
+        var dtos = points.Select(point => ToPoint(point, supporters[point.Id], role, workItem, sprint, isFeature, today, clock, zone, callerId)).ToList();
         var log = failures.ToList();
         var createdAt = new DateTimeOffset(DateTime.SpecifyKind(retro.CreatedAt, DateTimeKind.Utc));
         return new RetroCardDto(
@@ -54,7 +55,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, 
             author,
             retro.Partial,
             createdAt,
-            DisplayDate.Relative(createdAt, clock),
+            DisplayDate.Relative(createdAt, clock.GetUtcNow(), zone),
             [.. sources.Select(source => new RetroItemRefDto(source.ItemId, source.ItemKey, ToTypeRef(source.ItemType), source.ItemTitle))],
             dtos,
             new RetroFailureLogDto(
@@ -63,7 +64,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, 
                 [.. log.Where(row => row.Kind == "friction").Select(row => row.Text)]));
     }
 
-    private static RetroPointDto ToPoint(PointRow point, IEnumerable<SupporterRow> supporters, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today, TimeProvider clock, Guid callerId)
+    private static RetroPointDto ToPoint(PointRow point, IEnumerable<SupporterRow> supporters, RetroRole role, RetroItemRefDto? workItem, SprintRef? sprint, bool isFeature, DateOnly today, TimeProvider clock, TimeZoneInfo zone, Guid callerId)
     {
         var theme = point.ThemeId is { } themeId ? new RetroThemeRefDto(themeId, point.ThemeName!, ParseEnum<RetroTone>(point.ThemeTone!)) : null;
         RetroActionRefDto? action = null;
@@ -81,7 +82,7 @@ public sealed class RetroCards(NpgsqlDataSource dataSource, TimeProvider clock, 
         {
             var decider = new UserRef(point.DeciderId!.Value, point.DeciderName!, point.DeciderInitials!, point.DeciderColour!, point.DeciderPhotoUrl);
             var decidedAt = new DateTimeOffset(DateTime.SpecifyKind(point.DecidedAt!.Value, DateTimeKind.Utc));
-            notNeeded = new RetroNotNeededDto(point.NotNeededReason!, new RetroAuthorDto(decider, point.DecidedAgentName, point.DecidedAgentName is null ? RetroRole.Person : RetroRole.Conductor), DisplayDate.Relative(decidedAt, clock));
+            notNeeded = new RetroNotNeededDto(point.NotNeededReason!, new RetroAuthorDto(decider, point.DecidedAgentName, point.DecidedAgentName is null ? RetroRole.Person : RetroRole.Conductor), DisplayDate.Relative(decidedAt, clock.GetUtcNow(), zone));
         }
 
         var author = new RetroAuthorDto(new UserRef(point.UserId, point.UserName, point.UserInitials, point.UserColour, point.UserPhotoUrl), point.AgentName, role);

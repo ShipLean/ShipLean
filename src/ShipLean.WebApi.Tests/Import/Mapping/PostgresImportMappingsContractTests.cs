@@ -1,3 +1,4 @@
+using ShipLean.TestSupport.Identity;
 using Npgsql;
 using ShipLean.Application.Database;
 using ShipLean.Application.Fakes.Import;
@@ -63,7 +64,7 @@ public sealed class PostgresImportMappingsContractTests : ImportMappingsContract
         var connectionId = Guid.NewGuid();
         var connections = new InMemoryJiraConnections();
         connections.Arrange(connectionId, JiraWorld.Credentials);
-        var jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = SeedIds.Users.Joel }, directory);
+        var jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = SeedIds.Users.Joel }, directory, new FixedViewerZone());
         jobs.RegisterConnection(connectionId);
         _mappings = new ImportMappings(connections, new InMemoryJiraClient(JiraWorld.Credentials, JiraWorld.Data(issues, statuses)), jobs, new StateCatalog(_dataSource), directory);
 

@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 using ShipLean.Contracts.Errors;
@@ -6,7 +7,7 @@ using ShipLean.Contracts.Users;
 namespace ShipLean.Application.Fakes.Agents;
 
 // The stamp comes from IUserAccounts and the user's existence from IUserDirectory, so a user changed elsewhere is seen.
-public sealed class InMemoryAgentAuthorizations(InMemoryAgentStore store, IUserDirectory users, IUserAccounts accounts, TimeProvider clock) : IAgentAuthorizations
+public sealed class InMemoryAgentAuthorizations(InMemoryAgentStore store, IUserDirectory users, IUserAccounts accounts, TimeProvider clock, IViewerZone viewerZone) : IAgentAuthorizations
 {
     public async Task<Guid> CreateAsync(Guid userId, string clientId, IReadOnlySet<string> scopes, CancellationToken cancellationToken = default)
     {
@@ -56,7 +57,7 @@ public sealed class InMemoryAgentAuthorizations(InMemoryAgentStore store, IUserD
                     return new ConnectedAgentDto(
                         a.Id, client.ClientName, client.ClientHost, client.Verified,
                         AgentSecrets.ScopeList(a), a.CreatedAt, a.LastUsedAt,
-                        DisplayDate.Relative(a.CreatedAt, clock), a.LastUsedAt is { } used ? DisplayDate.Relative(used, clock) : null);
+                        DisplayDate.Relative(a.CreatedAt, clock.GetUtcNow(), viewerZone.Zone), a.LastUsedAt is { } used ? DisplayDate.Relative(used, clock.GetUtcNow(), viewerZone.Zone) : null);
                 })
                 .ToList();
             return Task.FromResult(list);

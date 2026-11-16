@@ -17,7 +17,6 @@ import { PointsBar } from './rail/PointsByState';
 import { railSummary } from './rail/railSummary';
 import { SprintRail } from './rail/SprintRail';
 import { sprintStories, unparentedTasks } from './sprintStories';
-import { sprintWorkingDays } from './sprintWorkingDays';
 
 /**
  * The Sprint backlog body: the figures and burndown, then the sprint's stories and bugs with their tasks. At 900px and below
@@ -58,10 +57,7 @@ export function SprintBacklog({ project, sprint }: { project: ProjectDto; sprint
               }
             />
             {touch && summary ? <PointsBar points={summary.points} /> : null}
-            <Burndown
-              metrics={metrics.data}
-              days={sprintWorkingDays(sprint.startDate, sprint.endDate, project.workingDays)}
-            />
+            <Burndown metrics={metrics.data} />
           </div>
         ) : null}
         {touch && summary ? <GlanceRows projectId={project.id} summary={summary} /> : null}

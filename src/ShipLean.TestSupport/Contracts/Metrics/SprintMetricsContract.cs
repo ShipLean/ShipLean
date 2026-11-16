@@ -186,6 +186,21 @@ public abstract class SprintMetricsContract
         (entry.Committed, entry.Completed).ShouldBe((25m, 20m));
     }
 
+    // Mutation it catches: count every calendar day (drop the project's working-day filter), so the weekend inside the
+    // sprint joins WorkingDays. The arranged project works Monday to Friday.
+    [Test]
+    public async Task Metrics_WhenSprintSpansAWeekend_ShouldListOnlyItsWorkingDays()
+    {
+        var project = await ArrangeProjectAsync();
+        var monday = Today.AddDays(-28 - ((int)Today.DayOfWeek + 6) % 7);
+        var sprint = await ArrangeSprintAsync(project, "Over a weekend", monday, monday.AddDays(9));
+
+        var metrics = await CreateMetrics().GetSprintAsync(sprint);
+
+        metrics.WorkingDays.Select(d => d.DayNumber - monday.DayNumber).ShouldBe([0, 1, 2, 3, 4, 7, 8, 9]);
+        metrics.Burndown.Select(p => p.Date).ShouldBe(metrics.WorkingDays);
+    }
+
     [Test]
     public async Task Burndown_WhenItemAddedMidSprint_ShouldRaiseRemainingFromThatDay()
     {

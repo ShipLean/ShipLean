@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 
@@ -47,7 +48,7 @@ internal static class AgentPromptContext
             xml.Append("<primary-directive-thread comment-id=\"").Append(AgentXml.Escape(threadId)).Append("\">\n");
             foreach (var comment in ordered)
             {
-                var created = comment.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                var created = DisplayDate.Format(comment.CreatedAt);
                 xml.Append("  <comment author=\"").Append(AgentXml.Escape(comment.Author.Name))
                     .Append("\" created-at=\"").Append(created).Append("\">")
                     .Append(AgentXml.Escape(comment.Body)).Append("</comment>\n");

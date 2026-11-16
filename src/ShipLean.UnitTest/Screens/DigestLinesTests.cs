@@ -28,6 +28,7 @@ public class DigestLinesTests
     private static ChangeEntryDto Comment(string body, string? agent = null) =>
         new(Guid.NewGuid(), "SHIP-101", "Checkout v2", ChangeKind.Comment, SeedIds.Users.Tom, "Tom Okafor", At, null, body, null, agent, "feature");
 
+    // At is 09:00 UTC and the clock reads 12:00 UTC the same day, so the label is hours ago.
     [Test]
     public void Lines_WhenRevisionChangesStateAndHealth_ShouldGiveTwoLines()
     {
@@ -36,16 +37,16 @@ public class DigestLinesTests
             Change(FieldIds.State, Guid.NewGuid(), Guid.NewGuid(), "Active", "Closed"),
             Change(FieldIds.Health, "onTrack", "atRisk"));
 
-        var lines = DigestLines.Of(entry, Tom, Clock);
+        var lines = DigestLines.Of(entry, Tom, Clock, TimeZoneInfo.Utc);
 
         lines.Select(l => (l.Kind, l.Text)).ShouldBe([(DigestLineKind.State, "Active → Closed"), (DigestLineKind.Health, "On track → At risk")]);
-        lines.ShouldAllBe(l => l.By == Tom && l.AgentName == null && l.At == At && l.AtLabel == DisplayDate.Relative(At, Clock));
+        lines.ShouldAllBe(l => l.By == Tom && l.AgentName == null && l.At == At && l.AtLabel == "3h ago");
     }
 
     [Test]
     public void Lines_WhenHealthFirstSet_ShouldGiveJustTheNewHealth()
     {
-        var lines = DigestLines.Of(Revision(null, Change(FieldIds.Health, null, "blocked")), Tom, Clock);
+        var lines = DigestLines.Of(Revision(null, Change(FieldIds.Health, null, "blocked")), Tom, Clock, TimeZoneInfo.Utc);
 
         lines.Single().Text.ShouldBe("Blocked");
     }
@@ -53,7 +54,7 @@ public class DigestLinesTests
     [Test]
     public void Lines_WhenStatusLineChanged_ShouldGiveTheNewLine()
     {
-        var lines = DigestLines.Of(Revision(null, Change(FieldIds.StatusLine, "Was this", "Waiting on the fraud check API.")), Tom, Clock);
+        var lines = DigestLines.Of(Revision(null, Change(FieldIds.StatusLine, "Was this", "Waiting on the fraud check API.")), Tom, Clock, TimeZoneInfo.Utc);
 
         var line = lines.ShouldHaveSingleItem();
         line.Kind.ShouldBe(DigestLineKind.StatusLine);
@@ -63,15 +64,15 @@ public class DigestLinesTests
     [Test]
     public void Lines_WhenStatusLineCleared_ShouldGiveNoLine()
     {
-        DigestLines.Of(Revision(null, Change(FieldIds.StatusLine, "Was this", null)), Tom, Clock).ShouldBeEmpty();
+        DigestLines.Of(Revision(null, Change(FieldIds.StatusLine, "Was this", null)), Tom, Clock, TimeZoneInfo.Utc).ShouldBeEmpty();
     }
 
     [Test]
     public void Lines_WhenAgentCommentOrRevision_ShouldGiveAgentWork()
     {
-        var comment = DigestLines.Of(Comment("Pushed 3 commits", "Claude Code"), Tom, Clock).ShouldHaveSingleItem();
-        var revision = DigestLines.Of(Revision("Claude Code", Change(FieldIds.Points, null, 3)), Tom, Clock).ShouldHaveSingleItem();
-        var stateByAgent = DigestLines.Of(Revision("Claude Code", Change(FieldIds.State, Guid.NewGuid(), Guid.NewGuid(), "Active", "Closed")), Tom, Clock).ShouldHaveSingleItem();
+        var comment = DigestLines.Of(Comment("Pushed 3 commits", "Claude Code"), Tom, Clock, TimeZoneInfo.Utc).ShouldHaveSingleItem();
+        var revision = DigestLines.Of(Revision("Claude Code", Change(FieldIds.Points, null, 3)), Tom, Clock, TimeZoneInfo.Utc).ShouldHaveSingleItem();
+        var stateByAgent = DigestLines.Of(Revision("Claude Code", Change(FieldIds.State, Guid.NewGuid(), Guid.NewGuid(), "Active", "Closed")), Tom, Clock, TimeZoneInfo.Utc).ShouldHaveSingleItem();
 
         (comment.Kind, comment.Text, comment.AgentName).ShouldBe((DigestLineKind.AgentWork, "Claude Code commented", "Claude Code"));
         (revision.Kind, revision.Text, revision.AgentName).ShouldBe((DigestLineKind.AgentWork, "Claude Code changed Story points", "Claude Code"));
@@ -81,10 +82,10 @@ public class DigestLinesTests
     [Test]
     public void Lines_WhenPersonComments_ShouldGiveCommentCutOnAWord()
     {
-        var short1 = DigestLines.Of(Comment("Vault tokens **expire** after a year;\nwe refresh them on use."), Tom, Clock).ShouldHaveSingleItem();
+        var short1 = DigestLines.Of(Comment("Vault tokens **expire** after a year;\nwe refresh them on use."), Tom, Clock, TimeZoneInfo.Utc).ShouldHaveSingleItem();
         var body = string.Join(' ', Enumerable.Range(1, 120).Select(i => $"word{i}"));
 
-        var long1 = DigestLines.Of(Comment(body), Tom, Clock).ShouldHaveSingleItem();
+        var long1 = DigestLines.Of(Comment(body), Tom, Clock, TimeZoneInfo.Utc).ShouldHaveSingleItem();
 
         short1.Kind.ShouldBe(DigestLineKind.Comment);
         short1.Text.ShouldBe("Vault tokens expire after a year; we refresh them on use.");
@@ -99,7 +100,7 @@ public class DigestLinesTests
     [Test]
     public void Lines_WhenOnlyTitleChangedByAPerson_ShouldGiveNoLine()
     {
-        var lines = DigestLines.Of(Revision(null, Change(FieldIds.Title, "Old", "New"), Change(FieldIds.Points, null, 5)), Tom, Clock);
+        var lines = DigestLines.Of(Revision(null, Change(FieldIds.Title, "Old", "New"), Change(FieldIds.Points, null, 5)), Tom, Clock, TimeZoneInfo.Utc);
 
         lines.ShouldBeEmpty();
     }
