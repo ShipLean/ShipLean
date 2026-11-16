@@ -111,8 +111,6 @@ for (const theme of THEMES) {
     page,
   }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-    // A tap first, as a phone opens the sheet: the list's focus is then not keyboard focus, so no highlight is drawn.
-    await page.touchscreen.tap(5, 5);
     await mount(
       <Sheet open title="State" onClose={() => undefined}>
         <StateMenu
@@ -125,6 +123,9 @@ for (const theme of THEMES) {
     );
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(ids.stateMenuOption)).toHaveCount(6);
+    // Mounted with no input, script focus counts as keyboard focus and draws the highlight. On a phone the sheet opens
+    // from a tap, so focus the list by a tap (on the current state, which picks nothing new) to shoot it as a phone sees it.
+    await sheet.getByTestId(ids.stateMenuOption).nth(2).tap();
     await expect(sheet).toHaveScreenshot(`state-menu-sheet.${theme}.png`, {
       animations: 'disabled',
     });
