@@ -36,8 +36,14 @@ export function KpiTile({ testId, value, unit, label, to, linkTestId, wrap }: Kp
           </small>
         ) : null}
       </div>
-      <div className="text-[length:var(--text-xs)] text-ink-muted touch:truncate touch:text-[11.5px]">
-        {label}
+      <div className="text-[length:var(--text-xs)] text-ink-muted touch:flex touch:min-w-0 touch:text-[11.5px]">
+        <span className="touch:min-w-0 touch:truncate">{label}</span>
+        {/* A tile that is a link says so with a › (SHIP-724 D7 design), outside the truncated label so it never cuts the label short. */}
+        {to === undefined ? null : (
+          <span aria-hidden="true" className="touch:flex-none touch:pl-[3px]">
+            {' ›'}
+          </span>
+        )}
       </div>
     </>
   );

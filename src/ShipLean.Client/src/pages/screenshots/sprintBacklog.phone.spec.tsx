@@ -3,7 +3,7 @@ import { expect } from '@playwright/experimental-ct-react';
 import { sprintsTestIds as ids } from '../../features/sprints/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { phonePageShots } from './shootPhone';
-import { stubShell } from './shellStub';
+import { PEOPLE, stubShell } from './shellStub';
 import { SPRINT_24, sprintsWithGoals, stubSprintBacklog } from './fixtures/sprints';
 
 // The Sprint backlog's figures, burndown and glance rows on a phone (SHIP-724, L724b): the page, the burndown read at a
@@ -51,8 +51,14 @@ phonePageShots([
   {
     name: 'sprint-backlog-active',
     ...backlog,
+    // Signed in as Priya, so her row reads "(you)" (SPRINT-5).
+    arrange: async (page: Page) => {
+      await stubShell(page, { sprints: sprintsWithGoals, me: { id: PEOPLE.priya.id } });
+      await stubSprintBacklog(page);
+    },
     act: async (page) => {
       await page.getByTestId(ids.glanceActive).tap();
+      await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Priya Shah (you)');
       await expect(page.getByTestId(touchTestIds.sheet).getByTestId(ids.glancePerson)).toHaveCount(
         5,
       );

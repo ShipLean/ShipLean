@@ -22,6 +22,24 @@ const right = 226;
 const left = 24;
 
 describe('burndownShape', () => {
+  test('mid-sprint puts every working day on the axis, from the first to the last', () => {
+    const shape = burndownShape([point('2026-10-19', 21), point('2026-10-20', 18)], days, 21);
+    expect(shape.axis.map((day) => day.day)).toEqual([
+      '19',
+      '20',
+      '21',
+      '22',
+      '23',
+      '26',
+      '27',
+      '28',
+      '29',
+      '30',
+    ]);
+    expect(shape.axis[0]?.x).toBe(left);
+    expect(shape.axis[9]?.x).toBe(right);
+  });
+
   test('on day 1 of 10 draws one dot at the left and an ideal line across the whole sprint', () => {
     const shape = burndownShape([point('2026-10-19', 21)], days, 21);
     expect(shape.dots).toHaveLength(1);

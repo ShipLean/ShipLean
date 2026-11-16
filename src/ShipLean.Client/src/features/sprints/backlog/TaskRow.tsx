@@ -70,7 +70,13 @@ export function TouchTaskRow({ task, changer }: { task: WorkItemDto; changer: St
         </div>
       </div>
       <div className="grid justify-items-end">
-        {task.assignee ? <Avatar {...task.assignee} /> : null}
+        {task.assignee ? (
+          <Avatar {...task.assignee} />
+        ) : (
+          <span data-testid={ids.unassignedAvatar} className="inline-flex">
+            <Avatar name="Unassigned" />
+          </span>
+        )}
       </div>
     </li>
   );

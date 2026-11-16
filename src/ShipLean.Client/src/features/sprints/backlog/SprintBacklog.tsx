@@ -35,7 +35,7 @@ export function SprintBacklog({ project, sprint }: { project: ProjectDto; sprint
   const summary = stories && unparented ? railSummary(stories, unparented) : undefined;
   const failed = metrics.isError || capacity.isError || items.isError;
   return (
-    <div data-testid={ids.backlog} className="flex items-start gap-4 p-4 touch:p-3">
+    <div data-testid={ids.backlog} className="flex items-start gap-4 p-4 touch:px-0 touch:py-3">
       <div className="grid min-w-0 flex-1 content-start gap-4 touch:grid-cols-[minmax(0,1fr)]">
         {failed ? (
           <p data-testid={ids.backlogLoadError} role="alert" className="m-0 text-alert">

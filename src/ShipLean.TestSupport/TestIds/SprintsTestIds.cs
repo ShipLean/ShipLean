@@ -149,4 +149,11 @@ public static class SprintsTestIds
     public const string EndRowTitle = "sprints-end-row-title";
     public const string EndSetAllSelect = "sprints-end-set-all-select";
     public const string EndUnfinished = "sprints-end-unfinished";
+    public const string GlanceItemKey = "sprints-backlog-glance-item-key";
+    public const string GlanceIdle = "sprints-backlog-glance-idle";
+    public const string UnassignedAvatar = "sprints-backlog-unassigned-avatar";
+    public const string ListPoints = "sprints-backlog-list-points";
+    public const string BurndownDay = "sprints-backlog-burndown-day";
+    public const string GlanceIcon = "sprints-backlog-glance-icon";
+    public const string GlanceReadyHint = "sprints-backlog-glance-ready-hint";
 }

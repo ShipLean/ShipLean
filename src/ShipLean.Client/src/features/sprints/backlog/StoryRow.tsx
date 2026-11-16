@@ -14,6 +14,11 @@ interface StoryRowProps {
   onToggle: () => void;
 }
 
+interface TouchStoryRowProps extends StoryRowProps {
+  /** False while the list's Tasks switch is off: the ▶ toggle is hidden (SHIP-1626 D3). */
+  tasksShown: boolean;
+}
+
 /** A story or bug: its toggle, key, state, assignee, task progress and points. */
 export function StoryRow({ entry, changer, open, onToggle }: StoryRowProps) {
   const { story } = entry;
@@ -57,7 +62,7 @@ export function StoryRow({ entry, changer, open, onToggle }: StoryRowProps) {
 }
 
 /** A story or bug as two lines at touch: toggle, type icon and title; then key, state pill and tasks done, with points and the assignee on the right. */
-export function TouchStoryRow({ entry, changer, open, onToggle }: StoryRowProps) {
+export function TouchStoryRow({ entry, changer, open, onToggle, tasksShown }: TouchStoryRowProps) {
   const { story } = entry;
   const done = doneTaskCount(entry);
   const total = entry.tasks.length;
@@ -69,7 +74,7 @@ export function TouchStoryRow({ entry, changer, open, onToggle }: StoryRowProps)
       data-flash={changer.flashing === story.key}
       className={`grid min-h-[58px] grid-cols-[32px_minmax(0,1fr)_40px] items-start gap-x-1 border-b border-edge py-2 pr-2 pl-1 transition-colors duration-700 has-[[aria-haspopup=dialog][aria-expanded=true]]:bg-signal-soft ${changer.flashing === story.key ? 'bg-caution/15' : ''}`}
     >
-      {total > 0 ? (
+      {tasksShown && total > 0 ? (
         <button
           type="button"
           data-testid={ids.rowToggle}
