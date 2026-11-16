@@ -38,7 +38,7 @@ test('ConnectionHealth_WhenTheConnectionIsHealthy_ShouldShowWhenItLastDelivered'
   page,
 }) => {
   await stub(page, { ...healthyConnection, lastDeliveredLabel: '2 hours ago' }, testReached);
-  const view = await mount(<ConnectionHealth connection={relay} />);
+  await mount(<ConnectionHealth connection={relay} />);
 
   await expect(page.getByTestId(ids.agentsConnectionHealth)).toContainText(
     'Last delivered 2 hours ago',
@@ -51,7 +51,7 @@ test('ConnectionHealth_WhenDeliveriesFailed_ShouldShowTheCountWithItsWindowAndTh
   page,
 }) => {
   await stub(page, { ...failingConnection, failedLast24h: 2 }, testReached);
-  const view = await mount(<ConnectionHealth connection={relay} />);
+  await mount(<ConnectionHealth connection={relay} />);
 
   const health = page.getByTestId(ids.agentsConnectionHealth);
   await expect(health).toContainText('2 failed in the last 24 h');
@@ -64,7 +64,7 @@ test('ConnectionHealth_WhenNothingWasDelivered_ShouldSaySo', async ({ mount, pag
     { ...healthyConnection, lastDeliveredAt: null, lastDeliveredLabel: null },
     testReached,
   );
-  const view = await mount(<ConnectionHealth connection={relay} />);
+  await mount(<ConnectionHealth connection={relay} />);
 
   await expect(page.getByTestId(ids.agentsConnectionHealth)).toContainText('No delivery yet');
 });
