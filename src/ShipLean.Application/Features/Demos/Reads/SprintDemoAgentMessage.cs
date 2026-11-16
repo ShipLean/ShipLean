@@ -23,7 +23,7 @@ internal static partial class SprintDemoAgentMessage
         }
 
         // Redacted before the parse (so Markdown cannot split a secret) and after it (so a secret the parse assembled is caught).
-        var paragraph = Redact(FirstParagraph(Redact(markdown)));
+        var paragraph = Redact(Collapse(HtmlTag().Replace(FirstParagraph(Redact(markdown)), " ")));
         return paragraph.Length == 0 ? null : Cut(paragraph);
     }
 

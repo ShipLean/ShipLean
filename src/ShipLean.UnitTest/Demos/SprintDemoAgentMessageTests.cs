@@ -89,7 +89,7 @@ public class SprintDemoAgentMessageTests
     [Test]
     public void Excerpt_WhenNestedPastMarkdigsDepthLimit_ShouldStillBePlainText()
     {
-        var markdown = new string('[', 5000) + "<script>alert(1)</script> **bold** [x](http://example.com/a) done" + new string(']', 5000);
+        var markdown = new string('>', 1000) + " <script>alert(1)</script> **bold** [x](http://example.com/a) done";
 
         var excerpt = SprintDemoAgentMessage.Excerpt(markdown)!;
 
@@ -107,5 +107,11 @@ public class SprintDemoAgentMessageTests
         excerpt.Length.ShouldBeLessThanOrEqualTo(SprintDemoAgentMessage.MaxLength);
         excerpt.ShouldEndWith("…");
         excerpt[..^1].ShouldBe(string.Concat(Enumerable.Repeat("😀", (excerpt.Length - 1) / 2)));
+    }
+
+    [Test]
+    public void Excerpt_WhenItHoldsRawHtml_ShouldKeepNoTags()
+    {
+        SprintDemoAgentMessage.Excerpt("Failed on <b>this</b> <script>x</script> step.")!.ShouldNotContain("<");
     }
 }
