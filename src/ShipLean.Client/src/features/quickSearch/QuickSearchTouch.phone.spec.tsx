@@ -166,5 +166,8 @@ test('QuickSearch_WhenNothingIsHighlightedOnPhone_ShouldMarkNoRowActiveUntilAnAr
   // The first ArrowDown lands on row 0, not row 1.
   await expect(options.first()).toHaveAttribute('aria-selected', 'true');
   await expect(options.nth(1)).toHaveAttribute('aria-selected', 'false');
-  await expect(input).toHaveAttribute('aria-activedescendant', (await options.first().getAttribute('id'))!);
+  await expect(input).toHaveAttribute(
+    'aria-activedescendant',
+    (await options.first().getAttribute('id'))!,
+  );
 });

@@ -167,7 +167,9 @@ export function QuickSearchDialog({
             aria-expanded="true"
             aria-controls={listId}
             aria-autocomplete="list"
-            aria-activedescendant={rows.length > 0 && active !== undefined ? optionId(active) : undefined}
+            aria-activedescendant={
+              rows.length > 0 && active !== undefined ? optionId(active) : undefined
+            }
             aria-label="Search"
             autoComplete="off"
             spellCheck={false}
