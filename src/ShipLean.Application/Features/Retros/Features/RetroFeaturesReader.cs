@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.Retros.Reads;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.Core;
@@ -10,7 +11,7 @@ namespace ShipLean.Application.Features.Retros.Features;
 // The retros of a project rolled up by Feature, in one query. A Feature's row counts its own retro and its stories' and bugs'
 // (decision 19); a story or bug with no Feature that has a retro is loose. Archived retros and points are left out. Decisions
 // follow contract K2 through RetroDecisionSql, so Went well is never decidable and a Removed action returns its points to undecided.
-public sealed class RetroFeaturesReader(NpgsqlDataSource dataSource, TimeProvider clock) : IRetroFeaturesReader
+public sealed class RetroFeaturesReader(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IRetroFeaturesReader
 {
     public async Task<RetroFeaturesDto> GetAsync(Guid projectId, CancellationToken cancellationToken = default)
     {
@@ -31,7 +32,7 @@ public sealed class RetroFeaturesReader(NpgsqlDataSource dataSource, TimeProvide
             row.Retros,
             row.OwnRetros,
             new RetroAggregateDto(counts, row.ToDecide, row.Decidable - row.ToDecide, row.Decidable, row.Actions),
-            DisplayDate.Relative(new DateTimeOffset(DateTime.SpecifyKind(row.LastRetroAt, DateTimeKind.Utc)), clock),
+            DisplayDate.Relative(new DateTimeOffset(DateTime.SpecifyKind(row.LastRetroAt, DateTimeKind.Utc)), clock.GetUtcNow(), viewerZone.Zone),
             !row.IsLoose && row.OwnRetros == 0);
     }
 

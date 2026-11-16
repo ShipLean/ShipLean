@@ -98,7 +98,7 @@ public sealed class RetroCardsDecisionTests : ApiFixture
         notNeeded.By.User.Id.ShouldBe(SeedIds.Users.Priya);
         notNeeded.By.AgentName.ShouldBeNull();
         notNeeded.By.Role.ShouldBe(RetroRole.Person);
-        notNeeded.DecidedAtLabel.ShouldBe(DisplayDate.Relative(decidedAt, Host.Services.GetRequiredService<TimeProvider>()));
+        notNeeded.DecidedAtLabel.ShouldBe(DisplayDate.Relative(decidedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
         points.Single(p => p.Id == byAgent).NotNeeded.ShouldNotBeNull().By.AgentName.ShouldBe("decide-agent");
         (await DecisionSqlAsync(connection, point)).ShouldBe("notNeeded");
     }

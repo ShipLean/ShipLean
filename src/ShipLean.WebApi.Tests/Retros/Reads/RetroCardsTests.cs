@@ -1,12 +1,19 @@
+using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Retros;
+using ShipLean.WebApi.Tests.ProjectSettings.Api;
 
 namespace ShipLean.WebApi.Tests.Retros.Reads;
 
@@ -16,6 +23,48 @@ public sealed class RetroCardsTests : ApiFixture
     private static readonly Guid Project = SeedIds.Projects.Ship;
 
     private IRetroCards Cards => Host.Services.GetRequiredService<IRetroCards>();
+
+    private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
+
+    // Reads the retro page of a story as the user. The retro is written at ViewerZoneTestData.LateEveningUtc: 20:00 UTC, so the
+    // next day in Bangkok. Time is never frozen: the expected label is built with DisplayDate and the zone.
+    private async Task<RetroItemDto> ReadStoryRetroAsync(TestUser user, Guid userId)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var project = await ArrangedProject.CreateAsync(connection, (userId, ProjectRole.Member));
+        var story = await new WorkItemBuilder(project.Id).WithType("story").InsertAsync(connection);
+        var seed = new RetroSeed(connection, project.Id);
+        var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: story, AgentName: $"agent-{Guid.NewGuid():N}", CreatedAt: ViewerZoneTestData.LateEveningUtc));
+        await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Dated by the viewer."));
+        var key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @story", new { story });
+        using var response = await Api.ActingAs(user).GetAsync($"/api/projects/{project.Id}/retros/items/{key}");
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<RetroItemDto>(text, Wire)!;
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to the Relative call for CreatedAtLabel in RetroCards.ToCard.
+    [Test]
+    public async Task Cards_WhenViewerIsInBangkok_ShouldDateACardByTheBangkokDay()
+    {
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+
+        var item = await ReadStoryRetroAsync(TestUser.Joel, SeedIds.Users.Joel);
+
+        var now = TimeProvider.System.GetUtcNow();
+        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
+        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+        item.Cards.Single().CreatedAtLabel.ShouldBe(expected);
+    }
+
+    // The fallback: a user with no zone still gets UTC labels.
+    [Test]
+    public async Task Cards_WhenViewerHasNoZone_ShouldDateACardByTheUtcDay()
+    {
+        var item = await ReadStoryRetroAsync(TestUser.Priya, SeedIds.Users.Priya);
+
+        item.Cards.Single().CreatedAtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+    }
 
     [Test]
     public async Task Load_ShouldKeepTheGivenOrder()
@@ -40,7 +89,7 @@ public sealed class RetroCardsTests : ApiFixture
 
         var card = (await Cards.LoadAsync([retro], CancellationToken.None)).Single();
 
-        card.CreatedAtLabel.ShouldBe(DisplayDate.Relative(card.CreatedAt, Host.Services.GetRequiredService<TimeProvider>()));
+        card.CreatedAtLabel.ShouldBe(DisplayDate.Relative(card.CreatedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
     }
 
     [Test]

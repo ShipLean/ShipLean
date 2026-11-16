@@ -36,7 +36,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
             MetricsSql.Remaining, new { sprintId, sprint.ProjectId, last = latest, sprintField = FieldIds.Sprint, stateField = FieldIds.State, storyLevel = WorkItemTypeRules.StoryLevelDb }, cancellationToken: cancellationToken)))
             .ToDictionary(r => r.Date, r => r.Remaining);
         var burndown = working.Where(d => d <= today).Select(d => new BurndownPoint(
-            d, remaining[d], working.Count <= 1 ? 0 : Math.Round(figures.Committed * (working.Count - 1 - working.IndexOf(d)) / (working.Count - 1), 2))).ToList();
+            d, BurndownLabels.Label(d, today), BurndownLabels.Day(d), remaining[d], working.Count <= 1 ? 0 : Math.Round(figures.Committed * (working.Count - 1 - working.IndexOf(d)) / (working.Count - 1), 2))).ToList();
         return new SprintMetricsDto(sprintId, figures.Committed, figures.Completed, remaining[latest], burndown);
     }
 
