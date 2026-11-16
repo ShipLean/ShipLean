@@ -79,10 +79,12 @@ export function AddRowFields({
           <SegmentedChoice
             label="Type"
             testId={ids.addType}
-            options={types.map((id) => ({
-              value: id,
-              label: id === 'story' ? 'Story' : typeName(id),
-            }))}
+            options={types
+              .filter((id) => id === 'story' || id === 'bug')
+              .map((id) => ({
+                value: id,
+                label: id === 'story' ? 'Story' : typeName(id),
+              }))}
             selected={type}
             onPick={onType}
           />

@@ -78,17 +78,19 @@ export function NewItemRow({
     return (
       <div
         data-testid={ids.addRow}
-        className="grid gap-2 border-b border-edge bg-signal-soft px-3 py-2.5"
+        className="grid grid-cols-[minmax(0,1fr)] gap-2 border-b border-edge bg-signal-soft px-3 py-2.5"
       >
         <div className="flex items-center gap-1.5">
           <div className="w-36 flex-none">
             <SegmentedChoice
               label="Type"
               testId={ids.addType}
-              options={types.map((option) => ({
-                value: option.id,
-                label: option.id === 'story' ? 'Story' : option.label,
-              }))}
+              options={types
+                .filter((option) => option.id === 'story' || option.id === 'bug')
+                .map((option) => ({
+                  value: option.id,
+                  label: option.id === 'story' ? 'Story' : option.label,
+                }))}
               selected={type}
               onPick={(value) => setType(value as WorkItemTypeId)}
             />
