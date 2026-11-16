@@ -14,8 +14,10 @@ public class InspectionMetricsApiTests : ApiFixture
     private static readonly string[] ViewKeys =
     [
         "project", "cadence", "range", "cut", "aggregate", "generatedAt", "caveat", "coverage", "headline", "periods", "quarters",
-        "cuts", "longest", "leftOut", "periodDetail",
+        "cuts", "longest", "leftOut", "periodDetail", "quality",
     ];
+
+    private static readonly string[] QualityKeys = ["escaping", "weighted", "foundBeforeRelease", "mergedPrs", "per100Prs"];
 
     private static string Url(Guid projectId, string query = "") => $"api/projects/{projectId}/inspection-metrics{query}";
 
@@ -39,6 +41,38 @@ public class InspectionMetricsApiTests : ApiFixture
         root.GetProperty("cuts").ValueKind.ShouldBe(JsonValueKind.Null);
         root.GetProperty("periodDetail").ValueKind.ShouldBe(JsonValueKind.Null);
         root.GetProperty("periods").ValueKind.ShouldBe(JsonValueKind.Array);
+    }
+
+    // SHIP-1398 QK3: quality on the view, every period, quarter and headlined sprint, and quality and bugs on the opened period. The
+    // seeded project's numbers fill in with QT4, so a null quality passes; a set one must carry exactly the five keys.
+    // Mutations: drop Quality from InspectionPeriodDto; drop Bugs from InspectionPeriodDetailDto; drop Per100Prs (red once quality is set).
+    [Test]
+    public async Task Get_ShouldIncludeQualityInFinalShape()
+    {
+        using var response = await Api.GetAsync(Url(SeedIds.Projects.Ship, $"?period={SeedIds.Sprints.Sprint20}"));
+
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        using var json = JsonDocument.Parse(text);
+        var root = json.RootElement;
+        var headline = root.GetProperty("headline");
+        var detail = root.GetProperty("periodDetail");
+        JsonElement[] owners =
+        [
+            root, detail, .. root.GetProperty("periods").EnumerateArray(), .. root.GetProperty("quarters").EnumerateArray(),
+            .. new[] { "finished", "soFar", "quarterToDate", "lastQuarter" }.Select(headline.GetProperty).Where(h => h.ValueKind != JsonValueKind.Null),
+        ];
+        root.GetProperty("periods").GetArrayLength().ShouldBeGreaterThan(0);
+        foreach (var owner in owners)
+        {
+            var quality = owner.GetProperty("quality");
+            if (quality.ValueKind != JsonValueKind.Null)
+            {
+                quality.EnumerateObject().Select(p => p.Name).ShouldBe(QualityKeys, ignoreOrder: true);
+            }
+        }
+        detail.TryGetProperty("bugs", out var bugs).ShouldBeTrue();
+        bugs.ValueKind.ShouldBeOneOf(JsonValueKind.Null, JsonValueKind.Array);
     }
 
     [Test]

@@ -41,8 +41,8 @@ public class QualityFactsReaderContractTests : ApiFixture
         await connection.ExecuteAsync(
             """
             INSERT INTO link_state (url_key, url, state, as_of, source, merged_at)
-            VALUES (link_url_key(@url), @url, 'merged', @at, 'github', @at)
-            """, new { url = PrUrl, at = T0.AddDays(2) });
+            VALUES (link_url_key(@url), @url, 'merged', @asOf, 'github', @at)
+            """, new { url = PrUrl, at = T0.AddDays(2), asOf = T0.AddDays(3) });
         await connection.ExecuteAsync(
             """UPDATE project SET bug_severity_weights = '{"1":10,"2":5,"3":2,"4":1}' WHERE id = @Ship""", new { Ship });
         var keys = (await connection.QueryAsync<(Guid Id, string Key)>("SELECT id, key FROM work_item WHERE id = ANY(@ids)", new { ids = new[] { task, caused, found, old } }))
