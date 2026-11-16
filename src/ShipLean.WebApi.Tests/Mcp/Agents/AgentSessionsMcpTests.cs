@@ -94,8 +94,17 @@ public class AgentSessionsMcpTests : McpFixture
 
         var text = reply.Structured().GetProperty("agent_sessions")[0].GetProperty("end_text").GetString();
         text.ShouldBe(AgentEndText.For(AgentEndReasons.DeliveryFailed, Detail));
-        // TODO: red until the per-reason wording makes AgentEndText.For carry the detail (its stub sentence ignores it).
-        text!.ShouldContain(Detail);
+    }
+
+    // Red until lane A1a replaces the AgentEndText.For stub sentence, which ignores the detail; then it is green with no change here.
+    [Test]
+    public async Task GetWorkItem_WhenDeliveryFailedAndCallerIsAdmin_ShouldNameTheDetailInEndText()
+    {
+        var key = await ArrangeDeliveryFailedAsync();
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
+
+        reply.Structured().GetProperty("agent_sessions")[0].GetProperty("end_text").GetString()!.ShouldContain(Detail);
     }
 
     [Test]
