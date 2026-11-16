@@ -78,6 +78,7 @@ export function StateMenu({
   const list = useRef<HTMLUListElement>(null);
   const sheetList = useRef<HTMLDivElement>(null);
   const prefix = useId();
+  const subtitleId = useId();
   useEffect(() => (list.current ?? sheetList.current)?.focus(), []);
   const [active, setActive] = useState(() =>
     Math.max(
@@ -125,9 +126,18 @@ export function StateMenu({
 
   if (touch) {
     return (
-      <div ref={sheetList} {...listProps} className="grid gap-1 outline-none">
+      // The keyboard's place: a ring on the list while it has keyboard focus, and an inset outline on the highlighted row
+      // (the tint means the current state, so the highlight must look different).
+      <div
+        ref={sheetList}
+        {...listProps}
+        aria-describedby={subtitle ? subtitleId : undefined}
+        className="group/list grid gap-1 rounded-control outline-none focus-visible:outline-2 focus-visible:outline-signal"
+      >
         {subtitle ? (
-          <p className="m-0 px-2 text-[length:var(--text-sm)] text-ink-muted">{subtitle}</p>
+          <p id={subtitleId} className="m-0 px-2 text-[length:var(--text-sm)] text-ink-muted">
+            {subtitle}
+          </p>
         ) : null}
         {shown.map((state, index) => {
           const current = state.id === currentId;
@@ -144,7 +154,7 @@ export function StateMenu({
                 role="option"
                 aria-selected={current}
                 aria-current={current ? 'true' : undefined}
-                className={`${actionSheetRowClass} cursor-pointer gap-3 text-ink ${current ? actionSheetCheckedClass : ''}`}
+                className={`${actionSheetRowClass} cursor-pointer gap-3 text-ink group-focus-visible/list:data-[active=true]:outline-2 group-focus-visible/list:data-[active=true]:-outline-offset-2 group-focus-visible/list:data-[active=true]:outline-signal ${current ? actionSheetCheckedClass : ''}`}
                 onClick={() => onSelect(state.id)}
               >
                 <ActionSheetRowFace

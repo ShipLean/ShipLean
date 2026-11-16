@@ -9,7 +9,8 @@ import { touchTestIds } from './testIds';
  * - `checked`: ✓ at the right, the row tinted, `aria-current="true"`. `trailing: 'chevron'`: › for a row that opens another sheet.
  * - `group`: consecutive actions with the same group sit under one heading; a change of group draws a divider. An empty
  *   group draws the divider without a heading.
- * - `toggle`: the row is a switch; tapping runs `onSelect` and keeps the sheet open. Toggle rows render after the others.
+ * - `toggle`: the row is a switch; tapping runs `onSelect` and keeps the sheet open. Toggle rows render after all the
+ *   others, so give a toggle a group of its own: one that shares a group with plain rows draws that heading again at the end.
  */
 export type SheetAction = {
   id: string;
@@ -42,11 +43,16 @@ export const actionSheetCheckedClass = 'bg-signal-soft';
 /** The content a sheet shows before its action rows: nodes, or a function given the sheet's close. */
 export type SheetSlot = ReactNode | ((close: () => void) => ReactNode);
 
+// A field counts as given unless it is undefined or null (a null detail draws nothing, as a null icon does).
+function given(value: unknown): boolean {
+  return value !== undefined && value !== null;
+}
+
 function hasAnatomy(face: SheetRowFace, iconSlot: boolean): boolean {
   return (
     iconSlot ||
-    face.hint !== undefined ||
-    face.detail !== undefined ||
+    given(face.hint) ||
+    given(face.detail) ||
     face.checked === true ||
     face.trailing !== undefined
   );
@@ -59,7 +65,7 @@ function hasAnatomy(face: SheetRowFace, iconSlot: boolean): boolean {
  */
 export function ActionSheetRowFace({
   face,
-  iconSlot = face.icon !== undefined && face.icon !== null,
+  iconSlot = given(face.icon),
 }: {
   face: SheetRowFace;
   iconSlot?: boolean;
@@ -74,7 +80,7 @@ export function ActionSheetRowFace({
       ) : null}
       <span className="grid min-w-0 flex-1">
         <span className="truncate">{face.label}</span>
-        {face.hint !== undefined ? (
+        {given(face.hint) ? (
           <span
             data-testid={touchTestIds.actionSheetHint}
             className="text-[length:var(--text-sm)] text-ink-muted"
@@ -83,7 +89,7 @@ export function ActionSheetRowFace({
           </span>
         ) : null}
       </span>
-      {face.detail !== undefined ? (
+      {given(face.detail) ? (
         <span
           data-testid={touchTestIds.actionSheetDetail}
           className="flex-none text-[length:var(--text-sm)] whitespace-nowrap text-ink-muted"
@@ -147,7 +153,7 @@ export function ActionSheetRow({
   // Keep the icon slot when the row has no icon (set by ActionSheet when any of its rows has one).
   iconSlot?: boolean;
 }) {
-  const slot = iconSlot ?? (action.icon !== undefined && action.icon !== null);
+  const slot = iconSlot ?? given(action.icon);
   const anatomy = hasAnatomy(action, slot);
   return (
     <button
@@ -215,7 +221,7 @@ function ActionSheetRows({
     ...actions.filter((action) => !action.toggle),
     ...actions.filter((action) => action.toggle),
   ];
-  const iconSlot = ordered.some((action) => action.icon !== undefined && action.icon !== null);
+  const iconSlot = ordered.some((action) => given(action.icon));
   return (
     <>
       {ordered.map((action, index) => {
@@ -237,7 +243,7 @@ function ActionSheetRows({
           </Fragment>
         );
       })}
-      {footer !== undefined && footer !== null ? (
+      {given(footer) ? (
         <ActionSheetFootnote>{footer}</ActionSheetFootnote>
       ) : null}
     </>

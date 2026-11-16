@@ -72,10 +72,37 @@ test('StateMenu_WhenGivenSubtitleAndFooter_ShouldShowThemInsteadOfTheFootnote', 
   );
   const menu = page.getByTestId(ids.stateMenu);
   await expect(menu).toHaveAccessibleName('State of SHIP-141');
-  await expect(menu).toContainText('Pay with saved card');
+  await expect(menu).toHaveAccessibleDescription('Pay with saved card');
   await expect(menu.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
     'Closed moves it off the board.',
   );
+});
+
+test('StateMenu_WhenArrowKeysUsedAtTouch_ShouldMarkTheHighlightedRow', async ({ mount, page }) => {
+  const picked: string[] = [];
+  await mount(
+    <Sheet open title="State" onClose={() => undefined}>
+      <StateMenu
+        states={states}
+        currentId="active"
+        onSelect={(id) => picked.push(id)}
+        onClose={() => undefined}
+      />
+    </Sheet>,
+  );
+  const menu = page.getByTestId(ids.stateMenu);
+  await expect(menu).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  const options = menu.getByTestId(ids.stateMenuOption);
+  // Active (index 2) is current; ArrowDown highlights Resolved (index 3), which gets the outline, not the current's tint.
+  await expect(options.nth(3)).toHaveAttribute('data-active', 'true');
+  await expect(menu).toHaveCSS('outline-style', 'solid');
+  await expect(options.nth(3)).toHaveCSS('outline-style', 'solid');
+  await expect(options.nth(2)).toHaveCSS('outline-style', 'none');
+  const tint = await options.nth(2).evaluate((el) => getComputedStyle(el).backgroundColor);
+  await expect(options.nth(3)).not.toHaveCSS('background-color', tint);
+  await page.keyboard.press('Enter');
+  expect(picked).toEqual(['resolved']);
 });
 
 for (const theme of THEMES) {
