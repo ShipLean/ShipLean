@@ -116,13 +116,26 @@
     font-size: var(--text-sm);
   }
 
-  /* Disabled buttons look disabled (K3): faded with a not-allowed cursor, so they never read as tappable
-     (RETRO-1). A page's own disabled: utility still applies on top. */
-  .btn-signal:disabled,
-  .btn-ghost:disabled,
-  .btn-danger-ghost:disabled {
+  /* Disabled buttons look disabled (K3, RETRO-1): faded, the default cursor, and hover or press leave them at their
+     resting colours. Both :disabled and aria-disabled="true". A page's own utilities (a later layer) still win. */
+  .btn-signal:is(:disabled, [aria-disabled='true']),
+  .btn-ghost:is(:disabled, [aria-disabled='true']),
+  .btn-danger-ghost:is(:disabled, [aria-disabled='true']) {
     opacity: 0.5;
-    cursor: not-allowed;
+    cursor: default;
+  }
+
+  .btn-signal:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: var(--color-accent);
+  }
+
+  .btn-ghost:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: transparent;
+    color: var(--color-muted);
+  }
+
+  .btn-danger-ghost:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: transparent;
   }
 }
 

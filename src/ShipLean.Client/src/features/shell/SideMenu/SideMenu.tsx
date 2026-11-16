@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { shortcutLabel } from '../../quickSearch/host/shortcutLabel';
 import { useQuickSearch } from '../../quickSearch/host/useQuickSearch';
 import { useLocation } from 'react-router-dom';
@@ -19,7 +19,8 @@ import { SprintsSubmenu } from './SprintsSubmenu';
 // The frame's left side: the ShipLean mark, the project button and its picker, the sections of the project and the
 // signed-in user. At 900px and below it is the touch drawer's body: every section's sub-pages show whichever section you
 // are in, and the picker is a bottom sheet over the drawer.
-export function SideMenu() {
+// `wordmarkEnd` goes at the end of the ShipLean wordmark row: the touch drawer puts its Close there (SHELL-13).
+export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
   const { pathname, search } = useLocation();
   const route = matchRoute(pathname, search);
   const { key, project } = useShellProject();
@@ -75,7 +76,7 @@ export function SideMenu() {
       aria-label="Project navigation"
       className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
     >
-      <div className="flex h-[26px] items-center justify-between">
+      <div data-testid={ids.sideMenuWordmark} className="flex min-h-[26px] items-center justify-between">
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
           <i className="inline-block size-3.5 rounded-[4px] bg-signal" />
           ShipLean
@@ -91,6 +92,7 @@ export function SideMenu() {
           <SearchIcon className="size-3" />
           {label}
         </button>
+        {wordmarkEnd}
       </div>
       <ProjectButton
         ref={button}

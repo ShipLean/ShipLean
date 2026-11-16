@@ -3,4 +3,5 @@ export const buttonHarnessIds = {
   ctButtonStates: 'ct-button-states',
   ctButtonEnabled: 'ct-button-enabled',
   ctButtonDisabled: 'ct-button-disabled',
+  ctButtonAriaDisabled: 'ct-button-aria-disabled',
 } as const;
