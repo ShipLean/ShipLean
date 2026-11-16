@@ -44,6 +44,33 @@ public class TimelineBarsTests
     }
 
     [Test]
+    public void Bars_WhenTaskHasCommits_ShouldSetLastCommitToLatest()
+    {
+        var f = Facts().WithTask("SHIP-3", "SHIP-1", "Other");
+        Active(f, "SHIP-2", 9);
+        Resolved(f, "SHIP-2", 14);
+        Active(f, "SHIP-3", 9);
+        f.WithCommit("SHIP-2", T0.AddHours(10)).WithCommit("SHIP-2", T0.AddHours(11.5)).WithCommit("SHIP-2", T0.AddHours(10.5))
+            .WithCommit("SHIP-3", T0.AddHours(20));
+
+        var bar = Build(f).Bars.Single(b => b.Key == "SHIP-2");
+
+        (bar.LastCommitAt, bar.LastCommitHours, bar.LastCommitLabel).ShouldBe((T0.AddHours(11.5), 11.5, "Mon 5 Oct, 11:30"));
+    }
+
+    [Test]
+    public void Bars_WhenTaskHasNoCommitTime_ShouldLeaveLastCommitNull()
+    {
+        var f = Facts();
+        Active(f, "SHIP-2", 9);
+        Resolved(f, "SHIP-2", 14);
+
+        var bar = OnlyBar(Build(f));
+
+        (bar.LastCommitAt, bar.LastCommitHours, bar.LastCommitLabel).ShouldBe((null, null, null));
+    }
+
+    [Test]
     public void Build_WhenReopenedAndNotResolvedAgain_ShouldBeInFlight()
     {
         var f = Facts();

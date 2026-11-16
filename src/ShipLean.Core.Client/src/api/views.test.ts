@@ -111,11 +111,11 @@ test('views_ShouldTypeTheTimelineFixtures', () => {
       expect(TIMELINE_BAR_STATES).toContain(bar.state);
       for (const period of bar.history) expect(TIMELINE_PERIOD_STATES).toContain(period.state);
       for (const review of bar.reviews) expect(REVIEW_VERDICTS).toContain(review.verdict);
-      expect([bar.lastCommitAt, bar.lastCommitHours, bar.lastCommitLabel]).toEqual([
-        null,
-        null,
-        null,
-      ]);
+      // The last commit's three fields are all set or all null.
+      const lastCommit = [bar.lastCommitAt, bar.lastCommitHours, bar.lastCommitLabel];
+      expect(lastCommit.filter((field) => field === null)).toHaveLength(
+        bar.lastCommitAt === null ? 3 : 0,
+      );
     }
     for (const edge of view.edges) {
       expect(TIMELINE_EDGE_KINDS).toContain(edge.kind);
