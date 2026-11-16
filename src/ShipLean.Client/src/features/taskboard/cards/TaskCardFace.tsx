@@ -146,7 +146,7 @@ export function TaskCardFace({
           </button>
         ) : null}
         {fields.showAssignee ? (
-          <span data-testid={id(ids.cardAssignee)}>
+          <span data-testid={id(ids.cardAssignee)} className={pickUp ? 'touch:hidden' : undefined}>
             <Avatar {...(card.assignee ?? {})} />
           </span>
         ) : null}

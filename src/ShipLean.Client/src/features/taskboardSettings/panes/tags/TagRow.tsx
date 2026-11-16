@@ -1,4 +1,5 @@
 import { SWATCHES, type Swatch } from '@shiplean/core/api/persisted';
+import { SWATCH_NAMES } from '../../../boardSettings/panes/swatchNames';
 import { tagStyle } from '../../../board/cards/cardStyle';
 import { taskboardSettingsTestIds as ids } from '../../testIds';
 
@@ -38,8 +39,8 @@ export function TagRow({
             type="button"
             data-testid={ids.tagSwatch}
             aria-pressed={colour === swatch}
-            aria-label={swatch}
-            title={swatch}
+            aria-label={SWATCH_NAMES[swatch]}
+            title={SWATCH_NAMES[swatch]}
             disabled={readOnly}
             className="size-5 rounded-full border-2 border-transparent aria-pressed:border-ink disabled:opacity-50 touch:size-[var(--touch-target)]"
             style={{ background: `var(--color-${swatch})` }}
@@ -48,7 +49,7 @@ export function TagRow({
         ))}
       </span>
       <span className="text-[length:var(--text-sm)] text-ink-muted touch:order-1 touch:w-24 touch:truncate touch:text-right">
-        {colour ?? 'No colour'}
+        {colour === null ? 'No colour' : SWATCH_NAMES[colour]}
       </span>
       <button
         type="button"

@@ -6,6 +6,8 @@ import { Avatar } from '../../../components/Avatar';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { CardExtraFields } from '../../board/cards/CardExtraFields';
 import { StateDot } from '../../../components/StateDot';
+import { StateMenu } from '../../../components/StateMenu';
+import { FieldMenu } from '../../workItem/form/FieldMenu';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { taskboardTestIds as ids } from '../testIds';
 import { RowToggle } from './RowToggle';
@@ -149,19 +151,23 @@ export function StoryRowHeader({
             <span className="text-[length:var(--text-2xs)] text-ink-muted">{parent.key}</span>
           ) : null}
           {fields.extraFields.includes('state') ? (
-            <select
-              data-testid={ids.rowState}
-              aria-label={`State of ${parent.key}`}
-              className="field h-[var(--touch-target)]"
-              value={parent.state.id}
-              onChange={(event) => onSetState(event.target.value)}
+            <FieldMenu
+              buttonTestId={ids.rowState}
+              buttonLabel={`State of ${parent.key}`}
+              button={<StateDot category={parent.state.category} name={parent.state.name} />}
             >
-              {states.map((state) => (
-                <option key={state.id} value={state.id}>
-                  {state.name}
-                </option>
-              ))}
-            </select>
+              {(close) => (
+                <StateMenu
+                  states={states}
+                  currentId={parent.state.id}
+                  onClose={close}
+                  onSelect={(stateId) => {
+                    close();
+                    if (stateId !== parent.state.id) onSetState(stateId);
+                  }}
+                />
+              )}
+            </FieldMenu>
           ) : null}
           {fields.showAssignee && (parent.assignee !== null || fields.showEmptyFields) ? (
             <Avatar {...(parent.assignee ?? {})} />
