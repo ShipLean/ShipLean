@@ -80,6 +80,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.ImportJiraConnected), "Jira.Put");
         Add(ActionUsage.Track(UsageEventNames.ProfileUpdated), "Profile.Update");
         Add(ActionUsage.Track(UsageEventNames.ProfilePhotoChanged), "Profile.ReplacePhoto", "Profile.RemovePhoto");
+        Add(ActionUsage.SelfEmitted, "Profile.SetTimeZone");
+        Add(ActionUsage.Untracked("A read: the Profile page's screen view already counts it."), "Profile.TimeZones");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoCreated), "SprintDemo.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");

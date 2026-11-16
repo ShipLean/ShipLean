@@ -58,7 +58,8 @@ public class UserSessions(NpgsqlDataSource dataSource, TimeProvider clock)
         return await connection.QuerySingleOrDefaultAsync<UserSnapshot>(new CommandDefinition(
             """
             SELECT id, is_admin AS IsAdmin, must_change_password AS MustChangePassword,
-                   disabled_at IS NOT NULL AS Disabled, security_stamp AS SecurityStamp
+                   disabled_at IS NOT NULL AS Disabled, security_stamp AS SecurityStamp,
+                   time_zone AS TimeZone
             FROM app_user WHERE id = @userId
             """, new { userId }, cancellationToken: cancellationToken));
     }
