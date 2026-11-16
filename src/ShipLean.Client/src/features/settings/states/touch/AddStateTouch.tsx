@@ -20,7 +20,7 @@ export function AddStateTouch({
       <button
         type="button"
         data-testid={settingsTestIds.stateAddOpen}
-        className="btn-ghost w-full text-ink"
+        className="btn-ghost w-full text-ink touch:h-[var(--touch-target)]"
         onClick={() => setOpen(true)}
       >
         + Add state

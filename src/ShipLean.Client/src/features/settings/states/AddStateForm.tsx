@@ -66,7 +66,7 @@ export function AddStateForm({
         <button
           type="button"
           data-testid={settingsTestIds.stateAddCancel}
-          className="btn-ghost"
+          className="btn-ghost touch:h-[var(--touch-target)]"
           onClick={onCancel}
         >
           Cancel
