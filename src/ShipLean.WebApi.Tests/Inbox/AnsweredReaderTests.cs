@@ -340,10 +340,11 @@ public class AnsweredReaderTests : ApiFixture
         var bangkok = await MemberAsync(connection);
         var utc = await MemberAsync(connection);
         await ViewerZoneArrange.SetAsync(Api, TestUser.Of(bangkok), ViewerZoneTestData.BangkokId);
-        var item = await ItemAsync(connection, "Answered at 18:00 UTC yesterday");
+        var bangkokItem = await ItemAsync(connection, "Answered at 18:00 UTC yesterday");
+        var utcItem = await ItemAsync(connection, "Answered at 18:00 UTC yesterday, UTC viewer");
         var at = TestDates.Today.AddHours(-6);
-        await DecisionEventsAsync(connection, item, bangkok, "confirmed", at, 1);
-        await DecisionEventsAsync(connection, item, utc, "confirmed", at, 1);
+        await DecisionEventsAsync(connection, bangkokItem, bangkok, "confirmed", at, 1);
+        await DecisionEventsAsync(connection, utcItem, utc, "confirmed", at, 1);
 
         var bangkokView = await GetAsync(bangkok);
         var utcView = await GetAsync(utc);
