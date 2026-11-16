@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { Sheet } from '../touch/Sheet';
 import { touchTestIds } from '../touch/testIds';
-import { StateMenu, stateMenuFootnote } from './StateMenu';
+import { StateMenu } from './StateMenu';
 import { componentTestIds as ids } from './testIds';
 
 const THEMES = ['light', 'dark'] as const;
@@ -41,7 +41,9 @@ test('StateMenu_ShouldGroupStatesByCategoryAndMarkTheCurrent', async ({ mount, p
   await expect(options.nth(2)).toHaveAttribute('aria-current', 'true');
   await expect(options.nth(2)).toHaveAttribute('aria-selected', 'true');
   await expect(options.nth(0)).not.toHaveAttribute('aria-current');
-  await expect(menu.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(stateMenuFootnote);
+  await expect(menu.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
+    'States for each type are set per project in Settings. The colour follows the category.',
+  );
   for (const box of await options.evaluateAll((els) =>
     els.map((el) => el.getBoundingClientRect().toJSON()),
   )) {

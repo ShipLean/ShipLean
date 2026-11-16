@@ -45,7 +45,7 @@ const categoryLabels: Record<StateCategory, string> = {
 };
 
 /** The footnote under the states at touch, unless the caller passes its own `footer` (SHIP-714 D4). */
-export const stateMenuFootnote =
+const stateMenuFootnote =
   'States for each type are set per project in Settings. The colour follows the category.';
 
 /**
