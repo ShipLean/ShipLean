@@ -458,7 +458,12 @@ public class GetAgentSessionTests : McpFixture
         var docs = await File.ReadAllTextAsync(Path.Combine(RepoPaths.Root, "docs", "mcp.md"));
         var row = docs.Split('\n').Single(line => line.StartsWith("| `get_agent_session` |", StringComparison.Ordinal));
 
-        arguments.ShouldAllBe(argument => row.Contains($"`{argument}`", StringComparison.Ordinal), row);
+        // The argument clauses come before "Result:", which also names `session` and `item` as result fields; match each clause itself.
+        var argumentText = row[..row.IndexOf("Result:", StringComparison.Ordinal)];
+        argumentText.ShouldContain("Exactly one of `session` (a session id) or `item` (a key: its newest session)", Case.Sensitive);
+        argumentText.ShouldContain("`before` (the `next_before` of a previous call", Case.Sensitive);
+        argumentText.ShouldContain("`limit` (default 50, 1 to 100", Case.Sensitive);
+        arguments.ShouldAllBe(argument => argumentText.Contains($"`{argument}` (", StringComparison.Ordinal), row);
         row.ShouldContain("| read |");
     }
 
