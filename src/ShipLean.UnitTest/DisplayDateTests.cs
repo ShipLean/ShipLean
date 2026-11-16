@@ -293,7 +293,7 @@ public class DisplayDateTests
 
         choices.ShouldContain(("Asia/Bangkok", "Asia/Bangkok (UTC+07:00)"));
         choices.ShouldContain(("Europe/London", "Europe/London (UTC+01:00)"));
-        choices.ShouldAllBe(choice => DisplayDate.TryZone(choice.Id, out _));
+        choices.Where(choice => !DisplayDate.TryZone(choice.Id, out _)).ShouldBeEmpty();
         var offsets = choices.Select(choice => Zone(choice.Id).GetUtcOffset(now)).ToList();
         offsets.ShouldBe(offsets.Order().ToList());
     }

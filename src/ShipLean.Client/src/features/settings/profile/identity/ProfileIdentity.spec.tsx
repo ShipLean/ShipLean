@@ -23,6 +23,8 @@ const meOf = (over: Partial<MeDto> = {}): MeDto => ({
   canCreateProjects: true,
   theme: 'os',
   density: 'compact',
+  timeZone: null,
+  timeZoneLabel: 'Not set: times show in UTC',
   ...over,
 });
 

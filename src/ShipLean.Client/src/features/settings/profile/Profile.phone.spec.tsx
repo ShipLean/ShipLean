@@ -25,6 +25,8 @@ const me: MeDto = {
   canCreateProjects: true,
   theme: 'os',
   density: 'compact',
+  timeZone: null,
+  timeZoneLabel: 'Not set: times show in UTC',
 };
 
 const projects: ProjectSummaryDto[] = [

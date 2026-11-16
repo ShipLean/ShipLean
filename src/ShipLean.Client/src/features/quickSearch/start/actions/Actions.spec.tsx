@@ -16,6 +16,8 @@ const me: MeDto = {
   canCreateProjects: true,
   theme: 'dark',
   density: 'compact',
+  timeZone: null,
+  timeZoneLabel: 'Not set: times show in UTC',
 };
 
 interface Routable {

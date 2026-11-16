@@ -1,7 +1,7 @@
 import { expect, test, vi } from 'vitest';
 import me from '../../../ShipLean.TestSupport/PinnedShapes/me.json';
 import { configurePlatform, platform, type UnauthorizedReason } from '../platform';
-import { DENSITIES, THEMES, getMe, type MeDto } from './me';
+import { DENSITIES, THEMES, getMe, setTimeZone, timeZoneChoices, type MeDto } from './me';
 
 // Typecheck fails if the fixture lacks a field, has one of the wrong type, or has one the type doesn't declare.
 type DeepWiden<T> = T extends string
@@ -61,5 +61,34 @@ test('getMe_ShouldPassTheSignalAndSignIn', async () => {
   } finally {
     vi.unstubAllGlobals();
     configurePlatform(original);
+  }
+});
+
+test('setTimeZone_ShouldPutTheZoneAndSource', async () => {
+  const answer = { ...me.me, timeZone: 'Asia/Bangkok', timeZoneLabel: 'Asia/Bangkok (UTC+07:00)' };
+  const fetchStub = vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 }));
+  vi.stubGlobal('fetch', fetchStub);
+  try {
+    expect(await setTimeZone('Asia/Bangkok', 'browser')).toEqual(answer);
+    const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain('/api/me/time-zone');
+    expect(init.method).toBe('PUT');
+    expect(JSON.parse(init.body as string)).toEqual({ timeZone: 'Asia/Bangkok', source: 'browser' });
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+test('timeZoneChoices_ShouldGetTheChoices', async () => {
+  const choices = { choices: [{ id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' }] };
+  const fetchStub = vi.fn().mockResolvedValue(new Response(JSON.stringify(choices), { status: 200 }));
+  vi.stubGlobal('fetch', fetchStub);
+  try {
+    expect(await timeZoneChoices()).toEqual(choices);
+    const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain('/api/me/time-zones');
+    expect(init.method ?? 'GET').toBe('GET');
+  } finally {
+    vi.unstubAllGlobals();
   }
 });

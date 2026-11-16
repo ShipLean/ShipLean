@@ -35,20 +35,23 @@ public sealed class MeReader(
         """;
 
     public Task<MeDto> GetAsync(Guid userId, CancellationToken cancellationToken = default)
-        => ReadAsync(userId, viewerZone.Id, cancellationToken);
+        => ReadAsync(userId, useRequestZone: true, cancellationToken);
 
     // The same, with the zone read from the column: for the answer to a change of zone, whose request still carries the
     // zone it started with.
     public Task<MeDto> GetWithStoredZoneAsync(Guid userId, CancellationToken cancellationToken = default)
-        => ReadAsync(userId, null, cancellationToken);
+        => ReadAsync(userId, useRequestZone: false, cancellationToken);
 
-    private async Task<MeDto> ReadAsync(Guid userId, string? requestZone, CancellationToken cancellationToken)
+    private async Task<MeDto> ReadAsync(Guid userId, bool useRequestZone, CancellationToken cancellationToken)
     {
+        var now = clock.GetUtcNow();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<Row>(new CommandDefinition(
-            Sql, new { id = userId, now = clock.GetUtcNow() }, cancellationToken: cancellationToken))
+            Sql, new { id = userId, now }, cancellationToken: cancellationToken))
             ?? throw ApiException.Unauthorized("Sign in to continue.");
-        var (zoneId, zoneLabel) = ZoneFields(requestZone ?? row.TimeZone, clock.GetUtcNow());
+        var (zoneId, zoneLabel) = useRequestZone && viewerZone.Id is { } requestZone
+            ? (requestZone, DisplayDate.ZoneLabel(viewerZone.Zone, now))
+            : ZoneFields(row.TimeZone, now);
         return new MeDto(
             row.Id, row.Name, row.Email, row.Initials, row.AvatarColour, row.PhotoUrl, row.IsInstanceAdmin,
             UserStatusRule.Parse(row.Status), row.HasProjects, row.CanCreateProjects,
@@ -60,7 +63,7 @@ public sealed class MeReader(
     public const string NotSetLabel = "Not set: times show in UTC";
 
     // MeDto's TimeZone and TimeZoneLabel for a stored id: an id this host does not know reads as not set.
-    public static (string? Id, string Label) ZoneFields(string? stored, DateTimeOffset now) =>
+    private static (string? Id, string Label) ZoneFields(string? stored, DateTimeOffset now) =>
         DisplayDate.TryZone(stored, out var zone) ? (zone.Id, DisplayDate.ZoneLabel(zone, now)) : (null, NotSetLabel);
 
     public async Task<InstanceDto> InstanceAsync(CancellationToken cancellationToken = default)
