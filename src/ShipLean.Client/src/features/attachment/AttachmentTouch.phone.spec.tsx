@@ -176,3 +176,26 @@ test('AttachmentHeader_ShouldStretchTheToggleAndBorderTheMoreButton', async ({ m
   expect((toggle?.width ?? 0) + (more?.width ?? 0)).toBeGreaterThan((headerBox?.width ?? 0) - 40);
   await expect(page.getByTestId(ids.contentsPosition)).toHaveText('1 / 2');
 });
+
+test('AttachmentTooLarge_ShouldShowTheFileHeaderAndDownloadWithSize', async ({ mount, page }) => {
+  const stub = await stubFeature(page);
+  await page.route('**/api/projects/p1/work-items/by-key/*', (route) =>
+    route.fulfill({ json: { id: markdownView.workItem.id } }),
+  );
+  await page.route('**/api/work-items/*/attachments', (route) =>
+    route.fulfill({
+      json: [{ ...markdownView.attachment, name: 'design-v0.2.md', sizeBytes: 2.4 * 1024 * 1024 }],
+    }),
+  );
+  stub.failNext('markdownView', 400, {
+    error: 'This file is too large to show.',
+    code: 'markdown_too_large',
+  });
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  await expect(screen.getByTestId(ids.name)).toHaveText('design-v0.2.md');
+  await expect(screen.getByTestId(ids.tooLargeHeading)).toHaveText('Too large to show here');
+  const download = screen.getByTestId(ids.loadFailedDownload);
+  await expect(download).toHaveText('Download (2.4 MB)');
+  await expect(download).toHaveClass(/btn-signal/);
+});
