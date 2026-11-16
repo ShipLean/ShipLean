@@ -217,7 +217,7 @@ public class GetAgentSessionTests : McpFixture
         reply.IsToolError().ShouldBeTrue();
         var error = reply.Structured().GetProperty("error");
         error.GetProperty("code").GetString().ShouldBe("not_found");
-        error.GetProperty("message").GetString().ShouldContain("has no agent sessions");
+        error.GetProperty("message").GetString()!.ShouldContain("has no agent sessions");
     }
 
     [Test]
@@ -234,7 +234,7 @@ public class GetAgentSessionTests : McpFixture
             var delivery = Guid.CreateVersion7();
             await connection.ExecuteAsync(
                 "INSERT INTO agent_delivery (id, session_id, seq, action, body, next_attempt_at, status, created_at) VALUES (@delivery, @session, 1, 'created', @body::jsonb, now(), 'failed', now())",
-                new { delivery, session, body = $$"""{"uploadUrl":"https://shiplean.example/api/uploads/agent-log?token={{token}}","agentSession":{"prompt":"{{token}}"}}""" });
+                new { delivery, session, body = $$$"""{"uploadUrl":"https://shiplean.example/api/uploads/agent-log?token={{{token}}}","agentSession":{"prompt":"{{{token}}}"}}""" });
             await AgentDeliveryAttemptRows.InsertAsync(connection, new AgentDeliveryAttemptCreate(delivery, relay, 1, Now.AddMinutes(-1), 503, "Service Unavailable", 120, null));
         }
 
@@ -323,7 +323,7 @@ public class GetAgentSessionTests : McpFixture
     {
         var expected = JsonNode.Parse(await File.ReadAllTextAsync(
             Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "mcp", "get-agent-session.json")))!["admin"]!.AsObject();
-        var started = new DateTimeOffset(2026, 11, 15, 9, 0, 0, TimeSpan.Zero);
+        var started = DateTimeOffset.Parse(expected["session"]!["started"]!.GetValue<string>(), System.Globalization.CultureInfo.InvariantCulture);
         var sessionId = Guid.Parse(expected["session"]!["id"]!.GetValue<string>());
         string key;
         string connectionName;
@@ -374,7 +374,9 @@ public class GetAgentSessionTests : McpFixture
 
     [Test]
     public void ServerInstructions_ShouldSendAnAgentToGetAgentSessionToFindWhyARunFailed()
-        => McpServerServices.Instructions.ShouldContain("To find out why an agent run failed, call get_agent_session.");
+    {
+        McpServerServices.Instructions.ShouldContain("To find out why an agent run failed, call get_agent_session.");
+    }
 
     private async Task<McpReply> CallAsync(TestUser user, string arguments)
         => await CallToolAsync(await TokenAsync(user, ReadOnly), "get_agent_session", arguments);

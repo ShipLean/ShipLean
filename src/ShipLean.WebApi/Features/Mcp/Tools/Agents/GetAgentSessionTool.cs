@@ -20,7 +20,7 @@ internal sealed class GetAgentSessionTool(ItemResolver items, AgentSessionMcpRea
     private const int MaxLimit = 100;
     private const string SessionNotFound = "No agent session with that id was found.";
 
-    private static bool IsLive(string state) => state is AgentSessionStates.Submitted or AgentSessionStates.Working or AgentSessionStates.InputRequired;
+    private static bool IsLive(string state) => state is "submitted" or "working" or "inputRequired";
 
     [McpServerTool(Name = "get_agent_session"), McpScope(McpScopes.Read)]
     [Description("One agent session of a work item: how it ended (end_reason, end_text and, for those who may see it, end_detail), its activities newest first, its delivery attempts and its run log. Pass exactly one of session (the id from get_work_item's agent_sessions) or item (a key, like SHIP-123: its newest session).")]

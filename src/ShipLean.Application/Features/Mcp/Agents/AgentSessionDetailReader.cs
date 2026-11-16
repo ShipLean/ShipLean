@@ -82,7 +82,7 @@ public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgent
         var parts = before.Split('.');
         if (parts.Length == 2
             && long.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var ticks)
-            && ticks is >= 0 and <= DateTimeOffset.MaxValue.Ticks
+            && ticks <= DateTimeOffset.MaxValue.Ticks
             && Guid.TryParseExact(parts[1], "N", out var id))
         {
             return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
