@@ -51,7 +51,10 @@ test('Crumbs_WhenOnAttachmentRouteOnDesktop_ShouldSayAttachment', async ({ mount
 
 // The sprint crumb on a phone (K2, SHELL-11): "SHIP › Sprints › Sprint 24 › Backlog", as the sprint-tabs design.
 for (const theme of ['light', 'dark'] as const) {
-  test(`Crumbs_WhenOnASprintTabAtTouch_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+  test(`Crumbs_WhenOnASprintTabAtTouch_ShouldMatchItsScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await stubShell(page);
     await mount(
@@ -61,7 +64,12 @@ for (const theme of ['light', 'dark'] as const) {
       { hooksConfig: { route: '/p/SHIP/sprints/sprint-24/backlog' } },
     );
     const crumbs = page.getByTestId(ids.crumbs);
-    await expect(crumbs.getByTestId(ids.crumb)).toHaveText(['SHIP', 'Sprints', 'Sprint 24', 'Backlog']);
+    await expect(crumbs.getByTestId(ids.crumb)).toHaveText([
+      'SHIP',
+      'Sprints',
+      'Sprint 24',
+      'Backlog',
+    ]);
 
     await expect(crumbs).toHaveScreenshot(`sprint-crumbs.${theme}.png`, { animations: 'disabled' });
   });

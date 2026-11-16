@@ -38,6 +38,10 @@ test('Crumbs_WhenSprintStillLoading_ShouldShowSprint', async ({ mount, page }) =
 
   await expect(page.getByTestId(ids.crumb)).toHaveText(['SHIP', 'Sprints', 'Sprint', 'Backlog']);
 
-  await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SHELL_SPRINTS) });
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(SHELL_SPRINTS),
+  });
   await expect(page.getByTestId(ids.crumb)).toHaveText(['SHIP', 'Sprints', sprint.name, 'Backlog']);
 });
