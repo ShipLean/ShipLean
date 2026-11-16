@@ -66,14 +66,19 @@ test('getMe_ShouldPassTheSignalAndSignIn', async () => {
 
 test('setTimeZone_ShouldPutTheZoneAndSource', async () => {
   const answer = { ...me.me, timeZone: 'Asia/Bangkok', timeZoneLabel: 'Asia/Bangkok (UTC+07:00)' };
-  const fetchStub = vi.fn().mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 }));
+  const fetchStub = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify(answer), { status: 200 }));
   vi.stubGlobal('fetch', fetchStub);
   try {
     expect(await setTimeZone('Asia/Bangkok', 'browser')).toEqual(answer);
     const [url, init] = fetchStub.mock.calls[0] as [string, RequestInit];
     expect(url).toContain('/api/me/time-zone');
     expect(init.method).toBe('PUT');
-    expect(JSON.parse(init.body as string)).toEqual({ timeZone: 'Asia/Bangkok', source: 'browser' });
+    expect(JSON.parse(init.body as string)).toEqual({
+      timeZone: 'Asia/Bangkok',
+      source: 'browser',
+    });
   } finally {
     vi.unstubAllGlobals();
   }
@@ -81,7 +86,9 @@ test('setTimeZone_ShouldPutTheZoneAndSource', async () => {
 
 test('timeZoneChoices_ShouldGetTheChoices', async () => {
   const choices = { choices: [{ id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' }] };
-  const fetchStub = vi.fn().mockResolvedValue(new Response(JSON.stringify(choices), { status: 200 }));
+  const fetchStub = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify(choices), { status: 200 }));
   vi.stubGlobal('fetch', fetchStub);
   try {
     expect(await timeZoneChoices()).toEqual(choices);
