@@ -74,7 +74,8 @@ public class QualityJourneyTests : SeededAcceptanceTest
         await Expect(Page.GetByTestId(WorkItemTestIds.LinkType)).ToHaveValueAsync("causedBy");
         await Page.GetByTestId(WorkItemTestIds.LinkKey).FillAsync(_task);
         await Page.GetByTestId(WorkItemTestIds.LinkSubmit).ClickAsync();
-        await Expect(Page.GetByTestId(WorkItemTestIds.LinkCausedByRow)).ToContainTextAsync(_task);
+        var linkRow = Page.GetByTestId(WorkItemTestIds.LinkRow).Filter(new() { HasTextString = _task });
+        await Expect(linkRow).ToContainTextAsync("Caused by");
         await Page.GetByTestId(WorkItemTestIds.Save).ClickAsync();
         await Expect(Page.GetByTestId(WorkItemTestIds.SaveState)).ToContainTextAsync("Saved");
 
@@ -95,10 +96,11 @@ public class QualityJourneyTests : SeededAcceptanceTest
 
         // 4. The bug list: the escaping bug counts in the earlier sprint with its cause; the found one is marked as such.
         var rows = quality.GetByTestId(InspectionMetricsTestIds.QualityBugRow);
-        var escapingRow = rows.And(Page.Locator($"[data-key='{escaping}']"));
+        var escapingRow = rows.Filter(new() { HasTextString = escaping });
+        await Expect(escapingRow).ToHaveAttributeAsync("data-key", escaping);
         await Expect(escapingRow).ToContainTextAsync($"· {shortName}");
         await Expect(escapingRow.GetByTestId(InspectionMetricsTestIds.QualityBugCausedBy)).ToContainTextAsync(_task);
-        var foundRow = rows.And(Page.Locator($"[data-key='{found}']"));
+        var foundRow = rows.Filter(new() { HasTextString = found });
         await Expect(foundRow).ToHaveAttributeAsync("data-found-before-release", "true");
         await Expect(foundRow.GetByTestId(InspectionMetricsTestIds.QualityBugFoundBeforeRelease)).ToBeVisibleAsync();
     }
