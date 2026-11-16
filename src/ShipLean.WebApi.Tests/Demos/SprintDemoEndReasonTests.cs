@@ -66,6 +66,7 @@ public class SprintDemoEndReasonTests : ApiFixture
         admin.Status.ShouldBe(SprintDemoStatus.Failed);
         admin.StatusMessage.ShouldBe($"The agent connection didn't take the job: {Detail}");
         member.Status.ShouldBe(SprintDemoStatus.Failed);
+        member.StatusMessage.ShouldBe(AgentEndText.For(AgentEndReasons.DeliveryFailed, null));
         member.StatusMessage.ShouldBe("The agent connection didn't take the job.");
     }
 
