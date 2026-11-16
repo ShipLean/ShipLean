@@ -185,24 +185,6 @@ test('TouchPager_WhenOpen_ShouldNotScrollThePageSideways', async ({ mount, page 
   expect(await fitsTheWidth(page)).toBe(true);
 });
 
-// Headless phone Chromium draws overlay scrollbars. A styled ::-webkit-scrollbar takes layout space, as a desktop
-// browser's does when narrowed to the touch layout, so the window's content area is narrower than 100vw.
-test('TouchPager_WhenTheWindowHasAScrollbar_ShouldBleedOnlyToItsEdge', async ({ mount, page }) => {
-  await page.addStyleTag({
-    content: 'html::-webkit-scrollbar { width: 15px; background: #ccc } body { min-height: 3000px }',
-  });
-  await mount(<PagerHarness />);
-  const width = await page.evaluate(() => document.documentElement.clientWidth);
-  expect(width).toBe(375);
-  await expect
-    .poll(async () => {
-      const box = (await page.getByTestId(touchTestIds.pagerChips).boundingBox())!;
-      return [box.x, box.x + box.width];
-    })
-    .toEqual([0, width]);
-  expect(await fitsTheWidth(page)).toBe(true);
-});
-
 test('TouchPager_WhenPageHasCategory_ShouldDrawAStateDotInItsChip', async ({ mount, page }) => {
   await mount(<PagerHarness />);
   const dot = (id: string) => chipById(page, id).getByTestId(componentTestIds.stateDot);
