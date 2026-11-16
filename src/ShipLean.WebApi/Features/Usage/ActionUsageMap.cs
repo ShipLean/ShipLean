@@ -96,6 +96,9 @@ public static class ActionUsageMap
             "AgentConnections.Archive",
             "AgentConnections.RegenerateSecret",
             "AgentConnections.RegenerateToken");
+        Add(ActionUsage.Track(UsageEventNames.InstanceAgentConnectionTested), "AgentConnections.Test");
+        Add(ActionUsage.Track(UsageEventNames.AgentSessionRunLogUploaded), "AgentLogUpload.Upload");
+        Add(ActionUsage.Untracked("A settings read."), "AgentConnections.Health");
         Add(ActionUsage.Track(UsageEventNames.InstanceUserAdded), "UsersAdmin.Add");
         Add(
             ActionUsage.Track(UsageEventNames.InstanceUserChanged),
