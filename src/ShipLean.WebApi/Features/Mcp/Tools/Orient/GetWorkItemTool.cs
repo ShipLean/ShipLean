@@ -34,6 +34,7 @@ internal sealed class GetWorkItemTool(
     IAgentAddresses addresses,
     IItemAsks asks,
     TimeProvider clock,
+    IViewerZone viewerZone,
     McpItemTypeSlot itemType)
 {
     private const int CommentCount = 5;
@@ -103,7 +104,7 @@ internal sealed class GetWorkItemTool(
             itemAsks.OpenDecisions,
             isFeature ? snapshot.Goal : null,
             isFeature ? snapshot.StatusLine : null,
-            isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock) : null,
+            isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock, viewerZone) : null,
             isFeature ? snapshot.Slug : null,
             StartedLabel(snapshot));
         return OrientReply.Of(result, $"{result.Key} {result.Title}: {result.State}, revision {result.Revision}, {result.Children.Count} children, {result.Attachments.Count} attachments, {result.Comments.Count} recent comments{AsksSuffix(itemAsks)}.");
@@ -153,7 +154,7 @@ internal sealed class GetWorkItemTool(
 
     private string? StartedLabel(WorkItemSnapshot snapshot)
         => snapshot is { Type: WorkItemTypeId.Feature, StartedOn: { } started }
-            ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, clock.LocalTimeZone), clock.GetUtcNow(), clock.LocalTimeZone)
+            ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, viewerZone.Zone), clock.GetUtcNow(), viewerZone.Zone)
             : null;
 
     private static string CamelCase(LinkType type) => char.ToLowerInvariant(type.ToString()[0]) + type.ToString()[1..];

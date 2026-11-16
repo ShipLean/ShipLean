@@ -23,7 +23,8 @@ public sealed class AttachmentStore(
     IBlobStore blobs,
     TimeProvider clock,
     IProjectEvents events,
-    AttachmentLimits limits) : IAttachmentStore
+    AttachmentLimits limits,
+    IViewerZone viewerZone) : IAttachmentStore
 {
     private const string FallbackContentType = "application/octet-stream";
 
@@ -38,7 +39,7 @@ public sealed class AttachmentStore(
         var rows = await connection.QueryAsync<AttachmentRow>(new CommandDefinition(
             $"SELECT {AttachmentRow.Columns} {AttachmentRow.From} WHERE a.work_item_id = @workItemId AND a.archived_at IS NULL ORDER BY a.created_at, a.id",
             new { workItemId }, cancellationToken: cancellationToken));
-        return [.. rows.Select(r => r.ToDto(clock))];
+        return [.. rows.Select(r => r.ToDto(clock.GetUtcNow(), viewerZone.Zone))];
     }
 
     public async Task<AttachmentDto> AddAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, CancellationToken cancellationToken = default)
@@ -65,7 +66,7 @@ public sealed class AttachmentStore(
         }
 
         await PublishChangedAsync(connection, workItemId, cancellationToken);
-        return added.ToDto(clock);
+        return added.ToDto(clock.GetUtcNow(), viewerZone.Zone);
     }
 
     public async Task<(AttachmentDto Attachment, BlobContent Content)> OpenAsync(Guid id, CancellationToken cancellationToken = default)
@@ -88,11 +89,11 @@ public sealed class AttachmentStore(
                 throw ApiException.NotFound("That attachment does not exist.");
             }
 
-            return (row.ToDto(clock), new BlobContent(new BlobRangeStream(blobs, row.StorageRef, row.SizeBytes), row.ContentType), false);
+            return (row.ToDto(clock.GetUtcNow(), viewerZone.Zone), new BlobContent(new BlobRangeStream(blobs, row.StorageRef, row.SizeBytes), row.ContentType), false);
         }
 
         var blob = await blobs.GetAsync(row.StorageRef, cancellationToken) ?? throw ApiException.NotFound("That attachment does not exist.");
-        return (row.ToDto(clock), new BlobContent(blob.Content, row.ContentType), AttachmentServing.IsInline(row.ContentType, row.Sanitized));
+        return (row.ToDto(clock.GetUtcNow(), viewerZone.Zone), new BlobContent(blob.Content, row.ContentType), AttachmentServing.IsInline(row.ContentType, row.Sanitized));
     }
 
     public async Task ArchiveAsync(Guid id, CancellationToken cancellationToken = default)
@@ -200,7 +201,7 @@ public sealed class AttachmentStore(
         }
 
         await PublishChangedAsync(connection, workItemId, cancellationToken);
-        return [.. stored.Select(r => r.ToDto(clock))];
+        return [.. stored.Select(r => r.ToDto(clock.GetUtcNow(), viewerZone.Zone))];
     }
 
     private async Task<IReadOnlyList<AttachmentRow>> CommitAsync(NpgsqlConnection connection, Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction, CancellationToken cancellationToken)

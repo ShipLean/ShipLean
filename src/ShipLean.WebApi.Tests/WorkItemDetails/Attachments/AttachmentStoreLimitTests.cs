@@ -7,6 +7,7 @@ using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Application.Fakes.Blobs;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.LocalEnvironment.Database;
@@ -45,7 +46,7 @@ public class AttachmentStoreLimitTests
     public async Task ArrangeStore()
     {
         _blobs = new InMemoryBlobStore();
-        _store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, new DiscardingProjectEvents(), new AttachmentLimits(Limit));
+        _store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, new DiscardingProjectEvents(), new AttachmentLimits(Limit), new FixedViewerZone());
         await using var connection = await _database.OpenAsync();
         _workItem = await new WorkItemBuilder(SeedIds.Projects.Ship).InsertAsync(connection);
     }

@@ -6,6 +6,7 @@ using ShipLean.Application.Identity;
 using ShipLean.Application.Markdown;
 using ShipLean.Application.Sprints;
 using ShipLean.Application.WorkItems.History;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
@@ -19,7 +20,7 @@ namespace ShipLean.Application.Features.WorkItems;
 // The work item read model by SQL: WorkItemDto with its refs, rendered markdown, children, links and labels. Callers check
 // IProjectAccess first. The store reuses it (inside its transaction) to build the conflict body.
 [RegisterPerRequest]
-public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, IWorkItemExtras extras)
+public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer renderer, TimeProvider time, IWorkItemExtras extras, IViewerZone viewerZone)
 {
     public async Task<WorkItemDto> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -67,7 +68,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             r.Rev,
             r.ChangedBy is { } by ? users.GetValueOrDefault(by) : null,
             r.ChangedAt,
-            DisplayDate.Relative(r.ChangedAt, time),
+            DisplayDate.Relative(r.ChangedAt, time.GetUtcNow(), viewerZone.Zone),
             r.Origin,
             r.Changes,
             r.AgentName,
@@ -104,7 +105,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             ORDER BY a.created_at, a.id
             """,
             new { ids }, transaction, cancellationToken: cancellationToken)))
-            .Select(a => a.ToDto(time)).Where(a => a.Kind == AttachmentKind.Image).ToList();
+            .Select(a => a.ToDto(time.GetUtcNow(), viewerZone.Zone)).Where(a => a.Kind == AttachmentKind.Image).ToList();
         var users = await UsersAsync(
             connection, transaction,
             [.. rows.SelectMany(r => new[] { r.AssigneeId, r.CreatedBy, r.ChangedBy, r.StatusVerifiedBy, r.HealthSetBy }).Concat(children.Select(c => c.AssigneeId)).OfType<Guid>().Distinct()],
@@ -163,27 +164,27 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             row.Tags,
             new BoardPositionDto(row.ColumnId, row.ColumnDone, row.LaneId, row.ColumnOrder),
             row.BacklogOrder,
-            [.. links.Where(l => l.SourceId == row.Id).Select(l => l.ToDto(time))],
+            [.. links.Where(l => l.SourceId == row.Id).Select(l => l.ToDto(time.GetUtcNow(), viewerZone.Zone))],
             [.. children.Where(c => c.ParentId == row.Id).Select(c => new ChildSummaryDto(
                 c.Id, c.Key, WorkItemTypes.Ref(WorkItemTypes.Parse(c.Type)), c.Title, states[c.StateId], Lookup(users, c.AssigneeId), WorkItemPoints.Normalise(c.Points)))],
             row.Original,
             row.Revision,
             row.CreatedAt,
-            DisplayDate.Relative(row.CreatedAt, time),
+            DisplayDate.Relative(row.CreatedAt, time.GetUtcNow(), viewerZone.Zone),
             row.ChangedAt,
-            DisplayDate.Relative(row.ChangedAt, time),
+            DisplayDate.Relative(row.ChangedAt, time.GetUtcNow(), viewerZone.Zone),
             row.Goal,
             row.StatusLine,
             row.StatusVerifiedAt is { } verified
                 ? new StatusVerifiedDto(
-                    verified, DisplayDate.Relative(verified, time), StatusVerifiedDto.IsStale(verified, time.GetUtcNow()),
+                    verified, DisplayDate.Relative(verified, time.GetUtcNow(), viewerZone.Zone), StatusVerifiedDto.IsStale(verified, time.GetUtcNow()),
                     Lookup(users, row.StatusVerifiedBy), row.StatusVerifiedAgent, row.StatusVerifiedVia)
                 : null,
             row.Slug,
             row.StartedOn,
-            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, time.LocalTimeZone), time.GetUtcNow(), time.LocalTimeZone) : null,
+            row.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, viewerZone.Zone), time.GetUtcNow(), viewerZone.Zone) : null,
             row.HealthValue,
-            row.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time), Lookup(users, row.HealthSetBy), row.HealthSetAgent) : null,
+            row.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time.GetUtcNow(), viewerZone.Zone), Lookup(users, row.HealthSetBy), row.HealthSetAgent) : null,
             // TODO: roll up the children's counts and count open asks for NeedsYou.
             [],
             null);
@@ -220,11 +221,11 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
 
         private static readonly string[] ImageTypes = ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"];
 
-        public AttachmentDto ToDto(TimeProvider clock)
+        public AttachmentDto ToDto(DateTimeOffset now, TimeZoneInfo zone)
             => new(
                 Id, WorkItemId, Name, ContentType, SizeBytes,
                 UploaderId is { } id ? new UserRef(id, UploaderName!, UploaderInitials!, UploaderColour!, UploaderPhotoUrl) : null,
-                CreatedAt, DisplayDate.Relative(CreatedAt, clock), $"/api/attachments/{Id}/content", Kind(), ReplacedCount, AgentName, UploadedVia);
+                CreatedAt, DisplayDate.Relative(CreatedAt, now, zone), $"/api/attachments/{Id}/content", Kind(), ReplacedCount, AgentName, UploadedVia);
 
         // Markdown by .md or text/markdown first, then the image extensions and types, as AttachmentKinds.Of decides.
         private AttachmentKind Kind()

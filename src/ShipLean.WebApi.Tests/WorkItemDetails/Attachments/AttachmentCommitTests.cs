@@ -8,6 +8,7 @@ using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.LocalEnvironment.Database;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.WebApi.Tests.WorkItems.Store;
@@ -50,7 +51,7 @@ public class AttachmentCommitTests
     {
         _events = new CountingProjectEvents();
         _blobs = new BusyCountingBlobStore(new InMemoryBlobStore(), _singleConnection);
-        _store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, _events, new AttachmentLimits(Limit, Limit));
+        _store = new AttachmentStore(_dataSource, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, _events, new AttachmentLimits(Limit, Limit), new FixedViewerZone());
         await using var connection = await _database.OpenAsync();
         _workItem = await new WorkItemBuilder(SeedIds.Projects.Ship).InsertAsync(connection);
     }
@@ -169,7 +170,7 @@ public class AttachmentCommitTests
     [Test]
     public async Task Stage_ShouldHoldNoConnectionDuringTheBlobWrite()
     {
-        var store = new AttachmentStore(_singleConnection, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, _events, new AttachmentLimits(Limit, Limit));
+        var store = new AttachmentStore(_singleConnection, new FixedCurrentUser(SeedIds.Users.Joel), _blobs, TimeProvider.System, _events, new AttachmentLimits(Limit, Limit), new FixedViewerZone());
 
         await store.StageAsync(_workItem, "a.bin", "application/octet-stream", Zeros(10));
 
