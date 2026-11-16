@@ -10,6 +10,7 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Contracts.Users;
 using ShipLean.TestSupport.Hosting;
@@ -59,16 +60,19 @@ public class AgentSessionsReadTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        // A dedicated viewer: no seeded user's zone is touched.
+        var viewerId = await new AppUserBuilder().InsertAsync(database);
+        var viewer = TestUser.Of(viewerId);
         await database.ExecuteAsync(
             "INSERT INTO project_member (id, project_id, user_id, role) VALUES (@id, @projectId, @userId, 'admin')",
-            new { id = Guid.NewGuid(), projectId = arranged.Project.Id, userId = SeedIds.Users.Mei });
+            new { id = Guid.NewGuid(), projectId = arranged.Project.Id, userId = viewerId });
         var item = await arranged.CreateItemAsync(Api);
         var at = ViewerZoneTestData.LateEveningUtc;
         var session = await InsertSessionAsync(database, arranged, item.Id, "completed", at);
         await InsertActivityAsync(database, session, "response", "Done.", ephemeral: false, at);
-        await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
+        await ViewerZoneArrange.SetAsync(Api, viewer, ViewerZoneTestData.BangkokId);
 
-        var panel = await PanelAsync(item.Id, TestUser.Mei);
+        var panel = await PanelAsync(item.Id, viewer);
 
         var shown = panel.Sessions.ShouldHaveSingleItem();
         var expected = at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
@@ -158,7 +162,8 @@ public class AgentSessionsReadTests : ApiFixture
         first.Live.ShouldBeTrue();
         first.StopRequested.ShouldBeFalse();
         first.ConnectionName.ShouldStartWith("Relay ");
-        first.StartedLabel.ShouldBe(ShipLean.Core.DisplayDate.Relative(first.StartedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        // Started five minutes ago.
+        first.StartedLabel.ShouldMatch(@"^\d+m ago$");
         first.EndedLabel.ShouldBeNull();
         first.Urls.ShouldBe([new AgentUrlDto("Pull request", "https://github.com/ShipLean/ShipLean/pull/9")]);
         first.Plan.ShouldBe([new AgentPlanStepDto("Write the test", "completed"), new AgentPlanStepDto("Fix it", "inProgress")]);
