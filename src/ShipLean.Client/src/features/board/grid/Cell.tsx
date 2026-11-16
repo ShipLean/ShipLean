@@ -39,7 +39,10 @@ export function Cell({
   const empty = !offersNew && (cell?.cards ?? []).length === 0 && !(cell && cell.olderCount > 0);
   const place = { laneId, columnId: track.column.id, done: track.doneHalf };
   const cellKey = `cell:${laneId}:${track.column.id}:${track.doneHalf}`;
-  const touchOver = useTouchOver().over === cellKey;
+  const over = useTouchOver().over;
+  // A lifted card over this cell's end (the drop line at the bottom), or over one of its cards (lands above that card).
+  const touchOver = over === cellKey;
+  const touchLandsHere = touchOver || (cell?.cards ?? []).some((card) => card.id === over);
   const { setNodeRef, isOver } = useDroppable({
     id: cellKey,
     data: { kind: 'cell', ...place },
@@ -59,8 +62,9 @@ export function Cell({
           ? 'color-mix(in srgb, var(--color-surface-2) 30%, transparent)'
           : 'color-mix(in srgb, var(--color-surface-2) 55%, transparent)',
         border: track.doneHalf ? '1px dashed var(--color-border)' : undefined,
-        // The cell a card would land in is outlined, for a mouse drag (dnd-kit) and a touch drag alike.
-        outline: isOver || touchOver ? '2px solid var(--color-accent)' : undefined,
+        // The cell a card would land in is outlined: under the pointer for a mouse drag (dnd-kit), and wherever a lifted
+        // card would land for a touch drag (BACKLOG-21).
+        outline: isOver || touchLandsHere ? '2px solid var(--color-accent)' : undefined,
       }}
     >
       {offersNew ? <NewCard projectId={projectId} boardId={boardId} level={level} /> : null}
