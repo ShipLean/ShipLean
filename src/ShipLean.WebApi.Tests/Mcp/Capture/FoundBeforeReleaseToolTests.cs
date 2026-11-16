@@ -19,6 +19,13 @@ public class FoundBeforeReleaseToolTests : McpFixture
         return await connection.ExecuteScalarAsync<bool>("SELECT found_before_release FROM work_item WHERE key = @key", new { key });
     }
 
+    private async Task<string> CaptureAsync(string token, string item)
+    {
+        var reply = await CallToolAsync(token, "capture_work", $$"""{"project":"SHIP","items":[{{item}}]}""");
+        reply.IsToolError().ShouldBeFalse(reply.Structured().ToString());
+        return reply.Structured().GetProperty("items")[0].GetProperty("key").GetString()!;
+    }
+
     [Test]
     public async Task Capture_WhenFlagGiven_ShouldSetIt()
     {
@@ -60,14 +67,11 @@ public class FoundBeforeReleaseToolTests : McpFixture
     public async Task GetWorkItem_WhenBugFlagged_ShouldShowFoundBeforeRelease()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWrite);
-        var created = await CallToolAsync(
-            token,
-            "capture_work",
-            """{"project":"SHIP","items":[{"type":"bug","title":"Found in review","found_before_release":true},{"type":"story","title":"Not a bug"}]}""");
-        var items = created.Structured().GetProperty("items");
+        var bugKey = await CaptureAsync(token, """{"type":"bug","title":"Found in review","found_before_release":true}""");
+        var storyKey = await CaptureAsync(token, """{"type":"story","title":"Not a bug"}""");
 
-        var bug = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{items[0].GetProperty("key").GetString()}}"}""");
-        var story = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{items[1].GetProperty("key").GetString()}}"}""");
+        var bug = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{bugKey}}"}""");
+        var story = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{storyKey}}"}""");
 
         bug.Structured().GetProperty("found_before_release").GetBoolean().ShouldBeTrue();
         story.Structured().TryGetProperty("found_before_release", out _).ShouldBeFalse();
