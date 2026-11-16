@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using System.Globalization;
 using Agoda.IoC.Core;
 using Dapper;

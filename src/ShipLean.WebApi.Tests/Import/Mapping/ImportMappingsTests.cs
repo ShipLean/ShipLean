@@ -50,7 +50,7 @@ public sealed class ImportMappingsTests
     }
 
     private ImportMappings Mappings(InMemoryJiraData data)
-        => new(_connections, new InMemoryJiraClient(JiraWorld.Credentials, data), _jobs, new StateCatalog(_dataSource), new UserDirectory(_dataSource, TimeProvider.System), new FixedViewerZone());
+        => new(_connections, new InMemoryJiraClient(JiraWorld.Credentials, data), _jobs, new StateCatalog(_dataSource), new UserDirectory(_dataSource, TimeProvider.System));
 
     [Test]
     public async Task Mapping_WhenEpic_ShouldBecomeFeature()

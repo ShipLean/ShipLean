@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Agoda.IoC.Core;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;

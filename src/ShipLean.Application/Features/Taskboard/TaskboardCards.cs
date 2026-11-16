@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
