@@ -41,16 +41,14 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
   const unthemedOpen = sheetId === UNTHEMED_SHEET_ID && insights.unthemed.total > 0;
   const write = (next: URLSearchParams) => setParams(next, { replace: true });
   const closeSheet = () => write(withoutSheet(params));
-  // One retro.theme_sheet_opened per open: the effect runs when the open sheet changes, not on a re-render or a refetch. The usage
-  // call never blocks or fails the page.
+  // One retro.theme_sheet_opened per open: the effect runs when the open sheet changes, not on a re-render or a refetch, and an item opened
+  // over the sheet and closed again is not a new opening. The usage call never blocks or fails the page.
   const projectId = project.id;
-  const shownSheet = itemKey
-    ? null
-    : sheetRow
-      ? `theme:${sheetRow.theme.id}`
-      : unthemedOpen
-        ? UNTHEMED_SHEET_ID
-        : null;
+  const shownSheet = sheetRow
+    ? `theme:${sheetRow.theme.id}`
+    : unthemedOpen
+      ? UNTHEMED_SHEET_ID
+      : null;
   useEffect(() => {
     if (shownSheet === null) return;
     postRetroThemeSheetOpened(

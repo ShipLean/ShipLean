@@ -14,6 +14,7 @@ import { InsightsAddressHarness } from '../ct/InsightsAddressHarness';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ThemesAddressHarness } from './ct/ThemesAddressHarness';
+import { ThemesItemPeekHarness } from './ct/ThemesItemPeekHarness';
 
 // Recurring themes on a phone (SHIP-731 D1, D4, D9): the heading with What these mean, a card per theme with its heat
 // strip, the theme sheet and Rename… in it, and the Unthemed card with its sheet (RETRO-11, 12, 13). Regenerate the baselines with scripts/update-page-shots.sh src/features/retros/insights/Themes.phone.spec.tsx.
@@ -607,4 +608,57 @@ test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningWithI
   await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
 
   await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
+});
+
+const stubSheetOpenedReports = async (page: Parameters<typeof stubRetros>[0]) => {
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/*/usage/retro-theme-sheet-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  return opened;
+};
+
+test('ThemeSheet_WhenAnItemIsOpenedOverItAndClosed_ShouldNotReportTheOpeningAgain', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened = await stubSheetOpenedReports(page);
+  await mount(
+    <ThemesItemPeekHarness insights={withUnthemed} />,
+    open(`?sheet=theme:${helped.theme.id}`),
+  );
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  await expect(sheet.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+  await sheet.locator('a').first().tap();
+  await expect(address(page)).toContainText('item=');
+  await expect(sheet).toHaveCount(0);
+  await page.getByTestId('test-close-item').click();
+  await expect(address(page)).not.toContainText('item=');
+  await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await page.waitForTimeout(750);
+  expect(opened).toEqual([{ sheet: 'theme' }]);
+});
+
+test('ThemeSheet_WhenThePageRerendersWithItOpen_ShouldReportTheOpeningOnce', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened = await stubSheetOpenedReports(page);
+  const component = await mount(
+    <ThemesAddressHarness insights={withUnthemed} />,
+    open(`?sheet=theme:${helped.theme.id}`),
+  );
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  // A refetch hands the page a new insights object with the same content.
+  await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
+  await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await page.waitForTimeout(750);
+  expect(opened).toEqual([{ sheet: 'theme' }]);
 });
