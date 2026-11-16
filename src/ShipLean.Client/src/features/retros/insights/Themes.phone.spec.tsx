@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../touch/testIds';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
 import {
   actionDialog,
   insightsWeeks,
@@ -372,7 +373,11 @@ test('ThemeSheet_WhenAnItemIsOpenedFromIt_ShouldGiveWayToIt', async ({ mount, pa
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await sheet.locator('a').first().tap();
+  await sheet
+    .getByTestId(ids.retroThemeSheetAction)
+    .first()
+    .getByTestId(itemPeekTestIds.link)
+    .tap();
   await expect(address(page)).toContainText('item=');
   await expect(sheet).toHaveCount(0);
 });
@@ -639,8 +644,12 @@ test('ThemeSheet_WhenAnItemIsOpenedOverItAndClosed_ShouldNotReportTheOpeningAgai
   await page.getByTestId('test-close-item').click();
   await expect(address(page)).not.toContainText('item=');
   await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
-  await page.waitForTimeout(750);
-  expect(opened).toEqual([{ sheet: 'theme' }]);
+  // Sentinel: any second theme report would arrive before the Unthemed one.
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
 });
 
 test('ThemeSheet_WhenThePageRerendersWithItOpen_ShouldReportTheOpeningOnce', async ({
@@ -659,6 +668,10 @@ test('ThemeSheet_WhenThePageRerendersWithItOpen_ShouldReportTheOpeningOnce', asy
   await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
   await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
   await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
-  await page.waitForTimeout(750);
-  expect(opened).toEqual([{ sheet: 'theme' }]);
+  // Sentinel: any second theme report would arrive before the Unthemed one.
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
 });
