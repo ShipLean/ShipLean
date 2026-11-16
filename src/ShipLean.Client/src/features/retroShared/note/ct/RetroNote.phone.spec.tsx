@@ -8,11 +8,12 @@ import { RetroBoardHarness } from '../../board/ct/RetroBoardHarness';
 import { retroSharedTestIds as ids } from '../../testIds';
 import { RetroNoteHarness } from './RetroNoteHarness';
 
-// Your own undecided Went badly point with a root cause: ⋯, # theme, both buttons and the cause all show.
+// Your own undecided Went badly point in a listed theme, with a root cause: ⋯, # theme, both buttons and the cause all show.
 const own: RetroPointDto = {
   ...noteStates.undecided,
   category: 'wentBadly',
   canArchive: true,
+  theme: retroThemes.themes[1].theme,
   rootCause: 'The review checklist lives in a wiki nobody opens.',
 };
 
@@ -94,14 +95,13 @@ test('MoveToTheme_AtTouch_ShouldMarkTheCurrentThemeAndOfferUnthemed', async ({ m
   )) {
     expect(box).toBeGreaterThanOrEqual(32);
   }
-  const current = themeOf(own);
-  if (current) {
-    await expect(sheet.locator('[aria-current="true"]')).toHaveCount(1);
-    await expect(sheet.locator('[aria-current="true"]')).toContainText(current.theme.name);
-    await expect(sheet.locator('[aria-current="true"]')).toContainText(
-      `${current.pointCount} ${current.pointCount === 1 ? 'point' : 'points'}`,
-    );
-  }
+  const current = themeOf(own)!;
+  const marked = sheet.locator('[aria-current="true"]');
+  await expect(marked).toHaveCount(1);
+  await expect(marked).toContainText(current.theme.name);
+  await expect(marked).toContainText(
+    `${current.pointCount} ${current.pointCount === 1 ? 'point' : 'points'}`,
+  );
 
   const target = retroThemes.themes.find((t) => t.theme.id !== own.theme?.id)!;
   await rows.filter({ hasText: target.theme.name }).tap();
