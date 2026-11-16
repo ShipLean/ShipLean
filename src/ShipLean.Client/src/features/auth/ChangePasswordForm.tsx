@@ -45,7 +45,7 @@ export function ChangePasswordForm({
     <button
       type="submit"
       data-testid={authTestIds.changeSubmit}
-      className="btn-signal touch:h-10 touch:w-full"
+      className="btn-signal touch:h-10 touch:w-full touch:text-[length:15px]"
       disabled={!ready || save.isPending}
     >
       Save and continue
@@ -61,7 +61,7 @@ export function ChangePasswordForm({
     >
       <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold touch:text-[length:var(--text-lg)]">
         Choose your own password
-        <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted">
+        <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted touch:text-[length:var(--text-base)]">
           Signed in as {email}
         </small>
       </h1>
