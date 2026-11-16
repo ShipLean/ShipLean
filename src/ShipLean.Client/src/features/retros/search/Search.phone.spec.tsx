@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectDto } from '@shiplean/core/api/projects';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { retroSearch, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
@@ -261,4 +262,105 @@ test('SearchPhone_WhenCleared_ShouldKeepTheSearchTextFromTheSheetAndTheChipsButN
   await sheet.getByTestId(ids.retrosFilterSheetClear).tap();
   await expect(page.getByTestId(ids.retrosChip)).toHaveCount(0);
   await expect(box).toHaveValue('brief');
+});
+
+test('RetroSearchRow_WhenNothingOpen_ShouldNotLookSelected', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetrosSearchPanel project={project} />, route());
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  // The server's default retro is a desktop concept: the fixture carries one, and no row may show it on a phone.
+  expect(retroSearch.selected).not.toBeNull();
+  await expect(page.locator('[data-testid="retros-row"][aria-selected="true"]')).toHaveCount(0);
+});
+
+test('RetroSearchRow_WhenARetroIsOpen_ShouldLookSelectedOnItsRow', async ({ mount, page }) => {
+  await stubRetros(page);
+  const open = retroSearch.rows[0];
+  await mount(
+    <RetrosSearchPanel project={project} />,
+    route(`?selected=${open.retroId}&point=${open.id}`),
+  );
+  await expect(page.getByTestId(ids.retrosRow)).toHaveCount(retroSearch.rows.length);
+  const selected = page.locator('[data-testid="retros-row"][aria-selected="true"]');
+  await expect(selected).toHaveCount(1);
+  await expect(selected).toHaveAttribute('data-point-id', open.id);
+});
+
+test('RetroSearchRow_ShouldShowTheTypeIconAndKeyAtTheRightOfTheCategoryLine', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await mount(<RetrosSearchPanel project={project} />, route());
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  const first = rows.first();
+  const item = retroSearch.rows[0].workItem!;
+  const icon = first.getByTestId(componentTestIds.typeIcon);
+  await expect(icon).toHaveAttribute('data-type', item.type.id);
+  const key = first.getByText(item.key, { exact: true });
+  await expect(key).toBeVisible();
+  const row = (await first.boundingBox())!;
+  const iconBox = (await icon.boundingBox())!;
+  const keyBox = (await key.boundingBox())!;
+  expect(iconBox.x).toBeLessThan(keyBox.x);
+  // The key ends at the row's right padding (12px), not after the category.
+  expect(row.x + row.width - (keyBox.x + keyBox.width)).toBeLessThan(16);
+  expect(keyBox.x).toBeGreaterThan(row.x + row.width / 2);
+});
+
+test('RetroSearchFilter_ShouldFollowD3Order', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetrosSearchPanel project={project} />, route());
+  await page.getByTestId(ids.retrosFilterOpen).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.retrosFilterShow)).toBeVisible();
+  const first = (filter: string) => sheet.locator(`[data-filter="${filter}"]`).first();
+  const y = async (locator: ReturnType<typeof first>) => (await locator.boundingBox())!.y;
+  const order = [
+    first('category'),
+    sheet.getByTestId(ids.retrosFilterSprint),
+    sheet.getByTestId(ids.retrosFilterTheme),
+    first('level'),
+    first('role'),
+    first('decision'),
+    sheet.getByTestId(ids.retrosFilterNosprint),
+  ];
+  const ys: number[] = [];
+  for (const locator of order) ys.push(await y(locator));
+  expect(ys).toEqual([...ys].sort((a, b) => a - b));
+  expect(new Set(ys).size).toBe(order.length);
+  // Each chip group starts with its any chip, pressed while the filter is empty.
+  for (const [filter, label] of [
+    ['category', 'Any'],
+    ['level', 'All'],
+    ['role', 'Anyone'],
+    ['decision', 'Any'],
+  ] as const) {
+    await expect(first(filter)).toHaveText(label);
+    await expect(first(filter)).toHaveAttribute('aria-pressed', 'true');
+  }
+  // Category chips carry their colour square; the selects are 40px; Show fills the foot.
+  await expect(sheet.locator('[data-filter="category"]')).toHaveCount(5);
+  const wentWell = sheet.locator(
+    '[data-filter="category"][data-value="wentWell"] span[aria-hidden]',
+  );
+  await expect(wentWell).toHaveCount(1);
+  const height = async (id: string) => (await sheet.getByTestId(id).boundingBox())!.height;
+  expect(await height(ids.retrosFilterSprint)).toBeGreaterThanOrEqual(40);
+  expect(await height(ids.retrosFilterTheme)).toBeGreaterThanOrEqual(40);
+  const show = (await sheet.getByTestId(ids.retrosFilterShow).boundingBox())!;
+  const clear = (await sheet.getByTestId(ids.retrosFilterSheetClear).boundingBox())!;
+  expect(clear.x).toBeLessThan(show.x);
+  expect(show.width).toBeGreaterThan(200);
+  await expect(sheet.getByText('Only', { exact: true })).toBeVisible();
+  await expect(sheet.getByText('Only retros logged outside a sprint')).toBeVisible();
+  await expect(sheet.getByText('Only points with no theme yet')).toBeVisible();
+  await expect(sheet.getByText('Themes that keep coming back')).toBeVisible();
+  // Tapping Any clears the filter.
+  await sheet.locator('[data-filter="category"][data-value="wentWell"]').tap();
+  await expect(first('category')).toHaveAttribute('aria-pressed', 'false');
+  await first('category').tap();
+  await expect(first('category')).toHaveAttribute('aria-pressed', 'true');
 });

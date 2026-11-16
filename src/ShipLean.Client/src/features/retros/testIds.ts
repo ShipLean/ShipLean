@@ -224,4 +224,7 @@ export const retrosTestIds = {
   retrosFilterUnthemed: 'retros-filter-unthemed',
   retroRowChevron: 'retro-row-chevron',
   retroFeaturesSearchIcon: 'retro-features-search-icon',
+  retrosOpenRetroTypeKey: 'retros-open-retro-type-key',
+  retrosOpenRetroKey: 'retros-open-retro-key',
+  retrosOpenRetroSteps: 'retros-open-retro-steps',
 } as const;
