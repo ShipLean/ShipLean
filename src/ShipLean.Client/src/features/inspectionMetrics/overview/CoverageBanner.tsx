@@ -1,8 +1,6 @@
 import type { InspectionCoverageDto } from '@shiplean/core/api/views';
+import { LOW_COVERAGE_PERCENT } from '../coverage';
 import { inspectionMetricsTestIds as ids } from '../testIds';
-
-/** Below this share of tasks with a commit time the banner shows (the design's warning level for the coverage chip). */
-export const LOW_COVERAGE_PERCENT = 70;
 
 /** The warning that many tasks end at Resolved because they have no commit time (design ?coverage=low). */
 export function CoverageBanner({

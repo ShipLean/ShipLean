@@ -35,7 +35,7 @@ internal sealed class InspectionMetricsTools(ProjectResolver projects, IInspecti
         var body = JsonSerializer.SerializeToNode(view, InspectionMetricsJson.McpOptions)!.AsObject();
         var result = new JsonObject
         {
-            ["open_url"] = issuer.TrimEnd('/') + $"/p/{Uri.EscapeDataString(resolved.Key)}/inspection",
+            ["open_url"] = McpOpenUrls.InspectionMetrics(issuer, resolved.Key),
         };
         foreach (var property in body.ToList())
         {
