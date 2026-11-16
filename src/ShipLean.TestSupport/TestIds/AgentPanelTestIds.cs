@@ -28,5 +28,6 @@ public static class AgentPanelTestIds
     public const string SessionEndRunLog = "agent-panel-session-end-run-log";
     public const string SessionDeliveries = "agent-panel-session-deliveries";
     public const string SessionDeliveryRow = "agent-panel-session-delivery-row";
+    public const string SessionDeliveryOutcome = "agent-panel-session-delivery-outcome";
     public const string StartWarning = "agent-panel-start-warning";
 }

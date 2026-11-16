@@ -25,5 +25,6 @@ export const agentPanelTestIds = {
   sessionEndRunLog: 'agent-panel-session-end-run-log',
   sessionDeliveries: 'agent-panel-session-deliveries',
   sessionDeliveryRow: 'agent-panel-session-delivery-row',
+  sessionDeliveryOutcome: 'agent-panel-session-delivery-outcome',
   startWarning: 'agent-panel-start-warning',
 } as const;
