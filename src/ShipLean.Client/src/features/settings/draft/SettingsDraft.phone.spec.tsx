@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectSettingsDto } from '@shiplean/core/api/projects';
 import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import type { Page } from '../../../pages/screenshots/shoot';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
@@ -248,4 +249,33 @@ test('SettingsPhone_WhenReadOnly_ShouldDisableEveryEditControl', async ({ mount,
   await expect(page.getByTestId(ids.memberRemove)).toHaveCount(0);
   await expect(page.getByTestId(ids.memberAddEmail)).toHaveCount(0);
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
+});
+
+// ND3a-7 (SHIP-1809 P6): a member row is two lines: name · role · ✕ on the first, the email under the name.
+test('SettingsPhone_WhenMembersShown_ShouldPutNameRoleAndRemoveOnTheFirstLine', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('members'));
+  const rows = page.getByTestId(ids.memberRow);
+  await expect(rows.first()).toBeVisible();
+  const row = rows.last();
+  const remove = row.getByTestId(ids.memberRemove);
+  expect(await remove.innerText()).toBe('✕');
+  const [name, whole, role, cross] = await Promise.all([
+    row.getByTestId(componentTestIds.avatar).boundingBox(),
+    row.boundingBox(),
+    row.getByTestId(ids.memberRole).boundingBox(),
+    remove.boundingBox(),
+  ]);
+  if (!name || !whole || !role || !cross) throw new Error('row part not drawn');
+  const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+  expect(Math.abs(mid(role) - mid(name))).toBeLessThanOrEqual(4);
+  expect(Math.abs(mid(cross) - mid(name))).toBeLessThanOrEqual(4);
+  expect(cross.width).toBeGreaterThanOrEqual(32);
+  expect(cross.height).toBeGreaterThanOrEqual(32);
+  expect(role.x).toBeGreaterThan(name.x);
+  // Two lines: the role line plus the email line, not a third line for role and Remove.
+  expect(whole.height).toBeLessThan(role.height + 40);
 });

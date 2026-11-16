@@ -334,4 +334,6 @@ public static class SettingsTestIds
     public const string TimeZoneUseDevice = "settings-time-zone-use-device";
     public const string TimeZoneError = "settings-time-zone-error";
     public const string TimeZoneChoicesError = "settings-time-zone-choices-error";
+    public const string StateHandle = "settings-state-handle";
+    public const string StateColumnLabel = "settings-state-column-label";
 }
