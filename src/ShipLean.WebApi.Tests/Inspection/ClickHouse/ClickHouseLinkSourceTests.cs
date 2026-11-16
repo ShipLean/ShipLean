@@ -47,4 +47,28 @@ public sealed class ClickHouseLinkSourceTests
 
         linked.ShouldBe(["SHIP-11", "SHIP-12"]);
     }
+
+    // Claude Code with tool details on: the tool_result log says "mcp_tool", names the server inside tool_parameters and has the input in tool_input.
+    [Test]
+    public async Task FindRuns_WhenAClaudeCodeToolResultNamesShipleanInItsParameters_LinksItFromTheToolCall()
+    {
+        await using var scratch = await ScratchExporter.CreateAsync();
+        var migrator = scratch.Migrator();
+        await migrator.EnsureAsync(CancellationToken.None);
+        await scratch.AddLogAsync("cc", 0, "", new Dictionary<string, string>
+        {
+            ["tool_name"] = "mcp_tool", ["tool_parameters"] = "{\"mcp_server_name\":\"shiplean\",\"mcp_tool_name\":\"pick_up\"}", ["tool_input"] = "{\"item\":\"SHIP-21\"}",
+        });
+        await scratch.AddLogAsync("cc", 1, "", new Dictionary<string, string>
+        {
+            ["tool_name"] = "mcp_tool", ["tool_parameters"] = "{\"mcp_server_name\":\"other\",\"mcp_tool_name\":\"pick_up\"}", ["tool_input"] = "{\"item\":\"SHIP-22\"}",
+        });
+
+        var linked = await scratch.Finder(migrator).FindAsync(ScratchExporter.Query("SHIP-21"), CancellationToken.None);
+        var other = await scratch.Finder(migrator).FindAsync(ScratchExporter.Query("SHIP-22"), CancellationToken.None);
+
+        linked.Runs.Count.ShouldBe(1, linked.Problem);
+        linked.Runs[0].Links.ShouldBe([new RunItemLink("SHIP-21", LinkSource.FromToolCall)]);
+        other.Runs.ShouldBeEmpty();
+    }
 }
