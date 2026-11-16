@@ -1,4 +1,4 @@
-import type { MeDto } from '@shiplean/core/api/me';
+import type { MeDto, TimeZoneChoicesDto } from '@shiplean/core/api/me';
 import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { meDto } from '../../features/auth/authFixtures';
@@ -71,6 +71,21 @@ export const SHELL_MEMBERS: MemberDto[] = Object.values(PEOPLE).map((user) => ({
   status: 'active',
 }));
 
+// The zones GET /api/me/time-zones answers, for the Profile Time zone panel.
+export const SHELL_TIME_ZONES: TimeZoneChoicesDto = {
+  choices: [
+    { id: 'Europe/London', label: 'Europe/London (UTC+00:00)' },
+    { id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' },
+    { id: 'America/New_York', label: 'America/New_York (UTC-05:00)' },
+  ],
+};
+
+/** The viewer's saved zone for shots that show the Profile Time zone panel. */
+export const SHELL_ZONE: Pick<MeDto, 'timeZone' | 'timeZoneLabel'> = {
+  timeZone: 'Asia/Bangkok',
+  timeZoneLabel: 'Asia/Bangkok (UTC+07:00)',
+};
+
 /** Each field replaces the default whole (an array is not merged); `me` and `project` are merged over the default. */
 export interface ShellOverrides {
   /** The signed-in caller (default: Priya Shah, a project admin). */
@@ -111,6 +126,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/me') return json(meDto(overrides.me));
+    if (path === '/api/me/time-zones') return json(SHELL_TIME_ZONES);
     if (path === '/api/projects') return json(projects);
     if (path === `/api/projects/by-key/${project.key}`) return json(project);
     if (path === `/api/projects/${project.id}/sprints`) return json(sprints);
