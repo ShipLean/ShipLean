@@ -149,4 +149,17 @@ public class SchemaTests
         }
         await connection.ExecuteAsync("UPDATE app_user SET time_zone = 'Asia/Bangkok' WHERE id = @id", new { id });
     }
+
+    // SHIP-1398 K1. Mutations: make the column NOT NULL; type it as timestamp without zone.
+    [Test]
+    public async Task WorkItemLinkCommittedAt_WhenApplied_ShouldBeANullableTimestamptz()
+    {
+        await using var connection = await _database.OpenAsync();
+
+        var column = await connection.QuerySingleAsync<(string DataType, string IsNullable)>(
+            "SELECT data_type, is_nullable FROM information_schema.columns WHERE table_name = 'work_item_link' AND column_name = 'committed_at'");
+
+        column.DataType.ShouldBe("timestamp with time zone");
+        column.IsNullable.ShouldBe("YES");
+    }
 }

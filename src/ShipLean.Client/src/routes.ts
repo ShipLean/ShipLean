@@ -29,6 +29,7 @@
 //     /p/:key/retros/features     Retrospectives by Feature
 //     /p/:key/retros/items/:itemKey   one item's retros   ?retro=&decide=open&point=
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
+//     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|json&range=&cut=&p=&select=&tab=tasks|features
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
@@ -105,6 +106,7 @@ export interface RouteParams {
   retroFeatures: ProjectParams;
   retroItem: ProjectParams & { itemKey: string };
   retroInsights: ProjectParams;
+  inspectionMetrics: ProjectParams;
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
@@ -166,6 +168,10 @@ export interface RouteQuery {
   from?: string;
   // The sprint Retro tab's category tile at touch (wentWell | wentBadly | improve | notInPlan).
   cat?: string;
+  // Inspection (view, range and select above): the split, the sprint open (its id) and that sprint's tab.
+  cut?: string;
+  p?: string;
+  tab?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -353,6 +359,16 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['view', 'range', 'item'],
     installLevel: false,
     crumbs: () => ['Retrospectives', 'Insights'],
+  },
+  // Inspection (SHIP-1398): one page, the view in ?view=; inspectionMetricsQuery.ts reads and validates the rest.
+  inspectionMetrics: {
+    pattern: '/p/:key/inspection',
+    query: ['view', 'range', 'cut', 'p', 'select', 'tab', 'item'],
+    installLevel: false,
+    crumbs: (_p, q) => [
+      'Inspection',
+      q.view === 'leadtime' || q.view === 'period' ? 'Lead time' : 'Overview',
+    ],
   },
   jiraImport: {
     pattern: '/p/:key/import',

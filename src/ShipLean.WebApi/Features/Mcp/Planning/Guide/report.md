@@ -4,7 +4,7 @@ Hand in the report with `report_task` on your task, once per stop, whether you f
 
 - `item`: your task's key.
 - `status`: done, blocked or partial.
-- `commits`: your commits in order, each with its `repo` (as `git remote get-url origin` prints it), its full `sha` (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch), its `subject` and, when you have one, its `url`. They go on the task as its changes.
+- `commits`: your commits in order, each with its `repo` (as `git remote get-url origin` prints it), its full `sha` (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch), its `subject`, its `committed_at` (the author date, `git log -1 --format=%aI <sha>`: ISO 8601 with an offset, never later than a day from now) and, when you have one, its `url`. They go on the task as its changes.
 - `answered_comments`: for each open code comment in your brief that you fixed, its `id` and a `reply`. Each reply is posted on the comment's thread and the thread is resolved.
 - `pr_url`: the pull request, when there is one.
 - `tests_run`: one entry per test command, with its pass and fail counts and how long it took. Summarise the inner loop in one entry.

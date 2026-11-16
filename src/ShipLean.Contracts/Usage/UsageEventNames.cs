@@ -127,6 +127,14 @@ public static class UsageEventNames
     public const string FeatureTimelineViewed = "feature.timeline_viewed";
     public const string ReviewLogged = "review.logged";
 
+    // Inspection's lead time (SHIP-1398 K11). viewed, period_opened and task_opened are self-emitted by the page's reports;
+    // tool_read is the MCP tool inspection_metrics and commit_times_backfilled the temporary MCP tool backfill_commit_times.
+    public const string InspectionMetricsViewed = "inspection_metrics.viewed";
+    public const string InspectionMetricsPeriodOpened = "inspection_metrics.period_opened";
+    public const string InspectionMetricsTaskOpened = "inspection_metrics.task_opened";
+    public const string InspectionMetricsToolRead = "inspection_metrics.tool_read";
+    public const string InspectionMetricsCommitTimesBackfilled = "inspection_metrics.commit_times_backfilled";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

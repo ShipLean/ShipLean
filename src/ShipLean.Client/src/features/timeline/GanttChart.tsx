@@ -123,6 +123,7 @@ export function GanttChart({ view, options, selected, onSelect }: GanttChartProp
   );
   const leftRef = useRef<HTMLDivElement | null>(null);
   const markRows = useMemo(() => new Map(geometry.marks.map((m) => [m.key, m])), [geometry.marks]);
+  const barsByKey = useMemo(() => new Map(view.bars.map((b) => [b.key, b])), [view.bars]);
   const titles = useMemo(() => {
     const map = new Map<string, string>();
     for (const bar of view.bars)
@@ -299,6 +300,12 @@ export function GanttChart({ view, options, selected, onSelect }: GanttChartProp
                   : ids.chartDiamond;
             const title = titles.get(mark.key) ?? mark.key;
             const cp = options.cp && view.finished && view.criticalPath.includes(mark.key);
+            const bar = barsByKey.get(mark.key);
+            // The server sends the hours and the label together, both null when no commit time is known.
+            const commit =
+              bar !== undefined && bar.lastCommitHours !== null && bar.lastCommitLabel !== null
+                ? { x: bar.lastCommitHours * geometry.pxPerHour, label: bar.lastCommitLabel }
+                : null;
             return (
               <g key={mark.key}>
                 {mark.reviewLine && (
@@ -328,6 +335,19 @@ export function GanttChart({ view, options, selected, onSelect }: GanttChartProp
                 >
                   <MarkShape mark={mark} title={title} cp={cp} />
                 </g>
+                {commit !== null && (
+                  <line
+                    data-testid={ids.chartCommitTick}
+                    data-key={mark.key}
+                    x1={commit.x}
+                    x2={commit.x}
+                    y1={mark.box.y - 3}
+                    y2={mark.box.y + mark.box.height + 3}
+                    style={{ stroke: 'var(--color-text)', strokeWidth: 2, pointerEvents: 'none' }}
+                  >
+                    <title>{`Last commit ${commit.label}`}</title>
+                  </line>
+                )}
                 {mark.reviews.map((dot) => (
                   <circle
                     key={`${dot.x}-${dot.verdict}`}

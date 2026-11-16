@@ -24,6 +24,7 @@ export const timelineTestIds = {
   chartBracket: 'timeline-chart-bracket',
   chartDiamond: 'timeline-chart-diamond',
   chartReviewDot: 'timeline-chart-review-dot',
+  chartCommitTick: 'timeline-chart-commit-tick',
   chartNowLine: 'timeline-chart-now-line',
   chartWeekend: 'timeline-chart-weekend',
   chartSprintBand: 'timeline-chart-sprint-band',

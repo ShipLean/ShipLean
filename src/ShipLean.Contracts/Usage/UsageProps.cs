@@ -48,6 +48,12 @@ public static class UsageProps
     // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.
     public const string ItemType = "item_type";
 
+    // Which Inspection view was shown, on inspection_metrics.viewed: overview, leadtime, period or json.
+    public const string View = "view";
+
+    // Which kind of sprint was opened on Inspection, on inspection_metrics.period_opened: finished or running.
+    public const string Period = "period";
+
     // Why an agent session ended, on agent_session.finished: one of AgentEndReasons.
     public const string EndReason = "end_reason";
 

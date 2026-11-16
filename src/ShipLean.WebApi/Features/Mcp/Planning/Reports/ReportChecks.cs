@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.TaskChanges;
@@ -6,7 +8,7 @@ using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 namespace ShipLean.WebApi.Features.Mcp.Planning.Reports;
 
 // What report_task checks before it writes anything, so a call that is refused leaves nothing behind.
-internal static class ReportChecks
+internal static partial class ReportChecks
 {
     // The address rule link cards apply: trimmed, at most 2048 characters, absolute http or https.
     private const int MaxUrlLength = 2048;
@@ -89,6 +91,35 @@ internal static class ReportChecks
             throw ApiException.Validation("pr_url must start with http:// or https://.", "pr_url");
         }
     }
+
+    // Each commit's committed_at as UTC (null when not sent). It needs a date, a time and an offset (Z or +hh:mm), and may be at most a day ahead of now.
+    public static IReadOnlyList<DateTimeOffset?> CommitTimes(IReadOnlyList<ReportCommit> commits, DateTimeOffset now)
+    {
+        var times = new List<DateTimeOffset?>();
+        for (var i = 0; i < commits.Count; i++)
+        {
+            var field = $"commits[{i}].committed_at";
+            var text = commits[i].CommittedAt?.Trim();
+            if (string.IsNullOrEmpty(text))
+            {
+                times.Add(null);
+                continue;
+            }
+            if (!WithOffset().IsMatch(text) || !DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+            {
+                throw ApiException.Validation($"{field} must be ISO 8601 with an offset, such as 2026-11-16T09:30:00+02:00 or 2026-11-16T07:30:00Z; \"{text}\" is not.", field);
+            }
+            if (parsed > now.AddDays(1))
+            {
+                throw ApiException.Validation($"{field} is later than a day from now ({parsed:O}).", field);
+            }
+            times.Add(parsed.ToUniversalTime());
+        }
+        return times;
+    }
+
+    [GeneratedRegex(@"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$")]
+    private static partial Regex WithOffset();
 
     // The answers, one per comment id (a repeated id keeps its last reply); each needs an id and a reply.
     public static IReadOnlyList<CodeCommentAnswer> Answers(IReadOnlyList<AnsweredComment>? answered)

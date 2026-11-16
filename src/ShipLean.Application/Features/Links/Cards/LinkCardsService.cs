@@ -86,6 +86,9 @@ public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader,
         return await CardAsync(id, cancellationToken);
     }
 
+    public Task<bool> SetCommitTimeAsync(Guid workItemId, string url, DateTimeOffset committedAt, CancellationToken cancellationToken = default)
+        => rows.SetCommitTimeAsync(workItemId, url.Trim(), committedAt.ToUniversalTime(), cancellationToken);
+
     public async Task<WorkItemLinkRowDto> AddWorkItemLinkAsync(Guid workItemId, string targetKey, LinkType type, CancellationToken cancellationToken = default)
     {
         var projectId = await rows.ProjectOfAsync(workItemId, cancellationToken) ?? throw ApiException.NotFound("That work item does not exist.");

@@ -80,6 +80,30 @@ internal static class TimelineFactsSql
         ORDER BY e.at, e.id
         """;
 
+    // Every live commit of a task that has a time, one row per 7-character sha: commit-titled url links (committed_at) and the
+    // commits of a readable repository (code_commit.authored_at). The same two sources InspectionMetrics reads, so both show one end.
+    public const string Commits =
+        """
+        SELECT w.key AS itemKey, k.committed_at AS committedAt
+        FROM (
+            SELECT DISTINCT ON (work_item_id, sha7) work_item_id, sha7, committed_at
+            FROM (
+                SELECT l.source_id AS work_item_id, substring(l.title FROM char_length(@commitPrefix) + 1 FOR 7) AS sha7, l.committed_at
+                FROM work_item_link l
+                WHERE l.link_type = 'url' AND l.archived_at IS NULL AND starts_with(l.title, @commitPrefix) AND l.source_id = ANY(@taskIds)
+                UNION ALL
+                SELECT c.work_item_id, left(c.sha, 7), cc.authored_at
+                FROM work_item_commit c
+                JOIN code_commit cc ON cc.repository_id = c.repository_id AND cc.sha = c.sha
+                WHERE c.archived_at IS NULL AND c.work_item_id = ANY(@taskIds)
+            ) rows
+            WHERE committed_at IS NOT NULL
+            ORDER BY work_item_id, sha7, committed_at
+        ) k
+        JOIN work_item w ON w.id = k.work_item_id
+        ORDER BY k.committed_at, w.key
+        """;
+
     // Day boundaries arrive as 'YYYY-MM-DD' text and are cast here, so no session zone is involved.
     public const string Sprints =
         """
