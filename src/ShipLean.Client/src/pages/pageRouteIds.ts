@@ -37,4 +37,5 @@ export const pageRouteIds = {
   newProject: 'newProject',
   instanceSettings: 'instanceSettings',
   profile: 'profile',
+  projectSettingsIndex: 'projectSettingsIndex',
 } as const satisfies Record<string, RouteId>;

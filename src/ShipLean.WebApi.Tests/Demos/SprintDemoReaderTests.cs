@@ -12,6 +12,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
 using ShipLean.Core;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.AgentDispatch;
@@ -557,5 +558,101 @@ public class SprintDemoReaderTests : ApiFixture
         var dto = await GetAsync(demo.SprintId);
 
         dto.StatusMessage.ShouldBe("The agent session ended without uploading a video. It said: \"The newer id's answer.\"");
+    }
+
+    // ND4-1 (SHIP-1810 P7): the sprint's three numbers. The sprint starts in 2100, so the stories made now are committed and none is
+    // completed yet; Features moved counts the Features that hold its stories and bugs, once each, and not a story outside a Feature.
+    [Test]
+    public async Task Get_WhenTheSprintHasStoriesUnderFeatures_ShouldGiveCommittedCompletedAndFeaturesMoved()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database, withItem: false);
+        var projectId = demo.Project.Project.Id;
+        var checkout = await new WorkItemBuilder(projectId).WithType("feature").WithTitle("Checkout").InsertAsync(database);
+        var coupons = await new WorkItemBuilder(projectId).WithType("feature").WithTitle("Coupons").InsertAsync(database);
+        await new WorkItemBuilder(projectId).WithType("story").WithParent(checkout).WithSprint(demo.SprintId).WithPoints(3).InsertAsync(database);
+        await new WorkItemBuilder(projectId).WithType("story").WithParent(checkout).WithSprint(demo.SprintId).WithPoints(2).InsertAsync(database);
+        await new WorkItemBuilder(projectId).WithType("bug").WithParent(coupons).WithSprint(demo.SprintId).WithPoints(1).InsertAsync(database);
+        await new WorkItemBuilder(projectId).WithType("story").WithSprint(demo.SprintId).WithPoints(5).InsertAsync(database);
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Numbers.ShouldBe(new SprintDemoNumbersDto(11m, 0m, 2));
+    }
+
+    // ND4-5 (SHIP-1810 P2): the BAU item's row shows its type icon and title.
+    [Test]
+    public async Task Get_WhenTheSprintHasADemoItem_ShouldGiveItsTitleAndType()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Run.ShouldNotBeNull();
+        dto.Run.ItemTitle.ShouldBe("Sprint 23 demo");
+        dto.Run.ItemType.ShouldBe(WorkItemTypeId.Bau);
+    }
+
+    // ND4-10: who asked, after when, as one label; RequestedLabel stays as it was.
+    [Test]
+    public async Task Get_WhenRequested_ShouldNameWhoAskedInTheRequestedByLabel()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var requested = TimeProvider.System.GetUtcNow().AddMinutes(-5);
+        await RequestAsync(database, demo.SprintId, requested);
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Run.ShouldNotBeNull();
+        dto.Run.RequestedLabel.ShouldBe($"Requested {WhenOf(requested)}");
+        dto.Run.RequestedByLabel.ShouldBe($"Requested {WhenOf(requested)} by Joel Dickson");
+    }
+
+    [Test]
+    public async Task Get_WhenNotRequested_ShouldHaveNoRequestedByLabel()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Run.ShouldNotBeNull();
+        dto.Run.RequestedByLabel.ShouldBeNull();
+    }
+
+    // ND4-6 (SHIP-1810 P5): ShipLean's sentence and the agent's words apart, for the "It said" block; StatusMessage keeps both.
+    [Test]
+    public async Task Get_WhenSessionEndedWithWords_ShouldSplitWhatTheAgentSaid()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var session = await SessionAsync(database, demo, "failed", now.AddMinutes(-10));
+        await ActivityAsync(database, session, "error", "Playwright could not reach the seeded copy.", now.AddMinutes(-8));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.StatusMessage.ShouldBe("The agent session ended as failed before a video came back. It said: \"Playwright could not reach the seeded copy.\"");
+        dto.AgentSaid.ShouldBe(new SprintDemoAgentSaidDto("The agent session ended as failed before a video came back.", "Playwright could not reach the seeded copy."));
+    }
+
+    [Test]
+    public async Task Get_WhenFailedBecauseTheLinkExpired_ShouldHaveNoAgentSaid()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddDays(-2), now.AddDays(-1));
+        var session = await SessionAsync(database, demo, "failed", now.AddMinutes(-10));
+        await ActivityAsync(database, session, "error", "Words that only a session-ended failure shows.", now.AddMinutes(-8));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Status.ShouldBe(SprintDemoStatus.Failed);
+        dto.StatusMessage.ShouldBe("The upload link expired before a video came back.");
+        dto.AgentSaid.ShouldBeNull();
     }
 }

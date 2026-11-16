@@ -14,4 +14,7 @@ public static partial class Links
 
     // Your profile: /profile.
     public static string Profile() => "/profile";
+
+    // A project's tab-less settings address: the pane index on a phone, General above 900px: /p/:key/settings.
+    public static string ProjectSettingsIndex(string projectKey) => $"/p/{Segment(projectKey)}/settings";
 }

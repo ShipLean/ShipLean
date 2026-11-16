@@ -166,8 +166,8 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
           <NavItem
             icon="⚙"
             testId={ids.navSettings}
-            to={routePath('projectSettings', { key, tab: 'general' })}
-            active={route?.id === 'projectSettings'}
+            to={routePath('projectSettingsIndex', { key })}
+            active={route?.id === 'projectSettings' || route?.id === 'projectSettingsIndex'}
           >
             Settings
           </NavItem>

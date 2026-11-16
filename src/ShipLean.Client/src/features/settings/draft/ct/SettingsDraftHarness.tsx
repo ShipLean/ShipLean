@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { TopBarProvider, useTopBarSlots } from '../../../../touch/TopBar';
 import { useContext } from 'react';
 import { useLocation } from 'react-router-dom';
 import type { ProjectRole } from '@shiplean/core/api/projects';
@@ -46,15 +48,30 @@ export function SettingsDraftHarness({
   fakeStates?: boolean;
 }) {
   const last = useLocation().pathname.split('/').pop();
-  const tab: ProjectSettingsTab = projectSettingsTabs.find((t) => t === last) ?? 'general';
+  // The tab-less address (/p/SHIP/settings) is the pane index at touch.
+  const tab: ProjectSettingsTab | undefined =
+    last === 'settings' ? undefined : (projectSettingsTabs.find((t) => t === last) ?? 'general');
   const project = projectDto(role);
   return (
-    <SettingsDraftSlot
-      project={project}
-      tab={tab}
-      states={fakeStates ? <FakeStates /> : <div data-testid="harness-states">states</div>}
-      integrations={<div data-testid="harness-integrations">integrations</div>}
-      demos={<SettingsDemosSlot project={project} tab={tab} />}
-    />
+    <TopBarProvider>
+      <HarnessBack />
+      <SettingsDraftSlot
+        project={project}
+        tab={tab}
+        states={fakeStates ? <FakeStates /> : <div data-testid="harness-states">states</div>}
+        integrations={<div data-testid="harness-integrations">integrations</div>}
+        demos={<SettingsDemosSlot project={project} tab={tab ?? 'general'} />}
+      />
+    </TopBarProvider>
+  );
+}
+
+// The page's ‹ back, which the touch top bar would show; hidden, so the shots stay the page's own.
+function HarnessBack() {
+  const back = useTopBarSlots().back;
+  return back === undefined ? null : (
+    <Link to={back.to} data-testid="harness-back" className="sr-only">
+      {back.label}
+    </Link>
   );
 }

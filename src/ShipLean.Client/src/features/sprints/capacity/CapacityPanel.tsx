@@ -15,6 +15,7 @@ import {
 } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
 import { CapacityHeader } from './CapacityHeader';
+import { CapacityPeople } from './CapacityPeople';
 import type { CapacityLine } from './CapacityRow';
 import { CapacitySummary } from './CapacitySummary';
 import { CapacityTable } from './CapacityTable';
@@ -75,6 +76,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   const [touched, setTouched] = useState<TouchedRows>({});
   const [velocityTouched, setVelocityTouched] = useState<TouchedVelocity | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const { touch } = useTouchShell();
 
   const failed = members.isError || capacity.isError || metrics.isError || velocity.isError;
@@ -99,6 +101,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
   const typedVelocity = parseVelocity(velocityText);
   const worked = draftTotals(members.data, draft, typedVelocity, shape);
   const inTable = tableMembers(members.data, draft);
+  const addable = members.data.filter((m) => !inTable.includes(m)).map((m) => m.user);
   // An old sprint with points but no velocity: until a velocity is typed there is nothing to recompute from, so the
   // stored points and total stand (planning still uses them).
   const pointsOnly =
@@ -134,6 +137,9 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     setTouched(touchRow(touched, server, userId, row));
     setProblem(null);
   };
+  const addRow = (userId: string) => editRow(userId, { present: true, days: '', note: '' });
+  const removeRow = (userId: string) =>
+    editRow(userId, { ...rowOf(draft, userId), present: false });
   const editAll = (next: CapacityDraft) => {
     setTouched(touchAll(touched, server, members.data, next));
     setProblem(null);
@@ -192,12 +198,15 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
         </p>
       ) : (
         <CapacityToolbar
-          addable={members.data.filter((m) => !inTable.includes(m)).map((m) => m.user)}
+          addable={addable}
           previousName={previous?.name}
           copyBlocked={copyBlocked}
           dirty={dirty}
           saving={save.isPending}
-          onAdd={(userId) => editRow(userId, { present: true, days: '', note: '' })}
+          sprintName={sprint.name}
+          velocity={planned}
+          onAdd={addRow}
+          onAddMember={() => setAdding(true)}
           onCopy={() => {
             if (!previousCapacity.data || !previous) return;
             editAll(draftOf(previousCapacity.data, shape.workingDays));
@@ -230,15 +239,37 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
             needsVelocity={pointsOnly}
             onVelocity={typeVelocity}
           />
-          <CapacityTable
-            lines={lines}
-            shape={shape}
-            total={total}
-            readOnly={ended}
-            velocity={planned}
-            onChange={editRow}
-            onRemove={(userId) => editRow(userId, { ...rowOf(draft, userId), present: false })}
-          />
+          {touch ? (
+            <CapacityPeople
+              lines={lines}
+              shape={shape}
+              total={total}
+              readOnly={ended}
+              sprintName={sprint.name}
+              velocity={planned}
+              typedVelocity={pointsOnly ? undefined : typedVelocity}
+              unsaved={(userId) =>
+                rowsDiffer({ [userId]: rowOf(server, userId) }, { [userId]: rowOf(draft, userId) })
+              }
+              addable={ended ? [] : addable}
+              copyFrom={copyBlocked === undefined ? previous?.name : undefined}
+              adding={adding}
+              onAdding={setAdding}
+              onAdd={addRow}
+              onChange={editRow}
+              onRemove={removeRow}
+            />
+          ) : (
+            <CapacityTable
+              lines={lines}
+              shape={shape}
+              total={total}
+              readOnly={ended}
+              velocity={planned}
+              onChange={editRow}
+              onRemove={removeRow}
+            />
+          )}
         </div>
         <CapacitySummary
           sprintName={sprint.name}
@@ -255,10 +286,18 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
       <SaveBar
         dirty={dirty}
         message={
-          <div className="text-[length:var(--text-xs)] leading-4 whitespace-normal">
-            {conflict}
-            {problem === null ? null : errorLine}
-          </div>
+          conflict === null && problem === null ? (
+            // SHIP-1808 P4: with nothing to warn about, the bar says what it is saving.
+            <span className="flex items-center gap-1.5">
+              <i aria-hidden="true" className="size-1.5 flex-none rounded-full bg-caution" />
+              <span className="truncate">Unsaved capacity changes</span>
+            </span>
+          ) : (
+            <div className="text-[length:var(--text-xs)] leading-4 whitespace-normal">
+              {conflict}
+              {problem === null ? null : errorLine}
+            </div>
+          )
         }
         onDiscard={onDiscard}
         onSave={onSave}
