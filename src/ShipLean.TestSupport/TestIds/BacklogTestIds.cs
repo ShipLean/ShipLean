@@ -203,4 +203,5 @@ public static class BacklogTestIds
     public const string PlanQueueExit = "backlog-plan-queue-exit";
     public const string KeysButton = "backlog-keys-button";
     public const string KeysDialog = "backlog-keys-dialog";
+    public const string LevelProgressBar = "backlog-level-progress-bar";
 }

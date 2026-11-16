@@ -11,11 +11,11 @@ export function LevelHarness({
   project: ProjectDto;
   level: LevelBacklogLevel;
 }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   return (
     <>
       <LevelBacklog project={project} level={level} />
-      <span data-testid="harness-location">{pathname}</span>
+      <span data-testid="harness-location">{pathname + search}</span>
     </>
   );
 }

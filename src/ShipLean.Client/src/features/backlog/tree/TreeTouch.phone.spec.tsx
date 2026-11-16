@@ -52,14 +52,17 @@ test('TreeGroupRow_WhenTouch_ShouldShowPath', async ({ mount, page }) => {
   await mount(<TreeMode project={PROJECT} />, route);
 
   await expect(page.locator('table')).toHaveCount(0);
-  await expect(groupOf(page, 'SHIP-90').getByTestId(ids.treeGroupPath)).toHaveText('Storefront');
-  await expect(groupOf(page, 'SHIP-101').getByTestId(ids.treeGroupPath)).toHaveText(
-    'Storefront › Checkout v2',
-  );
+  await expect(groupOf(page, 'SHIP-90').getByTestId(ids.treeGroupPath)).toHaveCount(0);
+  await expect(groupOf(page, 'SHIP-90').getByTestId(ids.title)).toHaveText('Storefront');
+  await expect(groupOf(page, 'SHIP-101').getByTestId(ids.treeGroupPath)).toHaveText('Storefront ›');
   await expect(groupOf(page, 'SHIP-110').getByTestId(ids.treeGroupPath)).toHaveText(
-    'Storefront › Checkout v2 › Receipts',
+    'Storefront › Checkout v2 ›',
   );
-  await expect(page.getByTestId(ids.treeGroup).last().getByTestId(ids.treeGroupPath)).toHaveText(
+  await expect(groupOf(page, 'SHIP-110').getByTestId(ids.title)).toHaveText('Receipts');
+  await expect(page.getByTestId(ids.treeGroup).last().getByTestId(ids.treeGroupPath)).toHaveCount(
+    0,
+  );
+  await expect(page.getByTestId(ids.treeGroup).last().getByTestId(ids.title)).toHaveText(
     'No parent',
   );
   const caret = await groupOf(page, 'SHIP-101').getByTestId(ids.treeCaret).boundingBox();
@@ -136,4 +139,20 @@ test('TouchTree_WhenSelecting_ShouldNotRenderHandles', async ({ mount, page }) =
 
   await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
   await expect(rowOf(page, 'SHIP-141').getByTestId(ids.rank)).toHaveText('1');
+});
+
+// Catches: putting the path back on the title's line (the path box then isn't above the key and title) or dropping text-ink-muted.
+test('TreeGroupHeader_ShouldPutThePathOnAMutedFirstLine', async ({ mount, page }) => {
+  await stubBacklog(page, view);
+  await mount(<TreeMode project={PROJECT} />, route);
+
+  const group = groupOf(page, 'SHIP-110');
+  const path = group.getByTestId(ids.treeGroupPath);
+  await expect(path).toHaveClass(/text-ink-muted/);
+  await expect(group.getByTestId(ids.key)).toHaveText('SHIP-110');
+  const pathBox = await path.boundingBox();
+  const keyBox = await group.getByTestId(ids.key).boundingBox();
+  const titleBox = await group.getByTestId(ids.title).boundingBox();
+  expect(pathBox!.y + pathBox!.height).toBeLessThanOrEqual(keyBox!.y);
+  expect(pathBox!.y + pathBox!.height).toBeLessThanOrEqual(titleBox!.y);
 });

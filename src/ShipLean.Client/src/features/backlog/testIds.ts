@@ -201,4 +201,5 @@ export const backlogTestIds = {
   planQueueExit: 'backlog-plan-queue-exit',
   keysButton: 'backlog-keys-button',
   keysDialog: 'backlog-keys-dialog',
+  levelProgressBar: 'backlog-level-progress-bar',
 } as const;

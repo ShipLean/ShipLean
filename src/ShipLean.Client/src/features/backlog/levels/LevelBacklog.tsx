@@ -11,6 +11,7 @@ import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelTable } from './LevelTable';
 import { LevelTree } from './LevelTree';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
+import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { useColumnSort } from '../sort/useColumnSort';
@@ -68,78 +69,80 @@ export function LevelBacklog({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <BacklogToolbar
-        projectKey={project.key}
-        level={level}
-        mode={mode}
-        modes={level === 'features' ? FEATURE_MODES : []}
-        triage={state.triage}
-        onNewItem={() => (level === 'features' ? setNewFeatureOpen(true) : state.setAdding(true))}
-        newItemLabel={level === 'features' ? '+ New Feature' : undefined}
-        includeCompleted={state.includeCompleted}
-        onIncludeCompletedChange={state.setIncludeCompleted}
-        // Search is offered in ⋯ More at touch only; above 900px these backlogs have none.
-        search={touch ? () => <BacklogSearchBox search={search} /> : undefined}
-        sort={
-          sort.sort
-            ? {
-                label: `${sortColumn?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
-                onClear: sort.clear,
+    <BulkRunProvider projectId={project.id} queryKey={state.queryKey}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <BacklogToolbar
+          projectKey={project.key}
+          level={level}
+          mode={mode}
+          modes={level === 'features' ? FEATURE_MODES : []}
+          triage={state.triage}
+          onNewItem={() => (level === 'features' ? setNewFeatureOpen(true) : state.setAdding(true))}
+          newItemLabel={level === 'features' ? '+ New Feature' : undefined}
+          includeCompleted={state.includeCompleted}
+          onIncludeCompletedChange={state.setIncludeCompleted}
+          // Search is offered in ⋯ More at touch only; above 900px these backlogs have none.
+          search={touch ? () => <BacklogSearchBox search={search} /> : undefined}
+          sort={
+            sort.sort
+              ? {
+                  label: `${sortColumn?.label ?? sort.sort.column}, ${sort.sort.direction === 'asc' ? 'ascending' : 'descending'}`,
+                  onClear: sort.clear,
+                }
+              : undefined
+          }
+          columns={{ options: state.specs, hidden: view.hidden, onChange: view.setHidden }}
+          filter={() => (
+            <FilterButton
+              criteria={criteria}
+              open={state.filterOpen}
+              onToggle={state.toggleFilter}
+              onRemoveClause={(index) =>
+                state.setCriteria({
+                  ...criteria,
+                  clauses: criteria.clauses.filter((_, i) => i !== index),
+                })
               }
-            : undefined
-        }
-        columns={{ options: state.specs, hidden: view.hidden, onChange: view.setHidden }}
-        filter={() => (
-          <FilterButton
+              lists={lists}
+            />
+          )}
+        />
+        {state.filterOpen ? (
+          <FilterPanel
             criteria={criteria}
-            open={state.filterOpen}
-            onToggle={state.toggleFilter}
-            onRemoveClause={(index) =>
-              state.setCriteria({
-                ...criteria,
-                clauses: criteria.clauses.filter((_, i) => i !== index),
-              })
-            }
+            onChange={state.setCriteria}
+            error={refused}
             lists={lists}
+            onClose={state.toggleFilter}
+          />
+        ) : null}
+        {mode === 'tree' ? (
+          <LevelTree
+            rows={searched}
+            columns={columns as LevelColumnId[]}
+            specs={state.specs}
+            projectKey={project.key}
+            filtered={state.filtering || search.active}
+          />
+        ) : (
+          <LevelTable
+            rows={sort.rows}
+            columns={columns as LevelColumnId[]}
+            specs={state.specs}
+            level={level}
+            projectId={project.id}
+            projectKey={project.key}
+            adding={state.adding}
+            onCloseAdd={() => state.setAdding(false)}
+            filtered={state.filtering || search.active}
+            sort={sort.sort}
+            onSort={sort.onSort}
           />
         )}
-      />
-      {state.filterOpen ? (
-        <FilterPanel
-          criteria={criteria}
-          onChange={state.setCriteria}
-          error={refused}
-          lists={lists}
-          onClose={state.toggleFilter}
-        />
-      ) : null}
-      {mode === 'tree' ? (
-        <LevelTree
-          rows={searched}
-          columns={columns as LevelColumnId[]}
-          specs={state.specs}
-          projectKey={project.key}
-          filtered={state.filtering || search.active}
-        />
-      ) : (
-        <LevelTable
-          rows={sort.rows}
-          columns={columns as LevelColumnId[]}
-          specs={state.specs}
-          level={level}
-          projectId={project.id}
-          projectKey={project.key}
-          adding={state.adding}
-          onCloseAdd={() => state.setAdding(false)}
-          filtered={state.filtering || search.active}
-          sort={sort.sort}
-          onSort={sort.onSort}
-        />
-      )}
-      {newFeatureOpen ? (
-        <NewFeatureDialog project={project} onClose={() => setNewFeatureOpen(false)} />
-      ) : null}
-    </div>
+        {newFeatureOpen ? (
+          <NewFeatureDialog project={project} onClose={() => setNewFeatureOpen(false)} />
+        ) : null}
+      </div>
+    </BulkRunProvider>
   );
 }

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import { touchTestIds } from '../../../touch/testIds';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
 import { backlogView, ROWS } from '../ct/fixtures';
@@ -66,7 +67,6 @@ test('TouchLevelRow_ShouldHaveNoHandle', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
   await expect(page.getByTestId(ids.touchRowHandle)).toHaveCount(0);
   await expect(page.getByTestId(ids.grip)).toHaveCount(0);
-  await expect(page.getByTestId(ids.rank)).toHaveCount(0);
 });
 
 for (const [name, level, rows, route] of [
@@ -81,7 +81,7 @@ for (const [name, level, rows, route] of [
     await mount(<LevelHarness project={PROJECT} level={level} />, route);
     await expect(page.getByTestId(ids.row)).toHaveCount(rows.length);
 
-    await page.getByTestId(touchTestIds.moreButton).tap();
+    await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
     await expect(
       page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="search"]`),
     ).toBeVisible();
@@ -159,4 +159,59 @@ test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({
   for (let i = 0; i < (await options.count()); i++) {
     expect(await heightOf(options.nth(i))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   }
+});
+
+const rowOf = (page: Page, key: string) =>
+  page.locator(`[data-testid="${ids.row}"][data-key="${key}"]`);
+
+// Catches: removing `flex-1 min-w-0` from the progress wrapper (the bar collapses to 0px in the touch row).
+test('LevelRow_ProgressBar_ShouldBeWiderThanZero', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const bar = rowOf(page, 'SHIP-101').getByTestId(ids.levelProgressBar);
+  const box = await bar.boundingBox();
+  expect(box!.width).toBeGreaterThan(40);
+});
+
+// Catches: dropping the rank cell or the LevelRowMore button from the touch row.
+test('LevelRow_ShouldShowRankAndMore', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const row = rowOf(page, 'SHIP-101');
+  await expect(row.getByTestId(ids.rank)).toHaveText(String(FEATURE_ROWS[0].rank));
+  const more = row.getByTestId(touchTestIds.moreButton);
+  await expect(more).toHaveAttribute('aria-label', 'More for SHIP-101');
+  await more.tap();
+  for (const id of ['open', 'top', 'bottom']) {
+    await expect(
+      page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`),
+    ).toBeVisible();
+  }
+});
+
+// Catches: removing the `contains` guard from TouchLevelRow's tap (the sheet scrim's tap bubbles to the row and opens the item).
+test('LevelRowMore_WhenScrimTapped_ShouldNotOpenTheRow', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-101').getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(touchTestIds.sheetScrim).tap({ position: { x: 20, y: 20 } });
+
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/features');
+});
+
+// Catches: sending slot 'last' (or no placement) for Move to top.
+test('LevelRowMore_MoveToTop_ShouldReorder', async ({ mount, page }) => {
+  const server = await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-103').getByTestId(touchTestIds.moreButton).tap();
+  await page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="top"]`).tap();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  expect(server.bulks[0].items).toHaveLength(1);
+  expect(server.bulks[0].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
 });

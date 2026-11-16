@@ -4,7 +4,7 @@ import { useTouchShell } from '../../../touch/useTouchShell';
 import type { ColumnSpec } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import { TouchTreeGroup } from '../tree/touch/TouchTree';
-import { treePath } from '../tree/touch/treePath';
+import { treeParents } from '../tree/touch/treePath';
 import { visibleRows } from '../tree/treeRows';
 import { countUnder } from './countUnder';
 import type { LevelColumnId } from './levelColumns';
@@ -93,7 +93,7 @@ export function LevelTree({
               <TouchTreeGroup
                 key={row.id}
                 row={row}
-                path={treePath(rows, row)}
+                parents={treeParents(rows, row)}
                 open={!collapsed.has(row.id)}
                 rollup={`${features} ${features === 1 ? 'Feature' : 'Features'}`}
                 onToggle={() => toggle(row.id)}
