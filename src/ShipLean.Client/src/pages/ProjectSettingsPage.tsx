@@ -1,4 +1,4 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams, useSearchParams } from 'react-router-dom';
 import { pagesTestIds } from '../features/pages/testIds';
 import { projectSettingsTabs, routePath, type ProjectSettingsTab } from '../routes';
 import { SettingsDraftSlot } from '../slots/SettingsDraftSlot';
@@ -12,10 +12,20 @@ import { projectSettingsSlots } from './projectSettingsSlots';
 // address is the pane index at touch (SHIP-1809 P1) and General above 900px, where the tabs are the index.
 export function ProjectSettingsPage() {
   const { key = '', tab: raw } = useParams();
+  const [search] = useSearchParams();
   const { touch } = useTouchShell();
   const tab: ProjectSettingsTab | undefined = projectSettingsTabs.find((t) => t === raw);
   if (raw === undefined && !touch)
-    return <Navigate replace to={routePath('projectSettings', { key, tab: 'general' })} />;
+    return (
+      <Navigate
+        replace
+        to={routePath(
+          'projectSettings',
+          { key, tab: 'general' },
+          { item: search.get('item') ?? undefined },
+        )}
+      />
+    );
   return (
     <ProjectScreen
       routeId={raw === undefined ? pageRouteIds.projectSettingsIndex : pageRouteIds.projectSettings}

@@ -55,7 +55,7 @@ public sealed class ProjectSettingsTouch(IPage page)
     // The tab-less address: the pane index.
     public async Task OpenIndexAsync()
     {
-        await page.GotoAsync("/p/SHIP/settings");
+        await page.GotoAsync(Links.ProjectSettingsIndex("SHIP"));
         await Assertions.Expect(IndexRows.First).ToBeVisibleAsync();
     }
 
