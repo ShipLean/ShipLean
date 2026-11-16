@@ -57,16 +57,15 @@ test('GanttChart_WhenReviewed_ShouldDrawDotsAfterBar', async ({ mount, page }) =
 test('GanttChart_WhenTaskHasLastCommit_ShouldDrawTickAtItsTime', async ({ mount, page }) => {
   await mountChart(mount, FINISHED_TIMELINE);
   const bar = FINISHED_TIMELINE.bars.find((b) => b.key === 'SHIP-192')!;
-  const barBox = (await page
+  const rect = page
     .getByTestId(ids.chartBar)
     .and(page.locator('[data-key="SHIP-192"]'))
-    .boundingBox())!;
+    .locator('rect');
   const tick = page.getByTestId(ids.chartCommitTick).and(page.locator('[data-key="SHIP-192"]'));
   await expect(tick).toHaveCount(1);
-  const tickBox = (await tick.boundingBox())!;
-  // The bar spans startHours to endHours, so the tick sits at the same share of its width.
-  const share = (bar.lastCommitHours! - bar.startHours!) / (bar.endHours! - bar.startHours!);
-  expect(tickBox.x + tickBox.width / 2).toBeCloseTo(barBox.x + share * barBox.width, 0);
+  // Both are in the chart's own units, where x is hours × px per hour from the axis start: the bar's x is at startHours.
+  const pxPerHour = Number(await rect.getAttribute('x')) / bar.startHours!;
+  expect(Number(await tick.getAttribute('x1'))).toBeCloseTo(bar.lastCommitHours! * pxPerHour, 1);
   await expect(tick.locator('title')).toHaveText(`Last commit ${bar.lastCommitLabel}`);
 });
 
