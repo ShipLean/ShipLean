@@ -69,6 +69,15 @@ const profileReady = async (page: Page) => {
   await expect(page.getByTestId(ids.myProjectsList)).toBeVisible();
   await expect(page.getByTestId(agentsTestIds.connectedRow)).toHaveCount(1);
   await expect(page.getByTestId(devicesTestIds.row)).toHaveCount(2);
+  // Profile_ShouldShowTheIntroLine at desktop: the line sits above the identity panel, as in the reference.
+  const intro = page.getByTestId(pagesTestIds.profileIntro);
+  await expect(intro).toHaveText(
+    'Only you see these settings. Your name and avatar show wherever your work does.',
+  );
+  const introBox = await intro.boundingBox();
+  const identityBox = await page.getByTestId(pagesTestIds.slotProfileIdentity).boundingBox();
+  if (!introBox || !identityBox) throw new Error('the intro and the identity slot should render');
+  expect(introBox.y).toBeLessThan(identityBox.y);
 };
 
 const instanceArrange = async (page: Page) => {

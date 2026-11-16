@@ -179,6 +179,32 @@ test('ProfilePhone_WhenSavedFromTheBar_ShouldPutAndClose', async ({ mount, page 
   expect(calls).toEqual(['PUT /api/me/profile']);
 });
 
+test('PasswordPhone_WhenClosed_ShouldPutTheMetaOnItsOwnLineAboveTheRightAlignedAction', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  const view = await mount(<ProfilePanelsHarness />);
+  const panel = view.getByTestId(ids.passwordPanel);
+  const meta = await box(panel.getByText(/^Changing it signs out/));
+  const action = await box(panel.getByTestId(ids.passwordOpen));
+  const frame = await box(panel);
+  expect(action.y).toBeGreaterThanOrEqual(meta.y + meta.height);
+  expect(action.x + action.width).toBeGreaterThan(frame.x + frame.width - 24);
+  expect(action.x).toBeGreaterThan(meta.x + meta.width / 2);
+});
+
+test('PasswordPhone_WhenOpen_ShouldStartTheFormRightUnderTheMeta', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<ProfilePanelsHarness />);
+  await view.getByTestId(ids.passwordOpen).tap();
+  const panel = view.getByTestId(ids.passwordPanel);
+  const meta = await box(panel.getByText(/^Changing it signs out/));
+  const form = await box(panel.getByTestId(ids.passwordForm));
+  // The header's padding and rule only: an empty action wrapper wraps onto a line of its own and adds 8px.
+  expect(form.y - (meta.y + meta.height)).toBeLessThanOrEqual(10);
+});
+
 test('PasswordPhone_WhenCancelled_ShouldClearTheFieldsAndClose', async ({ mount, page }) => {
   await stub(page);
   const view = await mount(<ProfilePanelsHarness />);
