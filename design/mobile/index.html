@@ -74,10 +74,10 @@
 
   /* Anatomy */
   .anat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; }
-  .abar { display: flex; align-items: center; gap: 4px; height: 52px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
-  .abar .z { position: relative; display: grid; place-items: center; height: 44px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
+  .abar { display: flex; align-items: center; gap: 4px; height: 48px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
+  .abar .z { position: relative; display: grid; place-items: center; height: 32px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
   .abar .z i { position: absolute; top: -10px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
-  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 44px; align-content: center; }
+  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 32px; align-content: center; }
   .abar .t small { font-size: var(--text-2xs); color: var(--color-muted); }
   .abar .t b { font-size: var(--text-md); }
   .av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-sans); box-shadow: 0 0 0 2px var(--color-surface); }
@@ -97,7 +97,7 @@
 
   /* Mini mocks (static) */
   .mini { width: 300px; border-radius: 22px; border: 6px solid #1d2433; background: var(--color-bg); overflow: hidden; font-size: 12px; box-shadow: 0 8px 22px rgb(0 0 0 / .15); }
-  .mini .mb { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .mb { display: flex; align-items: center; gap: 6px; height: 37px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
   .mini .mb .ham { font-size: 16px; width: 28px; text-align: center; }
   .mini .mb .tt { flex: 1; line-height: 1.2; }
   .mini .mb .tt small { display: block; font-size: 9.5px; color: var(--color-muted); }
@@ -203,10 +203,10 @@
       <div class="states" role="group" aria-label="Prototype state" id="states">
         <button type="button" aria-pressed="true" data-img="shell" data-live="backlog.html"><span class="n">1</span><span><b>Any screen, closed</b><span>Menu · breadcrumb (cut from the left) · +n who else is here · Live · Search. The bar stays at the top while the page scrolls.</span></span></button>
         <button type="button" aria-pressed="false" data-img="drawer" data-live="backlog.html?nav"><span class="n">2</span><span><b>Drawer</b><span>The side menu slides in over the page. Every sub-page shows, so any screen is one tap away: levels as a row of three, the current sprint and All sprints, and the retro pages.</span></span></button>
-        <button type="button" aria-pressed="false" data-img="picker" data-live="backlog.html?picker"><span class="n">3</span><span><b>Switch project</b><span>A bottom sheet over the drawer with 48px rows. The keyboard waits until you tap the field, so the list isn't covered. Picking a project opens the same screen there and closes everything.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="picker" data-live="backlog.html?picker"><span class="n">3</span><span><b>Switch project</b><span>A bottom sheet over the drawer with 32px rows (<span class="key">--touch-target</span>), titled Switch project with Close on the right. The keyboard waits until you tap the field, so the list isn't covered. Picking a project opens the same screen there and closes everything.</span></span></button>
         <button type="button" aria-pressed="false" data-img="search" data-live="backlog.html?search"><span class="n">4</span><span><b>Quick search</b><span>The whole screen, the field at the top with Cancel, a 16px font, no key caps. Same groups as today: Recent, then Actions.</span></span></button>
-        <button type="button" aria-pressed="false" data-img="search-results" data-live="backlog.html?search=pay"><span class="n">5</span><span><b>Quick search, typing “pay”</b><span>Work items, Sprints, Projects, then Actions. Rows are 52px with the key under the title.</span></span></button>
-        <button type="button" aria-pressed="false" data-img="user-menu" data-live="backlog.html?usermenu"><span class="n">6</span><span><b>User menu</b><span>At the bottom of the drawer, opening upwards as on a desktop, with 44px items.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="search-results" data-live="backlog.html?search=pay"><span class="n">5</span><span><b>Quick search, typing “pay”</b><span>Work items, Sprints, Projects, then Actions. Rows are at least 32px, with the key under the title.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="user-menu" data-live="backlog.html?usermenu"><span class="n">6</span><span><b>User menu</b><span>At the bottom of the drawer, opening upwards as on a desktop, with 32px items.</span></span></button>
         <button type="button" aria-pressed="false" data-img="reconnecting" data-live="taskboard.html?offline"><span class="n">7</span><span><b>Reconnecting</b><span>Live is just the dot on a phone. Reconnecting gets its word back, because that's the state you need to notice.</span></span></button>
         <button type="button" aria-pressed="false" data-img="profile" data-live="profile.html"><span class="n">8</span><span><b>A page with no project</b><span>Your profile, New project: the trail starts at ShipLean and there's no Live dot. The drawer keeps the project you came from.</span></span></button>
       </div>
@@ -220,7 +220,7 @@
   <h2>Every state, side by side</h2>
   <p class="sub">Swipe sideways. The theme switch at the top applies to all of them. <span class="key">screenshots.sh</span> regenerates these images.</p>
   <div class="strip" id="gallery-strip">
-    <figure class="phone"><div class="glass"><img loading="lazy" alt="Backlog" data-img="shell" src="images/shell.light.png"></div><figcaption><b>Stories backlog</b><span>Closed: 52px bar instead of 165px</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="Backlog" data-img="shell" src="images/shell.light.png"></div><figcaption><b>Stories backlog</b><span>Closed: 48px bar instead of 165px</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Drawer" data-img="drawer" src="images/drawer.light.png"></div><figcaption><b>Drawer</b><span>One tap to any screen</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Drawer in Sprints" data-img="drawer-sprints" src="images/drawer-sprints.light.png"></div><figcaption><b>Drawer from the Taskboard</b><span>Sprints is the active section</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Picker" data-img="picker" src="images/picker.light.png"></div><figcaption><b>Switch project</b><span>Bottom sheet</span></figcaption></figure>
@@ -235,17 +235,17 @@
 
 <section id="anatomy">
   <h2>The top bar</h2>
-  <p class="sub">52px under 900px (plus the notch), sticky. The page's own toolbar scrolls away under it.</p>
+  <p class="sub">48px under 900px (plus the notch), sticky (SHIP-805 rule 11). The page's own toolbar scrolls away under it.</p>
   <div class="anat">
     <div class="abar" aria-label="Top bar anatomy">
-      <span class="z" style="width:44px"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg><i>1</i></span>
+      <span class="z" style="width:32px"><svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg><i>1</i></span>
       <span class="z t" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(to right,transparent,#000 18px);mask-image:linear-gradient(to right,transparent,#000 18px)"><small style="font-size:var(--text-sm)">P › Sprints › Sprint 24 ›</small><b>Taskboard</b></span><span style="position:relative;width:0"><i style="position:absolute;top:-24px;right:4px;width:18px;height:18px;border-radius:50%;background:var(--color-accent);color:var(--color-accent-fg);font:600 10px/18px var(--font-sans);text-align:center;font-style:normal">2</i></span>
       <span class="z" style="padding:0 4px;display:flex"><span class="pill" style="font-weight:600">+2</span><i>3</i></span>
       <span class="z" style="width:20px"><span class="live"></span><i>4</i></span>
-      <span class="z" style="width:44px"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5" stroke-linecap="round"/></svg><i>5</i></span>
+      <span class="z" style="width:32px"><svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5" stroke-linecap="round"/></svg><i>5</i></span>
     </div>
     <ul class="legend">
-      <li><i>1</i><div><b>Menu</b> <span>44 × 44. Opens the drawer and moves focus to its Close button; Esc, Close or the scrim closes it.</span></div></li>
+      <li><i>1</i><div><b>Menu</b> <span>32 × 32. Opens the drawer and moves focus to its Close button; Esc, Close or the scrim closes it.</span></div></li>
       <li><i>2</i><div><b>Where you are</b> <span>The desktop breadcrumb on one line. When it doesn't fit, it is cut from the left behind a short fade, so the screen's name always shows (D4).</span></div></li>
       <li><i>3</i><div><b>Presence</b> <span>A count only, +2 for two other people (avatars stay on a desktop). Tapping lists everyone, as today (D6).</span></div></li>
       <li><i>4</i><div><b>Live</b> <span>The dot alone. Reconnecting shows the word, in the warn colour.</span></div></li>
@@ -262,12 +262,12 @@
     <thead><tr><th>Rule</th><th>What</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td>One breakpoint: 900px</td><td>At 900px and below, the touch shell; above, the desktop shell. Quick search moves from 899 to 900 to match.</td><td>Phones and tablets in portrait get the same frame. One number to test.</td></tr>
-      <tr><td>Touch targets</td><td>Shell controls, drawer rows and sheet rows are at least <span class="key">--touch-target</span> (44px). Secondary chips are at least 36px. <b>Data rows keep the compact density.</b></td><td>Thumbs need the room on things you navigate with. Lists stay dense so you still see the backlog.</td></tr>
+      <tr><td>Touch targets</td><td>Every control, list row and sheet row is at least <span class="key">--touch-target</span> (32px, SHIP-805 rule 13). <b>Data rows keep the compact density.</b></td><td>Thumbs need the room on things you navigate with. Lists stay dense so you still see the backlog.</td></tr>
       <tr><td>Inputs are 16px</td><td>Every text field, select and textarea uses <span class="key">--text-input-touch</span> under 900px.</td><td>Below 16px, iOS Safari zooms the page on focus and stays zoomed.</td></tr>
       <tr><td>Only the top bar sticks</td><td>Page toolbars, sprint headers and filter strips scroll with the page.</td><td>Two sticky bars would take 100px+ of a 844px screen.</td></tr>
       <tr><td>Toolbars: one row</td><td>Keep the page's primary action and the one control people use most. Everything else goes in a <b>⋯ More</b> bottom sheet. Filters get a <b>Filter</b> button with a count. Keyboard hints (<span class="key">/</span>, Keys) are hidden on touch.</td><td>Today's backlog toolbar is four rows tall on a phone.</td></tr>
-      <tr><td>Tabs scroll sideways</td><td>The sprint tabs (Backlog, Taskboard, Capacity, Retro, Demo) stay on one row and scroll, 36px tall.</td><td>Wrapping tabs read as two separate groups.</td></tr>
-      <tr><td>Menus and dialogs become sheets</td><td>Pickers and menus open as bottom sheets with a grab bar and Cancel. Dialogs that hold a form open full screen.</td><td>Popovers anchored to small buttons land off-screen or under the thumb.</td></tr>
+      <tr><td>Tabs scroll sideways</td><td>The sprint tabs (Backlog, Taskboard, Capacity, Retro, Demo) stay on one row and scroll, 32px tall.</td><td>Wrapping tabs read as two separate groups.</td></tr>
+      <tr><td>Menus and dialogs become sheets</td><td>Pickers and menus open as bottom sheets with a grab bar, a title and Close on the right (SHIP-805 D1). Save bars pair Save with Discard (rule 15). Dialogs that hold a form open full screen.</td><td>Popovers anchored to small buttons land off-screen or under the thumb.</td></tr>
       <tr><td>Safe areas</td><td>Add <span class="key">viewport-fit=cover</span>; the top bar, drawer, sheets and toasts pad with <span class="key">env(safe-area-inset-*)</span>.</td><td>Notches and the home indicator.</td></tr>
       <tr><td>No hover-only</td><td>Anything that shows only on hover (row actions, tooltips that hold information) needs a tap path.</td><td>There is no hover on a phone.</td></tr>
       <tr><td>No swipe-to-open</td><td>The drawer opens from Menu only.</td><td>An edge swipe fights the browser's own back gesture on iOS and Android.</td></tr>
@@ -282,7 +282,7 @@
         <div class="tb"><span class="b p">+ New</span><span class="b on">List</span><span class="b" style="margin-left:-7px;border-left:0">Planning</span><span style="flex:1"></span><span class="b">Filter 2</span><span class="b">⋯</span></div>
         <div class="rows dim"><div><span class="ti">S</span>Pay with saved card</div><div><span class="ti">S</span>Address autocomplete</div></div>
         <div class="sheet">
-          <div class="sh"><span>More</span><a href="#rules">Done</a></div>
+          <div class="sh"><span>More</span><a href="#rules">Close</a></div>
           <div class="r">Add many<span>›</span></div>
           <div class="r">Show parents<span class="tog"></span></div>
           <div class="r">Completed<span class="tog on"></span></div>
@@ -294,7 +294,7 @@
     <div class="card">
       <h3>What the shell provides to page stories</h3>
       <ul class="scope">
-        <li><b>Sheet</b>: grab bar, title, Cancel or Done, safe-area padding, focus trap, closes on scrim or Esc.</li>
+        <li><b>Sheet</b>: grab bar, title, Close on the right, safe-area padding, focus trap, closes on scrim or Esc.</li>
         <li><b>More button</b> (⋯) that opens a Sheet with a page's overflow controls.</li>
         <li><b>useTouchShell()</b>: true at 900px and below, so a page doesn't hard-code its own width.</li>
         <li>Tokens: <span class="key">--touch-target</span>, <span class="key">--mobile-bar-height</span>, <span class="key">--drawer-width</span>, <span class="key">--text-input-touch</span> (added to <span class="key">tokens.css</span> and <span class="key">tokens.json</span>).</li>
@@ -344,7 +344,7 @@
 <section id="decide">
   <h2>Decisions</h2>
   <p class="sub">Settled by Joel on 7 Nov 2026: eight recommendations kept, two changed. The screens and images show the settled answers.</p>
-  <div class="wrap"><table class="rules"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th></th></tr></thead><tbody><tr><td>D1</td><td>Navigation on phones</td><td>A drawer from a top-bar Menu button</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D2</td><td>Where the touch shell starts</td><td>900px and below: phones and portrait tablets</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D3</td><td>Sub-pages in the drawer</td><td>Always shown for every section</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D4</td><td>Where you are, in the top bar</td><td>The breadcrumb on one line, cut from the left</td><td><span class="pill warn">Changed: recommended two lines</span></td></tr><tr><td>D5</td><td>Quick search on a phone</td><td>The whole screen, with Cancel</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D6</td><td>Presence and Live on a phone</td><td>A count only (+3); Live as a dot, Reconnecting as a word</td><td><span class="pill warn">Changed: recommended two avatars then +n</span></td></tr><tr><td>D7</td><td>What sticks while scrolling</td><td>The top bar only; page toolbars scroll away</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D8</td><td>Density on phones</td><td>Shell controls 44px; data rows stay compact</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D9</td><td>Page toolbars</td><td>One shared pattern: one row, Filter, ⋯ More sheet</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D10</td><td>Measuring it</td><td>A viewport property (phone, tablet, desktop) on screen.viewed</td><td><span class="pill ok">As recommended</span></td></tr></tbody></table></div>
+  <div class="wrap"><table class="rules"><thead><tr><th>#</th><th>Question</th><th>Answer</th><th></th></tr></thead><tbody><tr><td>D1</td><td>Navigation on phones</td><td>A drawer from a top-bar Menu button</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D2</td><td>Where the touch shell starts</td><td>900px and below: phones and portrait tablets</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D3</td><td>Sub-pages in the drawer</td><td>Always shown for every section</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D4</td><td>Where you are, in the top bar</td><td>The breadcrumb on one line, cut from the left</td><td><span class="pill warn">Changed: recommended two lines</span></td></tr><tr><td>D5</td><td>Quick search on a phone</td><td>The whole screen, with Cancel</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D6</td><td>Presence and Live on a phone</td><td>A count only (+3); Live as a dot, Reconnecting as a word</td><td><span class="pill warn">Changed: recommended two avatars then +n</span></td></tr><tr><td>D7</td><td>What sticks while scrolling</td><td>The top bar only; page toolbars scroll away</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D8</td><td>Density on phones</td><td>Shell controls 44px; data rows stay compact (since SHIP-805 rule 13: every control and row 32px)</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D9</td><td>Page toolbars</td><td>One shared pattern: one row, Filter, ⋯ More sheet</td><td><span class="pill ok">As recommended</span></td></tr><tr><td>D10</td><td>Measuring it</td><td>A viewport property (phone, tablet, desktop) on screen.viewed</td><td><span class="pill ok">As recommended</span></td></tr></tbody></table></div>
 </section>
 
 </main>

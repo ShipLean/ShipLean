@@ -74,10 +74,10 @@
 
   /* Anatomy */
   .anat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 22px; }
-  .abar { display: flex; align-items: center; gap: 4px; height: 52px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
-  .abar .z { position: relative; display: grid; place-items: center; height: 44px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
+  .abar { display: flex; align-items: center; gap: 4px; height: 48px; max-width: 390px; padding: 0 4px; border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); position: relative; }
+  .abar .z { position: relative; display: grid; place-items: center; height: 32px; border-radius: 8px; outline: 1px dashed color-mix(in srgb, var(--color-accent) 60%, transparent); }
   .abar .z i { position: absolute; top: -10px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-accent-fg); font: 600 10px/18px var(--font-sans); text-align: center; font-style: normal; }
-  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 44px; align-content: center; }
+  .abar .t { flex: 1; display: grid; place-items: start; line-height: 1.25; padding: 0 4px; height: 32px; align-content: center; }
   .abar .t small { font-size: var(--text-2xs); color: var(--color-muted); }
   .abar .t b { font-size: var(--text-md); }
   .av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-sans); box-shadow: 0 0 0 2px var(--color-surface); }
@@ -97,7 +97,7 @@
 
   /* Mini mocks (static) */
   .mini { width: 300px; border-radius: 22px; border: 6px solid #1d2433; background: var(--color-bg); overflow: hidden; font-size: 12px; box-shadow: 0 8px 22px rgb(0 0 0 / .15); }
-  .mini .mb { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .mini .mb { display: flex; align-items: center; gap: 6px; height: 37px; padding: 0 8px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
   .mini .mb .ham { font-size: 16px; width: 28px; text-align: center; }
   .mini .mb .tt { flex: 1; line-height: 1.2; }
   .mini .mb .tt small { display: block; font-size: 9.5px; color: var(--color-muted); }
@@ -203,7 +203,7 @@
     <div>
       <div class="states" role="group" aria-label="Prototype state" id="states">
         <button type="button" aria-pressed="true" data-img="item" data-live="work-item.html"><span class="n">1</span><span><b>Top of the page</b><span>The shell’s bar and crumbs, then section chips that stick under it. Type and key with copy, the title wrapping, the created/changed line, then fields as two-column tiles.</span></span></button>
-        <button type="button" aria-pressed="false" data-img="item-state" data-live="work-item.html?dirty&open=state"><span class="n">2</span><span><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header and Done. 44px rows, the same groups and footnote as the desktop menu. Two unsaved edits sit behind it.</span></span></button>
+        <button type="button" aria-pressed="false" data-img="item-state" data-live="work-item.html?dirty&open=state"><span class="n">2</span><span><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header: the field’s name and Close. 32px rows, the same groups and footnote as the desktop menu. Two unsaved edits sit behind it.</span></span></button>
         <button type="button" aria-pressed="false" data-img="item-parent" data-live="work-item.html?open=parent"><span class="n">3</span><span><b>Parent picker</b><span>Search at the top; Features under their Epic; the key on the right.</span></span></button>
         <button type="button" aria-pressed="false" data-img="item-tasks" data-live="work-item.html?dirty&at=Tasks"><span class="n">4</span><span><b>Tasks, with unsaved edits</b><span>Stacked rows: the title on top, then key, a native state select and the person. The Save bar names what is unsaved.</span></span></button>
         <button type="button" aria-pressed="false" data-img="item-discussion" data-live="work-item.html?at=Discussion&mention"><span class="n">5</span><span><b>Comment with @mention</b><span>The list opens above the box, clear of the keyboard. Keyboard hints are hidden; Comment is 40px.</span></span></button>
@@ -229,7 +229,7 @@
   <h2>Every state, side by side</h2>
   <div class="strip" id="gallery-strip">
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Top of the page" data-img="item" src="images/item.light.png"></div><figcaption><b>Top of the page</b><span>The shell’s bar and crumbs, then section chips that stick under it</span></figcaption></figure>
-    <figure class="phone"><div class="glass"><img loading="lazy" alt="State as a bottom sheet" data-img="item-state" src="images/item-state.light.png"></div><figcaption><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header and Done</span></figcaption></figure>
+    <figure class="phone"><div class="glass"><img loading="lazy" alt="State as a bottom sheet" data-img="item-state" src="images/item-state.light.png"></div><figcaption><b>State as a bottom sheet</b><span>Over the shell’s scrim, with its sheet header and Close</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Parent picker" data-img="item-parent" src="images/item-parent.light.png"></div><figcaption><b>Parent picker</b><span>Search at the top; Features under their Epic; the key on the right</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Tasks, with unsaved edits" data-img="item-tasks" src="images/item-tasks.light.png"></div><figcaption><b>Tasks, with unsaved edits</b><span>Stacked rows: the title on top, then key, a native state select and the person</span></figcaption></figure>
     <figure class="phone"><div class="glass"><img loading="lazy" alt="Comment with @mention" data-img="item-discussion" src="images/item-discussion.light.png"></div><figcaption><b>Comment with @mention</b><span>The list opens above the box, clear of the keyboard</span></figcaption></figure>
@@ -256,10 +256,10 @@
 <tr><td>Finding your way</td><td>Everything visible at once</td><td>Section chips stick under the bar (Description, Criteria 2/5, Tasks 0/3, Discussion 3, Links 4…). The one on screen is highlighted; tapping one scrolls to it.</td></tr>
 <tr><td>Title</td><td>One-line input</td><td>Type and key with a copy button above it; the title wraps at 19px semibold; Enter finishes; the created/changed line under it.</td></tr>
 <tr><td>Fields</td><td>One strip of cells</td><td>Two-column tiles. Story: State | Assignee, Sprint | Story points, then Priority, Parent and Tags on rows of their own. Feature: State | Epic, Slug | Started, Stories and bugs, Tags. Inputs at 16px.</td></tr>
-<tr><td>Pickers</td><td>Menus under the field</td><td>Bottom sheets over the shell’s scrim with its sheet header and Done, 44px rows, the same groups and footnotes; Parent keeps its search. Sprint, Epic, Severity and task State stay native selects.</td></tr>
+<tr><td>Pickers</td><td>Menus under the field</td><td>Bottom sheets over the shell’s scrim with its sheet header (title, Close on the right), 32px rows, the same groups and footnotes; Parent keeps its search. Sprint, Epic, Severity and task State stay native selects.</td></tr>
 <tr><td>Saving</td><td>Save and Discard in the header</td><td>A Save bar fixed to the bottom while something is unsaved, naming the fields. A 409 scrolls to the banner, whose buttons go full width.</td></tr>
 <tr><td>Tables</td><td>Tasks and Stories and bugs as table rows</td><td>Stacked rows: icon and title on top, then key, sprint, state and person. The Retrospectives rows scroll sideways.</td></tr>
-<tr><td>Touch</td><td>28px controls; ✕ and ⋯ on hover</td><td>36px controls, 32px icon buttons, 44px rows; nothing needs hover.</td></tr>
+<tr><td>Touch</td><td>28px controls; ✕ and ⋯ on hover</td><td>Controls, icon buttons and rows at least 32px (<span class="key">--touch-target</span>, SHIP-805 rule 13); the Save bar pairs Save with Discard; nothing needs hover.</td></tr>
 <tr><td>Long content</td><td>Wide images and tables fit</td><td>Images and SVGs shrink to the column; Markdown tables scroll inside the description; every section grid is minmax(0, 1fr).</td></tr>
 <tr><td>Discussion and Log</td><td>Composer with keyboard hints</td><td>Bigger box, hints hidden, 40px Comment; the @mention list opens above the box.</td></tr>
 <tr><td>History</td><td>Every revision</td><td>The newest three, then Show all N revisions.</td></tr>
@@ -298,7 +298,7 @@
       <li>Every field can be read and changed on a phone: title, State, Assignee, Sprint, Story points, Priority, Parent, Tags, Severity, Epic, the description and repro steps, criteria, the status band (including Blocked by and Parked reason) and Goal.</li>
       <li>Tasks, Stories and bugs, Discussion, Log, Links, Attachments, History and Retrospectives are all reachable from the section chips, and the chip for the section on screen is highlighted.</li>
       <li>Unsaved changes show the Save bar with the changed fields named; Save writes one revision as on desktop; a 409 brings the conflict banner into view with Reload theirs and Re-apply mine.</li>
-      <li>Every tappable control is at least 32px, list rows and sheet options at least 44px, and nothing needs hover (remove and ⋯ always visible).</li>
+      <li>Every tappable control, list row and sheet option is at least 32px (SHIP-805 rule 13), and nothing needs hover (remove and ⋯ always visible).</li>
       <li>The item modal (?item=KEY) opens full screen at 900px and below, with Close and Open full page.</li>
       <li>Page screenshots at 390 × 844 in both themes for work-item, work-item-bug, work-item-action, feature and feature-status-edit, next to the existing 1440 × 900 ones; the reference screens in design/screens carry the phone layer (item-touch.css, item-touch.js).</li>
       <li>Web events say whether they came from a phone, tablet or desktop (the viewport header from SHIP-713, D12), so edits and comments per item view can be compared week by week, phone against desktop.</li>

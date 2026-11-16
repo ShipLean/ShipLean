@@ -9,7 +9,7 @@
   Designed at 390 × 844; it applies at 900px and below, inside the SHIP-713 touch shell, and follows the shared mobile
   rules on SHIP-805 (it doesn't restate them). Open directly in a browser. Uses ../tokens.css only; no build step.
   The touch shell's top bar is drawn here as ../screens/shared.js draws it; the drawer and quick search live there.
-  SHIP-805 rules 11 and 13 (48px bar, 32px targets) aren't in tokens.css on this branch yet, so this page sets them.
+  --touch-target (32px) and --mobile-bar-height (48px) come from tokens.css (SHIP-805 rules 11 and 13).
   ?level=stories|features|epics   ?mode=list|planning|tree   ?theme=light|dark
   ?state=more|filter|row|drag|select|add|points|search|section|bulk-sprint   (drag: a row on the list, or over a sprint
   in Planning). Reordering is a touch drag on each row's handle (D2, Joel 7 Nov); a row's ⋯ keeps top, bottom, sprint, parent.
@@ -22,7 +22,7 @@
   })();
 </script>
 <style>
-:root { --touch-target: 32px; --mobile-bar-height: 48px; --m-pad: 12px; }
+:root { --m-pad: 12px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
@@ -83,7 +83,7 @@ button { cursor: pointer; }
 .row .rk { align-self: start; padding-top: 2px; font-size: 12px; color: var(--color-muted); font-variant-numeric: tabular-nums; text-align: center; }
 /* The drag handle (D2): the row's left edge, full row height, rank on top. Only the handle starts a drag (touch-action:
    none on it alone), so the rest of the row scrolls the page and a tap opens the item. */
-.grip { align-self: stretch; display: grid; grid-template-rows: auto 1fr; justify-items: center; gap: 2px; width: 30px; min-height: 44px; margin: -7px 0; padding: 9px 0 6px; border: 0; background: none; color: var(--color-muted); border-radius: var(--radius-sm); touch-action: none; cursor: grab; }
+.grip { align-self: stretch; display: grid; grid-template-rows: auto 1fr; justify-items: center; gap: 2px; width: 30px; min-height: var(--touch-target); margin: -7px 0; padding: 9px 0 6px; border: 0; background: none; color: var(--color-muted); border-radius: var(--radius-sm); touch-action: none; cursor: grab; }
 .grip .n { font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1; }
 .grip svg { width: 10px; height: 16px; align-self: center; opacity: .75; }
 .row.dragging { z-index: 5; background: var(--color-surface); border-radius: var(--radius-md); margin: 0 6px; box-shadow: 0 0 0 1.5px var(--color-accent), 0 14px 32px -8px rgb(0 0 0 / .35); transform: scale(1.02); }
@@ -153,7 +153,7 @@ button { cursor: pointer; }
 .pull .step button { width: var(--touch-target); height: var(--touch-target); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: 12px; }
 
 /* Tree: group headers carry the path; rows never indent (D6). */
-.gh { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; column-gap: 4px; min-height: 44px; padding: 6px var(--m-pad) 6px 4px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); }
+.gh { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; column-gap: 4px; min-height: var(--touch-target); padding: 6px var(--m-pad) 6px 4px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); }
 .gh .car { width: 28px; height: 32px; border: 0; background: none; color: var(--color-muted); font-size: 11px; }
 .gh .nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .gh .nm .tt { font-weight: var(--weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -197,11 +197,11 @@ button { cursor: pointer; }
 .sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
 .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 6px 2px var(--m-pad); }
 .sheet-head b { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-head .x { height: 36px; padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
+.sheet-head .x { height: var(--touch-target); padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
 .sheet .sb { overflow: auto; padding: 4px var(--m-pad) 14px; display: grid; gap: 12px; align-content: start; }
 .sheet .sub { font-size: 13px; color: var(--color-muted); padding: 0 var(--m-pad); margin-top: -2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acts-l { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
-.acts-l button, .acts-l label { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; }
+.acts-l button, .acts-l label { display: flex; align-items: center; gap: 12px; width: 100%; min-height: var(--touch-target); padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; }
 .acts-l .g { width: 20px; display: grid; place-items: center; color: var(--color-muted); flex: none; }
 .acts-l .r { margin-left: auto; color: var(--color-muted); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
 .acts-l small { display: block; font-size: 12px; color: var(--color-muted); }
@@ -226,7 +226,7 @@ button { cursor: pointer; }
 
 /* Points sheet. */
 .fib { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.fib button { height: 48px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 18px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+.fib button { height: var(--touch-target); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); font-size: 18px; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
 .fib button.cur { border-color: var(--color-accent); background: var(--color-accent-soft); }
 .qbar { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-muted); }
 .qbar .dots { display: flex; gap: 4px; }
@@ -237,7 +237,7 @@ button { cursor: pointer; }
 .itemcard .m { font-size: 12.5px; color: var(--color-muted); padding-left: 23px; display: flex; gap: 8px; align-items: center; }
 
 .picklist { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
-.picklist li { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
+.picklist li { display: flex; align-items: center; gap: 10px; min-height: var(--touch-target); padding: 4px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
 .picklist li:first-child { border-top: 0; }
 .picklist li[aria-selected="true"] { background: var(--color-accent-soft); }
 .picklist .m { margin-left: auto; font-size: 12.5px; color: var(--color-muted); white-space: nowrap; }
