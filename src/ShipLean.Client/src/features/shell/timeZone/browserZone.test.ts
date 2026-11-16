@@ -28,11 +28,12 @@ describe('browserZone', () => {
   });
 
   test('browserZone_WhenAskedAgain_ShouldAskIntlOnlyOnce', async () => {
-    const spy = vi
-      .spyOn(Intl, 'DateTimeFormat')
-      .mockImplementation(
-        () => ({ resolvedOptions: () => ({ timeZone: 'Asia/Bangkok' }) }) as unknown as Intl.DateTimeFormat,
-      );
+    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+      () =>
+        ({
+          resolvedOptions: () => ({ timeZone: 'Asia/Bangkok' }),
+        }) as unknown as Intl.DateTimeFormat,
+    );
     const browserZone = await freshBrowserZone();
 
     expect([browserZone(), browserZone(), browserZone()]).toEqual([
