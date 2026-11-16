@@ -39,4 +39,10 @@ export const touchTestIds = {
   imageViewer: 'touch-image-viewer',
   imageViewerImage: 'touch-image-viewer-image',
   imageViewerClose: 'touch-image-viewer-close',
+  // K1 action sheet anatomy (SHIP-1626)
+  actionSheetGroup: 'touch-action-sheet-group',
+  actionSheetHint: 'touch-action-sheet-hint',
+  actionSheetDetail: 'touch-action-sheet-detail',
+  actionSheetFooter: 'touch-action-sheet-footer',
+  actionSheetToggle: 'touch-action-sheet-toggle',
 } as const;
