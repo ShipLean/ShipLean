@@ -18,7 +18,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore store, NoteWriter notes, StaleWrites writes, CaptureSupport support)
 {
     [McpServerTool(Name = "refine_work_item"), McpScope(McpScopes.Write), McpPayload]
-    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change. When the new description is already in a file or is over about 20 KB, upload it with create_payload_upload (curl -T) and pass payload.")]
+    [Description("Improve one work item: rewrite its title, description or acceptance criteria, and set its points, tags, priority, severity, found_before_release (a bug only) or parent. A rewritten checklist keeps the ticked state of every line whose text is unchanged. Pass expected_revision (from get_work_item) to refuse if someone has edited it since you read it. A note becomes a comment explaining the change. When the new description is already in a file or is over about 20 KB, upload it with create_payload_upload (curl -T) and pass payload.")]
     public async Task<CallToolResult> RefineWorkItem(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("A new title.")] string? title = null,
@@ -28,6 +28,7 @@ internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore stor
         [Description("The whole tag list; replaces the old one.")] IReadOnlyList<string>? tags = null,
         [Description("1 (highest) to 4.")] int? priority = null,
         [Description("A bug's severity, 1 (critical) to 4 (low).")] int? severity = null,
+        [Description("A bug only: true when it was found before the release it belonged to went out (for example by your own review), false when it escaped.")] bool? found_before_release = null,
         [Description("The parent's key, or none to detach it.")] string? parent = null,
         [Description("The revision you read. A stale write is refused as a conflict.")] int? expected_revision = null,
         [Description("Why you changed it. Added as a comment after the change.")] string? note = null,
@@ -59,12 +60,13 @@ internal sealed class RefineTools(ItemResolver itemResolver, IWorkItemStore stor
             Tags = tags is null ? null : new FieldSet<IReadOnlyList<string>>(tags),
             Priority = priority is null ? null : new FieldSet<int>(priority.Value),
             Severity = severity is null ? null : new FieldSet<int?>(severity),
+            FoundBeforeRelease = found_before_release is null ? null : new FieldSet<bool>(found_before_release.Value),
             Parent = parentChange,
         };
         var fields = StaleWrites.Fields(changes);
         if (fields.Count == 0)
         {
-            throw ApiException.Validation("Say what to change: a title, description, acceptance criteria, points, tags, priority, severity or parent.");
+            throw ApiException.Validation("Say what to change: a title, description, acceptance criteria, points, tags, priority, severity, found before release or parent.");
         }
 
         var written = await writes.PatchAsync(resolved.Id, resolved.Key, changes, expected_revision ?? snapshot.Revision, expected_revision is not null, cancellationToken);

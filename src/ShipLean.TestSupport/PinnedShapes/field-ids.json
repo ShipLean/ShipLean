@@ -36,6 +36,7 @@
     { "value": 3, "label": "3 - Medium" },
     { "value": 4, "label": "4 - Low" }
   ] },
+  { "id": "foundBeforeRelease", "label": "Found before release", "kind": "text", "appliesTo": ["bug"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "description", "label": "Description", "kind": "markdown", "appliesTo": ["epic", "feature", "story", "bug", "task", "action", "bau"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "acceptanceCriteria", "label": "Acceptance criteria", "kind": "checklist", "appliesTo": ["story"], "nullable": false, "usedIn": ["history"], "ops": [], "values": null },
   { "id": "reproSteps", "label": "Repro steps", "kind": "markdown", "appliesTo": ["bug"], "nullable": true, "usedIn": ["history"], "ops": [], "values": null },

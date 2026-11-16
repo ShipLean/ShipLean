@@ -23,6 +23,11 @@ internal static class WorkItemChecks
             throw ApiException.Validation("Priority and severity run from 1 to 4, and points from 0 to 9999.99.");
         }
 
+        if (change.FoundBeforeRelease && change.Type != WorkItemTypeId.Bug)
+        {
+            throw ApiException.Validation("Only a Bug can be marked found before release.", "foundBeforeRelease");
+        }
+
         FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt, change.Health);
         await CheckStateAsync(scope, change, cancellationToken);
         if (change.AssigneeId is { } assignee && !await ExistsAsync(scope, "SELECT EXISTS (SELECT 1 FROM app_user WHERE id = @id)", assignee, change.ProjectId, cancellationToken))

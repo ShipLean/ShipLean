@@ -396,6 +396,7 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
         StatusVerifiedAt = p.StatusVerifiedAt,
         Health = p.Health,
         HealthSetAt = p.HealthSetAt,
+        FoundBeforeRelease = p.FoundBeforeRelease,
         ColumnId = p.ColumnId,
         ColumnDone = p.ColumnDone,
         LaneId = p.LaneId,
@@ -408,7 +409,7 @@ public sealed partial class InMemoryWorkItemStore(IWorkItemRules rules, ICurrent
         p.Title, p.Type, p.StateId, p.AssigneeId, p.Priority, p.Points, p.Tags, p.SprintId, p.ParentId, p.Severity,
         WorkItemFieldView.NullIfEmpty(p.Description), p.AcceptanceCriteria, WorkItemFieldView.NullIfEmpty(p.ReproSteps), [.. links.Select(l => l.Value)],
         WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt),
-        WorkItemFieldView.HealthValue(p.Health));
+        WorkItemFieldView.HealthValue(p.Health), p.FoundBeforeRelease);
 
     private WorkItemFieldLabels LabelsFor(InMemoryWorld world) => new(
         id => world.Projects.Values.SelectMany(p => p.States).FirstOrDefault(s => s.Id == id)?.Name,

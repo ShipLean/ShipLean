@@ -35,4 +35,5 @@ public sealed record ProposedChange(
     DateTimeOffset? StatusVerifiedAt = null,
     bool Bulk = false,
     FeatureHealth? Health = null,
-    DateTimeOffset? HealthSetAt = null);
+    DateTimeOffset? HealthSetAt = null,
+    bool FoundBeforeRelease = false);

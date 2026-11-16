@@ -80,7 +80,7 @@ public sealed class CaptureSupport(ICurrentRequest request, AgentBaseUrl baseUrl
             : await sprints.ResolveAsync(project.Id, item.Sprint, $"{at}.sprint", cancellationToken);
         return new PlannedItem(
             type, item.Title.Trim(), item.Description, [.. item.AcceptanceCriteria ?? []], item.ReproSteps, item.Severity, item.Points,
-            [.. item.Tags ?? []], item.Priority, parent?.Id, parent?.Key, sprint?.Id, sprint?.Name);
+            [.. item.Tags ?? []], item.Priority, parent?.Id, parent?.Key, sprint?.Id, sprint?.Name, item.FoundBeforeRelease == true);
     }
 
     public static WorkItemCreate ToCreate(Guid projectId, PlannedItem item) => new(projectId, item.Type, item.Title, item.ParentId, item.SprintId, new WorkItemChanges
@@ -89,6 +89,7 @@ public sealed class CaptureSupport(ICurrentRequest request, AgentBaseUrl baseUrl
         AcceptanceCriteria = item.AcceptanceCriteria.Count == 0 ? null : new FieldSet<IReadOnlyList<ChecklistItem>>([.. item.AcceptanceCriteria.Select(text => new ChecklistItem(text, false))]),
         ReproSteps = item.ReproSteps is null ? null : new FieldSet<string>(item.ReproSteps),
         Severity = item.Severity is null ? null : new FieldSet<int?>(item.Severity),
+        FoundBeforeRelease = item.FoundBeforeRelease ? new FieldSet<bool>(true) : null,
         Points = item.Points is null ? null : new FieldSet<decimal?>(item.Points),
         Tags = item.Tags.Count == 0 ? null : new FieldSet<IReadOnlyList<string>>(item.Tags),
         Priority = item.Priority is null ? null : new FieldSet<int>(item.Priority.Value),

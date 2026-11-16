@@ -57,6 +57,7 @@ public sealed class StaleWrites(IWorkItemStore store)
         Add(changes.Sprint is not null, FieldIds.Sprint);
         Add(changes.Parent is not null, FieldIds.Parent);
         Add(changes.Severity is not null, FieldIds.Severity);
+        Add(changes.FoundBeforeRelease is not null, FieldIds.FoundBeforeRelease);
         Add(changes.Description is not null, FieldIds.Description);
         Add(changes.Goal is not null, FieldIds.Goal);
         Add(changes.StatusLine is not null, FieldIds.StatusLine);

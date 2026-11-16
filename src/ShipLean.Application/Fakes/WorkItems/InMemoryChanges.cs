@@ -13,7 +13,8 @@ internal static class InMemoryChanges
         item.Id, item.ProjectId, item.Type, item.Title, item.Description, item.AcceptanceCriteria, item.ReproSteps, item.Severity,
         item.StateId, item.AssigneeId, item.SprintId, item.Priority, item.Points, item.ParentId, item.Tags,
         item.ColumnId, item.ColumnDone, item.LaneId, item.ColumnOrder, item.BacklogOrder,
-        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt);
+        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt,
+        FoundBeforeRelease: item.FoundBeforeRelease);
 
     public static ProposedChange Apply(ProposedChange change, WorkItemChanges? changes, DateTimeOffset at)
     {
@@ -29,6 +30,7 @@ internal static class InMemoryChanges
             AcceptanceCriteria = changes.AcceptanceCriteria is { } criteria ? criteria.Value ?? [] : change.AcceptanceCriteria,
             ReproSteps = changes.ReproSteps is { } repro ? repro.Value ?? "" : change.ReproSteps,
             Severity = changes.Severity is { } severity ? severity.Value : change.Severity,
+            FoundBeforeRelease = changes.FoundBeforeRelease is { } found ? found.Value : change.FoundBeforeRelease,
             StateId = changes.State is { } state ? state.Value : change.StateId,
             AssigneeId = changes.Assignee is { } assignee ? assignee.Value : change.AssigneeId,
             SprintId = changes.Sprint is { } sprint ? sprint.Value : change.SprintId,
@@ -55,6 +57,11 @@ internal static class InMemoryChanges
         IReadOnlyDictionary<Guid, UserRef> users,
         IReadOnlyDictionary<Guid, SprintRef> sprints)
     {
+        if (change.FoundBeforeRelease && change.Type != WorkItemTypeId.Bug)
+        {
+            throw ApiException.Validation("Only a Bug can be marked found before release.", "foundBeforeRelease");
+        }
+
         FeatureFieldRules.Check(change.Type, change.Goal, change.StatusLine, change.StatusVerifiedAt, change.Health);
         if (string.IsNullOrWhiteSpace(change.Title))
         {

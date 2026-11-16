@@ -20,6 +20,7 @@ public static class FieldIds
     public const string Parent = "parent";
     public const string Epic = "epic";
     public const string Severity = "severity";
+    public const string FoundBeforeRelease = "foundBeforeRelease";
     public const string Description = "description";
     public const string AcceptanceCriteria = "acceptanceCriteria";
     public const string ReproSteps = "reproSteps";
@@ -54,6 +55,7 @@ public static class FieldIds
         new(Parent, "Parent", FieldKind.WorkItem, [WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action], true, [FieldUse.Criteria, FieldUse.CardField, FieldUse.History], [CriteriaOp.Equal, CriteriaOp.NotEqual, CriteriaOp.In, CriteriaOp.IsEmpty, CriteriaOp.IsNotEmpty], null),
         new(Epic, "Epic", FieldKind.WorkItem, [WorkItemTypeId.Feature], true, [FieldUse.Criteria], [CriteriaOp.Equal, CriteriaOp.NotEqual, CriteriaOp.In, CriteriaOp.IsEmpty, CriteriaOp.IsNotEmpty], null),
         new(Severity, "Severity", FieldKind.Number, [WorkItemTypeId.Bug], true, [FieldUse.Criteria, FieldUse.CardField, FieldUse.History], [CriteriaOp.Equal, CriteriaOp.NotEqual, CriteriaOp.GreaterThan, CriteriaOp.LessThan, CriteriaOp.In, CriteriaOp.IsEmpty, CriteriaOp.IsNotEmpty], [new(Num(1), "1 - Critical"), new(Num(2), "2 - High"), new(Num(3), "3 - Medium"), new(Num(4), "4 - Low")]),
+        new(FoundBeforeRelease, "Found before release", FieldKind.Text, [WorkItemTypeId.Bug], false, [FieldUse.History], [], null),
         new(Description, "Description", FieldKind.Markdown, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], true, [FieldUse.History], [], null),
         new(AcceptanceCriteria, "Acceptance criteria", FieldKind.Checklist, [WorkItemTypeId.Story], false, [FieldUse.History], [], null),
         new(ReproSteps, "Repro steps", FieldKind.Markdown, [WorkItemTypeId.Bug], true, [FieldUse.History], [], null),
