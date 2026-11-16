@@ -227,4 +227,10 @@ export const retrosTestIds = {
   retrosOpenRetroTypeKey: 'retros-open-retro-type-key',
   retrosOpenRetroKey: 'retros-open-retro-key',
   retrosOpenRetroSteps: 'retros-open-retro-steps',
+  retroUnthemedSheet: 'retro-unthemed-sheet',
+  retroUnthemedSheetGiveThemes: 'retro-unthemed-sheet-give-themes',
+  retroThemesHeadingDefs: 'retro-themes-heading-defs',
+  retroThemesHeadingSummary: 'retro-themes-heading-summary',
+  retroThemeRenameHelper: 'retro-theme-rename-helper',
+  retroThemeCardLastChange: 'retro-theme-card-last-change',
 } as const;
