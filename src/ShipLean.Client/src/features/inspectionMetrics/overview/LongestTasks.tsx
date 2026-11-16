@@ -4,7 +4,11 @@ import { inspectionMetricsTestIds as ids } from '../testIds';
 import { PANEL_HEAD, PANEL_NOTE } from './overviewStyles';
 
 const PARTS = [
-  { name: 'Active', hours: (t: InspectionTaskDto) => t.activeHours, colour: 'var(--color-accent)' },
+  {
+    name: 'Active',
+    hours: (t: InspectionTaskDto) => t.activeHours,
+    colour: 'var(--chart-completed)',
+  },
   {
     name: 'Blocked',
     hours: (t: InspectionTaskDto) => t.blockedHours,
@@ -12,6 +16,16 @@ const PARTS = [
   },
   { name: 'Rework', hours: (t: InspectionTaskDto) => t.reworkHours, colour: 'var(--color-warn)' },
 ] as const;
+
+function TaskLabel({ task }: { task: InspectionTaskDto }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <TypeIcon type="task" />
+      <span className="font-mono text-[length:var(--text-xs)] text-ink-muted">{task.key}</span>
+      <span>{task.title}</span>
+    </span>
+  );
+}
 
 /** The range's longest tasks, each with its lead time split into active, blocked and rework; a row opens its sprint. */
 export function LongestTasks({
@@ -65,24 +79,24 @@ export function LongestTasks({
               key={task.key}
               data-testid={ids.overviewLongestRow}
               data-key={task.key}
-              className="cursor-pointer border-t border-edge hover:bg-sunken"
-              onClick={() => onTask(task)}
+              className={`border-t border-edge ${task.periodId === null ? '' : 'cursor-pointer hover:bg-sunken'}`}
+              onClick={task.periodId === null ? undefined : () => onTask(task)}
             >
               <td className="px-3 py-2">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 text-left"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onTask(task);
-                  }}
-                >
-                  <TypeIcon type="task" />
-                  <span className="font-mono text-[length:var(--text-xs)] text-ink-muted">
-                    {task.key}
-                  </span>
-                  <span>{task.title}</span>
-                </button>
+                {task.periodId === null ? (
+                  <TaskLabel task={task} />
+                ) : (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-left"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onTask(task);
+                    }}
+                  >
+                    <TaskLabel task={task} />
+                  </button>
+                )}
               </td>
               <td className="px-3 py-2">{task.featureTitle ?? '—'}</td>
               <td className="px-3 py-2">{task.who}</td>

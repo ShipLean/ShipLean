@@ -18,7 +18,7 @@ export function CoverageBanner({
     <div
       data-testid={ids.coverageBanner}
       role="status"
-      className="grid gap-1 rounded-panel border border-caution bg-caution/10 px-4 py-3 text-[length:var(--text-sm)]"
+      className="grid gap-1 rounded-panel border border-edge border-l-[3px] border-l-caution bg-panel px-4 py-3 text-[length:var(--text-sm)]"
     >
       <b>
         {without} of {coverage.tasks} tasks have no commit time, so their lead time ends at Resolved

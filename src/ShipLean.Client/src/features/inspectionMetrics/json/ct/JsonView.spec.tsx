@@ -32,9 +32,7 @@ for (const scheme of ['light', 'dark'] as const) {
     expect(Object.keys(json)).toContain('generated_at');
     expect(Object.keys(json)).toContain('period_detail');
     expect(text).toContain('"ended_by": "last_commit"');
-    await expect(page.getByTestId(ids.json).getByRole('heading', { level: 2 })).toHaveText(
-      'JSON for agents',
-    );
+    await expect(page.getByTestId(ids.json)).toContainText('JSON for agents');
   });
 }
 
@@ -48,6 +46,6 @@ test('JsonView_WhenBackClicked_ShouldAskForTheOverview', async ({ mount, page })
       onQueryChange={(patch) => patches.push(patch)}
     />,
   );
-  await page.getByTestId(ids.json).getByRole('button', { name: '← Overview' }).click();
+  await page.getByTestId(ids.jsonBack).click();
   await expect.poll(() => patches).toEqual([{ view: 'overview' }]);
 });

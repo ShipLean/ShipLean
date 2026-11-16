@@ -34,6 +34,19 @@ export const OverviewView: ComponentType<InspectionViewProps> = ({
     if (period !== undefined) openTask(period.id, taskKey, 'chart');
   };
 
+  const jsonLink = (
+    <div className="flex justify-end">
+      <button
+        type="button"
+        data-testid={ids.headerJsonLink}
+        className="btn-ghost"
+        onClick={() => onQueryChange({ view: 'json' })}
+      >
+        JSON for agents
+      </button>
+    </div>
+  );
+
   const chart = (
     <section className="panel">
       <header className="flex flex-wrap items-baseline gap-2 border-b border-edge px-4 py-2.5">
@@ -51,6 +64,7 @@ export const OverviewView: ComponentType<InspectionViewProps> = ({
   if (finished === null || !anyTask) {
     return (
       <section data-testid={ids.overview} className="grid gap-3">
+        {jsonLink}
         <OverviewEmpty unit={unit} running={view.headline.soFar?.name ?? null} noTasks={!anyTask} />
         {anyTask ? chart : null}
       </section>
@@ -59,9 +73,15 @@ export const OverviewView: ComponentType<InspectionViewProps> = ({
 
   return (
     <section data-testid={ids.overview} className="grid gap-3">
+      {jsonLink}
       <CoverageBanner coverage={view.coverage} unit={unit} />
       <div className="flex">
-        <LeadTimeCard headline={view.headline} finished={finished} periods={view.periods} />
+        <LeadTimeCard
+          headline={view.headline}
+          finished={finished}
+          periods={view.periods}
+          onOpen={() => onQueryChange({ view: 'leadtime' })}
+        />
       </div>
       {chart}
       <LongestTasks

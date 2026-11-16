@@ -24,6 +24,7 @@ export const JsonView: ComponentType<InspectionViewProps> = ({ project, view, on
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
+          data-testid={ids.jsonBack}
           className="btn-ghost"
           onClick={() => onQueryChange({ view: 'overview' })}
         >

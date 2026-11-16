@@ -180,3 +180,42 @@ test('OverviewView_WhenLongestRowClicked_ShouldNavigateToItsPeriodWithSelect', a
     .poll(() => server.usage.filter((u) => u.path === 'inspection-metrics-task-opened'))
     .toEqual([{ path: 'inspection-metrics-task-opened', body: { from: 'longest' } }]);
 });
+
+for (const [name, stub] of [
+  ['Headline', stubView],
+  ['NoFinishedSprint', stubNoFinishedSprint],
+] as const) {
+  test(`OverviewView_WhenJsonForAgentsClicked_${name}_ShouldAskForTheJsonView`, async ({
+    mount,
+    page,
+  }) => {
+    await routeInspectionMetrics(page);
+    const patches: Partial<InspectionQuery>[] = [];
+    await mountOverview(mount, stub(), patches);
+    await page.getByTestId(ids.headerJsonLink).click();
+    await expect.poll(() => patches).toEqual([{ view: 'json' }]);
+  });
+}
+
+test('OverviewView_WhenLeadTimeCardClicked_ShouldOpenLeadTime', async ({ mount, page }) => {
+  await routeInspectionMetrics(page);
+  const patches: Partial<InspectionQuery>[] = [];
+  await mountOverview(mount, VIEW, patches);
+  await page.getByTestId(ids.overviewLeadCard).click();
+  await expect.poll(() => patches).toEqual([{ view: 'leadtime' }]);
+});
+
+test('OverviewView_WhenChangeIsUnderThreePercent_ShouldReadSame', async ({ mount, page }) => {
+  await routeInspectionMetrics(page);
+  const finished = VIEW.headline.finished!;
+  await mountOverview(
+    mount,
+    stubView({
+      headline: {
+        ...VIEW.headline,
+        finished: { ...finished, leadTime: { ...finished.leadTime, changePctVsPrevious: -2 } },
+      },
+    }),
+  );
+  await expect(page.getByTestId(ids.overviewLeadCardChange)).toHaveText('≈ same');
+});
