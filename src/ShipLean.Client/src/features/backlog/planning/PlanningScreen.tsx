@@ -68,6 +68,16 @@ export function PlanningScreen({
   const createSprint = useCreateNextSprint(project.id);
   const planned = view.velocity === null ? null : (view.velocity.override ?? view.velocity.average);
   const moreActions: SheetAction[] = [
+    // A switch: tapping it keeps the sheet open (K1 toggle).
+    {
+      id: 'forecast',
+      label: 'Forecast',
+      icon: forecastIcon,
+      hint: 'Marks where each backlog item is likely to land',
+      group: '',
+      toggle: { on: forecast },
+      onSelect: () => onForecastChange(!forecast),
+    },
     ...(forecast && planned !== null
       ? [
           {
@@ -75,7 +85,6 @@ export function PlanningScreen({
             label: 'Override velocity',
             icon: velocityIcon,
             detail: planned,
-            trailing: 'chevron',
             onSelect: () => setOverriding(true),
           } satisfies SheetAction,
         ]
@@ -86,16 +95,6 @@ export function PlanningScreen({
       icon: createSprintIcon,
       disabled: createSprint.disabled,
       onSelect: createSprint.create,
-    },
-    // A switch: tapping it keeps the sheet open (K1 toggle).
-    {
-      id: 'forecast',
-      label: 'Forecast',
-      icon: forecastIcon,
-      hint: 'Show the forecast and plan against velocity',
-      group: '',
-      toggle: { on: forecast },
-      onSelect: () => onForecastChange(!forecast),
     },
   ];
   const queue = useCheckQueue();

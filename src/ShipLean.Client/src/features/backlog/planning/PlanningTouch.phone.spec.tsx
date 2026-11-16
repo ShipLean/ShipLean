@@ -192,9 +192,7 @@ test('PlanningTouchRow_InItsOwnSprintSection_ShouldHideTheSprintChipAndStackPoin
   await mount(<PlanningMode project={PROJECT} />, route);
 
   // SHIP-158 is the Sprint 25 row.
-  const row = page
-    .getByTestId(ids.row)
-    .filter({ has: page.getByTestId(ids.key).getByText('SHIP-158', { exact: true }) });
+  const row = page.locator(`[data-testid="${ids.row}"][data-key="SHIP-158"]`);
   await expect(row).toBeVisible();
   await expect(row.getByTestId(ids.sprintChip)).toHaveCount(0);
   const points = await row.getByTestId(ids.points).boundingBox();

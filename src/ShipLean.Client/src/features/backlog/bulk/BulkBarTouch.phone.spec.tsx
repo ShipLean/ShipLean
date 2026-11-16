@@ -249,6 +249,8 @@ test('BulkSprintSheet_ShouldOfferBacklogAndShowCapacity', async ({ mount, page }
   const sprint24 = page.locator(`[data-testid="${ids.bulkMoveSprint}"][data-sprint="sp24"]`);
   await expect(sprint24.getByTestId(componentTestIds.capacityBar)).toBeVisible();
   await expect(sprint24).toContainText('Current');
+  await expect(sprint24.getByTestId(touchTestIds.actionSheetHint)).toHaveText(/^Current · \S+/);
+  await expect(page.getByTestId(touchTestIds.actionSheetFooter)).toContainText('has no estimate');
   await expect(page.getByTestId(ids.bulkUnestimatedNote)).toHaveText(
     'SHIP-185 has no estimate, so it adds 0.',
   );
@@ -258,4 +260,29 @@ test('BulkSprintSheet_ShouldOfferBacklogAndShowCapacity', async ({ mount, page }
   // SHIP-185 is already in the Backlog, so only SHIP-160 moves.
   expect(server.bulks[0].items.map((item) => item.id)).toEqual(['id-SHIP-160']);
   expect(server.bulks[0].items[0].changes?.sprint).toEqual({ value: null });
+});
+
+test('BulkSprintSheet_WhenEverySelectedRowIsInTheBacklog_ShouldDisableTheBacklogTarget', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningManyView(), { sprints: planningSprints() });
+  await mount(
+    <SelectModeHarness>
+      <PlanningMode project={PROJECT} />
+    </SelectModeHarness>,
+    planning,
+  );
+  await expect(page.getByTestId(ids.row).first()).toBeVisible();
+  await pickMore(page, 'select');
+  // SHIP-185 is in the Backlog; SHIP-160 is in Sprint 24.
+  await rowOf(page, 'SHIP-185').getByTestId(ids.touchRowSelect).tap();
+  await expect(rowOf(page, 'SHIP-185')).toHaveAttribute('data-selected', 'true');
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  await expect(page.getByTestId(ids.bulkMoveBacklog)).toBeDisabled();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await rowOf(page, 'SHIP-160').getByTestId(ids.touchRowSelect).tap();
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  await expect(page.getByTestId(ids.bulkMoveBacklog)).toBeEnabled();
 });

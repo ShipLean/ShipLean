@@ -2,7 +2,7 @@ import type { SprintRef } from '@shiplean/core/api/refs';
 import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { CapacityBar } from '../../../components/CapacityBar';
-import { actionSheetRowClass } from '../../../touch/ActionSheet';
+import { ActionSheetFootnote, ActionSheetRowFace, actionSheetRowClass } from '../../../touch/ActionSheet';
 import { Sheet } from '../../../touch/Sheet';
 import { useSprintDates } from '../planning/useSprintDates';
 import { backlogTestIds as ids } from '../testIds';
@@ -12,6 +12,19 @@ import { sprintSum } from './sprintSum';
 export interface MoveTarget {
   sprint: SprintRef;
   section: BacklogSectionDto;
+}
+
+const NOTE_KEYS = 3;
+
+function hint(...parts: (string | null | undefined)[]): string | null {
+  const text = parts.filter((part) => part).join(' · ');
+  return text === '' ? null : text;
+}
+
+// The footnote names a few keys, then counts the rest.
+function noteKeys(rows: readonly BacklogRowDto[]): string {
+  const shown = rows.slice(0, NOTE_KEYS).map((row) => row.key).join(', ');
+  return rows.length > NOTE_KEYS ? `${shown} and ${rows.length - NOTE_KEYS} more` : shown;
 }
 
 const rowClass = `${actionSheetRowClass} gap-3 text-ink`;
@@ -43,12 +56,12 @@ export function BulkSprintSheet({
   const dates = useSprintDates(projectId);
   const unestimated = selected.filter((row) => row.points === null);
   const points = selected.reduce((sum, row) => sum + (row.points ?? 0), 0);
-  const keys = selected.map((row) => row.key).join(', ');
+  const subtitle = `${selected.length > 3 ? `${selected.length} items` : selected.map((row) => row.key).join(', ')} · ${points} pts`;
   return (
     <Sheet
       open
       title={`Move ${selected.length} ${selected.length === 1 ? 'item' : 'items'} to`}
-      subtitle={`${keys} · ${points} pts`}
+      subtitle={subtitle}
       onClose={onClose}
     >
       {targets.map((target) => {
@@ -67,28 +80,28 @@ export function BulkSprintSheet({
               onClose();
             }}
           >
-            <span className="grid min-w-0 flex-1">
-              <span className="truncate">{target.sprint.name}</span>
-              <span className="truncate text-[length:var(--text-sm)] text-ink-muted">
-                {[target.sprint.status === 'current' ? 'Current' : null, label]
-                  .filter((part) => part)
-                  .join(' · ')}
-              </span>
-            </span>
-            <span className="grid flex-none justify-items-end gap-1">
-              <span
-                data-testid={ids.bulkSum}
-                data-over={sum.over}
-                className={`text-[length:var(--text-sm)] tabular-nums ${sum.over ? 'font-semibold text-alert' : 'text-ink-muted'}`}
-              >
-                {sum.text}
-              </span>
-              {sum.of === null ? null : (
-                <span className="block w-24">
-                  <CapacityBar used={sum.after} capacity={sum.of} variant="capacity" />
-                </span>
-              )}
-            </span>
+            <ActionSheetRowFace
+              face={{
+                label: target.sprint.name,
+                hint: hint(target.sprint.status === 'current' ? 'Current' : null, label),
+                detail: (
+                  <span className="grid justify-items-end gap-1">
+                    <span
+                      data-testid={ids.bulkSum}
+                      data-over={sum.over}
+                      className={sum.over ? 'font-semibold text-alert' : undefined}
+                    >
+                      {sum.text}
+                    </span>
+                    {sum.of === null ? null : (
+                      <span className="block w-24">
+                        <CapacityBar used={sum.after} capacity={sum.of} variant="capacity" />
+                      </span>
+                    )}
+                  </span>
+                ),
+              }}
+            />
           </button>
         );
       })}
@@ -102,22 +115,18 @@ export function BulkSprintSheet({
           onClose();
         }}
       >
-        <span className="grid min-w-0 flex-1">
-          <span>Backlog</span>
-          <span className="text-[length:var(--text-sm)] text-ink-muted">Out of every sprint</span>
-        </span>
+        <ActionSheetRowFace face={{ label: 'Backlog', hint: 'Out of every sprint' }} />
       </button>
       {unestimated.length === 0 ? null : (
-        <p
-          data-testid={ids.bulkUnestimatedNote}
-          className="px-2 pt-2 text-[length:var(--text-sm)] text-ink-muted"
-        >
-          {unestimated.map((row) => row.key).join(', ')}{' '}
-          {unestimated.length === 1
-            ? 'has no estimate, so it adds'
-            : 'have no estimate, so they add'}{' '}
-          0.
-        </p>
+        <ActionSheetFootnote>
+          <span data-testid={ids.bulkUnestimatedNote}>
+            {noteKeys(unestimated)}{' '}
+            {unestimated.length === 1
+              ? 'has no estimate, so it adds'
+              : 'have no estimate, so they add'}{' '}
+            0.
+          </span>
+        </ActionSheetFootnote>
       )}
     </Sheet>
   );

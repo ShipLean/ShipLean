@@ -69,7 +69,15 @@ for (const theme of THEMES) {
   }) => {
     phoneOnly(page);
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-    await stubBacklog(page, backlogView(ROWS), { sprints: planningSprints() });
+    // Sprint 24 has no capacity of its own, so the velocity gives the bars their limit.
+    await stubBacklog(
+      page,
+      {
+        ...backlogView(ROWS),
+        velocity: { window: 3, average: 21, override: null, sprints: [] },
+      },
+      { sprints: planningSprints() },
+    );
     await mount(
       <SelectModeHarness>
         <ListMode project={PROJECT} />
