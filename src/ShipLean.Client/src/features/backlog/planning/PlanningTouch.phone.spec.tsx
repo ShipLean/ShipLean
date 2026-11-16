@@ -88,7 +88,7 @@ test('PlanningScreen_WhenTouchMoreTapped_ShouldOfferOverrideVelocityAndCreateSpr
   await mount(<PlanningMode project={PROJECT} />, route);
 
   await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.locator(actionRow('override-velocity'))).toHaveText('Override velocity');
+  await expect(page.locator(actionRow('override-velocity'))).toContainText('Override velocity');
   await expect(page.locator(actionRow('create-sprint'))).toHaveText('Create sprint');
   await expect(page.locator(actionRow('override-velocity'))).toContainText('21');
   await expect(page.getByTestId(ids.planningForecastToggle)).toHaveCount(0);

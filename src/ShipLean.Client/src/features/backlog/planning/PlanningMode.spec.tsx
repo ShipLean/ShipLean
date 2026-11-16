@@ -233,8 +233,9 @@ test('Planning_ShouldLinkEachSectionToItsSprint', async ({ mount, page }) => {
   await expect(links.nth(1)).toHaveText('Open sprint');
   await expect(links.nth(1)).toHaveAttribute('href', '/p/SHIP/sprints/sp25/backlog');
   const capacity = page.getByTestId(ids.planningSectionCapacityLink);
-  await expect(capacity).toHaveCount(1);
-  await expect(capacity).toHaveAttribute('href', '/p/SHIP/sprints/sp25/capacity');
+  // Sprint 24 is current and has no Capacity link; the two future sprints do.
+  await expect(capacity).toHaveCount(2);
+  await expect(capacity.first()).toHaveAttribute('href', '/p/SHIP/sprints/sp25/capacity');
 });
 
 test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({ mount, page }) => {
@@ -309,5 +310,5 @@ test('Planning_ItemCount_ShouldPluralise', async ({ mount, page }) => {
 
   const counts = page.getByTestId(ids.planningSectionCount);
   await expect(counts.nth(0)).toHaveText('1 item');
-  await expect(counts.nth(1)).toHaveText('2 items');
+  await expect(counts.last()).toHaveText('3 items · 16 pts');
 });
