@@ -223,13 +223,13 @@ test('SettingsStatesPhone_WhenMoreTapped_ShouldOfferTheRowActionsAndMoveUp', asy
     'Move down',
     'Delete…',
   ]);
-  await sheet.locator('[data-action-id="up"]').tap();
+  await sheet.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="up"]`).tap();
   await expect(sheet).toHaveCount(0);
   await expect(panel.getByTestId(ids.stateName).first()).toHaveValue('Active');
   await expect(panel.getByTestId(ids.stateName).nth(1)).toHaveValue('New');
 
   await panel.getByTestId(ids.stateRow).nth(0).getByTestId(touchTestIds.moreButton).tap();
-  await page.getByTestId(touchTestIds.sheet).locator('[data-action-id="delete"]').tap();
+  await page.getByTestId(touchTestIds.sheet).locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`).tap();
   await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
 });
 
@@ -296,7 +296,7 @@ for (const theme of THEMES) {
     const { panel } = await open(mount, page);
 
     await panel.getByTestId(ids.stateRow).nth(1).getByTestId(touchTestIds.moreButton).tap();
-    await page.getByTestId(touchTestIds.sheet).locator('[data-action-id="delete"]').tap();
+    await page.getByTestId(touchTestIds.sheet).locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`).tap();
 
     await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
     await expect(panel).toHaveScreenshot(`settings-states-delete-phone.${theme}.png`, {

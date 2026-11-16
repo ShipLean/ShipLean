@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectSettingsDto } from '@shiplean/core/api/projects';
 import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import type { Page } from '../../../pages/screenshots/shoot';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
@@ -262,18 +263,19 @@ test('SettingsPhone_WhenMembersShown_ShouldPutNameRoleAndRemoveOnTheFirstLine', 
   const row = rows.last();
   const remove = row.getByTestId(ids.memberRemove);
   await expect(remove).toHaveText('✕');
-  const [name, email, role, cross] = await Promise.all([
-    row.locator('td').first().boundingBox(),
-    row.locator('td').nth(1).boundingBox(),
+  const [name, whole, role, cross] = await Promise.all([
+    row.getByTestId(componentTestIds.avatar).boundingBox(),
+    row.boundingBox(),
     row.getByTestId(ids.memberRole).boundingBox(),
     remove.boundingBox(),
   ]);
-  if (!name || !email || !role || !cross) throw new Error('row part not drawn');
+  if (!name || !whole || !role || !cross) throw new Error('row part not drawn');
   const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
   expect(Math.abs(mid(role) - mid(name))).toBeLessThanOrEqual(4);
   expect(Math.abs(mid(cross) - mid(name))).toBeLessThanOrEqual(4);
   expect(cross.width).toBeGreaterThanOrEqual(32);
   expect(cross.height).toBeGreaterThanOrEqual(32);
   expect(role.x).toBeGreaterThan(name.x);
-  expect(email.y).toBeGreaterThanOrEqual(role.y + role.height - 1);
+  // Two lines: the role line plus the email line, not a third line for role and Remove.
+  expect(whole.height).toBeLessThan(role.height + 40);
 });

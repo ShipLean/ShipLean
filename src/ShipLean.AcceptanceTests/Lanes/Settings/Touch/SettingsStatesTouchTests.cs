@@ -5,7 +5,8 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Settings.Touch;
 
-// The States tab on a phone (P5): a type select, two-line state rows with visible actions, and a stacked delete form.
+// The States tab on a phone (P5; SHIP-1809 P4/P5): a type select, state rows with a ⠿ handle and a ⋯ sheet of actions,
+// and a stacked delete form.
 // Joel is the admin; nothing here saves. The touch rules are checked on the States panel only.
 [TestFixture]
 public class SettingsStatesTouchTests : SeededAcceptanceTest
@@ -14,8 +15,11 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
 
     private ILocator Panel => Page.GetByTestId(SettingsTestIds.StatesPanel);
 
+    private ILocator SheetRow(string label) =>
+        Page.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new() { HasTextString = label });
+
     [Test]
-    public async Task States_WhenOpenedOnAPhone_ShouldShowTwoLineRowsWithVisibleActions()
+    public async Task States_WhenOpenedOnAPhone_ShouldShowRowsWithAHandleAndAMoreButton()
     {
         var states = new SettingsStatesPage(Page);
         await states.OpenAsync();
@@ -35,6 +39,8 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
         {
             var row = states.Rows.Nth(i);
             foreach (var id in new[] { SettingsTestIds.StateMoveUp, SettingsTestIds.StateMoveDown, SettingsTestIds.StateDelete })
+                await Expect(row.GetByTestId(id)).ToBeHiddenAsync();
+            foreach (var id in new[] { SettingsTestIds.StateHandle, TouchTestIds.MoreButton })
             {
                 var button = row.GetByTestId(id);
                 await Expect(button).ToBeVisibleAsync();
@@ -54,14 +60,15 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
     }
 
     [Test]
-    public async Task States_WhenMovedUpOnAPhone_ShouldReorderTheDraft()
+    public async Task States_WhenMovedUpFromTheMoreSheetOnAPhone_ShouldReorderTheDraft()
     {
         var states = new SettingsStatesPage(Page);
         await states.OpenAsync();
         await Expect(states.NameOf(0)).ToHaveValueAsync("New");
         await Expect(states.NameOf(1)).ToHaveValueAsync("Active");
 
-        await states.Rows.Nth(1).GetByTestId(SettingsTestIds.StateMoveUp).TapAsync();
+        await states.Rows.Nth(1).GetByTestId(TouchTestIds.MoreButton).TapAsync();
+        await SheetRow("Move up").TapAsync();
 
         await Expect(states.NameOf(0)).ToHaveValueAsync("Active");
         await Expect(states.NameOf(1)).ToHaveValueAsync("New");
@@ -73,7 +80,8 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
     {
         var states = new SettingsStatesPage(Page);
         await states.OpenAsync();
-        await states.DeleteOf(1).TapAsync();
+        await states.Rows.Nth(1).GetByTestId(TouchTestIds.MoreButton).TapAsync();
+        await SheetRow("Delete…").TapAsync();
 
         await Expect(states.DeleteForm).ToBeVisibleAsync();
         var target = await Page.GetByTestId(SettingsTestIds.StateDeleteTarget).BoundingBoxAsync();
