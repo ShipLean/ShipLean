@@ -9,7 +9,6 @@ using ShipLean.Application.Features.FeaturesOverview;
 using ShipLean.Application.Features.WorkItems.Reads.Changes;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Screens;
-using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Users;
@@ -173,7 +172,7 @@ public class FeatureDigestApiTests : ApiFixture
         await using (var connection = await OpenDatabaseAsync())
         {
             await new QuestionBuilder(item).Text("Parakeet or Whisper?").AskedBy(SeedIds.Users.Priya, null, Ago(TimeSpan.FromHours(2))).BuildAsync(connection);
-            await new DecisionBuilder(item).Question("Approve the dark-mode colours?").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromHours(1))).BuildAsync(connection);
+            await new DecisionBuilder(item).Question("Approve the dark-mode colours?").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromMinutes(30))).BuildAsync(connection);
             await new DecisionBuilder(item).Question("Raised before I last looked").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromDays(3))).BuildAsync(connection);
         }
 
@@ -185,7 +184,7 @@ public class FeatureDigestApiTests : ApiFixture
         row.Lines[0].By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Priya);
         row.Lines[0].AgentName.ShouldBeNull();
         row.Lines[1].AgentName.ShouldBe("Claude Code");
-        row.Lines[1].AtLabel.ShouldBe(DisplayDate.Relative(row.Lines[1].At, TimeProvider.System));
+        row.Lines[1].AtLabel.ShouldBe("30m ago");
     }
 
     [Test]

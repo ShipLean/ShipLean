@@ -18,7 +18,6 @@ const filename = (file: string) => path.join(process.cwd(), file);
 const harness = filename('src/features/harness/Harness.tsx');
 const options = [
   {
-    allowlist: [{ file: 'src/features/harness/Listed.ts', owner: 'TEST', why: 'test' }],
     exceptions: [{ file: 'src/features/harness/zone.ts', allow: ['Intl.DateTimeFormat'] }],
   },
 ];
@@ -144,10 +143,6 @@ describe.each(copies)('no-client-dates (%s)', (_name, load) => {
         allowed('const t = Date.UTC(2026, 0, 1);'),
         allowed('const s = count.toLocaleString();'),
         allowed('const c = new Intl.Collator(undefined, { numeric: true });'),
-        allowed(
-          'const d = new Date(); const h = d.getHours();',
-          filename('src/features/harness/Listed.ts'),
-        ),
         allowed(
           'const z = Intl.DateTimeFormat().resolvedOptions().timeZone;',
           filename('src/features/harness/zone.ts'),

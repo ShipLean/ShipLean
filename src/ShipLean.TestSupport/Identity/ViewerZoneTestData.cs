@@ -2,7 +2,8 @@ using ShipLean.Core;
 
 namespace ShipLean.TestSupport.Identity;
 
-// Zones and instants for viewer time-zone tests. Expected labels are computed with DisplayDate and the zone, never typed.
+// Zones and instants for viewer time-zone tests. Expected labels are literal strings or worked out by hand from the
+// instant (ToOffset), never through DisplayDate, so a wrong DisplayDate cannot also make the expectation wrong.
 public static class ViewerZoneTestData
 {
     public const string BangkokId = "Asia/Bangkok";

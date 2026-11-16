@@ -10,8 +10,7 @@ import path from 'node:path';
 // (`new globalThis.Date()`, `window.Intl.DateTimeFormat`) count too. A non-Date `getHours`, or a non-number
 // `toLocaleString`, is not told apart (no type information).
 //
-// Options: `allowlist`, files (from the package root) the rule skips while their lane fixes them
-// (eslint/dates-allowlist.json); `exceptions`, permanent `{ file, allow }` entries that allow only the named constructs
+// Options: `exceptions`, permanent `{ file, allow }` entries that allow only the named constructs
 // in that one file (e.g. `{ file: 'src/actions/clock.ts', allow: ['new Date'] }`). An allowed 'Intl.DateTimeFormat'
 // covers only one read of the browser's zone, `Intl.DateTimeFormat().resolvedOptions().timeZone`, once in the file.
 
@@ -97,7 +96,6 @@ export const noClientDates = {
       {
         type: 'object',
         properties: {
-          allowlist: { type: 'array' },
           exceptions: { type: 'array' },
         },
         additionalProperties: false,
@@ -111,7 +109,6 @@ export const noClientDates = {
   create(context) {
     const options = context.options[0] ?? {};
     const file = relativeToPackage(context);
-    if ((options.allowlist ?? []).some((entry) => entry.file === file)) return {};
     const allowed = new Set(
       (options.exceptions ?? [])
         .filter((entry) => entry.file === file)

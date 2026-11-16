@@ -1,6 +1,6 @@
+using System.Globalization;
 using ShipLean.Application.Features.TaskChanges.Comments;
 using ShipLean.Contracts.TaskChanges;
-using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Identity;
 
@@ -22,9 +22,10 @@ public class CodeCommentLabelZoneTests
 
         var dto = CodeCommentDtos.From(comment, now, ViewerZoneTestData.Bangkok);
 
-        var utcLabel = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc);
-        dto.CreatedAtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok));
-        dto.CreatedAtLabel.ShouldNotBe(utcLabel);
+        // An earlier year reads "d MMM yyyy" on the zone's calendar day; worked out by hand at +07:00, not through DisplayDate.
+        var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7));
+        dto.CreatedAtLabel.ShouldBe(bangkokDay.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+        dto.CreatedAtLabel.ShouldNotBe(ViewerZoneTestData.LateEveningUtc.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
         dto.Replies[0].CreatedAtLabel.ShouldBe(dto.CreatedAtLabel);
     }
 }

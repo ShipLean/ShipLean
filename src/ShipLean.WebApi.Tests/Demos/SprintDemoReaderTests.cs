@@ -84,11 +84,12 @@ public class SprintDemoReaderTests : ApiFixture
             """,
             new { id = Guid.CreateVersion7(), itemId = demo.ItemId, connectionId = demo.Project.ConnectionId, state, at = at ?? TimeProvider.System.GetUtcNow(), by = SeedIds.Users.Joel });
 
-    // The label the reader should make for a moment, built from DisplayDate's own day maths so it holds across local midnight.
+    // The label the reader should make for a moment for a user with no zone (UTC), built from DisplayDate's own day maths
+    // so it holds across midnight.
     private static string WhenOf(DateTimeOffset at)
     {
         var now = TimeProvider.System.GetUtcNow();
-        var zone = TimeProvider.System.LocalTimeZone;
+        var zone = TimeZoneInfo.Utc;
         var day = DisplayDate.DaysUntil(at, now, zone) switch
         {
             0 => "today",
@@ -96,7 +97,7 @@ public class SprintDemoReaderTests : ApiFixture
             1 => "tomorrow",
             _ => DisplayDate.ShortDay(at, now, zone),
         };
-        return $"{day} at {DisplayDate.Clock(at, TimeProvider.System)}";
+        return $"{day} at {DisplayDate.Time(at, zone)}";
     }
 
     private async Task<Delivered> DeliverAsync(NpgsqlConnection database, Arranged demo, string chaptersJson, string script, DateTimeOffset delivered, int videoBytes = 4321)

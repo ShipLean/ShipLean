@@ -3,7 +3,6 @@ const eslint = require('@eslint/js');
 const reactHooks = require('eslint-plugin-react-hooks');
 const tseslint = require('typescript-eslint');
 const { noClientDates } = require('./eslint/dates.js');
-const datesAllowlist = require('./eslint/dates-allowlist.json');
 
 const shipleanPlugin = { meta: { name: 'shiplean' }, rules: { 'no-client-dates': noClientDates } };
 
@@ -52,7 +51,6 @@ module.exports = tseslint.config(
       'shiplean/no-client-dates': [
         'error',
         {
-          allowlist: datesAllowlist,
           exceptions: [
             // The one clock the actions read (D7).
             { file: 'src/actions/clock.ts', allow: ['new Date'] },
