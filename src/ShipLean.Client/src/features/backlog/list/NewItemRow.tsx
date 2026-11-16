@@ -64,7 +64,11 @@ export function NewItemRow({
   }
 
   const error = create.error ? (
-    <span data-testid={ids.addError} role="alert" className="text-[length:var(--text-sm)] text-alert">
+    <span
+      data-testid={ids.addError}
+      role="alert"
+      className="text-[length:var(--text-sm)] text-alert"
+    >
       {create.error instanceof ApiRequestError ? create.error.message : 'Could not add the item.'}
     </span>
   ) : null;
@@ -86,7 +90,7 @@ export function NewItemRow({
                 label: option.id === 'story' ? 'Story' : option.label,
               }))}
               selected={type}
-              onPick={setType}
+              onPick={(value) => setType(value as WorkItemTypeId)}
             />
           </div>
           <input
@@ -154,20 +158,10 @@ export function NewItemRow({
         onKeyDown={onKeyDown}
         {...paste}
       />
-      <button
-        type="button"
-        data-testid={ids.addSubmit}
-        className="btn-signal"
-        onClick={add}
-      >
+      <button type="button" data-testid={ids.addSubmit} className="btn-signal" onClick={add}>
         Add
       </button>
-      <button
-        type="button"
-        data-testid={ids.addClose}
-        className="btn-ghost"
-        onClick={onClose}
-      >
+      <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
         Esc
       </button>
       {error}

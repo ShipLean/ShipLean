@@ -27,7 +27,8 @@ test('ListDrag_WhileOverATarget_ShouldShowTheInsertionLine', async ({ mount, pag
   await send('touchStart', x, y);
   await page.clock.runFor(500);
   const endY = Math.round(target.y + target.height / 2);
-  for (let at = y + 20; at < endY + 20; at += 20) await send('touchMove', x + 50, Math.min(at, endY));
+  for (let at = y + 20; at < endY + 20; at += 20)
+    await send('touchMove', x + 50, Math.min(at, endY));
   await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
 
   // No release: the line is above the row under the finger, and only one shows.

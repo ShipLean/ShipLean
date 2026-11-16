@@ -79,26 +79,29 @@ export function AddRowFields({
           <SegmentedChoice
             label="Type"
             testId={ids.addType}
-            options={types.map((id) => ({ value: id, label: id === 'story' ? 'Story' : typeName(id) }))}
+            options={types.map((id) => ({
+              value: id,
+              label: id === 'story' ? 'Story' : typeName(id),
+            }))}
             selected={type}
             onPick={onType}
           />
         </div>
       ) : (
-      <select
-        data-testid={ids.addType}
-        aria-label="Type"
-        className="field"
-        value={type}
-        onChange={(event) => onType(event.target.value as WorkItemTypeId)}
-        onKeyDown={onKeyDown}
-      >
-        {types.map((id) => (
-          <option key={id} value={id}>
-            {typeName(id)}
-          </option>
-        ))}
-      </select>
+        <select
+          data-testid={ids.addType}
+          aria-label="Type"
+          className="field"
+          value={type}
+          onChange={(event) => onType(event.target.value as WorkItemTypeId)}
+          onKeyDown={onKeyDown}
+        >
+          {types.map((id) => (
+            <option key={id} value={id}>
+              {typeName(id)}
+            </option>
+          ))}
+        </select>
       )}
       <input
         autoFocus
