@@ -58,26 +58,26 @@ export function PagerHarness() {
       <p data-testid={ids.ctPagerReports}>{reports.join(',')}</p>
       {/* The pager adds no side gutter; the page's 12px gutter (the sprint tabs' at touch) is the harness's. */}
       <div className="px-3">
-      <TouchPager
-        pages={pages.map((page) => ({ ...page }))}
-        current={current}
-        onPageChange={(id) => {
-          setCurrent(id);
-          setReports((now) => [...now, id]);
-        }}
-        renderPage={(id) => (
-          <div
-            data-testid={ids.ctPagerPageBody}
-            className="grid gap-2 rounded border border-border bg-surface p-2"
-          >
-            {Array.from({ length: rows[id] ?? 1 }, (_, i) => (
-              <div key={i} className="h-10 rounded bg-accent-soft p-2 text-sm">
-                {id} card {i + 1}
-              </div>
-            ))}
-          </div>
-        )}
-      />
+        <TouchPager
+          pages={pages.map((page) => ({ ...page }))}
+          current={current}
+          onPageChange={(id) => {
+            setCurrent(id);
+            setReports((now) => [...now, id]);
+          }}
+          renderPage={(id) => (
+            <div
+              data-testid={ids.ctPagerPageBody}
+              className="grid gap-2 rounded border border-border bg-surface p-2"
+            >
+              {Array.from({ length: rows[id] ?? 1 }, (_, i) => (
+                <div key={i} className="h-10 rounded bg-accent-soft p-2 text-sm">
+                  {id} card {i + 1}
+                </div>
+              ))}
+            </div>
+          )}
+        />
       </div>
     </div>
   );

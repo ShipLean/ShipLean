@@ -153,57 +153,57 @@ export function TouchPager({
 
   return (
     <InsidePagerContext.Provider value={true}>
-    <div>
-      {chips ? (
-        <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
-          {pages.map((page) => {
-            const text = chipText(page);
-            return (
-              <button
-                key={page.id}
-                type="button"
-                className={`touch-pager-chip${pulsing.has(page.id) ? ' is-pulsing' : ''}`}
-                data-testid={touchTestIds.pagerChip}
-                data-page-id={page.id}
-                data-over={isOver(page)}
-                aria-current={page.id === current ? 'true' : undefined}
-                onClick={() => turnTo(page.id)}
-                onAnimationEnd={() =>
-                  setPulsing((now) => {
-                    const next = new Set(now);
-                    next.delete(page.id);
-                    return next;
-                  })
-                }
-              >
-                {page.category ? <StateDot category={page.category} /> : null}
-                <span>{page.label}</span>
-                {text ? <span className="touch-pager-chip-count">{text}</span> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-      <div
-        ref={trackRef}
-        className="touch-pager"
-        data-testid={touchTestIds.pager}
-        onScroll={onScroll}
-      >
-        {pages.map((page) => (
-          <div
-            key={page.id}
-            className="touch-pager-page"
-            role="group"
-            aria-label={page.label}
-            data-testid={touchTestIds.pagerPage}
-            data-page-id={page.id}
-          >
-            {renderPage(page.id)}
+      <div>
+        {chips ? (
+          <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
+            {pages.map((page) => {
+              const text = chipText(page);
+              return (
+                <button
+                  key={page.id}
+                  type="button"
+                  className={`touch-pager-chip${pulsing.has(page.id) ? ' is-pulsing' : ''}`}
+                  data-testid={touchTestIds.pagerChip}
+                  data-page-id={page.id}
+                  data-over={isOver(page)}
+                  aria-current={page.id === current ? 'true' : undefined}
+                  onClick={() => turnTo(page.id)}
+                  onAnimationEnd={() =>
+                    setPulsing((now) => {
+                      const next = new Set(now);
+                      next.delete(page.id);
+                      return next;
+                    })
+                  }
+                >
+                  {page.category ? <StateDot category={page.category} /> : null}
+                  <span>{page.label}</span>
+                  {text ? <span className="touch-pager-chip-count">{text}</span> : null}
+                </button>
+              );
+            })}
           </div>
-        ))}
+        ) : null}
+        <div
+          ref={trackRef}
+          className="touch-pager"
+          data-testid={touchTestIds.pager}
+          onScroll={onScroll}
+        >
+          {pages.map((page) => (
+            <div
+              key={page.id}
+              className="touch-pager-page"
+              role="group"
+              aria-label={page.label}
+              data-testid={touchTestIds.pagerPage}
+              data-page-id={page.id}
+            >
+              {renderPage(page.id)}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
     </InsidePagerContext.Provider>
   );
 }

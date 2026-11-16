@@ -26,7 +26,10 @@ async function liftCard(page: Page, key: string) {
     .first()
     .getByTestId(ids.cardKey)
     .boundingBox())!;
-  const from: Point = { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+  const from: Point = {
+    x: Math.round(box.x + box.width / 2),
+    y: Math.round(box.y + box.height / 2),
+  };
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
   await page.clock.runFor(450);
   await cdp.send('Input.dispatchTouchEvent', {
