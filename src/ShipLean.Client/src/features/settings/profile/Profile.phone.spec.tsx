@@ -40,6 +40,8 @@ const projects: ProjectSummaryDto[] = [
   },
 ];
 
+const timeZones = { choices: [{ id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' }] };
+
 interface Routable {
   route(
     url: string,
@@ -57,6 +59,7 @@ const stub = async (page: Routable): Promise<string[]> => {
     const request = route.request();
     const method = request.method();
     const path = new URL(request.url()).pathname;
+    if (path === '/api/me/time-zones') return route.fulfill({ json: timeZones });
     if (method === 'GET') return route.fulfill({ json: path === '/api/me' ? current : projects });
     calls.push(`${method} ${path}`);
     if (path === '/api/me/profile') {

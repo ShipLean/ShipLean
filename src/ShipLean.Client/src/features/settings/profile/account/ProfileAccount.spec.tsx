@@ -34,6 +34,8 @@ const projectOf = (
   isOnlyAdmin,
 });
 
+const timeZones = { choices: [{ id: 'Asia/Bangkok', label: 'Asia/Bangkok (UTC+07:00)' }] };
+
 interface Calls {
   list: string[];
   bodies: unknown[];
@@ -64,6 +66,7 @@ const stub = async (
     const request = route.request();
     const method = request.method();
     const path = new URL(request.url()).pathname;
+    if (path === '/api/me/time-zones') return route.fulfill({ json: timeZones });
     if (method === 'GET') {
       return route.fulfill({ json: path === '/api/me' ? current : projects });
     }
