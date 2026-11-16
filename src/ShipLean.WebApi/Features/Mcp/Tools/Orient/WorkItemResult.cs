@@ -70,6 +70,7 @@ public sealed record WorkItemResult(
         [property: JsonPropertyName("author")] string? Author,
         [property: JsonPropertyName("agent_name")] string? AgentName,
         [property: JsonPropertyName("at")] string At,
+        [property: JsonPropertyName("at_label")] string AtLabel,
         [property: JsonPropertyName("body")] string Body);
 
     public sealed record Attachment(

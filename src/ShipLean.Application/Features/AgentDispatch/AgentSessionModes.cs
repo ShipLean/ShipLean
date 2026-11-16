@@ -7,6 +7,13 @@ internal static class AgentSessionModes
 {
     public const string Implement = "implement";
     public const string Propose = "propose";
+    public const string Demo = "demo";
 
-    public static string ToWire(AgentSessionMode mode) => mode == AgentSessionMode.Propose ? Propose : Implement;
+    public static string ToWire(AgentSessionMode mode) => mode switch
+    {
+        AgentSessionMode.Implement => Implement,
+        AgentSessionMode.Propose => Propose,
+        AgentSessionMode.Demo => Demo,
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown agent session mode."),
+    };
 }

@@ -246,6 +246,8 @@ Read-side DTO pieces (C# `Contracts/Refs`, TS `api/refs.ts`), never stored insid
 | | `canCreateProjects` | boolean | no | `instance_settings.project_creation = 'everyone'`, or the user is an instance admin |
 | | `theme` | `os` \| `light` \| `dark` | no | The `theme` preference; `os` when there's no row (the page follows the OS) |
 | | `density` | `compact` \| `comfortable` | no | The `density` preference; `compact` when there's no row |
+| | `timeZone` | string | yes | `app_user.time_zone`, an IANA id (`Asia/Bangkok`); `null` when not set or not a zone the server knows, and every label then reads in UTC. Joel on the seed has none |
+| | `timeZoneLabel` | string | no | `DisplayDate.ZoneLabel` (`Asia/Bangkok (UTC+07:00)`, offset at now), or `Not set: times show in UTC` |
 
 **`UserStatus`** is derived from `app_user`, first match wins: `disabled` (`disabled_at` set) → `noPassword` (`password_hash` null: created by a Jira import or by an admin before sign-in was set up) → `locked` (`locked_until` later than now) → `oneTimePassword` (`must_change_password`) → `active`.
 

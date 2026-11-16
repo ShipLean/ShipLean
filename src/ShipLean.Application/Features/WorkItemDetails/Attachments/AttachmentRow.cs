@@ -35,11 +35,11 @@ internal sealed record AttachmentRow(
 
     public const string From = "FROM attachment a LEFT JOIN app_user u ON u.id = a.uploaded_by";
 
-    public AttachmentDto ToDto(TimeProvider clock)
+    public AttachmentDto ToDto(DateTimeOffset now, TimeZoneInfo zone)
         => new(
             Id, WorkItemId, Name, ContentType, SizeBytes,
             UploaderId is { } id ? new UserRef(id, UploaderName!, UploaderInitials!, UploaderColour!, UploaderPhotoUrl) : null,
-            CreatedAt, DisplayDate.Relative(CreatedAt, clock), $"/api/attachments/{Id}/content",
+            CreatedAt, DisplayDate.Relative(CreatedAt, now, zone), $"/api/attachments/{Id}/content",
             AttachmentKinds.Of(Name, ContentType),
             ReplacedCount,
             AgentName, UploadedVia);

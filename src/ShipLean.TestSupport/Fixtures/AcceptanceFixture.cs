@@ -35,6 +35,10 @@ public abstract partial class AcceptanceFixture
     // The browser context's size and input: desktop unless a class opts into AcceptanceViewport.Phone.
     protected virtual AcceptanceViewport Viewport => AcceptanceViewport.Desktop;
 
+    // The browser context's IANA time zone: UTC like the servers unless a class runs the browser in a viewer's zone
+    // (BangkokViewerTest).
+    protected virtual string BrowserTimeZone => "UTC";
+
     // More app configuration for the host, such as a SHIPLEAN_* variable the scenario turns on.
     protected virtual IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>();
 
@@ -104,7 +108,7 @@ public abstract partial class AcceptanceFixture
             HasTouch = viewport.HasTouch,
             IsMobile = viewport.IsMobile,
             DeviceScaleFactor = viewport.DeviceScaleFactor,
-            TimezoneId = "UTC",
+            TimezoneId = BrowserTimeZone,
         });
         await _context.Tracing.StartAsync(new TracingStartOptions { Screenshots = true, Snapshots = true });
     }

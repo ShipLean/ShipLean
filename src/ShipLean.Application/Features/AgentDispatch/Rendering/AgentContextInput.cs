@@ -6,7 +6,8 @@ namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 // (sent as appUserId and oauthClientId). TriggerCommentId marks the thread the session was started from, if any.
 // Ancestors is the whole chain above the item, nearest first, each with its description; when set, the promptContext renders it in place of the parent.
 // Guidance is the prompt of the automation (or the person) that started the session; Transition is the move that fired it.
-// Mode is the session's mode; only a propose session adds shipleanMode to the `created` payload. Propose is set exactly when Mode is
+// Mode is the session's mode; implement sends no shipleanMode in the `created` payload, propose and demo send theirs. A demo input is the
+// implement one with Mode set to Demo (the demo prompt is its Guidance). Propose is set exactly when Mode is
 // Propose: the loader then builds an allowlisted input (AgentContextLoader.LoadProposeAsync) and the promptContext is AgentProposePromptContext.
 // In propose mode Repository is the GitHub issue's repository (rendered as shipleanRepository, not in promptContext) and Project.Name is blank.
 public sealed record AgentContextInput(

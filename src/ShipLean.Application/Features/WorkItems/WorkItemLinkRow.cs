@@ -43,7 +43,7 @@ internal sealed record WorkItemLinkRow(
         ? new LinkValue(Type, null, null, Url, Title)
         : new LinkValue(Type, TargetId, TargetKey, null, null));
 
-    public LinkDto ToDto(TimeProvider time) => new(
+    public LinkDto ToDto(DateTimeOffset now, TimeZoneInfo zone) => new(
         Id,
         Type,
         TargetId,
@@ -51,7 +51,7 @@ internal sealed record WorkItemLinkRow(
         TargetId is null ? Title : TargetTitle,
         Url,
         CardState is not null && CardAsOf is { } asOf && CardSource is not null
-            ? new LinkCardDto(Enum.Parse<LinkCardState>(CardState, ignoreCase: true), CardTitle, asOf, DisplayDate.Relative(asOf, time), Enum.Parse<WebhookProvider>(CardSource, ignoreCase: true))
+            ? new LinkCardDto(Enum.Parse<LinkCardState>(CardState, ignoreCase: true), CardTitle, asOf, DisplayDate.Relative(asOf, now, zone), Enum.Parse<WebhookProvider>(CardSource, ignoreCase: true))
             : null,
         AddedVia is not null && MatchedOn is not null
             ? new AutoLinkDto(Enum.Parse<WebhookProvider>(AddedVia, ignoreCase: true), Enum.Parse<AutoLinkMatch>(MatchedOn, ignoreCase: true))

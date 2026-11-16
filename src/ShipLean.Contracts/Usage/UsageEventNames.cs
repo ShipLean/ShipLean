@@ -133,6 +133,7 @@ public static class UsageEventNames
     public const string WebhookReceived = "webhook.received";
     public const string ProfileUpdated = "profile.updated";
     public const string ProfilePhotoChanged = "profile.photo_changed";
+    public const string ProfileTimeZoneSet = "profile.time_zone_set";
     public const string InstanceSettingsChanged = "instance.settings_changed";
     public const string InstanceIntegrationsChanged = "instance.integrations_changed";
     public const string InstanceAnalyticsChanged = "instance.analytics_changed";

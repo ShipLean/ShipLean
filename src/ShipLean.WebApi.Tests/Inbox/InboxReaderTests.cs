@@ -8,10 +8,12 @@ using ShipLean.Application.Features.Inbox;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Inbox;
 using ShipLean.Contracts.Refs;
+using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Inbox;
 
 namespace ShipLean.WebApi.Tests.Inbox;
@@ -317,5 +319,21 @@ public class InboxReaderTests : ApiFixture
             Current.OpenCountsByProjectAsync(userId, cancellationToken);
 
         public Task<bool> EverAsync(Guid userId, CancellationToken cancellationToken = default) => Current.EverAsync(userId, cancellationToken);
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to DisplayDate.Time in InboxReader.
+    [Test]
+    public async Task Inbox_WhenViewerIsInBangkok_ShouldStampTheAsOfLineInBangkokTime()
+    {
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Tom, ViewerZoneTestData.BangkokId);
+        var before = TimeProvider.System.GetUtcNow();
+
+        var inbox = await GetAsync([]);
+
+        var after = TimeProvider.System.GetUtcNow();
+        string[] bangkok = [DisplayDate.Time(before, ViewerZoneTestData.Bangkok), DisplayDate.Time(after, ViewerZoneTestData.Bangkok)];
+        string[] utc = [DisplayDate.Time(before, TimeZoneInfo.Utc), DisplayDate.Time(after, TimeZoneInfo.Utc)];
+        bangkok.ShouldContain(inbox.LoadedAtLabel);
+        utc.ShouldNotContain(inbox.LoadedAtLabel);
     }
 }

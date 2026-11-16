@@ -65,8 +65,8 @@ public sealed class DemoRunStarter(
         var inspection = await brandSource.InspectAsync(request.ProjectId, cancellationToken);
         var outcome = await sessions.StartWinnerAsync(
             request.ItemId, request.UserId, request.BaseUrl, null,
-            async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, token)).Instructions,
-            cancellationToken);
+            async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, DemoPromptChannel.Session, token)).Instructions,
+            cancellationToken, AgentSessionMode.Demo);
         if (outcome.SessionId is not null)
         {
             await events.PublishAsync(new SprintDemoChanged(request.ProjectId, request.SprintId));
@@ -91,7 +91,7 @@ public sealed class DemoRunStarter(
             throw ApiException.Conflict("An agent session is already making this demo.");
         }
 
-        var decided = await DecideAsync(transaction, request, data, inspection, cancellationToken);
+        var decided = await DecideAsync(transaction, request, data, inspection, DemoPromptChannel.Handover, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await events.PublishAsync(new SprintDemoChanged(request.ProjectId, request.SprintId));
         return decided;
@@ -114,7 +114,8 @@ public sealed class DemoRunStarter(
 
     // The winner's writes, all on the transaction. The old links are revoked before the new one is issued; the sprint row is written after the
     // link so it carries the link's own expiry.
-    private async Task<SprintDemoHandover> DecideAsync(DbTransaction transaction, DemoRunRequest request, SprintDemoData data, DemoBrandInspection inspection, CancellationToken cancellationToken)
+    private async Task<SprintDemoHandover> DecideAsync(
+        DbTransaction transaction, DemoRunRequest request, SprintDemoData data, DemoBrandInspection inspection, DemoPromptChannel channel, CancellationToken cancellationToken)
     {
         var connection = transaction.Connection!;
         await transfers.RevokeAsync(TransferKind.Demo, request.ItemId, transaction, cancellationToken);
@@ -144,6 +145,6 @@ public sealed class DemoRunStarter(
             issued.ExpiresAt,
             limits.MaxDemoBytes,
             brand,
-            prompt.Render(data, target, brand));
+            prompt.Render(data, target, brand, channel));
     }
 }

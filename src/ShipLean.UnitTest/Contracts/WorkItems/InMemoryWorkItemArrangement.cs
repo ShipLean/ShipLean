@@ -5,6 +5,7 @@ using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.UnitTest.Contracts.WorkItems;
 
@@ -13,9 +14,9 @@ public static class InMemoryWorkItemArrangement
 {
     private static int _projects;
 
-    public static InMemoryWorkItemStore CreateStore(IWorkItemRules rules, Guid actorId)
+    public static InMemoryWorkItemStore CreateStore(IWorkItemRules rules, Guid actorId, TimeProvider? clock = null, IViewerZone? zone = null)
     {
-        var store = new InMemoryWorkItemStore(rules, new FixedUser(actorId), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None);
+        var store = new InMemoryWorkItemStore(rules, new FixedUser(actorId), new MarkdownRenderer(), clock ?? TimeProvider.System, AgentIdentity.None, zone ?? new FixedViewerZone());
         store.AddUser(User(SeedIds.Users.Joel, "Joel Dickson", "JD"));
         store.AddUser(User(SeedIds.Users.Priya, "Priya Shah", "PS"));
         store.AddUser(User(SeedIds.Users.Sam, "Sam Rivera", "SR"));

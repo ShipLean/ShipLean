@@ -1,5 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
+import { noClientDates } from './eslint/dates.js';
 
 // The core is shared by the web SPA and the phone app, so it may not reach for either one's views or browser globals.
 const platformNeutral = 'The core is platform-neutral: views and hooks stay in the apps.';
@@ -85,5 +86,14 @@ export default tseslint.config(
       ],
       'no-restricted-syntax': ['error', ...declaredGlobals],
     },
+  },
+  // Dates are server labels (SHIP-1702 D7): no Date objects, Intl date formats or date libraries outside tests.
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/**/*.test.ts', 'src/test-support/**'],
+    plugins: {
+      shiplean: { meta: { name: 'shiplean' }, rules: { 'no-client-dates': noClientDates } },
+    },
+    rules: { 'shiplean/no-client-dates': 'error' },
   },
 );

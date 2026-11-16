@@ -156,6 +156,50 @@ public class DemoRunStarterTests : ApiFixture
         (tokenExpires - sprint.At.Value).ShouldBeGreaterThan(TimeSpan.FromHours(23));
     }
 
+    // C1: a sprint-demo session is stored as mode 'demo' (the CHECK must accept it) and its created body tells the relay so.
+    [Test]
+    public async Task StartSession_WhenButton_ShouldStoreDemoModeAndSendShipleanModeDemo()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        using var scope = NewScope();
+
+        var outcome = await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
+
+        (await database.ExecuteScalarAsync<string>("SELECT mode FROM agent_session WHERE id = @id", new { id = outcome.SessionId })).ShouldBe("demo");
+        var delivery = (await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem();
+        delivery.Status.ShouldBe("pending");
+        var body = System.Text.Json.Nodes.JsonNode.Parse(delivery.Body)!.AsObject();
+        body["shipleanMode"]!.GetValue<string>().ShouldBe("demo");
+        body.ContainsKey("shipleanRepository").ShouldBeFalse();
+    }
+
+    // C4: a ShipLean-started session reads the session channel.
+    [Test]
+    public async Task StartSession_WhenButton_ShouldRenderSessionChannel()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        using var scope = NewScope();
+
+        await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
+
+        _prompt.LastChannel.ShouldBe(DemoPromptChannel.Session);
+    }
+
+    // C4: the create_sprint_demo hand-over reads the handover channel.
+    [Test]
+    public async Task HandOver_WhenMcp_ShouldRenderHandoverChannel()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        using var scope = NewScope();
+
+        await StarterOf(scope).HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None);
+
+        _prompt.LastChannel.ShouldBe(DemoPromptChannel.Handover);
+    }
+
     [Test]
     public async Task Session_WhenLost_ShouldIssueNothingAndWriteNothing()
     {

@@ -1,0 +1,1 @@
+Start it, wait until it answers and record against it, but only if every command it needs is one you are allowed to run (step 6). Otherwise build the demo from slides alone and say so in the intro and in your final response.

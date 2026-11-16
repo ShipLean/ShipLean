@@ -10,7 +10,7 @@ namespace ShipLean.Application.Features.TaskChanges.Endpoints;
 
 // What the code comment routes do: the access check on the work item first (a comment id is checked against that item), then the write.
 [RegisterPerRequest]
-public sealed class CommentEndpoints(IProjectAccess access, ICodeComments comments, TimeProvider time)
+public sealed class CommentEndpoints(IProjectAccess access, ICodeComments comments, TimeProvider time, IViewerZone viewerZone)
 {
     public async Task<CodeCommentDto> AddAsync(Guid workItemId, AddCodeCommentRequest request, CancellationToken cancellationToken)
     {
@@ -24,14 +24,14 @@ public sealed class CommentEndpoints(IProjectAccess access, ICodeComments commen
         };
         var added = await comments.AddAsync(
             workItemId, new NewCodeComment(request.Repo, request.Sha, request.Path, side, request.Line, request.StartLine, request.LineText ?? string.Empty, request.Body), cancellationToken);
-        return CodeCommentDtos.From(added, time);
+        return CodeCommentDtos.From(added, time.GetUtcNow(), viewerZone.Zone);
     }
 
     public async Task<CodeCommentDto> ReplyAsync(Guid workItemId, Guid commentId, ReplyCodeCommentRequest request, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
 
-        return CodeCommentDtos.From(await comments.ReplyAsync(workItemId, commentId, request.Body, cancellationToken), time);
+        return CodeCommentDtos.From(await comments.ReplyAsync(workItemId, commentId, request.Body, cancellationToken), time.GetUtcNow(), viewerZone.Zone);
     }
 
     public async Task ResolveAsync(Guid workItemId, Guid commentId, ResolveCodeCommentRequest request, CancellationToken cancellationToken)

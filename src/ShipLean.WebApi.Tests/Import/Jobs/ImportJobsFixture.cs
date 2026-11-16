@@ -16,6 +16,7 @@ using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Import;
 using ShipLean.Contracts.Import.Jira;
 using ShipLean.Contracts.Persisted;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.Import.Apply;
@@ -39,7 +40,7 @@ public abstract class ImportJobsFixture : ApiFixture
 
     protected InMemoryJiraConnections Connections { get; } = new();
 
-    internal RecordingAttachmentStore Attachments { get; } = new(new InMemoryAttachmentStore(new SettableCurrentUser(), new InMemoryBlobStore(), TimeProvider.System));
+    internal RecordingAttachmentStore Attachments { get; } = new(new InMemoryAttachmentStore(new SettableCurrentUser(), new InMemoryBlobStore(), TimeProvider.System, new FixedViewerZone()));
 
     protected InMemoryJiraClient Jira { get; private set; } = null!;
 

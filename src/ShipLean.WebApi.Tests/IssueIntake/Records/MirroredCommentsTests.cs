@@ -9,6 +9,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Inbox;
 using ShipLean.Contracts.IssueIntake;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Sprints;
 using ShipLean.TestSupport.Fixtures;
@@ -102,7 +103,7 @@ public class MirroredCommentsTests : ApiFixture
         var store = new CommentStore(
             dataSource, new FixedCurrentUser(SeedIds.Users.Joel), AgentIdentity.None,
             scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, events,
-            scope.ServiceProvider.GetRequiredService<IMentionRecorder>());
+            scope.ServiceProvider.GetRequiredService<IMentionRecorder>(), new FixedViewerZone());
         return new DbMirroredComments(dataSource, store);
     }
 

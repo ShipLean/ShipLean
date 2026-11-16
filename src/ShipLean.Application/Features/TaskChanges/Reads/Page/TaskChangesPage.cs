@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Features.TaskChanges.Comments;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
@@ -20,7 +21,8 @@ public sealed class TaskChangesPage(
     IStateCatalog catalog,
     ICodeHost host,
     ICodeComments codeComments,
-    TimeProvider clock) : ITaskChangesPage
+    TimeProvider clock,
+    IViewerZone viewerZone) : ITaskChangesPage
 {
     private const string All = "all";
 
@@ -59,7 +61,7 @@ public sealed class TaskChangesPage(
             workItemId, item.Key, item.Title, item.Type == WorkItemTypeId.Bug ? "bug" : "task", char.ToLowerInvariant(category[0]) + category[1..],
             [.. rows.Select(r => Dto(r, access.GetValueOrDefault(r.Id, "ok")))], single ? chosen[0].Id.ToString() : All,
             mode, rows.Count == 0 ? null : rows[^1].Id.ToString(), shown,
-            [.. comments.Select(c => CodeCommentDtos.From(c, clock))], open.Count);
+            [.. comments.Select(c => CodeCommentDtos.From(c, clock.GetUtcNow(), viewerZone.Zone))], open.Count);
     }
 
     private static List<Row> Choose(List<Row> rows, string commit, bool single)
@@ -124,7 +126,7 @@ public sealed class TaskChangesPage(
     {
         var repo = r.Repo;
         return new TaskCommitRowDto(
-            r.Id, repo.Name, repo.WebUrl, r.Provider, r.Sha, r.Sha[..7], r.Subject, r.AuthorName, DisplayDate.Relative(r.AuthoredAt, clock),
+            r.Id, repo.Name, repo.WebUrl, r.Provider, r.Sha, r.Sha[..7], r.Subject, r.AuthorName, DisplayDate.Relative(r.AuthoredAt, clock.GetUtcNow(), viewerZone.Zone),
             r.AddedBy, r.AddedByAgent, r.Additions, r.Deletions, r.FilesChanged, repo.CommitUrl(r.Sha), access);
     }
 

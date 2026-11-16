@@ -2,6 +2,10 @@
 const eslint = require('@eslint/js');
 const reactHooks = require('eslint-plugin-react-hooks');
 const tseslint = require('typescript-eslint');
+const { noClientDates } = require('./eslint/dates.js');
+const datesAllowlist = require('./eslint/dates-allowlist.json');
+
+const shipleanPlugin = { meta: { name: 'shiplean' }, rules: { 'no-client-dates': noClientDates } };
 
 const testSupport = {
   group: ['**/test-support', '**/test-support/**'],
@@ -26,8 +30,8 @@ module.exports = tseslint.config(
   tseslint.configs.recommended,
   reactHooks.configs.flat['recommended-latest'],
   {
-    // The config files are CommonJS and run in Node.
-    files: ['*.js'],
+    // The config files (and the eslint/ rules they load) are CommonJS and run in Node.
+    files: ['*.js', 'eslint/*.js'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: { module: 'writable', require: 'readonly', __dirname: 'readonly' },
@@ -38,5 +42,28 @@ module.exports = tseslint.config(
     files: ['**/*.ts', '**/*.tsx'],
     ignores: ['**/*.test.ts', '**/*.spec.tsx'],
     rules: { 'no-restricted-imports': ['error', { patterns: [testSupport] }] },
+  },
+  // Dates are server labels (SHIP-1702 D7): no Date objects, Intl date formats or date libraries outside tests.
+  {
+    files: ['src/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.tsx', '**/test-support/**'],
+    plugins: { shiplean: shipleanPlugin },
+    rules: {
+      'shiplean/no-client-dates': [
+        'error',
+        {
+          allowlist: datesAllowlist,
+          exceptions: [
+            // The one clock the actions read (D7).
+            { file: 'src/actions/clock.ts', allow: ['new Date'] },
+            // Mic tuning's "tested today" label is device-only data (D10).
+            {
+              file: 'src/screens/micTuning/input/inputLabels.ts',
+              allow: ['new Date', 'getTimezoneOffset'],
+            },
+          ],
+        },
+      ],
+    },
   },
 );

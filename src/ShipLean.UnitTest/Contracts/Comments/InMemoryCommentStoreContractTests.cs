@@ -2,6 +2,7 @@ using ShipLean.Application.Fakes.Comments;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Refs;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Contracts.Comments;
 using ShipLean.TestSupport.Contracts.Mcp;
@@ -19,7 +20,7 @@ public class InMemoryCommentStoreContractTests : CommentStoreContract
     [SetUp]
     public void CreateWorld()
     {
-        _store = new InMemoryCommentStore(_user, new MarkdownRenderer(), TimeProvider.System, _agent);
+        _store = new InMemoryCommentStore(_user, new MarkdownRenderer(), TimeProvider.System, _agent, new FixedViewerZone());
         _store.AddUser(new UserRef(SeedIds.Users.Joel, "Joel Dickson", "JD", "#5b6b8c", null));
         _store.AddUser(new UserRef(SeedIds.Users.Priya, "Priya Shah", "PS", "#2f7fd8", null));
     }

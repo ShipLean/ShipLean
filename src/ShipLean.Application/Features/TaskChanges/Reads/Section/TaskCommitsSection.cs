@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.TaskChanges.Dtos;
 using ShipLean.Core;
@@ -7,7 +8,7 @@ using ShipLean.Core;
 namespace ShipLean.Application.Features.TaskChanges.Reads.Section;
 
 // ITaskCommitsSection over work_item_commit and code_commit. It makes no host calls: every row is Access "ok".
-public sealed class TaskCommitsSection(NpgsqlDataSource dataSource, TimeProvider clock) : ITaskCommitsSection
+public sealed class TaskCommitsSection(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : ITaskCommitsSection
 {
     public async Task<TaskCommitsSectionDto> SectionAsync(Guid workItemId, CancellationToken cancellationToken = default)
     {
@@ -49,7 +50,7 @@ public sealed class TaskCommitsSection(NpgsqlDataSource dataSource, TimeProvider
         var repo = new RepoRef(row.Provider == "gitlab" ? CodeProvider.Gitlab : CodeProvider.Github, row.Host, row.RepoPath);
         return new TaskCommitRowDto(
             row.Id, repo.Name, repo.WebUrl, row.Provider, row.Sha, row.Sha[..7], row.Subject, row.AuthorName,
-            DisplayDate.Relative(new DateTimeOffset(DateTime.SpecifyKind(row.AuthoredAt, DateTimeKind.Utc)), clock), row.AddedBy, row.AddedByAgent, row.Additions, row.Deletions, row.FilesChanged,
+            DisplayDate.Relative(new DateTimeOffset(DateTime.SpecifyKind(row.AuthoredAt, DateTimeKind.Utc)), clock.GetUtcNow(), viewerZone.Zone), row.AddedBy, row.AddedByAgent, row.Additions, row.Deletions, row.FilesChanged,
             repo.CommitUrl(row.Sha), "ok");
     }
 
