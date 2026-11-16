@@ -69,6 +69,20 @@ const velocity: VelocityDto = {
 
 const sprintIdOf = (url: string, fromEnd: number) => url.split('/').at(-fromEnd)!;
 
+// Sprint 24's working days (19 Oct to 30 Oct, Monday to Friday), as the server sends them for the burndown's x-axis.
+const sprint24WorkingDays = [
+  '2026-10-19',
+  '2026-10-20',
+  '2026-10-21',
+  '2026-10-22',
+  '2026-10-23',
+  '2026-10-26',
+  '2026-10-27',
+  '2026-10-28',
+  '2026-10-29',
+  '2026-10-30',
+];
+
 export async function stubSprintFigures(page: Page, burndown: SprintMetricsDto['burndown'] = []) {
   await page.route('**/api/projects/p1/velocity', (route) => route.fulfill({ json: velocity }));
   await page.route('**/api/sprints/*/metrics', (route) => {
@@ -81,6 +95,7 @@ export async function stubSprintFigures(page: Page, burndown: SprintMetricsDto['
         completed: f.completed,
         remaining: f.committed - f.completed,
         burndown: id === SPRINT_24 ? burndown : [],
+        workingDays: id === SPRINT_24 ? sprint24WorkingDays : [],
       } satisfies SprintMetricsDto,
     });
   });
@@ -360,6 +375,7 @@ export async function stubSprintEnd(page: Page) {
         completed: 10,
         remaining: 11,
         burndown: [],
+        workingDays: sprint24WorkingDays,
       } satisfies SprintMetricsDto,
     }),
   );

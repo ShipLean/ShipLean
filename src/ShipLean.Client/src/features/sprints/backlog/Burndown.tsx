@@ -10,14 +10,7 @@ const TOUCH_HEIGHT = 118;
 const TOUCH_FALLBACK_WIDTH = 366;
 
 /** Story points remaining at the end of each working day so far, over the whole sprint's working days, against the ideal line. Inline SVG, no chart library. At 900px and below, a tap or drag along the chart reads a day in the header. */
-export function Burndown({
-  metrics,
-  days,
-}: {
-  metrics: SprintMetricsDto;
-  /** Every working day of the sprint (yyyy-MM-dd), the chart's x-axis. */
-  days: readonly string[];
-}) {
+export function Burndown({ metrics }: { metrics: SprintMetricsDto }) {
   const { touch } = useTouchShell();
   const box = useRef<HTMLDivElement>(null);
   const [boxWidth, setBoxWidth] = useState(TOUCH_FALLBACK_WIDTH);
@@ -35,7 +28,10 @@ export function Burndown({
 
   const width = touch ? boxWidth : BURNDOWN_WIDTH;
   const height = touch ? TOUCH_HEIGHT : BURNDOWN_HEIGHT;
-  const shape = burndownShape(metrics.burndown, days, metrics.committed, { width, height });
+  const shape = burndownShape(metrics.burndown, metrics.workingDays, metrics.committed, {
+    width,
+    height,
+  });
   const dotPicked = touch ? shape.dots.find((dot) => dot.date === picked) : undefined;
 
   // The pointer's x in the chart's own units; the chart is drawn 1:1 but scaled anyway if the box is not.

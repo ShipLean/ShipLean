@@ -29,7 +29,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
         var latest = DateOnly.FromDayNumber(Math.Min(today.DayNumber, sprint.End.DayNumber));
         if (latest < sprint.Start)
         {
-            return new SprintMetricsDto(sprintId, figures.Committed, figures.Completed, figures.Committed, []);
+            return new SprintMetricsDto(sprintId, figures.Committed, figures.Completed, figures.Committed, [], working);
         }
 
         var remaining = (await connection.QueryAsync<RemainingRow>(new CommandDefinition(
@@ -37,7 +37,7 @@ public sealed partial class SprintMetrics(NpgsqlDataSource dataSource, TimeProvi
             .ToDictionary(r => r.Date, r => r.Remaining);
         var burndown = working.Where(d => d <= today).Select(d => new BurndownPoint(
             d, BurndownLabels.Label(d, today), BurndownLabels.Day(d), remaining[d], working.Count <= 1 ? 0 : Math.Round(figures.Committed * (working.Count - 1 - working.IndexOf(d)) / (working.Count - 1), 2))).ToList();
-        return new SprintMetricsDto(sprintId, figures.Committed, figures.Completed, remaining[latest], burndown);
+        return new SprintMetricsDto(sprintId, figures.Committed, figures.Completed, remaining[latest], burndown, working);
     }
 
     public async Task<VelocityDto> GetVelocityAsync(Guid projectId, CancellationToken cancellationToken = default)

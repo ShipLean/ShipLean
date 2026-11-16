@@ -137,6 +137,18 @@ const metrics: SprintMetricsDto = {
     { date: '2026-10-20', label: '20 Oct', day: '20', remaining: 7, ideal: 5.25 },
     { date: '2026-10-21', label: '21 Oct', day: '21', remaining: 5, ideal: 3.5 },
   ],
+  workingDays: [
+    '2026-10-19',
+    '2026-10-20',
+    '2026-10-21',
+    '2026-10-22',
+    '2026-10-23',
+    '2026-10-26',
+    '2026-10-27',
+    '2026-10-28',
+    '2026-10-29',
+    '2026-10-30',
+  ],
 };
 
 const capacity = (total: number | null): SprintCapacityDto => ({

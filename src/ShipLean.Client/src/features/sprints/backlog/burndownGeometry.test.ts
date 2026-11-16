@@ -1,8 +1,19 @@
 import { describe, expect, test } from 'vitest';
 import { burndownShape } from './burndownGeometry';
-import { sprintWorkingDays } from './sprintWorkingDays';
 
-const days = sprintWorkingDays('2026-10-19', '2026-10-30', [1, 2, 3, 4, 5]);
+// The working days of a Monday-to-Friday sprint, 19 Oct to 30 Oct, as the server sends them in workingDays.
+const days = [
+  '2026-10-19',
+  '2026-10-20',
+  '2026-10-21',
+  '2026-10-22',
+  '2026-10-23',
+  '2026-10-26',
+  '2026-10-27',
+  '2026-10-28',
+  '2026-10-29',
+  '2026-10-30',
+];
 const point = (date: string, remaining: number) => {
   const day = String(Number(date.slice(8, 10)));
   return { date, label: `${day} Oct`, day, remaining, ideal: 0 };

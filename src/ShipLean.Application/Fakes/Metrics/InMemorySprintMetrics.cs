@@ -25,7 +25,7 @@ public sealed partial class InMemorySprintMetrics(InMemoryPlanning world) : ISpr
                 days.Count <= 1 ? 0 : Math.Round(committed * (days.Count - 1 - days.IndexOf(d)) / (days.Count - 1), 2))).ToList();
             var latest = DateOnly.FromDayNumber(Math.Min(world.Today.DayNumber, sprint.End.DayNumber));
             var remaining = latest < sprint.Start ? committed : world.RemainingOn(sprint, latest);
-            return Task.FromResult(new SprintMetricsDto(sprintId, committed, world.Completed(sprint), remaining, burndown));
+            return Task.FromResult(new SprintMetricsDto(sprintId, committed, world.Completed(sprint), remaining, burndown, days));
         }
     }
 

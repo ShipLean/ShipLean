@@ -106,6 +106,8 @@ export interface SprintMetricsDto {
   completed: number;
   remaining: number;
   burndown: BurndownPoint[];
+  /** Every working day of the sprint (yyyy-MM-dd, the sprint's UTC calendar days), the burndown's x-axis. */
+  workingDays: string[];
 }
 
 export interface VelocityEntryDto {
