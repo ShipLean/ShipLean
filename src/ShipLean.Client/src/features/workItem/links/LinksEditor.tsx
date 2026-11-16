@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { LINK_TYPES } from '@shiplean/core/api/persisted';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useDraftLinks } from '../form/DraftContext';
 import { workItemTestIds as ids } from '../testIds';
 import { LinkForm } from './LinkForm';
 import { LinkRow } from './LinkRow';
+import { linkTypeLabels } from './linkTypes';
 
 // The links of the work item as the form's draft holds them: added, edited and removed here, written by the form's Save.
 export function LinksEditor({ project, itemKey }: { project: ProjectDto; itemKey: string }) {
@@ -68,14 +69,23 @@ export function LinksEditor({ project, itemKey }: { project: ProjectDto; itemKey
         </span>
       ) : (
         <ul className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          {grouped.map((link) => (
-            <LinkRow
-              key={link.uid}
-              link={link}
-              projectKey={project.key}
-              onEdit={() => setOpen(link.uid)}
-              onRemove={() => setLinks(links.filter((existing) => existing.uid !== link.uid))}
-            />
+          {grouped.map((link, index) => (
+            <Fragment key={link.uid}>
+              {link.type !== grouped[index - 1]?.type ? (
+                <li
+                  aria-hidden="true"
+                  className="hidden px-1 pt-1 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase touch:block"
+                >
+                  {linkTypeLabels[link.type]}
+                </li>
+              ) : null}
+              <LinkRow
+                link={link}
+                projectKey={project.key}
+                onEdit={() => setOpen(link.uid)}
+                onRemove={() => setLinks(links.filter((existing) => existing.uid !== link.uid))}
+              />
+            </Fragment>
           ))}
         </ul>
       )}

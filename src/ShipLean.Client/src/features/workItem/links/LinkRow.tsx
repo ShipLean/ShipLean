@@ -7,7 +7,7 @@ import { isWebUrl, linkTypeLabels } from './linkTypes';
 const rowButton =
   'size-6 touch:size-[var(--touch-target)] rounded-control text-ink-muted hover:bg-signal-soft focus-visible:outline-2 focus-visible:outline-signal';
 
-// One link: its type, its target, the pull or merge request state a webhook reported (with "auto" when the webhook
+// One link: its type (at touch only for screen readers: the group heading above the rows shows it), its target, the pull or merge request state a webhook reported (with "auto" when the webhook
 // added the link) and, for a link not saved yet, a note that it is waiting for Save.
 export function LinkRow({
   link,
@@ -40,18 +40,18 @@ export function LinkRow({
     ) : (
       <>
         {link.key === null ? (
-          <span className="font-semibold">{link.key}</span>
+          <span className="font-semibold touch:whitespace-nowrap">{link.key}</span>
         ) : (
           <ItemLink
             projectKey={projectKey}
             itemKey={link.key}
-            className="font-semibold text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
+            className="font-semibold text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:shrink-0 touch:items-center touch:whitespace-nowrap"
           >
             {link.key}
           </ItemLink>
         )}
         <span
-          className="truncate touch:min-w-0 touch:overflow-visible touch:whitespace-normal touch:[overflow-wrap:anywhere]"
+          className="truncate touch:min-w-0 touch:overflow-visible touch:whitespace-normal touch:[overflow-wrap:break-word]"
           title={link.title ?? undefined}
         >
           {link.title}
@@ -64,7 +64,7 @@ export function LinkRow({
       data-link-type={link.type}
       className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)]"
     >
-      <span className="w-20 shrink-0 text-[length:var(--text-xs)] text-ink-muted touch:w-16">
+      <span className="w-20 shrink-0 text-[length:var(--text-xs)] text-ink-muted touch:sr-only">
         {linkTypeLabels[link.type]}
       </span>
       {target}

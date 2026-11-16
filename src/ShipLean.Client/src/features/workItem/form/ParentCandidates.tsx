@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { ParentRefDto, WorkItemDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
+import {
+  actionSheetCheckedClass,
+  actionSheetRowClass,
+  ActionSheetFootnote,
+  ActionSheetGroupHeading,
+  ActionSheetRowFace,
+} from '../../../touch/ActionSheet';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { workItemTestIds as ids } from '../testIds';
 import { useWorkItemsOfType } from '../workItemApi';
@@ -12,6 +19,28 @@ const pathOf = (item: WorkItemDto): string =>
   item.type.id === 'feature' && item.parent?.type.id === 'epic'
     ? `${item.parent.title} › ${item.title}`
     : item.title;
+
+// At touch the candidates sit under their Epic's heading (SHIP-714 L714b); the Epics themselves, and Features with no
+// Epic, get a heading of their own. Groups keep the order their first candidate has.
+const groupOf = (item: WorkItemDto): string =>
+  item.type.id === 'epic'
+    ? 'Epics'
+    : item.parent?.type.id === 'epic'
+      ? item.parent.title
+      : 'No epic';
+
+const footnoteOf = (types: WorkItemTypeId[]): string =>
+  types.length === 1 && types[0] === 'feature'
+    ? 'A user story or bug sits under a Feature.'
+    : types.includes('epic')
+      ? 'A Feature sits under an Epic or another Feature.'
+      : 'A task sits under a user story, bug or action item.';
+
+function groupedBy(items: WorkItemDto[]): [string, WorkItemDto[]][] {
+  const groups = new Map<string, WorkItemDto[]>();
+  for (const item of items) groups.set(groupOf(item), [...(groups.get(groupOf(item)) ?? []), item]);
+  return [...groups];
+}
 
 export function ParentCandidates({
   projectId,
@@ -65,7 +94,41 @@ export function ParentCandidates({
       >
         No parent
       </button>
-      {shown.map((item) => (
+      {touch
+        ? groupedBy(shown).map(([group, items], index) => (
+            <Fragment key={group}>
+              <ActionSheetGroupHeading label={group} divider={index > 0} />
+              {items.map((item) => {
+                const current = value?.id === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    data-testid={ids.parentOption}
+                    role="menuitemradio"
+                    aria-checked={current}
+                    aria-current={current ? 'true' : undefined}
+                    className={`${actionSheetRowClass} gap-3 text-ink ${current ? actionSheetCheckedClass : ''}`}
+                    onClick={() =>
+                      onPick({ id: item.id, key: item.key, type: item.type, title: item.title })
+                    }
+                  >
+                    <ActionSheetRowFace
+                      face={{
+                        label: item.title,
+                        icon: <TypeIcon type={item.type.id} />,
+                        detail: item.key,
+                        checked: current,
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </Fragment>
+          ))
+        : null}
+      {touch ? <ActionSheetFootnote>{footnoteOf(types)}</ActionSheetFootnote> : null}
+      {(touch ? [] : shown).map((item) => (
         <button
           key={item.id}
           type="button"
