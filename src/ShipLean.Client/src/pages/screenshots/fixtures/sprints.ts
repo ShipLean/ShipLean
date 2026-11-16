@@ -186,6 +186,7 @@ function item(
     position: { columnId: null, done: false, laneId: null, columnOrder: null },
     backlogOrder: id,
     links: [],
+    caused: [],
     children: children.map((c): ChildSummaryDto => ({
       id: c.id,
       key: c.key,

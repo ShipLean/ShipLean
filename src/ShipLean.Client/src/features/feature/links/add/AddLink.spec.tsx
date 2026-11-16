@@ -86,6 +86,24 @@ test('AddLink_WhenWorkItemTab_ShouldAddRelation', async ({ mount, page }) => {
   });
 });
 
+// Caused by joins a Bug to the Task that introduced it; a Feature is neither, so its picker never offers it (SHIP-1398 item D18).
+test('AddLink_WhenWorkItemTab_ShouldNeverOfferCausedBy', async ({ mount, page }) => {
+  await stubAll(page);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  const root = screen.getByTestId(ids.addLink);
+  await root.getByTestId(ids.addLinkOpen).click();
+  await root.getByTestId(ids.addLinkTabWorkItem).click();
+
+  const select = root.getByTestId(ids.addLinkType);
+  await expect(select).toBeVisible();
+  const options = await select.evaluate((el) =>
+    Array.from((el as HTMLSelectElement).options, (o) => ({ value: o.value, label: o.text })),
+  );
+  expect(options.map((o) => o.value)).toContain('duplicate');
+  expect(options.map((o) => o.value)).not.toContain('causedBy');
+  expect(options.map((o) => o.label)).not.toContain('Caused by');
+});
+
 test('AddLink_WhenDuplicate_ShouldShowInlineError', async ({ mount, page }) => {
   const { failNext } = await stubAll(page);
   const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);

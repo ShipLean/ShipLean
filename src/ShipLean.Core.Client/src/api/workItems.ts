@@ -107,8 +107,8 @@ export interface WorkItemDto {
   position: BoardPositionDto;
   backlogOrder: string;
   links: LinkDto[];
-  /** Bugs that point at this item with a Caused by link (a Task's Caused rows); LinkDto is outgoing only. Optional only while the shared CT fixtures lack it; the server always sends it. */
-  caused?: CausedRefDto[];
+  /** Bugs that point at this item with a Caused by link (a Task's Caused rows); LinkDto is outgoing only. The server always sends it. */
+  caused: CausedRefDto[];
   children: ChildSummaryDto[];
   originalSystem: OriginalSystemDto | null;
   revision: number;
