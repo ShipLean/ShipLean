@@ -268,7 +268,7 @@ function TouchSprintForm({
           id={`${idPrefix}-goal`}
           data-testid={ids.goal}
           rows={3}
-          className="field w-full resize-y py-2 leading-snug text-ink"
+          className="field min-h-[76px] w-full resize-y py-2 leading-snug text-ink"
           placeholder="Optional"
           value={values.goal}
           onChange={(event) => onChange('goal', event.target.value)}

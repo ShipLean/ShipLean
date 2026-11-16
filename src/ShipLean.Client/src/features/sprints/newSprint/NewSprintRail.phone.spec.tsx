@@ -29,6 +29,8 @@ test('NewSprint_AtTouch_ShouldShowAnOverlapUnderTheSideBySideDates', async ({ mo
   const end = (await page.getByTestId(ids.newSprintEnd).boundingBox())!;
   expect(end.y, 'Start and End share a row').toBe(start.y);
   await expect(page.getByTestId(ids.newSprintGoal)).toHaveAttribute('rows', '3');
+  const goal = (await page.getByTestId(ids.newSprintGoal).boundingBox())!;
+  expect(goal.height, 'Goal shows several lines').toBeGreaterThanOrEqual(76);
   await expect(page.getByTestId(ids.newSprintError)).toBeHidden();
 
   await page.getByTestId(touchTestIds.dialogPrimary).getByTestId(ids.newSprintCreate).tap();
