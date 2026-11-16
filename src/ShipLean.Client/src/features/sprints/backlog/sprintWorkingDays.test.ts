@@ -25,3 +25,28 @@ test('sprintWorkingDays crosses a month end', () => {
 test('sprintWorkingDays returns nothing when the sprint falls on days off', () => {
   expect(sprintWorkingDays('2026-10-24', '2026-10-25', WEEK)).toEqual([]);
 });
+
+const EVERY_DAY = [1, 2, 3, 4, 5, 6, 7];
+
+// Mutation: an off-by-one in the days-from-civil month table (e.g. the March-based offset) shifts these dates.
+test('sprintWorkingDays_WhenSprintCrossesAYearAndALeapDay_ShouldListEveryCivilDate', () => {
+  expect(sprintWorkingDays('2023-12-30', '2024-01-02', EVERY_DAY)).toEqual([
+    '2023-12-30',
+    '2023-12-31',
+    '2024-01-01',
+    '2024-01-02',
+  ]);
+  expect(sprintWorkingDays('2024-02-28', '2024-03-01', EVERY_DAY)).toEqual([
+    '2024-02-28',
+    '2024-02-29',
+    '2024-03-01',
+  ]);
+  expect(sprintWorkingDays('2100-02-28', '2100-03-01', EVERY_DAY)).toEqual([
+    '2100-02-28',
+    '2100-03-01',
+  ]);
+  expect(sprintWorkingDays('2026-12-31', '2027-01-01', [4, 5])).toEqual([
+    '2026-12-31',
+    '2027-01-01',
+  ]);
+});
