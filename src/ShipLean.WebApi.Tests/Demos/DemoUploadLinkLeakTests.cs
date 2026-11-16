@@ -84,7 +84,7 @@ public class DemoUploadLinkLeakTests : McpFixture
         await using (var scope = Host.Services.CreateAsyncScope())
         {
             var starter = scope.ServiceProvider.GetRequiredService<IDemoRunStarter>();
-            (projectId, sprintId, itemId) = await DemoRunArrange.NewDemoAsync(database, Api, starter);
+            (projectId, sprintId, itemId) = await DemoRunArrange.NewDemoAsync(database, Api.ActingAs(TestUser.Joel), starter);
             await starter.StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
         }
 
