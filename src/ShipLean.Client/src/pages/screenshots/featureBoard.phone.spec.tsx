@@ -135,6 +135,26 @@ phonePageShots([
     },
   },
   {
+    // SHIP-1831: every person chosen at the page's real 358px content width; the Stories | People switch must not clip.
+    name: 'feature-board-filtered-all',
+    route: FEATURE_BOARD_ROUTE,
+    shell: true,
+    arrange: (p) => arrangeFeatureBoard(p, FEATURE_BOARD_VIEW),
+    ready: featureBoardReady,
+    act: async (page) => {
+      await page.getByTestId(taskboardTestIds.filterButton).tap();
+      const rows = page.getByTestId(taskboardTestIds.filterSheetRow);
+      const total = await rows.count();
+      for (let i = 0; i < total; i++) await rows.nth(i).tap();
+      await expect(page.getByTestId(taskboardTestIds.filterCount)).toHaveText(String(total));
+      await page.getByTestId(touchTestIds.sheetClose).tap();
+      await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+      const groupBy = page.getByTestId(taskboardTestIds.groupBy);
+      const fits = await groupBy.evaluate((el) => el.scrollWidth <= el.clientWidth);
+      expect(fits).toBe(true);
+    },
+  },
+  {
     name: 'feature-board-parent-section',
     route: FEATURE_BOARD_PARENT_ROUTE,
     shell: true,

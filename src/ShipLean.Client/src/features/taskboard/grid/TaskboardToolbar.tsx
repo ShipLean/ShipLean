@@ -50,7 +50,7 @@ export function TaskboardToolbar({
     >
       <span className="flex-1 touch:hidden" />
       <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">Group by</span>
-      <GroupBySwitch value={grouping} onChange={onGroupingChange} />
+      <GroupBySwitch value={grouping} onChange={onGroupingChange} className="touch:shrink-0" />
       <span className="hidden flex-1 touch:block" />
       <FaceFilter people={people} chosen={faces} onToggle={onFaceToggle} className="touch:hidden" />
       <button
@@ -63,8 +63,10 @@ export function TaskboardToolbar({
         {faces.size === 0 ? <FunnelIcon /> : null}
         {faces.size > 0 ? (
           <span data-testid={ids.filterFaces} className="flex -space-x-1">
-            {[...faces].slice(0, 3).map((id) => (
-              <Avatar key={id} {...(people.find((p) => p.id === id) ?? {})} />
+            {[...faces].slice(0, 3).map((id, index) => (
+              <span key={id} className={index >= 2 ? 'contents touch:hidden' : 'contents'}>
+                <Avatar {...(people.find((p) => p.id === id) ?? {})} />
+              </span>
             ))}
           </span>
         ) : null}
