@@ -52,13 +52,6 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             selection.Period is null ? null : run.PeriodDetail(selection.Period, selection.Select));
     }
 
-    // The sprint a day's end falls in: the one holding the day, else the one whose weekend (up to two days after its last day) holds it.
-    internal static InspectionSprint? SprintOf(IReadOnlyList<InspectionSprint> sprints, DateOnly day)
-        => sprints.FirstOrDefault(sprint => sprint.StartDate <= day && day <= sprint.EndDate)
-            ?? sprints.LastOrDefault(sprint => sprint.EndDate < day && day <= sprint.EndDate.AddDays(WeekendDays));
-
-    internal static string QuarterLabel(DateOnly quarterStart) => $"Q{((quarterStart.Month - 1) / 3) + 1} {quarterStart.Year.ToString(CultureInfo.InvariantCulture)}";
-
     private sealed class Run
     {
         private readonly InspectionWindow _window;
@@ -67,7 +60,6 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
         private readonly DateTimeOffset _now;
         private readonly TimeZoneInfo _zone;
         private readonly DateOnly _today;
-        private readonly IReadOnlyList<InspectionSprint> _sprints;
         private readonly IReadOnlyList<InspectionSprint> _started;
         private readonly IReadOnlyDictionary<string, LeadTimeTaskFact> _taskFacts;
         private readonly IReadOnlyList<AggregatedTask> _measured;
@@ -81,8 +73,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             _now = now;
             _zone = zone;
             _today = DisplayDate.Today(now, zone);
-            _sprints = [.. sprints.Sprints.OrderBy(sprint => sprint.StartDate)];
-            _started = [.. _sprints.Where(sprint => sprint.StartDate <= _today)];
+            _started = [.. sprints.Sprints.Where(sprint => sprint.StartDate <= _today).OrderBy(sprint => sprint.StartDate)];
             _taskFacts = facts.Tasks.ToDictionary(task => task.Key, StringComparer.Ordinal);
 
             var reviews = facts.Reviews.ToLookup(review => review.ItemKey, StringComparer.Ordinal);
@@ -332,6 +323,13 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
         }
 
         private List<AggregatedTask> TasksIn(InspectionSprint sprint) => [.. _bySprint[sprint.Id]];
+
+        // The sprint a day's end falls in: the one holding the day, else the one whose weekend (up to two days after its last day) holds it.
+        private static InspectionSprint? SprintOf(IReadOnlyList<InspectionSprint> sprints, DateOnly day)
+            => sprints.FirstOrDefault(sprint => sprint.StartDate <= day && day <= sprint.EndDate)
+                ?? sprints.LastOrDefault(sprint => sprint.EndDate < day && day <= sprint.EndDate.AddDays(WeekendDays));
+
+        private static string QuarterLabel(DateOnly quarterStart) => $"Q{((quarterStart.Month - 1) / 3) + 1} {quarterStart.Year.ToString(CultureInfo.InvariantCulture)}";
 
         private bool IsRunning(InspectionSprint sprint) => sprint.StartDate <= _today && _today <= sprint.EndDate;
 

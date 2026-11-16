@@ -101,8 +101,8 @@ public class LeadTimeAggregatorTests
 
         view.Cuts.ShouldNotBeNull().Select(c => (c.Key, c.Label, c.Agent, c.All.Tasks, c.All.MeanHours))
             .ShouldBe([("Claude Code", "Claude Code", true, 2, 20d), ("people", "People", false, 2, 50d), ("Cursor", "Cursor", true, 1, 20d)]);
-        view.Cuts!.ShouldAllBe(c => c.Cells.Count == 2);
-        view.Cuts![1].Cells.Select(c => c.MeanHours).ShouldBe([40d, 60d]);
+        view.Cuts.ShouldAllBe(c => c.Cells.Count == 2);
+        view.Cuts[1].Cells.Select(c => c.MeanHours).ShouldBe([40d, 60d]);
     }
 
     [Test]
