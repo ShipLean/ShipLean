@@ -31,7 +31,7 @@ const VIEWS = [
 /**
  * The sprint Retro tab: the header, the By category / By work item toggle (opens on By category), the chosen view and
  * the rail. The view, Written by, decide and point live in the address (sprintRetroAddress.ts), not in state. The data is the sprint's SprintRetroDto; each part is its own component and takes it whole.
- * At 900px and below (SHIP-727): the four numbers are buttons, the rail's sections open as sheets, the toolbar holds the
+ * At 900px and below (SHIP-727): the four numbers (rendered by SprintRetroSlot, in the header) are buttons, the rail's sections open as sheets, the toolbar holds the
  * view, Filter (n) and ⋯ and doesn't stick, and the category tiles (kept in the address as `cat`) pick one column.
  */
 export function SprintRetroPanel({

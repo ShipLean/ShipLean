@@ -28,7 +28,8 @@ export function SprintRetroSlot({ project, sprint, header }: SprintRetroSlotProp
   // The open rail sheet belongs to one sprint, so moving to another sprint closes it (as SprintHeader does with its edit state).
   const [open, setOpen] = useState<{ sprintId: string; sheet: RailSheet } | null>(null);
   const sheet = open?.sprintId === sprint.id ? open.sheet : null;
-  const setSheet = (next: RailSheet | null) => setOpen(next && { sprintId: sprint.id, sheet: next });
+  const setSheet = (next: RailSheet | null) =>
+    setOpen(next && { sprintId: sprint.id, sheet: next });
   const retro = useSprintRetro(project.id, sprint.id).data;
   const numbers =
     touch && retro ? (
