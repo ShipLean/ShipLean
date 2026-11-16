@@ -38,7 +38,7 @@ export function RetroRailSheets({
           <button
             type="button"
             data-testid={ids.retroRecurringOpenInsights}
-            className="btn-ghost w-full"
+            className="btn-ghost min-h-[var(--touch-target)] w-full"
             onClick={onOpenInsights}
           >
             Open insights

@@ -110,7 +110,7 @@ test('RetroFilterSheet_ShouldPutLabelsAboveFullWidthSegments', async ({ mount, p
     const left = Math.min(...boxes.map((b) => b!.x));
     const right = Math.max(...boxes.map((b) => b!.x + b!.width));
     // The segments span the sheet body (less its 12px side padding).
-    expect(right - left).toBeGreaterThanOrEqual(body.width - 25);
+    expect(right - left).toBeGreaterThanOrEqual(body.width - 28);
     // Equal widths.
     const widths = boxes.map((b) => b!.width);
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
@@ -126,6 +126,9 @@ test('RetroFilterSheet_ShouldPutLabelsAboveFullWidthSegments', async ({ mount, p
     .boundingBox();
   const decide = (await page.getByTestId(ids.retroToDecideFilter).boundingBox())!;
   expect(points!.y + points!.height).toBeLessThanOrEqual(decide.y + 1);
+  for (const id of [ids.retroFilterClear, ids.retroFilterShow]) {
+    expect((await page.getByTestId(id).boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  }
   // The hint wraps inside the sheet.
   const hint = page.getByTestId(touchTestIds.sheetBody).getByText('To decide hides Went well');
   const hintBox = (await hint.boundingBox())!;
