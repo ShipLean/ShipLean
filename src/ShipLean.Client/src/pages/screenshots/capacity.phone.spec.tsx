@@ -6,7 +6,7 @@ import { stubShell } from './shellStub';
 import { SPRINT_24, sprintsWithGoals, stubCapacity } from './fixtures/sprints';
 
 // Sprint Capacity on a phone (SHIP-726, L726a; SHIP-1808 design): whole page, with a draft (the Save bar), the toolbar's ⋯
-// sheet and nobody entered. Regenerate with
+// sheet, a person's days sheet and nobody entered. Regenerate with
 // scripts/update-page-shots.sh src/pages/screenshots/capacity.phone.spec.tsx.
 
 const emptyCapacity = {
@@ -45,8 +45,25 @@ phonePageShots([
     arrange,
     ready,
     act: async (page) => {
-      await page.getByTestId(ids.capacityDays).first().fill('6');
+      await page.getByTestId(ids.capacityRow).first().tap();
+      await page.getByTestId(touchTestIds.sheet).getByTestId(ids.capacityDays).fill('6');
+      await page.getByTestId(touchTestIds.sheetClose).tap();
+      await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
       await expect(page.getByTestId(ids.capacityTotal)).not.toHaveText('21.5');
+    },
+  },
+  {
+    name: 'capacity-days',
+    route: `/p/SHIP/sprints/${SPRINT_24}/capacity`,
+    shell: true,
+    arrange,
+    ready,
+    act: async (page) => {
+      await page.getByTestId(ids.capacityRow).nth(4).tap();
+      const sheet = page.getByTestId(touchTestIds.sheet);
+      await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Ana Costa');
+      await expect(sheet.getByTestId(ids.capacityDays)).toHaveValue('5');
+      await expect(sheet.getByTestId(ids.capacityRemove)).toContainText('Remove from Sprint 24');
     },
   },
   {

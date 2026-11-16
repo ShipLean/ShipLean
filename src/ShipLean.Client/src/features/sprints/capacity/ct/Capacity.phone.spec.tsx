@@ -6,6 +6,7 @@ import {
   sprintsWithGoals,
   stubCapacity,
 } from '../../../../pages/screenshots/fixtures/sprints';
+import { componentTestIds } from '../../../../components/testIds';
 import { touchTestIds } from '../../../../touch/testIds';
 import { sprintsTestIds as ids } from '../../testIds';
 
@@ -51,9 +52,9 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
   expect(boxes[0]!.x).toBeLessThan(boxes[1]!.x);
   expect(boxes[1]!.x).toBeLessThan(boxes[2]!.x);
   for (const box of boxes) expect(box.y + box.height).toBeLessThan(firstRow.y);
-  // The days field sits under the name; the note gets a line of its own under that.
+  // The days line sits under the name and points.
   const name = (await page.getByTestId(ids.capacityPoints).first().boundingBox())!;
-  const days = (await page.getByTestId(ids.capacityDays).first().boundingBox())!;
+  const days = (await page.getByTestId(ids.capacityRowDays).first().boundingBox())!;
   expect(days.y).toBeGreaterThan(name.y + name.height - 1);
   // Compared on the document element: a mobile context widens innerWidth to fit overflow.
   const overflow = await page.evaluate(
@@ -72,19 +73,21 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
 
 test('Capacity_WhenEditingDaysOnPhone_ShouldShowTheWholeNoteField', async ({ mount, page }) => {
   await open(page, mount);
-  // The edited row shows reset beside the days field, which widened that line and cut the note field off (R1a).
-  const row = page.getByTestId(ids.capacityRow).first();
-  await row.getByTestId(ids.capacityDays).fill('6');
-  await expect(row.getByTestId(ids.capacityDaysReset)).toBeVisible();
+  // The note is typed in the days sheet now, on a line of its own under the days and Use default. Inline on the row it
+  // was cut off at the right edge (R1a); in the sheet it must still fit the sheet and show its whole placeholder.
+  await page.getByTestId(ids.capacityRow).first().tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await sheet.getByTestId(ids.capacityDays).fill('6');
+  await expect(sheet.getByTestId(ids.capacityDaysReset)).toBeVisible();
 
-  const note = row.getByTestId(ids.capacityNote);
-  const rowBox = (await row.boundingBox())!;
+  const note = sheet.getByTestId(ids.capacityNote);
+  const sheetBox = (await sheet.boundingBox())!;
   const noteBox = (await note.boundingBox())!;
-  expect(noteBox.x).toBeGreaterThanOrEqual(rowBox.x);
-  expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width);
-  // On a line of its own, under the days field and reset.
-  const daysBox = (await row.getByTestId(ids.capacityDays).boundingBox())!;
-  expect(noteBox.y).toBeGreaterThanOrEqual(daysBox.y + daysBox.height);
+  expect(noteBox.x).toBeGreaterThanOrEqual(sheetBox.x);
+  expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(sheetBox.x + sheetBox.width);
+  // On a line of its own, under the days field and Use default.
+  const resetBox = (await sheet.getByTestId(ids.capacityDaysReset).boundingBox())!;
+  expect(noteBox.y).toBeGreaterThanOrEqual(resetBox.y + resetBox.height);
   // Its placeholder fits inside the field, not cut off at the right edge.
   const room = await note.evaluate((el) => {
     const input = el as HTMLInputElement;
@@ -97,6 +100,78 @@ test('Capacity_WhenEditingDaysOnPhone_ShouldShowTheWholeNoteField', async ({ mou
     return inner - text;
   });
   expect(room).toBeGreaterThanOrEqual(0);
+});
+
+test('Capacity_WhenOnPhone_ShouldShowEachPersonAsATwoLineRowWithADaysBar', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  // ND2-2: no fields on the row; a bar of days out of the working days under the name, the days in words beside it.
+  const people = page.getByTestId(ids.capacityTable);
+  await expect(people.getByTestId(ids.capacityDays)).toHaveCount(0);
+  await expect(people.getByTestId(ids.capacityNote)).toHaveCount(0);
+  const priya = page.getByTestId(ids.capacityRow).first();
+  await expect(priya.getByTestId(ids.capacityRowDays)).toHaveText('10 / 10 days · default');
+  const ana = page.getByTestId(ids.capacityRow).nth(4);
+  await expect(ana.getByTestId(ids.capacityRowDays)).toHaveText('5 / 10 days');
+  await expect(ana.getByTestId(ids.capacityRowNote)).toHaveText('Part-time this sprint');
+  const bar = ana.getByTestId(componentTestIds.capacityBar);
+  await expect(bar).toHaveAttribute('aria-valuenow', '5');
+  await expect(bar).toHaveAttribute('aria-valuemax', '10');
+  // Two lines: the bar sits under the name and points, the days beside the bar.
+  const points = (await ana.getByTestId(ids.capacityPoints).boundingBox())!;
+  const barBox = (await bar.boundingBox())!;
+  const days = (await ana.getByTestId(ids.capacityRowDays).boundingBox())!;
+  expect(barBox.y).toBeGreaterThanOrEqual(points.y + points.height - 1);
+  expect(barBox.x + barBox.width).toBeLessThan(days.x);
+  // Each bar has the same track, so 5 of 10 days fills half of it.
+  const fill = (await ana.getByTestId(componentTestIds.capacityBarFill).boundingBox())!;
+  expect(Math.abs(fill.width - barBox.width / 2)).toBeLessThanOrEqual(1);
+  const priyaBar = (await priya.getByTestId(componentTestIds.capacityBar).boundingBox())!;
+  expect(priyaBar.width).toBe(barBox.width);
+  // ND2-7: a People header with the count and the team total above the rows.
+  const head = page.getByTestId(ids.capacityPeopleHead);
+  await expect(head).toContainText('People 5');
+  await expect(head).toContainText('Team capacity 21.5 pts');
+  const headBox = (await head.boundingBox())!;
+  expect(headBox.y + headBox.height).toBeLessThanOrEqual((await priya.boundingBox())!.y);
+});
+
+test('Capacity_WhenRowTappedOnPhone_ShouldStepDaysByHalfADayInTheDaysSheet', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  // ND2-4: Remove lives in the sheet, not on the row.
+  await expect(page.getByTestId(ids.capacityRemove)).toHaveCount(0);
+  const ana = page.getByTestId(ids.capacityRow).nth(4);
+  await ana.tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Ana Costa');
+  const days = sheet.getByTestId(ids.capacityDays);
+  await expect(days).toHaveValue('5');
+  await sheet.getByTestId(ids.capacityDaysMore).tap();
+  await expect(days).toHaveValue('5.5');
+  await expect(sheet.getByTestId(ids.capacitySheetPoints)).toHaveText('2.75');
+  await sheet.getByTestId(ids.capacityDaysLess).tap();
+  await sheet.getByTestId(ids.capacityDaysLess).tap();
+  await expect(days).toHaveValue('4.5');
+  await expect(ana.getByTestId(ids.capacityRowDays)).toHaveText('4.5 / 10 days');
+  await expect(ana.getByTestId(ids.capacityUnsaved)).toHaveText('Unsaved');
+  await expect(page.getByTestId(ids.capacityUnsaved)).toHaveCount(1);
+  await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
+
+  await sheet.getByTestId(ids.capacityDaysReset).tap();
+  await expect(days).toHaveValue('');
+  await expect(ana.getByTestId(ids.capacityRowDays)).toHaveText('10 / 10 days · default');
+
+  await expect(sheet.getByTestId(ids.capacityRemove)).toContainText('Remove from Sprint 24');
+  await sheet.getByTestId(ids.capacityRemove).tap();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByTestId(ids.capacityRow)).toHaveCount(4);
+  await expect(page.getByTestId(ids.capacityPeopleHead)).toContainText('People 4');
 });
 
 test('Capacity_WhenMoreTapped_ShouldOfferClear', async ({ mount, page }) => {
@@ -177,8 +252,11 @@ for (const theme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await open(page, mount);
 
-    await page.getByTestId(ids.capacityDays).first().fill('6');
+    await page.getByTestId(ids.capacityRow).first().tap();
+    await page.getByTestId(touchTestIds.sheet).getByTestId(ids.capacityDays).fill('6');
+    await page.getByTestId(touchTestIds.sheetClose).tap();
 
+    await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
     await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
     await expect(page).toHaveScreenshot(`capacity-phone-dirty.${theme}.png`, {
       animations: 'disabled',

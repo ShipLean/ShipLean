@@ -15,6 +15,7 @@ import {
 } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
 import { CapacityHeader } from './CapacityHeader';
+import { CapacityPeople } from './CapacityPeople';
 import type { CapacityLine } from './CapacityRow';
 import { CapacitySummary } from './CapacitySummary';
 import { CapacityTable } from './CapacityTable';
@@ -134,6 +135,7 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     setTouched(touchRow(touched, server, userId, row));
     setProblem(null);
   };
+  const removeRow = (userId: string) => editRow(userId, { ...rowOf(draft, userId), present: false });
   const editAll = (next: CapacityDraft) => {
     setTouched(touchAll(touched, server, members.data, next));
     setProblem(null);
@@ -230,15 +232,32 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
             needsVelocity={pointsOnly}
             onVelocity={typeVelocity}
           />
-          <CapacityTable
-            lines={lines}
-            shape={shape}
-            total={total}
-            readOnly={ended}
-            velocity={planned}
-            onChange={editRow}
-            onRemove={(userId) => editRow(userId, { ...rowOf(draft, userId), present: false })}
-          />
+          {touch ? (
+            <CapacityPeople
+              lines={lines}
+              shape={shape}
+              total={total}
+              readOnly={ended}
+              sprintName={sprint.name}
+              velocity={planned}
+              typedVelocity={pointsOnly ? undefined : typedVelocity}
+              unsaved={(userId) =>
+                rowsDiffer({ [userId]: rowOf(server, userId) }, { [userId]: rowOf(draft, userId) })
+              }
+              onChange={editRow}
+              onRemove={removeRow}
+            />
+          ) : (
+            <CapacityTable
+              lines={lines}
+              shape={shape}
+              total={total}
+              readOnly={ended}
+              velocity={planned}
+              onChange={editRow}
+              onRemove={removeRow}
+            />
+          )}
         </div>
         <CapacitySummary
           sprintName={sprint.name}

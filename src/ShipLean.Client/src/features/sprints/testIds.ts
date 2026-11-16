@@ -148,4 +148,12 @@ export const sprintsTestIds = {
   planSprints: 'sprints-plan-sprints',
   listEmpty: 'sprints-list-empty',
   listEmptyNew: 'sprints-list-empty-new',
+  // ND2 phone (SHIP-1954)
+  capacityPeopleHead: 'sprints-capacity-people-head',
+  capacityRowDays: 'sprints-capacity-row-days',
+  capacityRowNote: 'sprints-capacity-row-note',
+  capacityUnsaved: 'sprints-capacity-unsaved',
+  capacityDaysLess: 'sprints-capacity-days-less',
+  capacityDaysMore: 'sprints-capacity-days-more',
+  capacitySheetPoints: 'sprints-capacity-sheet-points',
 } as const;
