@@ -49,7 +49,7 @@ public class QualityAggregatorContractTests
         var view = new LeadTimeAggregator().Build(sprints, window, LeadTimeFacts.Empty, Array.Empty<TaskLeadTime>(), selection, Now, TimeZoneInfo.Utc);
         var services = new ServiceCollection();
         new InspectionMetricsServices().AddServices(services, new ConfigurationBuilder().Build());
-        using var provider = services.BuildServiceProvider();
+        using var provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
         return provider.GetRequiredService<IQualityAggregator>().Apply(view, sprints, window, facts, Now, TimeZoneInfo.Utc);
     }
 
