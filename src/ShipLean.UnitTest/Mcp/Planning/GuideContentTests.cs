@@ -184,6 +184,16 @@ public class GuideContentTests
     }
 
     [Test]
+    public void GuideContent_ShouldTellAgentsToSendTheAuthorDateOfEachCommit()
+    {
+        const string command = "git log -1 --format=%aI <sha>";
+        PlanGuide.Read(PlanGuidePart.Brief).ShouldContain($"`committed_at`: the commit's author date, from `{command}`");
+        var report = PlanGuide.Read(PlanGuidePart.Report);
+        report.ShouldContain("`committed_at`");
+        report.ShouldContain(command);
+    }
+
+    [Test]
     public void GuideContent_StepNine_ShouldCompileTheFeatureRetroWithCompiledFrom()
     {
         var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];

@@ -38,7 +38,8 @@ internal sealed class ReportTools(
     ICodeComments codeComments,
     ITaskCommits taskCommits,
     IRepoAddresses repoAddresses,
-    ICurrentAgent agent)
+    ICurrentAgent agent,
+    TimeProvider clock)
 {
     [McpServerTool(Name = "report_task"), McpScope(McpScopes.Write)]
     [Description("Hand in the report for a task of a plan when you stop work on it, in the shape its brief asks for. The report lands as a comment on the task, its commits are added to the task's Changes (each commit with repo and its full sha), the pull request becomes a link on it, and the task moves on. A commit that cannot be added, because its repository is unreadable or the commit is missing, stays a link and is listed in commits_not_added. answered_comments replies to open code comments and resolves them. Done moves it to the first Completed state. Blocked unassigns it and returns it to the first Proposed state, with your reason. Partial leaves it as it is, or moves it to the first InProgress state if it has not started or was Completed. Each left_undone item becomes an orphan task. A report on a Completed task is accepted: done leaves it there, blocked and partial reopen it. Send it once per stop, done or not. At most 25 commits and 25 left_undone items a call.")]
@@ -67,6 +68,7 @@ internal sealed class ReportTools(
         var commitList = commits ?? [];
         var undone = ReportChecks.LeftUndone(left_undone);
         ReportChecks.CheckLinks(commitList, pr_url);
+        var commitTimes = ReportChecks.CommitTimes(commitList, clock.GetUtcNow());
         ReportChecks.CheckLists(tests_run, acceptance_tests);
         var answers = ReportChecks.Answers(answered_comments);
         var blockedReason = parsedStatus == ReportStatus.Blocked ? ReportChecks.BlockedReason(constraint_not_met, undone) : null;
@@ -85,7 +87,7 @@ internal sealed class ReportTools(
 
         var fields = new ReportFields(
             tests_run ?? [], acceptance_tests ?? [], config_files_changed, red_tests, context_used_k, public_surface, decisions, gotchas, undone, temporary_behaviour, constraint_not_met);
-        var resolved = await ResolveCommitsAsync(commitList, cancellationToken);
+        var resolved = await ResolveCommitsAsync(commitList, commitTimes, cancellationToken);
         var report = ReportBody.Build(parsedStatus, blockedReason, [.. resolved.Select(r => new ReportCommitLine(r.Sha, r.Input.Subject, r.Url ?? r.Input.Repo!.Trim()))], pr_url, fields);
         if (report.Length > MarkdownRenderer.MaxLength)
         {
@@ -118,11 +120,12 @@ internal sealed class ReportTools(
     }
 
     // Parsed one commit at a time, before anything is written: reads only. A repository that is unreadable, or a string that does not parse, leaves the commit unresolved with its reason.
-    private async Task<IReadOnlyList<ResolvedCommit>> ResolveCommitsAsync(IReadOnlyList<ReportCommit> commits, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<ResolvedCommit>> ResolveCommitsAsync(IReadOnlyList<ReportCommit> commits, IReadOnlyList<DateTimeOffset?> times, CancellationToken cancellationToken)
     {
         var resolved = new List<ResolvedCommit>();
-        foreach (var commit in commits)
+        for (var i = 0; i < commits.Count; i++)
         {
+            var commit = commits[i];
             var sha = commit.Sha!.Trim();
             var url = string.IsNullOrWhiteSpace(commit.Url) ? null : commit.Url.Trim();
             try
@@ -130,11 +133,11 @@ internal sealed class ReportTools(
                 var repo = string.IsNullOrWhiteSpace(commit.Repo)
                     ? (await repoAddresses.ParseCommitUrlAsync(url!, cancellationToken)).Repo
                     : await repoAddresses.ParseAsync(commit.Repo.Trim(), cancellationToken);
-                resolved.Add(new ResolvedCommit(commit, sha, repo, url ?? repo.CommitUrl(sha), null));
+                resolved.Add(new ResolvedCommit(commit, sha, repo, url ?? repo.CommitUrl(sha), null, times[i]));
             }
             catch (ApiException e) when (e.Code is ApiErrorCodes.RepoUnreadable or ApiErrorCodes.Validation)
             {
-                resolved.Add(new ResolvedCommit(commit, sha, null, url, e.Code));
+                resolved.Add(new ResolvedCommit(commit, sha, null, url, e.Code, times[i]));
             }
         }
         return resolved;
@@ -179,10 +182,16 @@ internal sealed class ReportTools(
                 count++;
             }
         }
+
+        // The time of a commit that is a link: set on a new link and on one an earlier report made, and never over a time already there.
+        foreach (var commit in notAdded.Where(n => n.Commit.Url is not null && n.Commit.CommittedAt is not null).Select(n => n.Commit))
+        {
+            await linkCards.SetCommitTimeAsync(taskId, commit.Url!, commit.CommittedAt!.Value, cancellationToken);
+        }
         return count;
     }
 
-    private sealed record ResolvedCommit(ReportCommit Input, string Sha, RepoRef? Repo, string? Url, string? Reason);
+    private sealed record ResolvedCommit(ReportCommit Input, string Sha, RepoRef? Repo, string? Url, string? Reason, DateTimeOffset? CommittedAt);
 
     private sealed record NotAdded(ResolvedCommit Commit, CommitNotAdded Entry);
 
