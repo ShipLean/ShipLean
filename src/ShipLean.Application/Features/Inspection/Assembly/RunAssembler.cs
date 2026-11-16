@@ -19,8 +19,20 @@ public sealed class RunAssembler : IRunAssembler
         // What an error marker says: the span's status message, or the log record's body in a log-only run.
         var errorLabels = logOnly
             ? raw.Logs.OrderBy(log => log.Time).Select((log, index) => (Id: RowFactory.LogRowId(index), log.Body)).ToDictionary(item => item.Id, item => item.Body)
-            : raw.Spans.Where(span => span.StatusMessage is not null).ToDictionary(span => span.SpanId, span => span.StatusMessage!);
+            : ErrorLabels(raw.Spans);
         return new AssembledRun(raw.Summary, logOnly, turns, Markers(rows, errorLabels, logOnly), WhatItDid.From(rows));
+    }
+
+    // A span's status message labels its error marker; a failed execution span (Claude Code's tool.execution, which has no row of its own)
+    // labels its tool's row.
+    private static Dictionary<string, string> ErrorLabels(IReadOnlyList<SpanRecord> spans)
+    {
+        var labels = spans.Where(span => span.StatusMessage is not null).ToDictionary(span => span.SpanId, span => span.StatusMessage!);
+        foreach (var execution in spans.Where(span => span is { Name: SpanNames.Execution, ParentSpanId: not null, StatusMessage: not null }))
+        {
+            labels.TryAdd(execution.ParentSpanId!, execution.StatusMessage!);
+        }
+        return labels;
     }
 
     // A collector retry can export a span or log twice and the stores do not dedupe, so each span id and each identical log counts once.
@@ -48,7 +60,7 @@ public sealed class RunAssembler : IRunAssembler
         foreach (var interaction in raw.Spans.Where(span => span.Name == SpanNames.Interaction))
         {
             var rows = RowsUnder(children[interaction.SpanId], raw.Logs, children, null, 0, inInteraction);
-            var promptId = interaction.Attributes.GetValueOrDefault(InspectionFieldNames.Defaults.Prompt);
+            var promptId = LogJoin.PromptIdOf(raw.Logs, interaction);
             turns.Add((new Turn(0, interaction.Start, interaction.End, promptId, LogJoin.PromptText(raw.Logs, interaction, promptId), rows), interaction.Start));
         }
         var attached = raw.Logs.Where(log => log.SpanId is not null && raw.Spans.Any(span => span.SpanId == log.SpanId)).ToList();
@@ -81,7 +93,7 @@ public sealed class RunAssembler : IRunAssembler
     {
         var interactions = raw.Spans.Where(span => span.Name == SpanNames.Interaction).ToList();
         var unjoined = raw.Logs
-            .Where(log => !attached.Contains(log) && !interactions.Any(i => LogJoin.JoinsInteraction(log, i, i.Attributes.GetValueOrDefault(InspectionFieldNames.Defaults.Prompt))))
+            .Where(log => !attached.Contains(log) && !interactions.Any(i => LogJoin.JoinsInteraction(log, i, LogJoin.PromptIdOf(raw.Logs, i))))
             .OrderBy(log => log.Time).ToList();
         for (var index = 0; index < unjoined.Count; index++)
         {
@@ -113,8 +125,9 @@ public sealed class RunAssembler : IRunAssembler
             var subagent = span.Name == SpanNames.Subagent;
             var wait = subagent ? null : kids.FirstOrDefault(kid => kid.Name == SpanNames.BlockedOnUser);
             var collapsed = subagent ? CountDescendants(span.SpanId, children) : 0;
-            var rowLogs = logs.Where(log => log.SpanId == span.SpanId).OrderBy(log => log.Time).ToList();
-            rows.Add(RowFactory.FromSpan(span, rowParentId, depth, wait, collapsed, rowLogs));
+            var execution = kids.FirstOrDefault(kid => kid.Name == SpanNames.Execution);
+            var rowLogs = logs.Where(log => LogJoin.BelongsToRow(log, span)).OrderBy(log => log.Time).ToList();
+            rows.Add(RowFactory.FromSpan(span, rowParentId, depth, wait, collapsed, rowLogs, execution));
             if (subagent)
             {
                 MarkSeen(span.SpanId, children, seen);

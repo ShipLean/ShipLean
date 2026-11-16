@@ -43,8 +43,8 @@ public static class AgentSetupContent
             # Content stays off. Uncomment to send it (see the note on secrets).
             # export OTEL_LOG_USER_PROMPTS=1
             # export OTEL_LOG_ASSISTANT_RESPONSES=0         # OTEL_LOG_USER_PROMPTS=1 also captures replies unless this is 0
-            # export OTEL_LOG_TOOL_DETAILS=1
-            # export OTEL_LOG_TOOL_CONTENT=1
+            # export OTEL_LOG_TOOL_DETAILS=1                # also lets a run with no item tag link by its ShipLean tool calls
+            # export OTEL_LOG_TOOL_CONTENT=1                # tool input and output; OTEL_LOG_RAW_API_BODIES=1 sends everything
 
             """;
 
@@ -58,7 +58,7 @@ public static class AgentSetupContent
             "Claude Code reads its telemetry settings from the environment, a --settings file or your user settings (~/.claude/settings.json). A repository's .claude/settings.json cannot turn telemetry on: Claude Code ignores the exporter variables there.",
             "Per run: start Claude Code with --settings shiplean-telemetry.json, or source telemetry.env first. Keep shiplean-telemetry.json out of the repository: it holds the collector token.",
             "user-claude-settings.json is for ~/.claude/settings.json (merge its env block). It leaves out the item, because user settings apply to every run; tag a run with the item through the per-run file or OTEL_RESOURCE_ATTRIBUTES.",
-            $"Change {i.Fields.Item} in the per-run file to the item you start the run for, or let agent-relay set it.",
+            $"Change {i.Fields.Item} in the per-run file to the item you start the run for, or let agent-relay set it. Tagging is the dependable link: without it a run links only from ShipLean tool calls (OTEL_LOG_TOOL_DETAILS=1), and only after the call names the item.",
             "The collector token is shared by the whole instance. Never commit it; rotate it if it leaks.",
             ContentNote,
         ],

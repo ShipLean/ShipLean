@@ -7,6 +7,9 @@ public static class ContentKeys
     public static readonly IReadOnlySet<string> Hidden = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "prompt", "prompt_text", "input", "tool_input", "tool_parameters", "tool_output", "output", "response", "result", "content", "command", "arguments",
+        // Claude Code with prompt or tool capture on: the interaction span's prompt, a Bash span's whole command line, and what
+        // OTEL_LOG_USER_PROMPTS adds to llm_request spans (system_prompt_preview, new_context, response.model_output).
+        "user_prompt", "full_command", "system_prompt_preview", "new_context", "model_output",
     };
 
     // Under the OpenTelemetry GenAI prefix, a segment that starts with one of these holds messages or prompt text (gen_ai.prompt.0.content,

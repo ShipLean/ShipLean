@@ -14,6 +14,9 @@ public sealed class ClickHouseTraceSourceContractTests : TraceSourceContractTest
 
     protected override string Store => "clickhouse";
 
+    // Codex CLI and Cursor have no recording yet (D27).
+    protected override IReadOnlyCollection<string> RecordedNames => ["claude-code-recorded"];
+
     protected override ITraceSource CreateSource(InspectionOptions options) => Build(options);
 
     // The one place the source's parts are built; lane A owns it and gives the parts their settings and connections here.

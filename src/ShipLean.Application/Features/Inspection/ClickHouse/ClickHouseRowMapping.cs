@@ -69,7 +69,7 @@ public static class ClickHouseRowMapping
         _ => SpanStatus.Unset,
     };
 
-    // OTel severity numbers: 1-4 TRACE, 5-8 DEBUG, 9-12 INFO, 13-16 WARN, 17-20 ERROR, 21-24 FATAL.
+    // OTel severity numbers: 0 UNSPECIFIED (Claude Code sends no text and 0), 1-4 TRACE, 5-8 DEBUG, 9-12 INFO, 13-16 WARN, 17-20 ERROR, 21-24 FATAL.
     private static string Severity(int number) => number switch
     {
         >= 21 => "FATAL",
@@ -77,7 +77,8 @@ public static class ClickHouseRowMapping
         >= 13 => "WARN",
         >= 9 => "INFO",
         >= 5 => "DEBUG",
-        _ => "TRACE",
+        >= 1 => "TRACE",
+        _ => "UNSPECIFIED",
     };
 
     private static string? Empty(string value) => value.Length == 0 ? null : value;

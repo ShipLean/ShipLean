@@ -14,7 +14,11 @@ public abstract class TraceSourceContractTests
     private readonly Dictionary<string, LoadedRun> runs = [];
     private ITraceSource source = null!;
 
-    public static IEnumerable<string> FixtureNames => InspectionFixtures.Synthetic.Select(f => f.Name);
+    // Every fixture a lane may run: the synthetic ones and the recorded ones. A suite lists the recorded names it supports in RecordedNames.
+    public static IEnumerable<string> FixtureNames => InspectionFixtures.Synthetic.Concat(InspectionFixtures.Recorded).Select(f => f.Name);
+
+    // The recorded fixtures this store has been opted into (D27: only real agent runs exist as recordings). A store not listed skips them.
+    protected virtual IReadOnlyCollection<string> RecordedNames => [];
 
     protected abstract string Store { get; }
 
@@ -28,7 +32,7 @@ public abstract class TraceSourceContractTests
     {
         var stack = await InspectionStack.GetAsync();
         source = CreateSource(stack.Options(Store));
-        foreach (var fixture in InspectionFixtures.Synthetic)
+        foreach (var fixture in InspectionFixtures.Synthetic.Concat(InspectionFixtures.Recorded.Where(f => RecordedNames.Contains(f.Name))))
         {
             runs[fixture.Name] = await LoadedRun.LoadAsync(stack, fixture, fixture.Name == "claude-code-synthetic" ? 2 : 1, Timeout);
         }
@@ -37,7 +41,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task FindRuns_WhenTheRunIsLinked_ReturnsItsSummaryAndLinks(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
 
         var search = await source.FindRunsAsync(Query(run, run.ItemKey), CancellationToken.None);
 
@@ -51,7 +55,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task FindRunsAndGetRun_WhenAskedUnderEachLinkedItem_ServeTheRun(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
 
         foreach (var link in run.Expected.Summary.Links)
         {
@@ -64,7 +68,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task GetRun_WhenTheRunExists_EqualsTheExpectedRun(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
 
         var actual = await source.GetRunAsync(Ref(run, run.ItemKey, run.Expected.Summary.RunId), CancellationToken.None);
 
@@ -75,7 +79,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task FindRunsAndGetRun_WhenAnotherProjectKeyIsUsed_FindNothing(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
         await AssertFoundAsync(run);
 
         // Longer than the real key (catches a store matching stored.StartsWith(query) in reverse), a prefix of it (catches a prefix match), and unrelated.
@@ -93,7 +97,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task FindRunsAndGetRun_WhenTheWindowIsBeforeTheRun_FindNothing(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
         var (from, to) = (run.Load.StartedAt.AddHours(-3), run.Load.StartedAt.AddHours(-2));
         await AssertFoundAsync(run);
 
@@ -108,7 +112,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task GetRun_WhenTheRunIsUnknown_IsNull(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
         await AssertFoundAsync(run);
 
         var got = await source.GetRunAsync(Ref(run, run.ItemKey, "no-such-session"), CancellationToken.None);
@@ -119,7 +123,7 @@ public abstract class TraceSourceContractTests
     [TestCaseSource(nameof(FixtureNames))]
     public async Task FindRunsAndGetRun_WhenTheItemIsNotLinked_FindNothing(string name)
     {
-        var run = runs[name];
+        var run = Loaded(name);
         const string unlinked = "SHIP-999999";
         await AssertFoundAsync(run);
 
@@ -129,6 +133,12 @@ public abstract class TraceSourceContractTests
         search.Reachable.ShouldBeTrue($"{Lane}: {search.Problem}");
         search.Runs.ShouldBeEmpty(Lane);
         got.ShouldBeNull(Lane);
+    }
+
+    private LoadedRun Loaded(string name)
+    {
+        Assume.That(runs.ContainsKey(name), $"{name} is not opted into the {Store} suite yet.");
+        return runs[name];
     }
 
     // The positive control for every negative test: the correct query and ref DO find the run, so a store that returns nothing fails.

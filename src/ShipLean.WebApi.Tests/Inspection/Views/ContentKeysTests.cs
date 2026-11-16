@@ -10,7 +10,10 @@ public class ContentKeysTests
     public void Hidden_ShouldBeExactlyTheKeysThatCarryPromptsAndToolIo()
     {
         ContentKeys.Hidden.Order(StringComparer.Ordinal).ShouldBe(
-            ["arguments", "command", "content", "input", "output", "prompt", "prompt_text", "response", "result", "tool_input", "tool_output", "tool_parameters"]);
+            [
+                "arguments", "command", "content", "full_command", "input", "model_output", "new_context", "output", "prompt", "prompt_text", "response", "result",
+                "system_prompt_preview", "tool_input", "tool_output", "tool_parameters", "user_prompt",
+            ]);
     }
 
     [Test]
@@ -42,5 +45,17 @@ public class ContentKeysTests
 
         ContentKeys.Visible(attributes, false).Select(a => a.Key).Order(StringComparer.Ordinal)
             .ShouldBe(["gen_ai.request.model", "gen_ai.usage.input_tokens", "prompt.id", "tool.name"]);
+    }
+
+    [Test]
+    public void Visible_WhenContentIsHiddenAndTheKeysAreClaudeCodes_ShouldDropPromptCommandAndModelText()
+    {
+        var attributes = new Dictionary<string, string>
+        {
+            ["user_prompt"] = "p", ["full_command"] = "dotnet build", ["system_prompt_preview"] = "s", ["new_context"] = "n", ["response.model_output"] = "r",
+            ["tool_name"] = "Bash", ["tool_use_id"] = "toolu-1", ["input_tokens"] = "10",
+        };
+
+        ContentKeys.Visible(attributes, false).Select(a => a.Key).Order(StringComparer.Ordinal).ShouldBe(["input_tokens", "tool_name", "tool_use_id"]);
     }
 }
