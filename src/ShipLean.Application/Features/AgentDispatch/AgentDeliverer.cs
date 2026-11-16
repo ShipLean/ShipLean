@@ -18,9 +18,18 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // A 200 is sent; anything else (another status, a redirect, a timeout, no connection) is a failure and follows AgentDeliverySchedule.
 // Only a `created` that runs out of retries fails its session; a `prompted` that does is marked failed and logged, and the session carries on.
 // A send is at least once: a row whose "sent" mark could not be written is sent again, so receivers dedupe on Linear-Delivery (the relay does).
+// Every send (a try that counts towards attempts) is recorded in agent_delivery_attempt with its status, scrubbed error, duration
+// and next try time. The error is scrubbed (AgentErrorText.Scrub) once, where it is built, so the attempt row, last_error, the
+// warning logs and the end detail all get the same safe value.
 // The hosted loop is AgentDeliveryService; tests drive a pass directly with their own clock.
 public sealed class AgentDeliverer(
-    NpgsqlDataSource dataSource, IAgentConnections connections, IHttpClientFactory httpClients, AgentSessionNotifier notifier, TimeProvider time, ILogger<AgentDeliverer> logger)
+    NpgsqlDataSource dataSource,
+    IAgentConnections connections,
+    IHttpClientFactory httpClients,
+    AgentSessionNotifier notifier,
+    IAgentDeliveryAttempts attempts,
+    TimeProvider time,
+    ILogger<AgentDeliverer> logger)
 {
     public const string HttpClientName = "agent-delivery";
     public const string EventHeaderValue = "AgentSessionEvent";
@@ -104,11 +113,21 @@ public sealed class AgentDeliverer(
         }
 
         AgentConnection? agent = null;
-        string? error;
+        int? status = null;
+        string? raw;
+        var at = time.GetUtcNow();
+        var started = time.GetTimestamp();
         try
         {
             agent = await connections.GetAsync(row.ConnectionId, cancellationToken);
-            error = agent is null ? "The agent connection no longer exists." : await SendAsync(row, agent, cancellationToken);
+            if (agent is null)
+            {
+                raw = "The agent connection no longer exists.";
+            }
+            else
+            {
+                (status, raw) = await SendAsync(row, agent, cancellationToken);
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -116,12 +135,18 @@ public sealed class AgentDeliverer(
         }
         catch (OperationCanceledException)
         {
-            error = "No answer within 5 seconds.";
+            raw = "No answer within 5 seconds.";
         }
         catch (Exception failed)
         {
-            error = $"{failed.GetType().Name}: {failed.Message}";
+            raw = $"{failed.GetType().Name}: {failed.Message}";
         }
+
+        var durationMs = (int)Math.Min(int.MaxValue, time.GetElapsedTime(started).TotalMilliseconds);
+        var error = AgentErrorText.Scrub(raw);
+        var attempt = row.Attempts + 1;
+        var nextAttemptAt = error is not null && AgentDeliverySchedule.RetryAfter(row.Action, attempt) is { } wait ? time.GetUtcNow() + wait : (DateTimeOffset?)null;
+        await attempts.RecordAsync(new AgentDeliveryAttemptCreate(row.Id, row.ConnectionId, attempt, at, status, error, durationMs, nextAttemptAt), cancellationToken);
 
         if (error is null)
         {
@@ -132,12 +157,12 @@ public sealed class AgentDeliverer(
         await FailedAsync(row, agent?.Name ?? row.ConnectionId.ToString(), error, cancellationToken);
     }
 
-    // Null when the receiver answered 200.
-    private async Task<string?> SendAsync(AgentDeliveryRow row, AgentConnection agent, CancellationToken cancellationToken)
+    // The receiver's HTTP status (null when nothing was sent) and the raw error, null when the receiver answered 200.
+    private async Task<(int? Status, string? Error)> SendAsync(AgentDeliveryRow row, AgentConnection agent, CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(agent.ReceiverUrl, UriKind.Absolute, out var url) || url.Scheme is not ("http" or "https"))
         {
-            return "The receiver URL is not an http(s) address.";
+            return (null, "The receiver URL is not an http(s) address.");
         }
 
         var sentAt = time.GetUtcNow().ToUnixTimeMilliseconds();
@@ -156,7 +181,8 @@ public sealed class AgentDeliverer(
         request.Headers.UserAgent.ParseAdd("Linear-Webhook");
 
         using var response = await httpClients.CreateClient(HttpClientName).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        return response.StatusCode == HttpStatusCode.OK ? null : $"The receiver answered {(int)response.StatusCode} {response.StatusCode}.";
+        var status = (int)response.StatusCode;
+        return (status, response.StatusCode == HttpStatusCode.OK ? null : $"The receiver answered {status} {response.StatusCode}.");
     }
 
     // The receiver has the delivery already, so a failed write is tried once more before it is left pending: left pending, the row is
