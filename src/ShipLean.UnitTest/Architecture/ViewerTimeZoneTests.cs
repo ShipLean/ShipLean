@@ -6,8 +6,8 @@ namespace ShipLean.UnitTest.Architecture;
 // format a date itself (a ToString or interpolation format with MMM, ddd or HH:mm that is neither ISO nor names UTC).
 // The old overloads no longer exist, so a call to one fails the build; the scanner still flags them in case they return.
 //
-// Permanently allowed (see ViewerTimeZoneScanner): src/ShipLean.Core/DisplayDate.cs (everything) and
-// src/ShipLean.Core/SprintLabels.cs (its "d MMM" formats only: sprint dates are calendar days, D8).
+// Permanently allowed (see ViewerTimeZoneScanner): src/ShipLean.Core/DisplayDate.cs, everything. Sprint day labels
+// ("d MMM", calendar days with no zone, D8) are DisplayDate.SprintDates too, so no other file is exempt.
 [TestFixture]
 public class ViewerTimeZoneTests
 {
@@ -69,9 +69,8 @@ public class ViewerTimeZoneTests
         string.Join("|", ViewerTimeZoneScanner.Scan(source)).ShouldBe(expected);
     }
 
-    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = d.ToString(\"d MMM\") + d.ToString(\"d MMM yyyy\");", "")]
+    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = d.ToString(\"d MMM\") + d.ToString(\"d MMM yyyy\");", "format \"d MMM yyyy\"|format \"d MMM\"")]
     [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = d.ToString(\"HH:mm\");", "format \"HH:mm\"")]
-    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = $\"{d:ddd d MMM}\";", "format \"ddd d MMM\"")]
     [TestCase("src/ShipLean.Core/SprintLabels.cs", "var z = clock.LocalTimeZone;", "LocalTimeZone")]
     [TestCase("src/ShipLean.Core/Other.cs", "var s = d.ToString(\"d MMM\");", "format \"d MMM\"")]
     [TestCase("src/ShipLean.Core/DisplayDate.cs", "var s = d.ToString(\"HH:mm\"); var z = clock.LocalTimeZone;", "")]

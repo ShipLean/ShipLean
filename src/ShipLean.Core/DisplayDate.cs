@@ -91,6 +91,13 @@ public static class DisplayDate
     // A calendar date with its weekday ("Thu 25 Dec"), for a holiday on a sprint's capacity screen.
     public static string WeekdayDay(DateOnly day) => day.ToString("ddd d MMM", CultureInfo.InvariantCulture);
 
+    // A sprint's dates ("20 Oct – 2 Nov"); calendar days with no zone (D8). The year is added to both ends when either is not today's year.
+    public static string SprintDates(DateOnly start, DateOnly end, DateOnly today)
+    {
+        var format = start.Year == today.Year && end.Year == today.Year ? "d MMM" : "d MMM yyyy";
+        return $"{start.ToString(format, CultureInfo.InvariantCulture)} – {end.ToString(format, CultureInfo.InvariantCulture)}";
+    }
+
     // A calendar day as the UI prints it ("Cleared · JD, 19 Oct"): "19 Oct" this year, "2 Mar 2025" otherwise.
     public static string ShortDay(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)
     {
