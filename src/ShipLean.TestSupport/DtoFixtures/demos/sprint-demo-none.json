@@ -19,5 +19,11 @@
     "canCreate": true,
     "createBlockedMessage": null,
     "canRetryYouTube": false
-  }
+  },
+  "numbers": {
+    "committed": 23,
+    "completed": 21,
+    "featuresMoved": 3
+  },
+  "agentSaid": null
 }
