@@ -79,7 +79,13 @@ export function TouchRowList({
       <TouchListHandle
         row={row}
         onDrop={onHandleDrop}
-        onLiftedChange={(lifted) => setLiftedId(lifted ? row.id : null)}
+        // Every handle reports its own state after each render: a row that is not lifted must not clear another's lift.
+        onLiftedChange={(lifted) =>
+          setLiftedId((current) => {
+            if (lifted) return row.id;
+            return current === row.id ? null : current;
+          })
+        }
         onOver={setOverId}
       />
     );
