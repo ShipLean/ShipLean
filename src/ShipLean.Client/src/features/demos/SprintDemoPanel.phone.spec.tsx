@@ -166,10 +166,7 @@ test('DemoStatusBand_WhenClosableOnAPhone_ShouldKeepCreateOffInItsPlace', async 
   expect(button.y).toBeGreaterThanOrEqual(message.y + message.height);
 });
 
-test('DemoStatusBand_WhenRunOnAPhone_ShouldShowTheItemAsAFullWidthRow', async ({
-  mount,
-  page,
-}) => {
+test('DemoStatusBand_WhenRunOnAPhone_ShouldShowTheItemAsAFullWidthRow', async ({ mount, page }) => {
   const demo = working as unknown as SprintDemoDto;
   await stubDemo(page, demo);
   await mount(view);

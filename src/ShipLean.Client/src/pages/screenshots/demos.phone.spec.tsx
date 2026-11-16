@@ -68,7 +68,11 @@ phonePageShots([
   demoShot('sprint-demo-failed-said', failedSaid),
   demoShot('sprint-demo', demoStates.ready, withPlayer(demoStates.ready, 'video')),
   {
-    ...demoShot('sprint-demo-ready-chapters', demoStates.ready, withPlayer(demoStates.ready, 'video')),
+    ...demoShot(
+      'sprint-demo-ready-chapters',
+      demoStates.ready,
+      withPlayer(demoStates.ready, 'video'),
+    ),
     act: scrollTo(ids.demoChapters),
   },
   demoShot(
