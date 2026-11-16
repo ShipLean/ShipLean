@@ -44,9 +44,7 @@ test('queryFromSearch_WhenEmpty_ShouldGiveTheDefaultsAndWriteNothing', () => {
 });
 
 test('queryFromSearch_WhenValuesUnknown_ShouldFallBackToTheDefaults', () => {
-  const query = queryFromSearch(
-    new URLSearchParams('view=cost&range=w6&cut=x&tab=y&p=&select='),
-  );
+  const query = queryFromSearch(new URLSearchParams('view=cost&range=w6&cut=x&tab=y&p=&select='));
   expect(query).toEqual(DEFAULT_INSPECTION_QUERY);
 });
 
