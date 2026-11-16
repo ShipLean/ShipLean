@@ -160,7 +160,7 @@ test('ItemParentSheet_ShouldGroupByEpicAndMarkTheCurrentParent', async ({ mount,
   await expect(options.nth(1)).toContainText('✓');
   await expect(options.nth(2)).toHaveAttribute('aria-checked', 'false');
   await expect(sheet.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
-    'A user story or bug sits under a Feature.',
+    'A user story, bug or action item sits under a Feature.',
   );
 });
 
