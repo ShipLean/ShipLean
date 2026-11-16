@@ -134,7 +134,9 @@ test('TimeZone_WhenChoicesFailToLoad_ShouldShowTheErrorNotAnEmptySelect', async 
   await stub(page, { choicesFail: true });
   const view = await mount(<TimeZonePanel />);
 
-  await expect(view.getByTestId(ids.timeZoneChoicesError)).toHaveText('Something broke.');
+  await expect(view.getByTestId(ids.timeZoneChoicesError)).toHaveText(
+    'The list of time zones could not be loaded. Reload the page to try again.',
+  );
   await expect(view.getByTestId(ids.timeZoneSelect)).toHaveCount(0);
   await expect(view.getByTestId(ids.timeZoneCurrent)).toHaveText(NOT_SET);
 });

@@ -305,6 +305,9 @@ test('Appearance_WhenFirstPickRefusedAfterSecondSaved_ShouldKeepTheSecond', asyn
   let saved = me.theme;
   await page.route('**/api/**', async (route) => {
     const request = route.request();
+    if (new URL(request.url()).pathname === '/api/me/time-zones') {
+      return route.fulfill({ json: timeZones });
+    }
     if (request.method() === 'GET') {
       const isMe = new URL(request.url()).pathname === '/api/me';
       return route.fulfill({ json: isMe ? { ...me, theme: saved } : [] });
