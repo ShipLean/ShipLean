@@ -110,6 +110,9 @@ test('CardMore_OnAFeatureWithNoPoints_ShouldSitAtTheRight', async ({ mount, page
   // The warn ? shows and the ⋯ is at the card's right edge (inside its padding), not beside the key.
   await expect(feature.getByTestId(ids.cardPoints)).toHaveText('?');
   expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
+  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so the ⋯ does not depend on the chip's margin.
+  const wrapper = await feature.getByTestId(ids.cardMore).boundingBox();
+  expect(wrapper?.width ?? 0).toBeGreaterThan(0);
 });
 
 test('CardActionsSheet_WhenLanePicked_ShouldMoveToLane', async ({ mount, page }) => {
