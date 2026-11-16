@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using ShipLean.Application.Features.Mcp.Agents;
 using ShipLean.Application.Features.Mcp.Orient;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
@@ -18,7 +19,6 @@ using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.Core;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Resolve;
-using ShipLean.WebApi.Features.Mcp.Tools.Agents;
 using ShipLean.WebApi.Features.Mcp.Tools.Feature;
 using ShipLean.WebApi.Features.Mcp.Usage;
 

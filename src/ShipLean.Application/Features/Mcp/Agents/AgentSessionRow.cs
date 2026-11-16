@@ -1,4 +1,4 @@
-namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;
+namespace ShipLean.Application.Features.Mcp.Agents;
 
 // One agent_session row as MCP reads it, before the viewer's role decides what of its end they may see.
 public sealed record AgentSessionRow(

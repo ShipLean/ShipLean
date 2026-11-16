@@ -1,3 +1,5 @@
+using ShipLean.Application.Features.Mcp.Agents;
+
 namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;
 
 // What get_agent_session reads. The item was resolved and the caller's access checked before this is called, so an

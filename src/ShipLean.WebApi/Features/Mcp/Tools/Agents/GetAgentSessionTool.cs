@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using ShipLean.Application.Features.Mcp.Agents;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts;

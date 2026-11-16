@@ -1,7 +1,7 @@
 using Dapper;
 using Npgsql;
 
-namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;
+namespace ShipLean.Application.Features.Mcp.Agents;
 
 // The SQL behind get_work_item's agent_sessions and get_agent_session's access check. Access is the caller's job: the item id
 // passed in was resolved through the MCP item resolver first.

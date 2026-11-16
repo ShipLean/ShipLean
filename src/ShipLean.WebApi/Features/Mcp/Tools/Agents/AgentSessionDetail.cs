@@ -1,3 +1,4 @@
+using ShipLean.Application.Features.Mcp.Agents;
 using ShipLean.Contracts.Agents;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;

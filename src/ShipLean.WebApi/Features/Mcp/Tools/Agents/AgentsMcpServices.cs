@@ -4,12 +4,11 @@ using ShipLean.Contracts;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;
 
-// Singletons like the MCP resolvers: the user is read from the request at call time.
+// The get_agent_session reader, a singleton like the MCP resolvers.
 public sealed class AgentsMcpServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<AgentSessionMcpReads>();
         services.AddSingleton<IAgentSessionDetails, StubAgentSessionDetails>();
     }
 }
