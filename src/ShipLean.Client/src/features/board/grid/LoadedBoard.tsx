@@ -66,7 +66,8 @@ export function LoadedBoard({
         filter={filter}
         onFilter={setFilter}
       />
-      <div className="min-h-0 flex-1 overflow-auto bg-canvas">
+      {/* At touch the document scrolls, and the column pager bleeds to the screen edges (K5), so nothing here clips. */}
+      <div className="min-h-0 flex-1 overflow-auto bg-canvas touch:overflow-visible">
         <BoardGrid view={board} context={context} headerFlashes={settingsChanges} />
       </div>
       {childList.open ? (

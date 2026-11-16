@@ -1,10 +1,13 @@
 /* TouchPager: the chip row and the snapping track (K6). Design: board-touch.css, "Column chips" and "Pager".
-   The pager adds no side gutter of its own: it sits in the page's gutter, and a page is sized from the track, not the
-   viewport, so the next one peeks whatever that gutter is (SHIP-1626 TBOARD-2). */
+   The pager bleeds out of the page's gutter to the screen edges and pads itself 12px, so a page starts at x=12 and the
+   next one peeks 30px at 390px whatever the gutter (K5; SHIP-1626 TBOARD-2). Pages are sized from the track. */
+.touch-pager-root {
+  margin-inline: calc(50% - 50vw);
+}
 .touch-pager-chips {
   display: flex;
   gap: 6px;
-  padding: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -55,10 +58,11 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: 0 0 var(--space-4);
+  padding: 0 var(--space-3) var(--space-4);
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--space-3);
   scrollbar-width: none;
   container-type: inline-size;
 }
@@ -67,7 +71,7 @@
 }
 .touch-pager-page {
   flex: none;
-  width: min(100cqw - 24px, 340px);
+  width: min(100cqw - 26px, 340px);
   scroll-snap-align: start;
 }
 

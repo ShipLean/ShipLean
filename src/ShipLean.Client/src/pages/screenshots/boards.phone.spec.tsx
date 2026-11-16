@@ -227,7 +227,7 @@ phonePageShots([
   },
 ]);
 
-// SHIP-1626 TBOARD-2: at 390px the second page starts inside the screen and inside the track, so it peeks.
+// SHIP-1626 TBOARD-2 (K5): at 390px the second page peeks 30-36px at the right edge.
 test('TouchPager_OnTheStoriesBoardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
   await stubShell(page);
   await stubBoard(page, storiesBoard());
@@ -235,8 +235,8 @@ test('TouchPager_OnTheStoriesBoardPage_ShouldPeekTheNextPage', async ({ mount, p
   await expect(page.getByTestId(boardTestIds.card).first()).toBeVisible();
   const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
   const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
-  expect(second.x).toBeGreaterThanOrEqual(354);
-  expect(second.x).toBeLessThan(390);
-  // At least 12px of it shows (the design's ~30px less the page gutter), not a sliver.
-  expect(second.x).toBeLessThanOrEqual(track.x + track.width - 12);
+  // K5: the next page peeks 30-36px at 390px, on screen and inside the track (the pager bleeds to the screen edges).
+  const peek = Math.min(390, track.x + track.width) - second.x;
+  expect(peek).toBeGreaterThanOrEqual(30);
+  expect(peek).toBeLessThanOrEqual(36);
 });

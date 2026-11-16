@@ -56,8 +56,8 @@ export function PagerHarness() {
       </div>
       <p data-testid={ids.ctPagerCurrent}>{current}</p>
       <p data-testid={ids.ctPagerReports}>{reports.join(',')}</p>
-      {/* The pager adds no side gutter; the page's 12px gutter (the sprint tabs' at touch) is the harness's. */}
-      <div className="px-3">
+      {/* A page's 16px gutter: the pager bleeds out of it to the screen edges. */}
+      <div className="px-4">
         <TouchPager
           pages={pages.map((page) => ({ ...page }))}
           current={current}

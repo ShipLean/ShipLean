@@ -38,7 +38,7 @@ function EdgeHint({ edge }: { edge: 'left' | 'right' }) {
       data-testid={touchTestIds.dragEdgeHint}
       data-edge={edge}
       aria-hidden="true"
-      className={`pointer-events-none fixed top-1/2 z-80 flex h-12 w-3 -translate-y-1/2 items-center justify-center text-[length:var(--text-lg)] leading-none text-accent ${edge === 'left' ? 'left-0' : 'right-0'}`}
+      className={`pointer-events-none fixed top-1/2 z-80 flex h-12 w-6 -translate-y-1/2 items-center justify-center text-[length:var(--text-lg)] leading-none text-accent/70 ${edge === 'left' ? 'left-0' : 'right-0'}`}
     >
       {edge === 'left' ? '‹' : '›'}
     </span>

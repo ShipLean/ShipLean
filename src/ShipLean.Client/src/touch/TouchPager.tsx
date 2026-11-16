@@ -153,7 +153,7 @@ export function TouchPager({
 
   return (
     <InsidePagerContext.Provider value={true}>
-      <div>
+      <div className="touch-pager-root">
         {chips ? (
           <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
             {pages.map((page) => {

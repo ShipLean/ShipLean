@@ -6,7 +6,8 @@ import { taskboardTestIds as ids } from '../testIds';
 
 // The ‹ › edge hints while a task is lifted on the phone grid (SHIP-1626 TBOARD-12): holding at either edge turns the
 // page, so both edges say so while the card is up, and neither once it is down. Real touch input through CDP and a paused
-// clock, as TouchDrag.phone.spec.tsx does. Runs in the CT phone project.
+// clock, as TouchDrag.phone.spec.tsx does. Runs in the CT phone project. The sprint Taskboard and the Feature board share
+// this grid and this hook; the harness drives it through the Feature board.
 
 const route = { hooksConfig: { route: '/p/SHIP/items/SHIP-100/board' } };
 const MOVES = '**/api/work-items/f1/feature-board/moves';
