@@ -120,14 +120,14 @@ describe('useBrowserZoneOnLoad', () => {
     const zone = vi.fn<() => string | null>(() => null);
     const { mount, act } = await page(zone);
     const first = mount();
-    await vi.waitFor(() => expect(meReads(sent)).toBe(1));
-    await act(() => Promise.resolve());
+    await vi.waitFor(() => expect(zone).toHaveBeenCalledTimes(1));
     first.unmount();
     zone.mockReturnValue('Asia/Bangkok');
 
     mount();
 
     await vi.waitFor(() => expect(meReads(sent)).toBe(2));
+    await act(() => Promise.resolve());
     await act(() => Promise.resolve());
     expect(zone).toHaveBeenCalledTimes(1);
     expect(puts(sent)).toEqual([]);
