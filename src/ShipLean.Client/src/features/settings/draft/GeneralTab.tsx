@@ -3,6 +3,7 @@ import { settingsTestIds } from '../testIds';
 import { HolidaysPanel } from './HolidaysPanel';
 import { FieldErrorText } from './FieldErrorText';
 import { Panel } from './Panel';
+import { SeverityWeightsPanel } from './SeverityWeightsPanel';
 import type { TabProps } from './tabProps';
 import { WorkingDays } from './WorkingDays';
 
@@ -119,6 +120,7 @@ export function GeneralTab({
         <WorkingDays {...tab} />
       </Panel>
       <HolidaysPanel {...tab} />
+      <SeverityWeightsPanel {...tab} />
     </>
   );
 }

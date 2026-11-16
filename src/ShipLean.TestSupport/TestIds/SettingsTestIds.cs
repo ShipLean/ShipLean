@@ -30,6 +30,11 @@ public static class SettingsTestIds
     public const string HolidaysPanel = "settings-holidays-panel";
     public const string HolidayCountry = "settings-holiday-country";
     public const string HolidaysUnavailable = "settings-holidays-unavailable";
+    public const string SeverityWeightsPanel = "settings-severity-weights-panel";
+    public const string SeverityWeight1 = "settings-severity-weight-1";
+    public const string SeverityWeight2 = "settings-severity-weight-2";
+    public const string SeverityWeight3 = "settings-severity-weight-3";
+    public const string SeverityWeight4 = "settings-severity-weight-4";
     public const string WorkingDays = "settings-working-days";
     public const string WorkingDay1 = "settings-working-day-1";
     public const string WorkingDay2 = "settings-working-day-2";

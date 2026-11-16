@@ -106,6 +106,8 @@ export interface ProjectGeneralPut {
   repoUrl: string | null;
   repoBaseBranch: string | null;
   holidayCountry: string | null;
+  /** Keys '1' to '4', each a whole number of at least 1. */
+  bugSeverityWeights: Record<string, number>;
 }
 
 export interface MemberPut {

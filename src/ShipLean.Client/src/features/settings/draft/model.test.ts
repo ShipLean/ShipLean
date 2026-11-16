@@ -109,6 +109,36 @@ describe('settings draft model', () => {
     ]);
   });
 
+  it('parse_WhenSeverityWeightNotPositiveWhole_ShouldPointAtThatWeight', () => {
+    const draft = {
+      ...toDraft(saved),
+      bugSeverityWeights: { '1': '8', '2': '0', '3': '2.5', '4': '1' },
+    };
+
+    const fields = validate(draft, saved.states).map((e) => e.field);
+
+    expect(fields).toEqual(['bugSeverityWeight-2', 'bugSeverityWeight-3']);
+  });
+
+  it('toPut_WhenSeverityWeightsEdited_ShouldSendAllFourAsNumbers', () => {
+    const draft = {
+      ...toDraft(saved),
+      bugSeverityWeights: { '1': '10', '2': '5', '3': '3', '4': '1' },
+    };
+    const result = parse(draft, saved.states);
+    if (!('parsed' in result)) throw new Error('expected parsed');
+
+    expect(toPut(draft, result.parsed).general.bugSeverityWeights).toEqual({
+      '1': 10,
+      '2': 5,
+      '3': 3,
+      '4': 1,
+    });
+    expect(changesBetween(toDraft(saved), draft, saved.states).map((c) => c.label)).toEqual([
+      'Bug severity weights',
+    ]);
+  });
+
   it('toPut_WhenMemberRemovedAndOverrideSet_ShouldLeaveMemberOutAndParseOverride', () => {
     const base = toDraft(saved);
     const draft = {
