@@ -69,17 +69,33 @@ test('PhoneGrid_WhenStoryClosed_ShouldShowOneLine', async ({ mount, page }) => {
   await expect(page.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`)).toHaveCount(0);
   const first = lines.first();
   await expect(first.getByTestId(ids.rowTitle)).toHaveText('Story SHIP-138');
-  await expect(first.getByTestId(ids.closedLineDone)).toHaveText('1/1');
+  await expect(first.getByTestId(ids.closedLineDone)).toHaveText('☑ 1/1');
   await expect(first).toContainText('Closed');
   expect((await first.boundingBox())!.height).toBe(40);
-  // Closed stories come after every open lane on the page.
-  const last = await page
-    .locator(`[data-testid="${touchTestIds.pagerPage}"][data-page-id="t-new"]`)
-    .evaluate(
-      (el, t) => [...el.querySelectorAll<HTMLElement>(t)].map((n) => n.dataset.testid).at(-1),
-      `[data-testid="${ids.lane}"],[data-testid="${ids.closedLine}"]`,
-    );
-  expect(last).toBe(ids.closedLine);
+  await expect(first.getByTestId(ids.rowToggle)).toHaveAttribute('aria-expanded', 'false');
+  await expect(first.getByTestId(ids.closedLineDone)).toContainText('☑');
+});
+
+test('ClosedStoryLine_WhenToggled_ShouldShowItsTasks', async ({ mount, page }) => {
+  await mount(<PhoneGridHarness board="feature" />, route);
+  const closedPage = page.locator(
+    `[data-testid="${touchTestIds.pagerPage}"][data-page-id="t-closed"]`,
+  );
+  const line = closedPage.locator(`[data-testid="${ids.closedLine}"][data-row="id-SHIP-138"]`);
+  // The Closed page has SHIP-138's one task: the line says so.
+  await expect(line.getByTestId(ids.closedLineHere)).toHaveText('1 here');
+  await expect(
+    closedPage.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`),
+  ).toHaveCount(0);
+
+  await line.getByTestId(ids.rowToggle).tap();
+
+  const lane = closedPage.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`);
+  await expect(lane.getByTestId(ids.card)).toHaveCount(1);
+  await expect(line).toHaveCount(0);
+  // And back: the toggle on the lane's card closes it to one line.
+  await lane.getByTestId(ids.rowToggle).tap();
+  await expect(line).toHaveCount(1);
 });
 
 test('PhoneGrid_WhenFilterHidesEveryTask_ShouldKeepLaneWithHiddenCount', async ({

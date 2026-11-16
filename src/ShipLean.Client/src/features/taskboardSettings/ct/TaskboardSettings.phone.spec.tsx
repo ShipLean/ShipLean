@@ -7,6 +7,7 @@ interface Point {
   y: number;
 }
 import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
+import { TASKBOARD_STYLE_RULES } from '../../../pages/screenshots/fixtures/taskboardView';
 import { PROJECT_ID } from '../../boardSettings/ct/boardSettingsFixtures';
 import { criteriaTestIds } from '../../criteria/testIds';
 import { styleRule } from '../../boardSettings/ct/stubBoard';
@@ -261,3 +262,49 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+test('TaskboardSettingsStyles_AtPhoneWidth_ShouldNotOverflow', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ styleRules: TASKBOARD_STYLE_RULES }), ['Blocked']);
+  await mount(dialog('styles'));
+  await expect(page.getByTestId(ids.styleRow)).toHaveCount(TASKBOARD_STYLE_RULES.length);
+  const pane = page.getByTestId(ids.stylesPane);
+  const widths = await pane.evaluate((el) => {
+    let scroller: Element | null = el;
+    while (scroller && scroller.scrollWidth <= scroller.clientWidth)
+      scroller = scroller.parentElement;
+    return {
+      pane: el.getBoundingClientRect().right,
+      scroll: scroller ? scroller.scrollWidth - scroller.clientWidth : 0,
+    };
+  });
+  expect(widths.scroll, 'nothing on the screen scrolls sideways').toBe(0);
+  expect(widths.pane, 'the pane ends inside the 390px screen').toBeLessThanOrEqual(390);
+});
+
+test('TagColours_ShouldShowTheColourName', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ tagColours: [{ tag: 'Blocked', colour: 'danger' }] }), [
+    'Blocked',
+  ]);
+  await mount(dialog('tags'));
+  const row = page.getByTestId(ids.tagRow);
+  await expect(row).toContainText('Red');
+  await expect(row).not.toContainText('danger');
+  await expect(row.getByRole('button', { name: 'Red' })).toBeVisible();
+});
+
+test('TaskboardSettingsFields_AtPhoneWidth_ShouldBeOneColumn', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ cardFields: [task, { ...task, type: 'story' }] }));
+  await mount(dialog('fields'));
+  const core = page.getByTestId(ids.fieldsCore);
+  const add = page.getByTestId(ids.fieldsAdd);
+  await expect(add).toBeVisible();
+  const [c, a] = [(await core.boundingBox())!, (await add.boundingBox())!];
+  expect(a.y, 'Additional fields sit under Core fields').toBeGreaterThan(c.y + c.height);
+  expect(a.x + a.width, 'both fieldsets span the same column').toBeLessThanOrEqual(c.x + c.width);
+  expect(c.width, 'the column is the screen').toBeGreaterThan(330);
+  const doc = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    document.documentElement.clientWidth,
+  ]);
+  expect(doc[0]).toBeLessThanOrEqual(doc[1]);
+});

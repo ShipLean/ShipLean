@@ -10,16 +10,18 @@ const options: { id: TaskboardGrouping; label: string }[] = [
 export function GroupBySwitch({
   value,
   onChange,
+  className = '',
 }: {
   value: TaskboardGrouping;
   onChange: (next: TaskboardGrouping) => void;
+  className?: string;
 }) {
   return (
     <div
       data-testid={ids.groupBy}
       role="group"
       aria-label="Group by"
-      className="inline-flex overflow-hidden rounded-control border border-edge"
+      className={`inline-flex overflow-hidden rounded-control border border-edge ${className}`}
     >
       {options.map((option) => (
         <button
