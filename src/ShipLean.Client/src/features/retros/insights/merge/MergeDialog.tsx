@@ -98,7 +98,8 @@ export function MergeDialog({
         {options.map((o) => (
           <label
             key={o.theme.id}
-            className="flex items-center gap-2 text-[length:var(--text-sm)] has-[:disabled]:text-ink-muted touch:min-h-10"
+            data-testid={ids.retroMergeSourceRow}
+            className="flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-10 touch:has-[:disabled]:text-ink-muted"
           >
             <input
               type="checkbox"

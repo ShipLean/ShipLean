@@ -241,4 +241,6 @@ export const retrosTestIds = {
   retroImpactHint: 'retro-impact-hint',
   retroImpactIntro: 'retro-impact-intro',
   retroActionsSection: 'retro-actions-section',
+  retroUnthemedCardOpen: 'retro-unthemed-card-open',
+  retroMergeSourceRow: 'retro-merge-source-row',
 } as const;

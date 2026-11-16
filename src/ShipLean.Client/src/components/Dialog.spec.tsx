@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { Dialog } from './Dialog';
+import { SUBTITLE, LONG_TITLE } from './ct/subtitleDialogText';
+import { SubtitleDialogHarness } from './ct/SubtitleDialogHarness';
 import { DialogEscHarness } from './ct/DialogEscHarness';
 import { DialogHarness } from './ct/DialogHarness';
 import { harnessTestIds as harness } from './ct/harnessIds';
@@ -92,4 +94,47 @@ test('Dialog_WhenAbove900_ShouldNotRenderThePrimaryAction', async ({ mount, page
   await expect(dialog.getByTestId(touchTestIds.dialogPrimary)).toHaveCount(0);
   await expect(dialog.getByTestId(touchTestIds.dialogClose)).toHaveCount(0);
   await expect(dialog.getByRole('button', { name: 'Create' })).toHaveCount(0);
+});
+
+test('Dialog_WhenGivenASubtitle_ShouldNameItByTheTitleAndDescribeItBySubtitle', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SubtitleDialogHarness />);
+  const dialog = page.getByTestId(ids.dialog);
+  await expect(dialog.getByTestId(ids.dialogSubtitle)).toHaveText(SUBTITLE);
+  await expect(dialog.getByTestId(ids.dialogTitle)).toHaveText(LONG_TITLE);
+  await expect(dialog).toHaveAccessibleName(LONG_TITLE);
+  await expect(dialog).toHaveAccessibleDescription(SUBTITLE);
+});
+
+test('Dialog_WhenGivenASubtitle_ShouldKeepTheTitleOnOneLine', async ({ mount, page }) => {
+  await mount(<SubtitleDialogHarness />);
+  const title = (await page.getByTestId(ids.dialogTitle).boundingBox())!;
+  const subtitle = (await page.getByTestId(ids.dialogSubtitle).boundingBox())!;
+  expect(title.height).toBeLessThan(28);
+  expect(subtitle.y).toBeGreaterThanOrEqual(title.y + title.height);
+});
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`Dialog_WhenGivenASubtitle_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await mount(<SubtitleDialogHarness />);
+    await expect(page.getByTestId(ids.dialogSubtitle)).toBeVisible();
+    await expect(page).toHaveScreenshot(`dialog-subtitle.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}
+
+test('Dialog_WhenGivenNoSubtitle_ShouldNotDescribeItself', async ({ mount, page }) => {
+  await mount(
+    <Dialog title="New feature" onClose={() => undefined}>
+      <span>body</span>
+    </Dialog>,
+  );
+  const dialog = page.getByTestId(ids.dialog);
+  await expect(dialog).toHaveAccessibleName('New feature');
+  await expect(dialog).not.toHaveAttribute('aria-describedby', /.*/);
+  await expect(dialog.getByTestId(ids.dialogSubtitle)).toHaveCount(0);
 });

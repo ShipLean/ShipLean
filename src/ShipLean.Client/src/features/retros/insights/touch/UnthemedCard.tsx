@@ -40,7 +40,7 @@ export function UnthemedCard({
       <header className="flex items-center gap-2">
         <button
           type="button"
-          data-testid={ids.retroThemeCardOpen}
+          data-testid={ids.retroUnthemedCardOpen}
           aria-label="Open Unthemed"
           className="min-h-[var(--touch-target)] min-w-0 flex-1 cursor-pointer text-left text-[length:var(--text-base)] font-semibold text-ink italic"
           onClick={openSheet}

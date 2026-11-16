@@ -54,8 +54,8 @@ export function Dialog({
   const { touch } = useTouchShell();
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  const headlineId = useId();
-  const subtitleId = useId();
+  const headlineId = `${titleId}-headline`;
+  const subtitleId = `${titleId}-subtitle`;
   useModalFocus(panel);
 
   // A click on the backdrop would move focus to the body, outside the trap; keep it where it is.

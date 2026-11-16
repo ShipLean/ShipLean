@@ -111,5 +111,12 @@ test('PhoneRetroRow_ShouldShowAChevron', async ({ mount, page }) => {
     const chevron = phoneRows.nth(index).getByTestId(ids.retroRowChevron);
     await expect(chevron).toHaveText('›');
     await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    const row = (await phoneRows.nth(index).boundingBox())!;
+    const arrow = (await chevron.boundingBox())!;
+    expect(arrow.width).toBeGreaterThan(0);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
+    expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
+    expect(arrow.y).toBeGreaterThanOrEqual(row.y);
+    expect(arrow.y + arrow.height).toBeLessThanOrEqual(row.y + row.height);
   }
 });

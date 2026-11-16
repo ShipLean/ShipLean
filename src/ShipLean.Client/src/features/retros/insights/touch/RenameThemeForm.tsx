@@ -3,8 +3,7 @@ import { retrosTestIds as ids } from '../../testIds';
 
 /**
  * The theme sheet's rename field (D9): a 16px name, the error under it, and the line saying what a rename keeps. Discard
- * and Save are the sheet's footer, so
- * the sheet owns the draft; Enter saves and Esc discards, as the desktop ✎ does.
+ * and Save are the sheet's footer, so the sheet owns the draft; Enter saves and Esc discards, as the desktop ✎ does.
  */
 export function RenameThemeForm({
   value,
