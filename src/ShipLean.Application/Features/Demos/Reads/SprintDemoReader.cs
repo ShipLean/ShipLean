@@ -3,11 +3,13 @@ using System.Text.Json;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Markdown;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.Reads;
 
@@ -17,7 +19,8 @@ public sealed class SprintDemoReader(
     IAttachmentStore attachments,
     MarkdownRenderer renderer,
     IAgentSessionStarter sessions,
-    TimeProvider time) : ISprintDemoReader
+    TimeProvider time,
+    IViewerZone viewerZone) : ISprintDemoReader
 {
     private const string LiveSessionMessage = "An agent session is already making this demo.";
 
@@ -95,7 +98,7 @@ public sealed class SprintDemoReader(
         }
 
         var state = session is null ? null : SessionStateOf(session);
-        var requested = row.RequestedAt is { } at ? $"Requested {SprintDemoLabels.When(at, time)}" : "Not requested yet";
+        var requested = row.RequestedAt is { } at ? $"Requested {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : "Not requested yet";
         return new SprintDemoRunDto(row.ItemKey, $"/p/{row.ProjectKey}/items/{row.ItemKey}", state, requested, ExpiryLabel(row.UploadExpiresAt, now));
     }
 
@@ -108,7 +111,7 @@ public sealed class SprintDemoReader(
             return null;
         }
 
-        return at <= now ? $"Link expired {SprintDemoLabels.When(at, time)}" : $"Link valid until {SprintDemoLabels.When(at, time)}";
+        return at <= now ? $"Link expired {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : $"Link valid until {DisplayDate.DayAt(at, now, viewerZone.Zone)}";
     }
 
     private SprintDemoVideoDto? VideoOf(SprintDemoRow row, IReadOnlyDictionary<Guid, FileRow> files)
@@ -126,7 +129,7 @@ public sealed class SprintDemoReader(
             file.SizeBytes,
             duration,
             SprintDemoLabels.Duration(duration),
-            row.DeliveredAt is { } delivered ? $"Delivered {SprintDemoLabels.When(delivered, time)}" : string.Empty);
+            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, time.GetUtcNow(), viewerZone.Zone)}" : string.Empty);
     }
 
     // A missing, archived or unreadable chapters file is no chapters, not an error.

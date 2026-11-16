@@ -11,6 +11,7 @@ using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Asks;
 
@@ -256,5 +257,32 @@ public class ItemAsksApiTests : ApiFixture
 
         var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.NotFound);
         error.Code.ShouldBe(ApiErrorCodes.NotFound);
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative calls in ItemAsks.
+    [Test]
+    public async Task ItemAsks_WhenViewerIsInBangkok_ShouldDateAnAskByTheBangkokDay()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var item = await ItemAsync(connection, "story", SeedIds.Users.Joel);
+        await new QuestionBuilder(item).AskedBy(SeedIds.Users.Joel, null, ViewerZoneTestData.LateEveningUtc).BuildAsync(connection);
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
+
+        var bangkok = await ReadAsAsync(TestUser.Mei, item);
+        var utc = await ReadAsAsync(TestUser.Joel, item);
+
+        var now = TimeProvider.System.GetUtcNow();
+        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
+        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+        bangkok.Questions.Single().AskedAtLabel.ShouldBe(expected);
+        utc.Questions.Single().AskedAtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+    }
+
+    private async Task<ItemAsksDto> ReadAsAsync(TestUser user, Guid item)
+    {
+        using var response = await Api.ActingAs(user).GetAsync(Url(item));
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<ItemAsksDto>(text, WireOptions)!;
     }
 }

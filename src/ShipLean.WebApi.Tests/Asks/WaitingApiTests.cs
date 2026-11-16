@@ -9,6 +9,8 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.Core;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Asks;
 
@@ -186,5 +188,22 @@ public class WaitingApiTests : ApiFixture
         story.Key.ShouldBe("SHIP-124");
         story.OpenDecisions.ShouldBe(4);
         story.OpenQuestions.ShouldBe(2);
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative call in WaitingOnMe.
+    [Test]
+    public async Task Waiting_WhenViewerIsInBangkok_ShouldDateAWaitByTheBangkokDay()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var item = await ItemAsync(connection, SeedIds.Projects.Ship, SeedIds.Users.Joel, assignee: SeedIds.Users.Mei);
+        await OpenAsksAsync(connection, item, decisions: 1, questions: 0, at: ViewerZoneTestData.LateEveningUtc);
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
+
+        var waiting = await WaitingAsync(TestUser.Mei);
+
+        var now = TimeProvider.System.GetUtcNow();
+        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
+        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+        waiting.Items.Single(i => i.Id == item).OldestAtLabel.ShouldBe(expected);
     }
 }
