@@ -4,7 +4,8 @@ namespace ShipLean.Application.Features.InspectionMetrics.Facts;
 public interface ILeadTimeFactsReader
 {
     // fromDay and toDay select tasks, not revisions: the tasks whose lead time could end in [fromDay, toDay + 2 days] (the design's
-    // weekend grace after a sprint), meaning a first move to a Resolved-category state or a commit time inside that span. For each
+    // weekend grace after a sprint), meaning a first move to a Resolved-category state or a commit time inside that span, plus every
+    // live task of each Feature one of them belongs to, whatever its dates (for the Features tab's counts). For each
     // such task it returns every state move, Blocked tag change, review and commit, whatever its date, so a task started before
     // fromDay keeps its start and is never read as left out.
     Task<LeadTimeFacts> ReadAsync(Guid projectId, DateOnly fromDay, DateOnly toDay, CancellationToken ct);

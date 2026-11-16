@@ -7,7 +7,8 @@ using ShipLean.TestSupport.InspectionMetrics;
 
 namespace ShipLean.UnitTest.InspectionMetrics;
 
-// The aggregator (K7) over hand-made TaskLeadTime values, never the real measure. Sprints as in the contract tests: Sprint 1 (Mon 7
+// The aggregator (K7) over hand-made TaskLeadTime values, never the real measure. Sprint 0 (Fri 19 Jun to Tue 30 Jun) ends in Q2.
+// The others are as in the contract tests: Sprint 1 (Mon 7
 // Sep to Fri 18 Sep) ends in Q3, Sprints 2 to 4 (21 Sep to 2 Oct, 5 to 16 Oct, 19 to 30 Oct) end in Q4. Sprint 5 (2 to 13 Nov) has
 // not started. Today is Sat 24 Oct 2026, inside Sprint 4.
 [TestFixture]
@@ -17,12 +18,13 @@ public class LeadTimeAggregatorTests
     private static readonly Guid Ana = new("00000000-0000-4000-8000-000000000a01");
     private static readonly Guid Tom = new("00000000-0000-4000-8000-000000000a02");
 
+    private static readonly InspectionSprint S0 = Sprint(0, new DateOnly(2026, 6, 19));
     private static readonly InspectionSprint S1 = Sprint(1, new DateOnly(2026, 9, 7));
     private static readonly InspectionSprint S2 = Sprint(2, new DateOnly(2026, 9, 21));
     private static readonly InspectionSprint S3 = Sprint(3, new DateOnly(2026, 10, 5));
     private static readonly InspectionSprint S4 = Sprint(4, new DateOnly(2026, 10, 19));
     private static readonly InspectionSprint S5 = Sprint(5, new DateOnly(2026, 11, 2));
-    private static readonly InspectionSprint[] All = [S1, S2, S3, S4, S5];
+    private static readonly InspectionSprint[] All = [S0, S1, S2, S3, S4, S5];
 
     private static InspectionSprint Sprint(int number, DateOnly start)
         => new(new Guid($"00000000-0000-4000-8000-00000000000{number}"), $"Sprint {number}", start, start.AddDays(11));
@@ -196,6 +198,9 @@ public class LeadTimeAggregatorTests
         other.PeriodDetail.ShouldNotBeNull().Selected.ShouldBeNull();
     }
 
+    // The facts carry every live task of a Feature with a task in the window, open ones too (K5), so the open SHIP-4 is in the facts
+    // with no TaskLeadTime. SHIP-98's tasks have all ended, one of them left out.
+    // Mutation: count the Feature's total, before and first start over the tasks ended in the period only.
     [Test]
     public void Build_WhenPeriodGiven_ShouldCountEachFeaturesTasksEndedHereBeforeAndInAll()
     {
@@ -203,14 +208,43 @@ public class LeadTimeAggregatorTests
             .WithTask("SHIP-1", featureKey: "SHIP-99", featureTitle: "Coupons v2")
             .WithTask("SHIP-2", featureKey: "SHIP-99", featureTitle: "Coupons v2")
             .WithTask("SHIP-3", featureKey: "SHIP-99", featureTitle: "Coupons v2")
-            .WithTask("SHIP-4", featureKey: "SHIP-99", featureTitle: "Coupons v2");
-        TaskLeadTime[] tasks = [Task("SHIP-1", At(9, 22, 12), 24), Task("SHIP-2", At(10, 6, 12), 10), Task("SHIP-3", At(10, 8, 12), 30)];
+            .WithTask("SHIP-4", featureKey: "SHIP-99", featureTitle: "Coupons v2")
+            .WithTask("SHIP-5", featureKey: "SHIP-98", featureTitle: "Gift cards")
+            .WithTask("SHIP-6", featureKey: "SHIP-98", featureTitle: "Gift cards");
+        TaskLeadTime[] tasks =
+        [
+            Task("SHIP-1", At(9, 22, 12), 24), Task("SHIP-2", At(10, 6, 12), 10), Task("SHIP-3", At(10, 8, 12), 30), Task("SHIP-5", At(10, 9, 12), 50),
+            new("SHIP-6", null, At(10, 8, 18), LeadTimeEndedBy.Resolved, 0, 0, 0, 0, [], [], "Closed in one bulk edit with no start recorded"),
+        ];
 
         var view = Build([S2, S3], facts, tasks, period: S3);
 
-        var feature = view.PeriodDetail.ShouldNotBeNull().Features.ShouldHaveSingleItem();
-        (feature.Key, feature.Title, feature.TasksEnded, feature.TasksEndedBefore, feature.TasksTotal, feature.LongestTaskKey, feature.LeadTime.MeanHours)
-            .ShouldBe(("SHIP-99", "Coupons v2", 2, 1, 4, "SHIP-3", 20d));
-        feature.ExecutionLabel.ShouldBe("33 days so far");
+        view.PeriodDetail.ShouldNotBeNull().Features
+            .Select(f => (f.Key, f.Title, f.TasksEnded, f.TasksEndedBefore, f.TasksTotal, f.LongestTaskKey, f.LeadTime.MeanHours, f.ExecutionLabel))
+            .ShouldBe([("SHIP-99", "Coupons v2", 2, 1, 4, "SHIP-3", 20d, "33 days so far"), ("SHIP-98", "Gift cards", 1, 0, 2, "SHIP-5", 50d, "2 days")]);
+    }
+
+    // A finished quarter compares with the whole of last quarter, the weekend after its last sprint included: Sprint 0 ends Tue 30 Jun,
+    // and its task that ended Wed 1 Jul counts in it, in Q2.
+    // Mutation: cut last quarter at its last day for a finished quarter too.
+    [Test]
+    public void Build_WhenQuarterFinished_ShouldCompareWithAllOfLastQuarterIncludingItsWeekendTasks()
+    {
+        var view = Build([S1, S2], Task("SHIP-1", At(7, 1, 12), 10), Task("SHIP-2", At(9, 15, 12), 20));
+
+        var q3 = view.Headline.LastQuarter.ShouldNotBeNull();
+        (q3.Quarter, q3.ToDate, q3.LeadTime.MeanHours, q3.LeadTime.ChangePctVsPrevious).ShouldBe(("Q3 2026", false, 20d, 100));
+        view.Quarters.Single(q => q.Quarter == "Q3 2026").LeadTime.ChangePctVsPrevious.ShouldBe(100);
+    }
+
+    // Mutation: drop the clamp, so a commit dated before the start makes a negative lead time.
+    [Test]
+    public void Build_WhenEndBeforeStart_ShouldCountZeroHours()
+    {
+        var end = At(10, 7, 12);
+        var view = Build([S3], new("SHIP-1", end.AddHours(2), end, LeadTimeEndedBy.LastCommit, 0, 0, 0, 0, [], [], null), Task("SHIP-2", At(10, 8, 12), 10));
+
+        view.Periods.Single().LeadTime.MeanHours.ShouldBe(5d);
+        view.Periods.Single().Dots.Single(d => d.TaskKey == "SHIP-1").LeadHours.ShouldBe(0d);
     }
 }

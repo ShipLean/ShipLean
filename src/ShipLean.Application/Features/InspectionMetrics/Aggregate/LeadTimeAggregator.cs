@@ -245,23 +245,24 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                         group.Key,
                         ended[0].Fact.FeatureTitle ?? group.Key,
                         ended.Count,
-                        all.Count(task => task.Sprint is not null && task.Sprint.EndDate < period.StartDate),
+                        all.Count(task => DisplayDate.DayOf(task.Lead.End, _zone) < period.StartDate),
                         total,
                         LeadTimeStats.Of(ended),
                         longest.Key,
                         DisplayDate.Duration(LeadTimeStats.Round(longest.LeadHours)),
-                        ExecutionLabel(all, total));
+                        ExecutionLabel(group.Key, all, total));
                 })
                 .OrderByDescending(feature => feature.TasksEnded)
                 .ThenBy(feature => feature.Key, StringComparer.Ordinal)];
 
-        // How long the Feature has been executing: from its first task's start to now, or to its last task's end once every task of
-        // it has ended.
-        private string ExecutionLabel(IReadOnlyList<AggregatedTask> all, int total)
+        // How long the Feature has been executing: from the first start of its measured tasks to now, or to the last end once every
+        // task of it (left out ones included) has ended. The facts carry every live task of the Feature, open ones too.
+        private string ExecutionLabel(string featureKey, IReadOnlyList<AggregatedTask> all, int total)
         {
             var first = all.Min(task => task.Start);
-            var done = all.Count >= total;
-            var until = done ? all.Max(task => task.Lead.End) : _now;
+            var ended = _tasks.Where(task => _taskFacts[task.TaskKey].FeatureKey == featureKey).ToList();
+            var done = ended.Count == total;
+            var until = done ? ended.Max(task => task.End) : _now;
             var days = (int)Math.Floor((until - first).TotalDays);
             var text = days == 1 ? "1 day" : $"{days.ToString(CultureInfo.InvariantCulture)} days";
             return done ? text : $"{text} so far";
@@ -302,8 +303,8 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             }
             var toDate = InspectionWindow.QuarterStart(_today) == quarterStart;
             var lastQuarter = quarterStart.AddMonths(-3);
-            var lastQuarterUntil = toDate ? lastQuarter.AddDays(_today.DayNumber - quarterStart.DayNumber) : quarterStart.AddDays(-1);
-            var previous = SprintsEndingIn(lastQuarter).SelectMany(TasksIn).Where(task => DisplayDate.DayOf(task.Lead.End, _zone) <= lastQuarterUntil).ToList();
+            var lastQuarterUntil = lastQuarter.AddDays(_today.DayNumber - quarterStart.DayNumber);
+            var previous = SprintsEndingIn(lastQuarter).SelectMany(TasksIn).Where(task => !toDate || DisplayDate.DayOf(task.Lead.End, _zone) <= lastQuarterUntil).ToList();
             return new InspectionQuarterDto(
                 QuarterLabel(quarterStart),
                 toDate,
