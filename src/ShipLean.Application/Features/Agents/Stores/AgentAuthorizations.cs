@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Dapper;
 using ShipLean.Core;
 using Npgsql;
