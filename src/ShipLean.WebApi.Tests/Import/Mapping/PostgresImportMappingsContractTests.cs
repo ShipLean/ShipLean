@@ -66,7 +66,7 @@ public sealed class PostgresImportMappingsContractTests : ImportMappingsContract
         connections.Arrange(connectionId, JiraWorld.Credentials);
         var jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = SeedIds.Users.Joel }, directory, new FixedViewerZone());
         jobs.RegisterConnection(connectionId);
-        _mappings = new ImportMappings(connections, new InMemoryJiraClient(JiraWorld.Credentials, JiraWorld.Data(issues, statuses)), jobs, new StateCatalog(_dataSource), directory, new FixedViewerZone());
+        _mappings = new ImportMappings(connections, new InMemoryJiraClient(JiraWorld.Credentials, JiraWorld.Data(issues, statuses)), jobs, new StateCatalog(_dataSource), directory);
 
         var fresh = await _mappings.SuggestAsync(connectionId, JiraWorld.ProjectKey, null);
         var priyaRef = new UserRef(SeedIds.Users.Priya, "Priya Shah", "PS", "#5b6b8c", null);

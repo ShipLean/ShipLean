@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using Npgsql;

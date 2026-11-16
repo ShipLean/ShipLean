@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 using ShipLean.Contracts.Errors;
