@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { retroSearch, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
@@ -121,3 +122,27 @@ for (const theme of THEMES) {
     });
   });
 }
+
+test('OpenRetroHeader_ShouldShowTheTypeIconKeyAndTitleAndBorderTheStepButtons', async ({
+  mount,
+  page,
+}) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+  const dialog = page.getByTestId(ids.retrosOpenRetro);
+  await expect(dialog).toBeVisible();
+  const item = retroSearch.selected!.workItem!;
+  const header = dialog.locator('header');
+  await expect(header.getByTestId(componentTestIds.typeIcon)).toHaveAttribute(
+    'data-type',
+    item.type.id,
+  );
+  await expect(header.getByText(item.key, { exact: true })).toBeVisible();
+  await expect(header.getByRole('heading')).toHaveText(item.title);
+  await expect(header.getByRole('heading')).not.toContainText(item.type.name);
+  await expect(dialog.getByTestId(ids.retrosOpenRetroPosition)).toContainText('Result 1 of');
+  const pair = header.getByTestId(touchTestIds.dialogPrimary).locator('> div');
+  await expect(pair).toHaveCSS('border-top-width', '1px');
+  await expect(pair.locator('button')).toHaveCount(2);
+});

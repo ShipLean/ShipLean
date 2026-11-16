@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Dialog } from '../../../../components/Dialog';
+import { TypeIcon } from '../../../../components/TypeIcon';
 import { routePath } from '../../../../routes';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { RetroBoard } from '../../../retroShared/board/RetroBoard';
@@ -17,7 +18,7 @@ import type { AddTarget } from '../../../retroShared/board/AddTarget';
 import type { RetrosSearchSlotProps } from '../SearchSlotProps';
 
 const stepButton =
-  'grid size-[var(--touch-target)] place-items-center rounded-control text-ink disabled:text-ink-muted disabled:opacity-40';
+  'grid size-[var(--touch-target)] place-items-center border-0 bg-transparent text-ink disabled:text-ink-muted disabled:opacity-40';
 
 /** The open retro on a phone: the whole retro in a full-screen dialog, ‹ › stepping through the results. */
 export function OpenRetroView({
@@ -43,9 +44,7 @@ export function OpenRetroView({
   if (!card) return null;
 
   const item = card.workItem;
-  const title = item
-    ? `${item.type.name} ${item.key} ${item.title}`
-    : `Sprint ${card.sprint?.name}`;
+  const title = item ? item.title : `Sprint ${card.sprint?.name}`;
   const sprint = card.sprint?.name;
   const position = steps.position > 0 ? `Result ${steps.position} of ${steps.total}` : '';
   const isFeature = item?.type.id === 'feature';
@@ -53,10 +52,20 @@ export function OpenRetroView({
   return (
     <Dialog
       title={title}
+      titleIcon={
+        item ? (
+          <span className="inline-flex flex-none items-center gap-1.5">
+            <TypeIcon type={item.type.id} />
+            <span className="font-mono text-[length:var(--text-sm)] text-ink-muted">
+              {item.key}
+            </span>
+          </span>
+        ) : null
+      }
       onClose={steps.close}
       testId={ids.retrosOpenRetro}
       primaryAction={
-        <>
+        <div className="inline-flex divide-x divide-edge overflow-hidden rounded-control border border-edge">
           <button
             type="button"
             data-testid={ids.retrosOpenRetroPrevious}
@@ -77,7 +86,7 @@ export function OpenRetroView({
           >
             ›
           </button>
-        </>
+        </div>
       }
     >
       <div ref={body} data-testid={ids.retrosSelected} className="grid min-w-0 gap-3">
