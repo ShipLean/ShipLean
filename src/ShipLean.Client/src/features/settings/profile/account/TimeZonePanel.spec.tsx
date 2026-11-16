@@ -127,6 +127,25 @@ test('TimeZone_WhenServerRefuses_ShouldShowItsMessageAndKeepTheZone', async ({ m
   await expect(view.getByTestId(ids.timeZoneCurrent)).toHaveText('Asia/Bangkok (UTC+07:00)');
 });
 
+// Mutation: put `disabled={choices.data === undefined || saving}` back on the select (a disabled control drops keyboard focus).
+test('TimeZone_WhenAKeyboardSaveIsRefused_ShouldKeepFocusOnTheSelectAndAnnounceTheError', async ({
+  mount,
+  page,
+}) => {
+  await stub(page, { zone: 'Asia/Bangkok', refuse: 'That is not a time zone ShipLean knows.' });
+  const view = await mount(<TimeZonePanel />);
+  const select = view.getByTestId(ids.timeZoneSelect);
+  await expect(select).toBeEnabled();
+
+  await select.focus();
+  await page.keyboard.press('ArrowUp');
+
+  const error = view.getByTestId(ids.timeZoneError);
+  await expect(error).toHaveText('That is not a time zone ShipLean knows.');
+  await expect(error).toHaveAttribute('role', 'alert');
+  await expect(select).toBeFocused();
+});
+
 test('TimeZone_WhenChoicesFailToLoad_ShouldShowTheErrorNotAnEmptySelect', async ({
   mount,
   page,

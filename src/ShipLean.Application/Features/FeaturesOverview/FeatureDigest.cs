@@ -13,7 +13,7 @@ namespace ShipLean.Application.Features.FeaturesOverview;
 // What changed in a project since the caller last pressed Mark as seen (feature_digest_seen, 24 hours back when they never have),
 // oldest change first, a page per cursor. The first page leads with NeedsYou: the open decisions and questions raised since then
 // on items the caller owns (AskOwnerSql). Later pages carry Changed only. Callers check Member access first.
-public sealed class FeatureDigest(NpgsqlDataSource dataSource, IWorkItemChanges changes, ICurrentUser currentUser, TimeProvider clock) : IFeatureDigest
+public sealed class FeatureDigest(NpgsqlDataSource dataSource, IWorkItemChanges changes, ICurrentUser currentUser, TimeProvider clock, IViewerZone viewerZone) : IFeatureDigest
 {
     private const int PageSize = 100;
 
@@ -23,14 +23,14 @@ public sealed class FeatureDigest(NpgsqlDataSource dataSource, IWorkItemChanges 
         var seenAt = await connection.ExecuteScalarAsync<DateTimeOffset?>(new CommandDefinition(
             "SELECT seen_at FROM feature_digest_seen WHERE user_id = @userId AND project_id = @projectId",
             new { userId = currentUser.Id, projectId }, cancellationToken: cancellationToken));
-        var (since, sinceLabel) = FeaturesSince.Of(seenAt, clock);
+        var (since, sinceLabel) = FeaturesSince.Of(seenAt, clock, viewerZone.Zone);
 
         var page = cursor is null
             ? await changes.SinceTimeAsync(projectId, since, PageSize, null, cancellationToken)
             : await changes.SinceAsync(projectId, cursor, PageSize, null, cancellationToken);
         var users = await UsersAsync(connection, page.Entries.Select(e => e.ActorId).OfType<Guid>(), cancellationToken);
         var changed = page.Entries
-            .Select(entry => (Entry: entry, Lines: DigestLines.Of(entry, entry.ActorId is { } actor ? users.GetValueOrDefault(actor) : null, clock)))
+            .Select(entry => (Entry: entry, Lines: DigestLines.Of(entry, entry.ActorId is { } actor ? users.GetValueOrDefault(actor) : null, clock, viewerZone.Zone)))
             .Where(pair => pair.Lines.Count > 0)
             .GroupBy(pair => pair.Entry.WorkItemId)
             .Select(group => new DigestItemDto(group.Key, group.First().Entry.Key, group.First().Entry.Type!, group.First().Entry.Title, [.. group.SelectMany(pair => pair.Lines)]))
@@ -73,7 +73,7 @@ public sealed class FeatureDigest(NpgsqlDataSource dataSource, IWorkItemChanges 
             .Select(group => new DigestItemDto(
                 group.Key, group.First().Key, group.First().Type, group.First().Title,
                 [.. group.Select(r => new DigestLineDto(
-                    DigestLineKind.Ask, $"{(r.IsDecision ? "Decision" : "Needs input")}: {r.Text}", users.GetValueOrDefault(r.RaisedBy), r.AgentName, r.At, DisplayDate.Relative(r.At, clock)))]))
+                    DigestLineKind.Ask, $"{(r.IsDecision ? "Decision" : "Needs input")}: {r.Text}", users.GetValueOrDefault(r.RaisedBy), r.AgentName, r.At, DisplayDate.Relative(r.At, clock.GetUtcNow(), viewerZone.Zone)))]))
             .ToList();
     }
 

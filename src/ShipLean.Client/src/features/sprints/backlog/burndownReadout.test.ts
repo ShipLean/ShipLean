@@ -1,13 +1,24 @@
 import { describe, expect, test } from 'vitest';
 import { burndownShape } from './burndownGeometry';
 import { burndownDotAt, burndownReadout } from './burndownReadout';
-import { sprintWorkingDays } from './sprintWorkingDays';
 
-const days = sprintWorkingDays('2026-10-19', '2026-10-30', [1, 2, 3, 4, 5]);
+// The working days of a Monday-to-Friday sprint, 19 Oct to 30 Oct, as the server sends them in workingDays.
+const days = [
+  '2026-10-19',
+  '2026-10-20',
+  '2026-10-21',
+  '2026-10-22',
+  '2026-10-23',
+  '2026-10-26',
+  '2026-10-27',
+  '2026-10-28',
+  '2026-10-29',
+  '2026-10-30',
+];
 const points = [
-  { date: '2026-10-19', remaining: 21, ideal: 21 },
-  { date: '2026-10-20', remaining: 21, ideal: 18.7 },
-  { date: '2026-10-21', remaining: 19, ideal: 16.3 },
+  { date: '2026-10-19', label: '19 Oct', day: '19', remaining: 21, ideal: 21 },
+  { date: '2026-10-20', label: '20 Oct', day: '20', remaining: 21, ideal: 18.7 },
+  { date: '2026-10-21', label: '21 Oct', day: '21', remaining: 19, ideal: 16.3 },
 ];
 // Width 366 spaces the nine gaps 37.3 apart from x=24: the first three days sit at 24, 61.3 and 98.7.
 const shape = burndownShape(points, days, 21, { width: 366, height: 118 });
@@ -34,7 +45,14 @@ describe('burndownReadout', () => {
   });
 
   test('names the month of a day in a sprint that spans two months', () => {
-    const dot = { ...shape.dots[0]!, date: '2026-11-02', day: 2, remaining: 8, ideal: 9 };
+    const dot = {
+      ...shape.dots[0]!,
+      date: '2026-11-02',
+      label: '2 Nov',
+      day: '2',
+      remaining: 8,
+      ideal: 9,
+    };
     expect(burndownReadout(dot)).toBe('2 Nov · 8 left · ideal 9');
   });
 });

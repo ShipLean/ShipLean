@@ -65,7 +65,7 @@ public class AgentConnectionHealthTests : ApiFixture
         var health = await HealthAsync(connection);
 
         health.ShouldBe(new AgentConnectionHealthDto(
-            success, DisplayDate.Relative(success, Clock), 2, newestFailure, DisplayDate.Relative(newestFailure, Clock), "Bad gateway."));
+            success, DisplayDate.Relative(success, Clock.GetUtcNow(), TimeZoneInfo.Utc), 2, newestFailure, DisplayDate.Relative(newestFailure, Clock.GetUtcNow(), TimeZoneInfo.Utc), "Bad gateway."));
         health.LastDeliveredLabel.ShouldBe("2h ago");
     }
 
@@ -118,7 +118,7 @@ public class AgentConnectionHealthTests : ApiFixture
         var at = Ago(TimeSpan.FromHours(1));
         await AddAsync(database, delivery, connection, at, 202, Accepted);
 
-        (await HealthAsync(connection)).ShouldBe(new AgentConnectionHealthDto(null, null, 1, at, DisplayDate.Relative(at, Clock), Accepted));
+        (await HealthAsync(connection)).ShouldBe(new AgentConnectionHealthDto(null, null, 1, at, DisplayDate.Relative(at, Clock.GetUtcNow(), TimeZoneInfo.Utc), Accepted));
     }
 
     [Test]

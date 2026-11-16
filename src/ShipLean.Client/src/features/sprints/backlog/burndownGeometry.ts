@@ -12,8 +12,10 @@ export interface BurndownDot {
   y: number;
   /** The server's yyyy-MM-dd: unique across a sprint that spans two months. */
   date: string;
-  /** The day of the month. */
-  day: number;
+  /** The day as the server prints it ("2 Nov"). */
+  label: string;
+  /** The day of the month, as the server prints it. */
+  day: string;
   remaining: number;
   ideal: number;
 }
@@ -59,7 +61,8 @@ export function burndownShape(
         x: round(x(index)),
         y: round(y(p.remaining)),
         date: p.date,
-        day: Number(p.date.slice(8, 10)),
+        label: p.label,
+        day: p.day,
         remaining: p.remaining,
         ideal: p.ideal,
       },

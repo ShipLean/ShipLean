@@ -231,7 +231,7 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
 
     private string StartedLabel(DateTimeOffset at) => $"{DisplayDate.ShortDay(at, time.GetUtcNow(), viewerZone.Zone)}, {DisplayDate.Time(at, viewerZone.Zone)}";
 
-    private string ClockSeconds(DateTimeOffset at) => DisplayDate.ClockSeconds(at, time);
+    private string ClockSeconds(DateTimeOffset at) => DisplayDate.LogTime(at, viewerZone.Zone);
 
     private static string AgentId(string service) => AgentIds.GetValueOrDefault(service, service);
 

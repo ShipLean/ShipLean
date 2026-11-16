@@ -3,6 +3,7 @@
 import type { HistoryDto } from '@shiplean/core/api/workItems';
 import { VOICE_ROW_MS } from '../../actions/undo';
 import type { Pending } from '../../actions/types';
+import { isoAt } from '../../actions/clock';
 
 // One change to the item, from its history: who made it, through which agent, and when (ISO 8601 UTC).
 export interface ItemChange {
@@ -78,7 +79,7 @@ export function voiceChanges(
       batchId,
       items,
       state,
-      undoUntil: new Date(until).toISOString(),
+      undoUntil: isoAt(until),
       changedSince,
       undoable: !changedSince && now.getTime() < until,
     });

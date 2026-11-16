@@ -17,7 +17,7 @@ import {
   stubNewProject,
   stubPhoto,
 } from './fixtures/accountStubs';
-import { stubShell } from './shellStub';
+import { SHELL_ZONE, stubShell } from './shellStub';
 import { pageShots, type Page } from './shoot';
 
 const priyaAdmin = {
@@ -55,7 +55,7 @@ async function signIn(page: Page, email: string) {
 
 const profileArrange = async (page: Page, photo: boolean) => {
   await stubShell(page, {
-    me: { ...priyaAdmin, photoUrl: photo ? '/api/users/me/photo?v=1' : null },
+    me: { ...priyaAdmin, ...SHELL_ZONE, photoUrl: photo ? '/api/users/me/photo?v=1' : null },
     projects: MY_PROJECTS,
     instanceName,
   });

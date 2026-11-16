@@ -271,11 +271,12 @@ public class ItemAsksApiTests : ApiFixture
         var bangkok = await ReadAsAsync(TestUser.Mei, item);
         var utc = await ReadAsAsync(TestUser.Joel, item);
 
-        var now = TimeProvider.System.GetUtcNow();
-        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
-        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
-        bangkok.Questions.Single().AskedAtLabel.ShouldBe(expected);
-        utc.Questions.Single().AskedAtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+        // Two years old, so the label is the short day with its year; the instant is 20:00 UTC, which is the next day in Bangkok.
+        var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var utcDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        bangkokDay.ShouldNotBe(utcDay);
+        bangkok.Questions.Single().AskedAtLabel.ShouldBe(bangkokDay);
+        utc.Questions.Single().AskedAtLabel.ShouldBe(utcDay);
     }
 
     private async Task<ItemAsksDto> ReadAsAsync(TestUser user, Guid item)

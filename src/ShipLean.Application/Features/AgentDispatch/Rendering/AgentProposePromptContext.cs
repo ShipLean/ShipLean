@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using ShipLean.Contracts.Agents;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.AgentDispatch.Rendering;
 
@@ -25,7 +26,7 @@ internal static class AgentProposePromptContext
             xml.Append("<github-comments>\n");
             foreach (var comment in input.Comments.OrderBy(c => c.CreatedAt))
             {
-                var created = comment.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                var created = DisplayDate.Format(comment.CreatedAt);
                 xml.Append("  <comment author-login=\"").Append(AgentXml.Escape(comment.Author.Name))
                     .Append("\" created-at=\"").Append(created).Append("\">")
                     .Append(AgentXml.Escape(comment.Body)).Append("</comment>\n");

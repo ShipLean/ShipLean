@@ -45,8 +45,11 @@ export function TimeZonePanel() {
               data-testid={settingsTestIds.timeZoneSelect}
               className="field w-70 max-w-full font-sans touch:h-9 touch:w-full"
               value={me.timeZone ?? ''}
-              disabled={choices.data === undefined || saving}
-              onChange={(e) => save(e.target.value)}
+              disabled={choices.data === undefined}
+              aria-busy={saving}
+              onChange={(e) => {
+                if (!saving) save(e.target.value);
+              }}
             >
               {me.timeZone === null ? (
                 <option value="" disabled>
@@ -65,8 +68,10 @@ export function TimeZonePanel() {
               type="button"
               data-testid={settingsTestIds.timeZoneUseDevice}
               className="btn-ghost h-9 touch:h-[var(--touch-target)]"
-              disabled={saving}
-              onClick={() => save(device)}
+              aria-busy={saving}
+              onClick={() => {
+                if (!saving) save(device);
+              }}
             >
               Use this device&apos;s zone ({device})
             </button>

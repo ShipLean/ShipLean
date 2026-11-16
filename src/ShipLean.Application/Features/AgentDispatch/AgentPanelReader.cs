@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // the newest is kept (alone) and every other is dropped. Times are labelled here, never in the browser.
 // A session that is not live (terminal or stale) carries its end reason, sentence, detail, run log and delivery attempts, as
 // AgentSessionVisibility lets the viewer's project role see them (C3); a live session carries none of them.
-public sealed class AgentPanelReader(NpgsqlDataSource dataSource, IAgentDeliveryAttempts attempts, TimeProvider time)
+public sealed class AgentPanelReader(NpgsqlDataSource dataSource, IAgentDeliveryAttempts attempts, TimeProvider time, IViewerZone viewerZone)
 {
     // Only the newest this many activities of a session are read; a session with more shows its tail.
     public const int MaxActivities = 200;
@@ -48,12 +48,15 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, IAgentDelivery
         Guid[] ended = [.. sessions.Where(s => !IsLive(s.State)).Select(s => s.Id)];
         var deliveries = await attempts.ForSessionsAsync(ended, cancellationToken);
 
-        return sessions.Select(session => ToDto(session, activities[session.Id].ToList(), deliveries[session.Id].ToList(), viewerRole)).ToList();
+        var now = time.GetUtcNow();
+        var zone = viewerZone.Zone;
+        return sessions.Select(session => ToDto(session, activities[session.Id].ToList(), deliveries[session.Id].ToList(), viewerRole, now, zone)).ToList();
     }
 
     private static bool IsLive(string state) => state is AgentSessionStates.Submitted or AgentSessionStates.Working or AgentSessionStates.InputRequired;
 
-    private AgentSessionDto ToDto(SessionRow session, List<ActivityRow> activities, List<AgentDeliveryAttemptDto> deliveries, ProjectRole viewerRole)
+    private static AgentSessionDto ToDto(
+        SessionRow session, List<ActivityRow> activities, List<AgentDeliveryAttemptDto> deliveries, ProjectRole viewerRole, DateTimeOffset now, TimeZoneInfo zone)
     {
         var live = IsLive(session.State);
         var runLog = session.RunLogId is { } logId
@@ -64,7 +67,7 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, IAgentDelivery
             : AgentSessionVisibility.Apply(session.EndReason, session.EndDetail, runLog, viewerRole);
         var newest = activities.Count == 0 ? null : activities[^1];
         var shown = activities.Where(a => !a.Ephemeral || a == newest).Select(a => new AgentActivityDto(
-            a.Id, a.Type, a.Body, a.Action, a.Parameter, a.Result, a.Ephemeral, a.Signal, a.CreatedAt, DisplayDate.Relative(a.CreatedAt, time))).ToList();
+            a.Id, a.Type, a.Body, a.Action, a.Parameter, a.Result, a.Ephemeral, a.Signal, a.CreatedAt, DisplayDate.Relative(a.CreatedAt, now, zone))).ToList();
         return new AgentSessionDto(
             session.Id,
             session.ConnectionName,
@@ -72,10 +75,10 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, IAgentDelivery
             live,
             session.StopRequestedAt is not null,
             session.StartedAt,
-            DisplayDate.Relative(session.StartedAt, time),
+            DisplayDate.Relative(session.StartedAt, now, zone),
             session.LastActivityAt,
-            DisplayDate.Relative(session.LastActivityAt, time),
-            session.EndedAt is { } ended ? DisplayDate.Relative(ended, time) : null,
+            DisplayDate.Relative(session.LastActivityAt, now, zone),
+            session.EndedAt is { } ended ? DisplayDate.Relative(ended, now, zone) : null,
             JsonSerializer.Deserialize<List<AgentUrlDto>>(session.Urls, Json) ?? [],
             JsonSerializer.Deserialize<List<AgentPlanStepDto>>(session.Plan, Json) ?? [],
             shown,

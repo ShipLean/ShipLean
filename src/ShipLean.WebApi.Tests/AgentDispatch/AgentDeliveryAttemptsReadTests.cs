@@ -41,9 +41,9 @@ public class AgentDeliveryAttemptsReadTests : ApiFixture
         attempts.Select(group => group.Key).ShouldBe([first, second], ignoreOrder: true);
         attempts[first].ToList().ShouldBe(
         [
-            new AgentDeliveryAttemptDto("created", 1, t0, DisplayDate.Relative(t0, clock), null, "No answer within 5 seconds.", 5000, t0.AddHours(1), DisplayDate.Relative(t0.AddHours(1), clock)),
-            new AgentDeliveryAttemptDto("created", 2, t0.AddHours(1), DisplayDate.Relative(t0.AddHours(1), clock), 502, "Bad gateway.", 40, null, null),
-            new AgentDeliveryAttemptDto("prompted", 1, t0.AddHours(2), DisplayDate.Relative(t0.AddHours(2), clock), null, "No answer within 5 seconds.", 5000, null, null),
+            new AgentDeliveryAttemptDto("created", 1, t0, DisplayDate.Relative(t0, clock.GetUtcNow(), TimeZoneInfo.Utc), null, "No answer within 5 seconds.", 5000, t0.AddHours(1), DisplayDate.Relative(t0.AddHours(1), clock.GetUtcNow(), TimeZoneInfo.Utc)),
+            new AgentDeliveryAttemptDto("created", 2, t0.AddHours(1), DisplayDate.Relative(t0.AddHours(1), clock.GetUtcNow(), TimeZoneInfo.Utc), 502, "Bad gateway.", 40, null, null),
+            new AgentDeliveryAttemptDto("prompted", 1, t0.AddHours(2), DisplayDate.Relative(t0.AddHours(2), clock.GetUtcNow(), TimeZoneInfo.Utc), null, "No answer within 5 seconds.", 5000, null, null),
         ]);
         attempts[second].Select(a => (a.Action, a.HttpStatus, a.Error)).ShouldBe([("created", (int?)202, (string?)null)]);
     }

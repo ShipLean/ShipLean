@@ -2,10 +2,12 @@ using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
+using ShipLean.Core;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 
-// The rule and recent comments every plan brief starts with.
+// The rule and recent comments every plan brief starts with. Comment times stay UTC and say so, as agent prompts do
+// (SHIP-1702 D5): a brief is read by an agent, not shown to a viewer.
 public static class BriefPlanContext
 {
     public const string StateRule =
@@ -35,7 +37,7 @@ public static class BriefPlanContext
         {
             foreach (var comment in (await comments.ListAsync(id, cancellationToken)).Where(c => c.CreatedAt >= since))
             {
-                lines.Add($"- ({comment.CreatedAt:u}) {comment.Body.ReplaceLineEndings(" ")}");
+                lines.Add($"- ({DisplayDate.Format(comment.CreatedAt)}) {comment.Body.ReplaceLineEndings(" ")}");
             }
         }
         if (lines.Count == 0)

@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Agoda.IoC.Core;
 using Dapper;
 using Npgsql;
@@ -12,7 +13,7 @@ namespace ShipLean.Application.Features.Taskboard;
 
 // Turns tree rows into the cards of the Taskboard: tag colours, the first matching style rule and the extra fields, all from the Taskboard's own settings.
 [RegisterPerRequest]
-public sealed class TaskboardCards(NpgsqlDataSource dataSource, ICriteriaEvaluator criteria, TimeProvider time)
+public sealed class TaskboardCards(NpgsqlDataSource dataSource, ICriteriaEvaluator criteria, TimeProvider time, IViewerZone viewerZone)
 {
     // Fields a card shows on its own lines; an extra field naming one of these is left out.
     private static readonly HashSet<string> OnTheCard = [FieldIds.State, FieldIds.Parent, FieldIds.Assignee, FieldIds.Points, FieldIds.Tags];
@@ -62,8 +63,8 @@ public sealed class TaskboardCards(NpgsqlDataSource dataSource, ICriteriaEvaluat
             FieldIds.Priority => extras is null ? null : Option(definition, extras.Priority),
             FieldIds.Severity => extras?.Severity is { } severity ? Option(definition, severity) : null,
             FieldIds.Sprint => row.Sprint?.Name,
-            FieldIds.CreatedAt => extras is null ? null : DisplayDate.Relative(extras.CreatedAt, time),
-            FieldIds.ChangedAt => extras is null ? null : DisplayDate.Relative(extras.ChangedAt, time),
+            FieldIds.CreatedAt => extras is null ? null : DisplayDate.Relative(extras.CreatedAt, time.GetUtcNow(), viewerZone.Zone),
+            FieldIds.ChangedAt => extras is null ? null : DisplayDate.Relative(extras.ChangedAt, time.GetUtcNow(), viewerZone.Zone),
             FieldIds.CreatedBy => extras?.CreatedByName,
             FieldIds.ChangedBy => extras?.ChangedByName,
             _ => null,

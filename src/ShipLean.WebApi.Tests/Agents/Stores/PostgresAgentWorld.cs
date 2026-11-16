@@ -1,3 +1,4 @@
+using ShipLean.TestSupport.Identity;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.Agents.Stores;
 using ShipLean.Contracts.Agents;
@@ -19,7 +20,7 @@ internal sealed class PostgresAgentWorld : AgentWorld
         var dataSource = database.DataSource;
         Clients = new OAuthClients(dataSource, new StubClientMetadataDocuments(_clock), _clock);
         Requests = new OAuthRequests(dataSource, _clock);
-        Authorizations = new AgentAuthorizations(dataSource, _clock);
+        Authorizations = new AgentAuthorizations(dataSource, _clock, new FixedViewerZone());
         Codes = new OAuthCodes(dataSource, _clock);
         Tokens = new AgentTokens(dataSource, _clock);
         Issuer = new AgentTokenIssuer(dataSource, _clock);
