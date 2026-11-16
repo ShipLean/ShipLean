@@ -185,6 +185,7 @@ export function TouchPager({
                   className={`touch-pager-chip${pulsing.has(page.id) ? ' is-pulsing' : ''}`}
                   data-testid={touchTestIds.pagerChip}
                   data-page-id={page.id}
+                  data-category={page.category}
                   data-over={isOver(page)}
                   aria-current={page.id === current ? 'true' : undefined}
                   onClick={() => turnTo(page.id)}
