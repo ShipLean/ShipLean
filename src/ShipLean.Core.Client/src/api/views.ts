@@ -543,10 +543,36 @@ export interface LeadTimeStatsDto {
   changePctVsPrevious: number | null;
 }
 
+/**
+ * Escaping bugs over a period, quarter or the range (SHIP-1398 QK3): every Bug not found before release, in the sprint it was
+ * filed (or its cause's sprint once it has a Caused by link). mergedPrs and per100Prs are null when no linked PR merged.
+ */
+export interface InspectionQualityStatsDto {
+  escaping: number;
+  weighted: number;
+  foundBeforeRelease: number;
+  mergedPrs: number | null;
+  per100Prs: number | null;
+}
+
+/** A bug counted in the opened period; severity 1 (critical) to 4 (low) or null; causedBy* name the Task that introduced it. */
+export interface InspectionBugDto {
+  key: string;
+  title: string;
+  severity: number | null;
+  filedAt: string;
+  filedLabel: string;
+  foundBeforeRelease: boolean;
+  causedByKey: string | null;
+  causedByTitle: string | null;
+}
+
 export interface InspectionHeadlinePeriodDto {
   periodId: string;
   name: string;
   leadTime: LeadTimeStatsDto;
+  /** Null when the project has no bugs at all; so is every other quality and bugs in the view. */
+  quality: InspectionQualityStatsDto | null;
 }
 
 /** The last finished sprint, the running one so far, this quarter to date and last quarter; each null when there is none. */
@@ -578,6 +604,7 @@ export interface InspectionPeriodDto {
   inProgress: boolean;
   leadTime: LeadTimeStatsDto;
   dots: InspectionDotDto[];
+  quality: InspectionQualityStatsDto | null;
 }
 
 export interface InspectionQuarterDto {
@@ -585,6 +612,7 @@ export interface InspectionQuarterDto {
   toDate: boolean;
   periodIds: string[];
   leadTime: LeadTimeStatsDto;
+  quality: InspectionQualityStatsDto | null;
 }
 
 /** One row of the cut table; cells has one entry per period, in periods order. */
@@ -687,6 +715,9 @@ export interface InspectionPeriodDetailDto {
   features: InspectionPeriodFeatureDto[];
   /** Null unless select names one of this sprint's tasks; an unknown key selects nothing. */
   selected: InspectionTaskMeasurementDto | null;
+  quality: InspectionQualityStatsDto | null;
+  /** Every bug counted in this sprint, found before release ones included, oldest filed first. */
+  bugs: InspectionBugDto[] | null;
 }
 
 /** GET of a project's Inspection lead time; the MCP tool inspection_metrics sends the same fields in snake_case. */
@@ -708,4 +739,6 @@ export interface InspectionMetricsViewDto {
   leftOut: InspectionLeftOutDto[];
   /** Null unless the query names a period. */
   periodDetail: InspectionPeriodDetailDto | null;
+  /** Escaping bugs over the shown sprints; null when the project has no bugs at all. */
+  quality: InspectionQualityStatsDto | null;
 }

@@ -34,6 +34,7 @@ export const story: WorkItemDto = {
   reproSteps: '',
   reproStepsHtml: '',
   severity: null,
+  foundBeforeRelease: false,
   state: { id: 's-active', name: 'Active', category: 'inProgress' },
   assignee: priya,
   createdBy: priya,
@@ -77,6 +78,7 @@ export const bug: WorkItemDto = {
   reproSteps: '1. Open the prompt\n2. Cancel',
   reproStepsHtml: '<ol><li>Open the prompt</li><li>Cancel</li></ol>',
   severity: 2,
+  foundBeforeRelease: false,
   state: { id: 's-triaged', name: 'Triaged', category: 'proposed' },
 };
 

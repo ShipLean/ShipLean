@@ -135,6 +135,15 @@ public class ViewDtoTests
         detail.Next.ShouldNotBeNull();
         view.Headline.QuarterToDate.ShouldNotBeNull().ToDate.ShouldBeTrue();
         view.Headline.LastQuarter.ShouldNotBeNull().ToDate.ShouldBeFalse();
+        view.Quality.ShouldNotBeNull();
+        view.Periods.ShouldAllBe(p => p.Quality != null);
+        view.Periods.ShouldContain(p => p.Quality!.MergedPrs == null && p.Quality.Per100Prs == null);
+        view.Quarters.ShouldAllBe(q => q.Quality != null);
+        var bugs = detail.Bugs.ShouldNotBeNull();
+        bugs.ShouldContain(b => b.CausedByKey != null && b.CausedByTitle != null);
+        bugs.ShouldContain(b => b.FoundBeforeRelease);
+        bugs.ShouldContain(b => b.Severity == null);
+        detail.Quality.ShouldNotBeNull().FoundBeforeRelease.ShouldBe(bugs.Count(b => b.FoundBeforeRelease));
         IEnumerable<LeadTimeStatsDto> stats =
         [
             .. view.Periods.Select(p => p.LeadTime), .. view.Quarters.Select(q => q.LeadTime), .. view.Cuts.SelectMany(c => c.Cells.Append(c.All)),

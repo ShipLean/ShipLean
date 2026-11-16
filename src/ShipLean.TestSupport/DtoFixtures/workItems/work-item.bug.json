@@ -14,6 +14,7 @@
   "reproSteps": "1. Sign in with a passkey on iOS 18.1\n2. Lock and unlock the app so the biometric prompt shows\n3. Tap **Cancel** on the Face ID prompt\n\n**Expected:** back to the sign-in screen with the password option.\n**Actual:** the app closes. Crash log attached (app 4.12.0, build 881).",
   "reproStepsHtml": "<ol>\n<li>Sign in with a passkey on iOS 18.1</li>\n<li>Lock and unlock the app so the biometric prompt shows</li>\n<li>Tap <strong>Cancel</strong> on the Face ID prompt</li>\n</ol>\n<p><strong>Expected:</strong> back to the sign-in screen with the password option.\n<strong>Actual:</strong> the app closes. Crash log attached (app 4.12.0, build 881).</p>\n",
   "severity": 2,
+  "foundBeforeRelease": true,
   "state": {
     "id": "00000003-0000-4000-8001-000000000402",
     "name": "Triaged",

@@ -170,6 +170,7 @@ function item(
     reproSteps: '',
     reproStepsHtml: '',
     severity: null,
+    foundBeforeRelease: false,
     state: { ...stateOf(state, CATEGORY_OF[state]!, type) },
     assignee,
     createdBy: null,

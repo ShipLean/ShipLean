@@ -167,4 +167,16 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(view.periods.filter((p) => p.inProgress)).toHaveLength(1);
   expect(view.longest.filter((t) => t.endedBy === 'resolved')).toHaveLength(1);
   expect(view.cuts?.every((row) => row.cells.length === view.periods.length)).toBe(true);
+
+  // Quality (QK3): every period has it, one period had no merged PR, and the opened period lists a caused-by and a found bug.
+  expect(view.quality).not.toBeNull();
+  expect(view.periods.every((p) => p.quality !== null)).toBe(true);
+  expect(view.periods.some((p) => p.quality?.mergedPrs === null && p.quality.per100Prs === null)).toBe(true);
+  expect(view.quarters.every((q) => q.quality !== null)).toBe(true);
+  expect(view.headline.finished?.quality).not.toBeNull();
+  const bugs = view.periodDetail?.bugs ?? [];
+  expect(bugs.some((b) => b.causedByKey !== null)).toBe(true);
+  expect(bugs.some((b) => b.foundBeforeRelease)).toBe(true);
+  expect(bugs.some((b) => b.severity === null)).toBe(true);
+  expect(view.periodDetail?.quality?.foundBeforeRelease).toBe(bugs.filter((b) => b.foundBeforeRelease).length);
 });

@@ -33,6 +33,13 @@
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": 1492
+      },
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 16,
+        "per100Prs": 12.5
       }
     },
     "soFar": {
@@ -52,6 +59,13 @@
         "meanUnresolvedTailLabel": "54 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": -90
+      },
+      "quality": {
+        "escaping": 0,
+        "weighted": 0,
+        "foundBeforeRelease": 0,
+        "mergedPrs": null,
+        "per100Prs": null
       }
     },
     "quarterToDate": {
@@ -76,6 +90,13 @@
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 4,
+        "weighted": 12,
+        "foundBeforeRelease": 2,
+        "mergedPrs": 37,
+        "per100Prs": 10.8
       }
     },
     "lastQuarter": {
@@ -100,6 +121,13 @@
         "meanUnresolvedTailLabel": "0 min",
         "endedAtResolved": 1,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6
       }
     }
   },
@@ -138,7 +166,14 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000022",
@@ -174,7 +209,14 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 21,
+        "per100Prs": 9.5
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000023",
@@ -219,7 +261,14 @@
           "overTwoDays": true,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 16,
+        "per100Prs": 12.5
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000024",
@@ -255,7 +304,14 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 0,
+        "weighted": 0,
+        "foundBeforeRelease": 0,
+        "mergedPrs": null,
+        "per100Prs": null
+      }
     }
   ],
   "quarters": [
@@ -281,6 +337,13 @@
         "meanUnresolvedTailLabel": "0 min",
         "endedAtResolved": 1,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6
       }
     },
     {
@@ -305,6 +368,13 @@
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 4,
+        "weighted": 12,
+        "foundBeforeRelease": 2,
+        "mergedPrs": 37,
+        "per100Prs": 10.8
       }
     }
   ],
@@ -831,6 +901,52 @@
           "text": "Resolved"
         }
       ]
-    }
+    },
+    "quality": {
+      "escaping": 2,
+      "weighted": 6,
+      "foundBeforeRelease": 1,
+      "mergedPrs": 16,
+      "per100Prs": 12.5
+    },
+    "bugs": [
+      {
+        "key": "SHIP-233",
+        "title": "Report totals off by one day (time zones)",
+        "severity": 2,
+        "filedAt": "2026-10-06T15:00:00+00:00",
+        "filedLabel": "Tue 6 Oct 15:00",
+        "foundBeforeRelease": false,
+        "causedByKey": "SHIP-229",
+        "causedByTitle": "Report date filter"
+      },
+      {
+        "key": "SHIP-236",
+        "title": "Sort order lost after refresh",
+        "severity": null,
+        "filedAt": "2026-10-08T10:00:00+00:00",
+        "filedLabel": "Thu 8 Oct 10:00",
+        "foundBeforeRelease": false,
+        "causedByKey": null,
+        "causedByTitle": null
+      },
+      {
+        "key": "SHIP-240",
+        "title": "CSV export breaks on commas",
+        "severity": 3,
+        "filedAt": "2026-10-12T13:00:00+00:00",
+        "filedLabel": "Mon 12 Oct 13:00",
+        "foundBeforeRelease": true,
+        "causedByKey": null,
+        "causedByTitle": null
+      }
+    ]
+  },
+  "quality": {
+    "escaping": 5,
+    "weighted": 16,
+    "foundBeforeRelease": 2,
+    "mergedPrs": 55,
+    "per100Prs": 9.1
   }
 }
