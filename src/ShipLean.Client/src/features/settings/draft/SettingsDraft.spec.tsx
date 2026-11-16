@@ -241,6 +241,7 @@ test('Draft_WhenAgentFieldsEdited_ShouldSendThemWithGeneral', async ({ mount, pa
     repoUrl: 'https://github.com/ShipLean/ShipLean.git',
     repoBaseBranch: null,
     holidayCountry: null,
+    bugSeverityWeights: { 1: 8, 2: 4, 3: 2, 4: 1 },
   });
 });
 

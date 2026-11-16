@@ -25,7 +25,7 @@ const TEST_IDS: Record<SeverityKey, string> = {
 export function SeverityWeightsPanel({ draft, setDraft, readOnly, errors }: TabProps) {
   return (
     <Panel title="Bug severity weights" testId={settingsTestIds.severityWeightsPanel}>
-      <div className="grid gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-4 gap-2 touch:grid-cols-2">
         {SEVERITY_KEYS.map((key) => (
           <label key={key} className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
             {LABELS[key]}
