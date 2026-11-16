@@ -16,7 +16,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // taken and writes nothing. Nothing is sent here: the delivery service sends the outbox. An archived connection counts as no connection.
 // The blob store is lazy: this starter is built at startup (AgentDispatchSubscriber), and making a folder store then
 // would stop the host when its folder is not writable, before any attachment is read.
-// Every session gets its one-use agent-log upload link (C10) on the winning transaction, and the `created` guidance names it.
+// Every implement session gets its one-use agent-log upload link (C10) on the winning transaction, and the `created` guidance names it.
 public sealed class AgentSessionStarter(
     NpgsqlDataSource dataSource, IProjectAgentSettings projectSettings, IAgentConnections connections, AgentSessionNotifier notifier, TimeProvider time, Lazy<IBlobStore> blobs,
     AgentRunLogLinks runLogLinks, ILogger<AgentSessionStarter> logger) : IAgentSessionStarter
@@ -96,7 +96,7 @@ public sealed class AgentSessionStarter(
             return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
         }
 
-        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, cancellationToken);
+        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, mode, cancellationToken);
         var body = RenderBody(input with { RunLogUrl = runLogUrl }, workItemId);
         await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -147,7 +147,7 @@ public sealed class AgentSessionStarter(
         }
 
         var prompt = await winnerPrompt(transaction, cancellationToken);
-        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, cancellationToken);
+        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, mode, cancellationToken);
         var body = RenderBody(input with { Guidance = prompt, RunLogUrl = runLogUrl }, workItemId);
         await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -167,10 +167,16 @@ public sealed class AgentSessionStarter(
                 workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), fallbackBaseUrl, prompt, cancellationToken);
     }
 
-    // The attachment is stamped with the connection's name, as the agent that uploaded it for the session's creator.
+    // The attachment is stamped with the connection's name, as the agent that uploaded it for the session's creator. A propose session gets
+    // no link: its envelope carries only the allowlisted input, and a link would let a read-only run write to the item.
     private async Task<string?> IssueRunLogLinkAsync(
-        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, Guid connectionId, string? fallbackBaseUrl, CancellationToken cancellationToken)
+        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, Guid connectionId, string? fallbackBaseUrl, AgentSessionMode mode, CancellationToken cancellationToken)
     {
+        if (mode == AgentSessionMode.Propose)
+        {
+            return null;
+        }
+
         var agent = await connections.GetAsync(connectionId, cancellationToken) ?? throw new InvalidOperationException("The session's agent connection disappeared while it started.");
         return await runLogLinks.IssueAsync(transaction, workItemId, sessionId, creatorId, agent.Name, fallbackBaseUrl, cancellationToken);
     }
