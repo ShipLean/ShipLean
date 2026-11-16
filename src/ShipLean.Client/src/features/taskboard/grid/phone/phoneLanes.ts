@@ -33,13 +33,12 @@ const isClosed = (row: TaskboardRowDto) => row.parent?.state.category === 'compl
 /**
  * One state's page, grouped by Stories: one ordered list in backlog order (the rows' order), an open story as a lane with its
  * tasks in this state or none (D4), a closed story as one line (D8), then the Unparented lane last whatever the input order (D12).
- * `lanes` and `closed` are the same entries split by kind.
  */
 export function phoneLanes<Row extends TaskboardRowDto>(
   rows: readonly Row[],
   stateId: string,
   faces: ReadonlySet<string>,
-): { entries: PhoneEntry<Row>[]; lanes: StoryLane<Row>[]; closed: ClosedStory<Row>[] } {
+): { entries: PhoneEntry<Row>[] } {
   const laneOf = (row: Row): StoryLane<Row> => {
     const all = row.cells.find((cell) => cell.stateId === stateId)?.tasks ?? [];
     const tasks = all.filter((card) => passesFaces(card, faces));
@@ -57,9 +56,5 @@ export function phoneLanes<Row extends TaskboardRowDto>(
         story: { rowId: lane.rowId, row, done, total: done + (rollup?.open ?? 0), lane },
       };
     });
-  return {
-    entries,
-    lanes: entries.flatMap((e) => (e.kind === 'lane' ? [e.lane] : [])),
-    closed: entries.flatMap((e) => (e.kind === 'closed' ? [e.story] : [])),
-  };
+  return { entries };
 }
