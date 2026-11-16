@@ -597,6 +597,7 @@ The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, insid
 | Grouped by People | ![People lanes, light](images/tboard-people.light.png) | ![People lanes, dark](images/tboard-people.dark.png) |
 | Settings: Styles | ![Settings styles, light](images/tboard-settings.light.png) | ![Settings styles, dark](images/tboard-settings.dark.png) |
 | Settings: Fields | ![Settings fields, light](images/tboard-settings-fields.light.png) | ![Settings fields, dark](images/tboard-settings-fields.dark.png) |
+| Settings: Fields on row headers (User Story) | ![Settings fields for row headers, light](images/tboard-settings-fields-story.light.png) | ![Settings fields for row headers, dark](images/tboard-settings-fields-story.dark.png) |
 | Settings: Tag colours | ![Settings tag colours, light](images/tboard-settings-tags.light.png) | ![Settings tag colours, dark](images/tboard-settings-tags.dark.png) |
 
 ## Decisions and questions on a phone (SHIP-922)
