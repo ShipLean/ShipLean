@@ -519,7 +519,7 @@ export interface InspectionProjectDto {
   name: string;
 }
 
-/** Tasks of the range that ended at a commit time; percent is null with no tasks. Below 100 the page shows a banner. */
+/** Tasks of the range that ended at a commit time; percent is null with no tasks. Below 70% the page shows a banner. */
 export interface InspectionCoverageDto {
   tasks: number;
   withCommitTime: number;
