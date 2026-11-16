@@ -44,7 +44,7 @@ public static class TestAuthentication
                 options.ForwardSignOut = AuthServices.CookieScheme;
             });
         // Services called straight from Host.Services act as the fixture's user (ShipLeanHost.ActAs).
-        services.AddSingleton<ActingCurrentUser>(sp => new ActingCurrentUser(sp, new CurrentUser(sp)));
+        services.AddSingleton<ActingCurrentUser>(sp => new ActingCurrentUser(sp, new CurrentUser(sp.GetRequiredService<ICurrentRequest>())));
         services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<ActingCurrentUser>());
     }
 
