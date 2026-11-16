@@ -127,7 +127,9 @@ async function touchDrag(page: Page, from: Point, to: Point, hold = false) {
   if (!hold) await send('touchEnd');
 }
 
-const centre = async (locator: { boundingBox(): Promise<Point & { width: number; height: number } | null> }) => {
+const centre = async (locator: {
+  boundingBox(): Promise<(Point & { width: number; height: number }) | null>;
+}) => {
   const box = await locator.boundingBox();
   if (!box) throw new Error('no box');
   return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
@@ -229,7 +231,10 @@ test('SettingsStatesPhone_WhenMoreTapped_ShouldOfferTheRowActionsAndMoveUp', asy
   await expect(panel.getByTestId(ids.stateName).nth(1)).toHaveValue('New');
 
   await panel.getByTestId(ids.stateRow).nth(0).getByTestId(touchTestIds.moreButton).tap();
-  await page.getByTestId(touchTestIds.sheet).locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`).tap();
+  await page
+    .getByTestId(touchTestIds.sheet)
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`)
+    .tap();
   await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
 });
 
@@ -296,7 +301,10 @@ for (const theme of THEMES) {
     const { panel } = await open(mount, page);
 
     await panel.getByTestId(ids.stateRow).nth(1).getByTestId(touchTestIds.moreButton).tap();
-    await page.getByTestId(touchTestIds.sheet).locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`).tap();
+    await page
+      .getByTestId(touchTestIds.sheet)
+      .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="delete"]`)
+      .tap();
 
     await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
     await expect(panel).toHaveScreenshot(`settings-states-delete-phone.${theme}.png`, {
