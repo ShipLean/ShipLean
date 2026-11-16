@@ -1,8 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { AppRoutes } from '../../../AppRoutes';
-
-/** The test id of the button AppRoutesWithGo draws. */
-export const goTestId = 'ct-inspection-go';
+import { goTestId } from './goTestId';
 
 // The real route table plus one button that moves the address to `to`, for component tests that change the address the
 // way a view will (the placeholder views have no controls of their own).

@@ -5,7 +5,8 @@ import {
   stubView,
 } from '../features/inspectionMetrics/ct/stubInspectionMetrics';
 import { inspectionMetricsTestIds as ids } from '../features/inspectionMetrics/testIds';
-import { AppRoutesWithGo, goTestId } from '../features/inspectionMetrics/ct/AppRoutesWithGo';
+import { AppRoutesWithGo } from '../features/inspectionMetrics/ct/AppRoutesWithGo';
+import { goTestId } from '../features/inspectionMetrics/ct/goTestId';
 import { stubProjectApi } from './pagesFixtures';
 
 const roots = {
