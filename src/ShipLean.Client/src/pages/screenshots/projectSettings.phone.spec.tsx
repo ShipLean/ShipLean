@@ -3,9 +3,10 @@ import { connection, jiraProjects } from '../../features/import/ct/fixtures';
 import { importTestIds } from '../../features/import/testIds';
 import { issueIntakeSample } from '../../features/settings/issueIntake/ct/issueIntakeStub';
 import { settingsTestIds as ids } from '../../features/settings/testIds';
+import { shellTestIds } from '../../features/shell/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { projectSettings } from './fixtures/workItemSettings';
-import { stubShell } from './shellStub';
+import { SHELL_MEMBERS, stubShell } from './shellStub';
 import { phonePageShots } from './shootPhone';
 import type { Page } from './shoot';
 
@@ -22,17 +23,33 @@ const arrange = async (page: Page) => {
     route.fulfill({ json: projectSettings }),
   );
 };
+// A pane is a sub-page at touch (SHIP-1809 P2): ‹ back to the index and the pane's crumb, no tab row.
 const ready = async (page: Page) => {
-  await expect(page.getByTestId(ids.tabRow)).toBeVisible();
+  await expect(page.getByTestId(touchTestIds.topBarBack)).toBeVisible();
+  await expect(page.getByTestId(ids.tabRow)).toHaveCount(0);
 };
 
 phonePageShots([
+  {
+    name: 'project-settings-index',
+    route: '/p/SHIP/settings',
+    shell: true,
+    arrange,
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.settingsIndexRow)).toHaveCount(7);
+      await expect(page.getByTestId(ids.settingsIndexCount)).toHaveText(String(SHELL_MEMBERS.length));
+      await expect(page.getByTestId(shellTestIds.crumb)).toHaveText(['SHIP', 'Settings']);
+    },
+  },
   {
     name: 'project-settings-general',
     route: '/p/SHIP/settings/general',
     shell: true,
     arrange,
-    ready,
+    ready: async (page) => {
+      await ready(page);
+      await expect(page.getByTestId(shellTestIds.crumb)).toHaveText(['SHIP', 'Settings', 'General']);
+    },
   },
   {
     name: 'project-settings-general-dirty',
