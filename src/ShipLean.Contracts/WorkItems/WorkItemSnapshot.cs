@@ -48,4 +48,5 @@ public sealed record WorkItemSnapshot(
     FeatureHealth? Health = null,
     DateTimeOffset? HealthSetAt = null,
     Guid? HealthSetBy = null,
-    string? HealthSetAgent = null);
+    string? HealthSetAgent = null,
+    bool FoundBeforeRelease = false);

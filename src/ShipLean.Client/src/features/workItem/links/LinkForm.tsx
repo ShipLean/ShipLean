@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { LINK_TYPES, type LinkType } from '@shiplean/core/api/persisted';
+import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { inputClass } from '../form/inputClasses';
 import { linkSignature, newDraftLink, type DraftLink } from '../form/draft';
 import { workItemTestIds as ids } from '../testIds';
@@ -13,6 +14,8 @@ const buttonClass =
 // Adds a link, or edits `initial`: a type, then a work item key of this project or a web address. A work item is looked
 // up by key when the form is submitted, so the link carries the item's id.
 export function LinkForm({
+  itemType,
+  presetType,
   projectId,
   itemKey,
   others,
@@ -20,6 +23,10 @@ export function LinkForm({
   onSubmit,
   onCancel,
 }: {
+  /** The item the link is on. Caused by is offered on a Bug only. */
+  itemType?: WorkItemTypeId;
+  /** The type the form opens with, for a new link. */
+  presetType?: LinkType;
   projectId: string;
   itemKey: string;
   others: readonly DraftLink[];
@@ -27,7 +34,7 @@ export function LinkForm({
   onSubmit: (link: DraftLink) => void;
   onCancel: () => void;
 }) {
-  const [type, setType] = useState<LinkType>(initial?.type ?? 'related');
+  const [type, setType] = useState<LinkType>(initial?.type ?? presetType ?? 'related');
   const [key, setKey] = useState(initial?.key ?? '');
   const [url, setUrl] = useState(initial?.url ?? '');
   const [title, setTitle] = useState(initial?.title ?? '');
@@ -76,6 +83,10 @@ export function LinkForm({
     setChecking(true);
     try {
       const target = await fetchWorkItem(projectId, wanted);
+      if (type === 'causedBy' && target.type.id !== 'task') {
+        setError('Caused by links to the Task that introduced the bug.');
+        return;
+      }
       finish({
         type,
         workItemId: target.id,
@@ -115,11 +126,13 @@ export function LinkForm({
           setError(null);
         }}
       >
-        {LINK_TYPES.map((option) => (
-          <option key={option} value={option}>
-            {linkTypeLabels[option]}
-          </option>
-        ))}
+        {LINK_TYPES.filter((option) => option !== 'causedBy' || itemType === 'bug').map(
+          (option) => (
+            <option key={option} value={option}>
+              {linkTypeLabels[option]}
+            </option>
+          ),
+        )}
       </select>
       {type === 'url' ? (
         <>

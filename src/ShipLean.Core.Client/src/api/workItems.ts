@@ -53,6 +53,12 @@ export interface AutoLinkDto {
   matchedOn: 'title' | 'branch' | 'body';
 }
 
+export interface CausedRefDto {
+  id: string;
+  key: string;
+  title: string;
+}
+
 export interface LinkDto {
   id: string;
   type: LinkType;
@@ -87,6 +93,8 @@ export interface WorkItemDto {
   reproSteps: string;
   reproStepsHtml: string;
   severity: number | null;
+  /** A Bug's Found before release (SHIP-1398 item D17); false on every other type. */
+  foundBeforeRelease: boolean;
   state: StateRef;
   assignee: UserRef | null;
   createdBy: UserRef | null;
@@ -99,6 +107,8 @@ export interface WorkItemDto {
   position: BoardPositionDto;
   backlogOrder: string;
   links: LinkDto[];
+  /** Bugs that point at this item with a Caused by link (a Task's Caused rows); LinkDto is outgoing only. The server always sends it. */
+  caused: CausedRefDto[];
   children: ChildSummaryDto[];
   originalSystem: OriginalSystemDto | null;
   revision: number;
@@ -148,6 +158,8 @@ export interface WorkItemChanges {
   acceptanceCriteria: FieldSet<ChecklistItem[]> | null;
   reproSteps: FieldSet<string> | null;
   severity: FieldSet<number | null> | null;
+  /** Bug only (SHIP-1398 item D17); optional so existing writers that never send it stay as they are. */
+  foundBeforeRelease?: FieldSet<boolean> | null;
   state: FieldSet<string> | null;
   assignee: FieldSet<string | null> | null;
   sprint: FieldSet<string | null> | null;

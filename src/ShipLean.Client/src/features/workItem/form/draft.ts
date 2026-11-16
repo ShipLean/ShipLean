@@ -47,6 +47,8 @@ export interface Draft {
   acceptanceCriteria: ChecklistItem[];
   reproSteps: string;
   severity: number | null;
+  /** Bug only: false on every other type. */
+  foundBeforeRelease: boolean;
   state: StateRef;
   assignee: UserRef | null;
   sprint: SprintRef | null;
@@ -81,6 +83,7 @@ export const draftFields: readonly DraftField[] = [
   'acceptanceCriteria',
   'reproSteps',
   'severity',
+  'foundBeforeRelease',
   'links',
 ];
 
@@ -100,6 +103,7 @@ export const fieldLabels: Record<DraftField, string> = {
   acceptanceCriteria: 'Acceptance criteria',
   reproSteps: 'Repro steps',
   severity: 'Severity',
+  foundBeforeRelease: 'Found before release',
   links: 'Links',
 };
 
@@ -110,6 +114,7 @@ export function draftOf(item: WorkItemDto): Draft {
     acceptanceCriteria: item.acceptanceCriteria,
     reproSteps: item.reproSteps,
     severity: item.severity,
+    foundBeforeRelease: item.foundBeforeRelease,
     state: item.state,
     assignee: item.assignee,
     sprint: item.sprint,
@@ -178,6 +183,7 @@ export function changesOf(base: Draft, draft: Draft): WorkItemChanges {
     acceptanceCriteria: changed.has('acceptanceCriteria') ? set(draft.acceptanceCriteria) : null,
     reproSteps: changed.has('reproSteps') ? set(draft.reproSteps) : null,
     severity: changed.has('severity') ? set(draft.severity) : null,
+    foundBeforeRelease: changed.has('foundBeforeRelease') ? set(draft.foundBeforeRelease) : null,
     state: changed.has('state') ? set(draft.state.id) : null,
     assignee: changed.has('assignee') ? set(draft.assignee?.id ?? null) : null,
     sprint: changed.has('sprint') ? set(draft.sprint?.id ?? null) : null,

@@ -120,7 +120,8 @@ internal sealed class GetWorkItemTool(
             isFeature ? snapshot.StatusLine : null,
             isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock, viewerZone) : null,
             isFeature ? snapshot.Slug : null,
-            StartedLabel(snapshot));
+            StartedLabel(snapshot),
+            snapshot.Type == WorkItemTypeId.Bug ? snapshot.FoundBeforeRelease : null);
         return OrientReply.Of(result, $"{result.Key} {result.Title}: {result.State}, revision {result.Revision}, {result.Children.Count} children, {result.Attachments.Count} attachments, {result.Comments.Count} recent comments{AsksSuffix(itemAsks)}.");
     }
 

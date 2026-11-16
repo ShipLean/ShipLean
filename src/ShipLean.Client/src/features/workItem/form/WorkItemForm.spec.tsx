@@ -196,6 +196,27 @@ test('WorkItemForm_WhenBug_ShouldShowReproAndSeverity', async ({ mount, page }) 
   expect(api.patches[0].changes.severity).toEqual({ value: 1 });
 });
 
+test('WorkItemForm_WhenFoundBeforeReleaseChecked_ShouldSaveTheField', async ({ mount, page }) => {
+  const api = await stubApi(page, bug);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-153" />, route('SHIP-153'));
+
+  await expect(screen.getByTestId(ids.foundBeforeReleaseInput)).not.toBeChecked();
+  await screen.getByTestId(ids.foundBeforeReleaseInput).check();
+  await screen.getByTestId(ids.save).click();
+
+  await expect(screen.getByTestId(ids.saveState)).toHaveText('Saved · revision 8');
+  expect(api.patches[0].changes.foundBeforeRelease).toEqual({ value: true });
+  await expect(screen.getByTestId(ids.foundBeforeReleaseInput)).toBeChecked();
+});
+
+test('WorkItemForm_WhenNotBug_ShouldNotShowFoundBeforeRelease', async ({ mount, page }) => {
+  await stubApi(page, story);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));
+
+  await expect(screen.getByTestId(ids.title)).toBeVisible();
+  await expect(screen.getByTestId(ids.foundBeforeRelease)).toHaveCount(0);
+});
+
 test('WorkItemForm_WhenActionItem_ShouldShowSprintAndPointsButNoCriteriaOrRepro', async ({
   mount,
   page,

@@ -322,7 +322,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
 
 const metricsView = inspectionView as InspectionMetricsViewDto;
 
-test.each(['overview', 'leadtime', 'period', 'json'] as const)(
+test.each(['overview', 'leadtime', 'period', 'quality', 'json'] as const)(
   'inspectionMetricsSlots_WhenViewIs_%s_ShouldMountOnlyThatSlot',
   (name) => {
     const slots = inspectionMetricsSlots(
@@ -353,7 +353,7 @@ test('inspectionMetricsSlots_WhenViewMissingOrUnknown_ShouldMountOverview', () =
   ).toEqual(['overview']);
   expect(
     Object.keys(
-      inspectionMetricsSlots(project, metricsView, new URLSearchParams('view=quality'), vi.fn()),
+      inspectionMetricsSlots(project, metricsView, new URLSearchParams('view=cost'), vi.fn()),
     ),
   ).toEqual(['overview']);
 });

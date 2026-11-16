@@ -58,8 +58,16 @@ export async function stubApi(
     const answer = respondToPatch(patch);
     if (gate) await gate;
     if (answer.status === 200) {
-      const set = (field: 'title' | 'description' | 'points' | 'priority' | 'tags' | 'severity') =>
-        patch.changes[field] ? { [field]: patch.changes[field].value } : {};
+      const set = (
+        field:
+          | 'title'
+          | 'description'
+          | 'points'
+          | 'priority'
+          | 'tags'
+          | 'severity'
+          | 'foundBeforeRelease',
+      ) => (patch.changes[field] ? { [field]: patch.changes[field].value } : {});
       current = {
         ...current,
         ...set('title'),
@@ -68,6 +76,7 @@ export async function stubApi(
         ...set('priority'),
         ...set('tags'),
         ...set('severity'),
+        ...set('foundBeforeRelease'),
         revision: current.revision + 1,
       };
     }

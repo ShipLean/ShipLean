@@ -94,4 +94,29 @@ public static class InspectionMetricsTestIds
     public const string TaskRowReviews = "inspection-metrics-task-row-reviews";
     public const string TaskRowCommits = "inspection-metrics-task-row-commits";
     public const string JsonBack = "inspection-metrics-json-back";
+
+    // Quality (QT0, SHIP-1398 QK6): the Quality view, the Overview quality card and the menu item
+    public const string MenuQuality = "inspection-metrics-menu-quality";
+    public const string Quality = "inspection-metrics-quality";
+    public const string QualityEmpty = "inspection-metrics-quality-empty";
+    public const string QualityCard = "inspection-metrics-quality-card";
+    public const string QualityCardValue = "inspection-metrics-quality-card-value";
+    public const string QualityChart = "inspection-metrics-quality-chart";
+    public const string QualityChartBar = "inspection-metrics-quality-chart-bar";
+    public const string QualityPeriodRows = "inspection-metrics-quality-period-rows";
+    public const string QualityPeriodRow = "inspection-metrics-quality-period-row";
+    public const string QualityQuarterRow = "inspection-metrics-quality-quarter-row";
+    public const string QualityBugRows = "inspection-metrics-quality-bug-rows";
+    public const string QualityBugRow = "inspection-metrics-quality-bug-row";
+    public const string QualityBugCausedBy = "inspection-metrics-quality-bug-caused-by";
+    public const string QualityBugAddCausedBy = "inspection-metrics-quality-bug-add-caused-by";
+    public const string QualityBugFoundBeforeRelease = "inspection-metrics-quality-bug-found-before-release";
+    public const string OverviewQualityCard = "inspection-metrics-overview-quality-card";
+    public const string OverviewQualityCardValue = "inspection-metrics-overview-quality-card-value";
+    public const string OverviewQualityCardChange = "inspection-metrics-overview-quality-card-change";
+    public const string OverviewQualityCardSoFar = "inspection-metrics-overview-quality-card-so-far";
+    public const string OverviewQualityBySprint = "inspection-metrics-overview-quality-by-sprint";
+    public const string OverviewQualityEmpty = "inspection-metrics-overview-quality-empty";
+    // QT5 append: one severity's part of a sprint's bar
+    public const string QualityChartSegment = "inspection-metrics-quality-chart-segment";
 }

@@ -60,6 +60,9 @@ public sealed record ProjectGeneralRequest(string? Key, string Name, string Desc
         }
     }
 
+    // Null (or left out) keeps the saved weights; the service refuses anything but the four severities 1 to 4 with positive weights.
+    public IReadOnlyDictionary<int, int>? BugSeverityWeights { get; init; }
+
     [JsonIgnore]
     public ProvidedAgentFields Provided => _provided;
 }

@@ -4,6 +4,7 @@ using ShipLean.Application.Features.InspectionMetrics.Aggregate;
 using ShipLean.Application.Features.InspectionMetrics.Facts;
 using ShipLean.Application.Features.InspectionMetrics.Measure;
 using ShipLean.Application.Features.InspectionMetrics.Periods;
+using ShipLean.Application.Features.InspectionMetrics.Quality;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Views.InspectionMetrics;
 
@@ -18,5 +19,7 @@ public sealed class InspectionMetricsServices : IServiceModule
         services.AddSingleton<ILeadTimeFactsReader, LeadTimeFactsReader>();
         services.AddSingleton<ITaskLeadTimeMeasure, TaskLeadTimeMeasure>();
         services.AddSingleton<ILeadTimeAggregator, LeadTimeAggregator>();
+        services.AddSingleton<IQualityFactsReader, QualityFactsReader>();
+        services.AddSingleton<IQualityAggregator, QualityAggregator>();
     }
 }

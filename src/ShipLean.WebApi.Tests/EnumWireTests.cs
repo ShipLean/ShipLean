@@ -30,6 +30,15 @@ public class EnumWireTests : ApiFixture
         (await response.Content.ReadAsStringAsync()).ShouldBe("""{"category":"inProgress"}""");
     }
 
+    // SHIP-1398 QK2: the Caused by link type crosses the wire as causedBy, as the link_type CHECK and LINK_TYPES spell it.
+    [Test]
+    public async Task Response_WhenLinkTypeCausedBy_ShouldBeCausedBy()
+    {
+        var json = await Client.GetStringAsync("/api/test-controller/things/link-type");
+
+        json.ShouldBe("""{"linkType":"causedBy"}""");
+    }
+
     [Test]
     public async Task Request_WhenEnumIsANumber_ShouldBeValidation()
     {

@@ -22,6 +22,7 @@ export const WORK_ITEM: WorkItemVoiceContext = {
     reproSteps: '',
     reproStepsHtml: '',
     severity: null,
+    foundBeforeRelease: false,
     state: {
       id: '00000003-0000-4000-8001-000000000202',
       name: 'Active',
@@ -65,6 +66,7 @@ export const WORK_ITEM: WorkItemVoiceContext = {
     },
     backlogOrder: '00000012',
     links: [],
+    caused: [],
     children: [
       {
         id: '00000005-0000-4000-8001-000000000141',

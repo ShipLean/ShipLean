@@ -33,11 +33,11 @@ internal sealed class DiscussTools(ItemResolver itemResolver, IWorkItemStore sto
     }
 
     [McpServerTool(Name = "link"), McpScope(McpScopes.Write)]
-    [Description("Link a work item to another one (related, blocked_by, duplicate or predecessor), or to an outside page such as a pull request or a doc by passing url and a title.")]
+    [Description("Link a work item to another one (related, blocked_by, duplicate, predecessor or caused_by), or to an outside page such as a pull request or a doc by passing url and a title.")]
     public async Task<CallToolResult> Link(
         [Description("The item's key, such as SHIP-12.")] string item,
         [Description("The other item's key. Leave out when you pass a url.")] string? to = null,
-        [Description("related (the default), blocked_by (item is blocked by the other), duplicate or predecessor (the other comes first).")] string? type = null,
+        [Description("related (the default), blocked_by (item is blocked by the other), duplicate, predecessor (the other comes first) or caused_by (item is a Bug and the other is the Task that introduced it; nothing else may be linked this way).")] string? type = null,
         [Description("An outside page's address (http or https), instead of to.")] string? url = null,
         [Description("What the outside page is called. Leave out to use the title ShipLean reads from the page.")] string? title = null,
         [Description("A note about why the page is linked, shown on its card.")] string? note = null,
@@ -85,8 +85,14 @@ internal sealed class DiscussTools(ItemResolver itemResolver, IWorkItemStore sto
             "blockedby" => LinkType.BlockedBy,
             "duplicate" => LinkType.Duplicate,
             "predecessor" => LinkType.Predecessor,
-            _ => throw ApiException.Validation($"\"{text}\" is not a link type: use related, blocked_by, duplicate or predecessor.", "type"),
+            "causedby" => LinkType.CausedBy,
+            _ => throw ApiException.Validation($"\"{text}\" is not a link type: use related, blocked_by, duplicate, predecessor or caused_by.", "type"),
         };
 
-    private static string Name(LinkType type) => type == LinkType.BlockedBy ? "blocked_by" : type.ToString().ToLowerInvariant();
+    private static string Name(LinkType type) => type switch
+    {
+        LinkType.BlockedBy => "blocked_by",
+        LinkType.CausedBy => "caused_by",
+        _ => type.ToString().ToLowerInvariant(),
+    };
 }

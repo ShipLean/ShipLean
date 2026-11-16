@@ -3,10 +3,11 @@ import { routePath } from '../../routes';
 import { queryToSearch, type InspectionQuery } from './inspectionMetricsQuery';
 import { inspectionMetricsTestIds as ids } from './testIds';
 
-// The tabs the header offers in wave 1; a sprint stays under Lead time and the JSON under Overview (design shared.js).
+// The tabs the header offers; a sprint stays under Lead time and the JSON under Overview (design shared.js).
 const TABS = [
   { view: 'overview', label: 'Overview', lit: ['overview', 'json'] },
   { view: 'leadtime', label: 'Lead time', lit: ['leadtime', 'period'] },
+  { view: 'quality', label: 'Quality', lit: ['quality'] },
 ] as const;
 
 /** Inspection's header: the title, the server's caveat (once the view model has loaded) and the view tabs. */

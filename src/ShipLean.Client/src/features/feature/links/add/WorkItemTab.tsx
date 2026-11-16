@@ -3,8 +3,11 @@ import { inputClass, selectClass } from '../../../workItem/form/inputClasses';
 import { linkTypeLabels } from '../../../workItem/links/linkTypes';
 import { featureTestIds as ids } from '../../testIds';
 
-export type WorkItemLinkType = Exclude<LinkType, 'url'>;
-const types = LINK_TYPES.filter((type): type is WorkItemLinkType => type !== 'url');
+export type WorkItemLinkType = Exclude<LinkType, 'url' | 'causedBy'>;
+// Caused by joins a Bug to a Task, and a Feature is neither, so it is never offered here.
+const types = LINK_TYPES.filter(
+  (type): type is WorkItemLinkType => type !== 'url' && type !== 'causedBy',
+);
 
 // A relation to another work item of this project: its key and how it relates. The server checks the key.
 export function WorkItemTab({

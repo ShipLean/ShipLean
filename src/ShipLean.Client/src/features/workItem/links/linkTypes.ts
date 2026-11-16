@@ -7,6 +7,7 @@ export const linkTypeLabels: Record<LinkType, string> = {
   related: 'Related',
   duplicate: 'Duplicate',
   url: 'External URL',
+  causedBy: 'Caused by',
 };
 
 const WEB_URL = /^https?:\/\/[^\s/]+\.[^\s]+$/;

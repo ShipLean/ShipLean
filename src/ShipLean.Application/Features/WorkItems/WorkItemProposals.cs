@@ -10,7 +10,8 @@ internal static class WorkItemProposals
         item.Id, item.ProjectId, item.Type, item.Title, item.Description, item.AcceptanceCriteria, item.ReproSteps, item.Severity,
         item.StateId, item.AssigneeId, item.SprintId, item.Priority, item.Points, item.ParentId, item.Tags,
         item.ColumnId, item.ColumnDone, item.LaneId, item.ColumnOrder, item.BacklogOrder,
-        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt);
+        item.Goal, item.StatusLine, item.StatusVerifiedAt, Health: item.Health, HealthSetAt: item.HealthSetAt,
+        FoundBeforeRelease: item.FoundBeforeRelease);
 
     // A client may send null for a list (an explicit "addLinks": null): that is an empty list.
     public static WorkItemChanges? Clean(WorkItemChanges? changes)
@@ -32,6 +33,7 @@ internal static class WorkItemProposals
             AcceptanceCriteria = changes.AcceptanceCriteria is { } criteria ? criteria.Value ?? [] : change.AcceptanceCriteria,
             ReproSteps = changes.ReproSteps is { } repro ? repro.Value ?? "" : change.ReproSteps,
             Severity = changes.Severity is { } severity ? severity.Value : change.Severity,
+            FoundBeforeRelease = changes.FoundBeforeRelease is { } found ? found.Value : change.FoundBeforeRelease,
             StateId = changes.State is { } state ? state.Value : change.StateId,
             AssigneeId = changes.Assignee is { } assignee ? assignee.Value : change.AssigneeId,
             SprintId = changes.Sprint is { } sprint ? sprint.Value : change.SprintId,
@@ -56,5 +58,5 @@ internal static class WorkItemProposals
         p.Title, p.Type, p.StateId, p.AssigneeId, p.Priority, p.Points, p.Tags, p.SprintId, p.ParentId, p.Severity,
         WorkItemFieldView.NullIfEmpty(p.Description), p.AcceptanceCriteria, WorkItemFieldView.NullIfEmpty(p.ReproSteps), [.. links.Select(l => l.Value)],
         WorkItemFieldView.NullIfEmpty(p.Goal), WorkItemFieldView.NullIfEmpty(p.StatusLine), WorkItemFieldView.Instant(p.StatusVerifiedAt),
-        WorkItemFieldView.HealthValue(p.Health));
+        WorkItemFieldView.HealthValue(p.Health), p.FoundBeforeRelease);
 }

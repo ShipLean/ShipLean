@@ -21,6 +21,9 @@ public sealed class ApiRoutesTestController : ApiControllerBase
     [HttpGet("category")]
     public IActionResult Category() => Ok(new { category = ShipLean.Contracts.Refs.StateCategory.InProgress });
 
+    [HttpGet("link-type")]
+    public IActionResult CausedByLinkType() => Ok(new { linkType = ShipLean.Contracts.Persisted.LinkType.CausedBy });
+
     [HttpPost("category")]
     public IActionResult EchoCategory(CategoryBody body) => Ok(body);
 

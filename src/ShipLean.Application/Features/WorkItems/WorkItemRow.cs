@@ -51,7 +51,8 @@ internal sealed record WorkItemRow(
     string? Health,
     DateTimeOffset? HealthSetAt,
     Guid? HealthSetBy,
-    string? HealthSetAgent)
+    string? HealthSetAgent,
+    bool FoundBeforeRelease)
 {
     public const string Select =
         """
@@ -66,7 +67,8 @@ internal sealed record WorkItemRow(
                COALESCE(w.goal, '') AS goal, COALESCE(w.status_line, '') AS statusLine, w.status_verified_at AS statusVerifiedAt,
                w.status_verified_by AS statusVerifiedBy, w.status_verified_agent AS statusVerifiedAgent, w.status_verified_via AS statusVerifiedVia,
                w.slug, to_char(w.started_on, 'YYYY-MM-DD') AS startedOnText,
-               w.health, w.health_set_at AS healthSetAt, w.health_set_by AS healthSetBy, w.health_set_agent AS healthSetAgent
+               w.health, w.health_set_at AS healthSetAt, w.health_set_by AS healthSetBy, w.health_set_agent AS healthSetAgent,
+               w.found_before_release AS foundBeforeRelease
         FROM work_item w
         """;
 
@@ -85,5 +87,5 @@ internal sealed record WorkItemRow(
         SprintId, Priority, WorkItemPoints.Normalise(Points), BacklogOrder, ParentId, ParentType is null ? null : WorkItemTypes.Parse(ParentType),
         Tags, ColumnId, ColumnDone, LaneId, ColumnOrder, Original, Revision, CreatedBy, CreatedAt, ChangedBy, ChangedAt, StateChangedAt, links,
         Goal, StatusLine, StatusVerifiedAt, StatusVerifiedBy, StatusVerifiedAgent, StatusVerifiedVia, Slug, StartedOn,
-        HealthValue, HealthSetAt, HealthSetBy, HealthSetAgent);
+        HealthValue, HealthSetAt, HealthSetBy, HealthSetAgent, FoundBeforeRelease);
 }
