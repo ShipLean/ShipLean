@@ -152,4 +152,5 @@ export const sprintsTestIds = {
   unassignedAvatar: 'sprints-backlog-unassigned-avatar',
   listPoints: 'sprints-backlog-list-points',
   burndownDay: 'sprints-backlog-burndown-day',
+  glanceIcon: 'sprints-backlog-glance-icon',
 } as const;

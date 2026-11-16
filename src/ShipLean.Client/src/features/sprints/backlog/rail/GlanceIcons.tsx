@@ -1,3 +1,5 @@
+import { sprintsTestIds as ids } from '../../testIds';
+
 // The glance rows' leading icons (SHIP-724 D1 design): a hand for Ready to pick up, two people for In progress now.
 const SVG_PROPS = {
   width: 18,
@@ -9,6 +11,7 @@ const SVG_PROPS = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': true,
+  'data-testid': ids.glanceIcon,
 } as const;
 
 export function HandIcon() {

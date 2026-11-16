@@ -20,4 +20,6 @@ export const sprintHeaderTestIds = {
   pickerSheetTick: 'sprint-header-picker-sheet-tick',
   pickerSheetAllSprints: 'sprint-header-picker-sheet-all-sprints',
   goalToggle: 'sprint-header-goal-toggle',
+  // SHIP-1835: the ⋯ sheet's row icons.
+  moreIcon: 'sprint-header-more-icon',
 } as const;

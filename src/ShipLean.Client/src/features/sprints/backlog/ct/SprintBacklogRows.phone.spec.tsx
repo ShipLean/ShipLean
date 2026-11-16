@@ -97,6 +97,22 @@ test('SprintStatesSheet_ShouldNameTheItemAndMarkCurrent', async ({ mount, page }
   await expect(current).not.toHaveCSS('background-color', otherBg);
 });
 
+// SHIP-1626 D3: with Tasks off a story has no ▶; the list header sums the points (SPRINT-6).
+test('SprintBacklogRows_WhenTasksOff_ShouldHideTheToggle', async ({ mount, page }) => {
+  await open(page, mount);
+  await expect(page.getByTestId(ids.rowToggle).first()).toBeVisible();
+  await expect(page.getByTestId(ids.listPoints)).toHaveText(/^5 · \d+ pts$/);
+  await page.getByTestId(ids.showTasks).tap();
+  await expect(page.getByTestId(ids.rowToggle)).toHaveCount(0);
+});
+
+test('TouchTaskRow_WhenUnassigned_ShouldDrawTheDashedPlaceholder', async ({ mount, page }) => {
+  await open(page, mount);
+  const placeholder = page.getByTestId(ids.unassignedAvatar).first();
+  await expect(placeholder).toBeVisible();
+  await expect(placeholder.getByTestId(componentTestIds.avatar)).toHaveCSS('border-top-style', 'dashed');
+});
+
 for (const theme of THEMES) {
   test(`SprintBacklogRows_WhenOpened_ShouldMatchItsScreenshot_sprint-backlog-rows-phone_${theme}`, async ({
     mount,

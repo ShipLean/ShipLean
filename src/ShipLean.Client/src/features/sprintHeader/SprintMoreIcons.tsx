@@ -1,3 +1,5 @@
+import { sprintHeaderTestIds as ids } from './testIds';
+
 // The sprint header ⋯ sheet's row icons (sprint-backlog-more design): a flag, a pencil, a list and a tick.
 const SVG_PROPS = {
   width: 18,
@@ -9,6 +11,7 @@ const SVG_PROPS = {
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
   'aria-hidden': true,
+  'data-testid': ids.moreIcon,
 } as const;
 
 export function FlagIcon() {
