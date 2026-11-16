@@ -74,4 +74,14 @@ export const inspectionMetricsTestIds = {
   json: 'inspection-metrics-json',
   jsonCopy: 'inspection-metrics-json-copy',
   jsonBody: 'inspection-metrics-json-body',
+  // Review round 1 appends
+  periodPrev: 'inspection-metrics-period-prev',
+  periodNext: 'inspection-metrics-period-next',
+  periodBack: 'inspection-metrics-period-back',
+  periodQuarter: 'inspection-metrics-period-quarter',
+  coverageChip: 'inspection-metrics-coverage-chip',
+  headerJsonLink: 'inspection-metrics-header-json-link',
+  railOpenItem: 'inspection-metrics-rail-open-item',
+  taskRowReviews: 'inspection-metrics-task-row-reviews',
+  taskRowCommits: 'inspection-metrics-task-row-commits',
 } as const;

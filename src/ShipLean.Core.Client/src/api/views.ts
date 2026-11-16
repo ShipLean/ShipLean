@@ -492,6 +492,9 @@ export type InspectionAggregate = (typeof INSPECTION_AGGREGATES)[number];
 export const LEAD_TIME_ENDED_BY = ['lastCommit', 'resolved'] as const;
 export type LeadTimeEndedBy = (typeof LEAD_TIME_ENDED_BY)[number];
 
+export const INSPECTION_PARENT_TYPES = ['story', 'bug'] as const;
+export type InspectionParentType = (typeof INSPECTION_PARENT_TYPES)[number];
+
 export const INSPECTION_SEGMENT_KINDS = ['active', 'blocked', 'rework', 'unresolvedTail'] as const;
 export type InspectionSegmentKind = (typeof INSPECTION_SEGMENT_KINDS)[number];
 
@@ -531,6 +534,7 @@ export interface LeadTimeStatsDto {
   meanReworkHours: number | null;
   meanReworkLabel: string | null;
   meanUnresolvedTailHours: number | null;
+  meanUnresolvedTailLabel: string | null;
   endedAtResolved: number;
   changePctVsPrevious: number | null;
 }
@@ -541,16 +545,20 @@ export interface InspectionHeadlinePeriodDto {
   leadTime: LeadTimeStatsDto;
 }
 
-/** The last finished sprint, and the running one so far; either null when there is none. */
+/** The last finished sprint, the running one so far, this quarter to date and last quarter; each null when there is none. */
 export interface InspectionHeadlineDto {
   finished: InspectionHeadlinePeriodDto | null;
   soFar: InspectionHeadlinePeriodDto | null;
+  quarterToDate: InspectionQuarterDto | null;
+  lastQuarter: InspectionQuarterDto | null;
 }
 
 export interface InspectionDotDto {
   taskKey: string;
+  title: string;
   leadHours: number;
   leadLabel: string;
+  endedBy: LeadTimeEndedBy;
   overTwoDays: boolean;
   longest: boolean;
 }
@@ -587,7 +595,8 @@ export interface InspectionCutRowDto {
 export interface InspectionTaskDto {
   key: string;
   title: string;
-  storyKey: string | null;
+  parentKey: string | null;
+  parentType: InspectionParentType | null;
   featureKey: string | null;
   featureTitle: string | null;
   who: string;
@@ -603,6 +612,8 @@ export interface InspectionTaskDto {
   blockedHours: number;
   reworkHours: number;
   unresolvedTailHours: number;
+  reviews: number;
+  commits: number;
   periodId: string | null;
 }
 
@@ -619,9 +630,18 @@ export interface InspectionPeriodFeatureDto {
   key: string;
   title: string;
   tasksEnded: number;
+  tasksEndedBefore: number;
   tasksTotal: number;
-  meanLeadHours: number | null;
-  meanLeadLabel: string | null;
+  leadTime: LeadTimeStatsDto;
+  longestTaskKey: string | null;
+  longestLeadLabel: string | null;
+  executionLabel: string | null;
+}
+
+/** A neighbouring sprint, for the period header's previous and next buttons. */
+export interface InspectionPeriodRefDto {
+  id: string;
+  shortName: string;
 }
 
 export interface InspectionSegmentDto {
@@ -634,6 +654,7 @@ export interface InspectionSegmentDto {
   counted: boolean;
 }
 
+/** An event with at > the task's endedAt happened after the lead time ended: the rail styles it as not counted. */
 export interface InspectionEventDto {
   kind: InspectionEventKind;
   at: string;
@@ -652,10 +673,15 @@ export interface InspectionPeriodDetailDto {
   periodId: string;
   name: string;
   datesLabel: string;
+  quarter: string;
+  /** Neighbours over all started sprints, not only the range; null at either end. */
+  previous: InspectionPeriodRefDto | null;
+  next: InspectionPeriodRefDto | null;
   inProgress: boolean;
   leadTime: LeadTimeStatsDto;
   tasks: InspectionTaskDto[];
   features: InspectionPeriodFeatureDto[];
+  /** Null unless select names one of this sprint's tasks; an unknown key selects nothing. */
   selected: InspectionTaskMeasurementDto | null;
 }
 

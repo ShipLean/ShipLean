@@ -82,4 +82,15 @@ public static class InspectionMetricsTestIds
     public const string Json = "inspection-metrics-json";
     public const string JsonCopy = "inspection-metrics-json-copy";
     public const string JsonBody = "inspection-metrics-json-body";
+
+    // Review round 1 appends
+    public const string PeriodPrev = "inspection-metrics-period-prev";
+    public const string PeriodNext = "inspection-metrics-period-next";
+    public const string PeriodBack = "inspection-metrics-period-back";
+    public const string PeriodQuarter = "inspection-metrics-period-quarter";
+    public const string CoverageChip = "inspection-metrics-coverage-chip";
+    public const string HeaderJsonLink = "inspection-metrics-header-json-link";
+    public const string RailOpenItem = "inspection-metrics-rail-open-item";
+    public const string TaskRowReviews = "inspection-metrics-task-row-reviews";
+    public const string TaskRowCommits = "inspection-metrics-task-row-commits";
 }

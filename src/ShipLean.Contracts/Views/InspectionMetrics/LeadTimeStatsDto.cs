@@ -15,5 +15,6 @@ public sealed record LeadTimeStatsDto(
     double? MeanReworkHours,
     string? MeanReworkLabel,
     double? MeanUnresolvedTailHours,
+    string? MeanUnresolvedTailLabel,
     int EndedAtResolved,
     int? ChangePctVsPrevious);

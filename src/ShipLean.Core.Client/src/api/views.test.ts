@@ -16,6 +16,7 @@ import {
   INSPECTION_CADENCES,
   INSPECTION_CUTS,
   INSPECTION_EVENT_KINDS,
+  INSPECTION_PARENT_TYPES,
   INSPECTION_RANGES,
   INSPECTION_SEGMENT_KINDS,
   KEY_DATE_POINTS,
@@ -141,7 +142,17 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(INSPECTION_CUTS).toContain(view.cut);
   expect(INSPECTION_AGGREGATES).toContain(view.aggregate);
   const tasks = [...view.longest, ...(view.periodDetail?.tasks ?? [])];
-  for (const task of tasks) expect(LEAD_TIME_ENDED_BY).toContain(task.endedBy);
+  for (const task of tasks) {
+    expect(LEAD_TIME_ENDED_BY).toContain(task.endedBy);
+    if (task.parentType !== null) expect(INSPECTION_PARENT_TYPES).toContain(task.parentType);
+  }
+  for (const dot of view.periods.flatMap((p) => p.dots))
+    expect(LEAD_TIME_ENDED_BY).toContain(dot.endedBy);
+  expect(new Set(tasks.map((t) => t.parentType))).toEqual(new Set(INSPECTION_PARENT_TYPES));
+  expect(view.headline.quarterToDate?.toDate).toBe(true);
+  expect(view.headline.lastQuarter?.toDate).toBe(false);
+  expect(view.periodDetail?.previous).not.toBeNull();
+  expect(view.periodDetail?.next).not.toBeNull();
   const selected = view.periodDetail?.selected;
   for (const segment of selected?.segments ?? [])
     expect(INSPECTION_SEGMENT_KINDS).toContain(segment.kind);

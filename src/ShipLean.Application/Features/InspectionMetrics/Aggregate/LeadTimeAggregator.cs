@@ -27,7 +27,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             now,
             Caveat,
             new InspectionCoverageDto(0, 0, null),
-            new InspectionHeadlineDto(null, null),
+            new InspectionHeadlineDto(null, null, null, null),
             [],
             [],
             selection.Cut == InspectionCut.None ? null : [],

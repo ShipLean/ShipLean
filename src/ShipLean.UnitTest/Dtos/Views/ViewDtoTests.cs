@@ -131,6 +131,19 @@ public class ViewDtoTests
         var selected = detail.Selected.ShouldNotBeNull();
         selected.Segments.Select(s => s.Kind).ShouldBe([InspectionSegmentKind.Active, InspectionSegmentKind.Rework, InspectionSegmentKind.UnresolvedTail]);
         selected.Events.Select(e => e.Kind).Distinct().Count().ShouldBe(Enum.GetValues<InspectionEventKind>().Length);
+        detail.Previous.ShouldNotBeNull();
+        detail.Next.ShouldNotBeNull();
+        view.Headline.QuarterToDate.ShouldNotBeNull().ToDate.ShouldBeTrue();
+        view.Headline.LastQuarter.ShouldNotBeNull().ToDate.ShouldBeFalse();
+        IEnumerable<LeadTimeStatsDto> stats =
+        [
+            .. view.Periods.Select(p => p.LeadTime), .. view.Quarters.Select(q => q.LeadTime), .. view.Cuts.SelectMany(c => c.Cells.Append(c.All)),
+            .. detail.Features.Select(f => f.LeadTime), detail.LeadTime,
+        ];
+        foreach (var s in stats.Where(s => s.MeanHours is not null))
+        {
+            (s.MeanActiveHours + s.MeanBlockedHours + s.MeanReworkHours).ShouldNotBeNull().ShouldBe(s.MeanHours!.Value, 0.001);
+        }
     }
 
     [Test]
