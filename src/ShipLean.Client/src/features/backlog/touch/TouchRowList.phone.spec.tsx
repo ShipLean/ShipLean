@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { touchTestIds } from '../../../touch/testIds';
 import { backlogView, itemRow, PROJECT } from '../ct/fixtures';
 import { stubBacklog } from '../ct/stubApi';
-import { REMOVE_FIRST_ROW_ID, TouchListDragHarness } from '../ct/TouchListDragHarness';
+import { TouchListDragHarness } from '../ct/TouchListDragHarness';
+import { REMOVE_FIRST_ROW_ID } from '../ct/touchListDragHarnessIds';
 import { ListMode } from '../list/ListMode';
 import { backlogTestIds as ids } from '../testIds';
 

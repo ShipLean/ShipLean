@@ -3,11 +3,10 @@ import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { SelectionProvider } from '../selection/SelectionProvider';
 import { TouchSelectModeProvider } from '../touch/selectMode';
 import { TouchRowList } from '../touch/TouchRowList';
+import { REMOVE_FIRST_ROW_ID } from './touchListDragHarnessIds';
 
 // CT-only: the touch row list with the real drag handles, and a button that removes the first row, as a teammate's
 // change would while a finger holds it. The button sits last, so pressing it never moves a row.
-export const REMOVE_FIRST_ROW_ID = 'harness-remove-first-row';
-
 export function TouchListDragHarness({ rows }: { rows: BacklogRowDto[] }) {
   const [shown, setShown] = useState(rows);
   return (
