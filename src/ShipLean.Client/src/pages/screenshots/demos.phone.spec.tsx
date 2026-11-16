@@ -1,7 +1,7 @@
 import { expect } from '@playwright/experimental-ct-react';
 import { demosTestIds as ids } from '../../features/demos/testIds';
 import type { SprintDemoDto } from '@shiplean/core/api/demos';
-import { demoSprints, demoStates, stubDemo } from './fixtures/demos';
+import { demoSprints, demoStates, stubDemo, videoSettled } from './fixtures/demos';
 import { stubSprintFigures } from './fixtures/sprints';
 import { stubShell } from './shellStub';
 import type { Page } from './shoot';
@@ -32,6 +32,7 @@ const withPlayer = (demo: SprintDemoDto, player: 'video' | 'embed') => async (pa
   await expect(page.getByTestId(player === 'video' ? ids.demoVideo : ids.demoEmbed)).toBeVisible();
   await expect(page.getByTestId(ids.demoChapter)).toHaveCount(demo.chapters.length);
   await expect(page.getByTestId(ids.demoScript)).toBeVisible();
+  if (player === 'video') await videoSettled(page);
 };
 
 // Failed after the agent session ended (ShipLean#147): the message quotes what the agent said, and agentSaid splits it

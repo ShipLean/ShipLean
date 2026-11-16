@@ -13,6 +13,8 @@ import type {
 } from '@shiplean/core/api/demos';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import { expect } from '@playwright/experimental-ct-react';
+import { demosTestIds } from '../../../features/demos/testIds';
 import { attachment, change, revision } from '../../../features/workItem/ct/stubSide';
 import { PEOPLE } from '../shellStub';
 import { sprintsWithGoals } from './sprints';
@@ -100,8 +102,8 @@ export const demoStates = {
 
 export async function stubDemo(page: Page, demo: SprintDemoDto) {
   await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: demo }));
-  // No video file is served: the element settles on its error state with its controls, the same in every run (an empty
-  // 200 leaves the browser's loading spinner turning, which differs frame to frame).
+  // No video file is served: the element settles on its error state with its controls (an empty 200 leaves the
+  // browser's loading spinner turning). A shot of the player waits for videoSettled, which waits out the spinner.
   await page.route('**/api/attachments/*/content', (route) => route.fulfill({ status: 404 }));
   // The nocookie embed is a third-party page: a plain dark frame stands in for it.
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
@@ -110,6 +112,42 @@ export async function stubDemo(page: Page, demo: SprintDemoDto) {
       body: '<html><body style="margin:0;background:#101418"></body></html>',
     }),
   );
+}
+
+/** The pseudo of the spinner inside Chromium's own <video> controls; the browser removes it once the spinner is down. */
+const NATIVE_SPINNER = '-internal-media-controls-loading-panel-spinner-frame';
+
+interface DomNode {
+  attributes?: string[];
+  children?: DomNode[];
+  shadowRoots?: DomNode[];
+}
+
+const hasSpinner = (node: DomNode): boolean => {
+  const at = node.attributes?.indexOf('pseudo') ?? -1;
+  if (at >= 0 && node.attributes![at + 1] === NATIVE_SPINNER) return true;
+  return [...(node.children ?? []), ...(node.shadowRoots ?? [])].some(hasSpinner);
+};
+
+/**
+ * Waits until the demo <video> has settled on its error state (stubDemo answers its file with a 404) and the browser
+ * has taken its loading spinner down. The spinner does not stop when the error lands: Chromium lets it finish its turn
+ * (up to about 1.5s) before removing it, and it lives in the browser's own shadow DOM, which no locator or page script
+ * reaches, so the check reads the DOM through DevTools. Without it a shot catches the spinner at a different angle, or
+ * not at all, from run to run (SHIP-1871, SHIP-1926).
+ */
+export async function videoSettled(page: Page) {
+  const video = page.getByTestId(demosTestIds.demoVideo);
+  // NETWORK_NO_SOURCE: the 404 has landed, so no new loading spinner can start.
+  await expect(video).toHaveJSProperty('networkState', 3);
+  const devTools = await page.context().newCDPSession(page);
+  await expect
+    .poll(async () => {
+      const { root } = await devTools.send('DOM.getDocument', { depth: -1, pierce: true });
+      return hasSpinner(root);
+    })
+    .toBe(false);
+  await devTools.detach();
 }
 
 // ---- Demos settings (design/screens/settings-demos*.png) ----
