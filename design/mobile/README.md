@@ -337,6 +337,18 @@ The Sprint backlog (`/p/:key/sprints/:id/backlog`) and the sprint header every s
 | Close sprint | ![Close sprint, light](images/sprint-backlog-close.light.png) | ![Close sprint, dark](images/sprint-backlog-close.dark.png) |
 | Someone else changed it | ![Conflict toast, light](images/sprint-backlog-conflict.light.png) | ![Conflict toast, dark](images/sprint-backlog-conflict.dark.png) |
 
+## All sprints on a phone (SHIP-723, SHIP-1807)
+
+The All sprints list (`/p/:key/sprints`) at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/sprints-touch.css` and `../screens/sprints-touch.js`, which `sprints.html` loads; `?at=list`, `?sheet=more:<sprint>`, `?new`, `?new=overlap` and `?empty` open its states (with `?shot` they hide what is above). The eight decisions are P1–P8 on SHIP-1807 and on the review page.
+
+| File | What it is |
+|---|---|
+| `sprints.html` | The desktop screen, with the phone layer included; `?at=list` and the states above open the phone states. |
+| `sprints-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions P1–P8 for Joel. |
+| `images/sprints*.png` | `sprints.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `sprints` (the list), `sprints-list`, `sprints-more` and `sprints-more-past` (a sprint's ⋯ sheet), `sprints-new` and `sprints-new-overlap` (New sprint), `sprints-empty`. |
+
+The phone rules: a head row with the project and count, Plan sprints and + New sprint, no separate heading; the velocity chart above the list, redrawn with every bar labelled; sections Current, Future (soonest first) and Past (newest first); a row shows name, dates, the goal up to two lines, and Capacity · Committed · Completed with labels, and opens the sprint's Backlog; ⋯ opens a K1 sheet (Open: Backlog, Taskboard, Capacity, and Retro and Demo on current and past sprints; then Edit sprint, and Close sprint on the current sprint only); New sprint is full screen with ✕ top left and the Save bar (Discard · Create sprint); a project with no sprints gets one panel and no chart.
+
 ## Sprint retro on a phone (SHIP-727)
 
 The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unchanged.
