@@ -638,7 +638,11 @@ test('ThemeSheet_WhenAnItemIsOpenedOverItAndClosed_ShouldNotReportTheOpeningAgai
   await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
   await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
   await expect(sheet.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
-  await sheet.locator('a').first().tap();
+  await sheet
+    .getByTestId(ids.retroThemeSheetAction)
+    .first()
+    .getByTestId(itemPeekTestIds.link)
+    .tap();
   await expect(address(page)).toContainText('item=');
   await expect(sheet).toHaveCount(0);
   await page.getByTestId('test-close-item').click();
