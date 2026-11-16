@@ -69,8 +69,12 @@ public class TimeZoneApiTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    private static string LabelOf(string zone) =>
-        DisplayDate.ZoneLabel(DisplayDate.TryZone(zone, out var found) ? found : throw new ArgumentException(zone, nameof(zone)), TimeProvider.System.GetUtcNow());
+    // London's label from its offset today, by hand rather than through DisplayDate.ZoneLabel (London is never behind UTC).
+    private static string LondonLabel()
+    {
+        var offset = TimeZoneInfo.FindSystemTimeZoneById(London).GetUtcOffset(TimeProvider.System.GetUtcNow());
+        return $"{London} (UTC+{offset:hh\\:mm})";
+    }
 
     // Mutation: drop `time_zone = @zone` from the UPDATE.
     [Test]
@@ -97,7 +101,7 @@ public class TimeZoneApiTests : ApiFixture
         using var response = await PutZoneAsync(user, London, "browser");
 
         (await ProfileWire.ReadMeAsync(response)).TimeZone.ShouldBe(London);
-        (await ProfileWire.GetMeAsync(Api, user)).TimeZoneLabel.ShouldBe(LabelOf(London));
+        (await ProfileWire.GetMeAsync(Api, user)).TimeZoneLabel.ShouldBe(LondonLabel());
     }
 
     // Mutation: remove the `time_zone IS NULL` guard (`@fromProfile OR time_zone IS NULL` -> `true`), so a browser value overwrites a choice.
@@ -157,7 +161,7 @@ public class TimeZoneApiTests : ApiFixture
         var choices = await Api.GetJsonAsync<TimeZoneChoicesDto>("/api/me/time-zones");
 
         choices.Choices.ShouldContain(new TimeZoneChoiceDto("Asia/Bangkok", "Asia/Bangkok (UTC+07:00)"));
-        choices.Choices.ShouldContain(new TimeZoneChoiceDto(London, LabelOf(London)));
+        choices.Choices.ShouldContain(new TimeZoneChoiceDto(London, LondonLabel()));
         choices.Choices.Where(choice => !DisplayDate.TryZone(choice.Id, out _) || choice.Id.Contains(' ', StringComparison.Ordinal)).ShouldBeEmpty();
         var now = TimeProvider.System.GetUtcNow();
         var offsets = choices.Choices.Select(choice => DisplayDate.TryZone(choice.Id, out var zone) ? zone.GetUtcOffset(now) : TimeSpan.MaxValue).ToList();

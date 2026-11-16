@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using System.Globalization;
 using Agoda.IoC.Core;
 using Dapper;
@@ -13,7 +14,7 @@ namespace ShipLean.Application.Features.Import.Jobs;
 
 // Every read and write of the import tables: jobs, their mapping, log and errors. Statuses and resolutions are stored as camelCase text.
 [RegisterSingleton]
-public sealed class ImportJobRows(NpgsqlDataSource dataSource, TimeProvider clock)
+public sealed class ImportJobRows(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone)
 {
     private const string IssueTypeKind = "issueType";
     private const string StatusKind = "status";
@@ -362,7 +363,7 @@ public sealed class ImportJobRows(NpgsqlDataSource dataSource, TimeProvider cloc
         var lines = await connection.QueryAsync<LogRow>(new CommandDefinition(
             "SELECT id, logged_at AS loggedAt, level, message FROM import_log WHERE import_job_id = @jobId ORDER BY id", new { jobId }, cancellationToken: cancellationToken));
         return [.. lines.Select(l => new ImportLogLineDto(
-            l.Id, l.LoggedAt, TimeZoneInfo.ConvertTime(l.LoggedAt, clock.LocalTimeZone).ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+            l.Id, l.LoggedAt, DisplayDate.LogTime(l.LoggedAt, viewerZone.Zone),
             Enum.Parse<ImportLogLevel>(l.Level, ignoreCase: true), l.Message))];
     }
 
@@ -443,8 +444,8 @@ public sealed class ImportJobRows(NpgsqlDataSource dataSource, TimeProvider cloc
     public ImportJobDto ToDto(ImportJobRow row)
         => new(
             row.Id, row.JiraProjectKey, row.ProjectKey, row.ProjectId, StatusOf(row.Status), ImportJson.Read<ImportJobProgressJson>(row.Progress),
-            row.StartedAt, row.StartedAt is { } started ? DisplayDate.Relative(started, clock) : null,
-            row.FinishedAt, row.FinishedAt is { } finished ? DisplayDate.Relative(finished, clock) : null,
+            row.StartedAt, row.StartedAt is { } started ? DisplayDate.Relative(started, clock.GetUtcNow(), viewerZone.Zone) : null,
+            row.FinishedAt, row.FinishedAt is { } finished ? DisplayDate.Relative(finished, clock.GetUtcNow(), viewerZone.Zone) : null,
             row.CreatorId is { } creator ? new UserRef(creator, row.CreatorName!, row.CreatorInitials!, row.CreatorColour!, row.CreatorPhotoUrl) : null);
 
     public static ImportErrorDto ToDto(ImportErrorRow row)

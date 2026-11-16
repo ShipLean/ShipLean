@@ -13,10 +13,7 @@ public static class DisplayDate
 
     // "Last edited" style label: "just now", "12m ago", "2h ago"
     // (same calendar day), "Yesterday", "30 Sep" (this year), "2 Mar 2025" (an earlier year). Calendar days are
-    // the clock's local time zone; a value in the future (clock skew) reads "just now".
-    public static string Relative(DateTimeOffset value, TimeProvider clock) =>
-        Relative(value, clock.GetUtcNow(), clock.LocalTimeZone);
-
+    // the viewer's zone; a value in the future (clock skew) reads "just now".
     public static string Relative(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)
     {
         var elapsed = now - value;
@@ -40,18 +37,6 @@ public static class DisplayDate
         }
         return ShortDay(value, now, zone);
     }
-
-    // The time of day in the clock's local time zone ("14:02"), for lines such as "the version from 14:02".
-    public static string Clock(DateTimeOffset value, TimeProvider clock) =>
-        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm", CultureInfo.InvariantCulture);
-
-    // The time of day with seconds in the clock's local time zone ("14:02:09"), for log and row times.
-    public static string ClockSeconds(DateTimeOffset value, TimeProvider clock) =>
-        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
-
-    // The weekday in the clock's local time zone ("Mon"), for lines such as "since Mon 09:12".
-    public static string Weekday(DateTimeOffset value, TimeProvider clock) =>
-        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("ddd", CultureInfo.InvariantCulture);
 
     // How long something has waited, for an Inbox row ("now", "14h", "4d", "3w"): whole units, always rounded down. Under an hour
     // (or a value in the future, clock skew) is "now"; then hours under a day, days under a week, and weeks after that.
@@ -105,6 +90,13 @@ public static class DisplayDate
 
     // A calendar date with its weekday ("Thu 25 Dec"), for a holiday on a sprint's capacity screen.
     public static string WeekdayDay(DateOnly day) => day.ToString("ddd d MMM", CultureInfo.InvariantCulture);
+
+    // A sprint's dates ("20 Oct – 2 Nov"); calendar days with no zone (D8). The year is added to both ends when either is not today's year.
+    public static string SprintDates(DateOnly start, DateOnly end, DateOnly today)
+    {
+        var format = start.Year == today.Year && end.Year == today.Year ? "d MMM" : "d MMM yyyy";
+        return $"{start.ToString(format, CultureInfo.InvariantCulture)} – {end.ToString(format, CultureInfo.InvariantCulture)}";
+    }
 
     // A calendar day as the UI prints it ("Cleared · JD, 19 Oct"): "19 Oct" this year, "2 Mar 2025" otherwise.
     public static string ShortDay(DateTimeOffset value, DateTimeOffset now, TimeZoneInfo zone)

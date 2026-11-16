@@ -1,11 +1,10 @@
 using System.Text.Json.Nodes;
-using Npgsql;
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Demos;
 using ShipLean.AcceptanceTests.Pages.Realtime;
 using ShipLean.Contracts;
 using ShipLean.TestSupport;
-using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.AcceptanceTests.Lanes.Demos;
 
@@ -26,25 +25,26 @@ public class DemoViewerZoneTests : BangkokViewerTest
         var tab = new SprintDemoTab(Page);
         await tab.GotoAsync("SHIP", sprint);
         await new LiveStatus(Page).WaitUntilLiveAsync();
+        var before = TimeProvider.System.GetUtcNow();
         await tab.CreateDemoAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "working", new() { Timeout = 30_000 });
+        var after = TimeProvider.System.GetUtcNow();
 
-        var requestedAt = await ReadInstantAsync($"SELECT demo_requested_at FROM sprint WHERE id = '{sprint}'");
-        var expiresAt = await ReadInstantAsync($"SELECT demo_upload_expires_at FROM sprint WHERE id = '{sprint}'");
-        var requested = "Requested " + ExpectedLabels.DayAt(requestedAt, ViewerZoneTestData.Bangkok);
-        var expiry = "Link valid until " + ExpectedLabels.DayAt(expiresAt, ViewerZoneTestData.Bangkok);
-        requested.ShouldNotBe("Requested " + ExpectedLabels.DayAt(requestedAt, TimeZoneInfo.Utc));
-        await Expect(tab.StatusBand).ToContainTextAsync(requested);
-        await Expect(tab.StatusBand).ToContainTextAsync(expiry);
-    }
+        // The request was made between before and after, and the link lasts 24 hours, so its expiry is "tomorrow" at the same
+        // minute. The tab shows those instants in Bangkok (UTC+07:00); the minutes are formatted here, not by DisplayDate, and
+        // no instant is read from the database. A UTC tab would read seven hours earlier.
+        var bangkokMinutes = new List<string>();
+        var utcMinutes = new List<string>();
+        for (var at = before; at < after.AddMinutes(1); at = at.AddMinutes(1))
+        {
+            bangkokMinutes.Add(at.ToOffset(TimeSpan.FromHours(7)).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture));
+            utcMinutes.Add(at.ToOffset(TimeSpan.Zero).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture));
+        }
 
-    private async Task<DateTimeOffset> ReadInstantAsync(string sql)
-    {
-        await using var connection = new NpgsqlConnection(ConnectionString);
-        await connection.OpenAsync();
-        await using var command = new NpgsqlCommand(sql, connection);
-        var value = await command.ExecuteScalarAsync() ?? throw new InvalidOperationException($"No row for: {sql}");
-        return value is DateTime utc ? new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)) : (DateTimeOffset)value;
+        bangkokMinutes.ShouldNotBe(utcMinutes);
+        var minutes = string.Join('|', bangkokMinutes.Distinct());
+        await Expect(tab.StatusBand).ToContainTextAsync(new Regex($"Requested today at ({minutes})"));
+        await Expect(tab.StatusBand).ToContainTextAsync(new Regex($"Link valid until tomorrow at ({minutes})"));
     }
 
     private async Task ArrangeAgentAsync()

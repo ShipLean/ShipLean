@@ -8,6 +8,7 @@ import type {
   PreviewLine,
   UndoOutcome,
 } from './types';
+import { isoAt } from './clock';
 
 export interface InMemoryActionRunnerDeps {
   now: () => Date;
@@ -42,7 +43,7 @@ export class InMemoryActionRunner implements ActionRunner {
   dispatch(batch: AppAction[], opts: DispatchOptions): string {
     const batchId = `batch-${this.nextBatch++}`;
     const at = this.now();
-    const undoUntil = opts.undo.ms > 0 ? new Date(at.getTime() + opts.undo.ms).toISOString() : null;
+    const undoUntil = opts.undo.ms > 0 ? isoAt(at.getTime() + opts.undo.ms) : null;
     for (const action of batch) {
       this.items.push({
         id: `${batchId}-${this.nextItem++}`,

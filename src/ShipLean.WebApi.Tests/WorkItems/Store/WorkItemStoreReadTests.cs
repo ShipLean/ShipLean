@@ -2,7 +2,6 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
-using ShipLean.Core;
 using ShipLean.TestSupport;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Store;
@@ -62,7 +61,7 @@ public class WorkItemStoreReadTests : PostgresWorkItemStoreTestBase
         dto.Priority.ShouldBe(1);
         dto.Revision.ShouldBe(1);
         dto.CreatedBy.ShouldNotBeNull().Id.ShouldBe(Actor);
-        dto.CreatedAtLabel.ShouldBe(DisplayDate.Relative(dto.CreatedAt, TimeProvider.System));
+        dto.CreatedAtLabel.ShouldBe("just now");
         dto.Position.ColumnId.ShouldBe(project.ColumnId(0));
         dto.OriginalSystem.ShouldBeNull();
         dto.Links.Select(l => (l.Key, l.Url, l.Title)).ShouldBe([(other.Key, null, "Other"), (null, "https://example.test", "Doc")]);

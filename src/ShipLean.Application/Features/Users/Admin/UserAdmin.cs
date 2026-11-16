@@ -18,7 +18,7 @@ namespace ShipLean.Application.Features.Users.Admin;
 // administer), and the one-time password last, so an aborted request leaves a user that Set up sign-in can recover. In proxy mode there is no one-time password.
 [RegisterPerRequest]
 public sealed class UserAdmin(
-    NpgsqlDataSource dataSource, ICurrentUser currentUser, IProjectAccess access, IUserDirectory directory, IUserAccounts accounts, IProjectEvents events, TimeProvider clock, ProxySignInSettings proxy, ILogger<UserAdmin> logger)
+    NpgsqlDataSource dataSource, ICurrentUser currentUser, IProjectAccess access, IUserDirectory directory, IUserAccounts accounts, IProjectEvents events, TimeProvider clock, IViewerZone viewerZone, ProxySignInSettings proxy, ILogger<UserAdmin> logger)
 {
     private sealed record UserRowDto(Guid Id, string Name, string Email, string Initials, string AvatarColour, string? PhotoUrl, bool IsInstanceAdmin, string Status, DateTimeOffset? LastSignInAt);
 
@@ -170,6 +170,6 @@ public sealed class UserAdmin(
     private AdminUserDto ToDto(UserRowDto user, IEnumerable<MembershipRow> memberships) => new(
         user.Id, user.Name, user.Email, user.Initials, user.AvatarColour, user.PhotoUrl, user.IsInstanceAdmin,
         UserStatusRule.Parse(user.Status),
-        user.LastSignInAt is { } at ? DisplayDate.Relative(at, clock) : null,
+        user.LastSignInAt is { } at ? DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone) : null,
         [.. memberships.Select(m => new AdminUserProjectDto(m.Id, m.Key, m.Name, Enum.Parse<ProjectRole>(m.Role, ignoreCase: true), m.SoleActiveAdmin))]);
 }

@@ -46,7 +46,7 @@ public sealed class SprintDemoReader(
         var (status, message) = SprintDemoStatusRule.Decide(facts, now);
 
         var chapters = await ChaptersAsync(row, files, cancellationToken);
-        var video = VideoOf(row, files);
+        var video = VideoOf(row, files, now);
         return new SprintDemoDto(
             row.Id,
             row.Name,
@@ -114,7 +114,7 @@ public sealed class SprintDemoReader(
         return at <= now ? $"Link expired {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : $"Link valid until {DisplayDate.DayAt(at, now, viewerZone.Zone)}";
     }
 
-    private SprintDemoVideoDto? VideoOf(SprintDemoRow row, IReadOnlyDictionary<Guid, FileRow> files)
+    private SprintDemoVideoDto? VideoOf(SprintDemoRow row, IReadOnlyDictionary<Guid, FileRow> files, DateTimeOffset now)
     {
         if (row.VideoAttachmentId is not { } id || !files.TryGetValue(id, out var file))
         {
@@ -129,7 +129,7 @@ public sealed class SprintDemoReader(
             file.SizeBytes,
             duration,
             SprintDemoLabels.Duration(duration),
-            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, time.GetUtcNow(), viewerZone.Zone)}" : string.Empty);
+            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, now, viewerZone.Zone)}" : string.Empty);
     }
 
     // A missing, archived or unreadable chapters file is no chapters, not an error.

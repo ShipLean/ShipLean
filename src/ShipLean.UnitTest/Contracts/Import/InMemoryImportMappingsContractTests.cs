@@ -1,3 +1,4 @@
+using ShipLean.TestSupport.Identity;
 using ShipLean.Application.Fakes.Import;
 using ShipLean.Application.Fakes.Users;
 using ShipLean.Contracts.Import;
@@ -25,7 +26,7 @@ public sealed class InMemoryImportMappingsContractTests : ImportMappingsContract
     {
         var users = new InMemoryUsers();
         var user = InMemoryUserArranger.Arrange(users, new UserSpec());
-        _jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = user.Id }, new InMemoryUserDirectory(users));
+        _jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = user.Id }, new InMemoryUserDirectory(users), new FixedViewerZone());
         _mappings = new InMemoryImportMappings(_jobs);
     }
 

@@ -98,6 +98,7 @@ public class YouTubeCheckTests : ApiFixture
     public async Task Check_WhenMatches_ShouldConnectAndDeleteTheTestVideo()
     {
         var project = await ArrangeAsync();
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, "UTC");
 
         var result = await CheckAsync(project, "unlisted");
 
@@ -116,7 +117,7 @@ public class YouTubeCheckTests : ApiFixture
         stored.Visibility.ShouldBe("unlisted");
         stored.Refusal.ShouldBeNull();
         stored.CheckedAt.ShouldNotBeNull();
-        result.CheckedLabel.ShouldBe($"Checked today at {DisplayDate.Time(stored.CheckedAt.Value, TimeZoneInfo.Utc)}");
+        result.CheckedLabel.ShouldBe($"Checked today at {stored.CheckedAt.Value.ToOffset(TimeSpan.Zero).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}");
     }
 
     // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone in YouTubeCheck.
@@ -130,9 +131,10 @@ public class YouTubeCheckTests : ApiFixture
 
         var stored = await StoredAsync(project);
         var checkedAt = stored.CheckedAt.ShouldNotBeNull();
-        var expected = $"Checked {DisplayDate.DayAt(checkedAt, checkedAt, ViewerZoneTestData.Bangkok)}";
-        expected.ShouldNotBe($"Checked {DisplayDate.DayAt(checkedAt, checkedAt, TimeZoneInfo.Utc)}");
-        result.CheckedLabel.ShouldBe(expected);
+        // A fresh check reads "today at" the stamp's time of day, here formatted for UTC+07:00 and for UTC with an explicit format.
+        var bangkok = $"Checked today at {checkedAt.ToOffset(TimeSpan.FromHours(7)).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}";
+        bangkok.ShouldNotBe($"Checked today at {checkedAt.ToOffset(TimeSpan.Zero).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}");
+        result.CheckedLabel.ShouldBe(bangkok);
     }
 
     [Test]

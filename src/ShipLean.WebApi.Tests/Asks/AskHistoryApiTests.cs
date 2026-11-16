@@ -217,9 +217,10 @@ public class AskHistoryApiTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         var line = JsonSerializer.Deserialize<HistoryDto>(text, WireOptions)!.Asks.Single();
 
-        var now = TimeProvider.System.GetUtcNow();
-        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
-        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
-        line.AtLabel.ShouldBe(expected);
+        // Two years old, so the label is the short day with its year; the instant is 20:00 UTC, which is the next day in Bangkok.
+        var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        var utcDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        bangkokDay.ShouldNotBe(utcDay);
+        line.AtLabel.ShouldBe(bangkokDay);
     }
 }
