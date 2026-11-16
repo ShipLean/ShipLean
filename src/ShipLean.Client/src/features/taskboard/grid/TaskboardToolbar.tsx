@@ -25,7 +25,6 @@ export function TaskboardToolbar({
   onFacesClear,
   more,
   moreLabel = 'More',
-  moreSubtitle,
   onAddStory,
 }: {
   grouping: TaskboardGrouping;
@@ -38,9 +37,8 @@ export function TaskboardToolbar({
   onFacesClear: () => void;
   /** The ⋯ sheet's actions at 900px and below; each board passes its own. */
   more: readonly SheetAction[];
-  /** The ⋯ sheet's title ("Feature board", "Taskboard") and the line under it. */
+  /** The ⋯ sheet's title ("Feature board", "Taskboard"). */
   moreLabel?: string;
-  moreSubtitle?: string;
   onAddStory: () => void;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -48,7 +46,7 @@ export function TaskboardToolbar({
   return (
     <div
       data-testid={ids.toolbar}
-      className="flex items-center gap-3 border-b border-edge px-4 py-2 touch:gap-2"
+      className="flex items-center gap-3 border-b border-edge px-4 py-2 touch:gap-2 touch:px-0"
     >
       <span className="flex-1 touch:hidden" />
       <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">Group by</span>
@@ -58,6 +56,7 @@ export function TaskboardToolbar({
       <button
         type="button"
         data-testid={ids.filterButton}
+        aria-label={faces.size > 0 ? `Filter, ${faces.size} chosen` : 'Filter'}
         className={`btn-ghost hidden gap-1.5 touch:inline-flex touch:px-2 touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)] ${faces.size > 0 ? 'border-signal text-ink' : ''}`}
         onClick={() => setFilterOpen(true)}
       >
@@ -88,7 +87,7 @@ export function TaskboardToolbar({
         ⚙ Settings
       </button>
       <span className="hidden touch:contents">
-        <MoreButton actions={more} label={moreLabel} subtitle={moreSubtitle} variant="bordered" />
+        <MoreButton actions={more} label={moreLabel} variant="bordered" />
       </span>
       <button
         type="button"

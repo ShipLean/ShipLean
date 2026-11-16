@@ -158,7 +158,7 @@ for (const theme of THEMES) {
     await mount(slot, route);
     await expect(page.getByTestId(ids.lane).first()).toBeVisible();
     await page.getByTestId(ids.filterButton).tap();
-    await page.getByTestId(ids.filterSheetRow).nth(1).tap();
+    for (const row of await page.getByTestId(ids.filterSheetRow).all()) await row.tap();
     await page.getByTestId(touchTestIds.sheetClose).tap();
     await expect(page.getByTestId(ids.toolbar)).toHaveScreenshot(
       `phone-toolbar-filtered.${theme}.png`,
