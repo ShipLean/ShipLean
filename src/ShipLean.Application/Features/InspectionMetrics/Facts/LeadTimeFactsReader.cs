@@ -14,6 +14,7 @@ namespace ShipLean.Application.Features.InspectionMetrics.Facts;
 // change, review and commit of those tasks, whatever its date. fromDay and toDay are days in the project's zone, and sprints are
 // dated in that zone. The selection runs in UTC from (fromDay - 1 day) 00:00Z up to (toDay + 3 days) 00:00Z, which covers any zone
 // offset: a few extra tasks at the edges are harmless, because the aggregator assigns each task to its sprint in the zone.
+// A commit is a commit link (committed_at) or a commit of a readable repository (code_commit.authored_at); one per sha7 per task.
 public sealed class LeadTimeFactsReader(NpgsqlDataSource dataSource) : ILeadTimeFactsReader
 {
     public async Task<LeadTimeFacts> ReadAsync(Guid projectId, DateOnly fromDay, DateOnly toDay, CancellationToken ct)

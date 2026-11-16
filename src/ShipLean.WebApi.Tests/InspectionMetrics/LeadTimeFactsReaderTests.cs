@@ -86,6 +86,32 @@ public class LeadTimeFactsReaderTests : ReportTestBase
         (await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 7), new DateOnly(2026, 10, 7))).Tasks.Select(t => t.Key).ShouldNotContain(task);
     }
 
+    // A commit of a readable repository is a work_item_commit row, its time the code_commit's authored_at; the task has no other
+    // reason to be selected, so the commit alone decides.
+    // Mutation: drop the work_item_commit branch of the union.
+    [Test]
+    public async Task Read_WhenCommitOfReadableRepository_ShouldReturnItWithItsAuthoredTime()
+    {
+        var task = NextTask();
+        (await PickUpAsync(task)).IsToolError().ShouldBeFalse();
+        const string sha = "0123456789abcdef0123456789abcdef01234567";
+        var repository = Guid.NewGuid();
+        await using var connection = await OpenDatabaseAsync();
+        var id = await connection.QuerySingleAsync<Guid>("SELECT id FROM work_item WHERE key = @key", new { key = task });
+        await connection.ExecuteAsync(
+            "INSERT INTO code_repository (id, provider, host, path) VALUES (@repository, 'github', 'github.com', @path)", new { repository, path = $"acme/{repository}" });
+        await connection.ExecuteAsync(
+            "INSERT INTO work_item_commit (id, work_item_id, repository_id, sha, position, added_via) VALUES (gen_random_uuid(), @id, @repository, @sha, 1, 'report_task')",
+            new { id, repository, sha });
+        await connection.ExecuteAsync(
+            "INSERT INTO code_commit (repository_id, sha, parent_shas, subject, author_name, authored_at, additions, deletions, files_changed, paths, read_at) VALUES (@repository, @sha, '{}', 'Work', 'Ann', @at, 1, 0, 1, '{}', @at)",
+            new { repository, sha, at = T0.AddHours(5) });
+
+        var facts = await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 5));
+
+        facts.Commits.Where(c => c.ItemKey == task).Select(c => (c.Sha7, c.CommittedAt)).ShouldBe([(sha[..7], (DateTimeOffset?)T0.AddHours(5))]);
+    }
+
     private async Task<string> ArrangeTaskAsync(string? agent, DateTimeOffset? pickedUpAt = null)
     {
         var t0 = pickedUpAt ?? T0;
