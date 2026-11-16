@@ -28,7 +28,7 @@ public class ViewerTimeZoneTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        over.ShouldBeEmpty(
+        string.Join(Environment.NewLine, over).ShouldBeEmpty(
             "Build the label with a zone-taking DisplayDate overload and IViewerZone.Zone (time.GetUtcNow(), viewerZone.Zone); "
             + "machine text uses ISO 8601 or DisplayDate.Format. Never add a baseline line.");
     }
@@ -45,7 +45,7 @@ public class ViewerTimeZoneTests
             .Order(StringComparer.Ordinal)
             .ToList();
 
-        problems.ShouldBeEmpty();
+        string.Join(Environment.NewLine, problems).ShouldBeEmpty("A baseline entry above what remains hides a new violation.");
     }
 
     [TestCase("DisplayDate.Relative(a, now, zone);", "")]
