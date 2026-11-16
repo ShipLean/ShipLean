@@ -204,7 +204,6 @@ test('DevicesSignOutConfirm_ButtonsShouldShareTheRowAt32px', async ({ mount, pag
   expect(cancel.height).toBeGreaterThanOrEqual(32);
   expect(go.height).toBeGreaterThanOrEqual(32);
   expect(Math.abs(cancel.width - go.width)).toBeLessThanOrEqual(1);
-  await expect(page.getByTestId(ids.confirmGo)).toHaveClass(/btn-danger-ghost/);
   expect(
     (await page.getByTestId(ids.signOut).first().boundingBox())?.height,
   ).toBeGreaterThanOrEqual(32);

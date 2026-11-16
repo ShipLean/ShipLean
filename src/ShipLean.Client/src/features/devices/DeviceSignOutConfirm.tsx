@@ -35,7 +35,7 @@ export function DeviceSignOutConfirm({
         <button
           type="button"
           data-testid={ids.confirmGo}
-          className="btn-danger-ghost touch:h-[var(--touch-target)] touch:flex-1"
+          className="btn-ghost text-alert hover:text-alert touch:h-[var(--touch-target)] touch:flex-1"
           disabled={pending}
           onClick={onConfirm}
         >
