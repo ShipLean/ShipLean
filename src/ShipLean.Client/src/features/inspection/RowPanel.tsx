@@ -183,7 +183,9 @@ export function RowPanel({ project, itemKey, runId, rowId }: RowPanelProps) {
               {detail.logs.map((log, i) => (
                 <div key={`${log.timeLabel}-${i}`} className="rp-lr" data-testid={ids.runPanelLog}>
                   <span className="rp-tm">{log.timeLabel}</span>
-                  <span className={`rp-sv ${log.severity}`}>{log.severity}</span>
+                  {log.severity === 'UNSPECIFIED' ? null : (
+                    <span className={`rp-sv ${log.severity}`}>{log.severity}</span>
+                  )}
                   <span className="rp-bd">
                     {log.body}{' '}
                     {log.attributes.map((a) => (

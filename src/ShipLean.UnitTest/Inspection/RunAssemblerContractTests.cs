@@ -13,6 +13,7 @@ public class RunAssemblerContractTests
     [TestCase("claude-code-synthetic")]
     [TestCase("codex-cli-synthetic")]
     [TestCase("cursor-synthetic")]
+    [TestCase("claude-code-recorded")]
     public void Assemble_WhenASyntheticRun_ShouldMatchItsAssembledJson(string name)
     {
         var fixture = InspectionFixtures.Get(name);

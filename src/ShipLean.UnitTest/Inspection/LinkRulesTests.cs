@@ -91,4 +91,77 @@ public class LinkRulesTests
             derived.ShouldBe(fixture.Expected.Summary.Links, ignoreOrder: true, fixture.Name);
         }
     }
+
+    // Claude Code with OTEL_LOG_TOOL_DETAILS on: the tool_result log says tool_name "mcp_tool", names the server inside tool_parameters and
+    // holds the arguments in tool_input. The record alone links; no span is joined.
+    private static LogRecordData ClaudeToolResult(string toolParameters, string? toolInput)
+    {
+        var attributes = new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["tool_use_id"] = "toolu-0003", ["tool_parameters"] = toolParameters };
+        if (toolInput is not null)
+        {
+            attributes["tool_input"] = toolInput;
+        }
+        return new LogRecordData(Now, "UNSPECIFIED", "claude_code.tool_result", attributes, null, null, "s", "p", "tool_result");
+    }
+
+    [Test]
+    public void Derive_WhenAClaudeCodeToolResultNamesShipleanAndTheItem_ShouldLinkItFromTheToolCall()
+    {
+        var log = ClaudeToolResult("""{"mcp_server_name":"shiplean","mcp_tool_name":"pick_up"}""", """{"item":"SHIP-77"}""");
+
+        LinkRules.Derive([], [log], ItemField).ShouldBe([new RunItemLink("SHIP-77", LinkSource.FromToolCall)]);
+    }
+
+    [Test]
+    public void Derive_WhenAClaudeCodeToolResultNamesAnotherServer_ShouldNotLink()
+    {
+        var log = ClaudeToolResult("""{"mcp_server_name":"other","mcp_tool_name":"pick_up"}""", """{"item":"SHIP-77"}""");
+
+        LinkRules.Derive([], [log], ItemField).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Derive_WhenAClaudeCodeToolResultHasNoToolInput_ShouldNotLink()
+    {
+        var log = ClaudeToolResult("""{"mcp_server_name":"shiplean","mcp_tool_name":"pick_up"}""", null);
+
+        LinkRules.Derive([], [log], ItemField).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Derive_WhenAnotherToolsParametersClaimTheShipleanServer_ShouldNotLink()
+    {
+        var log = ClaudeToolResult("""{"mcp_server_name":"shiplean"}""", """{"item":"SHIP-77"}""");
+        log = log with { Attributes = new Dictionary<string, string>(log.Attributes) { ["tool_name"] = "Bash" } };
+
+        LinkRules.Derive([], [log], ItemField).ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Derive_WhenTheServerAttributeIsEmpty_ShouldReadTheServerFromTheParametersOfAnMcpTool()
+    {
+        var log = ClaudeToolResult("""{"mcp_server_name":"shiplean"}""", """{"item":"SHIP-77"}""");
+        log = log with { Attributes = new Dictionary<string, string>(log.Attributes) { ["mcp_server_name"] = "" } };
+
+        LinkRules.Derive([], [log], ItemField).ShouldBe([new RunItemLink("SHIP-77", LinkSource.FromToolCall)]);
+    }
+
+    [Test]
+    public void Derive_WhenTheItemIsEmpty_ShouldTryTheNextInputAndLinkNothingElse()
+    {
+        var empty = ClaudeToolResult("""{"mcp_server_name":"shiplean"}""", """{"item":""}""");
+        var fallback = ClaudeToolResult("""{"mcp_server_name":"shiplean","item":"SHIP-78"}""", """{"item":""}""");
+
+        LinkRules.Derive([], [empty], ItemField).ShouldBeEmpty();
+        LinkRules.Derive([], [fallback], ItemField).ShouldBe([new RunItemLink("SHIP-78", LinkSource.FromToolCall)]);
+    }
+
+    [Test]
+    public void Derive_WhenTheSpanIsAShipleanToolWithNoInput_ShouldLinkNothingFromItAlone()
+    {
+        var span = new SpanRecord("t", "s", null, "claude_code.tool", "internal", Now, Now, SpanStatus.Ok, null,
+            new Dictionary<string, string> { ["tool_name"] = "mcp__shiplean__pick_up", ["tool_use_id"] = "toolu-0003" }, []);
+
+        Links(span).ShouldBeEmpty();
+    }
 }

@@ -166,24 +166,28 @@ public sealed class ClickHouseViewSql(ClickHouseNames names)
         """;
 
     // The two items a record can name: the tagged one (Tagged, or ShipleanFile when the Cursor hook said so) and the one a ShipLean
-    // MCP tool call's input names. `a` is the record's attributes over its resource's and `tool` its tool name.
+    // MCP tool call's input names. `a` is the record's attributes over its resource's and `tool` its tool name. The server is the
+    // mcp_server_name attribute, else, only when the tool is mcp_tool (Claude Code's tool_result log), the one inside tool_parameters; empty is absent; the input is the first of
+    // tool_input, tool_parameters, input that names an item.
     private static string Candidates(ClickHouseNames n) => $$"""
         [
             (a[{{n.ItemField}}], if(a['shiplean.link_source'] = 'file', {{FileVersion}}, {{TaggedVersion}})),
             (
-                if(a['mcp_server_name'] = 'shiplean' OR match(tool, '^(mcp__)?shiplean__{{ShipleanTools}}$'),
-                    multiIf(
-                        JSONType({{InputExpression}}, 'item') = 'String', JSONExtractString({{InputExpression}}, 'item'),
-                        JSONType({{InputExpression}}, 'key') = 'String', JSONExtractString({{InputExpression}}, 'key'),
-                        JSONType({{InputExpression}}, 'task') = 'String', JSONExtractString({{InputExpression}}, 'task'),
-                        ''),
+                if(coalesce(nullIf(a['mcp_server_name'], ''), if(tool = 'mcp_tool', nullIf(JSONExtractString(a['tool_parameters'], 'mcp_server_name'), ''), NULL)) = 'shiplean' OR match(tool, '^(mcp__)?shiplean__{{ShipleanTools}}$'),
+                    coalesce(nullIf({{ItemOf("a['tool_input']")}}, ''), nullIf({{ItemOf("a['tool_parameters']")}}, ''), nullIf({{ItemOf("a['input']")}}, ''), ''),
                     ''),
                 {{ToolCallVersion}})
         ]
         """;
 
-    // The first present of tool_parameters, tool_input, input.
-    private const string InputExpression = "multiIf(mapContains(a, 'tool_parameters'), a['tool_parameters'], mapContains(a, 'tool_input'), a['tool_input'], mapContains(a, 'input'), a['input'], '')";
+    // The item, key or task string at the top of a JSON input; empty when there is none.
+    private static string ItemOf(string input) => $"""
+        multiIf(
+                        JSONType({input}, 'item') = 'String', JSONExtractString({input}, 'item'),
+                        JSONType({input}, 'key') = 'String', JSONExtractString({input}, 'key'),
+                        JSONType({input}, 'task') = 'String', JSONExtractString({input}, 'task'),
+                        '')
+        """;
 
     private static string Tokens(string source, string attribute, string direction)
         => $"ifNull(toUInt64OrNull(a['{attribute}']), 0) AS {source}_tokens_{direction}, toUInt64(isNotNull(toUInt64OrNull(a['{attribute}']))) AS {source}_tokens_{direction}_n";

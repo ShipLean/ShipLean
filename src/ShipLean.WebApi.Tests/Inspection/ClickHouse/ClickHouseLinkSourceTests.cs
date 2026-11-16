@@ -47,4 +47,53 @@ public sealed class ClickHouseLinkSourceTests
 
         linked.ShouldBe(["SHIP-11", "SHIP-12"]);
     }
+
+    // Claude Code with tool details on: the tool_result log says "mcp_tool", names the server inside tool_parameters and has the input in tool_input.
+    [Test]
+    public async Task FindRuns_WhenAClaudeCodeToolResultNamesShipleanInItsParameters_LinksItFromTheToolCall()
+    {
+        await using var scratch = await ScratchExporter.CreateAsync();
+        var migrator = scratch.Migrator();
+        await migrator.EnsureAsync(CancellationToken.None);
+        await scratch.AddLogAsync("cc", 0, "", new Dictionary<string, string>
+        {
+            ["tool_name"] = "mcp_tool", ["tool_parameters"] = "{\"mcp_server_name\":\"shiplean\",\"mcp_tool_name\":\"pick_up\"}", ["tool_input"] = "{\"item\":\"SHIP-21\"}",
+        });
+        await scratch.AddLogAsync("cc", 1, "", new Dictionary<string, string>
+        {
+            ["tool_name"] = "mcp_tool", ["tool_parameters"] = "{\"mcp_server_name\":\"other\",\"mcp_tool_name\":\"pick_up\"}", ["tool_input"] = "{\"item\":\"SHIP-22\"}",
+        });
+
+        var linked = await scratch.Finder(migrator).FindAsync(ScratchExporter.Query("SHIP-21"), CancellationToken.None);
+        var other = await scratch.Finder(migrator).FindAsync(ScratchExporter.Query("SHIP-22"), CancellationToken.None);
+
+        linked.Runs.Count.ShouldBe(1, linked.Problem);
+        linked.Runs[0].Links.ShouldBe([new RunItemLink("SHIP-21", LinkSource.FromToolCall)]);
+        other.Runs.ShouldBeEmpty();
+    }
+
+    // The server inside tool_parameters is only trusted for "mcp_tool"; and an empty server or item counts as absent, as in LinkRules.
+    [Test]
+    public async Task FindRuns_WhenParametersClaimShipleanOnAnotherToolOrAreEmpty_DoNotLink()
+    {
+        await using var scratch = await ScratchExporter.CreateAsync();
+        var migrator = scratch.Migrator();
+        await migrator.EnsureAsync(CancellationToken.None);
+        const string Shiplean = "{\"mcp_server_name\":\"shiplean\"}";
+        await scratch.AddLogAsync("spoof", 0, "", new Dictionary<string, string> { ["tool_name"] = "Bash", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"SHIP-31\"}" });
+        await scratch.AddLogAsync("empty", 1, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["mcp_server_name"] = "", ["tool_parameters"] = "{\"mcp_server_name\":\"\"}", ["tool_input"] = "{\"item\":\"SHIP-32\"}" });
+        await scratch.AddLogAsync("emptyitem", 2, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"\"}" });
+        await scratch.AddLogAsync("fallback", 3, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["mcp_server_name"] = "", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"SHIP-33\"}" });
+
+        var linked = new List<string>();
+        foreach (var key in new[] { "SHIP-31", "SHIP-32", "SHIP-33" })
+        {
+            if ((await scratch.Finder(migrator).FindAsync(ScratchExporter.Query(key), CancellationToken.None)).Runs.Count > 0)
+            {
+                linked.Add(key);
+            }
+        }
+
+        linked.ShouldBe(["SHIP-33"]);
+    }
 }

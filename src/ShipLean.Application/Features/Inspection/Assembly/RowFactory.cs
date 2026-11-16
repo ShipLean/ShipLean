@@ -6,18 +6,18 @@ namespace ShipLean.Application.Features.Inspection.Assembly;
 
 internal static class RowFactory
 {
-    private static readonly string[] InputAttributes = ["tool_parameters", "tool_input", "input"];
+    private static readonly string[] InputAttributes = ["tool_input", "tool_parameters", "input"];
     private static readonly string[] EditTools = ["Edit", "MultiEdit", "Write", "NotebookEdit", "apply_patch"];
 
     public static string LogRowId(int index) => $"log-{index + 1}";
 
-    public static RunRow FromSpan(SpanRecord span, string? parentId, int depth, SpanRecord? wait, int collapsed, IReadOnlyList<LogRecordData> logs)
+    public static RunRow FromSpan(SpanRecord span, string? parentId, int depth, SpanRecord? wait, int collapsed, IReadOnlyList<LogRecordData> logs, SpanRecord? execution = null)
     {
         var toolName = span.Attributes.GetValueOrDefault("tool_name");
         var kind = KindOf(span, toolName);
         return new RunRow(
             span.SpanId, parentId, depth, kind, toolName ?? span.Name, span.Start, span.End, (long)(span.End - span.Start).TotalMilliseconds,
-            span.Status == SpanStatus.Error, IsRetry(span.Attributes), wait?.Start, wait?.End, collapsed, span.Attributes,
+            span.Status == SpanStatus.Error || execution?.Status == SpanStatus.Error, IsRetry(span.Attributes), wait?.Start, wait?.End, collapsed, span.Attributes,
             InputOf(span.Attributes), span.Attributes.GetValueOrDefault("output") ?? logs.Select(log => log.Attributes.GetValueOrDefault("output")).FirstOrDefault(o => o is not null),
             logs, FilePathOf(span.Attributes, toolName, null), span.Attributes.GetValueOrDefault("commit_sha"));
     }
@@ -25,7 +25,7 @@ internal static class RowFactory
     public static RunRow FromLog(LogRecordData log, string id)
     {
         var toolName = log.Attributes.GetValueOrDefault("tool_name");
-        var kind = LinkRules.IsShipleanTool(toolName, log.Attributes.GetValueOrDefault("mcp_server_name")) ? RowKind.ShipleanTool : RowKind.Event;
+        var kind = LinkRules.IsShipleanTool(toolName, LinkRules.McpServer(log.Attributes)) ? RowKind.ShipleanTool : RowKind.Event;
         var durationMs = long.TryParse(log.Attributes.GetValueOrDefault("duration_ms"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var ms) ? ms : (long?)null;
         var start = log.Time - TimeSpan.FromMilliseconds(durationMs ?? 0);
         return new RunRow(
@@ -44,7 +44,7 @@ internal static class RowFactory
         {
             return RowKind.ModelCall;
         }
-        return LinkRules.IsShipleanTool(toolName ?? span.Name, span.Attributes.GetValueOrDefault("mcp_server_name")) ? RowKind.ShipleanTool : RowKind.Tool;
+        return LinkRules.IsShipleanTool(toolName ?? span.Name, LinkRules.McpServer(span.Attributes)) ? RowKind.ShipleanTool : RowKind.Tool;
     }
 
     private static bool IsRetry(IReadOnlyDictionary<string, string> attributes)
