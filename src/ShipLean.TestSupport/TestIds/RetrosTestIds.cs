@@ -240,4 +240,10 @@ public static class RetrosTestIds
     public const string RetroThemeCardLastChange = "retro-theme-card-last-change";
     public const string RetroRailRow = "retro-rail-row";
     public const string RetroRecurringOpenInsights = "retro-recurring-open-insights";
+    public const string RetroActionDoneHeading = "retro-action-done-heading";
+    public const string RetroActionUnassigned = "retro-action-unassigned";
+    public const string RetroActionImpactPending = "retro-action-impact-pending";
+    public const string RetroImpactHint = "retro-impact-hint";
+    public const string RetroImpactIntro = "retro-impact-intro";
+    public const string RetroActionsSection = "retro-actions-section";
 }

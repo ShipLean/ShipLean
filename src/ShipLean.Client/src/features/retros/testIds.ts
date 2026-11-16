@@ -235,4 +235,10 @@ export const retrosTestIds = {
   retroThemeCardLastChange: 'retro-theme-card-last-change',
   retroRailRow: 'retro-rail-row',
   retroRecurringOpenInsights: 'retro-recurring-open-insights',
+  retroActionDoneHeading: 'retro-action-done-heading',
+  retroActionUnassigned: 'retro-action-unassigned',
+  retroActionImpactPending: 'retro-action-impact-pending',
+  retroImpactHint: 'retro-impact-hint',
+  retroImpactIntro: 'retro-impact-intro',
+  retroActionsSection: 'retro-actions-section',
 } as const;
