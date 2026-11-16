@@ -109,7 +109,7 @@ public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader,
             CausedByRule.Require(type, types[workItemId], types[targetId]);
         }
 
-        if ((await rows.ListWorkItemLinksAsync(workItemId, cancellationToken)).Any(l => !l.Incoming && l.WorkItemId == targetId && l.Type == type))
+        if ((await rows.ListWorkItemLinksAsync(workItemId, cancellationToken)).Any(l => l.WorkItemId == targetId && l.Type == type))
         {
             throw ApiException.LinkDuplicate("That work item is already linked with this link type.", "targetKey");
         }

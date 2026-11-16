@@ -14,7 +14,7 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
 {
     private sealed record ArchivedRow(Guid WorkItemId, Guid ProjectId);
 
-    private sealed record WorkItemLinkQueryRow(Guid Id, string TypeText, Guid WorkItemId, string Key, string Title, string ItemType, Guid StateId, string StateName, string StateCategory, bool Incoming);
+    private sealed record WorkItemLinkQueryRow(Guid Id, string TypeText, Guid WorkItemId, string Key, string Title, string ItemType, Guid StateId, string StateName, string StateCategory);
 
     // The item's live URL links, oldest first.
     public async Task<IReadOnlyList<LinkCardRow>> ListAsync(Guid workItemId, CancellationToken cancellationToken)
@@ -25,21 +25,12 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
             new { workItemId }, cancellationToken: cancellationToken))];
     }
 
-    // The item's live links to other work items, oldest first: the ones it made, and in the same query the Caused by links
-    // other items made to it (a Task's "Caused" rows, the Bugs that point at it).
+    // The item's live links to other work items, oldest first.
     public async Task<IReadOnlyList<WorkItemLinkRowDto>> ListWorkItemLinksAsync(Guid workItemId, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await connection.QueryAsync<WorkItemLinkQueryRow>(new CommandDefinition(
-            $"""
-            SELECT * FROM (
-                {WorkItemLinkSelect("l.target_id", false)}
-                WHERE l.source_id = @workItemId AND l.link_type <> 'url' AND l.archived_at IS NULL
-                UNION ALL
-                {WorkItemLinkSelect("l.source_id", true)}
-                WHERE l.target_id = @workItemId AND l.link_type = 'causedBy' AND l.archived_at IS NULL
-            ) x ORDER BY x.createdAt, x.id
-            """,
+            $"{WorkItemLinkSelect} WHERE l.source_id = @workItemId AND l.link_type <> 'url' AND l.archived_at IS NULL ORDER BY l.created_at, l.id",
             new { workItemId }, cancellationToken: cancellationToken));
         return [.. rows.Select(ToDto)];
     }
@@ -49,7 +40,7 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<WorkItemLinkQueryRow>(new CommandDefinition(
-            $"{WorkItemLinkSelect("l.target_id", false)} WHERE l.id = @id AND l.link_type <> 'url' AND l.archived_at IS NULL", new { id }, cancellationToken: cancellationToken));
+            $"{WorkItemLinkSelect} WHERE l.id = @id AND l.link_type <> 'url' AND l.archived_at IS NULL", new { id }, cancellationToken: cancellationToken));
         return row is null ? null : ToDto(row);
     }
 
@@ -186,13 +177,12 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
             "SELECT id FROM work_item WHERE project_id = @projectId AND key = upper(@key)", new { projectId, key = key.Trim() }, cancellationToken: cancellationToken));
     }
 
-    // The other end of the link is `other`: the target of a link the item made, the source of one made to it.
-    private static string WorkItemLinkSelect(string other, bool incoming) =>
-        $"""
+    private const string WorkItemLinkSelect =
+        """
         SELECT l.id, l.link_type AS typeText, t.id AS workItemId, t.key, t.title, t.type AS itemType,
-               s.id AS stateId, s.name AS stateName, s.category AS stateCategory, {(incoming ? "true" : "false")} AS incoming, l.created_at AS createdAt
+               s.id AS stateId, s.name AS stateName, s.category AS stateCategory
         FROM work_item_link l
-        JOIN work_item t ON t.id = {other}
+        JOIN work_item t ON t.id = l.target_id
         JOIN state s ON s.id = t.state_id
         """;
 
@@ -211,7 +201,7 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
         return new WorkItemLinkRowDto(
             row.Id, Enum.Parse<LinkType>(row.TypeText, ignoreCase: true), row.WorkItemId, row.Key, row.Title,
             new TypeRef(type, WorkItemTypeRules.Name(type)),
-            new StateRef(row.StateId, row.StateName, Enum.Parse<StateCategory>(row.StateCategory, ignoreCase: true)), row.Incoming);
+            new StateRef(row.StateId, row.StateName, Enum.Parse<StateCategory>(row.StateCategory, ignoreCase: true)));
     }
 
     private static string? NullIfBlank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();

@@ -6,6 +6,7 @@ using Dapper;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
@@ -35,6 +36,13 @@ public class CausedByLinkTests : ApiFixture
         return (await response.Content.ReadFromJsonAsync<LinkCardsDto>(Wire))!;
     }
 
+    private async Task<WorkItemDto> ReadAsync(string key)
+    {
+        using var response = await Api.GetAsync($"api/projects/{SeedIds.Projects.Ship}/work-items/by-key/{key}");
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        return (await response.Content.ReadFromJsonAsync<WorkItemDto>(Wire))!;
+    }
+
     [Test]
     public async Task Add_WhenBugToTask_ShouldShowCausedOnTask()
     {
@@ -46,13 +54,11 @@ public class CausedByLinkTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
         var onBug = (await ListAsync(bug.Id)).WorkItems.ShouldHaveSingleItem();
         onBug.Type.ShouldBe(LinkType.CausedBy);
-        onBug.Incoming.ShouldBeFalse();
         onBug.Key.ShouldBe(task.Key);
-        var onTask = (await ListAsync(task.Id)).WorkItems.ShouldHaveSingleItem();
-        onTask.Type.ShouldBe(LinkType.CausedBy);
-        onTask.Incoming.ShouldBeTrue();
-        onTask.Key.ShouldBe(bug.Key);
-        onTask.Title.ShouldBe("Escaped to prod");
+        var caused = (await ReadAsync(task.Key)).Caused.ShouldHaveSingleItem();
+        caused.Key.ShouldBe(bug.Key);
+        caused.Title.ShouldBe("Escaped to prod");
+        (await ReadAsync(bug.Key)).Caused.ShouldBeEmpty();
     }
 
     [Test]
