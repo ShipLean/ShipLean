@@ -13,6 +13,8 @@ public static partial class LinkRules
     private const string McpServerAttribute = "mcp_server_name";
     private const string ToolParametersAttribute = "tool_parameters";
     private const string ShipleanServer = "shiplean";
+    private const string ToolNameAttribute = "tool_name";
+    private const string McpToolName = "mcp_tool";
 
     private static readonly string[] ToolNameAttributes = ["tool_name"];
     // Claude Code puts the call's arguments in tool_input (OTEL_LOG_TOOL_DETAILS on) and, for an MCP tool, the server in tool_parameters.
@@ -54,10 +56,22 @@ public static partial class LinkRules
     public static bool IsShipleanTool(string? toolName, string? mcpServerName)
         => mcpServerName == ShipleanServer || (toolName is not null && ShipleanToolPattern().IsMatch(toolName));
 
-    // The MCP server a record names: the mcp_server_name attribute (Codex CLI, Cursor), else the mcp_server_name inside the
-    // tool_parameters JSON (Claude Code, whose tool_name is only "mcp_tool" there). Null when neither names one.
+    // The MCP server a record names: the mcp_server_name attribute (Codex CLI, Cursor), else, only when tool_name is "mcp_tool" (Claude
+    // Code's tool_result log), the mcp_server_name inside the tool_parameters JSON. Any other tool's parameters are the agent's own
+    // text and could claim to be the shiplean server. Empty counts as absent. Null when neither names one.
     public static string? McpServer(IReadOnlyDictionary<string, string> attributes)
-        => attributes.GetValueOrDefault(McpServerAttribute) ?? JsonString(attributes.GetValueOrDefault(ToolParametersAttribute), McpServerAttribute);
+    {
+        var named = attributes.GetValueOrDefault(McpServerAttribute);
+        if (!string.IsNullOrEmpty(named))
+        {
+            return named;
+        }
+        return attributes.GetValueOrDefault(ToolNameAttribute) == McpToolName
+            ? NullIfEmpty(JsonString(attributes.GetValueOrDefault(ToolParametersAttribute), McpServerAttribute))
+            : null;
+    }
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
 
     // The item a ShipLean tool call names: tool name from attribute tool_name, else the span name; input from the first of
     // tool_input, tool_parameters, input that is JSON with a top-level item, key or task string. It is a ShipLean tool when the name
@@ -106,7 +120,8 @@ public static partial class LinkRules
             {
                 if (document.RootElement.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String)
                 {
-                    return value.GetString();
+                    // An empty string names no item, as in the SQL; the next input is tried.
+                    return NullIfEmpty(value.GetString());
                 }
             }
             return null;

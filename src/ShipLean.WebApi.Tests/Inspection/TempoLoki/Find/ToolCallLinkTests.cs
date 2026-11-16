@@ -66,6 +66,26 @@ public sealed class ToolCallLinkTests
     }
 
     [Test]
+    public async Task Find_WhenAnotherToolsParametersClaimTheShipleanServer_DoesNotLink()
+    {
+        var (_, finder) = Build(ClaudeCodeCall("shiplean", "{\"item\":\"SHIP-1\"}").Replace("\"mcp_tool\"", "\"Bash\"", StringComparison.Ordinal));
+
+        var found = await finder.FindAsync(Query(), CancellationToken.None);
+
+        found.Runs.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Find_WhenTheItemIsEmpty_DoesNotLink()
+    {
+        var (_, finder) = Build(ClaudeCodeCall("shiplean", "{\"item\":\"\"}"));
+
+        var found = await finder.FindAsync(Query(""), CancellationToken.None);
+
+        found.Runs.ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task Find_WhenTheInputNamesAnotherItemThanTheTopLevelOne_LinksOnlyTheTopLevelItem()
     {
         var (_, finder) = Build(ClaudeCodeCall("shiplean", "{\"item\":\"SHIP-2\",\"note\":\"SHIP-1\"}"));

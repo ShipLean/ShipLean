@@ -188,3 +188,17 @@ test('RowPanel_WhenContentHidden_ShouldShowTheNoteInsteadOfInputAndOutput', asyn
   await expect(page.getByTestId(ids.runPanelAttribute)).toHaveCount(2);
   await expect(page.getByTestId(ids.runPanelLog)).toHaveCount(1);
 });
+
+test('RowPanel_WhenALogSeverityIsUnspecified_ShouldShowNoSeverityPillForIt', async ({
+  mount,
+  page,
+}) => {
+  const [info] = edit.logs;
+  await setup(page, { ...edit, logs: [info, { ...info, severity: 'UNSPECIFIED' }] });
+  await mount(<WaterfallHarness variant="default" initial="0000000000001005" />);
+  const logs = page.getByTestId(ids.runPanelLog);
+  await expect(logs).toHaveCount(2);
+  await expect(logs.nth(0).locator('.rp-sv')).toHaveText('INFO');
+  await expect(logs.nth(1).locator('.rp-sv')).toHaveCount(0);
+  await expect(logs.nth(1)).toContainText('tool_result');
+});

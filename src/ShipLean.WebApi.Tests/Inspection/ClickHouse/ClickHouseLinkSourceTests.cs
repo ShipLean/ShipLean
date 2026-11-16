@@ -71,4 +71,29 @@ public sealed class ClickHouseLinkSourceTests
         linked.Runs[0].Links.ShouldBe([new RunItemLink("SHIP-21", LinkSource.FromToolCall)]);
         other.Runs.ShouldBeEmpty();
     }
+
+    // The server inside tool_parameters is only trusted for "mcp_tool"; and an empty server or item counts as absent, as in LinkRules.
+    [Test]
+    public async Task FindRuns_WhenParametersClaimShipleanOnAnotherToolOrAreEmpty_DoNotLink()
+    {
+        await using var scratch = await ScratchExporter.CreateAsync();
+        var migrator = scratch.Migrator();
+        await migrator.EnsureAsync(CancellationToken.None);
+        const string Shiplean = "{\"mcp_server_name\":\"shiplean\"}";
+        await scratch.AddLogAsync("spoof", 0, "", new Dictionary<string, string> { ["tool_name"] = "Bash", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"SHIP-31\"}" });
+        await scratch.AddLogAsync("empty", 1, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["mcp_server_name"] = "", ["tool_parameters"] = "{\"mcp_server_name\":\"\"}", ["tool_input"] = "{\"item\":\"SHIP-32\"}" });
+        await scratch.AddLogAsync("emptyitem", 2, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"\"}" });
+        await scratch.AddLogAsync("fallback", 3, "", new Dictionary<string, string> { ["tool_name"] = "mcp_tool", ["mcp_server_name"] = "", ["tool_parameters"] = Shiplean, ["tool_input"] = "{\"item\":\"SHIP-33\"}" });
+
+        var linked = new List<string>();
+        foreach (var key in new[] { "SHIP-31", "SHIP-32", "SHIP-33" })
+        {
+            if ((await scratch.Finder(migrator).FindAsync(ScratchExporter.Query(key), CancellationToken.None)).Runs.Count > 0)
+            {
+                linked.Add(key);
+            }
+        }
+
+        linked.ShouldBe(["SHIP-33"]);
+    }
 }
