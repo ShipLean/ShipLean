@@ -55,7 +55,7 @@ export function stubNoFinishedSprint(): InspectionMetricsViewDto {
 /** Sprints with no task ending in them: every stat empty, no dots, no longest, nothing left out. */
 export function stubNoTasks(): InspectionMetricsViewDto {
   const view = stubView();
-  const empty = (headline: { leadTime: LeadTimeStatsDto } | null) =>
+  const empty = <T extends { leadTime: LeadTimeStatsDto }>(headline: T | null): T | null =>
     headline === null ? null : { ...headline, leadTime: noTasks };
   return {
     ...view,
