@@ -65,7 +65,7 @@ export function BacklogSearchBox({ search }: { search: BacklogSearch }) {
           closeTouchSearch();
         }}
       >
-        Cancel
+        Done
       </button>
     </>
   );

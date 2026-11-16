@@ -202,4 +202,7 @@ export const backlogTestIds = {
   keysButton: 'backlog-keys-button',
   keysDialog: 'backlog-keys-dialog',
   levelProgressBar: 'backlog-level-progress-bar',
+  summary: 'backlog-summary',
+  summaryNote: 'backlog-summary-note',
+  filterCount: 'backlog-filter-count',
 } as const;

@@ -15,6 +15,7 @@ import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { useColumnSort } from '../sort/useColumnSort';
+import { shownOf, summarise } from '../toolbar/listSummary';
 import { useLevelBacklog } from './useLevelBacklog';
 
 const FEATURE_KINDS: readonly NewItemKind[] = ['feature'];
@@ -78,7 +79,7 @@ export function LevelBacklog({
           modes={level === 'features' ? FEATURE_MODES : []}
           triage={state.triage}
           onNewItem={() => (level === 'features' ? setNewFeatureOpen(true) : state.setAdding(true))}
-          newItemLabel={level === 'features' ? '+ New Feature' : undefined}
+          newItemLabel={level === 'features' ? '+ New Feature' : '+ New Epic'}
           includeCompleted={state.includeCompleted}
           onIncludeCompletedChange={state.setIncludeCompleted}
           // Search is offered in ⋯ More at touch only; above 900px these backlogs have none.
@@ -91,6 +92,14 @@ export function LevelBacklog({
                 }
               : undefined
           }
+          summary={summarise(sort.rows, {
+            one: level === 'features' ? 'Feature' : 'Epic',
+            many: level === 'features' ? 'Features' : 'Epics',
+            withPoints: false,
+            includeCompleted: state.includeCompleted,
+            narrowed: state.filtering || search.active,
+            whole: state.unfilteredCount,
+          })}
           columns={{ options: state.specs, hidden: view.hidden, onChange: view.setHidden }}
           filter={() => (
             <FilterButton
@@ -114,6 +123,7 @@ export function LevelBacklog({
             error={refused}
             lists={lists}
             onClose={state.toggleFilter}
+            count={shownOf(sort.rows, state.unfilteredCount)}
           />
         ) : null}
         {mode === 'tree' ? (

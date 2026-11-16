@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { BacklogReviewDto } from '@shiplean/core/api/backlogWrites';
 import type { SheetAction } from '../../../touch/ActionSheet';
 import type { CheckQueue } from '../strip/useCheckQueue';
+import { estimateIcon, selectIcon } from '../toolbar/moreIcons';
 import { useTouchSelectMode } from './selectMode';
 
 /**
@@ -20,13 +21,22 @@ export function useSelectMoreActions(
   const count = unestimated.length;
   return useMemo(
     () => [
-      { id: 'select', label: 'Select', onSelect: start, disabled: selecting },
+      {
+        id: 'select',
+        label: 'Select',
+        icon: selectIcon,
+        hint: 'Then change state, points or sprint for many at once',
+        onSelect: start,
+        disabled: selecting,
+      },
       ...(count === 0
         ? []
         : [
             {
               id: 'estimate-unpointed',
               label: 'Estimate what has no points',
+              icon: estimateIcon,
+              detail: count,
               onSelect: () => queue.open('unestimated', unestimated),
             },
           ]),
