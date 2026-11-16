@@ -39,9 +39,7 @@ export function SprintRow({
           </span>
         ) : null}
         <span>{datesLabel}</span>
-        <span className="min-w-[62px] text-right font-mono text-ink">
-          {projectKey}
-        </span>
+        <span className="min-w-[62px] text-right font-mono text-ink">{projectKey}</span>
       </span>
     </>
   );
