@@ -34,7 +34,14 @@ describe('burndownReadout', () => {
   });
 
   test('names the month of a day in a sprint that spans two months', () => {
-    const dot = { ...shape.dots[0]!, date: '2026-11-02', label: '2 Nov', day: '2', remaining: 8, ideal: 9 };
+    const dot = {
+      ...shape.dots[0]!,
+      date: '2026-11-02',
+      label: '2 Nov',
+      day: '2',
+      remaining: 8,
+      ideal: 9,
+    };
     expect(burndownReadout(dot)).toBe('2 Nov · 8 left · ideal 9');
   });
 });
