@@ -33,8 +33,9 @@ public class FeatureTimelineViewerZoneTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         var feature = await new WorkItemBuilder(Ship).WithType("feature").WithCreatedAt(ViewerZoneTestData.LateEveningUtc).WithCreatedBy(SeedIds.Users.Joel).InsertAsync(connection);
-        var task = await new WorkItemBuilder(Ship).WithType("task").WithParent(feature).WithCreatedAt(ViewerZoneTestData.LateEveningUtc).WithCreatedBy(SeedIds.Users.Joel).InsertAsync(connection);
-        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at WHERE work_item_id = ANY(@ids) AND rev = 1", new { at = ViewerZoneTestData.LateEveningUtc, ids = new[] { feature, task } });
+        var story = await new WorkItemBuilder(Ship).WithType("story").WithParent(feature).WithCreatedAt(ViewerZoneTestData.LateEveningUtc).WithCreatedBy(SeedIds.Users.Joel).InsertAsync(connection);
+        var task = await new WorkItemBuilder(Ship).WithType("task").WithParent(story).WithCreatedAt(ViewerZoneTestData.LateEveningUtc).WithCreatedBy(SeedIds.Users.Joel).InsertAsync(connection);
+        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at WHERE work_item_id = ANY(@ids) AND rev = 1", new { at = ViewerZoneTestData.LateEveningUtc, ids = new[] { feature, story, task } });
         await new RevisionBuilder(task).WithRev(2).WithChangedAt(TaskStart).WithChangedBy(SeedIds.Users.Joel)
             .WithChanges($$"""[{"field":"state","from":null,"to":"{{SeedIds.States.Ship.TaskActive}}"}]""").InsertAsync(connection);
         await connection.ExecuteAsync("UPDATE work_item SET state_id = @state, revision = 2 WHERE id = @task", new { task, state = SeedIds.States.Ship.TaskActive });
