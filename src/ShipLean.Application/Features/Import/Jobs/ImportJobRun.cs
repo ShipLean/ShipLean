@@ -1,9 +1,8 @@
 using System.Security.Claims;
 using Agoda.IoC.Core;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ShipLean.Application.Features.Import.Apply;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Import;
 using ShipLean.Contracts.Import.Jira;
@@ -19,7 +18,7 @@ namespace ShipLean.Application.Features.Import.Jobs;
 [RegisterPerRequest]
 public sealed class ImportJobRun(
     ImportJobRows rows, ImportQueue queue, ImportNotifier notifier, IJiraConnections connections, IJiraClient jira, IImportApplier applier,
-    IProjectFactory projects, IServiceProvider services, IJobMetrics metrics, ILogger<ImportJobRun> logger)
+    IProjectFactory projects, ICurrentRequest request, IJobMetrics metrics, ILogger<ImportJobRun> logger)
 {
     private static readonly IReadOnlyList<int> WorkingDays = [1, 2, 3, 4, 5];
 
@@ -50,15 +49,14 @@ public sealed class ImportJobRun(
             return;
         }
 
-        var accessor = services.GetRequiredService<IHttpContextAccessor>();
-        accessor.HttpContext = ActorContext(job.CreatorId ?? JiraImportUser.Id);
+        var actor = request.ActAs(Actor(job.CreatorId ?? JiraImportUser.Id));
         try
         {
             await RunAsync(job, cancellationToken);
         }
         finally
         {
-            accessor.HttpContext = null;
+            actor.Dispose();
             queue.ClearStop(jobId);
         }
     }
@@ -363,6 +361,6 @@ public sealed class ImportJobRun(
     private static bool IsImported(ImportMappingDto mapping, JiraIssue issue)
         => mapping.IssueTypes.FirstOrDefault(t => t.JiraType == issue.Type) is { Target: not ImportTypeTarget.Skip };
 
-    private static DefaultHttpContext ActorContext(Guid userId)
-        => new() { User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString())], "ImportRunner")) };
+    private static ClaimsPrincipal Actor(Guid userId)
+        => new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString())], "ImportRunner"));
 }
