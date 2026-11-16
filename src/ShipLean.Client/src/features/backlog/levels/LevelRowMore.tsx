@@ -11,7 +11,11 @@ export function LevelRowMore({ row }: { row: BacklogRowDto }) {
   const runner = useBulkRunner();
   const actions: SheetAction[] = [
     { id: 'open', label: 'Open', onSelect: () => peek.open(row.key) },
-    { id: 'top', label: 'Move to top', onSelect: () => void runner.run(moveToEdgePlan([row], 'first')) },
+    {
+      id: 'top',
+      label: 'Move to top',
+      onSelect: () => void runner.run(moveToEdgePlan([row], 'first')),
+    },
     {
       id: 'bottom',
       label: 'Move to bottom',

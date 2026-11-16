@@ -53,49 +53,49 @@ export function TouchLevelRow({
         <span data-testid={ids.rank}>{row.rank}</span>
       </div>
       <div className="min-w-0 flex-1 py-2">
-      <div className="flex items-start gap-1.5">
-        {row.type ? (
-          <span className="mt-0.5 flex-none">
-            <TypeIcon type={row.type.id} />
+        <div className="flex items-start gap-1.5">
+          {row.type ? (
+            <span className="mt-0.5 flex-none">
+              <TypeIcon type={row.type.id} />
+            </span>
+          ) : null}
+          <span data-testid={ids.title} className="line-clamp-2 min-w-0 font-medium break-words">
+            {row.title}
           </span>
-        ) : null}
-        <span data-testid={ids.title} className="line-clamp-2 min-w-0 font-medium break-words">
-          {row.title}
-        </span>
-      </div>
-      <div
-        data-testid={ids.levelTouchMeta}
-        className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-xs)] text-ink-muted"
-      >
-        <span data-testid={ids.key}>{row.key}</span>
-        {row.state ? (
-          <span data-testid={ids.state}>
-            <StateDot category={row.state.category} name={row.state.name} />
-          </span>
-        ) : null}
-        {level === 'epics' ? (
-          <span data-testid={ids.levelFeatureCount}>
-            {featureCount} {featureCount === 1 ? 'Feature' : 'Features'}
-          </span>
-        ) : null}
-        {row.parent ? (
-          <span className="max-w-full min-w-0 break-words">
-            <ParentCell parent={row.parent} />
-          </span>
-        ) : null}
-        {row.parent?.type.id === 'feature' ? (
-          <span data-testid={ids.levelNested}>(nested)</span>
-        ) : null}
-      </div>
-      <div
-        data-testid={ids.levelTouchProgress}
-        className="mt-1 flex items-center gap-2 text-[length:var(--text-xs)]"
-      >
-        <div className="min-w-0 flex-1">
-          <LevelProgress row={row} />
         </div>
-        <LevelPoints row={row} />
-      </div>
+        <div
+          data-testid={ids.levelTouchMeta}
+          className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-xs)] text-ink-muted"
+        >
+          <span data-testid={ids.key}>{row.key}</span>
+          {row.state ? (
+            <span data-testid={ids.state}>
+              <StateDot category={row.state.category} name={row.state.name} />
+            </span>
+          ) : null}
+          {level === 'epics' ? (
+            <span data-testid={ids.levelFeatureCount}>
+              {featureCount} {featureCount === 1 ? 'Feature' : 'Features'}
+            </span>
+          ) : null}
+          {row.parent ? (
+            <span className="max-w-full min-w-0 break-words">
+              <ParentCell parent={row.parent} />
+            </span>
+          ) : null}
+          {row.parent?.type.id === 'feature' ? (
+            <span data-testid={ids.levelNested}>(nested)</span>
+          ) : null}
+        </div>
+        <div
+          data-testid={ids.levelTouchProgress}
+          className="mt-1 flex items-center gap-2 text-[length:var(--text-xs)]"
+        >
+          <div className="min-w-0 flex-1">
+            <LevelProgress row={row} />
+          </div>
+          <LevelPoints row={row} />
+        </div>
       </div>
       <LevelRowMore row={row} />
     </div>

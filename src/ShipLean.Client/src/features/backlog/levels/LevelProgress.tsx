@@ -10,7 +10,10 @@ export function LevelProgress({ row }: { row: BacklogRowDto }) {
   const { closed, total, current, other } = countStoryLevelUnder(row);
   const notPlanned = total - closed - current - other;
   return (
-    <div data-testid={ids.levelProgress} className="flex min-w-0 flex-1 items-center gap-[var(--space-2)]">
+    <div
+      data-testid={ids.levelProgress}
+      className="flex min-w-0 flex-1 items-center gap-[var(--space-2)]"
+    >
       <span
         className="flex h-1.5 max-w-[140px] min-w-0 flex-1 overflow-hidden rounded-full bg-sunken"
         title={`${closed} done · ${current} in current sprint · ${other} in another sprint · ${notPlanned} not in a sprint`}

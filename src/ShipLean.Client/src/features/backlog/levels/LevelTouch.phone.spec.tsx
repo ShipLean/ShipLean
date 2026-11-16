@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { Page } from '@playwright/test';
+import type { Page } from 'playwright';
 import { touchTestIds } from '../../../touch/testIds';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
 import { backlogView, ROWS } from '../ct/fixtures';
@@ -198,9 +198,7 @@ test('LevelRowMore_MoveToTop_ShouldReorder', async ({ mount, page }) => {
   await mount(<LevelHarness project={PROJECT} level="features" />, features);
 
   await rowOf(page, 'SHIP-103').getByTestId(touchTestIds.moreButton).tap();
-  await page
-    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="top"]`)
-    .tap();
+  await page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="top"]`).tap();
 
   await expect.poll(() => server.bulks.length).toBe(1);
   expect(server.bulks[0].items).toHaveLength(1);

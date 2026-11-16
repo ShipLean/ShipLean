@@ -24,5 +24,7 @@ export function treePath(rows: readonly BacklogRowDto[], row: BacklogRowDto): st
  */
 export function treeParents(rows: readonly BacklogRowDto[], row: BacklogRowDto): string {
   const titles = treePath(rows, row).split(' › ');
-  return titles.length > 1 && row.kind !== 'noParentGroup' ? `${titles.slice(0, -1).join(' › ')} ›` : '';
+  return titles.length > 1 && row.kind !== 'noParentGroup'
+    ? `${titles.slice(0, -1).join(' › ')} ›`
+    : '';
 }
