@@ -63,7 +63,7 @@ test('LeadTimeChart_WhenBarClicked_ShouldCallOnPeriodWithItsId', async ({ mount,
   const sent = { periods: [] as string[], dots: [] as string[] };
   await mountChart(mount, PERIODS, sent);
   const target = PERIODS[1];
-  // The column's lower edge: below the bars' dots, above the period labels.
+  // 20 px into the column's click area from its top-left: left of the bar and its dots, below the quarter label.
   await page
     .getByTestId(ids.chartBar)
     .and(page.locator(`[data-period-id="${target.id}"]`))
@@ -78,7 +78,7 @@ test('LeadTimeChart_WhenDotClicked_ShouldCallOnDotWithItsKey', async ({ mount, p
   await page
     .getByTestId(ids.chartDot)
     .and(page.locator(`[data-key="${LONGEST.taskKey}"]`))
-    .click({ force: true });
+    .click();
   await expect.poll(() => sent.dots).toEqual([LONGEST.taskKey]);
   expect(sent.periods).toEqual([]);
 });
@@ -89,6 +89,31 @@ test('LeadTimeChart_WhenEnterOnFocusedBar_ShouldCallOnPeriod', async ({ mount, p
   await page.getByTestId(ids.chartBar).first().focus();
   await page.keyboard.press('Enter');
   await expect.poll(() => sent.periods).toEqual([PERIODS[0].id]);
+});
+
+test('LeadTimeChart_WhenPeriodsArriveAfterEmpty_ShouldDrawAndKeepFollowingItsWidth', async ({
+  mount,
+  page,
+}) => {
+  const chart = await mount(
+    <div data-testid="lead-time-chart-host" style={{ width: 900 }}>
+      <LeadTimeChart periods={[]} onPeriod={() => undefined} onDot={() => undefined} />
+    </div>,
+  );
+  await expect(page.getByTestId(ids.chartEmpty)).toBeVisible();
+  await chart.update(
+    <div data-testid="lead-time-chart-host" style={{ width: 900 }}>
+      <LeadTimeChart periods={PERIODS} onPeriod={() => undefined} onDot={() => undefined} />
+    </div>,
+  );
+  await expect(page.getByTestId(ids.chartBar)).toHaveCount(PERIODS.length);
+  const svg = page.getByTestId(ids.chart).getByRole('img');
+  await expect(svg).toHaveAttribute('viewBox', '0 0 900 220');
+  // A resize after the switch still reaches the layout: the observer watches the div that is on screen.
+  await page
+    .getByTestId('lead-time-chart-host')
+    .evaluate((el: HTMLElement) => (el.style.width = '600px'));
+  await expect(svg).toHaveAttribute('viewBox', '0 0 600 220');
 });
 
 test('LeadTimeChart_WhenNoPeriods_ShouldShowTheEmptyState', async ({ mount, page }) => {
