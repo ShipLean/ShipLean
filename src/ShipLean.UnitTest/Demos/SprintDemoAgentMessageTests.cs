@@ -45,13 +45,14 @@ public class SprintDemoAgentMessageTests
     [Test]
     public void Excerpt_WhenLongerThanTheLimit_ShouldCutAtAWordWithAnEllipsis()
     {
-        var words = string.Join(' ', Enumerable.Repeat("render", 60));
+        // 6-character words, so a cut at 279 characters would fall inside a word.
+        var words = string.Join(' ', Enumerable.Repeat("video", 60));
 
         var excerpt = SprintDemoAgentMessage.Excerpt(words)!;
 
         excerpt.Length.ShouldBeLessThanOrEqualTo(280);
-        excerpt.ShouldEndWith("render…");
-        excerpt[..^1].Split(' ').ShouldAllBe(w => w == "render");
+        excerpt.ShouldEndWith("video…");
+        excerpt[..^1].Split(' ').ShouldAllBe(w => w == "video");
     }
 
     [Test]
