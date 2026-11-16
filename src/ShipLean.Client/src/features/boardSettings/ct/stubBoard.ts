@@ -23,6 +23,8 @@ export const ME = {
   canCreateProjects: true,
   theme: 'os',
   density: 'comfortable',
+  timeZone: null,
+  timeZoneLabel: 'Not set: times show in UTC',
 };
 
 /** CT only: answers the settings dialog's calls for one board, plus the project's tags; returns the bodies PUT. */
