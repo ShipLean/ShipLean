@@ -2,6 +2,8 @@ import { useState, type KeyboardEvent } from 'react';
 import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
 import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import type { ParentRefDto } from '@shiplean/core/api/workItems';
+import { useTouchShell } from '../../../touch/useTouchShell';
+import { SegmentedChoice } from '../../settings/profile/account/SegmentedChoice';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { FieldMenu } from '../../workItem/form/FieldMenu';
 import { ParentCandidates } from '../../workItem/form/ParentCandidates';
@@ -44,6 +46,7 @@ export function AddRowFields({
   const { title, points } = draft;
   const [pointsError, setPointsError] = useState(false);
   const paste = usePasteIntake(type);
+  const { touch } = useTouchShell();
 
   async function add() {
     const text = title.trim();
@@ -70,7 +73,18 @@ export function AddRowFields({
   }
 
   return (
-    <div className="flex items-center gap-[var(--space-2)]">
+    <div className="flex items-center gap-[var(--space-2)] touch:flex-wrap">
+      {touch ? (
+        <div className="w-36 flex-none">
+          <SegmentedChoice
+            label="Type"
+            testId={ids.addType}
+            options={types.map((id) => ({ value: id, label: id === 'story' ? 'Story' : typeName(id) }))}
+            selected={type}
+            onPick={onType}
+          />
+        </div>
+      ) : (
       <select
         data-testid={ids.addType}
         aria-label="Type"
@@ -85,6 +99,7 @@ export function AddRowFields({
           </option>
         ))}
       </select>
+      )}
       <input
         autoFocus
         data-testid={ids.addTitle}
@@ -143,7 +158,7 @@ export function AddRowFields({
         Add
       </button>
       <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
-        Esc
+        {touch ? 'Close' : 'Esc'}
       </button>
       <span className="text-[length:var(--text-xs)] text-ink-muted">{hint}</span>
       {error ? (

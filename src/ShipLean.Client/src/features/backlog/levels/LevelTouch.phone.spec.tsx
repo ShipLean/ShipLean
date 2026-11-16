@@ -142,6 +142,25 @@ test('NewItemRow_WhenNewChosenInStoriesListOnPhone_ShouldShowTheAddRow', async (
   expect(sideways).toBe(false);
 });
 
+test('InlineAdd_AtTouch_ShouldUseASegmentedSwitchAndClose', async ({ mount, page }) => {
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories' },
+  });
+  await page.getByTestId(ids.newItem).tap();
+
+  const switchButtons = page.getByRole('group', { name: 'Type' }).getByTestId(ids.addType);
+  await expect(switchButtons).toHaveText(['Story', 'Bug']);
+  await expect(switchButtons.first()).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('select')).toHaveCount(0);
+  await switchButtons.nth(1).tap();
+  await expect(switchButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+});
+
 test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({ mount, page }) => {
   await stubLevel(page, levelView('features', FEATURE_ROWS), { states: FEATURE_STATES });
   await mount(<LevelHarness project={PROJECT} level="features" />, features);

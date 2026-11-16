@@ -13,10 +13,12 @@ function TouchListHandle({
   row,
   onDrop,
   onLiftedChange,
+  onOver,
 }: {
   row: BacklogRowDto;
   onDrop: (rowId: string, targetId: string | null) => void;
   onLiftedChange: (lifted: boolean) => void;
+  onOver: (targetId: string | null) => void;
 }) {
   return (
     <TouchHandle
@@ -24,6 +26,7 @@ function TouchListHandle({
       rank={row.rank ?? ''}
       onDrop={(target) => onDrop(row.id, target)}
       onLiftedChange={onLiftedChange}
+      onOver={onOver}
       ghost={<TouchRowGhost row={row} />}
     />
   );
@@ -65,6 +68,8 @@ export function TouchRowList({
   const rowIds = useMemo(() => rows.map((row) => row.id), [rows]);
   useSelection(rowIds);
   const [liftedId, setLiftedId] = useState<string | null>(null);
+  // The row the finger is over: the lifted row lands just above it, so the insertion line sits there.
+  const [overId, setOverId] = useState<string | null>(null);
   const handleOf = (row: BacklogRowDto): ReactNode => {
     if (selecting) return <TouchSelectBox row={row} />;
     if (!handles) return undefined;
@@ -75,6 +80,7 @@ export function TouchRowList({
         row={row}
         onDrop={onHandleDrop}
         onLiftedChange={(lifted) => setLiftedId(lifted ? row.id : null)}
+        onOver={setOverId}
       />
     );
   };
@@ -85,6 +91,13 @@ export function TouchRowList({
       {addRow}
       {rows.map((row) => (
         <div key={row.id} className={liftedId === row.id ? 'opacity-40' : ''}>
+          {liftedId !== null && overId === row.id && liftedId !== row.id ? (
+            <div
+              data-testid={ids.touchDropLine}
+              aria-hidden="true"
+              className="relative h-0 border-t-2 border-accent before:absolute before:-top-[5px] before:left-1.5 before:size-2 before:rounded-full before:bg-accent"
+            />
+          ) : null}
           <TouchRow
             row={row}
             projectKey={projectKey}

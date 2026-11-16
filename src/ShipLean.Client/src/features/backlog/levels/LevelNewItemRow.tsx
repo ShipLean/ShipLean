@@ -88,8 +88,16 @@ export function LevelNewItemRow({
         className="btn-ghost touch:min-h-[var(--touch-target)]"
         onClick={onClose}
       >
-        Esc
+        {touch ? 'Close' : 'Esc'}
       </button>
+      {touch ? (
+        <span
+          data-testid={ids.addHelp}
+          className="basis-full text-[length:var(--text-xs)] text-ink-muted"
+        >
+          Adds at the top with the next key and stays open for the next one.
+        </span>
+      ) : null}
       {create.error ? (
         <span
           data-testid={ids.addError}
