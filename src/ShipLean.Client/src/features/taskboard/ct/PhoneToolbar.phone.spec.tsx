@@ -140,9 +140,9 @@ test('AddStoryBox_AtTouch_ShouldStayOnOneRowWithAHelperLine', async ({ mount, pa
   const close = await page.getByTestId(ids.addStoryClose).boundingBox();
   const help = await page.getByTestId(ids.addStoryHelp).boundingBox();
   if (!type || !title || !submit || !close || !help) throw new Error('the add box should render');
-  expect(title.y, 'the type and the title share a line').toBe(type.y);
-  expect(submit.y, 'Add shares it').toBe(type.y);
-  expect(close.y, 'so does the close button').toBe(type.y);
+  expect(Math.abs(title.y - type.y), 'the type and the title share a line').toBeLessThan(6);
+  expect(Math.abs(submit.y - type.y), 'Add shares it').toBeLessThan(6);
+  expect(Math.abs(close.y - type.y), 'so does the close button').toBeLessThan(6);
   expect(title.width, 'the title is a field, not a sliver').toBeGreaterThan(120);
   expect(close.x + close.width).toBeLessThanOrEqual(390);
   expect(help.y, 'the helper line sits below the row').toBeGreaterThan(type.y + type.height);

@@ -45,7 +45,7 @@ export function AddStoryBox({
   }
 
   return (
-    <div data-testid={ids.addStoryBox} className="grid gap-1 px-4 py-2 touch:px-3">
+    <div data-testid={ids.addStoryBox} className="grid grid-cols-[minmax(0,1fr)] gap-1 px-4 py-2 touch:px-3">
       <div className="flex items-center gap-2">
         <select
           data-testid={ids.addStoryType}
