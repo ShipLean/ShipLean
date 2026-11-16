@@ -9,7 +9,8 @@ test.use({ isMobile: false, launchOptions: { ignoreDefaultArgs: ['--hide-scrollb
 
 test('TouchPager_WhenTheWindowHasAScrollbar_ShouldBleedOnlyToItsEdge', async ({ mount, page }) => {
   await page.addStyleTag({
-    content: 'html::-webkit-scrollbar { width: 15px; background: #ccc } body { min-height: 3000px }',
+    content:
+      'html::-webkit-scrollbar { width: 15px; background: #ccc } body { min-height: 3000px }',
   });
   await mount(<PagerHarness />);
   const width = await page.evaluate(() => document.documentElement.clientWidth);
