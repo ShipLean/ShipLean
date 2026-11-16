@@ -174,7 +174,10 @@ test('DemoStatusBand_WhenRunOnAPhone_ShouldShowTheItemAsAFullWidthRow', async ({
   const item = page.getByTestId(ids.demoItemLink);
   // The type icon's letter, the key, the title, then the › (ND4-5).
   await expect(item).toHaveText(`U${demo.run!.itemKey}${demo.run!.itemTitle}›`);
-  await expect(item.getByTestId(componentTestIds.typeIcon)).toHaveAttribute('data-type', demo.run!.itemType);
+  await expect(item.getByTestId(componentTestIds.typeIcon)).toHaveAttribute(
+    'data-type',
+    demo.run!.itemType,
+  );
 
   const band = (await page.getByTestId(ids.demoStatusBand).boundingBox())!;
   const row = (await item.boundingBox())!;
@@ -216,7 +219,9 @@ test('SprintDemoPanel_WhenOnAPhone_ShouldShowTheSprintNumbersInOneRowAboveTheBan
 
   const row = (await page.getByTestId(ids.demoNumbers).boundingBox())!;
   const band = (await page.getByTestId(ids.demoStatusBand).boundingBox())!;
-  const tops = await Promise.all([committed, completed, moved].map(async (n) => (await n.boundingBox())!.y));
+  const tops = await Promise.all(
+    [committed, completed, moved].map(async (n) => (await n.boundingBox())!.y),
+  );
   expect(new Set(tops).size).toBe(1);
   expect(row.y + row.height).toBeLessThanOrEqual(band.y);
 });
@@ -229,8 +234,12 @@ test('DemoStatusBand_WhenTheSessionEndedWithWordsOnAPhone_ShouldQuoteThemUnderTh
   const demo: SprintDemoDto = {
     ...base,
     status: 'failed',
-    statusMessage: 'The agent session ended as failed before a video came back. It said: "No seeded copy."',
-    agentSaid: { message: 'The agent session ended as failed before a video came back.', text: 'No seeded copy.' },
+    statusMessage:
+      'The agent session ended as failed before a video came back. It said: "No seeded copy."',
+    agentSaid: {
+      message: 'The agent session ended as failed before a video came back.',
+      text: 'No seeded copy.',
+    },
     run: { ...base.run!, sessionState: 'ended' },
     actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
   };

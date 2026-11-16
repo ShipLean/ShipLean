@@ -92,7 +92,8 @@ export function DemoPlayer({ demo, player, notice }: DemoProps & { notice?: Reac
       {/* On a phone the facts sit in two columns, File and Delivered on lines of their own (SHIP-1810 P3). */}
       <p
         data-testid={ids.demoFacts}
-        className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--text-sm)] text-ink-muted touch:grid touch:grid-cols-2">
+        className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--text-sm)] text-ink-muted touch:grid touch:grid-cols-2"
+      >
         <span>
           Length <b className="font-medium text-ink">{video.durationLabel}</b>
         </span>
