@@ -25,3 +25,4 @@ export const retrosRoutes: readonly RouteId[] = [
   'retroItem',
   'retroInsights',
 ];
+export const inspectionRoutes: readonly RouteId[] = ['inspectionMetrics'];

@@ -1,4 +1,5 @@
 import type { BacklogViewDto } from '@shiplean/core/api/views';
+import type { BulkWriteRequest } from '@shiplean/core/api/backlogWrites';
 import type { WorkItemCreate } from '@shiplean/core/api/workItems';
 
 // The part of Playwright's Page and Route these stubs use (the CT package does not re-export the types).
@@ -20,6 +21,8 @@ export interface LevelServer {
   // The path and query of each level read, in order.
   reads: string[];
   creates: WorkItemCreate[];
+  // The bodies of the bulk writes (K1) sent, e.g. a row's Move to top.
+  bulks: BulkWriteRequest[];
   // Every value PUT to the `view:backlog` preference.
   puts: unknown[];
 }
@@ -36,7 +39,7 @@ export async function stubLevel(
     answer?: (search: URLSearchParams) => { status: number; body: unknown } | undefined;
   } = {},
 ): Promise<LevelServer> {
-  const server: LevelServer = { reads: [], creates: [], puts: [] };
+  const server: LevelServer = { reads: [], creates: [], bulks: [], puts: [] };
   let saved = options.saved;
   await page.route('**/api/projects/p1/backlogs/*?*', (route) => {
     const url = new URL(route.request().url());
@@ -58,6 +61,18 @@ export async function stubLevel(
     return saved === undefined
       ? route.fulfill({ status: 204 })
       : route.fulfill(json({ key: 'view:backlog', json: saved }));
+  });
+  await page.route('**/api/projects/p1/backlog/bulk', (route) => {
+    const body = route.request().postDataJSON() as BulkWriteRequest;
+    server.bulks.push(body);
+    const written = body.items.map((item) => ({
+      id: item.id,
+      key: item.id,
+      revision: item.expectedRevision + 1,
+      changes: [],
+      notices: [],
+    }));
+    return route.fulfill(json({ written, stale: [] }));
   });
   await page.route('**/api/work-items', (route) => {
     server.creates.push(route.request().postDataJSON() as WorkItemCreate);

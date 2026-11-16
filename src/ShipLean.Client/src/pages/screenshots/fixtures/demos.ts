@@ -13,6 +13,8 @@ import type {
 } from '@shiplean/core/api/demos';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
+import { expect } from '@playwright/experimental-ct-react';
+import { demosTestIds } from '../../../features/demos/testIds';
 import { attachment, change, revision } from '../../../features/workItem/ct/stubSide';
 import { PEOPLE } from '../shellStub';
 import { sprintsWithGoals } from './sprints';
@@ -36,10 +38,14 @@ const forSprint = (demo: SprintDemoDto, id: string, name: string): SprintDemoDto
   sprintName: name,
 });
 
-// The pins are written for Sprint 24; the script names its sprint, so it moves with it.
+// The pins are written for Sprint 24; the script and the BAU item's title name the sprint, so they move with it.
 const ended = (demo: SprintDemoDto): SprintDemoDto => ({
   ...forSprint(demo, ENDED_SPRINT, 'Sprint 23'),
   scriptHtml: demo.scriptHtml?.replaceAll('Sprint 24', 'Sprint 23') ?? null,
+  run:
+    demo.run === null
+      ? null
+      : { ...demo.run, itemTitle: demo.run.itemTitle.replaceAll('Sprint 24', 'Sprint 23') },
 });
 
 const noneDemo = ended(asDemo(none));
@@ -58,7 +64,12 @@ export const demoStates = {
     ...forSprint(asDemo(none), OPEN_SPRINT, 'Sprint 24'),
     status: 'closable',
     statusMessage: 'Close the sprint to make its demo.',
-    actions: { canCreate: false, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: false,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   none: noneDemo,
   /** The automatic demo could not start: no BAU item was made, so no run. */
@@ -69,6 +80,7 @@ export const demoStates = {
     actions: {
       canCreate: false,
       createBlockedMessage: 'Connect an agent to this project, then create the demo here.',
+      createWarning: null,
       canRetryYouTube: false,
     },
   },
@@ -77,7 +89,12 @@ export const demoStates = {
     ...workingDemo,
     status: 'requested',
     run: { ...workingRun, sessionState: null },
-    actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   working: workingDemo,
   /** The upload link expired with nothing delivered: the session has ended. */
@@ -86,7 +103,12 @@ export const demoStates = {
     status: 'failed',
     statusMessage: 'The upload link expired before a video came back.',
     run: { ...workingRun, sessionState: 'ended' },
-    actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   ready: readyDemo,
   youtubeUnlisted: ended(asDemo(unlisted)),
@@ -96,8 +118,8 @@ export const demoStates = {
 
 export async function stubDemo(page: Page, demo: SprintDemoDto) {
   await page.route('**/api/sprints/*/demo', (route) => route.fulfill({ json: demo }));
-  // No video file is served: the element settles on its error state with its controls, the same in every run (an empty
-  // 200 leaves the browser's loading spinner turning, which differs frame to frame).
+  // No video file is served: the element settles on its error state with its controls (an empty 200 leaves the
+  // browser's loading spinner turning). A shot of the player waits for videoSettled, which waits out the spinner.
   await page.route('**/api/attachments/*/content', (route) => route.fulfill({ status: 404 }));
   // The nocookie embed is a third-party page: a plain dark frame stands in for it.
   await page.route('https://www.youtube-nocookie.com/**', (route) =>
@@ -106,6 +128,60 @@ export async function stubDemo(page: Page, demo: SprintDemoDto) {
       body: '<html><body style="margin:0;background:#101418"></body></html>',
     }),
   );
+}
+
+/** The pseudo of the loading panel inside Chromium's own <video> controls. It stays once the video is settled; the
+ * spinner inside it (any element under it) is removed when the spinner is down. */
+const LOADING_PANEL = '-internal-media-controls-loading-panel';
+
+interface DomNode {
+  nodeType: number;
+  attributes?: string[];
+  children?: DomNode[];
+  shadowRoots?: DomNode[];
+}
+
+const inside = (node: DomNode) => [...(node.children ?? []), ...(node.shadowRoots ?? [])];
+
+const findPanel = (node: DomNode): DomNode | null => {
+  const at = node.attributes?.indexOf('pseudo') ?? -1;
+  if (at >= 0 && node.attributes![at + 1] === LOADING_PANEL) return node;
+  for (const child of inside(node)) {
+    const panel = findPanel(child);
+    if (panel !== null) return panel;
+  }
+  return null;
+};
+
+const ELEMENT_NODE = 1;
+const hasElements = (node: DomNode): boolean =>
+  inside(node).some((child) => child.nodeType === ELEMENT_NODE || hasElements(child));
+
+/**
+ * Waits until the demo <video> has settled on its error state (stubDemo answers its file with a 404) and the browser
+ * has taken its loading spinner down. The spinner does not stop when the error lands: Chromium lets it finish its turn
+ * (up to about 1.5s) before removing it, and it lives in the browser's own shadow DOM, which no locator or page script
+ * reaches, so the check reads the DOM through DevTools. Without it a shot catches the spinner at a different angle, or
+ * not at all, from run to run (SHIP-1871, SHIP-1926). The panel must be found: if a browser update renames it, the
+ * wait times out instead of passing with the spinner still turning.
+ */
+export async function videoSettled(page: Page) {
+  const video = page.getByTestId(demosTestIds.demoVideo);
+  // NETWORK_NO_SOURCE: the 404 has landed, so no new loading spinner can start.
+  await expect(video).toHaveJSProperty('networkState', 3);
+  const devTools = await page.context().newCDPSession(page);
+  try {
+    await expect
+      .poll(async () => {
+        const { root } = await devTools.send('DOM.getDocument', { depth: -1, pierce: true });
+        const panel = findPanel(root as DomNode);
+        if (panel === null) return 'no loading panel';
+        return hasElements(panel) ? 'spinner turning' : 'spinner down';
+      })
+      .toBe('spinner down');
+  } finally {
+    await devTools.detach();
+  }
 }
 
 // ---- Demos settings (design/screens/settings-demos*.png) ----

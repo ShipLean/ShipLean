@@ -21,4 +21,11 @@ export const agentPanelTestIds = {
   empty: 'agent-panel-empty',
   earlier: 'agent-panel-earlier',
   earlierSession: 'agent-panel-earlier-session',
+  sessionEnd: 'agent-panel-session-end',
+  sessionEndRunLog: 'agent-panel-session-end-run-log',
+  sessionDeliveries: 'agent-panel-session-deliveries',
+  sessionDeliveryRow: 'agent-panel-session-delivery-row',
+  sessionDeliveryOutcome: 'agent-panel-session-delivery-outcome',
+  sessionDeliveriesToggle: 'agent-panel-session-deliveries-toggle',
+  startWarning: 'agent-panel-start-warning',
 } as const;

@@ -1,5 +1,6 @@
 namespace ShipLean.Contracts.Demos;
 
+// Numbers and AgentSaid were added for the phone design (SHIP-1810 P7 and P5); StatusMessage still carries the whole sentence.
 public sealed record SprintDemoDto(
     Guid SprintId,
     string SprintName,
@@ -11,4 +12,6 @@ public sealed record SprintDemoDto(
     IReadOnlyList<SprintDemoFeatureDto> Features,
     string? ScriptHtml,
     SprintDemoYouTubeDto YouTube,
-    SprintDemoActionsDto Actions);
+    SprintDemoActionsDto Actions,
+    SprintDemoNumbersDto Numbers,
+    SprintDemoAgentSaidDto? AgentSaid);

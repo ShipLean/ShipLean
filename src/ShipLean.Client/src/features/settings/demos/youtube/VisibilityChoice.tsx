@@ -14,7 +14,10 @@ const notes: Record<YouTubeVisibility, string> = {
   private: 'only the channel owner',
 };
 
-/** The three visibilities as radios. Nothing is chosen until the person chooses. */
+/**
+ * The three visibilities as radios. Nothing is chosen until the person chooses. At touch they are one row of plain radios
+ * without the notes (SHIP-1809 P7), each a 32px target.
+ */
 export function VisibilityChoice({
   value,
   disabled,
@@ -30,12 +33,12 @@ export function VisibilityChoice({
       data-testid={ids.youtubeVisibility}
       role="radiogroup"
       aria-label="Visibility"
-      className="flex flex-wrap gap-x-4 gap-y-1 touch:grid touch:grid-cols-3 touch:gap-2"
+      className="flex flex-wrap gap-x-4 gap-y-1 touch:flex-nowrap touch:gap-x-5"
     >
       {YOU_TUBE_VISIBILITIES.map((visibility) => (
         <span
           key={visibility}
-          className="inline-flex items-center gap-1.5 touch:relative touch:min-h-[var(--touch-target)] touch:flex-col touch:items-start touch:justify-center touch:rounded-control touch:border touch:border-edge touch:px-2 touch:py-1"
+          className="inline-flex items-center gap-1.5 touch:relative touch:min-h-[var(--touch-target)]"
         >
           <label className="inline-flex items-center gap-1.5 font-medium text-ink touch:after:absolute touch:after:inset-0">
             <input
@@ -47,7 +50,7 @@ export function VisibilityChoice({
             />
             {labels[visibility]}
           </label>
-          <span className="text-ink-muted">({notes[visibility]})</span>
+          <span className="text-ink-muted touch:hidden">({notes[visibility]})</span>
         </span>
       ))}
     </div>

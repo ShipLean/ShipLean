@@ -40,6 +40,7 @@ export function TouchPlanningRow({
         projectKey={projectKey}
         flash={flash}
         forecast={forecast}
+        hideSprint={row.sprint?.id === sectionId}
         handle={
           selecting ? (
             <TouchSelectBox row={row} />

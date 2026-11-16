@@ -91,11 +91,13 @@ internal static class SprintDemoDataSql
         ORDER BY l.created_at, l.id
         """;
 
+    // An agent session's run log is left out (D10: admin-only, and the demo data goes to an agent for whoever made the demo).
     public const string Attachments =
         """
         SELECT work_item_id AS FeatureId, name AS Name
-        FROM attachment
+        FROM attachment a
         WHERE work_item_id = ANY(@featureIds) AND archived_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM agent_session s WHERE s.run_log_attachment_id = a.id)
         ORDER BY created_at, name, id
         """;
 

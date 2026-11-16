@@ -73,10 +73,12 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             ORDER BY l.created_at, l.id
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
+        // An earlier session's run log is left out (D10): it is admin-only, and the session's creator may be a member.
         var attachmentRows = (await connection.QueryAsync<AgentAttachmentRow>(new CommandDefinition(
             """
             SELECT id, name, content_type AS contentType, size_bytes AS sizeBytes, storage_ref AS storageRef
-            FROM attachment WHERE work_item_id = @workItemId AND archived_at IS NULL
+            FROM attachment a WHERE work_item_id = @workItemId AND archived_at IS NULL
+              AND NOT EXISTS (SELECT 1 FROM agent_session s WHERE s.run_log_attachment_id = a.id)
             ORDER BY created_at, id
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToList();

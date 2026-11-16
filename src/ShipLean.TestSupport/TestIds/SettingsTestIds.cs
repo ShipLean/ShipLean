@@ -289,6 +289,9 @@ public static class SettingsTestIds
     public const string AgentsShownToken = "agents-shown-token";
     public const string AgentsShownCopy = "agents-shown-copy";
     public const string AgentsShownDone = "agents-shown-done";
+    public const string AgentsConnectionHealth = "agents-connection-health";
+    public const string AgentsConnectionTest = "agents-connection-test";
+    public const string AgentsConnectionTestResult = "agents-connection-test-result";
     public const string GeneralAgentConnection = "settings-general-agent-connection";
     public const string GeneralRepoUrl = "settings-general-repo-url";
     public const string GeneralRepoBaseBranch = "settings-general-repo-base-branch";
@@ -334,4 +337,16 @@ public static class SettingsTestIds
     public const string TimeZoneUseDevice = "settings-time-zone-use-device";
     public const string TimeZoneError = "settings-time-zone-error";
     public const string TimeZoneChoicesError = "settings-time-zone-choices-error";
+    public const string StateHandle = "settings-state-handle";
+    public const string StateColumnLabel = "settings-state-column-label";
+    public const string SettingsIndex = "settings-index";
+    public const string SettingsIndexRow = "settings-index-row";
+    public const string SettingsIndexCount = "settings-index-count";
+    public const string UnsavedChip = "settings-unsaved-chip";
+    public const string ChangePane = "settings-change-pane";
+    public const string StateAddOpen = "settings-state-add-open";
+    public const string StateAddCancel = "settings-state-add-cancel";
+    public const string StateTypeRow = "settings-state-type-row";
+    public const string MembersSummary = "settings-members-summary";
+    public const string StateSummary = "settings-state-summary";
 }

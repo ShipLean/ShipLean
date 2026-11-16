@@ -17,7 +17,7 @@ internal sealed class TimelineBarsPartBuilder
     {
         _bars.Add(new TimelineBarDto(
             key, WorkItemTypeId.Task, key, parent, null, endHours is null ? TimelineBarState.InFlight : TimelineBarState.Resolved,
-            At(startHours), At(endHours), startHours, endHours, null, null, null, null, inferred, false, [], []));
+            At(startHours), At(endHours), startHours, endHours, null, null, null, null, inferred, false, [], [], null, null, null));
         return this;
     }
 

@@ -154,4 +154,20 @@ export const sprintsTestIds = {
   burndownDay: 'sprints-backlog-burndown-day',
   glanceIcon: 'sprints-backlog-glance-icon',
   glanceReadyHint: 'sprints-backlog-glance-ready-hint',
+  // ND1 phone (SHIP-1846)
+  listSection: 'sprints-list-section',
+  listHead: 'sprints-list-head',
+  planSprints: 'sprints-plan-sprints',
+  listEmpty: 'sprints-list-empty',
+  listEmptyNew: 'sprints-list-empty-new',
+  // ND2 phone (SHIP-1954)
+  capacityPeopleHead: 'sprints-capacity-people-head',
+  capacityRowDays: 'sprints-capacity-row-days',
+  capacityRowNote: 'sprints-capacity-row-note',
+  capacityUnsaved: 'sprints-capacity-unsaved',
+  capacityDaysLess: 'sprints-capacity-days-less',
+  capacityDaysMore: 'sprints-capacity-days-more',
+  capacitySheetPoints: 'sprints-capacity-sheet-points',
+  capacityAddMember: 'sprints-capacity-add-member',
+  capacitySheetFormula: 'sprints-capacity-sheet-formula',
 } as const;

@@ -156,4 +156,18 @@ public static class SprintsTestIds
     public const string BurndownDay = "sprints-backlog-burndown-day";
     public const string GlanceIcon = "sprints-backlog-glance-icon";
     public const string GlanceReadyHint = "sprints-backlog-glance-ready-hint";
+    public const string ListSection = "sprints-list-section";
+    public const string ListHead = "sprints-list-head";
+    public const string PlanSprints = "sprints-plan-sprints";
+    public const string ListEmpty = "sprints-list-empty";
+    public const string ListEmptyNew = "sprints-list-empty-new";
+    public const string CapacityPeopleHead = "sprints-capacity-people-head";
+    public const string CapacityRowDays = "sprints-capacity-row-days";
+    public const string CapacityRowNote = "sprints-capacity-row-note";
+    public const string CapacityUnsaved = "sprints-capacity-unsaved";
+    public const string CapacityDaysLess = "sprints-capacity-days-less";
+    public const string CapacityDaysMore = "sprints-capacity-days-more";
+    public const string CapacitySheetPoints = "sprints-capacity-sheet-points";
+    public const string CapacityAddMember = "sprints-capacity-add-member";
+    public const string CapacitySheetFormula = "sprints-capacity-sheet-formula";
 }

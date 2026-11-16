@@ -24,6 +24,18 @@ export function sameScreenIn(route: MatchedRoute | undefined, key: string): stri
     case 'retroItem':
       // The item belongs to the old project; its Features list is the nearest screen.
       return routePath('retroFeatures', { key });
+    case 'inspectionMetrics':
+      // The view, range and split carry over; the open sprint and task are the old project's, so a sprint's view goes
+      // back to Lead time.
+      return routePath(
+        'inspectionMetrics',
+        { key },
+        {
+          view: route.query.view === 'period' ? 'leadtime' : route.query.view,
+          range: route.query.range,
+          cut: route.query.cut,
+        },
+      );
     case 'workItem':
     case 'workItemAttachment':
     case 'featureBoard':

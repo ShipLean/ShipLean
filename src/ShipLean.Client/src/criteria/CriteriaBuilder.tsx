@@ -42,6 +42,7 @@ export function CriteriaBuilder({
   states,
   sprints,
   showChips = true,
+  layout,
 }: PickLists & {
   value: CriteriaJson;
   onChange: (value: CriteriaJson) => void;
@@ -49,6 +50,8 @@ export function CriteriaBuilder({
   errors?: readonly CriteriaValidationError[];
   /** Whether the builder shows its own summary chips; turn it off where the chips already sit in a toolbar. */
   showChips?: boolean;
+  /** `sheet`: each clause is a box, the field, a narrow operator and ✕ on one line and the value under them (the touch filter sheet). */
+  layout?: 'sheet';
 }) {
   // A clause has no identity in the criteria, so each row gets one here, kept in step with the clauses: it survives a removal,
   // which keeps the rows' own state (a half-typed list) with the right clause. A change from outside that alters the count starts over.
@@ -105,6 +108,7 @@ export function CriteriaBuilder({
           index={index}
           clause={clause}
           match={value.match}
+          layout={layout}
           fields={fields}
           lists={lists}
           errors={errorsOf(index)}

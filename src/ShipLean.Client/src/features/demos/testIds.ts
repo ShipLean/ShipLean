@@ -53,4 +53,12 @@ export const demosTestIds = {
   sprintHeaderTabDemo: 'sprint-header-tab-demo',
   // SHIP-889 touch
   demoCreateReason: 'demo-create-reason',
+  demoCreateWarning: 'demo-create-warning',
+  // SHIP-1936 touch
+  demoNumbers: 'demo-numbers',
+  demoNumberCommitted: 'demo-number-committed',
+  demoNumberCompleted: 'demo-number-completed',
+  demoNumberFeaturesMoved: 'demo-number-features-moved',
+  demoAgentSaid: 'demo-agent-said',
+  demoFacts: 'demo-facts',
 } as const;

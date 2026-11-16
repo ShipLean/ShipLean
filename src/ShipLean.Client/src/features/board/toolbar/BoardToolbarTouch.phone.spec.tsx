@@ -5,6 +5,7 @@ import { BoardHarness } from '../ct/BoardHarness';
 import { LocationProbe } from '../ct/LocationProbe';
 import { TOM, column, featuresBoard, storiesBoard } from '../ct/fixtures';
 import { stubBoard } from '../ct/stubApi';
+import { featuresWithHealth, filteredByHealth } from '../filter/ct/healthBoard';
 import { boardTestIds as ids } from '../testIds';
 
 // The board toolbar, Filter, More and ⓘ sheets at 900px and below (SHIP-719, L719b). Runs in the CT phone project.
@@ -212,4 +213,143 @@ test('DodSheet_WhenInfoTapped_ShouldOpenSheetNotPopover', async ({ mount, page }
   await expect(page.getByTestId(ids.dod)).toHaveCount(0);
   await sheet.getByTestId(touchTestIds.sheetClose).tap();
   await expect(sheet).toHaveCount(0);
+});
+
+test('BoardFilterSheet_ShouldShowTheMatchingCardCount', async ({ mount, page }) => {
+  await stubBoard(page, (search) => filtered(storiesBoard(), search), { members: [TOM] });
+  await mount(<BoardHarness />, stories);
+  await page.getByTestId(ids.filterToggle).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.filterCount)).toHaveText(
+    'Showing 14 of 14 cards · WIP counts include hidden cards',
+  );
+
+  await sheet.getByTestId(ids.filterPerson).filter({ hasText: 'Tom Okafor' }).tap();
+
+  await expect(sheet.getByTestId(ids.filterCount)).toHaveText(
+    'Showing 11 of 14 cards · WIP counts include hidden cards',
+  );
+});
+
+test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }) => {
+  await stubBoard(page, (search) => filtered(storiesBoard(), search), { members: [TOM] });
+  await mount(<BoardHarness />, stories);
+  const toggle = page.getByTestId(ids.filterToggle);
+  const more = page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton);
+  await expect(toggle).toHaveText('Filter');
+  const idleBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
+  // Filter and the bordered ⋯ sit together at the right; the level switch is alone at the left.
+  const [levels, filter, dots] = await Promise.all(
+    [page.getByTestId(ids.levelSwitch), toggle, more].map((part) => part.boundingBox()),
+  );
+  expect(filter!.x).toBeGreaterThan(levels!.x + levels!.width + 8);
+  expect(Math.abs(filter!.x + filter!.width + 8 - dots!.x)).toBeLessThan(2);
+  expect(dots!.x + dots!.width).toBeGreaterThan(370);
+  await expect(more).toHaveCSS('border-top-width', '1px');
+
+  await toggle.tap();
+  await page.getByTestId(ids.filterPerson).filter({ hasText: 'Tom Okafor' }).tap();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await expect(toggle).toHaveText('Filter (1)');
+  await expect
+    .poll(() => toggle.evaluate((el) => getComputedStyle(el).borderTopColor))
+    .not.toBe(idleBorder);
+});
+
+test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
+  const server = await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  await mount(<BoardHarness level="features" />, features);
+  await expect(page.getByTestId(ids.card)).toHaveCount(3);
+  await page.getByTestId(ids.filterToggle).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+
+  await sheet.getByTestId(ids.filterHealth).selectOption('atRisk');
+
+  await expect.poll(() => server.reads.at(-1)).toBe('?health=atRisk');
+  await expect(page.getByTestId(ids.card)).toHaveCount(1);
+  await expect(page.getByTestId(ids.cardKey)).toHaveText('SHIP-104');
+  await expect(sheet.getByTestId(ids.filterCount)).toContainText('Showing 12 of 14 cards');
+  await sheet.getByTestId(ids.filterClear).tap();
+  await expect(page.getByTestId(ids.card)).toHaveCount(3);
+});
+
+test('FeaturesBoard_HealthFilter_WhenTheBoardFailsToLoad_ShouldShowTheError', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).tap();
+  await expect(page.getByTestId(ids.card)).toHaveCount(3);
+  await page.route(/\/api\/boards\/[^/?]+\?health=/, (route) => route.fulfill({ status: 500 }));
+
+  await page.getByTestId(touchTestIds.sheet).getByTestId(ids.filterHealth).selectOption('blocked');
+
+  await expect(page.getByTestId(ids.loadFailed)).toBeVisible();
+});
+
+test('BoardMoreSheet_WhenStories_ShouldHintTheLaneOrderAndOfferFullOrCompact', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, storiesBoard());
+  await mount(<BoardHarness />, stories);
+
+  await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText(
+    'Expedite above Default lane',
+  );
+  await expect(sheet.getByTestId(ids.cardsOption)).toHaveText(['Full', 'Compact']);
+  // One row: the label and the segmented control share a line.
+  const [label, full] = await Promise.all([
+    sheet.getByText('Cards', { exact: true }).boundingBox(),
+    sheet.getByTestId(ids.cardsOption).first().boundingBox(),
+  ]);
+  expect(Math.abs(label!.y + label!.height / 2 - (full!.y + full!.height / 2))).toBeLessThan(3);
+  expect(full!.height).toBeGreaterThanOrEqual(32);
+});
+
+test('BoardFilterSheet_WhenOpened_ShouldReportTheOpening', async ({ mount, page }) => {
+  await stubBoard(page, storiesBoard());
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/p1/usage/board-filter-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<BoardHarness />, stories);
+
+  await page.getByTestId(ids.filterToggle).tap();
+  await expect(page.getByTestId(ids.filterSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ level: 'stories' }]);
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(ids.filterSheet)).toBeHidden();
+
+  expect(opened).toHaveLength(1);
+});
+
+test('FeaturesBoard_HealthFilterSheet_WhenCleared_ShouldReportAny', async ({ mount, page }) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  const health: unknown[] = [];
+  await page.route('**/api/projects/p1/usage/board-health-filtered', (route) => {
+    health.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await sheet.getByTestId(ids.filterHealth).selectOption('atRisk');
+  await expect.poll(() => health).toEqual([{ health: 'atRisk' }]);
+
+  await sheet.getByTestId(ids.filterClear).tap();
+
+  await expect.poll(() => health).toEqual([{ health: 'atRisk' }, { health: 'any' }]);
 });

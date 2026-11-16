@@ -60,4 +60,13 @@ public static class DemosTestIds
 
     // SHIP-889 touch
     public const string DemoCreateReason = "demo-create-reason";
+    public const string DemoCreateWarning = "demo-create-warning";
+
+    // SHIP-1936 touch
+    public const string DemoNumbers = "demo-numbers";
+    public const string DemoNumberCommitted = "demo-number-committed";
+    public const string DemoNumberCompleted = "demo-number-completed";
+    public const string DemoNumberFeaturesMoved = "demo-number-features-moved";
+    public const string DemoAgentSaid = "demo-agent-said";
+    public const string DemoFacts = "demo-facts";
 }

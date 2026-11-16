@@ -9,6 +9,7 @@ import { ColumnsMenu, type ColumnsMenuProps } from './ColumnsMenu';
 import { ModeSwitch } from './ModeSwitch';
 import { MoreSheet } from './MoreSheet';
 import { ToolbarChipsHost } from './touchSlots';
+import type { BacklogSummary } from './listSummary';
 import { TriageChip } from './TriageChip';
 
 // FROZEN: the filter, every backlog level and every mode render this one toolbar. Add optional props, never rename or
@@ -42,6 +43,10 @@ export interface BacklogToolbarProps {
   moreActions?: readonly SheetAction[];
   // At 900px and below: the column sort in force, shown in ⋯ More with the action that clears it. Absent, no sort row.
   sort?: { label: string; onClear: () => void };
+  // At 900px and below: the line under the toolbar that says what the list holds and what it leaves out. Absent (Planning), no line.
+  summary?: BacklogSummary;
+  // At 900px and below: a strip shown above the summary line (the not-estimated banner on Stories List).
+  banner?: ReactNode;
 }
 
 export function BacklogToolbar({
@@ -61,6 +66,8 @@ export function BacklogToolbar({
   triage,
   moreActions,
   sort,
+  summary,
+  banner,
 }: BacklogToolbarProps) {
   const { touch } = useTouchShell();
   const [chipsHost, setChipsHost] = useState<HTMLElement | null>(null);
@@ -92,6 +99,8 @@ export function BacklogToolbar({
           </ToolbarChipsHost.Provider>
           <span className="flex-1" />
           <MoreSheet
+            level={level}
+            mode={mode}
             onSearch={search ? () => setSearching(true) : undefined}
             options={options}
             moreActions={moreActions}
@@ -108,6 +117,18 @@ export function BacklogToolbar({
         {triage && chipsHost
           ? createPortal(<TriageChip count={triage.count} onShow={triage.onShow} />, chipsHost)
           : null}
+        {banner}
+        {summary ? (
+          <div
+            data-testid={ids.summary}
+            className="flex items-baseline gap-[var(--space-2)] border-t border-edge bg-sunken px-3 py-1.5 text-[length:var(--text-sm)] text-ink-muted"
+          >
+            <b className="text-ink">{summary.count}</b>
+            {summary.detail ? <span>· {summary.detail}</span> : null}
+            <span className="flex-1" />
+            {summary.note ? <span data-testid={ids.summaryNote}>{summary.note}</span> : null}
+          </div>
+        ) : null}
         {search && searching ? (
           <div
             data-testid={ids.searchRow}

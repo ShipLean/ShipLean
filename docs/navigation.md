@@ -25,6 +25,7 @@ The address of every screen is in `src/ShipLean.Client/src/routes.ts` (ids, path
 | Project | `retroFeatures` | `/p/:key/retros/features` | `show` (open, waiting), `q` |
 | Project | `retroItem` | `/p/:key/retros/items/:itemKey` | `retro` (the open retro), `decide` (open), `point` (the point to highlight) |
 | Project | `retroInsights` | `/p/:key/retros/insights` | `view` (themes, actions, impact), `range` (6, 3, all, w6, w12) |
+| Project | `inspectionMetrics` | `/p/:key/inspection` (desktop only, in `TouchExemptRoutes`) | `view` (overview, leadtime, period, json; overview when absent), `range` (last6, quarter, lastQuarter, all), `cut` (none, feature, who), `p` (the open sprint's id), `select` (a task key in that sprint), `tab` (tasks, features); `features/inspectionMetrics/inspectionMetricsQuery.ts` reads and writes them |
 | Project | `taskboard` | `/p/:key/sprints/:sprintId/taskboard` | `settings` |
 | Project | `jiraImport` | `/p/:key/import` | |
 | Project | `projectSettings` | `/p/:key/settings/:tab` (general, states, members, sprints, integrations, demos) | `demos` takes `youtube` (pending, denied, error): where the browser lands after Google's consent screen, which the panel reads once and then removes |
@@ -47,6 +48,7 @@ An unknown address (under `/p/:key` or anywhere else, such as `/nowhere`), an un
 - Project settings: `settingsDraft` is the frame of **every** tab (tab list with dirty dots, the one Save and Discard header, Save jumping to the first error). The page passes it the content of the States, Integrations and Demos tabs as `states`, `integrations` and `demos` (elements of `settingsStates`, `settingsIntegrations` and `settingsDemos`), and the frame renders them on those tabs. The Demos tab has its own Save and takes no part in the draft. The frame shares the draft with `settingsStates` through its own context.
 - Work item: `form` is the page frame (header and fields strip across the full width, then the main column beside the rail, as `work-item.html` draws it). The page passes it `links`, `tasks`, `discussion` and `side` as elements; the frame puts Links at the top of the rail, then Side, and Tasks and Discussion in the main column.
 - Instance settings: each tab mounts its own slot, with the `tab`.
+- Inspection: the page reads the view model itself (`GET api/projects/{id}/inspection-metrics`, one request per screen, for the range, split and sprint in the address; a sprint and task only on the period view), shows `InspectionHeader` (title, the server's caveat, the Overview and Lead time tabs) over it, and mounts one slot, the view `?view=` names (`inspectionMetricsSlots`). While the read is pending it shows `inspectionMetricsTestIds.loading`; when it fails (404 or 500) `inspectionMetricsTestIds.error` with Retry. It posts `usage/inspection-metrics-viewed` once per view opened. What the views show and how the numbers are read: [inspection-metrics.md](inspection-metrics.md); the commit-time backfill: [runbooks/backfill-commit-times.md](runbooks/backfill-commit-times.md).
 
 ## Slots
 
@@ -85,6 +87,7 @@ The five work item slots read the item through the query key `['projects', proje
 | `settingsStates` | Project settings, inside `settingsDraft` | `{ project, tab }` |
 | `settingsIntegrations` | Project settings, inside `settingsDraft` | `{ project, tab }` |
 | `settingsDemos` | Project settings, inside `settingsDraft` (the Demos tab) | `{ project, tab }`; the slot mounts `SettingsDemos` with its own Save, never the draft's: Automatic demos and the environment text, the brand panel (logo and tokens) and the YouTube panel |
+| `overview`, `leadtime`, `period`, `json` | Inspection (one, by `?view=`) | `{ project, view: InspectionMetricsViewDto, query: InspectionQuery, onQueryChange(patch) }` (`InspectionViewProps`); each is a view component under `features/inspectionMetrics/<view>/`, not a `slots/` file; `onQueryChange` writes the address, keeping `item` and replacing the history entry |
 | `importStepper`, `importRun` | Jira import (both routes) | `{ project: ProjectDto \| null }` (null at `/import`) |
 | `newProject` | New project | `{}` |
 | `instanceGeneral`, `instanceUsers`, `instanceProjects` | Instance settings | `{ tab }` |
@@ -107,7 +110,7 @@ The five work item slots read the item through the query key `['projects', proje
 
 ## The project picker
 
-The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Five screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog, Capacity and Retro go to All sprints (`sprints`), and a work item goes to the Stories backlog. Retrospectives Search keeps its filters in the query, but switching project drops them (a theme or sprint of one project means nothing in another). An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
+The picker opens only from the project button in the side menu (tooltip "Switch project"). Ctrl/⌘+P opens quick search, not the picker, and opening quick search closes the picker. Picking a project in the top bar goes to the same screen in that project (`features/shell/sameScreenIn.ts`): the route id, its params and its query are kept, with the new key. Inspection keeps its view, range and split and drops the open sprint and task (a sprint's view goes to Lead time). Five screens belong to one project's sprint or item, so they fall back: the Sprint taskboard, the Sprint backlog, Capacity and Retro go to All sprints (`sprints`), and a work item goes to the Stories backlog. Retrospectives Search keeps its filters in the query, but switching project drops them (a theme or sprint of one project means nothing in another). An install-level page (profile, instance settings, new project, import start, authorize) or an unknown address also goes to the Stories backlog.
 
 ## Testing
 

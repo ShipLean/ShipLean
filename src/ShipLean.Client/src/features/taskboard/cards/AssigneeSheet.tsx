@@ -1,5 +1,11 @@
 import type { CardDto } from '@shiplean/core/api/views';
-import { actionSheetRowClass } from '../../../touch/ActionSheet';
+import { Avatar } from '../../../components/Avatar';
+import {
+  ActionSheetRowFace,
+  actionSheetCheckedClass,
+  actionSheetRowClass,
+} from '../../../touch/ActionSheet';
+import { useMe } from '../../shell/useShellQueries';
 import { Sheet } from '../../../touch/Sheet';
 import { useTaskboardMoves } from '../moves/TaskboardMovesContext';
 import { taskboardTestIds as ids } from '../testIds';
@@ -17,8 +23,9 @@ export function AssigneeSheet({
   onBack: () => void;
 }) {
   const { view, assign } = useTaskboardMoves();
+  const { data: me } = useMe();
   const people = view.peopleRows.flatMap((row) => (row.person ? [row.person] : []));
-  const options = [null, ...people];
+  const options = [...people, null];
   return (
     <Sheet open title="Assignee" onClose={onClose}>
       <button
@@ -38,13 +45,19 @@ export function AssigneeSheet({
             data-testid={ids.assigneeOption}
             data-person-id={person?.id ?? ''}
             aria-current={here ? 'true' : undefined}
-            className={`${actionSheetRowClass} text-ink ${here ? 'bg-signal-soft font-semibold' : ''}`}
+            className={`${actionSheetRowClass} gap-3 text-ink ${here ? actionSheetCheckedClass : ''}`}
             onClick={() => {
               if (!here) assign(card, rowId, person, 'sheet');
               onClose();
             }}
           >
-            {person?.name ?? 'Unassigned'}
+            <ActionSheetRowFace
+              face={{
+                label: `${person?.name ?? 'Unassigned'}${person && person.id === me?.id ? ' (you)' : ''}`,
+                icon: <Avatar {...(person ?? {})} />,
+                checked: here,
+              }}
+            />
           </button>
         );
       })}

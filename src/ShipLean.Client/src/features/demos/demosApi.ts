@@ -39,12 +39,16 @@ export function useSprintDemo(projectId: string, sprintId: string) {
 
 // A teammate's demo write, the demo item's agent session or its attachments changed: read the demo again. The agent
 // and attachment events name a work item and the demo's item has no id on the DTO, so while the sprint has a run any
-// such event refetches.
+// such event refetches. An invalidate during the first read (no data yet) joins that read, which may have read the
+// demo before the change, so the read in flight is cancelled first and the demo is read again after the event.
 export function useSprintDemoRealtime(projectId: string, sprintId: string) {
   const queryClient = useQueryClient();
   useEffect(() => {
     const key = sprintDemoKey(projectId, sprintId);
-    const refetch = () => void queryClient.invalidateQueries({ queryKey: key });
+    const refetch = () =>
+      void queryClient
+        .cancelQueries({ queryKey: key })
+        .then(() => queryClient.invalidateQueries({ queryKey: key }));
     const whileRunning = () => {
       if (queryClient.getQueryData<SprintDemoDto>(key)?.run != null) refetch();
     };

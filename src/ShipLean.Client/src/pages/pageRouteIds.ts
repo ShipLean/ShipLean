@@ -31,10 +31,12 @@ export const pageRouteIds = {
   retroFeatures: 'retroFeatures',
   retroItem: 'retroItem',
   retroInsights: 'retroInsights',
+  inspectionMetrics: 'inspectionMetrics',
   importIntoProject: 'jiraImport',
   importWithoutProject: 'importStart',
   projectSettings: 'projectSettings',
   newProject: 'newProject',
   instanceSettings: 'instanceSettings',
   profile: 'profile',
+  projectSettingsIndex: 'projectSettingsIndex',
 } as const satisfies Record<string, RouteId>;

@@ -287,6 +287,33 @@ public class TimelineFactsReaderTests : ApiFixture
         facts.People[SeedIds.Users.Joel].ShouldNotBeNullOrEmpty();
     }
 
+    // Commit times come from commit links (committed_at) and from a readable repository's commits (code_commit.authored_at); a commit
+    // link with no time is no fact. Mutation: read the link's created_at instead of committed_at.
+    [Test]
+    public async Task Read_WhenCommitHasTime_ShouldReturnCommitFact()
+    {
+        var tree = await TreeAsync();
+        await using var connection = await OpenDatabaseAsync();
+        const string insertLink =
+            "INSERT INTO work_item_link (id, source_id, link_type, url, title, committed_at) VALUES (gen_random_uuid(), @id, 'url', @url, @title, @at)";
+        await connection.ExecuteAsync(insertLink, new { id = tree.Task, url = "https://git.example.test/c/aaaaaaa", title = "commit aaaaaaa Work", at = (DateTimeOffset?)T0.AddHours(2) });
+        await connection.ExecuteAsync(insertLink, new { id = tree.Task, url = "https://git.example.test/c/bbbbbbb", title = "commit bbbbbbb Later", at = (DateTimeOffset?)null });
+        const string sha = "ccccccc789abcdef0123456789abcdef01234567";
+        var repository = Guid.NewGuid();
+        await connection.ExecuteAsync(
+            "INSERT INTO code_repository (id, provider, host, path) VALUES (@repository, 'github', 'github.com', @path)", new { repository, path = $"acme/{repository}" });
+        await connection.ExecuteAsync(
+            "INSERT INTO work_item_commit (id, work_item_id, repository_id, sha, position, added_via) VALUES (gen_random_uuid(), @id, @repository, @sha, 1, 'report_task')",
+            new { id = tree.Task, repository, sha });
+        await connection.ExecuteAsync(
+            "INSERT INTO code_commit (repository_id, sha, parent_shas, subject, author_name, authored_at, additions, deletions, files_changed, paths, read_at) VALUES (@repository, @sha, '{}', 'Work', 'Ann', @at, 1, 0, 1, '{}', @at)",
+            new { repository, sha, at = T0.AddHours(4) });
+
+        var facts = await ReadAsync(tree.Feature);
+
+        facts.Commits.Select(commit => (commit.ItemKey, commit.CommittedAt)).ShouldBe([(tree.TaskKey, T0.AddHours(2)), (tree.TaskKey, T0.AddHours(4))]);
+    }
+
     [Test]
     public async Task Read_WhenChildRemoved_ShouldLeaveItOut()
     {

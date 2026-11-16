@@ -8,6 +8,7 @@ public static class ScreenIds
         "login", "newProject", "instanceSettings", "profile", "importStart", "storiesBacklog", "featuresBacklog",
         "epicsBacklog", "workItem", "workItemAttachment", "agentRun", "featureBoard", "featureTimeline", "storiesBoard", "featuresBoard", "epicsBoard",
         "sprints", "sprintBacklog", "taskboard", "capacity", "sprintRetro", "sprintDemo", "retros", "retroFeatures", "retroItem", "retroInsights", "jiraImport",
-        "projectSettings", "authorize", "mobileSignIn", "taskChanges",
+        "projectSettings", "authorize", "mobileSignIn", "taskChanges", "inspectionMetrics",
+        "projectSettingsIndex",
     };
 }

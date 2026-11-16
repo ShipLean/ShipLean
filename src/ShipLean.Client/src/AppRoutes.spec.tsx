@@ -9,8 +9,12 @@ import { mobileSignInTestIds } from './features/mobileSignIn/testIds';
 import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
 import { settingsTestIds } from './features/settings/testIds';
 import { taskChangesTestIds } from './features/taskChanges/testIds';
+import { inspectionMetricsTestIds } from './features/inspectionMetrics/testIds';
 import { pagesTestIds } from './features/pages/testIds';
+import { RouteHistoryHarness } from './pages/ct/RouteHistoryHarness';
+import { routeHistoryIds } from './pages/ct/routeHistoryIds';
 import { stubProjectApi } from './pages/pagesFixtures';
+import { projectSettings } from './pages/screenshots/fixtures/workItemSettings';
 import type { RouteId } from './routes';
 import { appTestIds } from './testIds';
 
@@ -86,11 +90,14 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   retroFeatures: { path: '/p/SHIP/retros/features', testId: pagesTestIds.retroFeaturesPage },
   retroItem: { path: '/p/SHIP/retros/items/SHIP-141', testId: pagesTestIds.retroItemPage },
   retroInsights: { path: '/p/SHIP/retros/insights', testId: pagesTestIds.retroInsightsPage },
+  inspectionMetrics: { path: '/p/SHIP/inspection', testId: inspectionMetricsTestIds.page },
   jiraImport: { path: '/p/SHIP/import', testId: pagesTestIds.importPage },
   projectSettings: {
     path: '/p/SHIP/settings/states',
     testId: pagesTestIds.projectSettingsPage,
   },
+  // Above 900px the tab-less address goes to General.
+  projectSettingsIndex: { path: '/p/SHIP/settings', testId: pagesTestIds.projectSettingsPage },
 };
 
 for (const [id, scaffold] of Object.entries(scaffolds)) {
@@ -235,4 +242,35 @@ test('InstanceSettings_WhenAnalyticsTabOpened_ShouldRenderTheAnalyticsSlot', asy
   await mount(<AppRoutes />, { hooksConfig: { route: '/instance/analytics' } });
   await expect(page.getByTestId(pagesTestIds.slotInstanceAnalytics)).toBeVisible();
   await expect(page.getByTestId(settingsTestIds.analyticsContainer)).toBeVisible();
+});
+
+// SHIP-1626 D2: above 900px the tab-less settings address is not the phone's pane index but General, where the tabs are
+// the index. The redirect replaces, so Back leaves settings instead of landing on the redirect again, and the open
+// item (?item=) goes with it.
+test('ProjectSettings_WhenTabLessAddressOpenedOnDesktop_ShouldReplaceItWithGeneralKeepingTheItem', async ({
+  mount,
+  page,
+}) => {
+  await stubProjectApi(page);
+  await page.route('**/api/projects/id-SHIP/settings', (route) =>
+    route.fulfill({ json: projectSettings }),
+  );
+  await page.route('**/api/holidays/countries', (route) => route.fulfill({ json: [] }));
+  await mount(<RouteHistoryHarness to="/p/SHIP/settings?item=SHIP-7" />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories' },
+  });
+  const location = page.getByTestId(routeHistoryIds.location);
+  await expect(location).toHaveText('/p/SHIP/backlogs/stories');
+
+  await page.getByTestId(routeHistoryIds.go).click();
+  await expect(location).toHaveText('/p/SHIP/settings/general?item=SHIP-7');
+  await expect(page.getByTestId(settingsTestIds.tabGeneral)).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await expect(page.getByTestId(settingsTestIds.settingsIndex)).toHaveCount(0);
+
+  // The open item's peek is modal over the harness, so Back is sent as the event, as the browser's button would be.
+  await page.getByTestId(routeHistoryIds.back).dispatchEvent('click');
+  await expect(location).toHaveText('/p/SHIP/backlogs/stories');
 });

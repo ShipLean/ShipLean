@@ -11,6 +11,7 @@ import { CapacityPage } from './pages/CapacityPage';
 import { FeatureBoardPage } from './pages/FeatureBoardPage';
 import { FeatureTimelinePage } from './pages/FeatureTimelinePage';
 import { ImportPage } from './pages/ImportPage';
+import { InspectionMetricsPage } from './pages/InspectionMetricsPage';
 import { InstanceSettingsPage } from './pages/InstanceSettingsPage';
 import { NewProjectPage } from './pages/NewProjectPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -82,8 +83,10 @@ export function AppRoutes() {
           <Route path={routePattern('retroFeatures')} element={<RetroFeaturesPage />} />
           <Route path={routePattern('retroItem')} element={<RetroItemPage />} />
           <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
+          <Route path={routePattern('inspectionMetrics')} element={<InspectionMetricsPage />} />
           <Route path={routePattern('jiraImport')} element={<ImportPage />} />
           <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
+          <Route path={routePattern('projectSettingsIndex')} element={<ProjectSettingsPage />} />
           <Route path="/p/:key/*" element={<NotFoundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

@@ -17,7 +17,7 @@ using ShipLean.WebApi.Infrastructure;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 [McpServerToolType]
-internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore attachments, IAgentAddresses addresses, ITransferTokens transfers, ICurrentUser currentUser, ICurrentAgent agent, CaptureSupport support)
+internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore attachments, IRunLogAttachments runLogs, IAgentAddresses addresses, ITransferTokens transfers, ICurrentUser currentUser, ICurrentAgent agent, CaptureSupport support)
 {
     [McpServerTool(Name = "read_attachment"), McpScope(McpScopes.Read)]
     [Description("Read a Markdown attachment on a work item by name. Returns the text when it is at most 200 KB. For any other file (an image such as a pasted screenshot, a PDF) and for larger Markdown it returns metadata, the UI link and a short-lived download_url (10 minutes, reusable) with a curl command: run it in the shell to save the file (curl -o <file> '<url>'), then read it from disk; the bytes never pass through the model.")]
@@ -32,7 +32,10 @@ internal sealed class ReadAttachmentTool(ItemResolver items, IAttachmentStore at
             throw ApiException.Validation("Pass the attachment name.", "name");
         }
 
+        // D10: an agent session's run log is read by project admins only; to anyone else it is not there.
+        var hiddenRunLogs = await runLogs.HiddenAsync(resolved.Id, resolved.Role, cancellationToken);
         var file = (await attachments.ListAsync(resolved.Id, cancellationToken))
+            .Where(candidate => !hiddenRunLogs.Contains(candidate.Id))
             .LastOrDefault(candidate => string.Equals(candidate.Name, name.Trim(), StringComparison.Ordinal));
         if (file is null)
         {

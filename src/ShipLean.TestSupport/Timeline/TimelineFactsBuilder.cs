@@ -25,6 +25,7 @@ public sealed class TimelineFactsBuilder
     private readonly List<TimelineReviewFact> _reviews = [];
     private readonly List<TimelineSprintFact> _sprints = [];
     private readonly Dictionary<Guid, string> _people = [];
+    private readonly List<TimelineCommitFact> _commits = [];
     private readonly Dictionary<string, int> _revs = new(StringComparer.Ordinal);
     private string _projectKey = "SHIP";
     private TimelineFeatureFact _feature = new(FeatureId, "SHIP-99", "Coupons v2", "New", StateCategory.Proposed, Start, null, null);
@@ -126,6 +127,13 @@ public sealed class TimelineFactsBuilder
         return this;
     }
 
+    // A commit of the task with its recorded time.
+    public TimelineFactsBuilder WithCommit(string taskKey, DateTimeOffset committedAt)
+    {
+        _commits.Add(new TimelineCommitFact(taskKey, committedAt));
+        return this;
+    }
+
     public TimelineFactsBuilder WithPerson(Guid userId, string name)
     {
         _people[userId] = name;
@@ -154,6 +162,7 @@ public sealed class TimelineFactsBuilder
             [.. _reviews],
             [.. _sprints],
             new Dictionary<Guid, string>(_people),
+            [.. _commits],
             _plannedBy);
 
     private TimelineFactsBuilder WithParent(

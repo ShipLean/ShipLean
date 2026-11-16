@@ -4,9 +4,12 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import none from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-none.json' with { type: 'json' };
 import ready from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-ready.json' with { type: 'json' };
+import working from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-working.json' with { type: 'json' };
+import youtubeFailed from '../../../../ShipLean.TestSupport/DtoFixtures/demos/sprint-demo-youtube-failed.json' with { type: 'json' };
 import type { SprintDemoDto } from '@shiplean/core/api/demos';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
+import { componentTestIds } from '../../components/testIds';
 import { DemoPanelHarness } from './ct/DemoPanelHarness';
 import { demosTestIds as ids } from './testIds';
 
@@ -56,6 +59,7 @@ const blocked: SprintDemoDto = {
   actions: {
     canCreate: false,
     createBlockedMessage: 'Connect an agent to this project, then create the demo here.',
+    createWarning: null,
     canRetryYouTube: false,
   },
 };
@@ -124,7 +128,11 @@ test('DemoChapters_WhenChapterTappedOnAPhone_ShouldSeek', async ({ mount, page }
   expect(seekedAt).toBeLessThan(readyDemo.chapters[1].startSeconds + 0.5);
 });
 
-test('DemoStatusBand_WhenActionDisabledOnAPhone_ShouldShowTheReason', async ({ mount, page }) => {
+// The design (SHIP-1810 P2) keeps the action last in the band, so the reason reads before the disabled button.
+test('DemoStatusBand_WhenActionDisabledOnAPhone_ShouldShowTheReasonAboveIt', async ({
+  mount,
+  page,
+}) => {
   await stubDemo(page, blocked);
   await mount(view);
   const action = page.getByTestId(ids.demoCreateBlocked);
@@ -133,10 +141,133 @@ test('DemoStatusBand_WhenActionDisabledOnAPhone_ShouldShowTheReason', async ({ m
   await expect(action).toBeDisabled();
   await expect(reason).toBeVisible();
   await expect(reason).toHaveText(blocked.actions.createBlockedMessage!);
-  const under = (await reason.boundingBox())!.y;
+  const above = (await reason.boundingBox())!;
   const button = (await action.boundingBox())!;
-  expect(under).toBeGreaterThanOrEqual(button.y + button.height);
+  expect(button.y).toBeGreaterThanOrEqual(above.y + above.height);
   expect(await action.getAttribute('title')).toBeNull();
+});
+
+test('DemoStatusBand_WhenClosableOnAPhone_ShouldKeepCreateOffInItsPlace', async ({
+  mount,
+  page,
+}) => {
+  const closable: SprintDemoDto = {
+    ...(none as unknown as SprintDemoDto),
+    status: 'closable',
+    actions: {
+      canCreate: false,
+      createBlockedMessage: null,
+      canRetryYouTube: false,
+      createWarning: null,
+    },
+  };
+  await stubDemo(page, closable);
+  await mount(view);
+  const action = page.getByTestId(ids.demoCreateBlocked);
+
+  await expect(action).toBeDisabled();
+  const band = (await page.getByTestId(ids.demoStatusBand).boundingBox())!;
+  const button = (await action.boundingBox())!;
+  const message = (await page.getByTestId(ids.demoStatusMessage).boundingBox())!;
+  expect(button.width).toBeGreaterThan(band.width - 12 * 2 - 4 - 1);
+  expect(button.y).toBeGreaterThanOrEqual(message.y + message.height);
+});
+
+test('DemoStatusBand_WhenRunOnAPhone_ShouldShowTheItemAsAFullWidthRow', async ({ mount, page }) => {
+  const demo = working as unknown as SprintDemoDto;
+  await stubDemo(page, demo);
+  await mount(view);
+  const item = page.getByTestId(ids.demoItemLink);
+  // The type icon's letter, the key, the title, then the › (ND4-5).
+  await expect(item).toHaveText(`U${demo.run!.itemKey}${demo.run!.itemTitle}›`);
+  await expect(item.getByTestId(componentTestIds.typeIcon)).toHaveAttribute(
+    'data-type',
+    demo.run!.itemType,
+  );
+
+  const band = (await page.getByTestId(ids.demoStatusBand).boundingBox())!;
+  const row = (await item.boundingBox())!;
+  const message = (await page.getByTestId(ids.demoStatusMessage).boundingBox())!;
+  expect(row.width).toBeGreaterThan(band.width - 12 * 2 - 4 - 1);
+  expect(row.height).toBeGreaterThanOrEqual(32);
+  expect(row.y).toBeGreaterThanOrEqual(message.y + message.height);
+});
+
+test('DemoYouTubeNotice_WhenFailedOnAPhone_ShouldSitUnderThePlayer', async ({ mount, page }) => {
+  const demo = youtubeFailed as unknown as SprintDemoDto;
+  await stubDemo(page, demo);
+  await mount(view);
+  const notice = page.getByTestId(ids.demoYoutubeNotice);
+  await expect(notice).toBeVisible();
+
+  // Under the player and above its facts (Length | Size, File, Delivered), as the design draws it (ND4-8).
+  const player = (await page.getByTestId(ids.demoVideo).boundingBox())!;
+  const box = (await notice.boundingBox())!;
+  const facts = (await page.getByTestId(ids.demoFacts).boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(player.y + player.height);
+  expect(box.y + box.height).toBeLessThanOrEqual(facts.y);
+});
+
+test('SprintDemoPanel_WhenOnAPhone_ShouldShowTheSprintNumbersInOneRowAboveTheBand', async ({
+  mount,
+  page,
+}) => {
+  const demo = working as unknown as SprintDemoDto;
+  await stubDemo(page, demo);
+  await mount(view);
+  const committed = page.getByTestId(ids.demoNumberCommitted);
+  const completed = page.getByTestId(ids.demoNumberCompleted);
+  const moved = page.getByTestId(ids.demoNumberFeaturesMoved);
+  await expect(committed).toHaveText(`${demo.numbers.committed}`);
+  await expect(completed).toHaveText(`${demo.numbers.completed}`);
+  await expect(moved).toHaveText(`${demo.numbers.featuresMoved}`);
+  await expect(page.getByTestId(ids.demoNumbers)).toContainText('Features moved');
+
+  const row = (await page.getByTestId(ids.demoNumbers).boundingBox())!;
+  const band = (await page.getByTestId(ids.demoStatusBand).boundingBox())!;
+  const tops = await Promise.all(
+    [committed, completed, moved].map(async (n) => (await n.boundingBox())!.y),
+  );
+  expect(new Set(tops).size).toBe(1);
+  expect(row.y + row.height).toBeLessThanOrEqual(band.y);
+});
+
+test('DemoStatusBand_WhenTheSessionEndedWithWordsOnAPhone_ShouldQuoteThemUnderTheMessage', async ({
+  mount,
+  page,
+}) => {
+  const base = working as unknown as SprintDemoDto;
+  const demo: SprintDemoDto = {
+    ...base,
+    status: 'failed',
+    statusMessage:
+      'The agent session ended as failed before a video came back. It said: "No seeded copy."',
+    agentSaid: {
+      message: 'The agent session ended as failed before a video came back.',
+      text: 'No seeded copy.',
+    },
+    run: { ...base.run!, sessionState: 'ended' },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      canRetryYouTube: false,
+      createWarning: null,
+    },
+  };
+  await stubDemo(page, demo);
+  await mount(view);
+  const message = page.getByTestId(ids.demoStatusMessage);
+  const said = page.getByTestId(ids.demoAgentSaid);
+  await expect(message).toHaveText(demo.agentSaid!.message);
+  await expect(said).toHaveText(`It said${demo.agentSaid!.text}`);
+  // The line under the message names who asked (ND4-10).
+  await expect(page.getByTestId(ids.demoStatusBand)).toContainText(demo.run!.requestedByLabel!);
+
+  const messageBox = (await message.boundingBox())!;
+  const saidBox = (await said.boundingBox())!;
+  const item = (await page.getByTestId(ids.demoItemLink).boundingBox())!;
+  expect(saidBox.y).toBeGreaterThanOrEqual(messageBox.y + messageBox.height);
+  expect(saidBox.y + saidBox.height).toBeLessThanOrEqual(item.y);
 });
 
 test('DemoStatusBand_WhenOnAPhone_ShouldPutTheActionFullWidth', async ({ mount, page }) => {

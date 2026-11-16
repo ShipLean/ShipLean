@@ -14,6 +14,7 @@ using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Logging;
 using ShipLean.TestSupport.Usage;
 using ShipLean.WebApi.Features.Usage;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;

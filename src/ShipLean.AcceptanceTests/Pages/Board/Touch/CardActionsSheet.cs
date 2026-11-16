@@ -4,7 +4,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Board.Touch;
 
-// A card's ⋯ on a phone and the sheets it opens (SHIP-719): the actions sheet, then Move to or Lane.
+// A card's ⋯ on a phone and the sheets it opens (SHIP-719): the actions sheet, whose Move to and Lane are rows of its own.
 public sealed class CardActionsSheet(IPage page)
 {
     private readonly TouchShell shell = new(page);
@@ -13,36 +13,31 @@ public sealed class CardActionsSheet(IPage page)
 
     public ILocator ActionsFor(string key) => shell.Sheet($"{key} actions");
 
-    public ILocator MoveToSheet => shell.Sheet("Move to");
+    // The Assign sheet on Stories, the Owner sheet on Features and Epics, titled with the card's key (SHIP-719 L719e).
+    public ILocator AssignSheet(string title, string key) => shell.Sheet($"{title} {key}");
 
-    public ILocator LaneSheet => shell.Sheet("Lane");
-
-    // The Assign sheet on Stories, the Owner sheet on Features and Epics (SHIP-719 L719e).
-    public ILocator AssignSheet(string title) => shell.Sheet(title);
-
-    // A person's row of the Assign / Owner sheet by name ("Unassigned" or "No owner" for nobody).
+    // A person's row of the Assign / Owner sheet by name, no ^ anchor because the Avatar's initials precede the name; "(you)" and the ✓ of the current row may follow it ("Unassigned" or "No owner" for nobody).
     public static ILocator Person(ILocator sheet, string name) =>
-        sheet.GetByTestId(BoardTestIds.AssignOption).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(name) + "\\s*$") });
+        sheet.GetByTestId(BoardTestIds.AssignOption).Filter(new LocatorFilterOptions { HasTextRegex = new Regex(Regex.Escape(name) + "(\\s*\\(you\\))?\\s*✓?\\s*$") });
 
-    // A row of a sheet by its label, a Move to row going on with " · WIP".
+    // A row of a sheet by its label; a row's value (WIP, who, here) follows the label, so the label is only a prefix.
     public static ILocator Row(ILocator sheet, string startsWith) =>
-        sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(startsWith) + "(\\s·|\\s*$)") });
+        sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(startsWith)) });
 
-    // Taps ⋯ on the card, then its Assign (Owner) row; Row anchors the label, so Move to top and bottom never match.
+    // Taps ⋯ on the card, then its Assign (Owner) row; Row matches the label as a prefix only, so Move to top and bottom never match; Person has no ^ anchor because the Avatar's initials precede the name.
     public async Task OpenAssignAsync(ILocator card, string key, string label)
     {
         await More(card).TapAsync();
         await Row(ActionsFor(key), label).TapAsync();
     }
 
-    // Taps ⋯ on the card, then Move to, then the column's row; returns the moves response.
+    // Taps ⋯ on the card, then the column's row of its Move to group; returns the moves response.
     public Task<IResponse> MoveToColumnAsync(ILocator card, string key, string columnName) =>
         page.RunAndWaitForResponseAsync(
             async () =>
             {
                 await More(card).TapAsync();
-                await Row(ActionsFor(key), "Move to").TapAsync();
-                await Row(MoveToSheet, columnName).TapAsync();
+                await Row(ActionsFor(key), columnName).TapAsync();
             },
             r => r.Request.Method == "POST" && Regex.IsMatch(new Uri(r.Url).AbsolutePath, "^/api/boards/[^/]+/moves$"));
 }

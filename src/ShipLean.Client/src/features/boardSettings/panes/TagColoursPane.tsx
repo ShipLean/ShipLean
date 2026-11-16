@@ -40,7 +40,7 @@ export function TagColoursPane({
         Tag colours apply on this board, and the Stories backlog borrows them. Tags without a colour
         show in the neutral style.
       </p>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
         {body}
         <StylePreview
           draft={draft}

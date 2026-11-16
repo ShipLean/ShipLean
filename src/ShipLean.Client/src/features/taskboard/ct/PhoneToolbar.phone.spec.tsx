@@ -31,7 +31,7 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
 
   await rows.nth(1).tap();
   await expect(rows.nth(1).getByRole('checkbox')).toBeChecked();
-  await expect(filter).toHaveText('Filter (1)');
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('1');
   const assignees = () =>
     page
       .getByTestId(ids.card)
@@ -46,6 +46,26 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
   await expect(filter).toHaveText('Filter');
 });
 
+test('PhoneToolbar_WhenFiltered_ShouldShowChosenFacesAndCount', async ({ mount, page }) => {
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(slot, route);
+  await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+  const filter = page.getByTestId(ids.filterButton);
+  await expect(filter.getByTestId(ids.filterFaces)).toHaveCount(0);
+  await expect(filter.getByTestId(ids.filterCount)).toHaveCount(0);
+
+  await filter.tap();
+  const rows = page.getByTestId(ids.filterSheetRow);
+  await rows.nth(0).tap();
+  await rows.nth(1).tap();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('2');
+  await expect(
+    filter.getByTestId(ids.filterFaces).getByTestId(componentTestIds.avatar),
+  ).toHaveCount(2);
+});
+
 test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async ({
   mount,
   page,
@@ -57,12 +77,13 @@ test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async (
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Card settings',
-    'Open the Feature',
+    `Open ${FEATURE_KEY}`,
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Feature board');
   const lanes = page.getByTestId(ids.lane);
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
@@ -82,11 +103,12 @@ test('PhoneToolbar_WhenMoreOpenedOnTheTaskboard_ShouldOfferCollapseExpandAndTask
   const lanes = page.getByTestId(ids.lane);
   await expect(lanes.first()).toBeVisible();
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Taskboard settings',
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Taskboard');
 
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
@@ -125,6 +147,55 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
     await expect(page.getByTestId(touchTestIds.sheet)).toHaveScreenshot(
       `phone-toolbar-more.${theme}.png`,
+    );
+  });
+}
+
+test('AddStoryBox_AtTouch_ShouldStayOnOneRowWithAHelperLine', async ({ mount, page }) => {
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(slot, route);
+  await page.getByTestId(ids.addStory).tap();
+
+  const type = await page.getByTestId(ids.addStoryType).boundingBox();
+  const title = await page.getByTestId(ids.addStoryTitle).boundingBox();
+  const submit = await page.getByTestId(ids.addStorySubmit).boundingBox();
+  const close = await page.getByTestId(ids.addStoryClose).boundingBox();
+  const help = await page.getByTestId(ids.addStoryHelp).boundingBox();
+  if (!type || !title || !submit || !close || !help) throw new Error('the add box should render');
+  expect(Math.abs(title.y - type.y), 'the type and the title share a line').toBeLessThan(6);
+  expect(Math.abs(submit.y - type.y), 'Add shares it').toBeLessThan(6);
+  expect(Math.abs(close.y - type.y), 'so does the close button').toBeLessThan(6);
+  expect(title.width, 'the title is a field, not a sliver').toBeGreaterThan(120);
+  expect(close.x + close.width).toBeLessThanOrEqual(390);
+  expect(help.y, 'the helper line sits below the row').toBeGreaterThan(type.y + type.height);
+  await expect(page.getByTestId(ids.addStoryClose)).toHaveText('✕');
+  await expect(page.getByTestId(ids.addStoryTitle)).toHaveAttribute(
+    'placeholder',
+    'Title of the story or bug',
+  );
+});
+
+for (const theme of THEMES) {
+  test(`AddStoryBox_AtTouch_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await page.getByTestId(ids.addStory).tap();
+    await expect(page.getByTestId(ids.addStoryBox)).toHaveScreenshot(`add-story-box.${theme}.png`);
+  });
+}
+
+for (const theme of THEMES) {
+  test(`PhoneToolbar_WhenFiltered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+    await page.getByTestId(ids.filterButton).tap();
+    for (const row of await page.getByTestId(ids.filterSheetRow).all()) await row.tap();
+    await page.getByTestId(touchTestIds.sheetClose).tap();
+    await expect(page.getByTestId(ids.toolbar)).toHaveScreenshot(
+      `phone-toolbar-filtered.${theme}.png`,
     );
   });
 }

@@ -66,7 +66,10 @@ public class SprintsListPhoneTests : SeededAcceptanceTest
         await sprints.OpenAsync("SHIP");
 
         await sprints.RowOf("Sprint 24").GetByTestId(TouchTestIds.MoreButton).TapAsync();
-        await new TouchShell(Page).ActionRow("Open").TapAsync();
+        // The ⋯ sheet's Open group (SHIP-1807 P6) starts with Backlog, whose row also shows the committed points.
+        var backlog = new TouchShell(Page).ActionSheetRows.First;
+        await Expect(backlog).ToContainTextAsync("Backlog");
+        await backlog.TapAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex(Regex.Escape(Links.SprintBacklog("SHIP", SeedIds.Sprints.Sprint24)) + "$"));
     }

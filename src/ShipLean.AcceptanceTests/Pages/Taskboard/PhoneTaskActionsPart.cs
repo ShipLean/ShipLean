@@ -32,7 +32,7 @@ public sealed class PhoneTaskActionsPart(IPage page)
     public async Task<IResponse> AssignToAsync(string name)
     {
         await Sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new() { HasTextString = "Assignee" }).TapAsync();
-        return await RunAndWaitForMoveAsync(() => Sheet.GetByTestId(TaskboardTestIds.AssigneeOption).Filter(new() { HasTextRegex = new Regex($"^\\s*{name}") }).TapAsync());
+        return await RunAndWaitForMoveAsync(() => Sheet.GetByTestId(TaskboardTestIds.AssigneeOption).Filter(new() { HasTextRegex = new Regex(Regex.Escape(name)) }).TapAsync());
     }
 
     private Task<IResponse> RunAndWaitForMoveAsync(Func<Task> action) =>

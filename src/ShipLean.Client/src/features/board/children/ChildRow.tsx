@@ -1,10 +1,14 @@
+import { StateDot } from '../../../components/StateDot';
 import { TypeIcon } from '../../../components/TypeIcon';
 import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
 
-// One child: type, key, title (opens the item) and its state; closed ones are muted.
+// One child: type, key, title (opens the item) and its state; closed ones are muted. At touch widths, as the design's
+// list inside the card: no key, and the state with its coloured dot.
 export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projectKey?: string }) {
+  const { touch } = useTouchShell();
   const closed = child.state.category === 'completed' || child.state.category === 'removed';
   return (
     <li
@@ -16,7 +20,9 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
       }`}
     >
       <TypeIcon type={child.type.id} />
-      <span className="text-[length:var(--text-2xs)] text-ink-muted">{child.key}</span>
+      {touch ? null : (
+        <span className="text-[length:var(--text-2xs)] text-ink-muted">{child.key}</span>
+      )}
       <ItemLink
         itemKey={child.key}
         projectKey={projectKey}
@@ -24,8 +30,15 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
       >
         {child.title}
       </ItemLink>
-      <span data-testid={ids.childState} className="text-[length:var(--text-2xs)] text-ink-muted">
-        {child.state.name}
+      <span
+        data-testid={ids.childState}
+        className="flex-none text-[length:var(--text-2xs)] text-ink-muted"
+      >
+        {touch ? (
+          <StateDot category={child.state.category} name={child.state.name} />
+        ) : (
+          child.state.name
+        )}
       </span>
     </li>
   );

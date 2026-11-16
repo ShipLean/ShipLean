@@ -44,6 +44,7 @@ public class AgentDeliveryTests : ApiFixture
             Host.Services.GetRequiredService<IAgentConnections>(),
             factory ?? new StubHttpClientFactory((receiver ?? _receiver).Client()),
             Host.Services.GetRequiredService<AgentSessionNotifier>(),
+            Host.Services.GetRequiredService<IAgentDeliveryAttempts>(),
             _clock,
             NullLogger<AgentDeliverer>.Instance);
 
@@ -318,6 +319,75 @@ public class AgentDeliveryTests : ApiFixture
 
         (await StateAsync(database, sessionId)).ShouldBe("submitted");
     }
+
+    // C2: a `created` out of retries ends the session as deliveryFailed, its detail the scrubbed error and the try count.
+    [Test]
+    public async Task RunDue_WhenCreatedIsRefusedTwice_ShouldEndTheSessionAsDeliveryFailedNamingTheStatusAndTries()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (_, _, sessionId) = await OpenSessionAsync(database);
+        _receiver.Then(HttpStatusCode.BadGateway, HttpStatusCode.BadGateway);
+
+        await FailCreatedTwiceAsync();
+
+        (await EndAsync(database, sessionId)).ShouldBe((AgentEndReasons.DeliveryFailed, "The receiver answered 502 BadGateway. (2 tries)"));
+    }
+
+    [Test]
+    public async Task RunDue_WhenCreatedTimesOutTwice_ShouldSayNoAnswerWithinFiveSecondsAndTries()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (_, _, sessionId) = await OpenSessionAsync(database);
+        _receiver.Then(new TaskCanceledException("timeout"), new TaskCanceledException("timeout"));
+
+        await FailCreatedTwiceAsync();
+
+        (await EndAsync(database, sessionId)).ShouldBe((AgentEndReasons.DeliveryFailed, "No answer within 5 seconds. (2 tries)"));
+    }
+
+    [Test]
+    public async Task RunDue_WhenCreatedThrowsTwice_ShouldStoreTheScrubbedExceptionTextAndTries()
+    {
+        const string Secret = "shl_up_0123456789abcdef0123456789abcdef";
+        const string Message = $"Connection refused (relay.internal:5100) posting https://relay.example.com/hook?token={Secret}";
+        await using var database = await OpenDatabaseAsync();
+        var (_, _, sessionId) = await OpenSessionAsync(database);
+        _receiver.Then(new HttpRequestException(Message), new HttpRequestException(Message));
+
+        await FailCreatedTwiceAsync();
+
+        var (reason, detail) = await EndAsync(database, sessionId);
+        reason.ShouldBe(AgentEndReasons.DeliveryFailed);
+        detail.ShouldBe(AgentErrorText.Scrub($"HttpRequestException: {Message}") + " (2 tries)");
+        detail.ShouldNotBeNull().ShouldNotContain(Secret);
+        detail.ShouldStartWith("HttpRequestException: Connection refused (relay.internal:5100)");
+    }
+
+    [Test]
+    public async Task CancelUnansweredStops_WhenTheGraceExpires_ShouldEndTheSessionAsCanceledWithNoDetail()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (_, _, sessionId) = await OpenSessionAsync(database);
+        await database.ExecuteAsync("UPDATE agent_session SET stop_requested_at = @Start WHERE id = @sessionId", new { sessionId, Start });
+
+        _clock.Advance(TimeSpan.FromMinutes(10));
+        await Deliverer().CancelUnansweredStopsAsync(CancellationToken.None);
+
+        (await StateAsync(database, sessionId)).ShouldBe("canceled");
+        (await EndAsync(database, sessionId)).ShouldBe((AgentEndReasons.Canceled, null));
+    }
+
+    private async Task FailCreatedTwiceAsync()
+    {
+        var deliverer = Deliverer();
+        await deliverer.RunDueAsync(CancellationToken.None);
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        await deliverer.RunDueAsync(CancellationToken.None);
+        _receiver.Requests.Count.ShouldBe(2);
+    }
+
+    private static Task<(string? Reason, string? Detail)> EndAsync(NpgsqlConnection database, Guid sessionId)
+        => database.QuerySingleAsync<(string? Reason, string? Detail)>("SELECT end_reason, end_detail FROM agent_session WHERE id = @sessionId", new { sessionId });
 
     private sealed record Row(Guid Id, int Seq, string Action, string Status, int Attempts, DateTimeOffset NextAttemptAt, string? LastError);
 }
