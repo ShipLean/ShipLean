@@ -14,7 +14,7 @@ public class InspectionMetricsApiTests : ApiFixture
     private static readonly string[] ViewKeys =
     [
         "project", "cadence", "range", "cut", "aggregate", "generatedAt", "caveat", "coverage", "headline", "periods", "quarters",
-        "cuts", "longest", "leftOut", "periodDetail", "quality", "bugs",
+        "cuts", "longest", "leftOut", "periodDetail", "quality", "bugs", "cost",
     ];
 
     private static readonly string[] QualityKeys = ["escaping", "weighted", "foundBeforeRelease", "mergedPrs", "per100Prs", "escapingBySeverity", "changePctVsPrevious"];
@@ -75,6 +75,19 @@ public class InspectionMetricsApiTests : ApiFixture
         }
         detail.GetProperty("bugs").ValueKind.ShouldBe(JsonValueKind.Array);
         root.GetProperty("bugs").ValueKind.ShouldBe(JsonValueKind.Array);
+    }
+
+    // SHIP-1398 CK2: this host has Inspection (agent runs) off for the instance, so the view has no cost at all.
+    // Mutation: skip the IInspectionFlag check in InspectionMetricsView.
+    [Test]
+    public async Task Get_WhenAgentRunsOff_ShouldReturnCostNull()
+    {
+        using var response = await Api.GetAsync(Url(SeedIds.Projects.Ship));
+
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        using var json = JsonDocument.Parse(text);
+        json.RootElement.GetProperty("cost").ValueKind.ShouldBe(JsonValueKind.Null);
     }
 
     [Test]
