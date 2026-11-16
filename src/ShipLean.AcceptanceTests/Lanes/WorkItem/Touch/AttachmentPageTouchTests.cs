@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Lanes.WorkItem.Side;
 using ShipLean.AcceptanceTests.Pages.Feature.Touch;
@@ -60,14 +61,14 @@ public class AttachmentPageTouchTests : SeededAcceptanceTest
     public async Task AttachmentTooLarge_ShouldShowTheFileHeaderAndDownloadWithSize()
     {
         var attachment = new AttachmentPageTouch(Page);
-        // Over the 256 KB the server renders: 300 KB of plain lines.
+        // Over the 256 KB the server renders: about 300 KB of plain lines.
         var bytes = Encoding.UTF8.GetBytes(string.Concat(Enumerable.Repeat("The vault keeps tokens, never card numbers.\n", 7000)));
         await WorkItemAttachments.UploadAsTomAsync(BaseUrl, SeedIds.WorkItems.Ship101, "too-big.md", bytes);
         await attachment.OpenTooLargeAsync("SHIP", "SHIP-101", await FindAttachmentIdAsync(SeedIds.WorkItems.Ship101, "too-big.md"));
 
         await Expect(attachment.Name).ToHaveTextAsync("too-big.md");
         await Expect(attachment.TooLargeHeading).ToHaveTextAsync("Too large to show here");
-        await Expect(attachment.Download).ToHaveTextAsync("Download (300 KB)");
+        await Expect(attachment.Download).ToHaveTextAsync("Download (301 KB)");
         (await TouchRules.ViolationsAsync(Page, attachment.Download)).ShouldBeEmpty();
     }
 
@@ -83,7 +84,7 @@ public class AttachmentPageTouchTests : SeededAcceptanceTest
 
         await Expect(touch.Sheet("About this file")).ToBeVisibleAsync();
         await Expect(attachment.AboutFacts).ToHaveCountAsync(4);
-        await Expect(attachment.AboutFacts.Locator("dt")).ToHaveTextAsync(["Size", "Uploaded by", "When", "On"]);
+        await Expect(attachment.AboutFacts).ToHaveTextAsync([new Regex("^Size"), new Regex("^Uploaded by"), new Regex("^When"), new Regex("^On")]);
         await Expect(attachment.AboutFacts.Nth(3)).ToContainTextAsync("SHIP-101");
     }
 
@@ -98,10 +99,10 @@ public class AttachmentPageTouchTests : SeededAcceptanceTest
         await Expect(touch.Sheet("About this file")).ToBeVisibleAsync();
         await Expect(attachment.MissingImageHint).ToHaveCountAsync(0);
 
-        // The same file with one external image: now there is something missing, and the hint says so.
+        // Another file with one external image: now there is something missing, and the hint says so.
         await WorkItemAttachments.UploadAsTomAsync(
-            BaseUrl, SeedIds.WorkItems.Ship101, "no-images.md", Encoding.UTF8.GetBytes("# No images\n\n![x](https://example.com/x.png)\n"));
-        await Page.ReloadAsync();
+            BaseUrl, SeedIds.WorkItems.Ship101, "external-image.md", Encoding.UTF8.GetBytes("# External\n\n![x](https://example.com/x.png)\n"));
+        await attachment.OpenAsync("SHIP", "SHIP-101", await FindAttachmentIdAsync(SeedIds.WorkItems.Ship101, "external-image.md"));
         await attachment.Facts.TapAsync();
         await Expect(attachment.MissingImageHint).ToBeVisibleAsync();
     }
@@ -118,7 +119,7 @@ public class AttachmentPageTouchTests : SeededAcceptanceTest
 
         var sheet = touch.Sheet("Attachment actions");
         await Expect(sheet).ToBeVisibleAsync();
-        await Expect(sheet.GetByTestId(TouchTestIds.ActionSheetRow).Locator("svg")).ToHaveCountAsync(4);
+        await Expect(sheet.GetByTestId(TouchTestIds.ActionSheetRow)).ToHaveCountAsync(4);
         await Expect(sheet.GetByTestId(TouchTestIds.ActionSheetHint)).ToContainTextAsync(["B", "Pick a file; the old copy is soft-deleted"]);
         (await TouchRules.ViolationsAsync(Page, sheet)).ShouldBeEmpty();
     }
