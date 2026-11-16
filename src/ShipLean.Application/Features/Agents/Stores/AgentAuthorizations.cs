@@ -7,7 +7,7 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Application.Features.Agents.Stores;
 
 // oauth_authorization: one live row per person and client (a unique index), carrying the user's security stamp at consent.
-public sealed class AgentAuthorizations(NpgsqlDataSource dataSource, TimeProvider clock) : IAgentAuthorizations
+public sealed class AgentAuthorizations(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IAgentAuthorizations
 {
     private sealed record Live(
         Guid Id,
@@ -101,7 +101,7 @@ public sealed class AgentAuthorizations(NpgsqlDataSource dataSource, TimeProvide
         return rows
             .Select(r => new ConnectedAgentDto(
                 r.Id, r.ClientName, r.ClientHost, r.Kind == "metadataDocument" && r.ClientHost is not null, (string[])r.Scopes, r.ConnectedAt, r.LastUsedAt,
-                DisplayDate.Relative(r.ConnectedAt, clock), r.LastUsedAt is { } used ? DisplayDate.Relative(used, clock) : null))
+                DisplayDate.Relative(r.ConnectedAt, clock.GetUtcNow(), viewerZone.Zone), r.LastUsedAt is { } used ? DisplayDate.Relative(used, clock.GetUtcNow(), viewerZone.Zone) : null))
             .ToList();
     }
 

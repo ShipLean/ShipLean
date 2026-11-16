@@ -15,7 +15,7 @@ namespace ShipLean.Application.Features.Import.Jira;
 // access first. The token goes in encrypted and never comes out: a read gets its last four characters, stored beside it, so reading never decrypts.
 [RegisterPerRequest]
 public sealed class JiraConnectionService(
-    NpgsqlDataSource dataSource, JiraTokens tokens, IJiraClient jira, ICurrentUser currentUser, IConfiguration configuration, TimeProvider clock)
+    NpgsqlDataSource dataSource, JiraTokens tokens, IJiraClient jira, ICurrentUser currentUser, IConfiguration configuration, TimeProvider clock, IViewerZone viewerZone)
 {
     private sealed record Row(
         Guid Id, Guid ProjectId, string BaseUrl, string Kind, string Email, string? ApiTokenEncrypted, string? TokenLastFour, DateTimeOffset CreatedAt,
@@ -126,7 +126,7 @@ public sealed class JiraConnectionService(
             ORDER BY j.jira_project_key, j.finished_at DESC
             """,
             new { projectId }, cancellationToken: cancellationToken));
-        return rows.ToDictionary(r => r.JiraProjectKey, r => new ImportedAsDto(r.ProjectKey, r.JobId, r.FinishedAt, DisplayDate.Relative(r.FinishedAt, clock)));
+        return rows.ToDictionary(r => r.JiraProjectKey, r => new ImportedAsDto(r.ProjectKey, r.JobId, r.FinishedAt, DisplayDate.Relative(r.FinishedAt, clock.GetUtcNow(), viewerZone.Zone)));
     }
 
     private JiraConnectionDto ToDto(Row row)
@@ -134,5 +134,5 @@ public sealed class JiraConnectionService(
             row.Id, row.ProjectId, row.BaseUrl, JiraKinds.Parse(row.Kind), row.Email,
             row.TokenLastFour ?? string.Empty,
             row.CreatorId is { } creator ? new UserRef(creator, row.CreatorName!, row.CreatorInitials!, row.CreatorColour!, row.CreatorPhotoUrl) : null,
-            row.CreatedAt, DisplayDate.Relative(row.CreatedAt, clock));
+            row.CreatedAt, DisplayDate.Relative(row.CreatedAt, clock.GetUtcNow(), viewerZone.Zone));
 }

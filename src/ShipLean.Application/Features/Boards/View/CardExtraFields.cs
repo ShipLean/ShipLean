@@ -9,7 +9,7 @@ namespace ShipLean.Application.Features.Boards.View;
 // The extra fields a board's settings ask a card to show, formatted by the server. Fields the card already draws (state, parent,
 // assignee, points, tags) are left out even when the settings list them, and so is a field that does not apply to the card's type.
 [RegisterPerRequest]
-public sealed class CardExtraFields(TimeProvider clock)
+public sealed class CardExtraFields(TimeProvider clock, IViewerZone viewerZone)
 {
     private static readonly string[] AlreadyDrawn = [FieldIds.State, FieldIds.Parent, FieldIds.Assignee, FieldIds.Points, FieldIds.Tags];
 
@@ -45,9 +45,9 @@ public sealed class CardExtraFields(TimeProvider clock)
         FieldIds.Priority => card.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
         FieldIds.Severity => card.Severity is { } severity ? OptionLabel(definition, severity) : null,
         FieldIds.Sprint => card.SprintName,
-        FieldIds.CreatedAt => DisplayDate.Relative(card.CreatedAt, clock),
+        FieldIds.CreatedAt => DisplayDate.Relative(card.CreatedAt, clock.GetUtcNow(), viewerZone.Zone),
         FieldIds.CreatedBy => card.CreatedByName,
-        FieldIds.ChangedAt => DisplayDate.Relative(card.ChangedAt, clock),
+        FieldIds.ChangedAt => DisplayDate.Relative(card.ChangedAt, clock.GetUtcNow(), viewerZone.Zone),
         FieldIds.ChangedBy => card.ChangedByName,
         _ => null,
     };

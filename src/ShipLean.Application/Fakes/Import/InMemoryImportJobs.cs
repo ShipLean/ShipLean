@@ -12,7 +12,7 @@ namespace ShipLean.Application.Fakes.Import;
 
 // Records the state transitions of import jobs and nothing else: it runs no import and publishes no events. A test arranges
 // connections, empty projects and finished jobs through the Register and Arrange methods.
-public sealed partial class InMemoryImportJobs(TimeProvider time, ICurrentUser currentUser, IUserDirectory users) : IImportJobs
+public sealed partial class InMemoryImportJobs(TimeProvider time, ICurrentUser currentUser, IUserDirectory users, IViewerZone viewerZone) : IImportJobs
 {
     private readonly object _gate = new();
     private readonly List<InMemoryImportJob> _jobs = [];
@@ -199,7 +199,7 @@ public sealed partial class InMemoryImportJobs(TimeProvider time, ICurrentUser c
         lock (_gate)
         {
             return Task.FromResult<IReadOnlyList<ImportLogLineDto>>([.. Find(jobId).Log.Select(l => new ImportLogLineDto(
-                l.Id, l.LoggedAt, l.LoggedAt.ToString("HH:mm:ss", CultureInfo.InvariantCulture), l.Level, l.Message))]);
+                l.Id, l.LoggedAt, DisplayDate.LogTime(l.LoggedAt, viewerZone.Zone), l.Level, l.Message))]);
         }
     }
 
@@ -299,8 +299,8 @@ public sealed partial class InMemoryImportJobs(TimeProvider time, ICurrentUser c
 
     private ImportJobDto ToDto(InMemoryImportJob job, UserRef? creator) => new(
         job.Id, job.JiraProjectKey, job.ProjectKey, job.ProjectId, job.Status, job.Progress,
-        job.StartedAt, job.StartedAt is { } started ? DisplayDate.Relative(started, time) : null,
-        job.FinishedAt, job.FinishedAt is { } finished ? DisplayDate.Relative(finished, time) : null, creator);
+        job.StartedAt, job.StartedAt is { } started ? DisplayDate.Relative(started, time.GetUtcNow(), viewerZone.Zone) : null,
+        job.FinishedAt, job.FinishedAt is { } finished ? DisplayDate.Relative(finished, time.GetUtcNow(), viewerZone.Zone) : null, creator);
 
     private static ImportMappingDto NoMapping { get; } = new([], [], [], new ImportFieldsDto("", [], true, true, true, true), new ImportTotalsDto(0, 0, 0, 0, 0, 0), []);
 
