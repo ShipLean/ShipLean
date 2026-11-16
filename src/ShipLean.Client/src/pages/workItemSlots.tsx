@@ -1,4 +1,5 @@
 import type { ProjectDto } from '@shiplean/core/api/projects';
+import type { AddLinkType } from '../routes';
 import type { AttachmentSlotProps } from '../slots/AttachmentSlot';
 import { AgentRunsSlot } from '../slots/AgentRunsSlot';
 import { ChangesSlot } from '../slots/ChangesSlot';
@@ -11,12 +12,16 @@ import { WorkItemRetroSlot } from '../slots/WorkItemRetroSlot';
 
 // The work item page is the form slot, which owns the frame (header and fields strip across the top, the main column
 // and the rail below) and lays out the other slots where work-item.html draws them.
-export function workItemSlots(project: ProjectDto, itemKey: string): { form: FormSlotProps } {
+export function workItemSlots(
+  project: ProjectDto,
+  itemKey: string,
+  addLink?: AddLinkType,
+): { form: FormSlotProps } {
   return {
     form: {
       project,
       itemKey,
-      links: <LinksSlot project={project} itemKey={itemKey} />,
+      links: <LinksSlot project={project} itemKey={itemKey} addLink={addLink} />,
       retro: <WorkItemRetroSlot project={project} itemKey={itemKey} />,
       changes: <ChangesSlot project={project} itemKey={itemKey} />,
       tasks: <TasksSlot project={project} itemKey={itemKey} />,
