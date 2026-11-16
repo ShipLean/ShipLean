@@ -39,7 +39,7 @@ public class CausedByLinkTests : ApiFixture
     private async Task<WorkItemDto> ReadAsync(string key)
     {
         using var response = await Api.GetAsync($"api/projects/{SeedIds.Projects.Ship}/work-items/by-key/{key}");
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         return (await response.Content.ReadFromJsonAsync<WorkItemDto>(Wire))!;
     }
 

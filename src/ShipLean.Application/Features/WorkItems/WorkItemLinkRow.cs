@@ -28,7 +28,9 @@ internal sealed record WorkItemLinkRow(
     // rows of the item they point at (sourceId = the Task, targetId = the Bug) so a Task's read can list the Bugs it caused.
     public const string Select =
         """
-        SELECT * FROM (
+        SELECT x.id, x.sourceId, x.typeText, x.targetId, x.targetKey, x.targetTitle, x.url, x.title, x.addedVia, x.matchedOn,
+               x.cardState, x.cardTitle, x.cardAsOf, x.cardSource, x.incoming
+        FROM (
             SELECT l.id, l.source_id AS sourceId, l.link_type AS typeText, l.target_id AS targetId, t.key AS targetKey,
                    t.title AS targetTitle, l.url, l.title, l.added_via AS addedVia, l.matched_on AS matchedOn,
                    ls.state AS cardState, ls.title AS cardTitle, ls.as_of AS cardAsOf, ls.source AS cardSource, false AS incoming, l.created_at AS createdAt
