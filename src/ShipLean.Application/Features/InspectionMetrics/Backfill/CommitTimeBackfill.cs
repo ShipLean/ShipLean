@@ -14,7 +14,7 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
 {
     private const int MaxPage = 500;
 
-    private sealed record LinkRow(Guid Id, Guid SourceId, string Url, string Title, string ItemKey, bool HasTime);
+    private sealed record LinkRow(Guid Id, Guid SourceId, string Url, string Title, string ItemKey);
 
     public async Task<CommitTimeMissingPageDto> ListMissingAsync(int limit, string? after, CancellationToken cancellationToken = default)
     {
@@ -31,7 +31,7 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = (await connection.QueryAsync<LinkRow>(new CommandDefinition(
             """
-            SELECT l.id AS Id, l.source_id AS SourceId, l.url AS Url, l.title AS Title, w.key AS ItemKey, false AS HasTime
+            SELECT l.id AS Id, l.source_id AS SourceId, l.url AS Url, l.title AS Title, w.key AS ItemKey
             FROM work_item_link l JOIN work_item w ON w.id = l.source_id
             WHERE l.link_type = 'url' AND l.archived_at IS NULL AND l.committed_at IS NULL AND starts_with(l.title, @prefix)
               AND (@after::uuid IS NULL OR l.id > @after::uuid)
@@ -63,7 +63,7 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
             var sha7 = commit.Sha[..7].ToLowerInvariant();
             var links = (await connection.QueryAsync<LinkRow>(new CommandDefinition(
                 """
-                SELECT l.id AS Id, l.source_id AS SourceId, l.url AS Url, l.title AS Title, w.key AS ItemKey, l.committed_at IS NOT NULL AS HasTime
+                SELECT l.id AS Id, l.source_id AS SourceId, l.url AS Url, l.title AS Title, w.key AS ItemKey
                 FROM work_item_link l JOIN work_item w ON w.id = l.source_id
                 WHERE l.link_type = 'url' AND l.archived_at IS NULL AND (l.title = @exact OR starts_with(l.title, @withSpace))
                 """,
@@ -75,8 +75,8 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
             }
             foreach (var link in links)
             {
-                // The one guarded writer: it sets the time only while the link has none, so a race loses to the earlier writer.
-                if (!link.HasTime && await linkCards.SetCommitTimeAsync(link.SourceId, link.Url, commit.CommittedAt, cancellationToken))
+                // The one guarded writer: it sets the time only while the link has none, so false means the link already had one.
+                if (await linkCards.SetCommitTimeAsync(link.SourceId, link.Url, commit.CommittedAt, cancellationToken))
                 {
                     updated++;
                 }
