@@ -54,6 +54,9 @@ public static class UsageProps
     // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.
     public const string ItemType = "item_type";
 
+    // Which sheet was opened on the Themes tab, on retro.theme_sheet_opened: "theme" (one theme's sheet) or "unthemed" (the sheet of the points with no theme).
+    public const string Sheet = "sheet";
+
     // Which Inspection view was shown, on inspection_metrics.viewed: overview, leadtime, period or json.
     public const string View = "view";
 

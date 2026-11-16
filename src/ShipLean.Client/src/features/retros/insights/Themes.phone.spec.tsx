@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
 import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../touch/testIds';
+import { itemPeekTestIds } from '../../itemPeek/testIds';
 import {
   actionDialog,
   insightsWeeks,
@@ -14,6 +15,7 @@ import { InsightsAddressHarness } from '../ct/InsightsAddressHarness';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
 import { ThemesAddressHarness } from './ct/ThemesAddressHarness';
+import { ThemesItemPeekHarness } from './ct/ThemesItemPeekHarness';
 
 // Recurring themes on a phone (SHIP-731 D1, D4, D9): the heading with What these mean, a card per theme with its heat
 // strip, the theme sheet and Rename… in it, and the Unthemed card with its sheet (RETRO-11, 12, 13). Regenerate the baselines with scripts/update-page-shots.sh src/features/retros/insights/Themes.phone.spec.tsx.
@@ -371,7 +373,11 @@ test('ThemeSheet_WhenAnItemIsOpenedFromIt_ShouldGiveWayToIt', async ({ mount, pa
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await sheet.locator('a').first().tap();
+  await sheet
+    .getByTestId(ids.retroThemeSheetAction)
+    .first()
+    .getByTestId(itemPeekTestIds.link)
+    .tap();
   await expect(address(page)).toContainText('item=');
   await expect(sheet).toHaveCount(0);
 });
@@ -579,4 +585,97 @@ test('RenameTheme_ShouldShowTheHelperLine', async ({ mount, page }) => {
   // Rename… and Merge give way to Discard and Save while the name is being changed.
   await expect(page.getByTestId(ids.retroThemeSheetRename)).toHaveCount(0);
   await expect(page.getByTestId(ids.retroThemeSheetMerge)).toHaveCount(0);
+});
+
+test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningWithItsSheet', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/*/usage/retro-theme-sheet-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<ThemesAddressHarness insights={withUnthemed} />, open('?range=6'));
+  const card = page
+    .getByTestId(ids.retroThemeCard)
+    .and(page.locator(`[data-theme-id="${helped.theme.id}"]`));
+  await card.getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  // The sheet's own loads arriving add no second report.
+  await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
+});
+
+const stubSheetOpenedReports = async (page: Parameters<typeof stubRetros>[0]) => {
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/*/usage/retro-theme-sheet-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  return opened;
+};
+
+test('ThemeSheet_WhenAnItemIsOpenedOverItAndClosed_ShouldNotReportTheOpeningAgain', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened = await stubSheetOpenedReports(page);
+  await mount(
+    <ThemesItemPeekHarness insights={withUnthemed} />,
+    open(`?sheet=theme:${helped.theme.id}`),
+  );
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  await expect(sheet.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+  await sheet
+    .getByTestId(ids.retroThemeSheetAction)
+    .first()
+    .getByTestId(itemPeekTestIds.link)
+    .tap();
+  await expect(address(page)).toContainText('item=');
+  await expect(sheet).toHaveCount(0);
+  await page.getByTestId('test-close-item').click();
+  await expect(address(page)).not.toContainText('item=');
+  await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  // Sentinel: any second theme report would arrive before the Unthemed one.
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
+});
+
+test('ThemeSheet_WhenThePageRerendersWithItOpen_ShouldReportTheOpeningOnce', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened = await stubSheetOpenedReports(page);
+  const component = await mount(
+    <ThemesAddressHarness insights={withUnthemed} />,
+    open(`?sheet=theme:${helped.theme.id}`),
+  );
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  // A refetch hands the page a new insights object with the same content.
+  await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
+  await component.update(<ThemesAddressHarness insights={{ ...withUnthemed }} />);
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  // Sentinel: any second theme report would arrive before the Unthemed one.
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
 });
