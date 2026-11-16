@@ -7,8 +7,14 @@ import { RecurringRow } from './recurring/RecurringRow';
 import { UnthemedRow } from './recurring/UnthemedRow';
 import { ThemeAxis } from './touch/ThemeAxis';
 import { ThemeCard } from './touch/ThemeCard';
-import { ThemeSheet } from './touch/ThemeSheet';
-import { themeSheetId, withoutSheet, withThemeSheet } from './touch/themeSheetAddress';
+import { ThemeSheet, UnthemedSheet } from './touch/ThemeSheet';
+import { defsSheetValue, withSheet } from './touch/insightsAddress';
+import {
+  themeSheetId,
+  UNTHEMED_SHEET_ID,
+  withoutSheet,
+  withThemeSheet,
+} from './touch/themeSheetAddress';
 import { LastChangeHeading } from './tips/LastChangeHeading';
 import { NoSprintTip } from './tips/NoSprintTip';
 import { StatusHeading } from './tips/StatusHeading';
@@ -28,17 +34,42 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
   const [params, setParams] = useSearchParams();
   // An open item is shown over the page, so the sheet gives way to it and comes back with it closed.
   const { itemKey } = useItemPeek();
-  const sheetRow = touch ? themes.find((t) => t.theme.id === themeSheetId(params)) : undefined;
+  const sheetId = touch ? themeSheetId(params) : null;
+  const sheetRow = themes.find((t) => t.theme.id === sheetId);
+  const unthemedOpen = sheetId === UNTHEMED_SHEET_ID && insights.unthemed.total > 0;
   const write = (next: URLSearchParams) => setParams(next, { replace: true });
   const closeSheet = () => write(withoutSheet(params));
+  const range = first && last ? `, ${first} – ${last}` : '';
   const heading = (
-    <header className="flex items-baseline gap-3 px-4 py-3 touch:px-0 touch:pt-0">
+    <header className="flex items-baseline gap-3 px-4 py-3">
       <h2 className="m-0 text-[length:var(--text-md)] font-semibold">
         Went badly and not in the plan
       </h2>
-      <span className="text-[length:var(--text-sm)] text-ink-muted">
-        by theme{first && last ? `, ${first} – ${last}` : ''}
-      </span>
+      <span className="text-[length:var(--text-sm)] text-ink-muted">by theme{range}</span>
+    </header>
+  );
+  // At touch (RETRO-11): What these mean beside the heading, and the range with the recurring count under it.
+  const touchHeading = (
+    <header className="grid gap-0.5">
+      <div className="flex items-baseline gap-3">
+        <h2 className="m-0 min-w-0 flex-1 text-[length:var(--text-md)] font-semibold">
+          Went badly and not in the plan
+        </h2>
+        <button
+          type="button"
+          data-testid={ids.retroThemesHeadingDefs}
+          className="min-h-[var(--touch-target)] shrink-0 cursor-pointer text-[length:var(--text-sm)] text-signal"
+          onClick={() => write(withSheet(params, defsSheetValue()))}
+        >
+          What these mean
+        </button>
+      </div>
+      <p
+        data-testid={ids.retroThemesHeadingSummary}
+        className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+      >
+        By theme{range}. {recurring} recurring.
+      </p>
     </header>
   );
   return (
@@ -47,7 +78,7 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
       <MergeProposals project={project} proposals={insights.mergeProposals} />
       {touch ? (
         <section className="grid grid-cols-[minmax(0,1fr)] gap-1.5">
-          {heading}
+          {touchHeading}
           <ThemeAxis columns={columns} />
           <div
             data-testid={ids.retroThemeCards}
@@ -89,6 +120,15 @@ export function RecurringThemes({ project, insights }: RetroInsightsSlotProps) {
                 next.set('merge', themeId);
                 write(next);
               }}
+            />
+          ) : null}
+          {unthemedOpen && !itemKey ? (
+            <UnthemedSheet
+              project={project}
+              unthemed={insights.unthemed}
+              columns={columns}
+              mode={mode}
+              onClose={closeSheet}
             />
           ) : null}
         </section>

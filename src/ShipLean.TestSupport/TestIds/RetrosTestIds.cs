@@ -232,4 +232,10 @@ public static class RetrosTestIds
     public const string RetrosOpenRetroTypeKey = "retros-open-retro-type-key";
     public const string RetrosOpenRetroKey = "retros-open-retro-key";
     public const string RetrosOpenRetroSteps = "retros-open-retro-steps";
+    public const string RetroUnthemedSheet = "retro-unthemed-sheet";
+    public const string RetroUnthemedSheetGiveThemes = "retro-unthemed-sheet-give-themes";
+    public const string RetroThemesHeadingDefs = "retro-themes-heading-defs";
+    public const string RetroThemesHeadingSummary = "retro-themes-heading-summary";
+    public const string RetroThemeRenameHelper = "retro-theme-rename-helper";
+    public const string RetroThemeCardLastChange = "retro-theme-card-last-change";
 }
