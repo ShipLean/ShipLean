@@ -43,10 +43,7 @@ test('TouchSprintBlock_WhenOverCapacity_ShouldShowOver', async ({ mount, page })
   ).toBe(0);
 });
 
-test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({
-  mount,
-  page,
-}) => {
+test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({ mount, page }) => {
   await stubBacklog(page, planningView(), { saved });
   await mount(<PlanningMode project={PROJECT} />, route);
   // Nothing of the desktop header is left in the block.

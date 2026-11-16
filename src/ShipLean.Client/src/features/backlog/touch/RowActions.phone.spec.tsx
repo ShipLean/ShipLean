@@ -392,7 +392,12 @@ test('RowMore_ShouldShowTheCurrentSprintAndParentAsValues', async ({ mount, page
     revision: 5,
     points: 8,
     sprint: { id: 'sp25', name: 'Sprint 25', status: 'future' },
-    parent: { id: 'f1', key: 'SHIP-90', type: { id: 'feature', name: 'Feature' }, title: 'Checkout v2' },
+    parent: {
+      id: 'f1',
+      key: 'SHIP-90',
+      type: { id: 'feature', name: 'Feature' },
+      title: 'Checkout v2',
+    },
   });
   await stubBacklog(page, backlogView([...ROWS, placed]), { sprints: SPRINTS });
   await mount(<RowActionsHarness project={PROJECT} />, route);

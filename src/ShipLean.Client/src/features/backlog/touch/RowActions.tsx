@@ -121,7 +121,7 @@ function MoreActions({
       onSelect: () => setSub('parent'),
       disabled: row.type === null || parentTypesOf(row.type.id).length === 0,
     },
-        {
+    {
       id: 'top',
       label: 'Move to top',
       icon: moveTopIcon,

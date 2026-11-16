@@ -113,7 +113,10 @@ export function BulkSprintSheet({
           className="px-2 pt-2 text-[length:var(--text-sm)] text-ink-muted"
         >
           {unestimated.map((row) => row.key).join(', ')}{' '}
-          {unestimated.length === 1 ? 'has no estimate, so it adds' : 'have no estimate, so they add'} 0.
+          {unestimated.length === 1
+            ? 'has no estimate, so it adds'
+            : 'have no estimate, so they add'}{' '}
+          0.
         </p>
       )}
     </Sheet>
