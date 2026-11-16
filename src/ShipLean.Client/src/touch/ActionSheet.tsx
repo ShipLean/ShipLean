@@ -243,9 +243,7 @@ function ActionSheetRows({
           </Fragment>
         );
       })}
-      {given(footer) ? (
-        <ActionSheetFootnote>{footer}</ActionSheetFootnote>
-      ) : null}
+      {given(footer) ? <ActionSheetFootnote>{footer}</ActionSheetFootnote> : null}
     </>
   );
 }
