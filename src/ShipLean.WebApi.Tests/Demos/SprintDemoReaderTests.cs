@@ -447,9 +447,9 @@ public class SprintDemoReaderTests : ApiFixture
         dto.Video.ShouldBeNull();
     }
 
-    private static async Task<Guid> SessionAsync(NpgsqlConnection database, Arranged demo, string state, DateTimeOffset at)
+    private static async Task<Guid> SessionAsync(NpgsqlConnection database, Arranged demo, string state, DateTimeOffset at, Guid? sessionId = null)
     {
-        var id = Guid.CreateVersion7();
+        var id = sessionId ?? Guid.CreateVersion7();
         await database.ExecuteAsync(
             """
             INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at, ended_at)
@@ -535,5 +535,25 @@ public class SprintDemoReaderTests : ApiFixture
         dto.Status.ShouldBe(SprintDemoStatus.Failed);
         dto.Actions.CanCreate.ShouldBeTrue();
         dto.Actions.CreateBlockedMessage.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Get_WhenTwoSessionsShareACreatedTime_ShouldUseTheNewerIdAndQuoteIt()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var olderId = Guid.Parse("00000000-0000-7000-8000-000000000001");
+        var newerId = Guid.Parse("00000000-0000-7000-8000-000000000002");
+        // The older id is inserted first, so only the id tie-breaker makes the newer id win.
+        var older = await SessionAsync(database, demo, "failed", now.AddMinutes(-10), olderId);
+        var newer = await SessionAsync(database, demo, "completed", now.AddMinutes(-10), newerId);
+        await ActivityAsync(database, older, "error", "The older id's error.", now.AddMinutes(-9));
+        await ActivityAsync(database, newer, "response", "The newer id's answer.", now.AddMinutes(-9));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.StatusMessage.ShouldBe("The agent session ended without uploading a video. It said: \"The newer id's answer.\"");
     }
 }

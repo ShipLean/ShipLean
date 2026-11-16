@@ -69,7 +69,7 @@ public sealed class SprintDemoReader(
                 ORDER BY a.created_at DESC, a.id DESC LIMIT 1
             ) last ON true
             WHERE s.work_item_id = @itemId
-            ORDER BY (s.state IN {AgentSessionLiveStates.Sql}) DESC, s.created_at DESC LIMIT 1
+            ORDER BY (s.state IN {AgentSessionLiveStates.Sql}) DESC, s.created_at DESC, s.id DESC LIMIT 1
             """,
             new { itemId }, cancellationToken: cancellationToken));
 
