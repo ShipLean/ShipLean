@@ -101,8 +101,15 @@ public class ToolUsageTests : McpFixture
     public async Task GetAgentSession_WhenCalled_ShouldTrackAgentSessionViewed()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new ShipLean.TestSupport.Builders.WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @item", new { item });
+            await new ShipLean.TestSupport.Builders.AgentSessionSeeds(item, await ShipLean.TestSupport.Builders.AgentSessionSeeds.InsertConnectionAsync(connection)).InsertAsync(connection);
+        }
 
-        var reply = await CallToolAsync(token, "get_agent_session", """{"item":"SHIP-124"}""");
+        var reply = await CallToolAsync(token, "get_agent_session", $$"""{"item":"{{key}}"}""");
 
         reply.IsToolError().ShouldBeFalse();
         var tracked = await NextAsync("tool:get_agent_session");
