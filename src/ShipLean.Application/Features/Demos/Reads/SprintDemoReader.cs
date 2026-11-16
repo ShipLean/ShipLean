@@ -8,17 +8,23 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
 using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.Reads;
 
 // K4 and K6's read: the sprint's row, its latest session, the files its pointers name (each opened once), and the features its chapters name.
+// The latest session's end reason and detail reach the status rule as AgentSessionVisibility lets the viewer's project role see
+// them (C3). CreateWarning is the project connection's last-delivery warning (IAgentConnectionWarnings), whenever one is set.
 public sealed class SprintDemoReader(
     NpgsqlDataSource dataSource,
     IAttachmentStore attachments,
     MarkdownRenderer renderer,
     IAgentSessionStarter sessions,
+    IProjectAccess access,
+    IProjectAgentSettings agentSettings,
+    IAgentConnectionWarnings warnings,
     TimeProvider time,
     IViewerZone viewerZone) : ISprintDemoReader
 {
@@ -42,7 +48,11 @@ public sealed class SprintDemoReader(
         }
 
         var live = session is { Live: true };
-        var facts = new SprintDemoFacts(row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, session?.Message);
+        var role = await access.RequireAsync(row.ProjectId, ProjectRole.Member, cancellationToken);
+        var end = session is null || live ? null : AgentSessionVisibility.Apply(session.EndReason, session.EndDetail, null, role);
+        var facts = new SprintDemoFacts(
+            row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, end?.EndReason, end?.EndDetail,
+            session?.Message);
         var (status, message) = SprintDemoStatusRule.Decide(facts, now);
 
         var chapters = await ChaptersAsync(row, files, cancellationToken);
@@ -64,7 +74,8 @@ public sealed class SprintDemoReader(
     private static async Task<SessionRow?> LatestSessionAsync(NpgsqlConnection connection, Guid itemId, CancellationToken cancellationToken)
         => await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
             $"""
-            SELECT s.state, s.state IN {AgentSessionLiveStates.Sql} AS live, coalesce(s.ended_at, s.last_activity_at) AS endedAt, last.body AS message
+            SELECT s.state, s.state IN {AgentSessionLiveStates.Sql} AS live, coalesce(s.ended_at, s.last_activity_at) AS endedAt, s.end_reason AS endReason,
+                   s.end_detail AS endDetail, last.body AS message
             FROM agent_session s
             LEFT JOIN LATERAL (
                 SELECT a.body FROM agent_activity a
@@ -225,22 +236,25 @@ public sealed class SprintDemoReader(
     private async Task<SprintDemoActionsDto> ActionsAsync(SprintDemoRow row, bool live, CancellationToken cancellationToken)
     {
         var retry = row.YouTubeState == "failed" && row.VideoAttachmentId is not null;
+        var warning = (await agentSettings.GetAsync(row.ProjectId, cancellationToken)).ConnectionId is { } connectionId
+            ? await warnings.ForConnectionAsync(connectionId, cancellationToken)
+            : null;
         if (!row.Closed)
         {
-            return new SprintDemoActionsDto(false, SprintDemoStatusRule.CloseFirst, retry);
+            return new SprintDemoActionsDto(false, SprintDemoStatusRule.CloseFirst, retry, warning);
         }
 
         if (live)
         {
-            return new SprintDemoActionsDto(false, LiveSessionMessage, retry);
+            return new SprintDemoActionsDto(false, LiveSessionMessage, retry, warning);
         }
 
         return await sessions.PlanProjectAsync(row.ProjectId, null, cancellationToken) is { } block
-            ? new SprintDemoActionsDto(false, AgentStartMessages.For(block), retry)
-            : new SprintDemoActionsDto(true, null, retry);
+            ? new SprintDemoActionsDto(false, AgentStartMessages.For(block), retry, warning)
+            : new SprintDemoActionsDto(true, null, retry, warning);
     }
 
-    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt, string? Message);
+    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt, string? EndReason, string? EndDetail, string? Message);
 
     private sealed record FileRow(Guid Id, string Name, long SizeBytes);
 

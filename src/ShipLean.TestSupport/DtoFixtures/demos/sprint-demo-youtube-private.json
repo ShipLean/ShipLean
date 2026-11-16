@@ -66,6 +66,7 @@
   "actions": {
     "canCreate": true,
     "createBlockedMessage": null,
-    "canRetryYouTube": false
+    "canRetryYouTube": false,
+    "createWarning": null
   }
 }

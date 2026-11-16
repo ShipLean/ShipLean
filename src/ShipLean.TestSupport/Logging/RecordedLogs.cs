@@ -1,12 +1,12 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace ShipLean.WebApi.Tests.Demos;
+namespace ShipLean.TestSupport.Logging;
 
 // Stands in for the host's ILoggerFactory (the app's Serilog one ignores added providers) and keeps every event as one string: category, message,
 // each structured property, each scope in force and the exception. It filters as appsettings.json does (Microsoft.AspNetCore and
 // System.Net.Http.HttpClient at Warning, the rest Information), so what it keeps is what production would write.
-internal sealed class RecordedLogs : ILoggerFactory
+public sealed class RecordedLogs : ILoggerFactory
 {
     private readonly ConcurrentQueue<string> _events = new();
     private readonly AsyncLocal<Scope?> _scope = new();

@@ -37,6 +37,14 @@ public class UsageEventNamesTests
         UsageEventNames.All.Count.ShouldBeGreaterThan(80);
     }
 
+    // SHIP-1620's events (C12), pinned so the mapping tasks and the docs' event table agree on the wire names.
+    [Test]
+    public void AgentSessionTroubleshootingNames_ShouldBePinned()
+    {
+        (UsageEventNames.AgentSessionViewed, UsageEventNames.InstanceAgentConnectionTested, UsageEventNames.AgentSessionRunLogUploaded)
+            .ShouldBe(("agent_session.viewed", "instance.agent_connection_tested", "agent_session.run_log_uploaded"));
+    }
+
     [Test]
     public void ScreenIds_WhenChecked_ShouldHoldTheClientRoutes()
     {

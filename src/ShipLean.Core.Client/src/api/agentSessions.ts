@@ -11,6 +11,8 @@ export interface AgentStartAvailabilityDto {
   reason: AgentStartBlock | null;
   /** Empty when Start agent works; otherwise a sentence for a person. */
   message: string;
+  /** A sentence for a person when the connection's newest delivery failed; null otherwise. */
+  warning: string | null;
 }
 
 export const AGENT_SESSION_STATES = [
@@ -62,6 +64,41 @@ export interface AgentActivityDto {
   createdLabel: string;
 }
 
+export const AGENT_END_REASONS = [
+  'completed',
+  'canceled',
+  'deliveryFailed',
+  'agentError',
+  'stale',
+  'proposalWithoutIssue',
+  'unknown',
+] as const;
+export type AgentEndReason = (typeof AGENT_END_REASONS)[number];
+
+/** One send of a delivery to the agent connection, oldest first. Never carries the delivery body. */
+export interface AgentDeliveryAttempt {
+  action: string;
+  attempt: number;
+  at: string;
+  atLabel: string;
+  /** Null when no answer came. */
+  httpStatus: number | null;
+  /** Already scrubbed by the server; null on success. */
+  error: string | null;
+  durationMs: number;
+  nextAttemptAt: string | null;
+  nextAttemptLabel: string | null;
+}
+
+/** The agent's own output, left on the item as an attachment. Project admins only. */
+export interface AgentRunLog {
+  attachmentId: string;
+  name: string;
+  sizeBytes: number;
+  /** The attachment download route. */
+  url: string;
+}
+
 export interface AgentSessionDto {
   id: string;
   connectionName: string;
@@ -80,6 +117,16 @@ export interface AgentSessionDto {
   plan: AgentPlanStepDto[];
   /** Oldest first. */
   activities: AgentActivityDto[];
+  /** Set for a session that is not live (ended or stale); null while live. */
+  endReason: AgentEndReason | null;
+  /** The sentence for a person; every project member sees it. */
+  endText: string | null;
+  /** Null for a member when the reason is deliveryFailed. */
+  endDetail: string | null;
+  /** Null for a member and when the agent left none. */
+  runLog: AgentRunLog | null;
+  /** Oldest first. Empty for a member. */
+  deliveries: AgentDeliveryAttempt[];
 }
 
 export interface AgentPanelDto {

@@ -2,6 +2,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import { SessionBody } from './SessionBody';
 import { SessionHeader } from './SessionHeader';
 import { useAgentPanel } from './agentPanelApi';
+import { StartWarning } from './StartWarning';
 import { agentPanelTestIds as ids } from './testIds';
 
 const button =
@@ -56,6 +57,7 @@ export function AgentPanel({ project, itemKey }: { project: ProjectDto; itemKey:
             Start agent
           </button>
         ) : null}
+        <StartWarning availability={panel.availability} />
       </header>
       {failure ? (
         <p

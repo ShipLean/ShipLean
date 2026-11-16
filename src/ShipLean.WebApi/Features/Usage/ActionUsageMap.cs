@@ -105,6 +105,10 @@ public static class ActionUsageMap
             "AgentConnections.Archive",
             "AgentConnections.RegenerateSecret",
             "AgentConnections.RegenerateToken");
+        Add(ActionUsage.Track(UsageEventNames.InstanceAgentConnectionTested), "AgentConnections.Test");
+        // Anonymous caller: UsageActionFilter records nothing without an actor, so the upload fires the event itself after it succeeds (E1, SHIP-1652).
+        Add(ActionUsage.SelfEmitted, "AgentLogUpload.Upload");
+        Add(ActionUsage.Untracked("A settings read."), "AgentConnections.Health");
         Add(ActionUsage.Track(UsageEventNames.InstanceUserAdded), "UsersAdmin.Add");
         Add(
             ActionUsage.Track(UsageEventNames.InstanceUserChanged),

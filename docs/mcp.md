@@ -184,6 +184,16 @@ Six tools take a `payload` argument for large arguments: `capture_plan`, `captur
 
 **Retrospective tools.** `log_retrospective` and `list_retrospectives` carry the learning-from-failure text first, then say what to log: every agent logs on its own story when it stops, with a raw failure log; the conductor compiles the Feature's retro with `compiled_from`. `decide_retro_actions` follows it as a `planning_guide` step; it is never automatic. The server instructions mention them in one sentence, and the planning guide's `work`, `guide`, `report` and `lead` parts say the same. What the points mean, the theme modes and how verdicts are computed are in [retrospectives.md](retrospectives.md).
 
+## Agent session tools
+
+An agent asked why a run failed can answer from MCP alone. `get_work_item` lists the item's newest five sessions (`agent_sessions`: `id`, `connection`, `state`, `started`, `ended`, `end_reason`, `end_text`); `get_agent_session` reads one. Code: `src/ShipLean.WebApi/Features/Mcp/Tools/Agents` and `src/ShipLean.Application/Features/Mcp/Agents`.
+
+| Tool | Scope | Does |
+|---|---|---|
+| `get_agent_session` | read | Exactly one of `session` (a session id) or `item` (a key: its newest session), else `validation` naming `session` or `item`. `before` (the `next_before` of a previous call; it names its session, so one from another session, say after the item's newest session changed, is `validation` on `before`) and `limit` (default 50, 1 to 100; otherwise `validation` on `limit`, checked after access). Result: `session` (`id`, `item`, `connection`, `state`, `started`, `ended`, `end_reason`, `end_text`, `end_detail`, `run_log`), `activities` newest first (`id`, `type`, `body`, `action`, `parameter`, `result`, `truncated`, `at`) with `next_before` (absent on the last page), and `deliveries` oldest first (`action`, `attempt`, `at`, `http_status`, `error`, `duration_ms`, `next_attempt_at`). Every activity text is cut at 4 KB of UTF-8 between characters and `truncated` says so. A caller outside the item's project, and an unknown session id, both get the same `not_found`; an item with no session gets `not_found` saying so. Counts as `agent_session.viewed`. |
+
+Who sees what is `AgentSessionVisibility.Apply`, by the caller's project role: every member gets `end_reason` and `end_text`; `end_detail` for `deliveryFailed`, `deliveries` and `run_log` (`attachment` is the attachment name for `read_attachment`, with `size_bytes`) are for project admins only. A live session (`submitted`, `working`, `inputRequired`) has no end fields, no run log and no deliveries for anyone, as in the agent panel. A stale session has no `ended`.
+
 ## Decisions and questions tools
 
 Agents record the decisions they made and the questions they need answered on a work item, and answer them as the item's owner. The key names the project, so there is no `project` argument, and the agent is stamped from the token (no `agent_name`). The next agent to pick the item up reads the answers; nothing waits for them. Each `open_url` ends with the anchor of what it touched (`#D3` or `#Q2`; for `record_decisions`, the first decision).

@@ -3,6 +3,7 @@ import type { SprintDemoDto, SprintDemoStatus } from '@shiplean/core/api/demos';
 import { Chip, type ChipTone } from '../../components/Chip';
 import { showToast } from '../../components/toastStore';
 import { useCreateSprintDemo } from './demosApi';
+import { DemoCreateWarning } from './DemoCreateWarning';
 import type { DemoProps } from './DemoProps';
 import { demosTestIds as ids } from './testIds';
 
@@ -159,6 +160,7 @@ export function DemoStatusBand({ demo }: DemoProps) {
           </button>
         )
       )}
+      <DemoCreateWarning actions={actions} />
     </div>
   );
 }

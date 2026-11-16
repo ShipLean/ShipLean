@@ -47,6 +47,11 @@ const session = (id: string, extra: Partial<AgentSessionDto> = {}): AgentSession
   urls: [],
   plan: [],
   activities: [],
+  endReason: null,
+  endText: null,
+  endDetail: null,
+  runLog: null,
+  deliveries: [],
   ...extra,
 });
 
@@ -54,8 +59,14 @@ const cannotStart: AgentStartAvailabilityDto = {
   canStart: false,
   reason: 'liveSession',
   message: 'An agent session is already running on this item.',
+  warning: null,
 };
-const canStart: AgentStartAvailabilityDto = { canStart: true, reason: null, message: '' };
+const canStart: AgentStartAvailabilityDto = {
+  canStart: true,
+  reason: null,
+  message: '',
+  warning: null,
+};
 
 // Stubs the panel's read, Start and Stop. A Stop marks the current session as stopping; a Start opens a new live session.
 async function stubPanel(
@@ -116,7 +127,12 @@ async function mountWith(
 test('AgentPanel_WhenNoSessionAndNoConnection_ShouldStayOut', async ({ mount, page }) => {
   await stubPanel(page, {
     visible: false,
-    availability: { canStart: false, reason: 'noConnection', message: 'No connection.' },
+    availability: {
+      canStart: false,
+      reason: 'noConnection',
+      message: 'No connection.',
+      warning: null,
+    },
     sessions: [],
   });
   const screen = await mountWith(mount, page);
@@ -249,6 +265,7 @@ test('AgentPanel_WhenStartIsBlocked_ShouldSayWhatIsMissing', async ({ mount, pag
       canStart: false,
       reason: 'noRepository',
       message: "This project has no repository. Add its URL in the project's General settings.",
+      warning: null,
     },
     sessions: [],
   });

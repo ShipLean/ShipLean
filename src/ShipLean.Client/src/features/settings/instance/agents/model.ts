@@ -24,6 +24,24 @@ export interface AgentConnectionPut {
   receiverUrl: string;
 }
 
+/** GET api/instance/agent-connections/{id}/health (C#: AgentConnectionHealthDto). */
+export interface AgentConnectionHealth {
+  lastDeliveredAt: string | null;
+  lastDeliveredLabel: string | null;
+  failedLast24h: number;
+  lastFailedAt: string | null;
+  lastFailedLabel: string | null;
+  lastError: string | null;
+}
+
+/** POST api/instance/agent-connections/{id}/test (C#: AgentConnectionTestDto). Reached is true for any HTTP answer. */
+export interface AgentConnectionTest {
+  reached: boolean;
+  httpStatus: number | null;
+  error: string | null;
+  durationMs: number;
+}
+
 /** What the show-once dialog holds: the connection's name and whichever of the two were just made. */
 export interface ShownOnce {
   name: string;
