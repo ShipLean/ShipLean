@@ -28,7 +28,11 @@ export function TagRow({
           {tag}
         </span>
       </span>
-      <span role="group" aria-label={`Colour for ${tag}`} className="inline-flex gap-1 touch:order-2 touch:flex-wrap">
+      <span
+        role="group"
+        aria-label={`Colour for ${tag}`}
+        className="inline-flex gap-1 touch:order-2 touch:flex-wrap"
+      >
         {SWATCHES.map((swatch) => (
           <button
             key={swatch}

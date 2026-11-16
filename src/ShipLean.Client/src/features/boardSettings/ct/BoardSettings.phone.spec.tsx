@@ -69,7 +69,11 @@ test('BoardSettings_WhenChangedOnPhone_ShouldShowSectionChipsAndSaveFromTheSaveB
 // SHIP-1849 (ND3b) gaps against the phone design settings-board-styles* (SHIP-1809 P4, P9).
 
 test('StyleRules_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ mount, page }) => {
-  const blocked = styleRule('blocked', 'Blocked', { field: 'tags', op: 'contains', value: 'Blocked' });
+  const blocked = styleRule('blocked', 'Blocked', {
+    field: 'tags',
+    op: 'contains',
+    value: 'Blocked',
+  });
   const spike = styleRule('spike', 'Spike', { field: 'tags', op: 'contains', value: 'Spike' });
   await stubBoard(
     page,
@@ -169,15 +173,14 @@ test('Previews_WhenOnPhone_ShouldBeHiddenSoTheRowsTakeTheWidth', async ({ mount,
   await expect(page.getByTestId(paneIds.tagsPreview)).toBeHidden();
   const clear = await page.getByTestId(paneIds.tagClear).first().boundingBox();
   const swatches = await page.getByTestId(paneIds.tagSwatch).last().boundingBox();
-  expect((swatches?.x ?? 0) + (swatches?.width ?? 0), 'swatches wrap inside the screen').toBeLessThanOrEqual(width);
+  expect(
+    (swatches?.x ?? 0) + (swatches?.width ?? 0),
+    'swatches wrap inside the screen',
+  ).toBeLessThanOrEqual(width);
   expect((clear?.x ?? 0) + (clear?.width ?? 0)).toBeLessThanOrEqual(width);
 
   await component.update(
-    <StoriesBoardSettingsHarness
-      projectId={PROJECT_ID}
-      boardId={BOARD_ID}
-      section="annotations"
-    />,
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="annotations" />,
   );
   await expect(page.getByTestId(paneIds.annotationTasks)).toBeVisible();
   await expect(page.getByTestId(paneIds.annotationsPreview)).toBeHidden();

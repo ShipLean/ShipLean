@@ -59,8 +59,14 @@ phonePageShots([
       const grip = await page.getByTestId(ids.styleGrip).first().boundingBox();
       const over = await page.getByTestId(ids.styleRow).nth(1).boundingBox();
       if (!grip || !over) throw new Error('no box');
-      const from = { x: Math.round(grip.x + grip.width / 2), y: Math.round(grip.y + grip.height / 2) };
-      const to = { x: Math.round(over.x + over.width / 2), y: Math.round(over.y + over.height / 2) };
+      const from = {
+        x: Math.round(grip.x + grip.width / 2),
+        y: Math.round(grip.y + grip.height / 2),
+      };
+      const to = {
+        x: Math.round(over.x + over.width / 2),
+        y: Math.round(over.y + over.height / 2),
+      };
       await page.clock.install({ time: 0 });
       await page.clock.pauseAt(1000);
       const cdp = await page.context().newCDPSession(page);
@@ -70,7 +76,9 @@ phonePageShots([
       for (let i = 1; i <= 10; i++) {
         await cdp.send('Input.dispatchTouchEvent', {
           type: 'touchMove',
-          touchPoints: [{ x: from.x + ((to.x - from.x) * i) / 10, y: from.y + ((to.y - from.y) * i) / 10 }],
+          touchPoints: [
+            { x: from.x + ((to.x - from.x) * i) / 10, y: from.y + ((to.y - from.y) * i) / 10 },
+          ],
         });
       }
       await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
