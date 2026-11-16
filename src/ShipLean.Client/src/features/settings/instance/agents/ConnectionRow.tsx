@@ -8,6 +8,7 @@ import {
   useUpdateConnection,
 } from './agentsApi';
 import { ConnectionForm } from './ConnectionForm';
+import { ConnectionHealth } from './ConnectionHealth';
 import { shownOf, type AgentConnectionDto, type ShownOnce } from './model';
 
 type Confirming = 'secret' | 'token' | 'archive' | null;
@@ -111,6 +112,7 @@ export function ConnectionRow({
               </span>
             </span>
           </div>
+          <ConnectionHealth connection={connection} />
           {archived ? null : confirming === null ? (
             <div className="flex flex-wrap items-center gap-1">
               <button
