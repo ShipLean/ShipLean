@@ -34,11 +34,16 @@ const withPlayer = (demo: SprintDemoDto, player: 'video' | 'embed') => async (pa
   await expect(page.getByTestId(ids.demoScript)).toBeVisible();
 };
 
-// Failed after the agent session ended (ShipLean#147): the server folds what the agent said into the message.
+// Failed after the agent session ended (ShipLean#147): the message quotes what the agent said, and agentSaid splits it
+// for the phone's "It said" block (P5).
 const failedSaid: SprintDemoDto = {
   ...demoStates.failed,
   statusMessage:
     'The agent session ended as failed before a video came back. It said: "Playwright could not reach http://localhost:5173: the seeded copy did not start within 5 minutes, so there was nothing to record."',
+  agentSaid: {
+    message: 'The agent session ended as failed before a video came back.',
+    text: 'Playwright could not reach http://localhost:5173: the seeded copy did not start within 5 minutes, so there was nothing to record.',
+  },
   run: { ...demoStates.failed.run!, sessionState: 'failed' },
 };
 
