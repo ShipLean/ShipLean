@@ -90,18 +90,26 @@ export function TouchRowList({
       />
     );
   };
+  // A lifted row that left the list (a teammate's change) never reports the end of its drag: ignore ids that are gone.
+  const lifted = liftedId !== null && rowIds.includes(liftedId) ? liftedId : null;
+  const over = overId !== null && rowIds.includes(overId) ? overId : null;
+  // The line sits above the row the finger is over, except on the lifted row itself and the row just below it, where a
+  // drop changes nothing.
+  const liftedIndex = lifted === null ? -1 : rowIds.indexOf(lifted);
+  const showsLine = (id: string, index: number) =>
+    lifted !== null && over === id && id !== lifted && index !== liftedIndex + 1;
   let emptyText = `Nothing matches "${searched}"`;
   if (searched === '') emptyText = filtered ? 'Nothing matches this filter' : 'Nothing to show';
   return (
     <div data-testid={ids.touchRowList} className="min-w-0 flex-1">
       {addRow}
-      {rows.map((row) => (
-        <div key={row.id} className={liftedId === row.id ? 'opacity-40' : ''}>
-          {liftedId !== null && overId === row.id && liftedId !== row.id ? (
+      {rows.map((row, index) => (
+        <div key={row.id} className={`relative ${lifted === row.id ? 'opacity-40' : ''}`}>
+          {showsLine(row.id, index) ? (
             <div
               data-testid={ids.touchDropLine}
               aria-hidden="true"
-              className="relative h-0 border-t-2 border-accent before:absolute before:-top-[5px] before:left-1.5 before:size-2 before:rounded-full before:bg-accent"
+              className="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 bg-accent before:absolute before:-top-[3px] before:left-1.5 before:size-2 before:rounded-full before:bg-accent"
             />
           ) : null}
           <TouchRow

@@ -63,6 +63,26 @@ test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({ mount,
   await expect(page.getByTestId(ids.addRow)).toBeVisible();
 });
 
+test('PlanningAddInSection_AtTouch_ShouldUseASegmentedSwitchHelpLineAndClose', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await section(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
+  await page.locator(actionRow('add')).tap();
+
+  const switchButtons = page.getByTestId(ids.addRow).getByTestId(ids.addType);
+  await expect(switchButtons).toHaveText(['Story', 'Bug']);
+  await expect(switchButtons.first()).toHaveAttribute('aria-pressed', 'true');
+  await switchButtons.nth(1).tap();
+  await expect(switchButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+});
+
 test('PullLine_WhenUpTapped_ShouldMoveOneItem', async ({ mount, page }) => {
   await stubBacklog(page, planningView(), { saved });
   await mount(<PlanningMode project={PROJECT} />, route);

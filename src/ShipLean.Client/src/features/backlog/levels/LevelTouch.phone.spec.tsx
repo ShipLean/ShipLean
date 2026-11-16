@@ -142,6 +142,17 @@ test('NewItemRow_WhenNewChosenInStoriesListOnPhone_ShouldShowTheAddRow', async (
   expect(sideways).toBe(false);
 });
 
+test('LevelNewItemRow_OnPhone_ShouldShowTheHelpLineAndClose', async ({ mount, page }) => {
+  await stubLevel(page, levelView('epics', EPIC_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="epics" />, epics);
+  await page.getByTestId(ids.newItem).tap();
+
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+});
+
 test('InlineAdd_AtTouch_ShouldUseASegmentedSwitchAndClose', async ({ mount, page }) => {
   await stubBacklog(page, backlogView(ROWS));
   await mount(<ListMode project={PROJECT} />, {
@@ -149,10 +160,9 @@ test('InlineAdd_AtTouch_ShouldUseASegmentedSwitchAndClose', async ({ mount, page
   });
   await page.getByTestId(ids.newItem).tap();
 
-  const switchButtons = page.getByRole('group', { name: 'Type' }).getByTestId(ids.addType);
+  const switchButtons = page.getByTestId(ids.addRow).getByTestId(ids.addType);
   await expect(switchButtons).toHaveText(['Story', 'Bug']);
   await expect(switchButtons.first()).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('select')).toHaveCount(0);
   await switchButtons.nth(1).tap();
   await expect(switchButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');

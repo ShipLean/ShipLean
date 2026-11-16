@@ -4,6 +4,7 @@ import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs
 import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { SegmentedChoice } from '../../settings/profile/account/SegmentedChoice';
+import { touchAddTypeOptions, TOUCH_ADD_HELP } from '../add/touchAddTypes';
 import { usePasteIntake } from '../add/usePasteIntake';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
@@ -85,12 +86,7 @@ export function NewItemRow({
             <SegmentedChoice
               label="Type"
               testId={ids.addType}
-              options={types
-                .filter((option) => option.id === 'story' || option.id === 'bug')
-                .map((option) => ({
-                  value: option.id,
-                  label: option.id === 'story' ? 'Story' : option.label,
-                }))}
+              options={touchAddTypeOptions(types.map((option) => option.id))}
               selected={type}
               onPick={(value) => setType(value as WorkItemTypeId)}
             />
@@ -117,7 +113,7 @@ export function NewItemRow({
         </div>
         <div className="flex items-center gap-2 text-[length:var(--text-xs)] text-ink-muted">
           <span data-testid={ids.addHelp} className="flex-1">
-            Adds at the top with the next key and stays open for the next one.
+            {TOUCH_ADD_HELP}
           </span>
           <button
             type="button"

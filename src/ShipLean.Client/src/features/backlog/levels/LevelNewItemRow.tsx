@@ -3,6 +3,7 @@ import { ApiRequestError } from '@shiplean/core/api/client';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { TOUCH_ADD_HELP } from '../add/touchAddTypes';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import type { LevelBacklogLevel } from './levelColumns';
@@ -95,7 +96,7 @@ export function LevelNewItemRow({
           data-testid={ids.addHelp}
           className="basis-full text-[length:var(--text-xs)] text-ink-muted"
         >
-          Adds at the top with the next key and stays open for the next one.
+          {TOUCH_ADD_HELP}
         </span>
       ) : null}
       {create.error ? (

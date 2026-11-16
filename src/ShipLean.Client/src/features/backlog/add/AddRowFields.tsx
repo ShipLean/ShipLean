@@ -9,6 +9,7 @@ import { FieldMenu } from '../../workItem/form/FieldMenu';
 import { ParentCandidates } from '../../workItem/form/ParentCandidates';
 import { parentTypesOf } from '../../workItem/form/ParentField';
 import { backlogTestIds as ids } from '../testIds';
+import { touchAddTypeOptions, TOUCH_ADD_HELP } from './touchAddTypes';
 import { usePasteIntake } from './usePasteIntake';
 import { EMPTY_DRAFT, type AddFields, type Draft } from './useAddChain';
 
@@ -79,12 +80,7 @@ export function AddRowFields({
           <SegmentedChoice
             label="Type"
             testId={ids.addType}
-            options={types
-              .filter((id) => id === 'story' || id === 'bug')
-              .map((id) => ({
-                value: id,
-                label: id === 'story' ? 'Story' : typeName(id),
-              }))}
+            options={touchAddTypeOptions(types)}
             selected={type}
             onPick={onType}
           />
@@ -165,7 +161,16 @@ export function AddRowFields({
       <button type="button" data-testid={ids.addClose} className="btn-ghost" onClick={onClose}>
         {touch ? 'Close' : 'Esc'}
       </button>
-      <span className="text-[length:var(--text-xs)] text-ink-muted">{hint}</span>
+      {touch ? (
+        <span
+          data-testid={ids.addHelp}
+          className="basis-full text-[length:var(--text-xs)] text-ink-muted"
+        >
+          {TOUCH_ADD_HELP}
+        </span>
+      ) : (
+        <span className="text-[length:var(--text-xs)] text-ink-muted">{hint}</span>
+      )}
       {error ? (
         <span
           data-testid={ids.addError}
