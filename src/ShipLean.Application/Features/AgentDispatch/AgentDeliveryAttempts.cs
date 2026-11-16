@@ -17,7 +17,7 @@ public sealed class AgentDeliveryAttempts(NpgsqlDataSource dataSource, TimeProvi
         try
         {
             await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-            await connection.ExecuteAsync(new CommandDefinition(
+            var inserted = await connection.ExecuteAsync(new CommandDefinition(
                 """
                 INSERT INTO agent_delivery_attempt (id, delivery_id, connection_id, attempt, at, http_status, error, duration_ms, next_attempt_at)
                 VALUES (@id, @deliveryId, @connectionId, @attempt, @at, @httpStatus, @error, @durationMs, @nextAttemptAt)
@@ -36,10 +36,18 @@ public sealed class AgentDeliveryAttempts(NpgsqlDataSource dataSource, TimeProvi
                     nextAttemptAt = attempt.NextAttemptAt?.ToUniversalTime(),
                 },
                 cancellationToken: cancellationToken));
+            if (inserted == 0)
+            {
+                // A resend that reused the attempt number: its outcome is not stored, and the panel and the health read keep the first row's.
+                // Ids, the number and the status only, never the error text.
+                logger.LogWarning(
+                    "Attempt {Attempt} of agent delivery {DeliveryId} was already recorded, so this try (status {HttpStatus}) was not stored",
+                    attempt.Attempt, attempt.DeliveryId, attempt.HttpStatus);
+            }
         }
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
-            // The error text is not logged: only ids and the attempt number.
+            // Not in the message template: only ids and the attempt number. (The exception itself may carry more, e.g. with Include Error Detail.)
             logger.LogWarning(failed, "Could not record attempt {Attempt} of agent delivery {DeliveryId}", attempt.Attempt, attempt.DeliveryId);
         }
     }

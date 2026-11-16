@@ -29,10 +29,9 @@ namespace ShipLean.WebApi.Tests.Demos;
 [NonParallelizable]
 public class DemoUploadLinkLeakTests : McpFixture
 {
-    private static readonly DateTimeOffset Start = new(2026, 11, 16, 4, 0, 0, TimeSpan.Zero);
-
     private readonly RecordedLogs _logs = new();
     private readonly List<string> _spans = [];
+    private readonly List<string> _spanSources = [];
     private ActivityListener? _listener;
 
     protected override bool WithProbeTools => false;
@@ -53,13 +52,18 @@ public class DemoUploadLinkLeakTests : McpFixture
     {
         _listener = new ActivityListener
         {
-            ShouldListenTo = source => source.Name == "Microsoft.AspNetCore",
+            // Every source the app exports (TracingServices: ASP.NET Core, ShipLean's own, the MCP SDK, Npgsql, HttpClient, Redis), so
+            // the delivery pass, which runs outside any request, is seen too.
+            ShouldListenTo = _ => true,
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
             ActivityStopped = activity =>
             {
                 lock (_spans)
                 {
+                    _spanSources.Add(activity.Source.Name);
                     _spans.AddRange(SecretLeakAssert.Attributes(activity));
+                    // Span events carry exception.message, which the tags do not.
+                    _spans.AddRange(activity.Events.SelectMany(e => e.Tags.Select(tag => $"{activity.DisplayName}/{e.Name}:{tag.Key}={tag.Value}")));
                 }
             },
         };
@@ -93,12 +97,15 @@ public class DemoUploadLinkLeakTests : McpFixture
             await starter.StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
         }
 
+        var start = TimeProvider.System.GetUtcNow();
         var token = DemoRunArrange.TokenIn((await AgentDispatchArrange.DeliveriesAsync(database, itemId)).Single().Body);
         token.ShouldNotBeEmpty();
         await database.ExecuteAsync("UPDATE agent_delivery SET status = 'failed', last_error = 'Set aside by a test.' WHERE status = 'pending' AND session_id NOT IN (SELECT id FROM agent_session WHERE work_item_id = @itemId)", new { itemId });
-        await database.ExecuteAsync("UPDATE agent_delivery SET next_attempt_at = @now WHERE session_id IN (SELECT id FROM agent_session WHERE work_item_id = @itemId)", new { now = Start, itemId });
+        await database.ExecuteAsync("UPDATE agent_delivery SET next_attempt_at = @now WHERE session_id IN (SELECT id FROM agent_session WHERE work_item_id = @itemId)", new { now = start, itemId });
 
-        var clock = new FakeTimeProvider(Start);
+        // Start from the real time: DemoRunStarter stamps demo_requested_at with the real clock, and the session must end after it,
+        // or the Demo band shows Requested with no message and its check is vacuous.
+        var clock = new FakeTimeProvider(start);
         using var relay = new HttpClient(new EchoingReceiver());
         var deliverer = new AgentDeliverer(
             Host.Services.GetRequiredService<NpgsqlDataSource>(),
@@ -108,9 +115,20 @@ public class DemoUploadLinkLeakTests : McpFixture
             Host.Services.GetRequiredService<IAgentDeliveryAttempts>(),
             clock,
             new Logger<AgentDeliverer>(_logs));
+        int spansBefore;
+        lock (_spans)
+        {
+            spansBefore = _spanSources.Count;
+        }
+
         await deliverer.RunDueAsync(CancellationToken.None);
         clock.Advance(TimeSpan.FromMinutes(1));
         await deliverer.RunDueAsync(CancellationToken.None);
+        string[] deliverySources;
+        lock (_spans)
+        {
+            deliverySources = [.. _spanSources.Skip(spansBefore)];
+        }
 
         // Not vacuous: the session ran out of tries, both sends are recorded, and each error names the failure.
         (await database.QuerySingleAsync<string>("SELECT state FROM agent_session WHERE work_item_id = @itemId", new { itemId })).ShouldBe("failed");
@@ -138,11 +156,15 @@ public class DemoUploadLinkLeakTests : McpFixture
         using var demo = await Api.ActingAs(TestUser.Joel).GetAsync($"api/sprints/{sprintId}/demo");
         var demoJson = await demo.Content.ReadAsStringAsync();
         demo.StatusCode.ShouldBe(HttpStatusCode.OK, demoJson);
+        var demoDto = System.Text.Json.JsonSerializer.Deserialize<SprintDemoDto>(demoJson, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } });
+        demoDto!.Status.ShouldBe(SprintDemoStatus.Failed, "the band must show the failure, or this check sees nothing");
+        demoDto.StatusMessage.ShouldNotBeNull().ShouldContain("HttpRequestException");
         leak.NotInJson(demoJson);
 
         var key = await database.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @itemId", new { itemId });
         var mcp = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
         mcp.Status.ShouldBe(HttpStatusCode.OK, mcp.Body);
+        mcp.Body.ShouldContain("HttpRequestException");
         leak.NotInMcpResult(mcp.Body);
 
         leak.NotInLogs(_logs);
@@ -152,6 +174,12 @@ public class DemoUploadLinkLeakTests : McpFixture
         {
             spans = [.. _spans];
         }
+
+        // The check must have seen the delivery itself: a span from the database, HttpClient or ShipLean's own source, recorded while
+        // the passes ran (the request spans of the reads that follow come from ASP.NET Core).
+        deliverySources.ShouldContain(
+            source => source == "Npgsql" || source == "System.Net.Http" || source.StartsWith("OpenTelemetry.Instrumentation.Http", StringComparison.Ordinal) || source == ShipLean.Core.Telemetry.ShipLeanActivities.SourceName,
+            "no span of the delivery pass was captured, so the trace check would pass empty");
 
         spans.ShouldNotBeEmpty();
         leak.NotInTraceAttributes(spans);

@@ -92,13 +92,17 @@ public class AgentDeliveryAttemptsRecordTests : ApiFixture
         var (_, deliveryId, connectionId) = await OpenSessionAsync(database);
         var attempts = new AgentDeliveryAttempts(Host.Services.GetRequiredService<NpgsqlDataSource>(), _clock, new Logger<AgentDeliveryAttempts>(_logs));
         var first = new AgentDeliveryAttemptCreate(deliveryId, connectionId, 1, Start, 502, "Bad gateway.", 40, Start.AddMinutes(1));
-        var resent = first with { At = Start.AddMinutes(1), HttpStatus = 200, Error = null, NextAttemptAt = null };
+        var resent = first with { At = Start.AddMinutes(1), HttpStatus = 500, Error = "Resent error text.", NextAttemptAt = null };
 
         await attempts.RecordAsync(first, CancellationToken.None);
         await Should.NotThrowAsync(() => attempts.RecordAsync(resent, CancellationToken.None));
 
         (await RowsAsync(database, deliveryId)).ShouldBe([(1, Start, 502, "Bad gateway.", Start.AddMinutes(1))]);
-        _logs.Events.ShouldNotContain(e => e.StartsWith("Warning", StringComparison.Ordinal), "the repeat is ignored by the insert, not swallowed after it failed");
+        _logs.Events.ShouldNotContain(e => e.Contains("Could not record", StringComparison.Ordinal), "the repeat is ignored by the insert, not swallowed after it failed");
+        var warning = _logs.Events.Where(e => e.StartsWith("Warning", StringComparison.Ordinal)).ShouldHaveSingleItem();
+        warning.ShouldContain(deliveryId.ToString());
+        warning.ShouldContain("Attempt 1 ");
+        warning.ShouldNotContain("Resent error text.");
     }
 
     [Test]
