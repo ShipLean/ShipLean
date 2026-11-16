@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { projectByKeyQuery, sprintsQuery } from '../../../pages/projectQueries';
-import { crumbTrail, matchRoute } from '../../../routes';
+import { crumbTrail, matchRoute, type RouteId } from '../../../routes';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { attachmentMarkdownKey, fetchAttachmentMarkdown } from '../../feature/featureApi';
 import { shellTestIds as ids } from '../testIds';
@@ -37,6 +37,15 @@ function useCutFromLeft(touch: boolean, trail: readonly string[]) {
   return { nav, cut: touch && cut };
 }
 
+// The routes under /p/:key/sprints/:sprintId, whose third crumb is the sprint.
+const SPRINT_TABS: ReadonlySet<RouteId> = new Set<RouteId>([
+  'sprintBacklog',
+  'taskboard',
+  'capacity',
+  'sprintRetro',
+  'sprintDemo',
+]);
+
 // Where you are: the project key (or ShipLean on install-level pages), then the screen's crumbs. An address that is
 // no screen shows just the root.
 export function Crumbs() {
@@ -44,10 +53,13 @@ export function Crumbs() {
   const key = useParams().key;
   const route = matchRoute(pathname, search);
   const { touch } = useTouchShell();
-  // The sprint Retro screen names its sprint ("Sprint 24"), as the design does; the other sprint tabs still say
-  // "Sprint". The project and its sprints are the queries the page itself makes, so this reads the cache.
+  // Every sprint tab names its sprint ("Sprint 24"), as the design does (SHIP-1626 D1: phone and desktop); until the
+  // sprints load the crumb says "Sprint". The project and its sprints are the queries the page itself makes, so this
+  // reads the cache.
   const sprintId =
-    route?.id === 'sprintRetro' ? (route.params as { sprintId: string }).sprintId : undefined;
+    route !== undefined && SPRINT_TABS.has(route.id)
+      ? (route.params as { sprintId: string }).sprintId
+      : undefined;
   const project = useQuery({ ...projectByKeyQuery(key ?? ''), enabled: sprintId !== undefined });
   const sprints = useQuery({
     ...sprintsQuery(project.data?.id ?? ''),

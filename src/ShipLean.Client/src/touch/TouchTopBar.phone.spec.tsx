@@ -151,6 +151,23 @@ test('TouchDrawer_WhenScrimEscOrCloseUsed_ShouldClose', async ({ mount, page }) 
   await expect(page.getByTestId(ids.drawerScrim)).toHaveCount(0);
 });
 
+test('Drawer_CloseShouldShareTheWordmarkRow', async ({ mount, page }) => {
+  await mountShell(mount, page);
+  await page.getByTestId(ids.topBarMenu).tap();
+  const drawer = page.getByTestId(ids.drawer);
+  await expect(drawer).toBeVisible();
+
+  const panel = (await drawer.boundingBox())!;
+  const menu = (await drawer.getByTestId(shellTestIds.sideMenu).boundingBox())!;
+  const close = (await page.getByTestId(ids.drawerClose).boundingBox())!;
+  // The side menu starts at the drawer's top: no row of its own for Close above the wordmark.
+  expect(menu.y).toBe(panel.y);
+  // The wordmark row is the menu's first 26px inside its 8px padding (y 8–34); Close is 32px and centred on it.
+  expect(close.y + close.height / 2).toBe(menu.y + 8 + 13);
+  expect(Math.min(close.width, close.height)).toBeGreaterThanOrEqual(32);
+  expect(close.x + close.width).toBe(panel.x + panel.width - 1 - 8);
+});
+
 for (const theme of THEMES) {
   for (const variant of ['plain', 'back'] as const) {
     const name = variant === 'plain' ? 'touch-top-bar' : 'touch-top-bar-back';
