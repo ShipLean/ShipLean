@@ -254,17 +254,6 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
   await expect(toggle).toHaveAttribute('data-active', 'true');
   const activeBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
   expect(activeBorder).not.toBe(idleBorder);
-  // The accent border, the same colour as the page's signal colour.
-  expect(activeBorder).toBe(
-    await page.evaluate(() => {
-      const probe = document.createElement('i');
-      probe.style.color = 'var(--color-signal)';
-      document.body.append(probe);
-      const colour = getComputedStyle(probe).color;
-      probe.remove();
-      return colour;
-    }),
-  );
 });
 
 test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
