@@ -66,11 +66,12 @@
   .cpt-row .l1 .pts { margin-left: auto; }
   .cpt-row .pts { flex: none; font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
   .cpt-row .pts small { font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-muted); }
-  .cpt-row .l2 { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
-  .cpt-row .l2 .d { font-size: var(--text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  /* The label column is a fixed width so every person's track is the same length and the bars compare. */
+  .cpt-row .l2 { display: grid; grid-template-columns: minmax(0, 1fr) 124px; gap: 10px; align-items: center; }
+  .cpt-row .l2 .d { text-align: right; white-space: nowrap; font-size: var(--text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; }
   .cpt-row .note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); color: var(--color-muted); }
   .cpt-row .go { flex: none; align-self: center; color: var(--color-muted); }
-  .cpt-add { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 var(--space-3); border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: var(--color-accent); font: inherit; font-size: var(--text-md); font-weight: var(--weight-medium); text-align: left; cursor: pointer; }
+  .cpt-add { display: flex; align-items: center; width: 100%; min-height: var(--touch-target); padding: 0 var(--space-3); border: 0; border-bottom: 1px solid var(--color-border); background: transparent; color: var(--color-accent); font: inherit; font-size: var(--text-md); font-weight: var(--weight-medium); text-align: left; cursor: pointer; }
   .cpt-empty { display: grid; gap: 4px; padding: var(--space-4) var(--space-3); border-bottom: 1px solid var(--color-border); font-size: var(--text-base); }
   .cpt-empty span { color: var(--color-muted); }
   .cpt-people .foot { margin: 0; padding: 10px var(--space-3); font-size: var(--text-sm); color: var(--color-muted); }
