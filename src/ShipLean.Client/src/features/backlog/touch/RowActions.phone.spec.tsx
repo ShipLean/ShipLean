@@ -164,7 +164,10 @@ test('PointsSheet_WhenUseMineAfterAConflict_ShouldSaveAndStepToTheNext', async (
   const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]), {
     patchAnswers: [
       conflictOn('SHIP-2'),
-      { status: 200, body: { id: 'id-SHIP-2', key: 'SHIP-2', revision: 10, changes: [], notices: [] } },
+      {
+        status: 200,
+        body: { id: 'id-SHIP-2', key: 'SHIP-2', revision: 10, changes: [], notices: [] },
+      },
     ],
   });
   await mount(<ListMode project={PROJECT} />, route);

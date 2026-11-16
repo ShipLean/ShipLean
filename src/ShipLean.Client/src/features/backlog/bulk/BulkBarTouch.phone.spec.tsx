@@ -204,7 +204,10 @@ test('PlanningRows_WhenSelecting_ShouldShowBoxesInPlaceOfHandles', async ({ moun
   await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
 });
 
-test('BeforeYouPlan_WhenTouch_ShouldMakeTheBannersEstimateATouchTarget', async ({ mount, page }) => {
+test('BeforeYouPlan_WhenTouch_ShouldMakeTheBannersEstimateATouchTarget', async ({
+  mount,
+  page,
+}) => {
   const rows = [1, 2].map((n) => itemRow({ key: `SHIP-${n}`, rank: n, points: null }));
   await stubBacklog(page, { ...backlogView(rows), review: review({ unestimated: [rows[0].id] }) });
   await mount(
