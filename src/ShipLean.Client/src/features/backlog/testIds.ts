@@ -214,4 +214,6 @@ export const backlogTestIds = {
   planningSectionCapacityLink: 'backlog-planning-section-capacity-link',
   bulkMoveBacklog: 'backlog-bulk-move-backlog',
   bulkUnestimatedNote: 'backlog-bulk-unestimated-note',
+  touchDropLine: 'backlog-touch-drop-line',
+  addHelp: 'backlog-add-help',
 } as const;

@@ -216,4 +216,6 @@ public static class BacklogTestIds
     public const string PlanningSectionCapacityLink = "backlog-planning-section-capacity-link";
     public const string BulkMoveBacklog = "backlog-bulk-move-backlog";
     public const string BulkUnestimatedNote = "backlog-bulk-unestimated-note";
+    public const string TouchDropLine = "backlog-touch-drop-line";
+    public const string AddHelp = "backlog-add-help";
 }

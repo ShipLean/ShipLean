@@ -3,6 +3,7 @@ import { ApiRequestError } from '@shiplean/core/api/client';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { TypeIcon } from '../../../components/TypeIcon';
+import { TOUCH_ADD_HELP } from '../add/touchAddTypes';
 import { useCreateWorkItem } from '../backlogApi';
 import { backlogTestIds as ids } from '../testIds';
 import type { LevelBacklogLevel } from './levelColumns';
@@ -88,8 +89,16 @@ export function LevelNewItemRow({
         className="btn-ghost touch:min-h-[var(--touch-target)]"
         onClick={onClose}
       >
-        Esc
+        {touch ? 'Close' : 'Esc'}
       </button>
+      {touch ? (
+        <span
+          data-testid={ids.addHelp}
+          className="basis-full text-[length:var(--text-xs)] text-ink-muted"
+        >
+          {TOUCH_ADD_HELP}
+        </span>
+      ) : null}
       {create.error ? (
         <span
           data-testid={ids.addError}

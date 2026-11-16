@@ -107,8 +107,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                   }
                   movingOffText={
                     narrowed
-                      ? "Reordering is off while a filter is on, because rank is relative to items you can't see. # shows each item's place in the full backlog."
-                      : 'Reordering is off while the list is sorted by a column. Click the sorted title until the arrow goes to get rank order back.'
+                      ? "Moving is off while a filter is on. # still shows each item's place in the whole backlog."
+                      : 'Moving is off while the list is sorted by a column. Click the sorted title until the arrow goes to get rank order back.'
                   }
                 >
                   {(columns) => (
