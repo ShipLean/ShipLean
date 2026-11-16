@@ -3,6 +3,7 @@ import { ApiRequestError } from '@shiplean/core/api/client';
 import type { AttachmentSlotProps } from '../../slots/AttachmentSlot';
 import { useAttachmentMarkdown } from '../feature/featureApi';
 import { AttachmentUnavailable } from './AttachmentUnavailable';
+import { useItemAttachment } from './useItemAttachment';
 import { AttachmentBody } from './body/AttachmentBody';
 import { AttachmentEditor } from './body/AttachmentEditor';
 import { routePath } from '../../routes';
@@ -40,6 +41,9 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
     attachmentId,
     data?.workItem.id ?? '',
   );
+  const tooLarge =
+    query.error instanceof ApiRequestError && query.error.code === 'markdown_too_large';
+  const tooLargeFile = useItemAttachment(project.id, itemKey, attachmentId, tooLarge);
   const saving = upload.isPending && upload.variables.savedText === true;
   const uploadError = upload.error?.message ?? null;
   const savedText = upload.variables?.savedText === true;
@@ -102,7 +106,6 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
   } else if (query.error) {
     const error = query.error;
     const notFound = error instanceof ApiRequestError && error.code === 'not_found';
-    const tooLarge = error instanceof ApiRequestError && error.code === 'markdown_too_large';
     content = (
       <AttachmentUnavailable
         kind={notFound ? 'notFound' : 'loadFailed'}
@@ -112,6 +115,7 @@ export function AttachmentScreen({ project, itemKey, attachmentId }: AttachmentS
         downloadUrl={
           tooLarge ? `/api/attachments/${encodeURIComponent(attachmentId)}/content` : undefined
         }
+        file={tooLargeFile}
       />
     );
   } else {

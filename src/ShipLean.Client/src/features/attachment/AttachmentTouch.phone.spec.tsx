@@ -18,11 +18,13 @@ test('AttachmentMoreSheet_WhenCopyLinkTapped_ShouldCopyAndClose', async ({
   const screen = await mount(<AttachmentHarness {...mountProps} />);
   await screen.getByTestId(touchTestIds.moreButton).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Download',
-    'Replace…',
-    'Copy link',
-    'About this file',
+  const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows).toHaveCount(4);
+  await expect(rows).toHaveText([
+    /^Download/,
+    /^Replace…/,
+    /^Copy link/,
+    /^About this file/,
   ]);
 
   await sheet.locator('[data-action-id="copy-link"]').tap();
@@ -97,4 +99,85 @@ test('AttachmentHeader_WhenFactsTapped_ShouldOpenAboutSheet', async ({ mount, pa
   await expect(sheet.getByTestId(ids.imageRow)).toHaveCount(1);
   await expect(sheet.getByTestId(ids.noHistory)).toBeVisible();
   await expect(sheet).toContainText('replaced twice');
+});
+
+test('AttachmentMenu_ShouldShowIconsAndSubLines', async ({ mount, page }) => {
+  await stubFeature(page);
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  const more = screen.getByTestId(touchTestIds.moreButton);
+  await more.tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows).toHaveCount(4);
+  // An icon slot on every row, the size under Download and the soft-delete note under Replace…
+  await expect(rows.locator('svg')).toHaveCount(4);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText([
+    /\d+ (B|KB|MB)/,
+    'Pick a file; the old copy is soft-deleted',
+  ]);
+  // A divider before About this file.
+  await expect(sheet.locator('hr')).toHaveCount(1);
+  await expect(more).toHaveClass(/border-edge/);
+});
+
+test('AttachmentAbout_ShouldListFactsAsRows', async ({ mount, page }) => {
+  await stubFeature(page);
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  await screen.getByTestId(ids.facts).tap();
+
+  const facts = page.getByTestId(touchTestIds.sheet).getByTestId(ids.aboutFact);
+  await expect(facts).toHaveCount(4);
+  await expect(facts.locator('dt')).toHaveText(['Size', 'Uploaded by', 'When', 'On']);
+  await expect(facts.nth(2)).toContainText('replaced twice');
+  await expect(facts.nth(3)).toContainText(markdownView.workItem.key);
+});
+
+test('AttachmentAbout_WhenNoImageMissing_ShouldNotShowTheHint', async ({ mount, page }) => {
+  await stubFeature(page, {
+    view: {
+      ...markdownView,
+      images: [{ src: 'flow.svg', status: 'attached', attachmentId: 'a-flow' }],
+    },
+  });
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  await screen.getByTestId(ids.facts).tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.imageRow)).toHaveCount(1);
+  await expect(sheet.getByTestId(ids.imagesMissingHint)).toHaveCount(0);
+});
+
+test('AttachmentAbout_WhenAnImageIsMissing_ShouldShowTheHint', async ({ mount, page }) => {
+  await stubFeature(page, {
+    view: {
+      ...markdownView,
+      images: [
+        { src: 'flow.svg', status: 'attached', attachmentId: 'a-flow' },
+        { src: 'https://i.imgur.com/x.png', status: 'external', attachmentId: null },
+      ],
+    },
+  });
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+
+  await screen.getByTestId(ids.facts).tap();
+
+  await expect(page.getByTestId(ids.imagesMissingHint)).toContainText('Attach the missing image');
+});
+
+test('AttachmentHeader_ShouldStretchTheToggleAndBorderTheMoreButton', async ({ mount, page }) => {
+  await stubFeature(page);
+  const screen = await mount(<AttachmentHarness {...mountProps} />);
+  const header = screen.getByTestId(ids.header);
+  await expect(header).toContainText('MD');
+
+  const toggle = await header.getByRole('group', { name: 'View' }).boundingBox();
+  const more = await screen.getByTestId(touchTestIds.moreButton).boundingBox();
+  const headerBox = await header.boundingBox();
+  // The toggle takes the row up to the ⋯, so the two together span the header's width less its padding.
+  expect((toggle?.width ?? 0) + (more?.width ?? 0)).toBeGreaterThan((headerBox?.width ?? 0) - 40);
+  await expect(page.getByTestId(ids.contentsPosition)).toHaveText('1 / 2');
 });
