@@ -128,3 +128,37 @@ for (const theme of THEMES) {
     );
   });
 }
+
+test('AddStoryBox_AtTouch_ShouldStayOnOneRowWithAHelperLine', async ({ mount, page }) => {
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(slot, route);
+  await page.getByTestId(ids.addStory).tap();
+
+  const type = await page.getByTestId(ids.addStoryType).boundingBox();
+  const title = await page.getByTestId(ids.addStoryTitle).boundingBox();
+  const submit = await page.getByTestId(ids.addStorySubmit).boundingBox();
+  const close = await page.getByTestId(ids.addStoryClose).boundingBox();
+  const help = await page.getByTestId(ids.addStoryHelp).boundingBox();
+  if (!type || !title || !submit || !close || !help) throw new Error('the add box should render');
+  expect(Math.abs(title.y - type.y), 'the type and the title share a line').toBeLessThan(6);
+  expect(Math.abs(submit.y - type.y), 'Add shares it').toBeLessThan(6);
+  expect(Math.abs(close.y - type.y), 'so does the close button').toBeLessThan(6);
+  expect(title.width, 'the title is a field, not a sliver').toBeGreaterThan(120);
+  expect(close.x + close.width).toBeLessThanOrEqual(390);
+  expect(help.y, 'the helper line sits below the row').toBeGreaterThan(type.y + type.height);
+  await expect(page.getByTestId(ids.addStoryClose)).toHaveText('✕');
+  await expect(page.getByTestId(ids.addStoryTitle)).toHaveAttribute(
+    'placeholder',
+    'Title of the story or bug',
+  );
+});
+
+for (const theme of THEMES) {
+  test(`AddStoryBox_AtTouch_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await page.getByTestId(ids.addStory).tap();
+    await expect(page.getByTestId(ids.addStoryBox)).toHaveScreenshot(`add-story-box.${theme}.png`);
+  });
+}

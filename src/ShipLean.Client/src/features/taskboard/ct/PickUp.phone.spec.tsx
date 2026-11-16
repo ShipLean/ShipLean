@@ -27,6 +27,16 @@ const card = (page: Page, key: string) =>
     .first();
 const sheet = (page: Page) => page.getByTestId(touchTestIds.sheet);
 
+test('TaskCard_WhenPickUpShows_ShouldReplaceTheEmptyFace', async ({ mount, page }) => {
+  await stubTaskboard(page, VIEW, { holdLaterReads: true });
+  await mount(sprintSlot, sprintRoute);
+
+  await expect(card(page, 'SHIP-173').getByTestId(ids.cardPickUp)).toBeVisible();
+  await expect(card(page, 'SHIP-173').getByTestId(ids.cardAssignee)).toBeHidden();
+  // An assigned task keeps its face.
+  await expect(card(page, 'SHIP-172').getByTestId(ids.cardAssignee)).toBeVisible();
+});
+
 test('PickUp_WhenUnassignedNewTaskOnPhone_ShouldShowWithoutHover', async ({ mount, page }) => {
   await stubTaskboard(page, VIEW, { holdLaterReads: true });
   await mount(sprintSlot, sprintRoute);

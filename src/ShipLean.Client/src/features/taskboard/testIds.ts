@@ -75,4 +75,5 @@ export const taskboardTestIds = {
   taskTitle: 'taskboard-task-title',
   taskError: 'taskboard-task-error',
   closedLineHere: 'taskboard-closed-line-here',
+  addStoryHelp: 'taskboard-add-story-help',
 } as const;
