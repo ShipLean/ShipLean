@@ -9,6 +9,15 @@ test('StartWarning_WhenTheLastDeliveryFailed_ShouldShowTheWarningText', async ({
   await expect(page.getByTestId(ids.startWarning)).toHaveText(
     'The last delivery to this connection failed 10 minutes ago.',
   );
+
+  // The class must exist: a dead utility falls back to body ink, so compare with the theme token itself.
+  const warn = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-warn)';
+    document.body.append(probe);
+    return getComputedStyle(probe).color;
+  });
+  await expect(page.getByTestId(ids.startWarning)).toHaveCSS('color', warn);
 });
 
 test('StartWarning_WhenThereIsNoWarning_ShouldRenderNothing', async ({ mount, page }) => {
