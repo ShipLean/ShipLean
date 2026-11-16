@@ -71,7 +71,7 @@ public class LinkCardRowsTests
         row.StateReportedBy.ShouldBe("Claude Code (claude.ai)");
         row.WorkItemId.ShouldBe(item);
         row.ProjectId.ShouldBe(SeedIds.Projects.Ship);
-        var dto = row.ToDto(new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Fetched.AddHours(2)));
+        var dto = row.ToDto(Fetched.AddHours(2), TimeZoneInfo.Utc);
         dto.ImageUrl.ShouldBe($"/api/link-cards/{id}/image");
         dto.FaviconUrl.ShouldBe($"/api/link-cards/{id}/favicon");
         dto.Title.ShouldBe("Typed");
@@ -107,7 +107,7 @@ public class LinkCardRowsTests
 
         row.Title.ShouldBeNull();
         row.Note.ShouldBeNull();
-        row.ToDto(TimeProvider.System).Title.ShouldBe("https://docs.example/text");
+        row.ToDto(TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc).Title.ShouldBe("https://docs.example/text");
     }
 
     [Test]

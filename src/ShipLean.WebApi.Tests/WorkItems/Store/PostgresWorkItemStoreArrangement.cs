@@ -9,6 +9,7 @@ using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 using ShipLean.LocalEnvironment.Database;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Store;
@@ -35,9 +36,9 @@ public sealed class PostgresWorkItemStoreArrangement : IAsyncDisposable
     public static async Task<PostgresWorkItemStoreArrangement> CreateAsync() => new(await ShipLeanDatabase.CloneSeedAsync());
 
     public WorkItemStore CreateStore(IWorkItemRules rules, Guid actorId)
-        => new(_dataSource, new FixedCurrentUser(actorId), rules, Events, new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None);
+        => new(_dataSource, new FixedCurrentUser(actorId), rules, Events, new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None, new FixedViewerZone());
 
-    public WorkItemReads CreateReads() => new(_dataSource, new MarkdownRenderer(), TimeProvider.System, IWorkItemExtras.None);
+    public WorkItemReads CreateReads() => new(_dataSource, new MarkdownRenderer(), TimeProvider.System, IWorkItemExtras.None, new FixedViewerZone());
 
     public async Task<ArrangedProject> ArrangeProjectAsync()
     {
