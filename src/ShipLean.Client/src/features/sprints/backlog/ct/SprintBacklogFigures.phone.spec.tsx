@@ -110,7 +110,19 @@ test('Burndown_ShouldDrawEverySprintDay', async ({ mount, page }) => {
 // SPRINT-6: the Committed tile is a link to Capacity and says so with a ›.
 test('SprintBacklog_CommittedTile_ShouldEndWithAChevron', async ({ mount, page }) => {
   await open(page, mount);
-  await expect(page.getByTestId(ids.kpiCapacityEdit)).toContainText(/Committed( \(vel\.\))? ›/);
+  const tile = page.getByTestId(ids.kpiCapacityEdit);
+  await expect(tile).toContainText(/Committed( \(vel\.\))? ›/);
+  // SHIP-2028: the › sits outside the truncated label, so the whole word shows at 390px (no "Committe…").
+  const clipped = await tile.evaluate((root) => {
+    const cut: string[] = [];
+    const walk = (el: Element) => {
+      if (el.scrollWidth > el.clientWidth) cut.push(el.textContent ?? '');
+      Array.from(el.children).forEach(walk);
+    };
+    Array.from(root.children).forEach(walk);
+    return cut;
+  });
+  expect(clipped).toEqual([]);
 });
 
 // SPRINT-5: an idle member says so, every item carries its key, and the rows are touch targets.

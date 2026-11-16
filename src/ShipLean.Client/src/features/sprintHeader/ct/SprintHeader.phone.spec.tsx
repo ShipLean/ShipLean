@@ -125,7 +125,8 @@ test('SprintHeaderMore_ShouldShowHintsAndChevrons', async ({ mount, page }) => {
   await mount(<SprintHeaderHarness {...props({ variant: 'slim', tab: 'taskboard' })} />);
   const more = page.getByTestId(touchTestIds.moreButton);
   // ND4-11: the bordered 32px ⋯ (K1), not a bare glyph.
-  await expect(more).toHaveCSS('border-top-style', 'solid');
+  // Preflight gives every element a solid 0px border, so the width is what tells bordered from bare.
+  await expect(more).toHaveCSS('border-top-width', '1px');
   expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(32);
 
   await more.tap();
