@@ -48,6 +48,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `ship-907-web-screens.md` | **Web screens the phone app adds** (SHIP-907, S5): the `/mobile/sign-in` confirm page for the app's browser handoff (`mobile/device-sign-in.html`), **Your profile › Signed-in devices** (`screens/profile.html`) and **Health** on Features (`screens/feature.html`, `features.html`, `features-board.html`). States, decisions C1–C6, V1–V6 and H1–H9 (Joel, 9 Nov 2026), CT baselines. See [Web screens for the phone app](#web-screens-for-the-phone-app-ship-907). |
 | `screens/task-changes.html`, `ship-1460-task-changes.md` | **Task changes** (SHIP-1460, mockup for approval, not built yet): the commits a Task or Bug was done in, the Changes page with the diff and line comments, Approve and Request changes. Desktop only. `?view=task\|review`, `&item=bug`, `&state=empty\|compose\|commits\|split\|request\|approve\|outdated\|noaccess`. The data model, agent contract and decisions D1–D16 (Joel, 14 Nov 2026) are in the `.md`. See [Task changes](#task-changes-ship-1460). |
 | `screens/agent-runs.html`, `ship-1463-agent-runs.md` | **Agent runs** (SHIP-1463, mockup for approval, not built yet): the runs of Claude Code, OpenAI CLI and Cursor on a Task, read from the team's ClickHouse or Tempo + Loki; the Run page with a waterfall (or an event timeline for log-only agents) and a span detail panel. Desktop only. `?view=task\|run`, `&run=claude\|openai\|cursor`, `&state=empty\|down\|zoom\|errors\|permission\|edit\|hidden\|truncated\|expired`. Screens and decisions D14–D22 (Joel, 14 Nov 2026: no cost and no span comments in v1) in the `.md`. See [Agent runs](#agent-runs-ship-1463). |
+| `screens/inspection.html`, `ship-1398-inspection.md` | **Inspection** (SHIP-1398, mockup for approval, not built yet): a new top-level menu after Retrospectives with Overview, Lead time, Quality and Cost. Mean lead time per task (first Active to last commit) by sprint with a dot per task, quarter roll-ups, the drill-down into one sprint's tasks and Features, escaping bugs (wave 2) and tokens (wave 3). `?view=overview\|leadtime\|period\|quality\|cost\|json`, `&range=6\|q\|lq\|all`, `&cut=feature\|who`, `&p=s23&tab=features&select=<key>`, `&cadence=weeks`, `&coverage=low`, `&wave=1`. Sample data and the view model in `inspection-data.js`; decisions D1–D14 (Joel, 15 Nov 2026) in the `.md`. See [Inspection](#inspection-ship-1398). |
 | `ship-1465-feature-timeline.md` | **Feature timeline** (SHIP-1465): how to read the chart, where each value comes from, the `feature_timeline` MCP response, review events (D15, open), what gets built and decisions D1–D15. |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
@@ -542,6 +543,18 @@ How an agent did a work item, read from the team's own trace and log stores (Cli
 | Run page · traced run | ![Run page, light](screens/agent-runs.light.png) | ![Run page, dark](screens/agent-runs.dark.png) |
 | Run page · zoomed to a turn | ![Run page zoomed to Turn 1, light](screens/agent-runs-zoom.light.png) | ![Run page zoomed to Turn 1, dark](screens/agent-runs-zoom.dark.png) |
 | Run page · log-only run | ![OpenAI CLI run, light](screens/agent-runs-openai.light.png) | ![OpenAI CLI run, dark](screens/agent-runs-openai.dark.png) |
+
+## Inspection (SHIP-1398)
+
+How the team is going on velocity, quality and cost, and the way down from each number to the work behind it. **Inspection** is a new side-menu item after Retrospectives with Overview, Lead time, Quality and Cost. A task's lead time runs from its first move to Active to its last commit (`committed_at`, new on `report_task`); the headline is the mean per sprint, with a dot per task so the long ones show. Click a sprint for its tasks, slowest first, each split into active, blocked and rework; a task opens its Feature timeline (SHIP-1465) and agent runs (SHIP-1463). One Feature in three waves: lead time, then escaping bugs (every Bug unless marked **Found before release**), then tokens. Everything is in [`ship-1398-inspection.md`](ship-1398-inspection.md). Not built.
+
+| Screen | Light | Dark |
+|---|---|---|
+| Overview | ![Inspection overview, light](screens/inspection.light.png) | ![Inspection overview, dark](screens/inspection.dark.png) |
+| Lead time | ![Lead time by sprint, light](screens/inspection-leadtime.light.png) | ![Lead time by sprint, dark](screens/inspection-leadtime.dark.png) |
+| One sprint's tasks | ![Sprint 23's tasks with SHIP-194 selected, light](screens/inspection-period.light.png) | ![Sprint 23's tasks with SHIP-194 selected, dark](screens/inspection-period.dark.png) |
+| Quality (wave 2) | ![Escaping bugs, light](screens/inspection-quality.light.png) | ![Escaping bugs, dark](screens/inspection-quality.dark.png) |
+| Cost (wave 3) | ![Tokens per task, light](screens/inspection-cost.light.png) | ![Tokens per task, dark](screens/inspection-cost.dark.png) |
 
 ## Your profile on a phone (SHIP-733)
 

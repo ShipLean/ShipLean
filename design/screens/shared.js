@@ -128,6 +128,7 @@
     'sprint-retro': ['tom'],
     retros: [],
     'retro-insights': ['ana'],
+    inspection: ['tom'],
   };
 
   // Tasks under Sprint 24's stories and bugs. Unassigned + New = ready to pick up.
@@ -165,6 +166,7 @@
     taskboard: ['Sprints', 'Sprint 24', 'Taskboard'], board: ['Boards', 'Stories'], 'features-board': ['Boards', new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features'], 'board-settings': ['Boards', 'Stories', 'Settings'],
     'work-item': ['Backlogs', 'SHIP-141'], feature: ['Backlogs', 'Features', 'SHIP-101'], 'feature-timeline': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-99', 'Timeline'], 'feature-board': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-101', 'Feature board'], attachment: ['Backlogs', 'SHIP-101', 'design-v0.2.md'], settings: ['Settings'], import: ['Jira import'],
     'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
+    inspection: ['Inspection', { leadtime: 'Lead time', period: 'Lead time', quality: 'Quality', cost: 'Cost', json: 'Overview' }[new URLSearchParams(location.search).get('view')] || 'Overview'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
     decisions: new URLSearchParams(location.search).get('state') === 'feature' ? ['Backlogs', 'Features', 'SHIP-101'] : ['Backlogs', 'SHIP-141'],
   };
@@ -183,12 +185,16 @@
 
   function sideMenu(active) {
     const proj = projects.find(p => p.key === PROJECT);
-    const link = (id, icon, label, href, sub) => `<a class="nav-i${sub ? ' sub' : ''}" href="${href}"${id === active || id === page ? ' aria-current="page"' : ''}>${sub ? '' : `<span class="ic">${icon}</span>`}${label}</a>`;
+    const link = (id, icon, label, href, sub) => `<a class="nav-i${sub ? ' sub' : ''}" href="${href}"${id === active || id === page || (sub && id === inspView) ? ' aria-current="page"' : ''}>${sub ? '' : `<span class="ic">${icon}</span>`}${label}</a>`;
     // Under 900px the side menu is a drawer (SHIP-713). It shows every section's sub-pages, so any screen is one tap
     // from the drawer: Backlogs and Boards get an Epics · Features · Stories row, Retrospectives a Search · Features ·
     // Insights row, and Sprints its two rows. On a desktop only the active section's sub-items show, as before.
     const level = new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features';
     const lvls = (label, rows) => `<div class="lvls m-only" role="group" aria-label="${label}">${rows.map(([text, href, on]) => `<a href="${href}"${on ? ' aria-current="page"' : ''}>${text}</a>`).join('')}</div>`;
+    // Inspection (SHIP-1398): one page, the view in ?view=. A drill-down into a period stays under Lead time.
+    const inspParam = page === 'inspection' ? new URLSearchParams(location.search).get('view') || 'overview' : null;
+    const inspView = inspParam && 'insp-' + ({ period: 'leadtime', json: 'overview' }[inspParam] || inspParam);
+    const inspectionSubs = [['insp-overview', 'Overview', 'inspection.html'], ['insp-leadtime', 'Lead time', 'inspection.html?view=leadtime'], ['insp-quality', 'Quality', 'inspection.html?view=quality'], ['insp-cost', 'Cost', 'inspection.html?view=cost']];
     const sprintSubs = link('sprint-backlog', '', 'Sprint 24 <span class="chip accent" style="height:16px;margin-left:auto">Current</span>', 'sprint-backlog.html', true) + link('sprints-all', '', 'All sprints', 'sprints.html', true);
     return `<aside class="side" id="side" aria-label="Project navigation">
       <div class="dhead m-only"><span class="logo"><i></i>ShipLean</span><button class="tbtn dclose" type="button" aria-label="Close navigation">${icon.close}</button></div>
@@ -204,6 +210,9 @@
       ${link('retros', '↺', 'Retrospectives', 'retros.html')}
       ${active === 'retros' ? `<div class="navgrp d-only">${link(page === 'retros' ? 'retros' : 'retros-search', '', 'Search', 'retros.html', true) + link(page === 'retro-item' ? 'retro-item' : 'retros-features', '', 'Features', 'retros-features.html', true) + link('retro-insights', '', 'Insights <span class="chip warn" style="height:16px;margin-left:auto">3 recurring</span>', 'retro-insights.html', true)}</div>` : ''}
       ${lvls('Retrospectives', [['Search', 'retros.html', page === 'retros'], ['Features', 'retros-features.html', page === 'retros-features' || page === 'retro-item'], ['Insights <span class="dot warn" title="3 recurring themes"></span>', 'retro-insights.html', page === 'retro-insights']])}
+      ${link('inspection', '◔', 'Inspection', 'inspection.html')}
+      ${active === 'inspection' ? `<div class="navgrp d-only">${inspectionSubs.map(([id, label, href]) => link(id, '', label, href, true)).join('')}</div>` : ''}
+      ${lvls('Inspection', inspectionSubs.map(([id, label, href]) => [label, href, id === inspView]))}
       ${link('import', '⇪', 'Jira import', 'import.html')}
       ${link('settings', '⚙', 'Settings', 'settings.html')}
       <button class="me" type="button" aria-haspopup="menu" aria-expanded="false">${av(ME)}<span>${people[ME].name}</span><span class="muted">▴</span></button>
