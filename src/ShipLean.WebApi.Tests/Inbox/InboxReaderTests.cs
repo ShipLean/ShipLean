@@ -331,8 +331,9 @@ public class InboxReaderTests : ApiFixture
         var inbox = await GetAsync([]);
 
         var after = TimeProvider.System.GetUtcNow();
-        string[] bangkok = [DisplayDate.Time(before, ViewerZoneTestData.Bangkok), DisplayDate.Time(after, ViewerZoneTestData.Bangkok)];
-        string[] utc = [DisplayDate.Time(before, TimeZoneInfo.Utc), DisplayDate.Time(after, TimeZoneInfo.Utc)];
+        // The same instants read as UTC+07:00 and as UTC, formatted here with an explicit format.
+        string[] bangkok = [before.ToOffset(TimeSpan.FromHours(7)).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture), after.ToOffset(TimeSpan.FromHours(7)).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)];
+        string[] utc = [before.ToOffset(TimeSpan.Zero).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture), after.ToOffset(TimeSpan.Zero).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)];
         bangkok.ShouldContain(inbox.LoadedAtLabel);
         utc.ShouldNotContain(inbox.LoadedAtLabel);
     }

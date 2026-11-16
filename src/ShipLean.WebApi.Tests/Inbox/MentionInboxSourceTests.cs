@@ -39,9 +39,12 @@ public class MentionInboxSourceTests
         await _database.DisposeAsync();
     }
 
-    [Test]
-    public async Task OpenAsync_WhenMentionOpen_ShouldListWithExcerptCutOnAWord()
+    // Two years old at 20:00 UTC: the day label reads the viewer's day, so UTC+07:00 is a day on from UTC.
+    [TestCase(0)]
+    [TestCase(7)]
+    public async Task OpenAsync_WhenMentionOpen_ShouldListWithExcerptCutOnAWord(int offsetHours)
     {
+        var zone = offsetHours == 0 ? TimeZoneInfo.Utc : ViewerZoneTestData.Bangkok;
         await using var connection = await _database.OpenAsync();
         var me = await MemberAsync(connection, SeedIds.Projects.Ship);
         var item = await new WorkItemBuilder(SeedIds.Projects.Ship).InsertAsync(connection);
@@ -50,17 +53,17 @@ public class MentionInboxSourceTests
         var words = Enumerable.Repeat("abcdefghi", 40).ToList();
         var comment = await new CommentBuilder(item).WithAuthor(SeedIds.Users.Priya)
             .WithBody($"**Tom**, please   check this:\n\n{string.Join(' ', words)}").InsertAsync(connection);
-        var at = _clock.GetUtcNow().AddHours(-5);
+        var at = ViewerZoneTestData.LateEveningUtc;
         var mention = await new MentionBuilder(comment, item, me).WithCreatedAt(at).InsertAsync(connection);
 
-        var rows = await _source.OpenAsync(me, SeedIds.Projects.Ship);
+        var rows = await new MentionInboxSource(_dataSource, _clock, new FixedViewerZone(zone)).OpenAsync(me, SeedIds.Projects.Ship);
 
         var row = rows.Single();
         row.WorkItemId.ShouldBe(item);
         row.Ask.Kind.ShouldBe(InboxAskKind.Mention);
         row.Ask.Label.ShouldBe("@");
         row.Ask.At.ShouldBe(at);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(at, _clock.GetUtcNow(), TimeZoneInfo.Utc));
+        row.Ask.AtLabel.ShouldBe(at.ToOffset(TimeSpan.FromHours(offsetHours)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
         row.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         row.Ask.AgentName.ShouldBeNull();
         row.Ask.Decision.ShouldBeNull();

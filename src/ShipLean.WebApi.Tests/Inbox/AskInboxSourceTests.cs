@@ -54,9 +54,9 @@ public class AskInboxSourceTests
 
         var rows = await source.OpenAsync(owner, SeedIds.Projects.Ship);
 
-        var now = _clock.GetUtcNow();
-        var expected = DisplayDate.Relative(raisedAt, now, ViewerZoneTestData.Bangkok);
-        expected.ShouldNotBe(DisplayDate.Relative(raisedAt, now, TimeZoneInfo.Utc));
+        // Two years old: the short day with its year, and 20:00 UTC is already the next day in Bangkok.
+        var expected = raisedAt.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+        expected.ShouldNotBe(raisedAt.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
         rows.Count.ShouldBe(2);
         rows.ShouldAllBe(r => r.Ask.AtLabel == expected);
     }
@@ -67,7 +67,7 @@ public class AskInboxSourceTests
         await using var connection = await _database.OpenAsync();
         var owner = await MemberAsync(connection, SeedIds.Projects.Ship);
         var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithAssignee(owner).InsertAsync(connection);
-        var raisedAt = _clock.GetUtcNow().AddDays(-2);
+        var raisedAt = ViewerZoneTestData.LateEveningUtc;
         await new DecisionBuilder(item).Question("Which store?").Recommended("Postgres").Alternatives("Redis", "Files")
             .RaisedBy(SeedIds.Users.Priya, "Claude Code", raisedAt).BuildAsync(connection);
         await new QuestionBuilder(item).Text("Ship it Friday?").AskedBy(SeedIds.Users.Mei, null, raisedAt.AddHours(1)).BuildAsync(connection);
@@ -79,7 +79,7 @@ public class AskInboxSourceTests
         decision.WorkItemId.ShouldBe(item);
         decision.Ask.Label.ShouldBe("D1");
         decision.Ask.At.ShouldBe(raisedAt);
-        decision.Ask.AtLabel.ShouldBe(DisplayDate.Relative(raisedAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
+        decision.Ask.AtLabel.ShouldBe(raisedAt.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
         decision.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         decision.Ask.AgentName.ShouldBe("Claude Code");
         decision.Ask.Decision!.Number.ShouldBe(1);

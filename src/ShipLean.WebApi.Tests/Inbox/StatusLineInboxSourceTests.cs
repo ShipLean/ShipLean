@@ -41,22 +41,25 @@ public class StatusLineInboxSourceTests
         await _database.DisposeAsync();
     }
 
-    [Test]
-    public async Task OpenAsync_WhenVerifiedFourDaysAgo_ShouldListWithVerifierAsFrom()
+    // Verified two years ago at 20:00 UTC: the day label reads the viewer's day, so UTC+07:00 is a day on from UTC.
+    [TestCase(0)]
+    [TestCase(7)]
+    public async Task OpenAsync_WhenVerifiedFourDaysAgo_ShouldListWithVerifierAsFrom(int offsetHours)
     {
+        var zone = offsetHours == 0 ? TimeZoneInfo.Utc : ViewerZoneTestData.Bangkok;
         await using var connection = await _database.OpenAsync();
         var owner = await MemberAsync(connection, SeedIds.Projects.Ship);
-        var verifiedAt = _clock.GetUtcNow().AddDays(-4);
+        var verifiedAt = ViewerZoneTestData.LateEveningUtc;
         var feature = await FeatureAsync(connection, owner, verifiedAt, SeedIds.Users.Priya, "Claude Code");
 
-        var rows = await _source.OpenAsync(owner, SeedIds.Projects.Ship);
+        var rows = await new StatusLineInboxSource(_dataSource, _clock, new FixedViewerZone(zone)).OpenAsync(owner, SeedIds.Projects.Ship);
 
         var row = rows.Single();
         row.WorkItemId.ShouldBe(feature);
         row.Ask.Kind.ShouldBe(InboxAskKind.Status);
         row.Ask.Label.ShouldBe("Status");
         row.Ask.At.ShouldBe(verifiedAt);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(verifiedAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
+        row.Ask.AtLabel.ShouldBe(verifiedAt.ToOffset(TimeSpan.FromHours(offsetHours)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
         row.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         row.Ask.AgentName.ShouldBe("Claude Code");
         row.Ask.Status.ShouldBe(new InboxStatusDto(Line, verifiedAt));
@@ -89,14 +92,14 @@ public class StatusLineInboxSourceTests
     {
         await using var connection = await _database.OpenAsync();
         var owner = await MemberAsync(connection, SeedIds.Projects.Ship);
-        var createdAt = _clock.GetUtcNow().AddDays(-10);
+        var createdAt = ViewerZoneTestData.LateEveningUtc;
         await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithAssignee(owner).WithCreatedAt(createdAt)
             .WithStatusLine(Line, null, null, null).InsertAsync(connection);
 
         var row = (await _source.OpenAsync(owner, SeedIds.Projects.Ship)).Single();
 
         row.Ask.At.ShouldBe(createdAt);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(createdAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
+        row.Ask.AtLabel.ShouldBe(createdAt.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture));
         row.Ask.From.ShouldBeNull();
         row.Ask.AgentName.ShouldBeNull();
         row.Ask.Status!.VerifiedAt.ShouldBeNull();
