@@ -34,10 +34,8 @@ public class SprintDemoPromptTests
 
     private static readonly DemoBrand DefaultBrand = new(true, "<svg id=\"default-logo\"/>", null, null, null, true, ":root { --color-bg: #e8eef7; }", null);
 
-#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
-    private static readonly DemoBrand ProjectBrand = new(false, null, LogoUrl, "image/png", new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), false,
+    private static readonly DemoBrand ProjectBrand = new(false, null, LogoUrl, "image/png", Upload.ExpiresAt, false,
         ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
-#pragma warning restore AG0051
 
     private static string Render(SprintDemoData? data = null, DemoBrand? brand = null, DemoPromptChannel channel = DemoPromptChannel.Handover)
         => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand, channel);
