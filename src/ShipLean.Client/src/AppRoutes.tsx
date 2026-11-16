@@ -84,6 +84,7 @@ export function AppRoutes() {
           <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
           <Route path={routePattern('jiraImport')} element={<ImportPage />} />
           <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
+          <Route path={routePattern('projectSettingsIndex')} element={<ProjectSettingsPage />} />
           <Route path="/p/:key/*" element={<NotFoundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

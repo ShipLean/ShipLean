@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Settings.Touch;
 using ShipLean.TestSupport;
@@ -7,15 +8,16 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Settings.Touch;
 
-// Project settings of Storefront on a phone (SHIP-732 P1-P4, L732a). Joel is its only admin; Priya is a member. The touch
-// rules are checked on this task's regions (the tab row and the Members panel) only.
+// Project settings of Storefront on a phone (SHIP-732 P1-P4, L732a; SHIP-1809 P1-P3). Joel is its only admin; Priya is a
+// member. The touch rules are checked on the index and the Members panel; TouchRouteSweepTests checks each address.
 [TestFixture]
 public class ProjectSettingsTouchTests : SeededAcceptanceTest
 {
     protected override AcceptanceViewport Viewport => AcceptanceViewport.Phone;
 
     // States, Integrations and Demos are other lanes' content (L732b, L732c): their own tests check them.
-    private static readonly string[] OwnTabs = ["general", "members", "sprints"];
+    private static readonly (string Tab, string Pane)[] OwnPanes =
+        [("general", "General"), ("members", "Members"), ("sprints", "Sprints & forecast")];
 
     [Test]
     public async Task General_WhenEditedOnAPhone_ShouldSaveFromTheSaveBar()
@@ -61,35 +63,62 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
         var settings = new ProjectSettingsTouch(Page);
         await settings.OpenAsync();
         await settings.Name.FillAsync("Storefront Two");
-        await settings.Tab("members").TapAsync();
+        await settings.GoToPaneAsync("Members");
         await settings.MemberRow("priya@shiplean.local").GetByTestId(SettingsTestIds.MemberRemove).TapAsync();
-        await settings.Tab("sprints").TapAsync();
+        await settings.GoToPaneAsync("Sprints & forecast");
 
         await settings.Unsaved.TapAsync();
 
         await Expect(settings.ChangeItems).ToHaveCountAsync(2);
         await settings.ChangeItems.Filter(new() { HasText = "priya@shiplean.local" }).TapAsync();
         await Expect(settings.Sheet).ToHaveCountAsync(0);
-        await Expect(settings.Tab("members")).ToHaveAttributeAsync("aria-current", "page");
+        await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/settings/members$"));
+        await Expect(settings.MembersPanel).ToBeVisibleAsync();
     }
 
     [Test]
-    public async Task Tabs_WhenOnAPhone_ShouldScrollInTheirOwnBox()
+    public async Task Index_WhenOpenedOnAPhone_ShouldListEveryPaneAndOpenEachAsASubPage()
+    {
+        var settings = new ProjectSettingsTouch(Page);
+        await settings.OpenIndexAsync();
+        await Expect(settings.Crumbs).ToHaveTextAsync(["SHIP", "Settings"]);
+        await Expect(settings.IndexRows).ToHaveTextAsync([
+            new Regex("^General"), new Regex("^States"), new Regex("^Members"), new Regex("^Sprints & forecast"),
+            new Regex("^Integrations"), new Regex("^Demos"), new Regex("^Inspection"),
+        ]);
+        await Expect(settings.IndexRow("Members").GetByTestId(SettingsTestIds.SettingsIndexCount)).ToHaveTextAsync("6");
+        await Expect(settings.TabRow).ToHaveCountAsync(0);
+        await Expect(settings.Back).ToHaveCountAsync(0);
+        (await TouchRules.ViolationsAsync(Page, settings.Index)).ShouldBeEmpty();
+
+        foreach (var (tab, pane) in OwnPanes)
+        {
+            await settings.IndexRow(pane).TapAsync();
+            await Expect(Page).ToHaveURLAsync(new Regex($"/p/SHIP/settings/{tab}$"));
+            await Expect(settings.Crumbs).ToHaveTextAsync(["SHIP", "Settings", pane]);
+            await Expect(settings.TabRow).ToHaveCountAsync(0);
+            (await settings.PageFitsAsync()).ShouldBeTrue($"the {tab} pane scrolls the page sideways");
+
+            await settings.Back.TapAsync();
+            await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/settings$"));
+        }
+    }
+
+    [Test]
+    public async Task Index_WhenThePaneHasUnsavedEdits_ShouldKeepTheDraftAndMarkThePane()
     {
         var settings = new ProjectSettingsTouch(Page);
         await settings.OpenAsync();
-        var sizes = await settings.TabRow.EvaluateAsync<int[]>("el => [el.scrollWidth, el.clientWidth]");
-        sizes[0].ShouldBeGreaterThan(sizes[1]);
-        // The row scrolls in its own box by design, so the touch rules are checked on its tabs, not on the row.
-        (await TouchRules.ViolationsAsync(Page, settings.Tab("general"))).ShouldBeEmpty();
-        (await TouchRules.ViolationsAsync(Page, settings.Tab("demos"))).ShouldBeEmpty();
+        await settings.Name.FillAsync("Storefront Two");
 
-        foreach (var tab in OwnTabs)
-        {
-            await settings.OpenAsync(tab);
-            await Expect(settings.Tab(tab)).ToHaveAttributeAsync("aria-current", "page");
-            (await settings.PageFitsAsync()).ShouldBeTrue($"the {tab} tab scrolls the page sideways");
-        }
+        await settings.Back.TapAsync();
+
+        await Expect(settings.IndexRow("General").GetByTestId(SettingsTestIds.TabDirty)).ToBeVisibleAsync();
+        await Expect(settings.IndexRow("Members").GetByTestId(SettingsTestIds.TabDirty)).ToHaveCountAsync(0);
+        await Expect(settings.Unsaved).ToHaveTextAsync("1 unsaved change");
+
+        await settings.IndexRow("General").TapAsync();
+        await Expect(settings.Name).ToHaveValueAsync("Storefront Two");
     }
 
     [Test]
@@ -112,6 +141,15 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
         await undo.TapAsync();
         await Expect(row.GetByTestId(SettingsTestIds.MemberRemove)).ToBeVisibleAsync();
         await Expect(settings.SaveBar).ToHaveCountAsync(0);
+    }
+
+    // The settings dialog frame (board and Taskboard settings) names its project in the header at touch (SHIP-1987).
+    [Test]
+    public async Task SettingsDialog_WhenOpenedOnAPhone_ShouldNameTheProjectInTheHeader()
+    {
+        await Page.GotoAsync(Links.BoardSettings("SHIP", "stories", "styles"));
+
+        await Expect(Page.GetByTestId(SettingsDialogTestIds.ProjectChip)).ToHaveTextAsync("Storefront · SHIP");
     }
 
     [Test]

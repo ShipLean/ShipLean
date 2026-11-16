@@ -1,23 +1,34 @@
-import { useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { pagesTestIds } from '../features/pages/testIds';
-import { projectSettingsTabs, type ProjectSettingsTab } from '../routes';
+import { projectSettingsTabs, routePath, type ProjectSettingsTab } from '../routes';
 import { SettingsDraftSlot } from '../slots/SettingsDraftSlot';
+import { useTouchShell } from '../touch/useTouchShell';
 import { NotFoundState } from './NotFoundState';
 import { pageRouteIds } from './pageRouteIds';
 import { ProjectScreen } from './ProjectScreen';
 import { projectSettingsSlots } from './projectSettingsSlots';
 
-// A project settings tab, inside the settings draft's frame. A tab that does not exist is not found.
+// A project settings tab, inside the settings draft's frame. A tab that does not exist is not found. The tab-less
+// address is the pane index at touch (SHIP-1809 P1) and General above 900px, where the tabs are the index.
 export function ProjectSettingsPage() {
-  const { tab: raw } = useParams();
+  const { key = '', tab: raw } = useParams();
+  const { touch } = useTouchShell();
   const tab: ProjectSettingsTab | undefined = projectSettingsTabs.find((t) => t === raw);
+  if (raw === undefined && !touch)
+    return <Navigate replace to={routePath('projectSettings', { key, tab: 'general' })} />;
   return (
-    <ProjectScreen routeId={pageRouteIds.projectSettings} testId={pagesTestIds.projectSettingsPage}>
+    <ProjectScreen
+      routeId={raw === undefined ? pageRouteIds.projectSettingsIndex : pageRouteIds.projectSettings}
+      testId={pagesTestIds.projectSettingsPage}
+    >
       {(project) =>
-        tab === undefined ? (
+        raw !== undefined && tab === undefined ? (
           <NotFoundState />
         ) : (
-          <SettingsDraftSlot {...projectSettingsSlots(project, tab).settingsDraft} />
+          <SettingsDraftSlot
+            {...projectSettingsSlots(project, tab ?? 'general').settingsDraft}
+            tab={tab}
+          />
         )
       }
     </ProjectScreen>

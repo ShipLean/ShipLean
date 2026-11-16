@@ -1,18 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { routePath, type ProjectSettingsTab } from '../../../routes';
+import { projectSettingsTabLabels, routePath, type ProjectSettingsTab } from '../../../routes';
 import { inspectionTestIds } from '../../inspection/testIds';
 import { settingsTestIds } from '../testIds';
 
-const LABELS: Record<ProjectSettingsTab, string> = {
-  general: 'General',
-  states: 'States',
-  members: 'Members',
-  sprints: 'Sprints & forecast',
-  integrations: 'Integrations',
-  demos: 'Demos',
-  inspection: 'Inspection',
-};
 const TEST_IDS: Record<ProjectSettingsTab, string> = {
   general: settingsTestIds.tabGeneral,
   states: settingsTestIds.tabStates,
@@ -79,7 +70,7 @@ export function TabList({
             tab === active ? 'bg-signal-soft font-semibold text-ink' : 'text-ink-muted'
           }`}
         >
-          {LABELS[tab]}
+          {projectSettingsTabLabels[tab]}
           {errored.has(tab) ? (
             <span
               data-testid={settingsTestIds.tabError}

@@ -1,4 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { projectByKeyQuery } from '../../pages/projectQueries';
 import { Dialog } from '../Dialog';
 import { showToast } from '../toastStore';
 import { useTouchShell } from '../../touch/useTouchShell';
@@ -58,6 +61,19 @@ export function SettingsDialog<TDoc extends object, TContext>({
     onFailed: (message) => showToast(`Could not save: ${message}`, { tone: 'danger' }),
   });
   const { touch } = useTouchShell();
+  // At touch the header names the project the settings belong to, as the phone design's chip (SHIP-1987). The project
+  // is the page's own query, so this reads the cache.
+  const key = useParams().key;
+  const project = useQuery({ ...projectByKeyQuery(key ?? ''), enabled: touch && key !== undefined });
+  const projectChip =
+    touch && project.data !== undefined ? (
+      <span
+        data-testid={ids.projectChip}
+        className="block h-6 max-w-[45%] shrink-0 truncate rounded-full bg-sunken px-2.5 text-[length:var(--text-xs)] leading-6 text-ink"
+      >
+        {project.data.name} · {project.data.key}
+      </span>
+    ) : undefined;
   const [askingToClose, setAskingToClose] = useState(false);
 
   const selectable = (id: string | undefined) =>
@@ -117,7 +133,13 @@ export function SettingsDialog<TDoc extends object, TContext>({
   const activeWarning = active === undefined ? undefined : warnings.get(active.id);
 
   return (
-    <Dialog title={title} width={width} onClose={requestClose} footer={touch ? undefined : footer}>
+    <Dialog
+      title={title}
+      width={width}
+      onClose={requestClose}
+      headerExtra={projectChip}
+      footer={touch ? undefined : footer}
+    >
       <div className="grid min-h-[420px] grid-cols-[200px_minmax(0,1fr)] gap-4 touch:min-h-0 touch:grid-cols-[minmax(0,1fr)]">
         <SettingsNav
           groups={groups}

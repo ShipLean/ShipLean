@@ -336,4 +336,7 @@ public static class SettingsTestIds
     public const string TimeZoneChoicesError = "settings-time-zone-choices-error";
     public const string StateHandle = "settings-state-handle";
     public const string StateColumnLabel = "settings-state-column-label";
+    public const string SettingsIndex = "settings-index";
+    public const string SettingsIndexRow = "settings-index-row";
+    public const string SettingsIndexCount = "settings-index-count";
 }
