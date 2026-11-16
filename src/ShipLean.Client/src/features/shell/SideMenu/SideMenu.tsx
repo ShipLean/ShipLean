@@ -81,7 +81,7 @@ export function SideMenu() {
       ref={side}
       data-testid={ids.sideMenu}
       aria-label="Project navigation"
-      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
+      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2 touch:min-h-0 touch:overflow-y-auto"
     >
       <div className="flex h-[26px] items-center justify-between">
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
