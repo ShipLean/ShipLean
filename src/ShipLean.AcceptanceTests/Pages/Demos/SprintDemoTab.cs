@@ -23,6 +23,9 @@ public sealed class SprintDemoTab(IPage page)
     // The visible reason beside a blocked Create button (the phone layout shows it under the full-width action).
     public ILocator CreateReason => page.GetByTestId(DemosTestIds.DemoCreateReason);
 
+    // The warning beside Create demo when the last delivery to the agent connection failed.
+    public ILocator CreateWarning => page.GetByTestId(DemosTestIds.DemoCreateWarning);
+
     public ILocator ItemLink => page.GetByTestId(DemosTestIds.DemoItemLink);
 
     public ILocator Player => page.GetByTestId(DemosTestIds.DemoPlayer);
