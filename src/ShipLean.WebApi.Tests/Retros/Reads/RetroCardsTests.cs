@@ -26,44 +26,52 @@ public sealed class RetroCardsTests : ApiFixture
 
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
 
-    // Reads the retro page of a story as the user. The retro is written at ViewerZoneTestData.LateEveningUtc: 20:00 UTC, so the
-    // next day in Bangkok. Time is never frozen: the expected label is built with DisplayDate and the zone.
-    private async Task<RetroItemDto> ReadStoryRetroAsync(TestUser user, Guid userId)
+    // Reads the retro page of a story as a dedicated viewer, a member of its own project with the given zone (none leaves it unset).
+    // The retro is written at ViewerZoneTestData.LateEveningUtc: 20:00 UTC, so the next day in Bangkok. Time is never frozen:
+    // the label of an instant two years back is its day, month and year, which the tests compose from the instant.
+    private async Task<RetroItemDto> ReadStoryRetroAsync(string? zone)
     {
         await using var connection = await OpenDatabaseAsync();
-        var project = await ArrangedProject.CreateAsync(connection, (userId, ProjectRole.Member));
+        var viewerId = await new AppUserBuilder().InsertAsync(connection);
+        var viewer = TestUser.Of(viewerId);
+        if (zone is not null)
+        {
+            await ViewerZoneArrange.SetAsync(Api, viewer, zone);
+        }
+        var project = await ArrangedProject.CreateAsync(connection, (viewerId, ProjectRole.Member));
         var story = await new WorkItemBuilder(project.Id).WithType("story").InsertAsync(connection);
         var seed = new RetroSeed(connection, project.Id);
         var retro = await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: story, AgentName: $"agent-{Guid.NewGuid():N}", CreatedAt: ViewerZoneTestData.LateEveningUtc));
         await seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.Improve, "Dated by the viewer."));
         var key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @story", new { story });
-        using var response = await Api.ActingAs(user).GetAsync($"/api/projects/{project.Id}/retros/items/{key}");
+        using var response = await Api.ActingAs(viewer).GetAsync($"/api/projects/{project.Id}/retros/items/{key}");
         var text = await response.Content.ReadAsStringAsync();
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         return JsonSerializer.Deserialize<RetroItemDto>(text, Wire)!;
     }
 
+    // An earlier year's short day label ("17 Nov 2024") built from the instant moved to the offset, independent of DisplayDate.
+    private static string DayWithYear(DateTimeOffset at) =>
+        $"{at.Day} {System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedMonthNames[at.Month - 1]} {at.Year}";
+
     // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to the Relative call for CreatedAtLabel in RetroCards.ToCard.
     [Test]
     public async Task Cards_WhenViewerIsInBangkok_ShouldDateACardByTheBangkokDay()
     {
-        await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+        var item = await ReadStoryRetroAsync(ViewerZoneTestData.BangkokId);
 
-        var item = await ReadStoryRetroAsync(TestUser.Joel, SeedIds.Users.Joel);
-
-        var now = TimeProvider.System.GetUtcNow();
-        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
-        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
-        item.Cards.Single().CreatedAtLabel.ShouldBe(expected);
+        var bangkokDay = DayWithYear(ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)));
+        bangkokDay.ShouldNotBe(DayWithYear(ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero)));
+        item.Cards.Single().CreatedAtLabel.ShouldBe(bangkokDay);
     }
 
     // The fallback: a user with no zone still gets UTC labels.
     [Test]
     public async Task Cards_WhenViewerHasNoZone_ShouldDateACardByTheUtcDay()
     {
-        var item = await ReadStoryRetroAsync(TestUser.Priya, SeedIds.Users.Priya);
+        var item = await ReadStoryRetroAsync(zone: null);
 
-        item.Cards.Single().CreatedAtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        item.Cards.Single().CreatedAtLabel.ShouldBe(DayWithYear(ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero)));
     }
 
     [Test]
@@ -89,7 +97,8 @@ public sealed class RetroCardsTests : ApiFixture
 
         var card = (await Cards.LoadAsync([retro], CancellationToken.None)).Single();
 
-        card.CreatedAtLabel.ShouldBe(DisplayDate.Relative(card.CreatedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        // Written a moment ago, so the label is a minutes-ago one, not a day.
+        card.CreatedAtLabel.ShouldMatch(@"^(just now|\d+m ago)$");
     }
 
     [Test]

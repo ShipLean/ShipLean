@@ -98,7 +98,7 @@ public sealed class RetroCardsDecisionTests : ApiFixture
         notNeeded.By.User.Id.ShouldBe(SeedIds.Users.Priya);
         notNeeded.By.AgentName.ShouldBeNull();
         notNeeded.By.Role.ShouldBe(RetroRole.Person);
-        notNeeded.DecidedAtLabel.ShouldBe(DisplayDate.Relative(decidedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        notNeeded.DecidedAtLabel.ShouldBe(UtcDayLabel(decidedAt));
         points.Single(p => p.Id == byAgent).NotNeeded.ShouldNotBeNull().By.AgentName.ShouldBe("decide-agent");
         (await DecisionSqlAsync(connection, point)).ShouldBe("notNeeded");
     }
@@ -138,4 +138,13 @@ public sealed class RetroCardsDecisionTests : ApiFixture
 
     private static Task<Guid> AgentRetroAsync(RetroSeed seed)
         => seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: SeedIds.WorkItems.Ship92, AgentName: $"agent-{Guid.NewGuid():N}"));
+
+    // A day two days back as the UI prints it, in UTC: "30 Sep" this year, "30 Sep 2025" in an earlier year. Built by hand, not by DisplayDate.
+    private string UtcDayLabel(DateTimeOffset at)
+    {
+        var utc = at.ToOffset(TimeSpan.Zero);
+        var month = System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedMonthNames[utc.Month - 1];
+        var thisYear = Host.Services.GetRequiredService<TimeProvider>().GetUtcNow().Year;
+        return utc.Year == thisYear ? $"{utc.Day} {month}" : $"{utc.Day} {month} {utc.Year}";
+    }
 }
