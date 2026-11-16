@@ -26,7 +26,8 @@ const settled = { ...linkCards, pages: linkCards.pages.filter((card) => !card.re
 type StubbedPage = Parameters<typeof stubApi>[0] &
   Parameters<typeof stubSide>[0] &
   Parameters<typeof stubComments>[0] &
-  Parameters<typeof stubFeature>[0];
+  Parameters<typeof stubFeature>[0] &
+  Parameters<typeof stubImages>[0];
 
 async function arrange(page: StubbedPage) {
   await stubApi(page, feature);
