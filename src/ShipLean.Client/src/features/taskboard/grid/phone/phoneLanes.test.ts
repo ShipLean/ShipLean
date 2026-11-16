@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StateRef } from '@shiplean/core/api/refs';
 import type { CardDto, TaskboardRowDto } from '@shiplean/core/api/views';
-import { phoneLanes } from './phoneLanes';
+import { phoneLanes as phoneEntries } from './phoneLanes';
 import { phonePeopleLanes } from './phonePeopleLanes';
 
 const NEW: StateRef = { id: 'new', name: 'New', category: 'proposed' };
@@ -47,6 +47,16 @@ const UNPARENTED = (tasks: CardDto[]): TaskboardRowDto => ({
     tasks: tasks.filter((t) => t.state.id === s.id),
   })),
 });
+
+/** The entries split by kind: the test-side view of a page's open lanes and closed lines. */
+const phoneLanes = (...args: Parameters<typeof phoneEntries>) => {
+  const { entries } = phoneEntries(...args);
+  return {
+    entries,
+    lanes: entries.flatMap((e) => (e.kind === 'lane' ? [e.lane] : [])),
+    closed: entries.flatMap((e) => (e.kind === 'closed' ? [e.story] : [])),
+  };
+};
 
 describe('phoneLanes', () => {
   it('phoneLanes_WhenUnparentedRowIsNotLast_ShouldPutItLast', () => {
