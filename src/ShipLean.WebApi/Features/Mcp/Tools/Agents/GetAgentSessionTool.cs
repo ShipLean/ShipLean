@@ -14,10 +14,13 @@ using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Agents;
 
 [McpServerToolType]
-internal sealed class GetAgentSessionTool(ItemResolver items, AgentSessionMcpReads reads, IAgentSessionDetails details, IAgentAddresses addresses)
+internal sealed class GetAgentSessionTool(ItemResolver items, AgentSessionMcpReads reads, AgentSessionDetailReader details, ICurrentUser currentUser, IAgentAddresses addresses)
 {
     private const int DefaultLimit = 50;
     private const int MaxLimit = 100;
+    private const string SessionNotFound = "No agent session with that id was found.";
+
+    private static bool IsLive(string state) => state is "submitted" or "working" or "inputRequired";
 
     [McpServerTool(Name = "get_agent_session"), McpScope(McpScopes.Read)]
     [Description("One agent session of a work item: how it ended (end_reason, end_text and, for those who may see it, end_detail), its activities newest first, its delivery attempts and its run log. Pass exactly one of session (the id from get_work_item's agent_sessions) or item (a key, like SHIP-123: its newest session).")]
@@ -33,12 +36,6 @@ internal sealed class GetAgentSessionTool(ItemResolver items, AgentSessionMcpRea
             throw ApiException.Validation("Pass exactly one of session or item.", string.IsNullOrWhiteSpace(session) ? "item" : "session");
         }
 
-        var take = limit ?? DefaultLimit;
-        if (take is < 1 or > MaxLimit)
-        {
-            throw ApiException.Validation($"limit must be between 1 and {MaxLimit}.", "limit");
-        }
-
         Guid? sessionId = null;
         var itemKey = item;
         if (!string.IsNullOrWhiteSpace(session))
@@ -49,14 +46,25 @@ internal sealed class GetAgentSessionTool(ItemResolver items, AgentSessionMcpRea
             }
 
             sessionId = parsed;
-            itemKey = await reads.ItemKeyOfAsync(parsed, cancellationToken) ?? throw ApiException.NotFound("No agent session with that id was found.");
+            itemKey = await reads.ItemKeyOfAsync(parsed, currentUser.Id, cancellationToken) ?? throw ApiException.NotFound(SessionNotFound);
         }
 
         var resolved = await items.ResolveAsync(itemKey!, ProjectRole.Member, field: sessionId is null ? "item" : "session", cancellationToken: cancellationToken);
-        var read = await details.ReadAsync(resolved.Id, resolved.Key, sessionId, before, take, cancellationToken);
+
+        var take = limit ?? DefaultLimit;
+        if (take is < 1 or > MaxLimit)
+        {
+            throw ApiException.Validation($"limit must be between 1 and {MaxLimit}.", "limit");
+        }
+
+        var read = await details.ReadAsync(resolved.Id, resolved.Key, sessionId, before, take, cancellationToken)
+            ?? throw ApiException.NotFound(sessionId is null ? $"{resolved.Key} has no agent sessions." : SessionNotFound);
 
         var row = read.Session;
-        var end = AgentSessionVisibility.Apply(row.EndReason, row.EndDetail, read.RunLog, resolved.Role);
+        // A live session has no end and no delivery attempts for anyone, as in the panel and the demo band.
+        var end = IsLive(row.State)
+            ? new AgentSessionEndView(null, null, null, null, ShowDeliveries: false)
+            : AgentSessionVisibility.Apply(row.EndReason, row.EndDetail, read.RunLog, resolved.Role);
         var projectKey = PlanningReply.ProjectKeyOf(resolved.Key);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
         var result = new GetAgentSessionResult(
