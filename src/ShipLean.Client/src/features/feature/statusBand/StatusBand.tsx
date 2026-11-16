@@ -3,12 +3,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { conflictOf } from '@shiplean/core/api/workItems';
 import { StateDot } from '../../../components/StateDot';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { cacheIfNewer } from '../../workItem/form/cacheIfNewer';
 import { workItemHistoryKey, workItemKey } from '../../workItem/workItemApi';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { featureTestIds as ids } from '../testIds';
 import { confirmStatus } from './statusApi';
 import { HealthPill } from './HealthPill';
+import { HealthButton } from './HealthButton';
 import { HealthSelect } from './HealthSelect';
 import { StatusEditor } from './StatusEditor';
 import { VerifiedChip } from './VerifiedChip';
@@ -20,6 +22,7 @@ const buttonClass =
 // (its own revision, so only while the form is clean); Edit status opens the editor, whose changes the form's Save writes.
 export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureRegionProps) {
   const queryClient = useQueryClient();
+  const { touch } = useTouchShell();
   const [editing, setEditing] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
@@ -60,6 +63,9 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
         ? `${healthSet.agent} (agent)`
         : (healthSet.by?.name ?? null);
 
+  const healthButton = (
+    <HealthButton health={draft.health} onChange={(health) => setField({ health })} />
+  );
   return (
     <section
       data-testid={ids.statusBand}
@@ -77,12 +83,15 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
       ) : (
         <div className="flex items-start justify-between gap-4 touch:flex-col touch:items-stretch touch:gap-3">
           <div className="flex min-w-0 items-start gap-3 touch:flex-col touch:gap-2">
-            <span
-              data-testid={ids.statusState}
-              className="rounded-full border border-edge bg-signal-soft px-2.5 py-0.5 touch:self-start"
-            >
-              <StateDot category={draft.state.category} name={draft.state.name} />
-            </span>
+            <div className="flex items-center gap-2 touch:self-start">
+              <span
+                data-testid={ids.statusState}
+                className="rounded-full border border-edge bg-signal-soft px-2.5 py-0.5"
+              >
+                <StateDot category={draft.state.category} name={draft.state.name} />
+              </span>
+              {touch ? healthButton : null}
+            </div>
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1">
               <p
                 data-testid={ids.statusLine}
@@ -117,8 +126,8 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
           </div>
         </div>
       )}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <HealthPill health={draft.health} testId={ids.statusHealth} />
+      <div className="mt-2 flex flex-wrap items-center gap-2 empty:hidden">
+        {touch ? null : <HealthPill health={draft.health} testId={ids.statusHealth} />}
         {healthSet !== null &&
         draft.health === item.health &&
         (draft.health === 'atRisk' || draft.health === 'blocked') ? (
@@ -130,7 +139,9 @@ export function StatusBand({ item, draft, dirty, setField, saveError }: FeatureR
             {healthSet.atLabel}
           </span>
         ) : null}
-        <HealthSelect health={draft.health} onChange={(health) => setField({ health })} />
+        {touch ? (editing ? healthButton : null) : (
+          <HealthSelect health={draft.health} onChange={(health) => setField({ health })} />
+        )}
       </div>
       {statusError === null ? null : (
         <p

@@ -111,7 +111,7 @@ export function LinkCard({
             </>
           )}
         </div>
-        {card.imageUrl ? (
+        {card.imageUrl && (!touch || card.kind === 'page') ? (
           <img
             data-testid={ids.linkCardImage}
             src={card.imageUrl}

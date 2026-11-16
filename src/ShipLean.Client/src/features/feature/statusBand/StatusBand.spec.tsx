@@ -217,3 +217,11 @@ test('StatusBand_WhenSetByAgent_ShouldNameTheAgent', async ({ mount, page }) => 
     'Set by Claude Code (claude.ai) (agent) 19 Oct',
   );
 });
+
+test('FeatureHealth_OnDesktop_ShouldKeepTheSelect', async ({ mount, page }) => {
+  await stubAll(page, { ...feature, health: 'atRisk' });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await expect(screen.getByTestId(ids.statusHealthSelect)).toHaveValue('atRisk');
+  await expect(screen.getByTestId(ids.statusHealthButton)).toHaveCount(0);
+});

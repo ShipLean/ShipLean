@@ -3,9 +3,11 @@ import type { StateDto } from '@shiplean/core/api/projects';
 import { priya } from '../../workItem/ct/fixtures';
 import { stubApi } from '../../workItem/ct/stubApi';
 import { stubComments } from '../../workItem/ct/stubDetails';
+import { touchTestIds } from '../../../touch/testIds';
+import { workItemTestIds } from '../../workItem/testIds';
 import { stubSide } from '../../workItem/ct/stubSide';
 import { WorkItemFormHarness } from '../../workItem/ct/WorkItemFormHarness';
-import { feature, stubFeature } from '../ct/stubFeature';
+import { feature, linkCards, stubFeature } from '../ct/stubFeature';
 import { featureTestIds as ids } from '../testIds';
 
 // The Feature's status band, editor, fields and Stories and bugs on the CT phone project (390×844, SHIP-714).
@@ -155,4 +157,106 @@ test('FeatureFieldsStrip_WhenTouch_ShouldLayOutTwoColumnTiles', async ({ mount, 
     above = box.y;
   }
   expect((await boxOf(screen.getByTestId(ids.stripEpic))).height).toBeGreaterThanOrEqual(32);
+});
+
+const atRiskItem = { ...feature, health: 'atRisk' as const };
+
+test('FeatureHealth_AtTouch_ShouldOpenTheHealthSheetFromThePill', async ({ mount, page }) => {
+  await stubAll(page, atRiskItem);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  // No native select at touch; the pill sits on the state chip's row.
+  await expect(screen.getByTestId(ids.statusHealthSelect)).toHaveCount(0);
+  const pill = screen.getByTestId(ids.statusHealthButton);
+  await expect(pill).toContainText('At risk');
+  const chipBox = await boxOf(screen.getByTestId(ids.statusState));
+  const pillBox = await boxOf(pill);
+  expect(pillBox.y).toBeLessThan(chipBox.y + chipBox.height);
+  expect(pillBox.height).toBeGreaterThanOrEqual(32);
+
+  await pill.tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Health');
+  const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows).toHaveCount(4);
+  await expect(rows.nth(1)).toHaveAttribute('aria-current', 'true');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveCount(3);
+  await expect(sheet.getByTestId(ids.healthSheetFootnote)).toBeVisible();
+  await expect(rows.nth(3)).toHaveText('Clear health');
+
+  await rows.nth(2).tap();
+  await expect(sheet).toHaveCount(0);
+  await expect(pill).toContainText('Blocked');
+  await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText('Unsaved: Health');
+});
+
+test('FeatureHealth_WhenNone_ShouldOfferSetHealth', async ({ mount, page }) => {
+  await stubAll(page, { ...feature, health: null, healthSet: null });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  const pill = screen.getByTestId(ids.statusHealthButton);
+  await expect(pill).toHaveText(/Set health/);
+  await pill.tap();
+  const rows = page.getByTestId(touchTestIds.sheet).getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows.nth(3)).toBeDisabled();
+  await rows.nth(0).tap();
+  await expect(pill).toContainText('On track');
+});
+
+test('FeatureHealth_WhenSaveFails_ShouldKeepThePreviousHealthAndSaySo', async ({ mount, page }) => {
+  await stubApi(page, atRiskItem, () => ({
+    status: 400,
+    body: { error: 'Health could not be saved.', code: 'validation', field: 'health' },
+  }));
+  await stubSide(page, priya, [], []);
+  await stubComments(page, priya, []);
+  await stubFeature(page);
+  await page.route('**/api/projects/p1/states', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(states) }),
+  );
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.statusHealthButton).tap();
+  await page.getByTestId(touchTestIds.actionSheetRow).nth(2).tap();
+  await screen.getByTestId(workItemTestIds.save).tap();
+  await expect(screen.getByTestId(ids.statusError)).toHaveText('Health could not be saved.');
+
+  // Nothing was written: discarding the edit shows the health the Feature still has.
+  await screen.getByTestId(workItemTestIds.discard).tap();
+  await expect(screen.getByTestId(ids.statusHealthButton)).toContainText('At risk');
+});
+
+test('StoriesAndBugs_WhenTouch_ShouldShowStateDotAndAddButtons', async ({ mount, page }) => {
+  await stubAll(page, feature);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await expect(screen.getByTestId(ids.childState).first().locator('[data-category]')).toBeVisible();
+  const story = screen.getByTestId(ids.childAddStory);
+  const bug = screen.getByTestId(ids.childAddBug);
+  const board = screen.getByTestId(ids.taskBoardLink);
+  for (const button of [story, bug, board]) {
+    expect((await boxOf(button)).height).toBeGreaterThanOrEqual(32);
+  }
+  await story.tap();
+  await expect(screen.getByTestId(ids.childAddForm)).toHaveAttribute('data-kind', 'story');
+  await bug.tap();
+  await expect(screen.getByTestId(ids.childAddForm)).toHaveAttribute('data-kind', 'bug');
+});
+
+test('FeatureLinks_CodeLinkCard_AtTouch_ShouldShowTheWholeTitle', async ({ mount, page }) => {
+  await stubAll(page, feature);
+  await stubFeature(page, {
+    cards: {
+      ...linkCards,
+      pages: [],
+      code: linkCards.code.map((card) => ({ ...card, imageUrl: 'https://example.test/p.png' })),
+    },
+  });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+  await expect(screen.getByTestId(ids.linkCard).first()).toBeVisible();
+  await expect(screen.getByTestId(ids.linkCardImage)).toHaveCount(0);
+  const title = screen.getByTestId(ids.linkCardTitle).first();
+  const box = await boxOf(title);
+  expect(await title.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  expect(box.width).toBeGreaterThan(150);
 });

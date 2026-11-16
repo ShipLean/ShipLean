@@ -1,15 +1,23 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { useChildEvents } from '../../workItem/tasks/useChildEvents';
 import type { FeatureRegionProps } from '../FeatureRegionProps';
 import { featureTestIds as ids } from '../testIds';
+import { AddChildForm, type ChildKind } from './AddChildForm';
 import { ChildRow } from './ChildRow';
 import { closedCount, storiesAndBugsOf } from './storiesAndBugs';
+
+const touchButtonClass =
+  'inline-flex h-[var(--touch-target)] items-center rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink active:bg-signal-soft';
 
 // The Feature's stories and bugs, open first. Each is its own work item; real-time child changes refetch the Feature.
 export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
   useChildEvents(item.projectId, item.key, item);
+  const { touch } = useTouchShell();
+  const [adding, setAdding] = useState<ChildKind | null>(null);
   const children = storiesAndBugsOf(item.children);
   const { closed, total } = closedCount(item.children);
   return (
@@ -29,12 +37,36 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
           Each is its own work item
         </span>
         <span className="flex-1" />
+        {touch ? (
+          <>
+            <button
+              type="button"
+              data-testid={ids.childAddStory}
+              className={touchButtonClass}
+              onClick={() => setAdding('story')}
+            >
+              + User story
+            </button>
+            <button
+              type="button"
+              data-testid={ids.childAddBug}
+              className={touchButtonClass}
+              onClick={() => setAdding('bug')}
+            >
+              + Bug
+            </button>
+          </>
+        ) : null}
         <Link
           data-testid={ids.taskBoardLink}
           to={routePath('featureBoard', { key: projectKey, itemKey: item.key })}
-          className="text-[length:var(--text-sm)] hover:text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
+          className={
+            touch
+              ? touchButtonClass
+              : 'text-[length:var(--text-sm)] hover:text-signal hover:underline'
+          }
         >
-          Task board
+          {touch ? '▦ Task board' : 'Task board'}
         </Link>
       </header>
       <div className="rounded-control border border-edge bg-panel">
@@ -51,6 +83,16 @@ export function StoriesAndBugs({ item, projectKey }: FeatureRegionProps) {
               <ChildRow key={child.id} child={child} projectKey={projectKey} />
             ))}
           </ul>
+        )}
+        {adding === null ? null : (
+          <AddChildForm
+            key={adding}
+            projectId={item.projectId}
+            featureKey={item.key}
+            featureId={item.id}
+            kind={adding}
+            onClose={() => setAdding(null)}
+          />
         )}
       </div>
     </section>
