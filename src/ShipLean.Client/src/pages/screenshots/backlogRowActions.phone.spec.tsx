@@ -87,7 +87,8 @@ for (const theme of THEMES) {
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(ids.queueStepKey)).toHaveText('SHIP-160');
 
-    await expect(sheet).toHaveScreenshot(`backlogs-queue.${theme}.png`, {
+    // The whole page, as the design: the list behind the Estimate sheet keeps every row (SHIP-1991).
+    await expect(page).toHaveScreenshot(`backlogs-queue.${theme}.png`, {
       animations: 'disabled',
     });
   });
