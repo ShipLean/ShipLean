@@ -141,3 +141,37 @@ test('ConnectionHealth_WhenTheConnectionIsArchived_ShouldNotOfferTheTest', async
   await expect(page.getByTestId(ids.agentsConnectionHealth)).toBeVisible();
   await expect(view.getByTestId(ids.agentsConnectionTest)).toHaveCount(0);
 });
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('ConnectionHealth_WhenTheLastErrorHoldsALongUrl_ShouldNotScrollSideways', async ({
+    mount,
+    page,
+  }) => {
+    // One unbroken token: the browser may break a URL after a slash, but not inside a long path segment.
+    const url = `https://relay.example.com/${'a'.repeat(120)}`;
+    await stub(
+      page,
+      {
+        ...failingConnection,
+        lastError: `HttpRequestException: Connection refused posting ${url}`,
+      },
+      { ...testUnreachable, error: `No answer from ${url}` },
+    ).then((server) => server.release());
+    const view = await mount(
+      <div className="p-4">
+        <ConnectionHealth connection={relay} />
+      </div>,
+    );
+
+    await expect(view.getByTestId(ids.agentsConnectionHealth)).toContainText(url);
+    await view.getByTestId(ids.agentsConnectionTest).click();
+    await expect(view.getByTestId(ids.agentsConnectionTestResult)).toContainText(url);
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+});

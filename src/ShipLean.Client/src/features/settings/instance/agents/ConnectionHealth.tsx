@@ -11,16 +11,16 @@ export function ConnectionHealth({ connection }: { connection: AgentConnectionDt
   return (
     <div
       data-testid={ids.agentsConnectionHealth}
-      className="grid gap-1 text-[length:var(--text-sm)]"
+      className="grid min-w-0 gap-1 text-[length:var(--text-sm)]"
     >
       {health.data ? <HealthLines health={health.data} /> : null}
       {health.error ? (
-        <p role="alert" className="m-0 text-alert">
+        <p role="alert" className="m-0 min-w-0 [overflow-wrap:anywhere] text-alert">
           {errorText(health.error)}
         </p>
       ) : null}
       {archived ? null : (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <button
             type="button"
             data-testid={ids.agentsConnectionTest}
@@ -40,7 +40,11 @@ export function ConnectionHealth({ connection }: { connection: AgentConnectionDt
             </span>
           ) : null}
           {test.error ? (
-            <span role="alert" data-testid={ids.agentsConnectionTestResult} className="text-alert">
+            <span
+              role="alert"
+              data-testid={ids.agentsConnectionTestResult}
+              className="min-w-0 [overflow-wrap:anywhere] text-alert"
+            >
               {errorText(test.error)}
             </span>
           ) : null}
@@ -52,9 +56,11 @@ export function ConnectionHealth({ connection }: { connection: AgentConnectionDt
 
 // Success colour only for a 2xx. Any other answer reached the receiver, which is neither good nor a failure (D6), so it is muted.
 function answerClass(result: AgentConnectionTest): string {
-  if (!result.reached) return 'min-w-0 break-words text-alert';
+  if (!result.reached) return 'min-w-0 [overflow-wrap:anywhere] text-alert';
   const ok = result.httpStatus !== null && result.httpStatus >= 200 && result.httpStatus < 300;
-  return ok ? 'min-w-0 break-words text-good' : 'min-w-0 break-words text-ink-muted';
+  return ok
+    ? 'min-w-0 [overflow-wrap:anywhere] text-good'
+    : 'min-w-0 [overflow-wrap:anywhere] text-ink-muted';
 }
 
 function HealthLines({ health }: { health: AgentConnectionHealth }) {
@@ -66,7 +72,7 @@ function HealthLines({ health }: { health: AgentConnectionHealth }) {
           : `Last delivered ${health.lastDeliveredLabel ?? ''}`.trim()}
       </p>
       {health.failedLast24h > 0 ? (
-        <p className="m-0 text-alert">
+        <p className="m-0 min-w-0 [overflow-wrap:anywhere] text-alert">
           {`${health.failedLast24h} failed in the last 24 h`}
           {health.lastFailedLabel === null ? '' : `, the last ${health.lastFailedLabel}`}
           {health.lastError === null ? '' : `: ${health.lastError}`}
