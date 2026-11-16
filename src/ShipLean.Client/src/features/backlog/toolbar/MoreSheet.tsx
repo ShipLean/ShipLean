@@ -1,9 +1,24 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { actionSheetRowClass, ActionSheetRow, type SheetAction } from '../../../touch/ActionSheet';
+import type { BacklogMode, Level } from '../../../routes';
 import { MoreButton } from '../../../touch/MoreButton';
 import { backlogTestIds as ids } from '../testIds';
 
+const TITLES: Record<Level, string> = { stories: 'Stories', features: 'Features', epics: 'Epics' };
+
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </svg>
+  );
+}
+
 export interface MoreSheetProps {
+  // The sheet's title: the level's name, or Planning.
+  level: Level;
+  mode: BacklogMode;
   // Search this list is offered when given; it opens the field under the toolbar.
   onSearch?: () => void;
   // The mode's own controls (Add many, Forecast), rendered as given.
@@ -17,8 +32,10 @@ export interface MoreSheetProps {
 }
 
 // The touch toolbar's ⋯ More (SHIP-716): the K5 MoreButton, with Search this list, the mode's options, the sort and Show
-// completed in its children slot and the mode's actions as its action rows. Nothing to offer, no button.
+// completed (a switch) in its children slot and the mode's actions as its action rows. Nothing to offer, no button.
 export function MoreSheet({
+  level,
+  mode,
   onSearch,
   options,
   moreActions,
@@ -29,13 +46,37 @@ export function MoreSheet({
   const completed = includeCompleted !== undefined && onIncludeCompletedChange !== undefined;
   if (!onSearch && !options && !moreActions?.length && !sort && !completed) return null;
 
+  // Show completed is a switch after everything else (K1 toggle), and tapping it keeps the sheet open.
+  const actions: SheetAction[] = [
+    ...(moreActions ?? []),
+    ...(includeCompleted !== undefined && onIncludeCompletedChange
+      ? [
+          {
+            id: 'completed',
+            label: 'Show completed',
+            group: '',
+            toggle: { on: includeCompleted },
+            onSelect: () => onIncludeCompletedChange(!includeCompleted),
+          } satisfies SheetAction,
+        ]
+      : []),
+  ];
   return (
-    <MoreButton actions={moreActions ?? []}>
+    <MoreButton
+      actions={actions}
+      label={mode === 'planning' ? 'Planning' : TITLES[level]}
+      variant="bordered"
+    >
       {(close) => (
         <>
           {onSearch ? (
             <ActionSheetRow
-              action={{ id: 'search', label: 'Search this list', onSelect: onSearch }}
+              action={{
+                id: 'search',
+                label: 'Search this list',
+                icon: <SearchIcon />,
+                onSelect: onSearch,
+              }}
               onClose={close}
             />
           ) : null}
@@ -66,17 +107,6 @@ export function MoreSheet({
                 Clear sort
               </button>
             </div>
-          ) : null}
-          {completed ? (
-            <label className={`${actionSheetRowClass} gap-3 text-ink`}>
-              <input
-                type="checkbox"
-                data-testid={ids.completedToggle}
-                checked={includeCompleted}
-                onChange={(event) => onIncludeCompletedChange(event.target.checked)}
-              />
-              Show completed
-            </label>
           ) : null}
         </>
       )}

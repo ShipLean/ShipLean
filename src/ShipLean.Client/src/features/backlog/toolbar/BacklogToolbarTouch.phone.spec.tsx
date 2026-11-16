@@ -61,9 +61,9 @@ test('MoreSheet_WhenMoreActionsGiven_ShouldListThemAfterOptions', async ({ mount
     [
       actionRow('search'),
       `[data-testid="harness-option"]`,
-      `[data-testid="${ids.completedToggle}"]`,
       actionRow('select'),
       actionRow('estimate'),
+      `[data-testid="${touchTestIds.actionSheetToggle}"][data-action-id="completed"]`,
     ],
   );
   expect(order.every((index) => index >= 0)).toBe(true);
@@ -179,9 +179,11 @@ test('BacklogToolbar_WhenFeaturesLevel_ShouldOfferSearchAndShowCompleted', async
   await expect(page.getByTestId(ids.modeOption)).toHaveText(['List', 'Tree']);
   await page.getByTestId(touchTestIds.moreButton).tap();
   await expect(page.locator(actionRow('search'))).toBeVisible();
-  const completed = page.getByTestId(ids.completedToggle);
+  const completed = page.locator(
+    `[data-testid="${touchTestIds.actionSheetToggle}"][data-action-id="completed"]`,
+  );
   await expect(completed).toBeVisible();
-  await completed.check();
+  await completed.tap();
   await expect(page.getByTestId('harness-state')).toContainText('true|');
 });
 
@@ -194,5 +196,6 @@ test('MoreSheet_WhenSearchTypedInListMode_ShouldNarrowTheTouchRows', async ({ mo
   await page.locator(actionRow('search')).tap();
   await page.getByTestId(ids.searchBox).fill(ROWS[0].key);
   await expect(page.getByTestId(ids.row)).toHaveCount(1);
-  await expect(page.getByTestId(ids.dragOffBanner)).toBeVisible();
+  // Handles are already gone while a search alone is on, so the banner stays out (SHIP-1821).
+  await expect(page.getByTestId(ids.dragOffBanner)).toHaveCount(0);
 });

@@ -204,4 +204,7 @@ public static class BacklogTestIds
     public const string KeysButton = "backlog-keys-button";
     public const string KeysDialog = "backlog-keys-dialog";
     public const string LevelProgressBar = "backlog-level-progress-bar";
+    public const string Summary = "backlog-summary";
+    public const string SummaryNote = "backlog-summary-note";
+    public const string FilterCount = "backlog-filter-count";
 }

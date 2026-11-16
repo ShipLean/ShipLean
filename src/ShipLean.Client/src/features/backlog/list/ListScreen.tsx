@@ -79,6 +79,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
               state={state}
               reorder={reorder}
               rowCount={rows.length}
+              shownRows={rows}
+              quietBanner={touch && search.active && !state.filtering && !queue.active && !sort.sorted}
               filtering={filtering}
               options={() => <AddManyButton />}
               search={() => <BacklogSearchBox search={search} />}
