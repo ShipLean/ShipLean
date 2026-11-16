@@ -103,7 +103,13 @@ public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader,
             throw ApiException.Validation("A work item can't link to itself.", "targetKey");
         }
 
-        if ((await rows.ListWorkItemLinksAsync(workItemId, cancellationToken)).Any(l => l.WorkItemId == targetId && l.Type == type))
+        if (type == LinkType.CausedBy)
+        {
+            var types = await rows.TypesOfAsync([workItemId, targetId], cancellationToken);
+            CausedByRule.Require(type, types[workItemId], types[targetId]);
+        }
+
+        if ((await rows.ListWorkItemLinksAsync(workItemId, cancellationToken)).Any(l => !l.Incoming && l.WorkItemId == targetId && l.Type == type))
         {
             throw ApiException.LinkDuplicate("That work item is already linked with this link type.", "targetKey");
         }
