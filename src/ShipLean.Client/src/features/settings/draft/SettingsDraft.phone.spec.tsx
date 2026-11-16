@@ -203,6 +203,23 @@ test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader',
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
+// ND3a-9 (SHIP-1809 P3): the Save bar's message is a soft chip, ● count ▾, at least one touch target tall.
+test('SettingsPhone_WhenEdited_ShouldShowTheCountAsAChipWithADotAndCaret', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('general'));
+  await page.getByTestId(ids.generalName).fill('Shop');
+  const chip = page.getByTestId(ids.unsavedChip);
+  await expect(chip).toHaveText('1 unsaved change▾');
+  await expect(chip).toHaveAttribute('aria-haspopup', 'dialog');
+  await expect(chip).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  expect((await chip.boundingBox())?.height).toBeGreaterThanOrEqual(32);
+  await chip.tap();
+  await expect(page.getByTestId(touchTestIds.sheet).getByTestId(ids.changeItem)).toHaveCount(1);
+});
+
 test('SettingsPhone_WhenChangesTapped_ShouldJumpToTheTab', async ({ mount, page }) => {
   await stub(page);
   await mount(<SettingsDraftHarness role="admin" />, route('general'));

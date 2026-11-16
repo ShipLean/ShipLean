@@ -6,7 +6,8 @@ import { ChangesSheet } from './ChangesSheet';
 
 /**
  * The one Save on a phone (SHIP-805 rule 15): the header's Save and Discard move into the K5 SaveBar while the draft
- * has changes. Its message opens the list of changes, each row jumping to its tab as the desktop list does.
+ * has changes. Its message is a soft chip (● count ▾, SHIP-1809 P3) that opens the list of changes, each row jumping to
+ * its tab as the desktop list does.
  */
 export function SettingsSaveBar({
   changes,
@@ -36,12 +37,18 @@ export function SettingsSaveBar({
         message={
           <button
             type="button"
-            data-testid={settingsTestIds.unsaved}
+            data-testid={settingsTestIds.unsavedChip}
             aria-haspopup="dialog"
-            className="font-semibold text-ink"
+            className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-caution/20 px-3 font-semibold text-ink"
             onClick={() => setListOpen(true)}
           >
-            {count} unsaved {count === 1 ? 'change' : 'changes'}
+            <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-caution" />
+            <span data-testid={settingsTestIds.unsaved} className="truncate">
+              {count} unsaved {count === 1 ? 'change' : 'changes'}
+            </span>
+            <span aria-hidden="true" className="shrink-0 text-[length:var(--text-xs)] text-ink-muted">
+              ▾
+            </span>
           </button>
         }
       />
