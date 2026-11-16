@@ -27,7 +27,7 @@ public sealed class AgentDeliverer(
     IAgentConnections connections,
     IHttpClientFactory httpClients,
     AgentSessionNotifier notifier,
-    IAgentDeliveryAttempts attempts,
+    IAgentDeliveryAttempts deliveryAttempts,
     TimeProvider time,
     ILogger<AgentDeliverer> logger)
 {
@@ -146,7 +146,7 @@ public sealed class AgentDeliverer(
         var error = AgentErrorText.Scrub(raw);
         var attempt = row.Attempts + 1;
         var nextAttemptAt = error is not null && AgentDeliverySchedule.RetryAfter(row.Action, attempt) is { } wait ? time.GetUtcNow() + wait : (DateTimeOffset?)null;
-        await attempts.RecordAsync(new AgentDeliveryAttemptCreate(row.Id, row.ConnectionId, attempt, at, status, error, durationMs, nextAttemptAt), cancellationToken);
+        await deliveryAttempts.RecordAsync(new AgentDeliveryAttemptCreate(row.Id, row.ConnectionId, attempt, at, status, error, durationMs, nextAttemptAt), cancellationToken);
 
         if (error is null)
         {
