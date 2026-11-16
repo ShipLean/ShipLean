@@ -16,8 +16,15 @@ const related: LinkDto = {
   key: 'SHIP-144',
   title: 'Saved cards list on the account page that goes on for a good while',
   url: null,
-  card: null,
-  autoLinked: null,
+  // A webhook's state badge and "auto" take row width too, which is when the key used to break.
+  card: {
+    state: 'merged',
+    title: 'SHIP-144 Saved cards',
+    asOf: '2026-10-25T09:30:00+00:00',
+    asOfLabel: '4 min ago',
+    source: 'github',
+  },
+  autoLinked: { via: 'github', matchedOn: 'branch' },
 };
 const web: LinkDto = {
   id: 'l2',
