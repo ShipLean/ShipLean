@@ -204,10 +204,11 @@ test('BoardFilter_WhenOpened_ShouldReportTheOpeningOnceNotTheClosing', async ({ 
 
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toBeVisible();
+  await expect.poll(() => sent).toEqual([{ report: 'board-filter-opened', body: {} }]);
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterBar)).toHaveCount(0);
 
-  expect(sent).toEqual([{ report: 'board-filter-opened', body: {} }]);
+  expect(sent).toHaveLength(1);
 });
 
 test('FeaturesBoard_HealthFilter_WhenChanged_ShouldReportTheChosenHealth', async ({
