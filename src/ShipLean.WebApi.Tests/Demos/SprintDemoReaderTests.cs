@@ -84,20 +84,21 @@ public class SprintDemoReaderTests : ApiFixture
             """,
             new { id = Guid.CreateVersion7(), itemId = demo.ItemId, connectionId = demo.Project.ConnectionId, state, at = at ?? TimeProvider.System.GetUtcNow(), by = SeedIds.Users.Joel });
 
-    // The label the reader should make for a moment for a user with no zone (UTC), built from DisplayDate's own day maths
-    // so it holds across midnight.
+    // The label the reader should make for a moment for a user with no zone (UTC), by plain UTC arithmetic and literal
+    // formats, never DisplayDate, so it holds across midnight and cannot copy a bug in the code under test.
     private static string WhenOf(DateTimeOffset at)
     {
-        var now = TimeProvider.System.GetUtcNow();
-        var zone = TimeZoneInfo.Utc;
-        var day = DisplayDate.DaysUntil(at, now, zone) switch
+        var now = TimeProvider.System.GetUtcNow().UtcDateTime;
+        var moment = at.UtcDateTime;
+        var days = (moment.Date - now.Date).Days;
+        var day = days switch
         {
             0 => "today",
             -1 => "yesterday",
             1 => "tomorrow",
-            _ => DisplayDate.ShortDay(at, now, zone),
+            _ => moment.ToString(moment.Year == now.Year ? "d MMM" : "d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture),
         };
-        return $"{day} at {DisplayDate.Time(at, zone)}";
+        return $"{day} at {moment.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}";
     }
 
     private async Task<Delivered> DeliverAsync(NpgsqlConnection database, Arranged demo, string chaptersJson, string script, DateTimeOffset delivered, int videoBytes = 4321)
