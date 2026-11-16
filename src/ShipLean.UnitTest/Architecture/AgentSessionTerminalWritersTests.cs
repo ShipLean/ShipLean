@@ -8,7 +8,7 @@ namespace ShipLean.UnitTest.Architecture;
 // ends without saying why and a revived one never keeps a stale reason. Reads every whole C# string literal (regular, verbatim, raw,
 // interpolated, multi-line) in the non-test projects under src/. For each UPDATE agent_session it looks only at the SET clause (up
 // to the first WHERE, RETURNING, FROM or the next statement), so CASE WHEN state IN … and WHERE state = … are not assignments.
-// An assignment is a SET item, literal or parameter (state = 'failed', state = @next); that item list must also assign end_reason.
+// An assignment is a SET item, literal or parameter (state = 'failed', state = @next); that item list must also assign end_reason and end_detail.
 // Known limit: SQL assembled from constants declared in other files (or other literals) is not seen, only each literal on its own.
 [TestFixture]
 public class AgentSessionTerminalWritersTests
@@ -18,6 +18,7 @@ public class AgentSessionTerminalWritersTests
     private static readonly Regex Update = new(@"\bUPDATE\s+(?:ONLY\s+)?agent_session\b(?:\s+(?:AS\s+)?(?!SET\b)\w+)?\s+SET\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex SetEnd = new(@"\b(?:WHERE|RETURNING|FROM|UPDATE|INSERT)\b|;", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex StateItem = new(@"(?:^|,)\s*(?:\w+\.)?state\s*=", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex EndDetailItem = new(@"(?:^|,)\s*(?:\w+\.)?end_detail\s*=", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex EndReasonItem = new(@"(?:^|,)\s*(?:\w+\.)?end_reason\s*=", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     // The writers C2 names, so a reader that stops finding literals fails here instead of passing on nothing.
@@ -83,9 +84,17 @@ public class AgentSessionTerminalWritersTests
     [Test]
     public void ProductionSql_WhenScanned_ShouldFindTheStateWritersC2Names()
     {
-        var writers = StateWriters(ProductionFiles()).Select(w => w.File).Distinct().Order(StringComparer.Ordinal);
+        var writers = StateWriters(ProductionFiles());
 
-        writers.ShouldBe(KnownWriters, ignoreOrder: true);
+        writers.Select(w => w.File).Distinct().Order(StringComparer.Ordinal).ShouldBe(KnownWriters, ignoreOrder: true);
+        // The number of UPDATEs, not only of files: a reader that stopped seeing one of a file's two writers would otherwise pass.
+        writers.GroupBy(w => w.File).ToDictionary(g => g.Key, g => g.Count()).ShouldBe(new Dictionary<string, int>
+        {
+            ["src/ShipLean.Application/Features/AgentDispatch/AgentDeliverer.cs"] = 2,
+            ["src/ShipLean.Application/Features/AgentDispatch/AgentReports.cs"] = 2,
+            ["src/ShipLean.Application/Features/AgentDispatch/AgentStaleSweeper.cs"] = 1,
+        });
+        writers.Count.ShouldBe(5);
     }
 
     [Test]
@@ -115,6 +124,17 @@ public class AgentSessionTerminalWritersTests
         Violations([("F.cs", source)]).ShouldHaveSingleItem();
     }
 
+    [TestCase(nameof(MultiLineUpdate))]
+    [TestCase(nameof(CaseWhenStateInSet))]
+    [TestCase(nameof(CteUpdate))]
+    public void Violations_WhenTheEndDetailIsRemovedFromAFixture_ShouldReportIt(string fixture)
+    {
+        var source = Regex.Replace(Fixture(fixture), @",\s*end_detail\s*=\s*(?:@detail|NULL)", string.Empty);
+
+        source.ShouldNotBe(Fixture(fixture));
+        Violations([("F.cs", source)]).ShouldHaveSingleItem();
+    }
+
     private static string Fixture(string name) => name switch
     {
         nameof(MultiLineUpdate) => MultiLineUpdate,
@@ -125,7 +145,7 @@ public class AgentSessionTerminalWritersTests
 
     // "file:line" for each state-setting UPDATE whose SET does not also set end_reason; the line is where the UPDATE starts.
     private static List<string> Violations(IEnumerable<(string File, string Text)> files)
-        => StateWriters(files).Where(w => !w.SetsEndReason).Select(w => $"{w.File}:{w.Line}").Order(StringComparer.Ordinal).ToList();
+        => StateWriters(files).Where(w => !w.SetsEndReason || !w.SetsEndDetail).Select(w => $"{w.File}:{w.Line}").Order(StringComparer.Ordinal).ToList();
 
     private static List<Writer> StateWriters(IEnumerable<(string File, string Text)> files)
     {
@@ -142,7 +162,7 @@ public class AgentSessionTerminalWritersTests
                     if (StateItem.IsMatch(set))
                     {
                         var line = text.AsSpan(0, literal.Start).Count('\n') + literal.Value.AsSpan(0, update.Index).Count('\n') + 1;
-                        found.Add(new Writer(file, line, EndReasonItem.IsMatch(set)));
+                        found.Add(new Writer(file, line, EndReasonItem.IsMatch(set), EndDetailItem.IsMatch(set)));
                     }
                 }
             }
@@ -328,5 +348,5 @@ public class AgentSessionTerminalWritersTests
 
     private sealed record Prefix(int Length, bool Interpolated, bool Verbatim);
 
-    private sealed record Writer(string File, int Line, bool SetsEndReason);
+    private sealed record Writer(string File, int Line, bool SetsEndReason, bool SetsEndDetail);
 }
