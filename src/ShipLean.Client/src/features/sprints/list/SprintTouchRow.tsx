@@ -162,9 +162,12 @@ export function SprintTouchRow({
       {notes.length === 0 ? null : (
         <p
           data-testid={ids.rowNotes}
-          className="m-0 pr-2 text-[length:var(--text-sm)] whitespace-pre-line text-ink-muted before:mr-1.5 before:content-['✎']"
+          className="m-0 flex items-start gap-1.5 pr-2 text-[length:var(--text-sm)] text-ink-muted"
         >
-          {notes.join('\n')}
+          <span className="mt-px flex-none">
+            <SprintSheetIcon name="edit" />
+          </span>
+          <span className="whitespace-pre-line">{notes.join('\n')}</span>
         </p>
       )}
     </li>
