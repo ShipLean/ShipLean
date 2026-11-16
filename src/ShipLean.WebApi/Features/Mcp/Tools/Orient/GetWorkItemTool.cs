@@ -87,7 +87,7 @@ internal sealed class GetWorkItemTool(
             [.. names.Parents.Select(p => new WorkItemResult.Ref(p.Key, p.Type, p.Title))],
             [.. children.Select(c => new WorkItemResult.Child(c.Key, c.Type.Name, c.Title, c.State.Name, c.Assignee?.Name))],
             [.. snapshot.Links.Select(l => new WorkItemResult.Link(CamelCase(l.Value.Type), l.Value.Key, l.Value.Title, l.Value.Url))],
-            [.. page.Select(c => new WorkItemResult.Comment(c.Author?.Name, c.AgentName, c.CreatedAt.ToString("O"), c.Body))],
+            [.. page.Select(c => new WorkItemResult.Comment(c.Author?.Name, c.AgentName, c.CreatedAt.ToString("O"), DisplayDate.Relative(c.CreatedAt, clock.GetUtcNow(), viewerZone.Zone), c.Body))],
             commentsOlder,
             [.. listed.Select(a => new WorkItemResult.Attachment(
                 a.Name, a.SizeBytes, a.ContentType, a.Kind == AttachmentKind.Markdown, a.UploadedBy?.Name, a.CreatedAt.ToString("O"), a.AgentName, a.Via))],

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using Dapper;
 using Npgsql;
@@ -33,7 +32,7 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
             {
                 continue;
             }
-            var retro = candidate.Source ?? "comment " + DisplayDate.DayOf(candidate.CreatedAt, viewerZone.Zone).ToString("O", CultureInfo.InvariantCulture);
+            var retro = candidate.Source ?? "comment " + DisplayDate.DayLabel(candidate.CreatedAt, viewerZone.Zone);
             lessons.Add(new RetroLesson(candidate.Feature, retro, text));
             if (lessons.Count == Newest)
             {
@@ -69,7 +68,7 @@ public sealed class ProjectLessons(NpgsqlDataSource dataSource, IAttachmentStore
         return [.. rows.GroupBy(row => row.RetroId).Select(group =>
         {
             var first = group.First();
-            var date = DisplayDate.DayOf(first.CreatedAt, viewerZone.Zone).ToString("O", CultureInfo.InvariantCulture);
+            var date = DisplayDate.DayLabel(first.CreatedAt, viewerZone.Zone);
             return new RetroLesson(first.Feature, "retrospective " + date, string.Join("\n", group.Select(row => "- " + row.Text)));
         })];
     }

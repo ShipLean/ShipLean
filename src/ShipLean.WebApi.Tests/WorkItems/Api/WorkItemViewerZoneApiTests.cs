@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dapper;
 using ShipLean.Contracts.WorkItems;
-using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
@@ -11,9 +10,8 @@ using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.WorkItems.Api;
 
-// The work item read dates its labels in the viewer's zone. One Feature stamped at ViewerZoneTestData.LateEveningUtc (20:00
-// UTC, the next day in Bangkok); Joel reads in Asia/Bangkok, Priya has no zone and reads in UTC. Time is never frozen:
-// expected labels come from DisplayDate with the zone.
+// The work item read dates its labels in the viewer's zone. One Feature stamped at 20:00 UTC (the next day in Bangkok); Joel reads in Asia/Bangkok, Priya has no zone and reads in UTC. The instant is fixed and the
+// expected labels are literals, not DisplayDate output.
 [TestFixture]
 public class WorkItemViewerZoneApiTests : ApiFixture
 {
@@ -21,6 +19,9 @@ public class WorkItemViewerZoneApiTests : ApiFixture
     {
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false) },
     };
+
+    // 20:00 UTC on Sun 10 Mar 2024: Bangkok reads 03:00 on Mon 11 Mar. The year is always an earlier one, so labels are "d MMM yyyy".
+    private static readonly DateTimeOffset Evening = new(2024, 3, 10, 20, 0, 0, TimeSpan.Zero);
 
     private Guid _feature;
 
@@ -31,7 +32,7 @@ public class WorkItemViewerZoneApiTests : ApiFixture
         _feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Zone read").InsertAsync(connection);
         await connection.ExecuteAsync(
             "UPDATE work_item SET status_line = 'On track', status_verified_at = @at, status_verified_by = @joel, status_verified_via = 'set_status', started_on = '2026-01-05', health = 'onTrack', health_set_at = @at, health_set_by = @joel WHERE id = @_feature",
-            new { at = ViewerZoneTestData.LateEveningUtc, joel = SeedIds.Users.Joel, _feature });
+            new { at = Evening, joel = SeedIds.Users.Joel, _feature });
         await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
     }
 
@@ -49,10 +50,8 @@ public class WorkItemViewerZoneApiTests : ApiFixture
     {
         var item = await ReadAsync(TestUser.Joel);
 
-        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, TimeProvider.System.GetUtcNow(), ViewerZoneTestData.Bangkok);
-        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
-        item.StatusVerified!.AtLabel.ShouldBe(expected);
-        item.HealthSet!.AtLabel.ShouldBe(expected);
+        item.StatusVerified!.AtLabel.ShouldBe("11 Mar 2024");
+        item.HealthSet!.AtLabel.ShouldBe("11 Mar 2024");
     }
 
     // The fallback: a user with no zone still reads UTC labels.
@@ -61,6 +60,6 @@ public class WorkItemViewerZoneApiTests : ApiFixture
     {
         var item = await ReadAsync(TestUser.Priya);
 
-        item.StatusVerified!.AtLabel.ShouldBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        item.StatusVerified!.AtLabel.ShouldBe("10 Mar 2024");
     }
 }

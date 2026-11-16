@@ -15,11 +15,9 @@ internal sealed class InMemoryDtoBuilder(
     IReadOnlyDictionary<Guid, UserRef> users,
     IReadOnlyDictionary<Guid, SprintRef> sprints,
     MarkdownRenderer renderer,
-    TimeProvider time)
+    TimeProvider time,
+    IViewerZone viewerZone)
 {
-    // The fake has no request user, like a real read with no zone: labels read in UTC.
-    private static readonly TimeZoneInfo Zone = TimeZoneInfo.Utc;
-
     private static readonly Dictionary<WorkItemTypeId, string> TypeNames = new()
     {
         [WorkItemTypeId.Epic] = "Epic",
@@ -45,7 +43,7 @@ internal sealed class InMemoryDtoBuilder(
         revision.Rev,
         UserOrNull(revision.ChangedBy),
         revision.ChangedAt,
-        DisplayDate.Relative(revision.ChangedAt, time.GetUtcNow(), Zone),
+        DisplayDate.Relative(revision.ChangedAt, time.GetUtcNow(), viewerZone.Zone),
         revision.Origin,
         revision.Changes,
         revision.AgentName,
@@ -85,21 +83,21 @@ internal sealed class InMemoryDtoBuilder(
             item.OriginalSystem,
             item.Revision,
             item.CreatedAt,
-            DisplayDate.Relative(item.CreatedAt, time.GetUtcNow(), Zone),
+            DisplayDate.Relative(item.CreatedAt, time.GetUtcNow(), viewerZone.Zone),
             item.ChangedAt,
-            DisplayDate.Relative(item.ChangedAt, time.GetUtcNow(), Zone),
+            DisplayDate.Relative(item.ChangedAt, time.GetUtcNow(), viewerZone.Zone),
             item.Goal,
             item.StatusLine,
             item.StatusVerifiedAt is { } verified
                 ? new StatusVerifiedDto(
-                    verified, DisplayDate.Relative(verified, time.GetUtcNow(), Zone), StatusVerifiedDto.IsStale(verified, time.GetUtcNow()),
+                    verified, DisplayDate.Relative(verified, time.GetUtcNow(), viewerZone.Zone), StatusVerifiedDto.IsStale(verified, time.GetUtcNow()),
                     UserOrNull(item.StatusVerifiedBy), item.StatusVerifiedAgent, item.StatusVerifiedVia)
                 : null,
             item.Slug,
             item.StartedOn,
-            item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, Zone), time.GetUtcNow(), Zone) : null,
+            item.StartedOn is { } started ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, viewerZone.Zone), time.GetUtcNow(), viewerZone.Zone) : null,
             item.Health,
-            item.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time.GetUtcNow(), Zone), UserOrNull(item.HealthSetBy), item.HealthSetAgent) : null,
+            item.HealthSetAt is { } healthSet ? new HealthSetDto(healthSet, DisplayDate.Relative(healthSet, time.GetUtcNow(), viewerZone.Zone), UserOrNull(item.HealthSetBy), item.HealthSetAgent) : null,
             Rollups(item, project),
             // TODO: count open asks for NeedsYou; the fake has no asks, so nothing waits on anyone.
             null);
