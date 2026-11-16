@@ -44,6 +44,7 @@ public class AgentDeliveryTests : ApiFixture
             Host.Services.GetRequiredService<IAgentConnections>(),
             factory ?? new StubHttpClientFactory((receiver ?? _receiver).Client()),
             Host.Services.GetRequiredService<AgentSessionNotifier>(),
+            Host.Services.GetRequiredService<IAgentDeliveryAttempts>(),
             _clock,
             NullLogger<AgentDeliverer>.Instance);
 
