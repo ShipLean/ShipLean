@@ -27,7 +27,7 @@ public class FeatureFieldsStoreTests : PostgresWorkItemStoreTestBase
     public async Task CloseDataSource() => await _dataSource.DisposeAsync();
 
     private WorkItemStore StoreAt(FakeTimeProvider clock, AgentIdentity? agent = null)
-        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent ?? AgentIdentity.None);
+        => new(_dataSource, new FixedCurrentUser(Actor), new PassThroughWorkItemRules(), Arrangement.Events, new MarkdownRenderer(), clock, agent ?? AgentIdentity.None, new FixedViewerZone());
 
     [TestCase(14, 0, false)]
     [TestCase(14, 1, true)]
