@@ -86,6 +86,21 @@ public class LeadTimeFactsReaderTests : ReportTestBase
         (await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 7), new DateOnly(2026, 10, 7))).Tasks.Select(t => t.Key).ShouldNotContain(task);
     }
 
+    // The Features tab counts all of a Feature's tasks, so a Feature with a task ending in the window brings its open tasks too.
+    // Mutation: return only the windowed tasks (drop the Feature clause).
+    [Test]
+    public async Task Read_WhenFeatureHasTaskInWindowAndOpenTask_ShouldReturnBoth()
+    {
+        var ended = await ArrangeTaskAsync(null);
+        var open = NextTask();
+
+        var facts = await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 5), new DateOnly(2026, 10, 5));
+
+        var both = facts.Tasks.Where(t => t.Key == ended || t.Key == open).ToList();
+        both.Select(t => t.Key).ShouldBe([ended, open], ignoreOrder: true);
+        both.Select(t => t.FeatureKey).Distinct().ShouldHaveSingleItem().ShouldNotBeNull();
+    }
+
     // A commit of a readable repository is a work_item_commit row, its time the code_commit's authored_at; the task has no other
     // reason to be selected, so the commit alone decides.
     // Mutation: drop the work_item_commit branch of the union.

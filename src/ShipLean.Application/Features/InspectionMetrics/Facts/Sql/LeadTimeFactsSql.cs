@@ -20,39 +20,49 @@ internal static class LeadTimeFactsSql
         WHERE c.archived_at IS NULL
         """;
 
-    // The tasks that could end in [fromDay, toDay + 2 days]: a first move to a Resolved-category state, or a commit time, inside
-    // that span. AgentName is the agent of the task's first In-progress move.
+    // The tasks that could end in [fromDay, toDay + 2 days] (a first move to a Resolved-category state, or a commit time, inside that
+    // span), and every live task of each Feature one of them belongs to, whatever its dates, so the Features tab can count a Feature's
+    // tasks and its first start. AgentName is the agent of the task's first In-progress move.
     public const string Tasks =
         $$"""
-        SELECT t.id, t.key, t.title, p.key AS parentKey, p.type AS parentType, f.key AS featureKey, f.title AS featureTitle,
-               t.assigned_to AS assigneeId, (
+        WITH live AS (
+            SELECT t.id, t.key, t.title, t.assigned_to, t.state_id, p.key AS parent_key, p.type AS parent_type, f.id AS feature_id,
+                   f.key AS feature_key, f.title AS feature_title
+            FROM work_item t
+            JOIN state s ON s.id = t.state_id
+            LEFT JOIN work_item p ON p.id = t.parent_id AND p.type IN ('story', 'bug')
+            LEFT JOIN work_item f ON f.id = p.parent_id AND f.type = 'feature'
+            WHERE t.project_id = @projectId AND t.type = 'task' AND s.category <> @removed),
+        windowed AS (
+            SELECT l.id, l.feature_id
+            FROM live l
+            WHERE EXISTS (
+                      SELECT 1
+                      FROM (
+                          SELECT min(m.changed_at) AS at
+                          FROM revision m
+                          CROSS JOIN LATERAL jsonb_array_elements(m.changes) AS c(value)
+                          JOIN state ms ON ms.id::text = (c.value -> 'to') #>> '{}'
+                          WHERE m.work_item_id = l.id AND c.value ->> 'field' = @stateField AND ms.category = @resolved) first_resolved
+                      WHERE first_resolved.at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND first_resolved.at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC')
+                  OR EXISTS (
+                      SELECT 1 FROM ({{CommitRows}}) k
+                      WHERE k.work_item_id = l.id
+                        AND k.committed_at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND k.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
+        SELECT l.id, l.key, l.title, l.parent_key AS parentKey, l.parent_type AS parentType, l.feature_key AS featureKey, l.feature_title AS featureTitle,
+               l.assigned_to AS assigneeId, (
                    SELECT m.agent_name
                    FROM revision m
                    CROSS JOIN LATERAL jsonb_array_elements(m.changes) AS c(value)
                    JOIN state ms ON ms.id::text = (c.value -> 'to') #>> '{}'
-                   WHERE m.work_item_id = t.id AND c.value ->> 'field' = @stateField AND ms.category = @inProgress
+                   WHERE m.work_item_id = l.id AND c.value ->> 'field' = @stateField AND ms.category = @inProgress
                    ORDER BY m.changed_at, m.rev
                    LIMIT 1) AS agentName,
                s.name AS stateName, s.category AS stateCategory
-        FROM work_item t
-        JOIN state s ON s.id = t.state_id
-        LEFT JOIN work_item p ON p.id = t.parent_id AND p.type IN ('story', 'bug')
-        LEFT JOIN work_item f ON f.id = p.parent_id AND f.type = 'feature'
-        WHERE t.project_id = @projectId AND t.type = 'task' AND s.category <> @removed
-          AND (EXISTS (
-                   SELECT 1
-                   FROM (
-                       SELECT min(m.changed_at) AS at
-                       FROM revision m
-                       CROSS JOIN LATERAL jsonb_array_elements(m.changes) AS c(value)
-                       JOIN state ms ON ms.id::text = (c.value -> 'to') #>> '{}'
-                       WHERE m.work_item_id = t.id AND c.value ->> 'field' = @stateField AND ms.category = @resolved) first_resolved
-                   WHERE first_resolved.at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND first_resolved.at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC')
-               OR EXISTS (
-                   SELECT 1 FROM ({{CommitRows}}) k
-                   WHERE k.work_item_id = t.id
-                     AND k.committed_at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND k.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
-        ORDER BY t.key
+        FROM live l
+        JOIN state s ON s.id = l.state_id
+        WHERE l.id IN (SELECT id FROM windowed) OR l.feature_id IN (SELECT feature_id FROM windowed WHERE feature_id IS NOT NULL)
+        ORDER BY l.key
         """;
 
     // Every state move, revision 1 included, with the target state's name and category.
