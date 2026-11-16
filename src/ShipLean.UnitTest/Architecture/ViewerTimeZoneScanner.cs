@@ -18,15 +18,18 @@ public static partial class ViewerTimeZoneScanner
     // - DisplayDate is where the viewer's zone is applied and every display format lives.
     private const string DisplayDatePath = "src/ShipLean.Core/DisplayDate.cs";
 
-    // - SprintLabels keeps its "d MMM" formats: sprint dates are calendar days with no zone (D8). Zone code there still fails.
+    // - SprintLabels keeps its "d MMM" formats: sprint dates are calendar days with no zone (D8). Any other format there
+    //   (say "HH:mm") and zone code there still fail.
     private const string SprintLabelsPath = "src/ShipLean.Core/SprintLabels.cs";
+    private static readonly string[] SprintLabelsFormats = ["d MMM", "d MMM yyyy"];
+
+    public const string UsingStatic = "using static TimeZoneInfo";
+    public const string UsingAlias = "using alias TimeZoneInfo";
 
     private static readonly (Regex Pattern, string Token)[] ZoneTokens =
     [
         (LocalTimeZoneRegex(), "LocalTimeZone"),
-        (LocalZoneRegex(), "TimeZoneInfo.Local"),
         (ToLocalTimeRegex(), "ToLocalTime("),
-        (ConvertTimeRegex(), "TimeZoneInfo.ConvertTime"),
         (FindZoneRegex(), "FindSystemTimeZoneById"),
         (SystemZonesRegex(), "GetSystemTimeZones"),
     ];
@@ -38,12 +41,7 @@ public static partial class ViewerTimeZoneScanner
         foreach (var file in ProductionFiles())
         {
             var path = Path.GetRelativePath(RepoPaths.Root, file).Replace('\\', '/');
-            if (path == DisplayDatePath)
-            {
-                continue;
-            }
-
-            foreach (var token in Scan(File.ReadAllText(file)).Where(t => path != SprintLabelsPath || !IsFormatToken(t)))
+            foreach (var token in ScanFile(path, File.ReadAllText(file)))
             {
                 found[(path, token)] = found.GetValueOrDefault((path, token)) + 1;
             }
@@ -51,6 +49,12 @@ public static partial class ViewerTimeZoneScanner
 
         return found;
     }
+
+    // The tokens found in one production file (path from the repository root), after the permanent exceptions.
+    public static IReadOnlyList<string> ScanFile(string path, string source) =>
+        path == DisplayDatePath
+            ? []
+            : Scan(source).Where(t => path != SprintLabelsPath || !SprintLabelsFormats.Any(f => t == FormatToken(f))).ToList();
 
     // The tokens found in one piece of C# source, one entry per occurrence.
     public static IReadOnlyList<string> Scan(string source)
@@ -61,6 +65,8 @@ public static partial class ViewerTimeZoneScanner
         {
             tokens.AddRange(pattern.Matches(masked.Code).Select(_ => token));
         }
+
+        tokens.AddRange(ZoneTypeTokens(masked.Code));
 
         foreach (Match call in OldOverloadRegex().Matches(masked.Code))
         {
@@ -85,25 +91,68 @@ public static partial class ViewerTimeZoneScanner
     }
 
     // The number of top-level arguments of the call whose '(' is at open.
-    public static int ArgumentCount(string code, int open)
+    public static int ArgumentCount(string code, int open) => Arguments(code, open).Count;
+
+    // The top-level arguments of the call whose '(' is at open, trimmed.
+    private static List<string> Arguments(string code, int open)
     {
         var depth = 0;
-        var commas = 0;
-        var empty = true;
+        var start = open + 1;
+        var arguments = new List<string>();
         for (var i = open; i < code.Length; i++)
         {
             var c = code[i];
             depth += c switch { '(' or '[' or '{' => 1, ')' or ']' or '}' => -1, _ => 0 };
+            if (depth == 0 || (depth == 1 && c == ','))
+            {
+                arguments.Add(code[start..i].Trim());
+                start = i + 1;
+            }
+
             if (depth == 0)
             {
                 break;
             }
-
-            commas += depth == 1 && c == ',' ? 1 : 0;
-            empty &= i == open || char.IsWhiteSpace(c);
         }
 
-        return empty ? 0 : commas + 1;
+        return arguments is [""] ? [] : arguments;
+    }
+
+    // TimeZoneInfo.Local and TimeZoneInfo.ConvertTime*, also through `using static System.TimeZoneInfo` (bare Local,
+    // ConvertTime) and `using Z = System.TimeZoneInfo` (Z.Local, Z.ConvertTime); the usings are flagged themselves. A
+    // ConvertTime whose zone arguments are all literally TimeZoneInfo.Utc is not zone code.
+    private static IEnumerable<string> ZoneTypeTokens(string code)
+    {
+        var tokens = new List<string>();
+        var isStatic = UsingStaticRegex().IsMatch(code);
+        tokens.AddRange(UsingStaticRegex().Matches(code).Select(_ => UsingStatic));
+        var aliases = UsingAliasRegex().Matches(code).Select(m => m.Groups[1].Value).ToList();
+        tokens.AddRange(aliases.Select(_ => UsingAlias));
+
+        var qualifiers = string.Join("|", aliases.Select(Regex.Escape).Prepend("TimeZoneInfo"));
+        var qualified = $@"\b(?:{qualifiers})\s*\.\s*";
+        var bare = isStatic ? @"|(?<![\w.])(?<!\.\s+)" : "";
+        var utc = isStatic ? $@"(?:(?:{qualifiers})\s*\.\s*)?Utc" : $@"(?:{qualifiers})\s*\.\s*Utc";
+
+        tokens.AddRange(Regex.Matches(code, $@"(?:{qualified}{bare})Local\b").Select(_ => "TimeZoneInfo.Local"));
+        foreach (Match convert in Regex.Matches(code, $@"(?:{qualified}{bare})(ConvertTime\w*)"))
+        {
+            var open = convert.Index + convert.Length;
+            while (open < code.Length && char.IsWhiteSpace(code[open]))
+            {
+                open++;
+            }
+
+            var toUtc = convert.Groups[1].Value == "ConvertTime" && open < code.Length && code[open] == '('
+                        && Arguments(code, open) is [_, _, ..] arguments
+                        && arguments.Skip(1).All(a => Regex.IsMatch(a, $"^{utc}$"));
+            if (!toUtc)
+            {
+                tokens.Add("TimeZoneInfo.ConvertTime");
+            }
+        }
+
+        return tokens;
     }
 
     // A display format such as "d MMM" or "HH:mm"; ISO 8601 (with a T) and formats that name UTC are machine text.
@@ -113,8 +162,6 @@ public static partial class ViewerTimeZoneScanner
         && !format.Contains("UTC", StringComparison.Ordinal);
 
     private static string FormatToken(string format) => $"format \"{format}\"";
-
-    private static bool IsFormatToken(string token) => token.StartsWith("format ", StringComparison.Ordinal);
 
     // True when the literal at start is the first argument of a ToString call: `ToString(` then the literal.
     private static bool FollowsToStringCall(string code, int start)
@@ -148,14 +195,14 @@ public static partial class ViewerTimeZoneScanner
     [GeneratedRegex(@"\bLocalTimeZone\b")]
     private static partial Regex LocalTimeZoneRegex();
 
-    [GeneratedRegex(@"\bTimeZoneInfo\s*\.\s*Local\b")]
-    private static partial Regex LocalZoneRegex();
-
     [GeneratedRegex(@"\bToLocalTime\s*\(")]
     private static partial Regex ToLocalTimeRegex();
 
-    [GeneratedRegex(@"\bTimeZoneInfo\s*\.\s*ConvertTime\w*")]
-    private static partial Regex ConvertTimeRegex();
+    [GeneratedRegex(@"\busing\s+static\s+(?:global::)?(?:System\s*\.\s*)?TimeZoneInfo\s*;")]
+    private static partial Regex UsingStaticRegex();
+
+    [GeneratedRegex(@"\busing\s+(\w+)\s*=\s*(?:global::)?(?:System\s*\.\s*)?TimeZoneInfo\s*;")]
+    private static partial Regex UsingAliasRegex();
 
     [GeneratedRegex(@"\b\w*FindSystemTimeZoneById\b")]
     private static partial Regex FindZoneRegex();

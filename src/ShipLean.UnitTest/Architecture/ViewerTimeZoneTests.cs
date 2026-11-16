@@ -107,9 +107,33 @@ public class ViewerTimeZoneTests
     [TestCase("var s = $\"until {at:yyyy-MM-dd HH:mm} UTC.\";", "")]
     [TestCase("var s = $\"merged {at:yyyy-MM-ddTHH:mm:ssZ}\";", "")]
     [TestCase("string[] formats = [\"yyyy-MM-dd HH:mm:ss zzz\"];", "")]
+    [TestCase("using static System.TimeZoneInfo;\nvar a = ConvertTime(v, zone); var b = Local; var c = FindSystemTimeZoneById(id);",
+        "FindSystemTimeZoneById|TimeZoneInfo.ConvertTime|TimeZoneInfo.Local|using static TimeZoneInfo")]
+    [TestCase("global using static TimeZoneInfo;\nvar a = ConvertTimeToUtc(v); var k = DateTimeKind.Local; v.ToLocalTime();",
+        "TimeZoneInfo.ConvertTime|ToLocalTime(|using static TimeZoneInfo")]
+    [TestCase("using Z = System.TimeZoneInfo;\nvar a = Z.ConvertTime(v, zone); var b = Z . Local; Z.FindSystemTimeZoneById(id);",
+        "FindSystemTimeZoneById|TimeZoneInfo.ConvertTime|TimeZoneInfo.Local|using alias TimeZoneInfo")]
+    [TestCase("var a = ConvertTime(v, zone); var b = Local; var k = DateTimeKind.Local;", "")]
+    [TestCase("var u = TimeZoneInfo.ConvertTime(v, TimeZoneInfo.Utc);", "")]
+    [TestCase("var u = TimeZoneInfo.ConvertTime(v, TimeZoneInfo.Utc, TimeZoneInfo.Utc);", "")]
+    [TestCase("var u = TimeZoneInfo.ConvertTime(v, zone, TimeZoneInfo.Utc);", "TimeZoneInfo.ConvertTime")]
+    [TestCase("var u = TimeZoneInfo.ConvertTime(v, TimeZoneInfo.Utc.Next);", "TimeZoneInfo.ConvertTime")]
+    [TestCase("using static System.TimeZoneInfo;\nvar u = ConvertTime(v, Utc);", "using static TimeZoneInfo")]
+    [TestCase("using Z = System.TimeZoneInfo;\nvar u = Z.ConvertTime(v, Z.Utc);", "using alias TimeZoneInfo")]
     public void Scan_WhenSnippetScanned_ShouldFlagOnlyZoneCodeOldOverloadsAndAdHocFormats(string source, string expected)
     {
         string.Join("|", ViewerTimeZoneScanner.Scan(source)).ShouldBe(expected);
+    }
+
+    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = d.ToString(\"d MMM\") + d.ToString(\"d MMM yyyy\");", "")]
+    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = d.ToString(\"HH:mm\");", "format \"HH:mm\"")]
+    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var s = $\"{d:ddd d MMM}\";", "format \"ddd d MMM\"")]
+    [TestCase("src/ShipLean.Core/SprintLabels.cs", "var z = clock.LocalTimeZone;", "LocalTimeZone")]
+    [TestCase("src/ShipLean.Core/Other.cs", "var s = d.ToString(\"d MMM\");", "format \"d MMM\"")]
+    [TestCase("src/ShipLean.Core/DisplayDate.cs", "var s = d.ToString(\"HH:mm\"); var z = clock.LocalTimeZone;", "")]
+    public void ScanFile_WhenPermanentException_ShouldAllowOnlyItsNamedCode(string path, string source, string expected)
+    {
+        string.Join("|", ViewerTimeZoneScanner.ScanFile(path, source)).ShouldBe(expected);
     }
 
     // (path, token) -> (count, lane file), from every TimeZoneBaseline/*.txt.
