@@ -4,6 +4,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Views.InspectionMetrics;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.InspectionMetrics;
@@ -23,7 +24,7 @@ public class InspectionMetricsToolTests : McpFixture
         var reply = await CallToolAsync(token, "inspection_metrics", """{"project":"SHIP","range":"lastQuarter","cut":"who"}""");
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
-        var body = JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
+        var body = JsonNode.Parse(reply.Structured().GetRawText()).ShouldNotBeNull().AsObject();
         body["project"]!.GetValue<string>().ShouldBe("SHIP");
         body["open_url"]!.GetValue<string>().ShouldEndWith("/p/SHIP/inspection");
         body.ContainsKey("generated_at").ShouldBeTrue();
