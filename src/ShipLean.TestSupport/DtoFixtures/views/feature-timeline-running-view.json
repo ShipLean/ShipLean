@@ -439,7 +439,10 @@
           },
           "note": null
         }
-      ]
+      ],
+      "lastCommitAt": null,
+      "lastCommitHours": null,
+      "lastCommitLabel": null
     },
     {
       "key": "SHIP-122",
@@ -495,7 +498,10 @@
           },
           "note": null
         }
-      ]
+      ],
+      "lastCommitAt": null,
+      "lastCommitHours": null,
+      "lastCommitLabel": null
     },
     {
       "key": "SHIP-171",
@@ -538,7 +544,10 @@
           "durationLabel": null
         }
       ],
-      "reviews": []
+      "reviews": [],
+      "lastCommitAt": null,
+      "lastCommitHours": null,
+      "lastCommitLabel": null
     },
     {
       "key": "SHIP-172",
@@ -572,7 +581,10 @@
           "durationLabel": "1.9 days"
         }
       ],
-      "reviews": []
+      "reviews": [],
+      "lastCommitAt": null,
+      "lastCommitHours": null,
+      "lastCommitLabel": null
     }
   ],
   "edges": [

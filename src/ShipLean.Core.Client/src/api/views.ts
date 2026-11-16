@@ -430,6 +430,10 @@ export interface TimelineBarDto {
   onCriticalPath: boolean;
   history: TimelinePeriodDto[];
   reviews: TimelineReviewDto[];
+  /** The last commit with a recorded time: its instant, hour offset from scale.start and label. All null when none is known. */
+  lastCommitAt: string | null;
+  lastCommitHours: number | null;
+  lastCommitLabel: string | null;
 }
 
 /** waitLabel only when waitHours ≥ 12; unblocked* belong to blocked edges and are null while still blocked. */

@@ -112,6 +112,20 @@ public class ToolUsageTests : McpFixture
         CallsOf("tool:list_projects").ShouldHaveSingleItem();
     }
 
+    [Test]
+    public async Task InspectionMetrics_WhenCalled_ShouldTrackToolReadWithTheProject()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        var reply = await CallToolAsync(token, "inspection_metrics", """{"project":"SHIP"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var tracked = await NextAsync("tool:inspection_metrics");
+        tracked.Name.ShouldBe(UsageEventNames.InspectionMetricsToolRead);
+        tracked.Outcome.ShouldBe(UsageOutcome.Ok);
+        tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+    }
+
     // The gate in front of the SDK refuses a missing scope with HTTP 403 before any filter runs, so nothing is tracked.
     // The filter's own forbidden answer is a backstop no real tool reaches (only test tools that disagree with the gate do).
     [Test]
