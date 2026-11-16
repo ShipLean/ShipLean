@@ -4,7 +4,12 @@ import type { PaneProps } from '../../../components/SettingsDialog/types';
 import type { BoardSettingsJson } from '@shiplean/core/api/persisted';
 import { boardHarnessIds } from './harnessIds';
 import { BoardSettingsView } from '../BoardSettingsView';
-import type { BoardPaneGroup, BoardSettingsContext } from '../panes';
+import {
+  boardPaneGroups,
+  DEFAULT_BOARD_PANE,
+  type BoardPaneGroup,
+  type BoardSettingsContext,
+} from '../panes';
 
 function TogglePane({ draft, onChange }: PaneProps<BoardSettingsJson, BoardSettingsContext>) {
   return (
@@ -73,6 +78,34 @@ export function BoardSettingsHarness({
       ) : (
         <span data-testid={boardHarnessIds.closed} />
       )}
+    </>
+  );
+}
+
+/** CT-only: the real Stories board panes over the real loading and frame, opened on one pane. */
+export function StoriesBoardSettingsHarness({
+  projectId,
+  boardId,
+  section,
+}: {
+  projectId: string;
+  boardId: string;
+  section: string;
+}) {
+  return (
+    <>
+      <ToastHost />
+      <BoardSettingsView
+        projectId={projectId}
+        boardId={boardId}
+        title="Stories board settings"
+        groups={boardPaneGroups}
+        apply="onSave"
+        section={section}
+        defaultSection={DEFAULT_BOARD_PANE}
+        onSectionChange={() => undefined}
+        onClose={() => undefined}
+      />
     </>
   );
 }

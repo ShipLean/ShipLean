@@ -37,11 +37,11 @@ export function ColumnsTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-panel border border-edge bg-panel">
+    <div className="overflow-hidden rounded-panel border border-edge bg-panel touch:overflow-x-auto">
       <table className="w-full border-collapse text-[length:var(--text-sm)]">
         <thead>
           <tr className="border-b border-edge bg-panel text-left text-[length:var(--text-xs)] text-ink-muted">
-            <th className="w-6" />
+            <th className="w-6 touch:w-8" />
             <th className="py-1.5 font-medium">Column</th>
             <th className="w-[72px] font-medium">WIP limit</th>
             <th className="w-[118px] font-medium">Split</th>
@@ -83,6 +83,10 @@ export function ColumnsTable({
               onDelete={() => onDelete(column, index)}
               onMove={(step) => onChange(moveColumn(columns, index, index + step))}
               onDragStart={() => setDragFrom(index)}
+              onTouchDrop={(targetId) => {
+                const to = columns.findIndex((c) => c.id === targetId);
+                if (to >= 0) onChange(moveColumn(columns, index, to));
+              }}
               onDrop={() => {
                 if (dragFrom !== undefined) onChange(moveColumn(columns, dragFrom, index));
                 setDragFrom(undefined);
