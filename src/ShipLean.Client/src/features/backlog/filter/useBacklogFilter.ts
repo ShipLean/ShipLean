@@ -87,6 +87,7 @@ export function useBacklogFilter(
     queryFn: () =>
       fetchBacklog({ projectId: project.id, level, mode, filter: '', includeCompleted }),
     enabled: sent !== '',
+    staleTime: Infinity,
   });
   const [read, setRead] = useState<BacklogViewDto | undefined>(undefined);
   if (backlog.isSuccess && backlog.data !== read) setRead(backlog.data);
