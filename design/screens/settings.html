@@ -31,6 +31,8 @@
       not part of the draft above. ?tab=demos opens it; &brand=default|logo|refused|tokens-refused and
       &yt=off|connect|pending|refused|connected pick the state of those two panels (the Preview panel does too).
   Open on another tab with #general, #members, #sprints, #integrations or #demos (or ?tab=).
+  SHIP-1809: settings-touch.css/js are the phone and tablet layout (900px and below); their review states are listed in
+  settings-touch.js.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
   shows a blocked delete, the last-admin rule and the read-only view a non-admin member gets.
 -->
@@ -171,6 +173,7 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
 .hint-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
 .hint-row .val { display: flex; align-items: center; gap: 6px; color: var(--color-muted); font-family: var(--font-mono); font-size: var(--text-xs); min-width: 0; overflow-wrap: anywhere; }
 </style>
+<link rel="stylesheet" href="settings-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -855,5 +858,6 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
   ]);
 })();
 </script>
+<script src="settings-touch.js"></script>
 </body>
 </html>

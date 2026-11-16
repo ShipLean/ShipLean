@@ -17,6 +17,8 @@ const arrange = (photo: boolean) => async (page: Page) => {
       name: 'Priya Shah',
       email: 'priya@larkspur.dev',
       isInstanceAdmin: true,
+      timeZone: 'Asia/Bangkok',
+      timeZoneLabel: 'Asia/Bangkok (UTC+07:00)',
       avatarColour: '#2f7fd8',
       photoUrl: photo ? '/api/users/me/photo?v=1' : null,
     },
@@ -33,6 +35,7 @@ const ready = async (page: Page) => {
   await expect(page.getByTestId(ids.myProjectsList)).toBeVisible();
   await expect(page.getByTestId(agentsTestIds.connectedRow)).toHaveCount(1);
   await expect(page.getByTestId(devicesTestIds.row)).toHaveCount(2);
+  await expect(page.getByTestId(ids.timeZoneSelect)).toBeEnabled();
 };
 
 // Scrolls a panel to just under the top bar.
