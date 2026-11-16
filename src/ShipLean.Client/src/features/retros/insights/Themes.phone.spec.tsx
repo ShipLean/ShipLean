@@ -258,7 +258,11 @@ test('ThemeCards_WhenAnActionChipIsTapped_ShouldOpenTheItemNotTheSheet', async (
 }) => {
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={base} />, open());
-  const chip = page.getByTestId(ids.retroThemeCard).first().getByTestId(itemPeekTestIds.link).first();
+  const chip = page
+    .getByTestId(ids.retroThemeCard)
+    .first()
+    .getByTestId(itemPeekTestIds.link)
+    .first();
   expect((await chip.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   await chip.tap();
   await expect(address(page)).toContainText('item=');
@@ -500,7 +504,9 @@ test('ThemeCards_WhenAThemeHasActionItems_ShouldShowThemWithoutAddAction', async
   await mount(<ThemesAddressHarness insights={bare} />, open());
   const cards = page.getByTestId(ids.retroThemeCard);
   await expect(cards).toHaveCount(base.themes.length);
-  await expect(cards.nth(0).getByTestId(itemPeekTestIds.link)).toHaveCount(base.themes[0].actionItems.length);
+  await expect(cards.nth(0).getByTestId(itemPeekTestIds.link)).toHaveCount(
+    base.themes[0].actionItems.length,
+  );
   await expect(cards.nth(0).getByTestId(ids.retroInsightsThemeAction)).toHaveCount(0);
   await expect(cards.nth(1).getByTestId(ids.retroInsightsThemeAction)).toHaveCount(1);
   await expect(page.getByTestId(ids.retroInsightsThemeAction)).toHaveCount(1);
