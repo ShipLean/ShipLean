@@ -174,6 +174,8 @@ for (const theme of THEMES) {
     const box = (await more.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(32);
     expect(box.width).toBe(box.height);
+    // The shot alone is within the 250px tolerance of a borderless button, so the border is asserted too.
+    await expect(more).toHaveCSS('border-top-width', '1px');
     await expect(more).toHaveScreenshot(`more-button-bordered.${theme}.png`, {
       animations: 'disabled',
     });
