@@ -7,7 +7,7 @@ namespace ShipLean.Application.Features.TaskChanges.Comments;
 // A CodeComment as the wire shape: side as "old" or "new", the time as a label.
 public static class CodeCommentDtos
 {
-    public static CodeCommentDto From(CodeComment comment, TimeProvider time) => new(
+    public static CodeCommentDto From(CodeComment comment, DateTimeOffset now, TimeZoneInfo zone) => new(
         comment.Id,
         comment.ParentId,
         comment.Repo,
@@ -20,11 +20,11 @@ public static class CodeCommentDtos
         comment.BodyHtml,
         comment.By,
         comment.ByAgent,
-        DisplayDate.Relative(comment.CreatedAt, time),
+        DisplayDate.Relative(comment.CreatedAt, now, zone),
         comment.ResolvedAt is not null,
         comment.OutdatedAt is not null,
         comment.SentBackAt is not null,
-        [.. comment.Replies.Select(r => From(r, time))]);
+        [.. comment.Replies.Select(r => From(r, now, zone))]);
 
     private static string? SideName(CodeSide? side)
     {
