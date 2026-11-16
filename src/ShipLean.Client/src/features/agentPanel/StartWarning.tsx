@@ -5,7 +5,7 @@ import { agentPanelTestIds as ids } from './testIds';
 export function StartWarning({ availability }: { availability: AgentStartAvailabilityDto }) {
   if (availability.warning === null) return null;
   return (
-    <p data-testid={ids.startWarning} className="m-0 text-[length:var(--text-sm)] text-warn">
+    <p data-testid={ids.startWarning} className="m-0 text-[length:var(--text-sm)] text-caution">
       {availability.warning}
     </p>
   );

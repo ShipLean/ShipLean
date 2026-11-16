@@ -8,6 +8,8 @@ import { agentPanelTestIds as ids } from './testIds';
 export function SessionEnd({ session }: { session: AgentSessionDto }) {
   if (session.live || !session.endText) return null;
   const { endText, endDetail, runLog } = session;
+  // endText can already end with the detail (a failed delivery does); say it once.
+  const showDetail = endDetail && !endText.includes(endDetail);
   return (
     <section
       data-testid={ids.sessionEnd}
@@ -19,7 +21,7 @@ export function SessionEnd({ session }: { session: AgentSessionDto }) {
         Why it ended
       </div>
       <div className="min-w-0 break-words">{endText}</div>
-      {endDetail ? (
+      {showDetail ? (
         <div className="min-w-0 whitespace-pre-wrap break-words text-[length:var(--text-xs)] text-ink-muted">
           {endDetail}
         </div>

@@ -22,6 +22,26 @@ test('SessionEnd_WhenDeliveryFailedAsAdmin_ShouldShowTheTextAndTheDetail', async
   await expect(page.getByTestId(ids.sessionEndRunLog)).toHaveCount(0);
 });
 
+test('SessionEnd_WhenDeliveryFailedAsAdmin_ShouldShowTheDetailOnce', async ({ mount, page }) => {
+  await mount(<SessionEnd session={deliveryFailedAsAdmin} />);
+
+  const text = (await page.getByTestId(ids.sessionEnd).textContent()) ?? '';
+  expect(text.split(deliveryFailedAsAdmin.endDetail!)).toHaveLength(2);
+});
+
+test('SessionEnd_WhenAgentErrorHasAMultiLineDetail_ShouldShowTheFullDetail', async ({
+  mount,
+  page,
+}) => {
+  await mount(<SessionEnd session={agentError} />);
+
+  // endText carries only the first line, so the whole detail is still shown below it.
+  const end = page.getByTestId(ids.sessionEnd);
+  await expect(end).toContainText('exit code 1');
+  const text = (await end.textContent()) ?? '';
+  expect(text).toContain('The build failed.\nexit code 1');
+});
+
 test('SessionEnd_WhenDeliveryFailedAsMember_ShouldShowTheTextOnly', async ({ mount, page }) => {
   await mount(<SessionEnd session={deliveryFailedAsMember} />);
 

@@ -13,6 +13,15 @@ test('DemoCreateWarning_WhenTheLastDeliveryFailed_ShouldShowTheWarningText', asy
   await mount(<DemoCreateWarning actions={actionsWithWarning} />);
 
   await expect(page.getByTestId(ids.demoCreateWarning)).toHaveText(createWarning);
+
+  // The class must exist: a dead utility falls back to body ink, so compare with the theme token itself.
+  const warn = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-warn)';
+    document.body.append(probe);
+    return getComputedStyle(probe).color;
+  });
+  await expect(page.getByTestId(ids.demoCreateWarning)).toHaveCSS('color', warn);
 });
 
 test('DemoCreateWarning_WhenThereIsNoWarning_ShouldRenderNothing', async ({ mount, page }) => {

@@ -5,7 +5,10 @@ import { demosTestIds as ids } from './testIds';
 export function DemoCreateWarning({ actions }: { actions: SprintDemoActionsDto }) {
   if (actions.createWarning === null) return null;
   return (
-    <p data-testid={ids.demoCreateWarning} className="m-0 text-[length:var(--text-sm)] text-warn">
+    <p
+      data-testid={ids.demoCreateWarning}
+      className="m-0 text-[length:var(--text-sm)] text-caution"
+    >
       {actions.createWarning}
     </p>
   );

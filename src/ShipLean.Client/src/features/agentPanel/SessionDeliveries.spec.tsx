@@ -25,7 +25,7 @@ test('SessionDeliveries_WhenTwoAttempts_ShouldListThemOldestFirstCollapsedUntilO
   await expect(page.getByTestId(ids.sessionDeliveries)).toBeVisible();
   await expect(rows.first()).toBeHidden();
 
-  await page.getByText('Delivery (2)').click();
+  await page.getByTestId(ids.sessionDeliveriesToggle).click();
 
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText('created');
@@ -42,7 +42,7 @@ test('SessionDeliveries_WhenNoAttempts_ShouldRenderNothing', async ({ mount, pag
   await mount(<SessionDeliveries session={deliveryFailedAsMember} />);
 
   await expect(page.getByTestId(ids.sessionDeliveries)).toHaveCount(0);
-  await expect(page.getByText('Delivery')).toHaveCount(0);
+  await expect(page.getByTestId(ids.sessionDeliveriesToggle)).toHaveCount(0);
 });
 
 test('SessionDeliveries_WhenErrorHoldsMarkup_ShouldRenderItAsText', async ({ mount, page }) => {
@@ -54,7 +54,7 @@ test('SessionDeliveries_WhenErrorHoldsMarkup_ShouldRenderItAsText', async ({ mou
       })}
     />,
   );
-  await page.getByText('Delivery (1)').click();
+  await page.getByTestId(ids.sessionDeliveriesToggle).click();
 
   await expect(page.getByTestId(ids.sessionDeliveryRow)).toContainText(markup);
   expect(await page.evaluate(() => (window as { __pwned?: boolean }).__pwned)).toBeUndefined();
@@ -75,7 +75,7 @@ test.describe('on a phone', () => {
         })}
       />,
     );
-    await page.getByText('Delivery (2)').click();
+    await page.getByTestId(ids.sessionDeliveriesToggle).click();
 
     await expect(page.getByTestId(ids.sessionDeliveryRow)).toHaveCount(2);
     const overflow = await page.evaluate(
