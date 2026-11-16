@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
+using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
+using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Logging;
 using ShipLean.TestSupport.Secrets;
@@ -144,6 +147,108 @@ public class AgentRunLogVisibilityTests : McpFixture
         var notesId = JsonDocument.Parse(text).RootElement.GetProperty("id").GetGuid();
 
         (await ListedAsync(TestUser.Priya, arranged.ItemId)).ShouldBe([notesId]);
+    }
+
+    // D10 on /api/downloads/{token}: a link read_attachment minted while the caller was an admin dies with the demotion, though it lives
+    // 10 minutes. Mutation: drop the IsHiddenAsync check from AttachmentDownloads.
+    [Test]
+    public async Task RunLog_WhenTheAdminWhoMintedADownloadLinkIsDemoted_ShouldBeNotFoundThroughIt()
+    {
+        var (arranged, _, name) = await UploadedAsync();
+        var read = await ReadAsync(TestUser.Joel, arranged.ItemKey, name);
+        read.IsToolError().ShouldBeFalse(read.Body);
+        var path = new Uri(read.Structured().GetProperty("download_url").GetString()!).AbsolutePath;
+        using (var asAdmin = await Client.GetAsync(path))
+        {
+            asAdmin.StatusCode.ShouldBe(HttpStatusCode.OK, "the link works while its user is an admin");
+        }
+
+        await using var database = await OpenDatabaseAsync();
+        await database.ExecuteAsync(
+            "UPDATE project_member SET role = 'member' WHERE project_id = @projectId AND user_id = @userId", new { projectId = arranged.ProjectId, userId = TestUser.Joel.Id });
+        using var demoted = await Client.GetAsync(path);
+
+        demoted.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await demoted.Content.ReadAsStringAsync()).ShouldNotContain("relay-host");
+    }
+
+    // D10 on the Markdown reader and archive routes: to a member the run log is not there (404, not 400 not-markdown), and a member can't
+    // archive it by id. Mutation: drop the IsHiddenAsync check from MarkdownView, or from AttachmentEndpoints.ArchiveAsync.
+    [Test]
+    public async Task RunLog_WhenMemberOpensItAsMarkdownOrArchivesIt_ShouldBeNotFoundAndStayLive()
+    {
+        var (arranged, runLogId, _) = await UploadedAsync();
+
+        using var markdown = await Api.ActingAs(TestUser.Priya).GetAsync($"api/attachments/{runLogId}/markdown");
+        using var archive = await Api.ActingAs(TestUser.Priya).PostJsonAsync($"api/attachments/{runLogId}/archive");
+
+        (await ApiClient.ReadApiErrorAsync(markdown, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        (await ApiClient.ReadApiErrorAsync(archive, HttpStatusCode.NotFound)).Code.ShouldBe(ApiErrorCodes.NotFound);
+        await ShouldStillBeTheRunLogAsync(arranged, runLogId);
+    }
+
+    // D10 in the next session's context: the `created` body lists the item's attachments to the agent, which may run for a member, so an
+    // earlier session's run log is left out. Mutation: drop the run-log filter from AgentContextLoader's attachment query.
+    [Test]
+    public async Task NextSession_WhenAnEarlierSessionLeftARunLog_ShouldNotListItInTheCreatedBody()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+        using var content = new MultipartFormDataContent { { new StringContent("notes"), "file", "notes.txt" } };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{arranged.ItemId}/attachments") { Content = content };
+        request.Headers.Add(TestAuthentication.UserHeader, TestUser.Priya.Id.ToString());
+        using var added = await Client.SendAsync(request);
+        added.StatusCode.ShouldBe(HttpStatusCode.OK, await added.Content.ReadAsStringAsync());
+
+        using var started = await Api.ActingAs(TestUser.Priya).PostJsonAsync($"api/work-items/{arranged.ItemId}/agent-session");
+        started.IsSuccessStatusCode.ShouldBeTrue(await started.Content.ReadAsStringAsync());
+
+        await using var database = await OpenDatabaseAsync();
+        var body = (await AgentDispatchArrange.DeliveriesAsync(database, arranged.ItemId)).Single(d => d.Action == "created" && d.SessionId != arranged.SessionId).Body;
+        body.ShouldContain("notes.txt", Case.Sensitive, "the item's other attachments are still listed");
+        body.ShouldNotContain(name, Case.Sensitive);
+        body.ShouldNotContain(runLogId.ToString(), Case.Sensitive);
+    }
+
+    // The run log's name is fixed and session ids are visible to members, so an upload of that name must not archive it. Mutation: remove the guard.
+    [Test]
+    public async Task RunLog_WhenAMemberUploadsItsNameOverTheApi_ShouldBeRefusedAndStayLive()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+        using var content = new MultipartFormDataContent { { new StringContent("forged"), "file", name } };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{arranged.ItemId}/attachments") { Content = content };
+        request.Headers.Add(TestAuthentication.UserHeader, TestUser.Priya.Id.ToString());
+
+        using var added = await Client.SendAsync(request);
+
+        var error = await ApiClient.ReadApiErrorAsync(added, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("That name is reserved for an agent run log.");
+        await ShouldStillBeTheRunLogAsync(arranged, runLogId);
+    }
+
+    // Mutation: remove the guard.
+    [Test]
+    public async Task RunLog_WhenAMemberAttachesItsNameOverMcp_ShouldBeRefusedAndStayLive()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+
+        var reply = await CallToolAsync(
+            await TokenAsync(TestUser.Priya, ReadWrite), "attach_file",
+            $$"""{"feature":"{{arranged.ItemKey}}","name":"{{name}}","content_type":"text/plain","base64":"Zm9yZ2Vk"}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        var error = reply.Structured().GetProperty("error");
+        error.GetProperty("code").GetString().ShouldBe("validation");
+        error.GetProperty("message").GetString().ShouldBe("That name is reserved for an agent run log.");
+        await ShouldStillBeTheRunLogAsync(arranged, runLogId);
+    }
+
+    private async Task ShouldStillBeTheRunLogAsync(AgentRunLogArrange arranged, Guid runLogId)
+    {
+        (await arranged.PanelSessionAsync(Api, TestUser.Joel)).RunLog.ShouldNotBeNull().AttachmentId.ShouldBe(runLogId);
+        using var download = await Api.ActingAs(TestUser.Joel).GetAsync($"api/attachments/{runLogId}/content");
+        download.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await download.Content.ReadAsStringAsync()).ShouldBe("relay-host.internal:8443 said no\n");
     }
 
     // Mutation: log the upload URL at Information when the session starts.

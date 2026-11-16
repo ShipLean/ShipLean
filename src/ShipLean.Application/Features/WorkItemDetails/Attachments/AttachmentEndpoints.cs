@@ -13,7 +13,7 @@ using ShipLean.Contracts.Errors;
 namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
 
 // What the attachment endpoints do: the access check first, then the store. Any member lists, uploads, downloads and archives, except that an
-// agent session's run log is listed and downloaded by project admins only (D10): to anyone else it is not there.
+// agent session's run log is listed, downloaded and archived by project admins only (D10): to anyone else it is not there.
 [RegisterPerRequest]
 public sealed class AttachmentEndpoints(IProjectAccess access, AttachmentStore store, AttachmentLimits limits, IRunLogAttachments runLogs)
 {
@@ -56,7 +56,12 @@ public sealed class AttachmentEndpoints(IProjectAccess access, AttachmentStore s
 
     public async Task ArchiveAsync(Guid id, CancellationToken cancellationToken)
     {
-        await access.RequireAsync(ProjectItem.Attachment, id, ProjectRole.Member, cancellationToken);
+        var (_, role) = await access.RequireAsync(ProjectItem.Attachment, id, ProjectRole.Member, cancellationToken);
+        if (await runLogs.IsHiddenAsync(id, role, cancellationToken))
+        {
+            throw ApiException.NotFound("That attachment does not exist.");
+        }
+
         await store.ArchiveAsync(id, cancellationToken);
     }
 }

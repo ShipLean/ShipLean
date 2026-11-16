@@ -63,6 +63,49 @@ public class GetAgentSessionTests : McpFixture
         reply.Texts().ShouldAllBe(text => !text.Contains(Detail) && !text.Contains("relay-host.internal"));
     }
 
+    // D9 and D4 over MCP: a member sees no delivery attempts whatever the end reason, but does see an agentError's detail (it is already in
+    // the member-visible activity log). Mutation: gate deliveries on the reason (or on a null end_detail) instead of the role.
+    [Test]
+    public async Task GetAgentSession_WhenCallerIsMemberOnAnAgentErrorSessionWithAttempts_ShouldShowTheDetailButNoDeliveries()
+    {
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            key = await KeyAsync(connection, item);
+            var relay = await AgentSessionSeeds.InsertConnectionAsync(connection);
+            var failed = await new AgentSessionSeeds(item, relay).WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("dotnet build failed")
+                .InsertAsync(connection);
+            await InsertAttemptsAsync(connection, failed, relay);
+        }
+
+        var reply = await CallAsync(TestUser.Priya, $$"""{"item":"{{key}}"}""");
+
+        var session = reply.Structured().GetProperty("session");
+        session.GetProperty("end_reason").GetString().ShouldBe(AgentEndReasons.AgentError);
+        session.GetProperty("end_detail").GetString().ShouldBe("dotnet build failed");
+        reply.Structured().GetProperty("deliveries").GetArrayLength().ShouldBe(0);
+        reply.Texts().ShouldAllBe(text => !text.Contains("relay-host.internal"));
+    }
+
+    // An archived run log is gone: the session no longer names it. Mutation: drop archived_at IS NULL from AgentSessionDetailReader's join.
+    [Test]
+    public async Task GetAgentSession_WhenTheRunLogAttachmentIsArchived_ShouldHaveNoRunLog()
+    {
+        var (key, session) = await ArrangeDeliveryFailedAsync();
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync(
+                "UPDATE attachment SET archived_at = now() WHERE id = (SELECT run_log_attachment_id FROM agent_session WHERE id = @session)", new { session });
+        }
+
+        var reply = await CallAsync(TestUser.Joel, $$"""{"item":"{{key}}"}""");
+
+        var seen = reply.Structured().GetProperty("session");
+        seen.GetProperty("end_detail").GetString().ShouldBe(Detail, "the caller is an admin, so only the archive hides the run log");
+        seen.TryGetProperty("run_log", out _).ShouldBeFalse("run_log is null, so it is left out");
+    }
+
     [TestCase("submitted", "Joel")]
     [TestCase("working", "Joel")]
     [TestCase("inputRequired", "Joel")]
@@ -142,6 +185,30 @@ public class GetAgentSessionTests : McpFixture
         first.Bodies.Concat(second.Bodies).Concat(third.Bodies).Order().ShouldBe(Enumerable.Range(1, 7).Select(n => $"same {n}"));
     }
 
+    // The cursor names its session: paging by item after someone restarts the agent must not read the new session's (empty) older page as the
+    // end of the old one. Mutation: ignore the session in the cursor.
+    [Test]
+    public async Task GetAgentSession_WhenTheItemsNewestSessionChangesBetweenPages_ShouldRefuseTheCursorOfTheOldOne()
+    {
+        var (key, session) = await ArrangeSessionWithActivitiesAsync(60);
+        var first = await PageAsync($$"""{"item":"{{key}}"}""");
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await connection.QuerySingleAsync<Guid>("SELECT work_item_id FROM agent_session WHERE id = @session", new { session });
+            await new AgentSessionSeeds(item, await AgentSessionSeeds.InsertConnectionAsync(connection)).WithState("working").WithCreatedAt(Now.AddMinutes(5))
+                .InsertAsync(connection);
+        }
+
+        var byItem = await CallAsync(TestUser.Joel, $$"""{"item":"{{key}}","before":"{{first.Next}}"}""");
+        var bySession = await PageAsync($$"""{"session":"{{session}}","before":"{{first.Next}}"}""");
+
+        byItem.IsToolError().ShouldBeTrue(byItem.Body);
+        var error = byItem.Structured().GetProperty("error");
+        error.GetProperty("code").GetString().ShouldBe("validation");
+        error.GetProperty("field").GetString().ShouldBe("before");
+        bySession.Bodies.ShouldBe(Enumerable.Range(1, 10).Reverse().Select(i => $"activity {i}"), "the old session still pages by its id");
+    }
+
     [Test]
     public async Task GetAgentSession_WhenBeforeIsNotACursor_ShouldBeAValidationErrorNamingBefore()
     {
@@ -162,6 +229,30 @@ public class GetAgentSessionTests : McpFixture
 
         var activity = reply.Structured().GetProperty("activities")[0];
         activity.GetProperty("body").GetString()!.Length.ShouldBe(4096);
+        activity.GetProperty("truncated").GetBoolean().ShouldBeTrue();
+    }
+
+    // Every activity text is capped, not only body. Mutation: drop the cap on result (or action, or parameter).
+    [TestCase("action")]
+    [TestCase("parameter")]
+    [TestCase("result")]
+    public async Task GetAgentSession_WhenAnActionTextIs10KB_ShouldCapItAt4KBAndFlagTruncated(string field)
+    {
+        Guid session;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            session = await new AgentSessionSeeds(item, await AgentSessionSeeds.InsertConnectionAsync(connection)).InsertAsync(connection);
+            var big = new string('x', 10 * 1024);
+            await connection.ExecuteAsync(
+                "INSERT INTO agent_activity (id, session_id, type, action, parameter, result, created_at) VALUES (gen_random_uuid(), @session, 'action', @action, @parameter, @result, @at)",
+                new { session, action = field == "action" ? big : "run", parameter = field == "parameter" ? big : "dotnet build", result = field == "result" ? big : "ok", at = Now.AddMinutes(-1) });
+        }
+
+        var reply = await CallAsync(TestUser.Joel, $$"""{"session":"{{session}}"}""");
+
+        var activity = reply.Structured().GetProperty("activities")[0];
+        activity.GetProperty(field).GetString()!.Length.ShouldBe(4096);
         activity.GetProperty("truncated").GetBoolean().ShouldBeTrue();
     }
 
@@ -367,7 +458,12 @@ public class GetAgentSessionTests : McpFixture
         var docs = await File.ReadAllTextAsync(Path.Combine(RepoPaths.Root, "docs", "mcp.md"));
         var row = docs.Split('\n').Single(line => line.StartsWith("| `get_agent_session` |", StringComparison.Ordinal));
 
-        arguments.ShouldAllBe(argument => row.Contains($"`{argument}`", StringComparison.Ordinal), row);
+        // The argument clauses come before "Result:", which also names `session` and `item` as result fields; match each clause itself.
+        var argumentText = row[..row.IndexOf("Result:", StringComparison.Ordinal)];
+        argumentText.ShouldContain("Exactly one of `session` (a session id) or `item` (a key: its newest session)", Case.Sensitive);
+        argumentText.ShouldContain("`before` (the `next_before` of a previous call", Case.Sensitive);
+        argumentText.ShouldContain("`limit` (default 50, 1 to 100", Case.Sensitive);
+        arguments.ShouldAllBe(argument => argumentText.Contains($"`{argument}` (", StringComparison.Ordinal), row);
         row.ShouldContain("| read |");
     }
 

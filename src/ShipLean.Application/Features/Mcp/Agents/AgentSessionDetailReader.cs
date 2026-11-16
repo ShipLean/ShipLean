@@ -8,7 +8,8 @@ namespace ShipLean.Application.Features.Mcp.Agents;
 
 // The reads behind get_agent_session. The item was resolved and the caller's access checked before this is called, so it never
 // decides who may see the session: it returns the session, its run log and every delivery attempt, and the tool applies
-// AgentSessionVisibility. Activities are paged newest first by a cursor of (created_at, id); every text is capped (AgentTextCap).
+// AgentSessionVisibility. Activities are paged newest first by a cursor of (created_at, id) that also names its session, so paging by item
+// can't slide onto a newer session started between pages (a before from another session is a validation error); every text is capped (AgentTextCap).
 public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgentDeliveryAttempts attempts)
 {
     // The session (it belongs to the item) or the item's newest; null when there is none.
@@ -31,6 +32,13 @@ public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgent
         if (row is null)
         {
             return null;
+        }
+
+        if (cursor is not null && cursor.Value.SessionId != row.Id)
+        {
+            throw ApiException.Validation(
+                "before is from a different agent session than the one this call reads (the item's newest session may have changed). Pass session with the id of the session you were paging.",
+                "before");
         }
 
         var page = (await connection.QueryAsync<ActivityRow>(new CommandDefinition(
@@ -56,7 +64,7 @@ public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgent
             itemKey,
             runLog,
             [.. shown.Select(ToActivity)],
-            more ? CursorOf(shown[^1]) : null,
+            more ? CursorOf(row.Id, shown[^1]) : null,
             deliveries);
     }
 
@@ -70,9 +78,9 @@ public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgent
         return new AgentSessionDetail.Activity(a.Id, a.Type, body, action, parameter, result, truncated, a.At);
     }
 
-    private static string CursorOf(ActivityRow last) => $"{last.At.UtcTicks.ToString(CultureInfo.InvariantCulture)}.{last.Id:N}";
+    private static string CursorOf(Guid sessionId, ActivityRow last) => $"{sessionId:N}.{last.At.UtcTicks.ToString(CultureInfo.InvariantCulture)}.{last.Id:N}";
 
-    private static (DateTimeOffset At, Guid Id)? ParseCursor(string? before)
+    private static (Guid SessionId, DateTimeOffset At, Guid Id)? ParseCursor(string? before)
     {
         if (string.IsNullOrWhiteSpace(before))
         {
@@ -80,12 +88,13 @@ public sealed class AgentSessionDetailReader(NpgsqlDataSource dataSource, IAgent
         }
 
         var parts = before.Split('.');
-        if (parts.Length == 2
-            && long.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var ticks)
+        if (parts.Length == 3
+            && Guid.TryParseExact(parts[0], "N", out var sessionId)
+            && long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var ticks)
             && ticks <= DateTimeOffset.MaxValue.Ticks
-            && Guid.TryParseExact(parts[1], "N", out var id))
+            && Guid.TryParseExact(parts[2], "N", out var id))
         {
-            return (new DateTimeOffset(ticks, TimeSpan.Zero), id);
+            return (sessionId, new DateTimeOffset(ticks, TimeSpan.Zero), id);
         }
 
         throw ApiException.Validation("before must be the next_before of a previous get_agent_session call.", "before");
