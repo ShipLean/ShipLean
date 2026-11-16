@@ -84,4 +84,5 @@ export const inspectionMetricsTestIds = {
   railOpenItem: 'inspection-metrics-rail-open-item',
   taskRowReviews: 'inspection-metrics-task-row-reviews',
   taskRowCommits: 'inspection-metrics-task-row-commits',
+  jsonBack: 'inspection-metrics-json-back',
 } as const;
