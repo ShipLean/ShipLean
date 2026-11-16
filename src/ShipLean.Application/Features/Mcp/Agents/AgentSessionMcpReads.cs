@@ -24,12 +24,17 @@ public sealed class AgentSessionMcpReads(NpgsqlDataSource dataSource)
         return [.. rows];
     }
 
-    // The key of the item a session belongs to; null when there is no such session.
-    public async Task<string?> ItemKeyOfAsync(Guid sessionId, CancellationToken cancellationToken)
+    // The key of the item a session belongs to, when the user is a member of its project; null for an unknown session and for one in
+    // a project the user is not in, so the two cannot be told apart.
+    public async Task<string?> ItemKeyOfAsync(Guid sessionId, Guid userId, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<string?>(new CommandDefinition(
-            "SELECT w.key FROM agent_session s JOIN work_item w ON w.id = s.work_item_id WHERE s.id = @sessionId",
-            new { sessionId }, cancellationToken: cancellationToken));
+            """
+            SELECT w.key FROM agent_session s JOIN work_item w ON w.id = s.work_item_id
+            JOIN project_member m ON m.project_id = w.project_id AND m.user_id = @userId AND m.archived_at IS NULL
+            WHERE s.id = @sessionId
+            """,
+            new { sessionId, userId }, cancellationToken: cancellationToken));
     }
 }

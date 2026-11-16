@@ -9,7 +9,7 @@ using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Agents;
 
-// get_work_item's agent_sessions and the get_agent_session shell over /mcp. Joel is an admin of SHIP and Priya a member; Joel is
+// get_work_item's agent_sessions over /mcp (get_agent_session is in GetAgentSession/). Joel is an admin of SHIP and Priya a member; Joel is
 // not in PART. Every test arranges its own item, so its sessions are the only ones it reads.
 [TestFixture]
 public class AgentSessionsMcpTests : McpFixture
@@ -96,7 +96,7 @@ public class AgentSessionsMcpTests : McpFixture
         text.ShouldBe(AgentEndText.For(AgentEndReasons.DeliveryFailed, Detail));
     }
 
-    // Red until lane A1a replaces the AgentEndText.For stub sentence, which ignores the detail; then it is green with no change here.
+    // Red until SHIP-1640 replaces the AgentEndText.For stub sentence, which ignores the detail; then it is green with no change here.
     [Test]
     public async Task GetWorkItem_WhenDeliveryFailedAndCallerIsAdmin_ShouldNameTheDetailInEndText()
     {
@@ -105,92 +105,6 @@ public class AgentSessionsMcpTests : McpFixture
         var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
 
         reply.Structured().GetProperty("agent_sessions")[0].GetProperty("end_text").GetString()!.ShouldContain(Detail);
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenBothSessionAndItem_ShouldBeAValidationErrorNamingTheField()
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_agent_session", $$"""{"session":"{{Guid.NewGuid()}}","item":"SHIP-124"}""");
-
-        reply.IsToolError().ShouldBeTrue();
-        var error = reply.Structured().GetProperty("error");
-        error.GetProperty("code").GetString().ShouldBe("validation");
-        error.GetProperty("field").GetString().ShouldBe("session");
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenNeitherSessionNorItem_ShouldBeAValidationErrorNamingTheField()
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_agent_session", "{}");
-
-        reply.IsToolError().ShouldBeTrue();
-        var error = reply.Structured().GetProperty("error");
-        error.GetProperty("code").GetString().ShouldBe("validation");
-        error.GetProperty("field").GetString().ShouldBe("item");
-    }
-
-    [TestCase(0)]
-    [TestCase(101)]
-    public async Task GetAgentSession_WhenLimitOutOfRange_ShouldBeAValidationErrorNamingLimit(int limit)
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_agent_session", $$"""{"item":"SHIP-124","limit":{{limit}}}""");
-
-        reply.Structured().GetProperty("error").GetProperty("field").GetString().ShouldBe("limit");
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenCallerIsNotAMemberOfTheItemsProject_ShouldBeNotFound()
-    {
-        Guid session;
-        string key;
-        await using (var connection = await OpenDatabaseAsync())
-        {
-            var item = await new WorkItemBuilder(SeedIds.Projects.Part).WithType("task").InsertAsync(connection);
-            key = await KeyAsync(connection, item);
-            session = await new AgentSessionSeeds(item, await AgentSessionSeeds.InsertConnectionAsync(connection)).InsertAsync(connection);
-        }
-        var token = await TokenAsync(TestUser.Joel, ReadOnly);
-
-        var byItem = await CallToolAsync(token, "get_agent_session", $$"""{"item":"{{key}}"}""");
-        var bySession = await CallToolAsync(token, "get_agent_session", $$"""{"session":"{{session}}"}""");
-
-        byItem.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("not_found");
-        bySession.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("not_found");
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenSessionIdIsUnknown_ShouldBeNotFound()
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_agent_session", $$"""{"session":"{{Guid.NewGuid()}}"}""");
-
-        reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe("not_found");
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenCallerIsMemberAndEndIsDeliveryFailed_ShouldHideDetailRunLogAndDeliveries()
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Priya, ReadOnly), "get_agent_session", """{"item":"SHIP-124"}""");
-
-        var session = reply.Structured().GetProperty("session");
-        session.GetProperty("end_reason").GetString().ShouldBe(AgentEndReasons.DeliveryFailed);
-        session.GetProperty("end_text").GetString().ShouldBe(AgentEndText.For(AgentEndReasons.DeliveryFailed, null));
-        session.TryGetProperty("end_detail", out _).ShouldBeFalse();
-        session.TryGetProperty("run_log", out _).ShouldBeFalse();
-        reply.Structured().GetProperty("deliveries").GetArrayLength().ShouldBe(0);
-    }
-
-    [Test]
-    public async Task GetAgentSession_WhenCallerIsAdmin_ShouldReturnTheShapePinnedInTestSupport()
-    {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_agent_session", """{"item":"SHIP-124"}""");
-
-        var actual = System.Text.Json.Nodes.JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
-        actual.Remove("project");
-        actual.Remove("open_url");
-        var expected = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(
-            Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "mcp", "get-agent-session.json")))!["admin"]!.AsObject();
-        expected["session"]!["end_text"] = AgentEndText.For(AgentEndReasons.DeliveryFailed, expected["session"]!["end_detail"]!.GetValue<string>());
-        System.Text.Json.Nodes.JsonNode.DeepEquals(actual, expected).ShouldBeTrue(actual.ToJsonString());
     }
 
     private async Task<string> ArrangeDeliveryFailedAsync()

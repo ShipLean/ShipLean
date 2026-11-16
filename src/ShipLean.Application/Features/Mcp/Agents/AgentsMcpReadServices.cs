@@ -8,5 +8,8 @@ namespace ShipLean.Application.Features.Mcp.Agents;
 public sealed class AgentsMcpReadServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddSingleton<AgentSessionMcpReads>();
+    {
+        services.AddSingleton<AgentSessionMcpReads>();
+        services.AddSingleton<AgentSessionDetailReader>();
+    }
 }
