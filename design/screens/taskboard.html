@@ -365,13 +365,29 @@
     task: [['key', 'Key (SHIP-123)'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points (informational)'], ['parent', 'Parent story (People grouping)'], ['empty', 'Show empty fields']],
     parent: [['key', 'Key'], ['points', 'Story points'], ['state', 'State'], ['assigned', 'Assigned to'], ['annotation', 'Task progress ☑ done/total']],
   };
+  const touchFields = {
+    task: [['key', 'Key'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points'], ['empty', 'Show empty fields']],
+    parent: [['key', 'Key'], ['points', 'Story points'], ['state', 'State'], ['assigned', 'Assigned to'], ['annotation', 'Task progress']],
+  };
+  let fieldsType = 'task';
   const sel = (opts, v) => `<select class="field">${opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
   function renderPane() {
     dlg.querySelectorAll('nav [data-pane]').forEach(b => b.setAttribute('aria-current', b.dataset.pane === paneId));
     if (paneId === 'fields') {
       const box = (kind, attr, f) => fieldLabels[kind].map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('');
+      /* At 900px and below: the built model in one column (SHIP-1626 D7): a Task / User Story / Bug switch, then Core
+         fields and Additional fields (up to 10, added from a select). Desktop keeps the two stacked groups below. */
+      const core = fieldsType === 'task' ? touchFields.task : touchFields.parent, attr = fieldsType === 'task' ? 'data-tf' : 'data-pf', f = fieldsType === 'task' ? S.taskFields : S.parentFields;
+      const typeBtn = (t, l) => `<button type="button" data-ftype="${t}" aria-pressed="${fieldsType === t}">${tIcon(t)} ${l}</button>`;
       pane.innerHTML = `<p class="hint">Choose what shows on each card on this Taskboard. Fields are edited on the card or in the work item form.</p>
-        <div class="fgrid">
+        <div class="fmodel m-only">
+          <div class="ftypes"><span class="seg" role="group" aria-label="Card type">${typeBtn('task', 'Task')}${typeBtn('story', 'User Story')}${typeBtn('bug', 'Bug')}</span><span class="xs muted">Settings for ${fieldsType === 'task' ? 'task' : fieldsType === 'story' ? 'story' : 'bug'} cards</span></div>
+          <fieldset><legend>Core fields</legend>${core.map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('')}</fieldset>
+          <fieldset><legend>Additional fields <span class="count">1 / 10</span></legend>
+            <div class="addl"><span class="xs muted">1</span><span>Priority</span><button class="ib" type="button" aria-label="Remove Priority">✕</button></div>
+            ${sel(['+ Add field (up to 10)', 'Due date', 'Component', 'Environment'], '+ Add field (up to 10)')}</fieldset>
+        </div>
+        <div class="fgrid d-only">
           <fieldset><legend>${tIcon('task')} Task cards</legend>${box('task', 'data-tf', S.taskFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
           <fieldset><legend>${tIcon('story')}${tIcon('bug')} Story and bug cards (row headers)</legend>${box('parent', 'data-pf', S.parentFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
         </div>`;
@@ -399,6 +415,7 @@
   dlg.addEventListener('click', e => {
     if (e.target === dlg || e.target.closest('[data-close]')) { dlg.hidden = true; return; }
     const nav = e.target.closest('[data-pane]'); if (nav) { paneId = nav.dataset.pane; renderPane(); return; }
+    const ft = e.target.closest('[data-ftype]'); if (ft) { fieldsType = ft.dataset.ftype; renderPane(); return; }
     const sw = e.target.closest('[data-tag]'); if (sw) { S.tagColors[sw.dataset.tag] = sw.dataset.c; renderPane(); render(); }
   });
   pane.addEventListener('change', e => {
