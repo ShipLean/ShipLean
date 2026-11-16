@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import {
   backlogView,
@@ -223,4 +224,38 @@ test('BeforeYouPlan_WhenTouch_ShouldMakeTheBannersEstimateATouchTarget', async (
   await expect(estimate).toHaveCount(1);
   const box = await estimate.boundingBox();
   expect(box!.height).toBeGreaterThanOrEqual(32);
+});
+
+test('BulkSprintSheet_ShouldOfferBacklogAndShowCapacity', async ({ mount, page }) => {
+  const server = await stubBacklog(page, planningManyView(), { sprints: planningSprints() });
+  await mount(
+    <SelectModeHarness>
+      <PlanningMode project={PROJECT} />
+    </SelectModeHarness>,
+    planning,
+  );
+  await expect(page.getByTestId(ids.row).first()).toBeVisible();
+  await pickMore(page, 'select');
+  // SHIP-160 is in Sprint 24; SHIP-185 is in the Backlog and has no estimate.
+  for (const key of ['SHIP-160', 'SHIP-185']) {
+    await rowOf(page, key).getByTestId(ids.touchRowSelect).tap();
+    await expect(rowOf(page, key)).toHaveAttribute('data-selected', 'true');
+  }
+
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move 2 items to');
+  await expect(sheet).toContainText('SHIP-160, SHIP-185 · 13 pts');
+  const sprint24 = page.locator(`[data-testid="${ids.bulkMoveSprint}"][data-sprint="sp24"]`);
+  await expect(sprint24.getByTestId(componentTestIds.capacityBar)).toBeVisible();
+  await expect(sprint24).toContainText('Current');
+  await expect(page.getByTestId(ids.bulkUnestimatedNote)).toHaveText(
+    'SHIP-185 has no estimate, so it adds 0.',
+  );
+
+  await page.getByTestId(ids.bulkMoveBacklog).tap();
+  await expect.poll(() => server.bulks.length).toBe(1);
+  // SHIP-185 is already in the Backlog, so only SHIP-160 moves.
+  expect(server.bulks[0].items.map((item) => item.id)).toEqual(['id-SHIP-160']);
+  expect(server.bulks[0].items[0].changes?.sprint).toEqual({ value: null });
 });

@@ -214,4 +214,6 @@ public static class BacklogTestIds
     public const string NotEstimatedBanner = "backlog-not-estimated-banner";
     public const string NotEstimatedEstimate = "backlog-not-estimated-estimate";
     public const string PlanningSectionCapacityLink = "backlog-planning-section-capacity-link";
+    public const string BulkMoveBacklog = "backlog-bulk-move-backlog";
+    public const string BulkUnestimatedNote = "backlog-bulk-unestimated-note";
 }
