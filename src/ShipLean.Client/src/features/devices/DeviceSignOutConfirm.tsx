@@ -22,11 +22,11 @@ export function DeviceSignOutConfirm({
         Sign out <b>{device.name}</b>? The app there goes back to Sign in straight away. Its server
         and email stay filled in.
       </span>
-      <span className="flex gap-2 phone:w-full phone:flex-col">
+      <span className="flex gap-2 touch:w-full">
         <button
           type="button"
           data-testid={ids.confirmCancel}
-          className="btn-ghost"
+          className="btn-ghost touch:h-[var(--touch-target)] touch:flex-1"
           disabled={pending}
           onClick={onCancel}
         >
@@ -35,7 +35,7 @@ export function DeviceSignOutConfirm({
         <button
           type="button"
           data-testid={ids.confirmGo}
-          className="btn-ghost text-alert hover:text-alert"
+          className="btn-danger-ghost touch:h-[var(--touch-target)] touch:flex-1"
           disabled={pending}
           onClick={onConfirm}
         >

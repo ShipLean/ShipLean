@@ -34,6 +34,8 @@ const ready = async (page: Page) => {
   await expect(page.getByTestId(ids.myProjectsList)).toBeVisible();
   await expect(page.getByTestId(agentsTestIds.connectedRow)).toHaveCount(1);
   await expect(page.getByTestId(devicesTestIds.row)).toHaveCount(2);
+  // SPRINT-13: the intro line sits above the panels (Profile_ShouldShowTheIntroLine).
+  await expect(page.getByTestId('profile-intro')).toBeVisible();
 };
 
 // Scrolls a panel to just under the top bar.

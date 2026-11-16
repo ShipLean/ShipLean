@@ -12,7 +12,7 @@ export function PanelFrame({
   title: string;
   meta?: string;
   testId: string;
-  /** A control on the heading's row; it takes the right edge at 900px and below, with the meta line under it. */
+  /** A control on the heading's row; at touch it moves to its own row at the right, under the meta line. */
   action?: ReactNode;
   /** The line under the header; a collapsed panel leaves it out. */
   rule?: boolean;
@@ -29,11 +29,13 @@ export function PanelFrame({
       >
         <h2 className="text-[length:var(--text-md)] font-semibold text-ink">{title}</h2>
         {meta === undefined ? null : (
-          <span className="text-[length:var(--text-xs)] text-ink-muted touch:order-3 touch:basis-full touch:text-[length:var(--text-sm)]">
+          <span className="text-[length:var(--text-xs)] text-ink-muted touch:order-2 touch:basis-full touch:text-[length:var(--text-sm)]">
             {meta}
           </span>
         )}
-        {action}
+        {action === undefined ? null : (
+          <span className="touch:order-3 touch:ml-auto">{action}</span>
+        )}
       </header>
       {children}
     </section>
