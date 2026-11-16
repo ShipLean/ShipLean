@@ -12,4 +12,5 @@ public static class RealtimeTestIds
     public const string Banner = "realtime-banner";
     public const string PresenceCount = "realtime-presence-count";
     public const string PresenceSheetItem = "realtime-presence-sheet-item";
+    public const string PresenceCountPill = "realtime-presence-count-pill";
 }

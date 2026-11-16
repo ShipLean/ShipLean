@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
+import { typeName } from '@shiplean/core/api/workItemTypes';
 import { Dialog } from '../../components/Dialog';
+import { TypeIcon } from '../../components/TypeIcon';
 import { useTouchShell } from '../../touch/useTouchShell';
 import { workItemSlots } from '../../pages/workItemSlots';
 import { routePath } from '../../routes';
+import { useWorkItem } from '../workItem/workItemApi';
 import { FormSlot } from '../../slots/FormSlot';
 import { ItemPeekContext } from './ItemPeekContext';
 import { itemPeekTestIds as ids } from './testIds';
@@ -28,6 +31,9 @@ function ItemPeekModal({
   close: () => void;
 }) {
   const { touch } = useTouchShell();
+  // The item page's own read, shared through the query cache: the bar names the item's type next to its key at touch.
+  const item = useWorkItem(project.id, itemKey).data;
+  const withType = touch && item !== undefined;
   // Above 900px the link sits in the header before ×; at 900px and below the full-screen Dialog puts it at the top right.
   const openFullPage = (
     <Link
@@ -40,7 +46,8 @@ function ItemPeekModal({
   );
   return (
     <Dialog
-      title={itemKey}
+      title={withType ? `${itemKey} ${typeName(item.type.id)}` : itemKey}
+      titleIcon={withType ? <TypeIcon type={item.type.id} /> : undefined}
       width="1200px"
       tall
       testId={ids.dialog}

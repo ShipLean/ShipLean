@@ -19,4 +19,5 @@ public static class QuickSearchTestIds
     public const string Note = "quick-search-note";
     public const string Scrim = "quick-search-scrim";
     public const string Cancel = "quick-search-cancel";
+    public const string Clear = "quick-search-clear";
 }
