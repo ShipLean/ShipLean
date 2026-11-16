@@ -18,13 +18,14 @@ public sealed class AgentRunLogLinks(ITransferTokens tokens)
 
     public static string NameOf(Guid sessionId) => $"agent-run-{sessionId}.log";
 
-    // The upload URL, or null when neither the instance's base URL nor the request's origin is known: a relative link is no use to a relay.
+    // The upload URL, or null (no token issued) when the instance has no base URL. The link is built from instance_settings.base_url only, never
+    // from the request: the Host header of a Start agent call is the caller's to choose, and an agent told to POST its admin-only run log and a
+    // live token to that host would hand both to whoever sent it. A relative link is no use to a relay either.
     public async Task<string?> IssueAsync(
-        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, string agentName, string? fallbackBaseUrl, CancellationToken cancellationToken)
+        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, string agentName, CancellationToken cancellationToken)
     {
         var baseUrl = await transaction.Connection!.QuerySingleOrDefaultAsync<string?>(new CommandDefinition(
             "SELECT base_url FROM instance_settings WHERE btrim(base_url) <> ''", transaction: transaction, cancellationToken: cancellationToken));
-        baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? fallbackBaseUrl : baseUrl;
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
             return null;

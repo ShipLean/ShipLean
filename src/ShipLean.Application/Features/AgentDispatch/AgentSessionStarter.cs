@@ -96,7 +96,7 @@ public sealed class AgentSessionStarter(
             return new AgentStartOutcome(null, AgentStartBlock.LiveSession);
         }
 
-        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, mode, cancellationToken);
+        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, mode, cancellationToken);
         var body = RenderBody(input with { RunLogUrl = runLogUrl }, workItemId);
         await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -147,7 +147,7 @@ public sealed class AgentSessionStarter(
         }
 
         var prompt = await winnerPrompt(transaction, cancellationToken);
-        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, fallbackBaseUrl, mode, cancellationToken);
+        var runLogUrl = await IssueRunLogLinkAsync(transaction, workItemId, sessionId, creatorId, plan.ConnectionId, mode, cancellationToken);
         var body = RenderBody(input with { Guidance = prompt, RunLogUrl = runLogUrl }, workItemId);
         await InsertDeliveryAsync(connection, transaction, sessionId, body, now, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -168,9 +168,10 @@ public sealed class AgentSessionStarter(
     }
 
     // The attachment is stamped with the connection's name, as the agent that uploaded it for the session's creator. A propose session gets
-    // no link: its envelope carries only the allowlisted input, and a link would let a read-only run write to the item.
+    // no link: its envelope carries only the allowlisted input, and a link would let a read-only run write to the item. The request's origin
+    // (fallbackBaseUrl) is deliberately not passed: the link comes from instance_settings.base_url only (AgentRunLogLinks.IssueAsync).
     private async Task<string?> IssueRunLogLinkAsync(
-        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, Guid connectionId, string? fallbackBaseUrl, AgentSessionMode mode, CancellationToken cancellationToken)
+        DbTransaction transaction, Guid workItemId, Guid sessionId, Guid creatorId, Guid connectionId, AgentSessionMode mode, CancellationToken cancellationToken)
     {
         if (mode == AgentSessionMode.Propose)
         {
@@ -178,7 +179,7 @@ public sealed class AgentSessionStarter(
         }
 
         var agent = await connections.GetAsync(connectionId, cancellationToken) ?? throw new InvalidOperationException("The session's agent connection disappeared while it started.");
-        return await runLogLinks.IssueAsync(transaction, workItemId, sessionId, creatorId, agent.Name, fallbackBaseUrl, cancellationToken);
+        return await runLogLinks.IssueAsync(transaction, workItemId, sessionId, creatorId, agent.Name, cancellationToken);
     }
 
     // False when the partial unique index ux_agent_session_live finds the item taken.
