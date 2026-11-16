@@ -4,14 +4,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using ShipLean.Application.Events;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Events;
+using ShipLean.UnitTest.Requests;
 
 namespace ShipLean.UnitTest.Events;
 
 [TestFixture]
 public class InMemoryProjectEventsTests
 {
-    private static InMemoryProjectEvents NewBus(ILogger<InMemoryProjectEvents>? logger = null, IHttpContextAccessor? accessor = null)
-        => new(logger ?? NullLogger<InMemoryProjectEvents>.Instance, accessor);
+    private static InMemoryProjectEvents NewBus(ILogger<InMemoryProjectEvents>? logger = null, ICurrentRequest? request = null)
+        => new(logger ?? NullLogger<InMemoryProjectEvents>.Instance, request);
 
     private static Task<List<ProjectEvent>> CollectAsync(IProjectEvents bus, Guid? projectId, int count, out IDisposable subscription)
     {
@@ -129,8 +130,9 @@ public class InMemoryProjectEventsTests
     {
         var context = new DefaultHttpContext();
         context.Request.Headers[ClientHeader.Name] = "tab-1";
-        var accessor = new HttpContextAccessor { HttpContext = context };
-        using var bus = NewBus(accessor: accessor);
+        var accessor = CurrentRequests.Accessor;
+        accessor.HttpContext = context;
+        using var bus = NewBus(request: CurrentRequests.Create());
         var projectId = Guid.NewGuid();
         var received = CollectAsync(bus, projectId, 3, out var subscription);
         using var _ = subscription;

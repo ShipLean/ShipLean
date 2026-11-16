@@ -9,7 +9,6 @@ public sealed class ProjectEventsServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpContextAccessor();
         services.AddSingleton<IProjectEvents, InMemoryProjectEvents>();
     }
 }

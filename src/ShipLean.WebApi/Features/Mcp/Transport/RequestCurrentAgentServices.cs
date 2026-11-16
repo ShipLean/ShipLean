@@ -6,8 +6,5 @@ namespace ShipLean.WebApi.Features.Mcp.Transport;
 public sealed class RequestCurrentAgentServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddHttpContextAccessor();
-        services.AddSingleton<ICurrentAgent, RequestCurrentAgent>();
-    }
+        => services.AddSingleton<ICurrentAgent, RequestCurrentAgent>();
 }
