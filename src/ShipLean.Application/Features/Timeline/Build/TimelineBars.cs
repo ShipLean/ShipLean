@@ -101,13 +101,14 @@ public static class TimelineBars
                 r.At, lens.HoursAt(r.At), lens.DayTime(r.At), r.Verdict,
                 r.AgentName is { } a ? TimelineLens.Agent(a) : lens.User(r.ByUserId)!, r.Note))
             .ToList();
+        var commitTimes = facts.Commits.Where(c => c.ItemKey == task.Key).Select(c => c.CommittedAt).ToList();
+        DateTimeOffset? lastCommit = commitTimes.Count == 0 ? null : commitTimes.Max();
         return new TimelineBarDto(
             task.Key, WorkItemTypeId.Task, task.Title, task.ParentKey, assignee, trace.State, trace.Start, trace.End,
             trace.Start is { } st ? lens.HoursAt(st) : null, trace.End is { } en ? lens.HoursAt(en) : null, hours,
             trace.Start is { } st2 ? lens.DayTime(st2) : null, trace.End is { } en2 ? lens.DayTime(en2) : null,
             trace.Start is null ? null : DisplayDate.Duration(raw), trace.Inferred, false, history, reviews,
-            // TODO: fill from the last commit time
-            null, null, null);
+            lastCommit, lastCommit is { } lc ? lens.HoursAt(lc) : null, lastCommit is { } lc2 ? lens.DayTime(lc2) : null);
     }
 
     private static TimelineStoryDto Bracket(TimelineLens lens, TimelineStoryFact story, List<TaskTrace> children, int idle, List<string> taskKeys)
