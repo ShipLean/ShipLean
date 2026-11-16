@@ -145,7 +145,9 @@ public sealed class AgentDeliverer(
         var durationMs = (int)Math.Min(int.MaxValue, time.GetElapsedTime(started).TotalMilliseconds);
         var error = AgentErrorText.Scrub(raw);
         var attempt = row.Attempts + 1;
-        var nextAttemptAt = error is not null && AgentDeliverySchedule.RetryAfter(row.Action, attempt) is { } wait ? time.GetUtcNow() + wait : (DateTimeOffset?)null;
+        // One reading of the clock for this failure: the attempt row's next_attempt_at and the delivery row's are the same instant.
+        var now = time.GetUtcNow();
+        var nextAttemptAt = error is not null && AgentDeliverySchedule.RetryAfter(row.Action, attempt) is { } wait ? now + wait : (DateTimeOffset?)null;
         await deliveryAttempts.RecordAsync(new AgentDeliveryAttemptCreate(row.Id, row.ConnectionId, attempt, at, status, error, durationMs, nextAttemptAt), cancellationToken);
 
         if (error is null)
@@ -154,7 +156,7 @@ public sealed class AgentDeliverer(
             return;
         }
 
-        await FailedAsync(row, agent?.Name ?? row.ConnectionId.ToString(), error, cancellationToken);
+        await FailedAsync(row, agent?.Name ?? row.ConnectionId.ToString(), error, now, cancellationToken);
     }
 
     // The receiver's HTTP status (null when nothing was sent) and the raw error, null when the receiver answered 200.
@@ -216,10 +218,9 @@ public sealed class AgentDeliverer(
             new { id = row.Id }, cancellationToken: cancellationToken));
     }
 
-    private async Task FailedAsync(AgentDeliveryRow row, string connectionName, string error, CancellationToken cancellationToken)
+    private async Task FailedAsync(AgentDeliveryRow row, string connectionName, string error, DateTimeOffset now, CancellationToken cancellationToken)
     {
         var attempts = row.Attempts + 1;
-        var now = time.GetUtcNow();
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         if (AgentDeliverySchedule.RetryAfter(row.Action, attempts) is { } wait)
         {
