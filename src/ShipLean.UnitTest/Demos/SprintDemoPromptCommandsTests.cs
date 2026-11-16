@@ -17,7 +17,8 @@ public partial class SprintDemoPromptCommandsTests
         "Start it, wait until it answers and record against it, but only if every command it needs is one you are allowed to run (step 6). "
         + "Otherwise build the demo from slides alone and say so in the intro and in your final response.";
 
-    private static readonly DateTimeOffset Expires = DateTimeOffset.Parse("2026-11-05T09:30:00Z", System.Globalization.CultureInfo.InvariantCulture);
+    // Printed as text only; these tests never read it.
+    private static readonly DateTimeOffset Expires = DateTimeOffset.UnixEpoch;
 
     private static readonly DemoBrand DefaultBrand = new(true, "<svg id=\"default-logo\"/>", null, null, null, true, ":root { --color-bg: #e8eef7; }", null);
 
@@ -169,7 +170,8 @@ public partial class SprintDemoPromptCommandsTests
         var commands = new List<string>();
         var current = new StringBuilder();
         var quote = '\0';
-        for (var i = 0; i < joined.Length; i++)
+        var i = 0;
+        while (i < joined.Length)
         {
             var c = joined[i];
             if (quote != '\0')
@@ -192,6 +194,7 @@ public partial class SprintDemoPromptCommandsTests
             {
                 current.Append(c);
             }
+            i++;
         }
         commands.Add(current.ToString());
         return commands.Select(c => KeywordPrefix().Replace(c.Trim(), string.Empty)).Where(c => c.Length > 0);
