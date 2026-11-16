@@ -91,7 +91,7 @@ describe('useBrowserZoneOnLoad', () => {
   // Mutation: drop the module-level once flag (use a per-mount ref instead).
   test('useBrowserZoneOnLoad_WhenShellMountsAgain_ShouldNotSendAgain', async () => {
     const sent = stubServer(null);
-    const { mount } = await page();
+    const { mount, act } = await page();
     const first = mount();
     await vi.waitFor(() => expect(puts(sent)).toHaveLength(1));
     first.unmount();
@@ -99,7 +99,7 @@ describe('useBrowserZoneOnLoad', () => {
     mount();
 
     await vi.waitFor(() => expect(meReads(sent)).toBeGreaterThanOrEqual(3));
-    await Promise.resolve();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
     expect(puts(sent)).toHaveLength(1);
   });
 
