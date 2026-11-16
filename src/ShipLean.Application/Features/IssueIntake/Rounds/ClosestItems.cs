@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Dapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Search;
@@ -57,22 +57,13 @@ public sealed class ClosestItems(IServiceScopeFactory scopes, NpgsqlDataSource d
     private async Task<IReadOnlyList<SearchResultItem>> SearchAsync(GitHubIssueRecord issue, Guid runAsUserId, CancellationToken cancellationToken)
     {
         await using var scope = scopes.CreateAsyncScope();
-        var accessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
-        var previous = accessor.HttpContext;
-        accessor.HttpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, runAsUserId.ToString())], nameof(ClosestItems))),
-        };
-        try
+        using (scope.ServiceProvider.GetRequiredService<ICurrentRequest>().ActAs(
+            new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, runAsUserId.ToString())], nameof(ClosestItems)))))
         {
             var results = await scope.ServiceProvider.GetRequiredService<ISearchRanker>().SearchAsync(
                 new SearchQuery(issue.Title, [issue.ProjectId], IncludeClosed: true, Limit: IAgentSessionStarter.MaxRelatedItems + 1),
                 cancellationToken);
             return [.. results.Items.Where(i => i.WorkItemId != issue.WorkItemId).Take(IAgentSessionStarter.MaxRelatedItems)];
-        }
-        finally
-        {
-            accessor.HttpContext = previous;
         }
     }
 }

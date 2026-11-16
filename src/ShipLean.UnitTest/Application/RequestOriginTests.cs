@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using ShipLean.Application.Requests;
 using ShipLean.Contracts;
+using ShipLean.UnitTest.Requests;
 
 namespace ShipLean.UnitTest.Application;
 
@@ -45,11 +46,9 @@ public class RequestOriginTests
     [Test]
     public void ClientId_WhenTheRequestChanges_ShouldFollowTheCurrentRequest()
     {
-        var accessor = new HttpContextAccessor
-        {
-            HttpContext = new DefaultHttpContext { Request = { Headers = { [ClientHeader.Name] = "first" } } },
-        };
-        var origin = new RequestOrigin(() => accessor.HttpContext);
+        var accessor = CurrentRequests.Accessor;
+        accessor.HttpContext = new DefaultHttpContext { Request = { Headers = { [ClientHeader.Name] = "first" } } };
+        var origin = new RequestOrigin(CurrentRequests.Create());
         origin.ClientId.ShouldBe("first");
 
         accessor.HttpContext = new DefaultHttpContext { Request = { Headers = { [ClientHeader.Name] = "second" } } };
@@ -57,5 +56,5 @@ public class RequestOriginTests
         origin.ClientId.ShouldBe("second");
     }
 
-    private static RequestOrigin OriginOf(HttpContext? context) => new(() => context);
+    private static RequestOrigin OriginOf(HttpContext? context) => new(CurrentRequests.Over(context));
 }

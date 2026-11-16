@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts;
@@ -11,5 +10,5 @@ public sealed class ActingCurrentUser(IServiceProvider services, CurrentUser rea
 {
     public Guid? Acting { get; set; }
 
-    public Guid Id => services.GetService<IHttpContextAccessor>()?.HttpContext is null && Acting is { } id ? id : real.Id;
+    public Guid Id => services.GetService<ICurrentRequest>()?.Exists != true && Acting is { } id ? id : real.Id;
 }

@@ -16,18 +16,16 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Capture;
 
 // What the capture and refine tools share: the instance's base URL for open_url, resolving an agent's words into ids, and the tool result shape.
 [RegisterPerRequest]
-public sealed class CaptureSupport(IServiceProvider services, AgentBaseUrl baseUrl, ItemResolver items, SprintResolver sprints, ProjectResolver projects)
+public sealed class CaptureSupport(ICurrentRequest request, AgentBaseUrl baseUrl, ItemResolver items, SprintResolver sprints, ProjectResolver projects)
 {
     public const int MaxItems = BulkLimits.MaxRows;
 
-    private HttpContext Http => services.GetRequiredService<IHttpContextAccessor>().HttpContext!;
-
     public async Task<string> BaseUrlAsync(CancellationToken cancellationToken)
-        => (await baseUrl.ReadAsync(Http.Request, cancellationToken)).Issuer;
+        => (await baseUrl.ReadAsync(cancellationToken)).Issuer;
 
     // The agent authorization this call runs under, or null for a caller that has none (the gateway).
     public Guid? AgentAuthorizationId()
-        => Guid.TryParse(Http.User.FindFirst(AgentClaims.AuthorizationClaim)?.Value, out var id) ? id : null;
+        => Guid.TryParse(request.User?.FindFirst(AgentClaims.AuthorizationClaim)?.Value, out var id) ? id : null;
 
     // The project an item key belongs to (its key prefix), for the result's `project` and open_url.
     public Task<ResolvedProject> ProjectOfAsync(ResolvedItem item, CancellationToken cancellationToken)

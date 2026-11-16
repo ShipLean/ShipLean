@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Agoda.IoC.Core;
 using Microsoft.AspNetCore.Authentication;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Users;
 using ShipLean.WebApi.Features.Auth.Proxy;
 
@@ -9,7 +10,7 @@ namespace ShipLean.WebApi.Features.Auth;
 
 // Issues and clears this request's sign-in cookie.
 [RegisterSingleton]
-public sealed class CookieSession(IServiceProvider services, IUserAccounts accounts, UserSessions sessions)
+public sealed class CookieSession(ICurrentRequest request, IUserAccounts accounts, UserSessions sessions)
 {
     // A session for the user under their current stamp.
     public async Task SignInAsync(Guid userId, CancellationToken cancellationToken)
@@ -31,10 +32,8 @@ public sealed class CookieSession(IServiceProvider services, IUserAccounts accou
     private Task IssueAsync(Guid userId, ClaimsPrincipal principal)
     {
         sessions.Forget(userId);
-        return Http.SignInAsync(AuthServices.CookieScheme, principal, new AuthenticationProperties { IsPersistent = true });
+        return request.SignInAsync(AuthServices.CookieScheme, principal, new AuthenticationProperties { IsPersistent = true });
     }
 
-    public Task SignOutAsync() => Http.SignOutAsync(AuthServices.CookieScheme);
-
-    private HttpContext Http => services.GetRequiredService<IHttpContextAccessor>().HttpContext ?? throw new InvalidOperationException("No request to sign in on.");
+    public Task SignOutAsync() => request.SignOutAsync(AuthServices.CookieScheme);
 }
