@@ -130,4 +130,23 @@ public class SchemaTests
             ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
         }
     }
+
+    // Mutations: make the column NOT NULL; drop the CHECK; widen the pattern so "Not a zone" passes.
+    [Test]
+    public async Task AppUserTimeZone_WhenShapedWrong_ShouldBeRejectedAndTheColumnStayNullable()
+    {
+        await using var connection = await _database.OpenAsync();
+        var id = await new AppUserBuilder().WithEmail("zone-shape@example.test").InsertAsync(connection);
+
+        (await connection.ExecuteScalarAsync<string>(
+            "SELECT is_nullable FROM information_schema.columns WHERE table_name = 'app_user' AND column_name = 'time_zone'")).ShouldBe("YES");
+        (await connection.ExecuteScalarAsync<int>("SELECT count(*) FROM pg_constraint WHERE conname = 'app_user_time_zone_check'")).ShouldBe(1);
+        foreach (var zone in new[] { "Not a zone", "Asia/Bangkok/", new string('a', 65) })
+        {
+            var ex = await Should.ThrowAsync<PostgresException>(async () => await connection.ExecuteAsync(
+                "UPDATE app_user SET time_zone = @zone WHERE id = @id", new { zone, id }));
+            ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
+        }
+        await connection.ExecuteAsync("UPDATE app_user SET time_zone = 'Asia/Bangkok' WHERE id = @id", new { id });
+    }
 }
