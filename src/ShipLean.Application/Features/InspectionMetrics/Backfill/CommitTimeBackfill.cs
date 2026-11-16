@@ -42,9 +42,7 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
             cancellationToken: cancellationToken))).ToList();
 
         var page = rows.Take(limit).ToList();
-        var links = page.Where(row => PlanMarkers.TryReadCommit(row.Title, out _, out _))
-            .Select(row => { PlanMarkers.TryReadCommit(row.Title, out var sha, out _); return new MissingCommitTimeDto(sha, row.Url, row.ItemKey); })
-            .ToList();
+        var links = page.Select(MissingOf).OfType<MissingCommitTimeDto>().ToList();
         return new CommitTimeMissingPageDto(links, rows.Count > limit ? page[^1].Id.ToString() : null);
     }
 
@@ -90,6 +88,9 @@ public sealed class CommitTimeBackfill(NpgsqlDataSource dataSource, ICurrentUser
         }
         return new CommitTimeBackfillCountsDto(updated, alreadySet, notFound);
     }
+
+    private static MissingCommitTimeDto? MissingOf(LinkRow row)
+        => PlanMarkers.TryReadCommit(row.Title, out var sha, out _) ? new MissingCommitTimeDto(sha, row.Url, row.ItemKey) : null;
 
     // Anyone else, a disabled admin included, gets the same answer as for a tool that does not exist.
     private async Task RequireInstanceAdminAsync(CancellationToken cancellationToken)

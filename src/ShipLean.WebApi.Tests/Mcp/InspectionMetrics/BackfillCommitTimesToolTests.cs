@@ -76,7 +76,7 @@ public class BackfillCommitTimesToolTests : ReportTestBase
         reply.Structured().GetProperty("updated").GetInt32().ShouldBe(0);
         reply.Structured().GetProperty("already_set").GetInt32().ShouldBe(1);
         reply.Structured().GetProperty("not_found").GetInt32().ShouldBe(1);
-        (await TimeOfAsync(WithTime)).ShouldBe(DateTimeOffset.Parse(SetAt).ToUniversalTime());
+        (await TimeOfAsync(WithTime)).ShouldBe(DateTimeOffset.Parse(SetAt, System.Globalization.CultureInfo.InvariantCulture).ToUniversalTime());
     }
 
     [Test]
