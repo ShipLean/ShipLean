@@ -346,7 +346,9 @@ test('routes_WhenNewIsNotAKind_ShouldDropIt', () => {
 });
 
 test('routes_WhenWorkItemHasAddLink_ShouldKeepOnlyAKnownType', () => {
-  expect(matchRoute('/p/SHIP/items/SHIP-141', '?addLink=causedBy')?.query).toEqual({ addLink: 'causedBy' });
+  expect(matchRoute('/p/SHIP/items/SHIP-141', '?addLink=causedBy')?.query).toEqual({
+    addLink: 'causedBy',
+  });
   expect(matchRoute('/p/SHIP/items/SHIP-141', '?addLink=related')?.query).toEqual({});
 });
 
