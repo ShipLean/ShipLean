@@ -69,11 +69,16 @@ public class DemoUploadLinkLeakTests : McpFixture
     [TearDown]
     public void StopListening() => _listener?.Dispose();
 
-    // A relay that answers every send by failing with its own request body in the message.
+    // A relay that answers every send by failing with a slice of its own request body around the upload link (a whole body would not fit the
+    // attempt's 1,000 character column, and the test would then fail for that reason instead of for the leak).
     private sealed class EchoingReceiver : HttpMessageHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => throw new HttpRequestException($"Relay rejected the job: {await request.Content!.ReadAsStringAsync(cancellationToken)}");
+        {
+            var body = await request.Content!.ReadAsStringAsync(cancellationToken);
+            var from = Math.Max(0, body.IndexOf("token=", StringComparison.Ordinal) - 80);
+            throw new HttpRequestException($"Relay rejected the job: {body.Substring(from, Math.Min(300, body.Length - from))}");
+        }
     }
 
     [Test]
