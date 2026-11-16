@@ -25,7 +25,11 @@ public class AgentDeliveryAttemptRecordingTests : ApiFixture
     private RecordedLogs _logs = null!;
 
     [TearDown]
-    public void DisposeReceiver() => _receiver.Dispose();
+    public void DisposeReceiver()
+    {
+        _receiver.Dispose();
+        _logs.Dispose();
+    }
 
     // The database is shared by the class, so rows left pending by an earlier test are set aside: a pass sends everything due.
     [SetUp]
