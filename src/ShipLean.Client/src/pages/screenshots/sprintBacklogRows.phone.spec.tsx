@@ -1,5 +1,6 @@
 import type { Page } from 'playwright';
 import { expect } from '@playwright/experimental-ct-react';
+import { componentTestIds } from '../../components/testIds';
 import { sprintsTestIds as ids } from '../../features/sprints/testIds';
 import { phonePageShots } from './shootPhone';
 import { stubShell } from './shellStub';
@@ -47,7 +48,7 @@ phonePageShots([
     ...backlog,
     act: async (page) => {
       await page.getByTestId(ids.storyRow).first().getByTestId(ids.stateButton).tap();
-      await expect(page.getByTestId(ids.statesSheetOption)).toHaveCount(4);
+      await expect(page.getByTestId(componentTestIds.stateMenuOption)).toHaveCount(4);
     },
   },
   {
@@ -71,7 +72,7 @@ phonePageShots([
     act: async (page) => {
       const closed = states.find((s) => s.type === 'story' && s.name === 'Closed')!;
       await page.getByTestId(ids.storyRow).first().getByTestId(ids.stateButton).tap();
-      await page.getByTestId(ids.statesSheetOption).filter({ hasText: closed.name }).tap();
+      await page.getByTestId(componentTestIds.stateMenuOption).filter({ hasText: closed.name }).tap();
       await expect(page.getByText('SHIP-141 was changed by someone else')).toBeVisible();
       await expect(page.getByTestId(ids.storyRow).first()).toHaveAttribute('data-flash', 'true');
     },

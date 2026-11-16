@@ -34,7 +34,7 @@ public sealed class SprintBacklogPhoneRows(IPage page)
     {
         await Row(itemKey).GetByTestId(SprintsTestIds.StateButton).TapAsync();
         return await page.RunAndWaitForResponseAsync(
-            () => Sheet.GetByTestId(SprintsTestIds.StatesSheetOption).Filter(new() { HasText = stateName }).TapAsync(),
+            () => Sheet.GetByTestId(ComponentTestIds.StateMenuOption).Filter(new() { HasText = stateName }).TapAsync(),
             r => r.Request.Method == "PATCH" && new Uri(r.Url).AbsolutePath.StartsWith("/api/work-items/", StringComparison.Ordinal));
     }
 }

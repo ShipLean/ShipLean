@@ -146,4 +146,10 @@ export const sprintsTestIds = {
   endRowTitle: 'sprints-end-row-title',
   endSetAllSelect: 'sprints-end-set-all-select',
   endUnfinished: 'sprints-end-unfinished',
+  // SHIP-1835 phone sprint backlog
+  glanceItemKey: 'sprints-backlog-glance-item-key',
+  glanceIdle: 'sprints-backlog-glance-idle',
+  unassignedAvatar: 'sprints-backlog-unassigned-avatar',
+  listPoints: 'sprints-backlog-list-points',
+  burndownDay: 'sprints-backlog-burndown-day',
 } as const;

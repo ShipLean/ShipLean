@@ -1,7 +1,6 @@
 import type { MemberDto } from '@shiplean/core/api/projects';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { Avatar } from '../../../../components/Avatar';
-import { TypeIcon } from '../../../../components/TypeIcon';
 import { Sheet } from '../../../../touch/Sheet';
 import { ItemLink } from '../../../itemPeek/ItemLink';
 import { sprintsTestIds as ids } from '../../testIds';
@@ -25,7 +24,12 @@ export function InProgressSheet({
   onClose,
 }: InProgressSheetProps) {
   return (
-    <Sheet open={open} title="In progress now" onClose={onClose}>
+    <Sheet
+      open={open}
+      title="In progress now"
+      subtitle="Who is working on what right now."
+      onClose={onClose}
+    >
       {members.map(({ user }) => {
         const active = activeByUser.get(user.id) ?? [];
         return (
@@ -33,16 +37,19 @@ export function InProgressSheet({
             key={user.id}
             data-testid={ids.glancePerson}
             data-user-id={user.id}
-            className="grid gap-0.5 py-1"
+            className="-mx-3 grid gap-0.5 border-b border-edge px-4 py-2 last:border-b-0"
           >
-            <div className="flex items-center gap-2 px-1 text-[length:var(--text-sm)] font-semibold">
-              <Avatar {...user} />
+            <div className="flex min-h-[var(--touch-target)] items-center gap-2 text-[length:var(--text-base)]">
+              <Avatar {...user} size="lg" />
               <span>
                 {user.name}
                 {user.id === meId ? <span className="text-ink-muted"> (you)</span> : null}
               </span>
-              <span className="ml-auto text-[length:var(--text-xs)] font-normal text-ink-muted">
-                {active.length > 0 ? `${active.length} active` : '—'}
+              <span
+                data-testid={active.length > 0 ? undefined : ids.glanceIdle}
+                className="ml-auto text-[length:var(--text-sm)] text-ink-muted"
+              >
+                {active.length > 0 ? `${active.length} active` : 'Nothing active'}
               </span>
             </div>
             {active.map((item) => (
@@ -51,10 +58,15 @@ export function InProgressSheet({
                 itemKey={item.key}
                 testId={ids.glancePersonItem}
                 onClick={onClose}
-                className="flex min-h-[var(--touch-target)] items-center gap-2 rounded-control py-1 pr-1 pl-7 text-[length:var(--text-base)] text-inherit no-underline active:bg-signal-soft"
+                className="flex min-h-[var(--touch-target)] items-center gap-2 rounded-control py-1 pr-1 pl-10 text-[length:var(--text-base)] text-inherit no-underline active:bg-signal-soft"
               >
-                <TypeIcon type={item.type.id} />
                 <span className="min-w-0">{item.title}</span>
+                <span
+                  data-testid={ids.glanceItemKey}
+                  className="flex-none font-mono text-[length:var(--text-xs)] text-ink-muted"
+                >
+                  {item.key}
+                </span>
               </ItemLink>
             ))}
           </section>

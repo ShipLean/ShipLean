@@ -38,6 +38,8 @@ export function KpiTile({ testId, value, unit, label, to, linkTestId, wrap }: Kp
       </div>
       <div className="text-[length:var(--text-xs)] text-ink-muted touch:truncate touch:text-[11.5px]">
         {label}
+        {/* A tile that is a link says so with a › (SHIP-724 D7 design). */}
+        {to === undefined ? null : <span aria-hidden="true"> ›</span>}
       </div>
     </>
   );

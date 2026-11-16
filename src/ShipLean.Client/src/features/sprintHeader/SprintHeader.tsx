@@ -50,11 +50,16 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
       All sprints
     </Link>
   );
+  // At touch the date line reads as one phrase, "19 Oct – 30 Oct · 5 days left", and only a running sprint's time left is
+  // bold (the sprint backlog and demo designs; SHIP-1626 ND4-11).
   const when = (
-    <div className="flex flex-wrap items-center gap-[var(--space-2)] text-[length:var(--text-sm)] text-ink-muted">
+    <div className="flex flex-wrap items-center gap-[var(--space-2)] text-[length:var(--text-sm)] text-ink-muted touch:gap-1">
       <span data-testid={ids.dates}>{sprint.datesLabel}</span>
       <span aria-hidden="true">·</span>
-      <b data-testid={ids.timeLeft} className="font-semibold text-ink">
+      <b
+        data-testid={ids.timeLeft}
+        className={`font-semibold text-ink ${sprint.status === 'current' ? '' : 'touch:font-normal touch:text-ink-muted'}`}
+      >
         {sprint.timeLabel}
       </b>
     </div>

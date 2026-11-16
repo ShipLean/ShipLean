@@ -11,6 +11,11 @@ import { StoryWithTasks, TouchStoryWithTasks } from './StoryWithTasks';
 import type { SprintStory } from './sprintStories';
 import { TouchUnparentedTasks, UnparentedTasks } from './UnparentedTasks';
 
+// The points of the list's stories and bugs (tasks' points are informational and not counted).
+function storyPoints(stories: SprintStory[]): number {
+  return stories.reduce((sum, { story }) => sum + (story.points ?? 0), 0);
+}
+
 const HEADINGS = ['Title', 'Key', 'State', 'Assigned', 'Tasks'] as const;
 
 interface BacklogTableProps {
@@ -68,9 +73,10 @@ export function BacklogTable({ projectId, sprintId, stories, unparented }: Backl
     return (
       <section className="grid">
         <div className="flex items-center gap-2 px-3 pt-3.5 pb-1.5 text-[length:var(--text-sm)] text-ink-muted">
-          <b className="text-[length:var(--text-base)] font-semibold text-ink">
-            {stories.length === 1 ? '1 story or bug' : `${stories.length} stories and bugs`}
-          </b>
+          <b className="text-[length:var(--text-base)] font-semibold text-ink">Stories and bugs</b>
+          <span data-testid={ids.listPoints}>
+            {stories.length} · {storyPoints(stories)} pts
+          </span>
           <button
             type="button"
             role="switch"
@@ -103,6 +109,7 @@ export function BacklogTable({ projectId, sprintId, stories, unparented }: Backl
               changer={changer}
               open={showTasks && !closed.has(entry.story.id)}
               onToggle={() => toggle(entry.story.id)}
+              tasksShown={showTasks}
             />
           ))}
           {showTasks ? <TouchUnparentedTasks tasks={unparented} changer={changer} /> : null}

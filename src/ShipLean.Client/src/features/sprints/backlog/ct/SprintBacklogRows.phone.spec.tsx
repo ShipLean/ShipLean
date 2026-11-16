@@ -6,7 +6,9 @@ import {
   sprintsWithGoals,
   stubSprintBacklog,
 } from '../../../../pages/screenshots/fixtures/sprints';
+import { componentTestIds } from '../../../../components/testIds';
 import { touchTestIds } from '../../../../touch/testIds';
+import { itemPeekTestIds } from '../../../itemPeek/testIds';
 import { sprintsTestIds as ids } from '../../testIds';
 
 // The Sprint backlog's two-line rows and States sheet on a phone (SHIP-724, L724c). Runs in the CT phone project.
@@ -63,14 +65,36 @@ test('StatesSheet_WhenOpened_ShouldShowEachStatesCategory', async ({ mount, page
   // The row whose sheet is open takes the accent tint.
   await expect(row).not.toHaveCSS('background-color', resting);
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('States');
-  await expect(sheet.getByTestId(ids.statesSheetOption)).toHaveCount(4);
-  await expect(sheet.getByTestId(ids.statesSheetCategory)).toHaveText([
+  await expect(sheet.getByTestId(componentTestIds.stateMenuOption)).toHaveCount(4);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetGroup)).toHaveText([
     'Proposed',
     'In progress',
     'Resolved',
     'Completed',
   ]);
+});
+
+// SPRINT-4: the sheet names the item it changes and marks its current state (K1b).
+test('SprintStatesSheet_ShouldNameTheItemAndMarkCurrent', async ({ mount, page }) => {
+  await open(page, mount);
+
+  const row = page.getByTestId(ids.taskRow).first();
+  const key = (await row.getAttribute('data-key'))!;
+  const title = (await row.getByTestId(itemPeekTestIds.link).first().textContent())!;
+  const state = (await row.getByTestId(ids.stateButton).getAttribute('aria-label'))!.split(': ')[1]!;
+  await row.getByTestId(ids.stateButton).tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText(`State of ${key}`);
+  await expect(sheet).toContainText(title);
+  const options = sheet.getByTestId(componentTestIds.stateMenuOption);
+  const current = options.filter({ hasText: state });
+  const other = options.filter({ hasNotText: state }).first();
+  await expect(current).toHaveAttribute('aria-current', 'true');
+  await expect(other).not.toHaveAttribute('aria-current', 'true');
+  // The current row is tinted; the others are not.
+  const otherBg = await other.evaluate((e) => getComputedStyle(e).backgroundColor);
+  await expect(current).not.toHaveCSS('background-color', otherBg);
 });
 
 for (const theme of THEMES) {
