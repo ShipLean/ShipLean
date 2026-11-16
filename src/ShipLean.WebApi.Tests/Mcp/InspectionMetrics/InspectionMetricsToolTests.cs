@@ -31,11 +31,14 @@ public class InspectionMetricsToolTests : McpFixture
         body.Remove("open_url");
         var fromTool = body.Deserialize<InspectionMetricsViewDto>(InspectionMetricsJson.McpOptions)!;
 
-        var fromApi = await Api.ActingAs(TestUser.Joel).GetJsonAsync<InspectionMetricsViewDto>($"api/projects/{SeedIds.Projects.Ship}/inspection-metrics?range=lastQuarter&cut=who");
+        var webOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
+        using var response = await Api.ActingAs(TestUser.Joel).GetAsync($"api/projects/{SeedIds.Projects.Ship}/inspection-metrics?range=lastQuarter&cut=who");
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK, text);
+        var fromApi = JsonSerializer.Deserialize<InspectionMetricsViewDto>(text, webOptions).ShouldNotBeNull();
 
         fromTool.Range.ShouldBe(InspectionRange.LastQuarter);
         fromTool.Cut.ShouldBe(InspectionCut.Who);
-        var webOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
         JsonSerializer.Serialize(fromTool with { GeneratedAt = fromApi.GeneratedAt }, webOptions)
             .ShouldBe(JsonSerializer.Serialize(fromApi, webOptions));
     }
