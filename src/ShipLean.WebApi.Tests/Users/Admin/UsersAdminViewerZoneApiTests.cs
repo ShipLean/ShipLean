@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dapper;
 using ShipLean.Contracts.Users.Admin;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Identity;
@@ -15,27 +16,42 @@ namespace ShipLean.WebApi.Tests.Users.Admin;
 [TestFixture]
 public class UsersAdminViewerZoneApiTests : ApiFixture
 {
-    private async Task<string?> LastSignInLabelAsync()
+    // A viewer of its own, an instance admin: the seeded users' zones are never touched.
+    private async Task<TestUser> ArrangeViewerAsync(string? zone)
     {
-        await using (var connection = await OpenDatabaseAsync())
+        await using var connection = await OpenDatabaseAsync();
+        var viewer = TestUser.Of(await new AppUserBuilder().Admin().InsertAsync(connection));
+        if (zone is not null)
         {
-            await connection.ExecuteAsync("UPDATE app_user SET last_sign_in_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = SeedIds.Users.Tom });
+            await ViewerZoneArrange.SetAsync(Api, viewer, zone);
         }
 
-        using var response = await Api.ActingAs(TestUser.Joel).GetAsync("api/admin/users");
+        return viewer;
+    }
+
+    private async Task<string?> LastSignInLabelAsync(TestUser viewer)
+    {
+        Guid person;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            person = await new AppUserBuilder().InsertAsync(connection);
+            await connection.ExecuteAsync("UPDATE app_user SET last_sign_in_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = person });
+        }
+
+        using var response = await Api.ActingAs(viewer).GetAsync("api/admin/users");
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var users = JsonSerializer.Deserialize<AdminUsersDto>(await response.Content.ReadAsStringAsync(), AuthClient.Json)!;
 
-        return users.Users.Single(u => u.Id == SeedIds.Users.Tom).LastSignIn;
+        return users.Users.Single(u => u.Id == person).LastSignIn;
     }
 
     // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative call in UserAdmin.
     [Test]
     public async Task UserAdmin_WhenViewerIsInBangkok_ShouldDateTheLastSignInByTheBangkokDay()
     {
-        await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+        var viewer = await ArrangeViewerAsync(ViewerZoneTestData.BangkokId);
 
-        var label = await LastSignInLabelAsync();
+        var label = await LastSignInLabelAsync(viewer);
 
         // 20:00 UTC is 03:00 the next day in Bangkok; two years old, so the label is the short day with its year.
         var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
@@ -47,7 +63,9 @@ public class UsersAdminViewerZoneApiTests : ApiFixture
     [Test]
     public async Task UserAdmin_WhenViewerHasNoZone_ShouldDateTheLastSignInByTheUtcDay()
     {
-        var label = await LastSignInLabelAsync();
+        var viewer = await ArrangeViewerAsync(null);
+
+        var label = await LastSignInLabelAsync(viewer);
 
         label.ShouldBe(ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.Zero).ToString("d MMM yyyy", CultureInfo.InvariantCulture));
     }
