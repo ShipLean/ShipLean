@@ -23,6 +23,11 @@ public class SprintDemoPromptTests
 
     private static readonly DemoBrand DefaultBrand = new(true, "<svg id=\"default-logo\"/>", null, null, null, true, ":root { --color-bg: #e8eef7; }", null);
 
+#pragma warning disable AG0051 // the prompt prints this date as text; no clock reads it.
+    private static readonly DemoBrand ProjectBrand = new(false, null, LogoUrl, "image/png", new DateTimeOffset(2026, 11, 5, 9, 30, 0, TimeSpan.Zero), false,
+        ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
+#pragma warning restore AG0051
+
     private static string Render(SprintDemoData? data = null, DemoBrand? brand = null)
         => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand);
 
@@ -785,6 +790,23 @@ public class SprintDemoPromptTests
         text.ShouldContain("\"key\":\"KEY-31\",\"type\":\"bug\"");
         CountOf(text, "\"type\":\"story\"").ShouldBe(7);
         text.ShouldNotContain("{{");
+    }
+
+    // C4: the handover channel (the create_sprint_demo MCP tool) renders exactly the text it rendered before the channels existed. The goldens
+    // were rendered from the template before the tools and return blocks moved out of it.
+    [TestCase("environment")]
+    [TestCase("no-environment")]
+    [TestCase("project-logo")]
+    public void Render_WhenHandover_ShouldMatchTodaysText(string name)
+    {
+        var text = name switch
+        {
+            "no-environment" => Render(Data("  ")),
+            "project-logo" => Render(brand: ProjectBrand),
+            _ => Render(),
+        };
+
+        text.ShouldBe(File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.UnitTest", "Demos", "Fixtures", $"sprint-demo-prompt-handover-{name}.golden.md")));
     }
 
     private static int CountOf(string text, string needle)
