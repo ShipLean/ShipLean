@@ -43,7 +43,7 @@ test('TouchSprintBlock_WhenOverCapacity_ShouldShowOver', async ({ mount, page })
   ).toBe(0);
 });
 
-test('TouchSprintBlock_WhenMoreTapped_ShouldOfferAddCapacityOpenSprint', async ({
+test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({
   mount,
   page,
 }) => {
@@ -56,7 +56,7 @@ test('TouchSprintBlock_WhenMoreTapped_ShouldOfferAddCapacityOpenSprint', async (
   await section(page, 'Sprint 25').getByTestId(touchTestIds.moreButton).tap();
   await expect(page.locator(actionRow('add'))).toHaveText('+ Add');
   await expect(page.locator(actionRow('capacity'))).toHaveText('Capacity');
-  await expect(page.locator(actionRow('open-sprint'))).toHaveCount(0);
+  await expect(page.locator(actionRow('open-sprint'))).toHaveText('Open sprint');
   await page.getByTestId(touchTestIds.sheetClose).tap();
 
   await section(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
