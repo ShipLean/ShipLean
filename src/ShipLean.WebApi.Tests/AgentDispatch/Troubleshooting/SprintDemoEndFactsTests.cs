@@ -18,8 +18,6 @@ namespace ShipLean.WebApi.Tests.AgentDispatch.Troubleshooting;
 // The Demo band's facts (C6): SprintDemoReader reads the demo item's latest session's end reason and detail with C3 applied for
 // the viewer. The facts are internal, so they are seen through the Failed StatusMessage, which SprintDemoStatusRule builds with
 // AgentEndText.For.
-// TODO: red until SHIP-1640 (A1a) makes SprintDemoStatusRule build the Failed message with AgentEndText.For and gives deliveryFailed
-// its "<detail>" wording; the admin assertion then goes green. The member assertions hold today.
 [TestFixture]
 public class SprintDemoEndFactsTests : ApiFixture
 {

@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
 
 namespace ShipLean.Application.Features.Demos.Reads;
@@ -38,7 +39,10 @@ internal static class SprintDemoStatusRule
 
         if (facts.LatestSessionState is "failed" or "canceled" or "stale" && facts.LatestSessionEndedAt >= requested)
         {
-            return (SprintDemoStatus.Failed, $"The agent session ended as {facts.LatestSessionState} before a video came back.");
+            // A session that ended without a recorded reason (a seed or a writer that predates reasons) keeps the state-only wording.
+            return (SprintDemoStatus.Failed, facts.LatestSessionEndReason is { } reason
+                ? AgentEndText.For(reason, facts.LatestSessionEndDetail)
+                : $"The agent session ended as {facts.LatestSessionState} before a video came back.");
         }
 
         return (SprintDemoStatus.Requested, null);

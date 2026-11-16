@@ -1,4 +1,5 @@
 using ShipLean.Application.Features.Demos.Reads;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
 
 namespace ShipLean.UnitTest.Demos;
@@ -17,8 +18,10 @@ public class SprintDemoStatusRuleTests
         DateTimeOffset? delivered = null,
         DateTimeOffset? expires = null,
         string? sessionState = null,
-        DateTimeOffset? sessionEnded = null)
-        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded, null, null);
+        DateTimeOffset? sessionEnded = null,
+        string? endReason = null,
+        string? endDetail = null)
+        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded, endReason, endDetail);
 
     [Test]
     public void Decide_WhenNotRequestedAndNotClosed_ShouldBeClosable()
@@ -111,11 +114,24 @@ public class SprintDemoStatusRuleTests
     [TestCase("failed")]
     [TestCase("canceled")]
     [TestCase("stale")]
-    public void Decide_WhenLatestSessionEndedBadlyAfterTheRequest_ShouldBeFailedNamingTheState(string state)
+    public void Decide_WhenLatestSessionEndedWithoutAReason_ShouldBeFailedNamingTheState(string state)
     {
         var result = SprintDemoStatusRule.Decide(Facts(expires: Now.AddHours(1), sessionState: state, sessionEnded: Requested.AddMinutes(10)), Now);
 
         result.ShouldBe((SprintDemoStatus.Failed, $"The agent session ended as {state} before a video came back."));
+    }
+
+    [TestCase("failed", AgentEndReasons.DeliveryFailed, "No answer within 5 seconds. (2 tries)", "The agent connection didn't take the job: No answer within 5 seconds. (2 tries)")]
+    [TestCase("failed", AgentEndReasons.DeliveryFailed, null, "The agent connection didn't take the job.")]
+    [TestCase("failed", AgentEndReasons.AgentError, "Build broke.\nstack trace", "The agent reported an error: Build broke.")]
+    [TestCase("stale", AgentEndReasons.Stale, "No activity for 30 minutes since x.", "The agent went quiet for 30 minutes.")]
+    [TestCase("canceled", AgentEndReasons.Canceled, null, "The agent session was stopped.")]
+    [TestCase("failed", AgentEndReasons.Unknown, null, "The agent session ended before ShipLean recorded why.")]
+    public void Decide_WhenLatestSessionEndedWithAReason_ShouldBeFailedWithItsSentence(string state, string reason, string? detail, string message)
+    {
+        var facts = Facts(expires: Now.AddHours(1), sessionState: state, sessionEnded: Requested.AddMinutes(10), endReason: reason, endDetail: detail);
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Failed, message));
     }
 
     [Test]
