@@ -14,7 +14,10 @@ const PHONE_WIDTH = 390;
 /** The Live dot to mask on a shell page, or nothing when something opaque covers it: a full-screen dialog's header (the
  * item modal, the image viewer, the New action item) sits over the top bar, and Playwright paints a mask over whatever
  * is on top, so masking there would hide that header from the comparison. A translucent sheet scrim still shows the
- * dot, so it stays masked. */
+ * dot, so it stays masked. Limits, each of which keeps the mask (the old behaviour): only the dot's centre is tested;
+ * elementsFromPoint skips pointer-events:none layers; a cover counts only when its own background-color is fully opaque
+ * and its own opacity is 1 (ancestors' opacity, background images and gradients are not read); and a dialog still
+ * fading in when this runs is not yet opaque, so `act` must wait for its dialog to be visible. */
 export async function liveDotMask(page: Page) {
   const liveDot = page.getByTestId(realtimeTestIds.liveDot);
   const covered = await liveDot.evaluate((dot) => {
