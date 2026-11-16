@@ -105,7 +105,9 @@ public static class TimelineBars
             task.Key, WorkItemTypeId.Task, task.Title, task.ParentKey, assignee, trace.State, trace.Start, trace.End,
             trace.Start is { } st ? lens.HoursAt(st) : null, trace.End is { } en ? lens.HoursAt(en) : null, hours,
             trace.Start is { } st2 ? lens.DayTime(st2) : null, trace.End is { } en2 ? lens.DayTime(en2) : null,
-            trace.Start is null ? null : DisplayDate.Duration(raw), trace.Inferred, false, history, reviews);
+            trace.Start is null ? null : DisplayDate.Duration(raw), trace.Inferred, false, history, reviews,
+            // TODO: fill from the last commit time
+            null, null, null);
     }
 
     private static TimelineStoryDto Bracket(TimelineLens lens, TimelineStoryFact story, List<TaskTrace> children, int idle, List<string> taskKeys)

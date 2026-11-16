@@ -63,6 +63,8 @@ public class BauToolCoverageTests
         ["create_sprint"] = Kind.NoItems,
         ["create_sprint_demo"] = Kind.NoItems,
         ["list_projects"] = Kind.NoItems,
+        // Lists task keys and titles once the facts reader fills in; the lane that does that moves it to ListsItems if BAU items can appear.
+        ["inspection_metrics"] = Kind.NoItems,
         ["planning_guide"] = Kind.NoItems,
         ["list_retrospectives"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,
