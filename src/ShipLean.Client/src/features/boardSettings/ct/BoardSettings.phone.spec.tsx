@@ -76,13 +76,13 @@ test('StyleRules_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ 
     boardSettingsDto({ settings: { ...emptySettings(), styleRules: [blocked, spike] } }),
     ['Blocked', 'Spike'],
   );
-  await page.clock.install({ time: 0 });
-  await page.clock.pauseAt(1000);
   await mount(
     <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="styles" />,
   );
   const rules = page.getByTestId(paneIds.styleRow);
   await expect(rules).toHaveCount(2);
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
   const order = () =>
     page
       .getByTestId(paneIds.styleName)

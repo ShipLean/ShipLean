@@ -54,11 +54,6 @@ phonePageShots([
     ...pane('board-settings-styles-drag', 'styles', (page) =>
       expect(page.getByTestId(ids.styleRow)).toHaveCount(3),
     ),
-    arrange: async (page: Page) => {
-      await page.clock.install({ time: 0 });
-      await page.clock.pauseAt(1000);
-      await arrange(page);
-    },
     // Hold the first rule's grip for the K5 lift, then move halfway down the second rule and keep holding.
     act: async (page: Page) => {
       const grip = await page.getByTestId(ids.styleGrip).first().boundingBox();
@@ -66,6 +61,8 @@ phonePageShots([
       if (!grip || !over) throw new Error('no box');
       const from = { x: Math.round(grip.x + grip.width / 2), y: Math.round(grip.y + grip.height / 2) };
       const to = { x: Math.round(over.x + over.width / 2), y: Math.round(over.y + over.height / 2) };
+      await page.clock.install({ time: 0 });
+      await page.clock.pauseAt(1000);
       const cdp = await page.context().newCDPSession(page);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
       await page.clock.runFor(450);
