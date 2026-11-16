@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,12 +9,12 @@ using ShipLean.Application.Features.FeaturesOverview;
 using ShipLean.Application.Features.WorkItems.Reads.Changes;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Screens;
-using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Users;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Screens;
 
 namespace ShipLean.WebApi.Tests.Screens;
@@ -89,6 +90,46 @@ public class FeatureDigestApiTests : ApiFixture
 
     private static string Health(string from, string to) => $$"""[{"field":"health","from":"{{from}}","to":"{{to}}","fromLabel":null,"toLabel":null}]""";
 
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone in DigestLines or FeatureDigest. LateEveningUtc is 20:00 UTC, 03:00 the next day in Bangkok; the person
+    // last saw the digest an hour earlier. Expected labels are plain arithmetic on the instant, not DisplayDate.
+    [Test]
+    public async Task Digest_WhenViewerIsInBangkok_ShouldLabelChangesByTheBangkokDay()
+    {
+        var mei = TestUser.Of(await MemberAsync());
+        var at = ViewerZoneTestData.LateEveningUtc;
+        var item = await FeatureAsync();
+        await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new DigestSeenBuilder(mei.Id!.Value, Ship).WithSeenAt(at.AddHours(-1)).InsertAsync(connection);
+        }
+
+        await ViewerZoneArrange.SetAsync(Api, mei, ViewerZoneTestData.BangkokId);
+
+        var pages = await PagesAsync(mei);
+
+        pages[0].SinceLabel.ShouldBe($"since {at.AddHours(6).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
+        LinesOf(pages, item).Single(l => l.Kind == DigestLineKind.StatusLine).AtLabel.ShouldBe(at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+    }
+
+    [Test]
+    public async Task Digest_WhenViewerHasNoZone_ShouldLabelChangesByTheUtcDay()
+    {
+        var mei = TestUser.Of(await MemberAsync());
+        var at = ViewerZoneTestData.LateEveningUtc;
+        var item = await FeatureAsync();
+        await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new DigestSeenBuilder(mei.Id!.Value, Ship).WithSeenAt(at.AddHours(-1)).InsertAsync(connection);
+        }
+
+        var pages = await PagesAsync(mei);
+
+        pages[0].SinceLabel.ShouldBe($"since {at.AddHours(-1).ToString("ddd HH:mm", CultureInfo.InvariantCulture)}");
+        LinesOf(pages, item).Single(l => l.Kind == DigestLineKind.StatusLine).AtLabel.ShouldBe(at.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+    }
+
     [Test]
     public async Task Digest_WhenSeenTwoDaysAgo_ShouldListChangesSinceThen()
     {
@@ -131,7 +172,7 @@ public class FeatureDigestApiTests : ApiFixture
         await using (var connection = await OpenDatabaseAsync())
         {
             await new QuestionBuilder(item).Text("Parakeet or Whisper?").AskedBy(SeedIds.Users.Priya, null, Ago(TimeSpan.FromHours(2))).BuildAsync(connection);
-            await new DecisionBuilder(item).Question("Approve the dark-mode colours?").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromHours(1))).BuildAsync(connection);
+            await new DecisionBuilder(item).Question("Approve the dark-mode colours?").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromMinutes(30))).BuildAsync(connection);
             await new DecisionBuilder(item).Question("Raised before I last looked").RaisedBy(SeedIds.Users.Priya, "Claude Code", Ago(TimeSpan.FromDays(3))).BuildAsync(connection);
         }
 
@@ -143,7 +184,7 @@ public class FeatureDigestApiTests : ApiFixture
         row.Lines[0].By.ShouldNotBeNull().Id.ShouldBe(SeedIds.Users.Priya);
         row.Lines[0].AgentName.ShouldBeNull();
         row.Lines[1].AgentName.ShouldBe("Claude Code");
-        row.Lines[1].AtLabel.ShouldBe(DisplayDate.Relative(row.Lines[1].At, TimeProvider.System));
+        row.Lines[1].AtLabel.ShouldBe("30m ago");
     }
 
     [Test]
@@ -182,7 +223,7 @@ public class FeatureDigestApiTests : ApiFixture
         }
 
         await using var dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(ConnectionString));
-        var digest = new FeatureDigest(dataSource, new WorkItemChanges(dataSource), new SettableCurrentUser { Id = me }, TimeProvider.System);
+        var digest = new FeatureDigest(dataSource, new WorkItemChanges(dataSource), new SettableCurrentUser { Id = me }, TimeProvider.System, new FixedViewerZone());
 
         var whileMember = await digest.GetAsync(Ship, null, CancellationToken.None);
         await connection.ExecuteAsync("UPDATE project_member SET archived_at = now() WHERE project_id = @Ship AND user_id = @me", new { Ship, me });

@@ -19,6 +19,8 @@ public static class UsageEventNames
     public const string AgentSessionStopped = "agent_session.stopped";
     public const string AgentSessionOpened = "agent_session.opened";
     public const string AgentSessionFinished = "agent_session.finished";
+    public const string AgentSessionViewed = "agent_session.viewed";
+    public const string AgentSessionRunLogUploaded = "agent_session.run_log_uploaded";
     public const string ProjectCreated = "project.created";
     public const string ProjectJoined = "project.joined";
     public const string ProjectLeft = "project.left";
@@ -147,6 +149,7 @@ public static class UsageEventNames
     public const string InstanceAnalyticsChanged = "instance.analytics_changed";
     public const string InstanceAgentConnectionCreated = "instance.agent_connection_created";
     public const string InstanceAgentConnectionChanged = "instance.agent_connection_changed";
+    public const string InstanceAgentConnectionTested = "instance.agent_connection_tested";
     public const string InstanceUserAdded = "instance.user_added";
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";

@@ -22,7 +22,8 @@ public sealed class FeaturesOverview(
     IWorkItemChanges changes,
     INeedsYouCounts needsYou,
     ICurrentUser currentUser,
-    TimeProvider clock) : IFeaturesOverview
+    TimeProvider clock,
+    IViewerZone viewerZone) : IFeaturesOverview
 {
     private const int ChangesCap = 500;
 
@@ -32,7 +33,7 @@ public sealed class FeaturesOverview(
         var seenAt = await connection.ExecuteScalarAsync<DateTimeOffset?>(new CommandDefinition(
             "SELECT seen_at FROM feature_digest_seen WHERE user_id = @userId AND project_id = @projectId",
             new { userId = currentUser.Id, projectId }, cancellationToken: cancellationToken));
-        var (since, sinceLabel) = FeaturesSince.Of(seenAt, clock);
+        var (since, sinceLabel) = FeaturesSince.Of(seenAt, clock, viewerZone.Zone);
         var changed = (await changes.SinceTimeAsync(projectId, since, ChangesCap, null, cancellationToken)).Entries.Count;
 
         // Features waiting in an intake (Triage) state are kept out of the backlog, so they are out of the rank too.
@@ -103,7 +104,7 @@ public sealed class FeaturesOverview(
         }
 
         var by = r.VerifiedBy is { } id ? users.GetValueOrDefault(id) : null;
-        return new StatusVerifiedDto(at, DisplayDate.Relative(at, clock), StatusVerifiedDto.IsStale(at, clock.GetUtcNow()), by, r.VerifiedAgent, r.VerifiedVia);
+        return new StatusVerifiedDto(at, DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone), StatusVerifiedDto.IsStale(at, clock.GetUtcNow()), by, r.VerifiedAgent, r.VerifiedVia);
     }
 
     private sealed record FieldRow(Guid Id, string StatusLine, DateTimeOffset? VerifiedAt, Guid? VerifiedBy, string? VerifiedAgent, string? VerifiedVia, string? Health);

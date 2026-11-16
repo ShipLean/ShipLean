@@ -1,7 +1,6 @@
 using System.Text.Json;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.Contracts;
-using ShipLean.Core;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.TestIds;
@@ -39,14 +38,14 @@ public class ProfileTimeZoneTests : SeededAcceptanceTest
     public async Task Profile_WhenAnotherZoneIsPicked_ShouldShowItsLabelAndKeepItAfterReload()
     {
         await SetZoneAsync(ViewerZoneTestData.BangkokId);
-        DisplayDate.TryZone(LondonId, out var london).ShouldBeTrue();
+        var londonOffset = TimeZoneInfo.FindSystemTimeZoneById(LondonId).GetUtcOffset(TimeProvider.System.GetUtcNow());
         await Page.GotoAsync(Links.Profile());
-        await Expect(Current).ToHaveTextAsync(DisplayDate.ZoneLabel(ViewerZoneTestData.Bangkok, TimeProvider.System.GetUtcNow()));
+        await Expect(Current).ToHaveTextAsync("Asia/Bangkok (UTC+07:00)");
         await Expect(Select).ToBeEnabledAsync();
 
         await Page.RunAndWaitForApiAsync("/api/me/time-zone", "PUT", () => Select.SelectOptionAsync(LondonId));
 
-        var londonLabel = DisplayDate.ZoneLabel(london, TimeProvider.System.GetUtcNow());
+        var londonLabel = $"{LondonId} (UTC+{londonOffset:hh\\:mm})";
         await Expect(Current).ToHaveTextAsync(londonLabel);
         await Page.ReloadAsync();
         await Expect(Current).ToHaveTextAsync(londonLabel);

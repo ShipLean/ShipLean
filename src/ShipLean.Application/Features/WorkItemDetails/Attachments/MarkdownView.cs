@@ -1,6 +1,7 @@
 using Agoda.IoC.Core;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Refs;
@@ -9,15 +10,20 @@ using ShipLean.Contracts.WorkItems;
 namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
 
 // A Markdown attachment for the reader page: the file, its work item, its source, HTML, outline, images and the item's other Markdown files.
-// Any member may read it.
+// Any member may read it, except an agent session's run log, which is not there to a non-admin (D10).
 [RegisterPerRequest]
-public sealed class MarkdownView(IProjectAccess access, IAttachmentStore attachments, IWorkItemStore workItems, MarkdownRenderer renderer)
+public sealed class MarkdownView(IProjectAccess access, IAttachmentStore attachments, IWorkItemStore workItems, MarkdownRenderer renderer, IRunLogAttachments runLogs)
 {
     private const long MaxBytes = 256 * 1024;
 
     public async Task<AttachmentMarkdownDto> ViewAsync(Guid id, CancellationToken cancellationToken)
     {
-        await access.RequireAsync(ProjectItem.Attachment, id, ProjectRole.Member, cancellationToken);
+        var (_, role) = await access.RequireAsync(ProjectItem.Attachment, id, ProjectRole.Member, cancellationToken);
+        if (await runLogs.IsHiddenAsync(id, role, cancellationToken))
+        {
+            throw ApiException.NotFound("That attachment does not exist.");
+        }
+
         var (attachment, content) = await attachments.OpenAsync(id, cancellationToken);
         await using (content.Content)
         {

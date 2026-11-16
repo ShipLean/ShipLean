@@ -10,7 +10,7 @@ public interface IAttachmentStore
     Task<IReadOnlyList<AttachmentDto>> ListAsync(Guid workItemId, CancellationToken cancellationToken = default);
 
     // Uploaded by ICurrentUser; source names the agent and tool when one attached it. A Markdown file up to 1 MB also stores its text for search.
-    // Throws NotFound for an unknown work item, Validation for a blank name.
+    // Throws NotFound for an unknown work item, Validation for a blank name or for the name of a live agent run log on the item (D10: only its agent-log link replaces it).
     Task<AttachmentDto> AddAsync(Guid workItemId, string name, string contentType, Stream content, AttachmentSource? source = null, CancellationToken cancellationToken = default);
 
     // The caller disposes the content. Throws NotFound when the attachment is archived or missing.
@@ -31,6 +31,7 @@ public interface IAttachmentStore
     // Writes the rows of staged files in one transaction under the item lock: each live row of the same name is archived, the new rows are inserted,
     // then inTransaction runs on the same transaction; if it throws, nothing changes. Publishes AttachmentsChanged once after the commit.
     // The item total counts the live files whose names are not in the batch plus the batch, so a replacement set counts only itself.
-    // Throws Validation for an empty batch, a repeated name, a row of another item, or a total over the item limit.
+    // Throws Validation for an empty batch, a repeated name, a row of another item, a total over the item limit, or the name of a live agent run log
+    // on the item unless every row comes through the agent-log link (AttachmentSource.AgentLogUploadVia).
     Task<IReadOnlyList<AttachmentDto>> CommitStagedAsync(Guid workItemId, IReadOnlyList<StagedAttachment> staged, Func<DbTransaction, CancellationToken, Task>? inTransaction = null, CancellationToken cancellationToken = default);
 }

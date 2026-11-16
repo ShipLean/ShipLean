@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using ShipLean.Application.Features.Mcp.Agents;
 using ShipLean.Application.Features.Mcp.Orient;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
@@ -34,6 +35,8 @@ internal sealed class GetWorkItemTool(
     OrientReads reads,
     IAgentAddresses addresses,
     IItemAsks asks,
+    AgentSessionMcpReads agentSessions,
+    IRunLogAttachments runLogs,
     ITaskCommits taskCommits,
     ICodeComments codeComments,
     TimeProvider clock,
@@ -42,10 +45,11 @@ internal sealed class GetWorkItemTool(
 {
     private const int CommentCount = 5;
     private const int HistoryCount = 10;
+    private const int AgentSessionCount = 5;
     private const int ChangeTextLength = 200;
 
     [McpServerTool(Name = "get_work_item"), McpScope(McpScopes.Read)]
-    [Description("Everything about one work item by key, like SHIP-123: its fields, revision, the parents above it, its children with their states, links, its attachments, the last 5 comments (or the 5 before comments_before) and the last 10 history entries (with the agent's name when an agent made the change). Keep the revision if you mean to change the item.")]
+    [Description("Everything about one work item by key, like SHIP-123: its fields, revision, the parents above it, its children with their states, links, its attachments, the last 5 comments (or the 5 before comments_before) and the last 10 history entries (with the agent's name when an agent made the change) and its 5 newest agent sessions (agent_sessions: state and why each ended; get_agent_session reads one). Keep the revision if you mean to change the item.")]
     public async Task<CallToolResult> GetWorkItemAsync(
         [Description("The work item key, like SHIP-123.")] string key,
         [Description("ISO 8601 time of the oldest comment you already have; returns the 5 comments before it.")] string? comments_before = null,
@@ -55,7 +59,9 @@ internal sealed class GetWorkItemTool(
         var snapshot = await store.GetAsync(item.Id, cancellationToken);
         var revisions = (await store.GetRevisionsAsync(item.Id, cancellationToken)).OrderByDescending(r => r.Rev).Take(HistoryCount).ToList();
         var (page, commentsOlder) = CommentPage(await comments.ListAsync(item.Id, cancellationToken), comments_before);
-        var listed = await attachments.ListAsync(item.Id, cancellationToken);
+        // D10: an agent session's run log is listed to project admins only.
+        var hiddenRunLogs = await runLogs.HiddenAsync(item.Id, item.Role, cancellationToken);
+        var listed = (await attachments.ListAsync(item.Id, cancellationToken)).Where(a => !hiddenRunLogs.Contains(a.Id)).ToList();
         var children = (await tree.DescendantsAsync(item.ProjectId, item.Id, null, cancellationToken)).Where(c => c.Depth == 1).ToList();
         var isFeature = snapshot.Type == WorkItemTypeId.Feature;
         itemType.Value = snapshot.Type.ToString().ToLowerInvariant();
@@ -64,6 +70,7 @@ internal sealed class GetWorkItemTool(
             [.. revisions.Where(r => r.ChangedBy is not null).Select(r => r.ChangedBy!.Value).Concat(isFeature && snapshot.StatusVerifiedBy is { } verifier ? [verifier] : []).Distinct()],
             cancellationToken);
         var itemAsks = await asks.GetAsync(item.Id, cancellationToken);
+        var sessions = await agentSessions.NewestAsync(item.Id, AgentSessionCount, cancellationToken);
         var (commits, openComments) = await ItemCodeReads.ReadAsync(taskCommits, codeComments, snapshot.Type, item.Id, cancellationToken);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
 
@@ -106,6 +113,7 @@ internal sealed class GetWorkItemTool(
                 q.WithdrawnAt?.ToString("O")))],
             itemAsks.OpenQuestions,
             itemAsks.OpenDecisions,
+            [.. sessions.Select(s => AgentSessionLineOf(s, item.Role))],
             commits,
             openComments,
             isFeature ? snapshot.Goal : null,
@@ -130,6 +138,15 @@ internal sealed class GetWorkItemTool(
             text += $" · {going} {Plural(going, "decision")} going with recommended";
         }
         return text;
+    }
+
+    private static WorkItemResult.AgentSessionLine AgentSessionLineOf(AgentSessionRow session, ProjectRole role)
+    {
+        var end = AgentSessionVisibility.Apply(session.EndReason, session.EndDetail, null, role);
+        return new WorkItemResult.AgentSessionLine(
+            session.Id, session.Connection, session.State, session.Started.ToString("O"),
+            session.State == "stale" ? null : session.Ended?.ToString("O"),
+            end.EndReason, end.EndText);
     }
 
     private static string Plural(int count, string noun) => count == 1 ? noun : noun + "s";

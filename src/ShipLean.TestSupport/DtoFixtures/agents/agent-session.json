@@ -1,0 +1,135 @@
+{
+  "live": {
+    "id": "0000000e-0000-4000-8001-000000000001",
+    "connectionName": "Home relay",
+    "state": "working",
+    "live": true,
+    "stopRequested": false,
+    "startedAt": "2026-10-24T13:40:00+00:00",
+    "startedLabel": "20 minutes ago",
+    "lastActivityAt": "2026-10-24T13:58:00+00:00",
+    "lastActivityLabel": "2 minutes ago",
+    "endedLabel": null,
+    "urls": [{ "label": "Pull request", "url": "https://github.com/ShipLean/ShipLean/pull/12" }],
+    "plan": [{ "content": "Write the migration", "status": "completed" }],
+    "activities": [
+      {
+        "id": "0000000f-0000-4000-8001-000000000001",
+        "type": "thought",
+        "body": "Reading the schema.",
+        "action": null,
+        "parameter": null,
+        "result": null,
+        "ephemeral": false,
+        "signal": null,
+        "createdAt": "2026-10-24T13:58:00+00:00",
+        "createdLabel": "2 minutes ago"
+      }
+    ],
+    "endReason": null,
+    "endText": null,
+    "endDetail": null,
+    "runLog": null,
+    "deliveries": []
+  },
+  "deliveryFailedAdmin": {
+    "id": "0000000e-0000-4000-8001-000000000002",
+    "connectionName": "Home relay",
+    "state": "failed",
+    "live": false,
+    "stopRequested": false,
+    "startedAt": "2026-10-24T12:00:00+00:00",
+    "startedLabel": "2 hours ago",
+    "lastActivityAt": "2026-10-24T12:00:00+00:00",
+    "lastActivityLabel": "2 hours ago",
+    "endedLabel": "2 hours ago",
+    "urls": [],
+    "plan": [],
+    "activities": [],
+    "endReason": "deliveryFailed",
+    "endText": "The agent connection didn't take the job: No answer within 5 seconds. (2 tries)",
+    "endDetail": "No answer within 5 seconds. (2 tries)",
+    "runLog": {
+      "attachmentId": "00000010-0000-4000-8001-000000000001",
+      "name": "agent-run-0000000e-0000-4000-8001-000000000002.log",
+      "sizeBytes": 18432,
+      "url": "/api/work-items/00000005-0000-4000-8001-000000000141/attachments/00000010-0000-4000-8001-000000000001/download"
+    },
+    "deliveries": [
+      {
+        "action": "created",
+        "attempt": 1,
+        "at": "2026-10-24T12:00:00+00:00",
+        "atLabel": "2 hours ago",
+        "httpStatus": null,
+        "error": "No answer within 5 seconds.",
+        "durationMs": 5000,
+        "nextAttemptAt": "2026-10-24T12:00:30+00:00",
+        "nextAttemptLabel": "2 hours ago"
+      },
+      {
+        "action": "created",
+        "attempt": 2,
+        "at": "2026-10-24T12:00:30+00:00",
+        "atLabel": "2 hours ago",
+        "httpStatus": 502,
+        "error": "The receiver answered 502 Bad Gateway.",
+        "durationMs": 412,
+        "nextAttemptAt": null,
+        "nextAttemptLabel": null
+      }
+    ]
+  },
+  "deliveryFailedMember": {
+    "id": "0000000e-0000-4000-8001-000000000002",
+    "connectionName": "Home relay",
+    "state": "failed",
+    "live": false,
+    "stopRequested": false,
+    "startedAt": "2026-10-24T12:00:00+00:00",
+    "startedLabel": "2 hours ago",
+    "lastActivityAt": "2026-10-24T12:00:00+00:00",
+    "lastActivityLabel": "2 hours ago",
+    "endedLabel": "2 hours ago",
+    "urls": [],
+    "plan": [],
+    "activities": [],
+    "endReason": "deliveryFailed",
+    "endText": "The agent connection didn't take the job",
+    "endDetail": null,
+    "runLog": null,
+    "deliveries": []
+  },
+  "stale": {
+    "id": "0000000e-0000-4000-8001-000000000003",
+    "connectionName": "Home relay",
+    "state": "stale",
+    "live": false,
+    "stopRequested": false,
+    "startedAt": "2026-10-24T10:00:00+00:00",
+    "startedLabel": "4 hours ago",
+    "lastActivityAt": "2026-10-24T10:05:00+00:00",
+    "lastActivityLabel": "4 hours ago",
+    "endedLabel": null,
+    "urls": [],
+    "plan": [],
+    "activities": [],
+    "endReason": "stale",
+    "endText": "The agent went quiet for 30 minutes.",
+    "endDetail": "No activity for 30 minutes since 2026-10-24T10:05:00Z.",
+    "runLog": null,
+    "deliveries": [
+      {
+        "action": "created",
+        "attempt": 1,
+        "at": "2026-10-24T10:00:00+00:00",
+        "atLabel": "4 hours ago",
+        "httpStatus": 202,
+        "error": null,
+        "durationMs": 140,
+        "nextAttemptAt": null,
+        "nextAttemptLabel": null
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using ShipLean.Application.Fakes.Projects;
+using ShipLean.Application.Features.Sprints.Metrics;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Sprints;
@@ -20,11 +21,11 @@ public sealed partial class InMemorySprintMetrics(InMemoryPlanning world) : ISpr
             var days = Enumerable.Range(0, sprint.End.DayNumber - sprint.Start.DayNumber + 1).Select(sprint.Start.AddDays)
                 .Where(d => project.WorkingDays.Contains(d.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)d.DayOfWeek)).ToList();
             var burndown = days.Where(d => d <= world.Today).Select(d => new BurndownPoint(
-                d, world.RemainingOn(sprint, d),
+                d, BurndownLabels.Label(d, world.Today), BurndownLabels.Day(d), world.RemainingOn(sprint, d),
                 days.Count <= 1 ? 0 : Math.Round(committed * (days.Count - 1 - days.IndexOf(d)) / (days.Count - 1), 2))).ToList();
             var latest = DateOnly.FromDayNumber(Math.Min(world.Today.DayNumber, sprint.End.DayNumber));
             var remaining = latest < sprint.Start ? committed : world.RemainingOn(sprint, latest);
-            return Task.FromResult(new SprintMetricsDto(sprintId, committed, world.Completed(sprint), remaining, burndown));
+            return Task.FromResult(new SprintMetricsDto(sprintId, committed, world.Completed(sprint), remaining, burndown, days));
         }
     }
 

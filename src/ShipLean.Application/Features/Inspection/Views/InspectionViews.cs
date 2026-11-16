@@ -2,6 +2,7 @@ using System.Globalization;
 using Agoda.IoC.Core;
 using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Application.Features.Inspection.Settings;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Core;
 using ShipLean.Contracts.Inspection;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.Inspection.Views;
 // The three run views behind K5, built from ITraceSource and IRunAssembler. Every RunQuery and RunRef comes from IInspectionItemLookup
 // through RunWindow, and every label is formatted here with DisplayDate.
 [RegisterPerRequest]
-public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time) : IInspectionViews
+public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time, IViewerZone viewerZone) : IInspectionViews
 {
     // The section shows the newest runs; it assembles each one for its timeline, so it is capped.
     public const int MaxSectionRuns = 50;
@@ -67,7 +68,7 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
             var agent = AgentId(summary.Agent);
             waits += assembled is null ? 0 : WaitMs(assembled);
             rows.Add(new AgentRunRowDto(
-                summary.RunId, agent, Label(agent), summary.StartedBy, DisplayDate.Relative(summary.StartedAt, now, time.LocalTimeZone), assembled?.WhatItDid,
+                summary.RunId, agent, Label(agent), summary.StartedBy, DisplayDate.Relative(summary.StartedAt, now, viewerZone.Zone), assembled?.WhatItDid,
                 summary.Links.First(l => l.ItemKey == item.ItemKey).Source, assembled?.Turns.Count ?? 0, summary.SpanCount + summary.LogCount,
                 assembled?.LogOnly ?? summary.SpanCount == 0, summary.Models.FirstOrDefault(), (long)(summary.EndedAt - summary.StartedAt).TotalMilliseconds,
                 summary.TokensIn, summary.TokensOut, summary.ErrorCount, assembled is null || assembled.LogOnly ? [] : Timeline(assembled, summary)));
@@ -228,9 +229,9 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     private string? Grafana(string? traceId)
         => gate.Instance.GrafanaUrlTemplate is { } template && traceId is not null ? template.Replace("{traceId}", traceId, StringComparison.Ordinal) : null;
 
-    private string StartedLabel(DateTimeOffset at) => $"{DisplayDate.ShortDay(at, time.GetUtcNow(), time.LocalTimeZone)}, {DisplayDate.Clock(at, time)}";
+    private string StartedLabel(DateTimeOffset at) => $"{DisplayDate.ShortDay(at, time.GetUtcNow(), viewerZone.Zone)}, {DisplayDate.Time(at, viewerZone.Zone)}";
 
-    private string ClockSeconds(DateTimeOffset at) => DisplayDate.ClockSeconds(at, time);
+    private string ClockSeconds(DateTimeOffset at) => DisplayDate.LogTime(at, viewerZone.Zone);
 
     private static string AgentId(string service) => AgentIds.GetValueOrDefault(service, service);
 

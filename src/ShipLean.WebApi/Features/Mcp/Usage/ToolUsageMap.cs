@@ -13,6 +13,7 @@ public static class ToolUsageMap
         ["capture_work"] = UsageEventNames.WorkCaptured,
         ["break_down"] = UsageEventNames.WorkItemBrokenDown,
         ["get_work_item"] = UsageEventNames.WorkItemViewed,
+        ["get_agent_session"] = UsageEventNames.AgentSessionViewed,
         ["refine_work_item"] = UsageEventNames.WorkItemUpdated,
         ["set_status"] = UsageEventNames.WorkItemStatusSet,
         ["update_progress"] = UsageEventNames.WorkItemProgressUpdated,

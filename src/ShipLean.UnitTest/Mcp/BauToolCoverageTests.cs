@@ -30,6 +30,7 @@ public class BauToolCoverageTests
         ["feature_progress"] = Kind.ListsItems,
         ["inspection_metrics"] = Kind.ListsItems,
         ["get_work_item"] = Kind.ByKeyOnly,
+        ["get_agent_session"] = Kind.ByKeyOnly,
         ["feature_timeline"] = Kind.ByKeyOnly,
         ["log_review"] = Kind.ByKeyOnly,
         ["read_attachment"] = Kind.ByKeyOnly,

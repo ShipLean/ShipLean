@@ -15,9 +15,11 @@ namespace ShipLean.WebApi.Features.Instance;
 // POST api/instance/agent-connections/{id}/regenerate-secret   -> AgentConnectionIssuedDto (secret)
 // POST api/instance/agent-connections/{id}/regenerate-token    -> AgentConnectionIssuedDto (token)
 // POST api/instance/agent-connections/{id}/archive             -> AgentConnectionDto
+// GET  api/instance/agent-connections/{id}/health              -> AgentConnectionHealthDto
+// POST api/instance/agent-connections/{id}/test                -> AgentConnectionTestDto (a signed ping with no item data)
 [InstanceAdmin]
 [Route("api/instance/agent-connections")]
-public sealed class AgentConnectionsController(IAgentConnections connections, AgentConnectionAdmin admin) : ApiControllerBase
+public sealed class AgentConnectionsController(IAgentConnections connections, AgentConnectionAdmin admin, IAgentConnectionHealth health, IAgentConnectionTester tester) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<AgentConnectionDto>>(StatusCodes.Status200OK)]
@@ -60,4 +62,17 @@ public sealed class AgentConnectionsController(IAgentConnections connections, Ag
     [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
     public Task<AgentConnectionDto> Archive(Guid id, CancellationToken cancellationToken) => admin.ArchiveAsync(id, cancellationToken);
+
+    [HttpGet("{id:guid}/health")]
+    [ProducesResponseType<AgentConnectionHealthDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
+    public Task<AgentConnectionHealthDto> Health(Guid id, CancellationToken cancellationToken) => health.ForConnectionAsync(id, cancellationToken);
+
+    [HttpPost("{id:guid}/test")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType<AgentConnectionTestDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public Task<AgentConnectionTestDto> Test(Guid id, CancellationToken cancellationToken) => tester.TestAsync(id, cancellationToken);
 }

@@ -119,13 +119,16 @@ public class AgentStartOverrideTests : ApiFixture
         var stored = await database.ExecuteScalarAsync<Guid>("SELECT connection_id FROM agent_session WHERE id = @id", new { id = session.Id });
         stored.ShouldBe(other);
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem());
-        body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>().ShouldBe("Do the <thing>.");
+        // C10: the session's run-log line follows the prompt.
+        var guidance = body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>();
+        guidance.Split("\n\n")[0].ShouldBe("Do the <thing>.");
+        RunLogs.AgentRunLogArrange.UrlIn(guidance).ShouldStartWith("https://shiplean.larkspur.dev/api/uploads/agent-log?token=");
         body["appUserId"]!.GetValue<string>().ShouldBe(other.ToString());
-        body["promptContext"]!.GetValue<string>().ShouldContain("<guidance>Do the &lt;thing&gt;.</guidance>");
+        body["promptContext"]!.GetValue<string>().ShouldContain("<guidance>Do the &lt;thing&gt;.\n\nIf you end with an error, POST your last 200 lines of output as text/plain to ");
     }
 
     [Test]
-    public async Task Start_WhenNoOverrideIsGiven_ShouldUseTheProjectsConnectionAndEmptyGuidance()
+    public async Task Start_WhenNoOverrideIsGiven_ShouldUseTheProjectsConnectionAndOnlyTheRunLogGuidance()
     {
         await using var database = await OpenDatabaseAsync();
         var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
@@ -135,6 +138,7 @@ public class AgentStartOverrideTests : ApiFixture
 
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem());
         body["appUserId"]!.GetValue<string>().ShouldBe(arranged.ConnectionId.ToString());
-        body["guidance"]!.AsArray().ShouldBeEmpty();
+        // A blank prompt is no prompt: the guidance is only C10's run-log line.
+        body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>().ShouldStartWith(RunLogs.AgentRunLogArrange.LinePrefix, Case.Sensitive);
     }
 }

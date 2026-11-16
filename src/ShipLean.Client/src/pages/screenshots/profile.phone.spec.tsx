@@ -5,7 +5,7 @@ import { pagesTestIds } from '../../features/pages/testIds';
 import { settingsTestIds as ids } from '../../features/settings/testIds';
 import { MY_PROJECTS, stubAgents, stubDevices, stubPhoto } from './fixtures/accountStubs';
 import type { Page } from './shoot';
-import { stubShell } from './shellStub';
+import { SHELL_ZONE, stubShell } from './shellStub';
 import { phonePageShots } from './shootPhone';
 
 // Your profile on a phone (SHIP-733), the phone twin of the `profile` shot in account.spec.tsx.
@@ -17,6 +17,7 @@ const arrange = (photo: boolean) => async (page: Page) => {
       name: 'Priya Shah',
       email: 'priya@larkspur.dev',
       isInstanceAdmin: true,
+      ...SHELL_ZONE,
       avatarColour: '#2f7fd8',
       photoUrl: photo ? '/api/users/me/photo?v=1' : null,
     },

@@ -1,3 +1,4 @@
+using ShipLean.TestSupport.Identity;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Fakes.Agents;
 using ShipLean.Application.Fakes.Users;
@@ -29,7 +30,7 @@ internal sealed class InMemoryAgentWorld : AgentWorld
         Issuer = new InMemoryAgentTokenIssuer(store, directory, _accounts, _clock);
         Clients = new InMemoryOAuthClients(store);
         Codes = new InMemoryOAuthCodes(store, _clock);
-        Authorizations = new InMemoryAgentAuthorizations(store, directory, _accounts, _clock);
+        Authorizations = new InMemoryAgentAuthorizations(store, directory, _accounts, _clock, new FixedViewerZone());
         _consent = new InMemoryAgentConsent(store, Authorizations, Codes, _currentUser, _clock);
         Requests = new InMemoryOAuthRequests(store, _consent, directory, new FixedAgentAddresses());
     }

@@ -2,6 +2,7 @@ using ShipLean.Application.Features.Timeline.Build;
 using ShipLean.Application.Features.Timeline.Facts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views.Timeline;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Timeline;
 
 namespace ShipLean.UnitTest.Timeline;
@@ -441,6 +442,32 @@ public class TimelineBarsTests
         scale.Days.Count.ShouldBe(1);
         scale.Days[0].Label.ShouldBe("Thu 15 Oct");
         scale.Start.ShouldBe(T0.AddDays(10));
+    }
+
+    [Test]
+    public void Build_WhenViewerIsInBangkok_ShouldKeepSprintBandsOnUtcMidnightAndLabelTheAxisInBangkok()
+    {
+        TimelineScaleDto ScaleIn(TimeZoneInfo zone)
+        {
+            var f = Facts().WithSprint("Sprint 2", new DateOnly(2026, 10, 7), new DateOnly(2026, 10, 8));
+            Active(f, "SHIP-2", 9);
+            return Build(f, zone).Scale;
+        }
+
+        var utc = ScaleIn(TimeZoneInfo.Utc);
+        var bangkok = ScaleIn(ViewerZoneTestData.Bangkok);
+
+        // D8: a sprint's days are UTC days, so the band is 7 Oct 00:00 UTC to 9 Oct 00:00 UTC whoever looks.
+        BandInstants(utc).ShouldBe((T0.AddDays(2), T0.AddDays(4)));
+        BandInstants(bangkok).ShouldBe(BandInstants(utc));
+        bangkok.Days[0].Label.ShouldBe(utc.Days[0].Label);
+        bangkok.Start.ShouldBe(utc.Start.AddHours(-7));
+    }
+
+    private static (DateTimeOffset Start, DateTimeOffset End) BandInstants(TimelineScaleDto scale)
+    {
+        var band = scale.Sprints.ShouldHaveSingleItem();
+        return (scale.Start.AddHours(band.StartHours), scale.Start.AddHours(band.EndHours));
     }
 
     [Test]

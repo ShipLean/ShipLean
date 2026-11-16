@@ -6,6 +6,7 @@ using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Journeys.Agents;
@@ -105,6 +106,34 @@ public class AgentPanelJourneyTests : SeededAcceptanceTest
             "SELECT count(*) FROM agent_delivery WHERE session_id = @session AND action = 'prompted' AND status = 'pending' AND body #>> '{agentActivity,signal}' = 'stop'",
             ("session", sessionId));
         queued.ShouldBe(1);
+    }
+
+    // A session that failed to deliver, seeded with its end reason and detail by SQL (the writers are not under test): the item
+    // page says why it ended, with the detail, because Joel is a project admin.
+    [Test]
+    public async Task EndedSession_WhenDeliveryFailed_ShouldShowWhyItEnded()
+    {
+        const string detail = "The receiver answered 503. (2 tries)";
+        var item = await ApiAsync("POST", "/api/work-items", new { projectId = SeedIds.Projects.Ship, type = "story", title = "Why did it end" });
+        var itemId = item.GetProperty("id").GetGuid();
+        await using (var connection = new NpgsqlConnection(ConnectionString))
+        {
+            await connection.OpenAsync();
+            var connectionId = await AgentSessionSeeds.InsertConnectionAsync(connection);
+            await new AgentSessionSeeds(itemId, connectionId)
+                .WithState("failed")
+                .WithEndReason("deliveryFailed")
+                .WithEndDetail(detail)
+                .InsertAsync(connection);
+        }
+
+        await new WorkItemScreen(Page).OpenAsync("SHIP", item.GetProperty("key").GetString()!);
+
+        var panel = Page.GetByTestId(AgentPanelTestIds.Panel);
+        await Expect(panel.GetByTestId(AgentPanelTestIds.State)).ToHaveAttributeAsync("data-state", "failed");
+        var end = panel.GetByTestId(AgentPanelTestIds.SessionEnd);
+        await Expect(end).ToContainTextAsync("Why it ended");
+        await Expect(end).ToContainTextAsync(detail);
     }
 
     private static async Task PostActivityAsync(HttpClient agent, Guid sessionId, object content)

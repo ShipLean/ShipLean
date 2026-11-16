@@ -3,6 +3,7 @@
 import type { KeyValueStore } from '@shiplean/core/platform';
 import type { AppAction, DispatchOptions, Pending, SendReceipt } from './types';
 import { VOICE_ROW_MS } from './undo';
+import { isoAt } from './clock';
 
 export interface BatchInfo {
   mode: 'hold' | 'after';
@@ -46,7 +47,7 @@ export function addBatch(
   offline: boolean,
 ): Outbox {
   const held = opts.undo.mode === 'hold' && opts.undo.ms > 0;
-  const undoUntil = opts.undo.ms > 0 ? new Date(now.getTime() + opts.undo.ms).toISOString() : null;
+  const undoUntil = opts.undo.ms > 0 ? isoAt(now.getTime() + opts.undo.ms) : null;
   const added: Pending[] = actions.map(({ id, action }) => ({
     id,
     batchId,
@@ -212,7 +213,7 @@ export function load(raw: string | null, now: Date): Outbox {
     .map((p): Pending => {
       if (p.state === 'undo' && p.undoUntil !== null) {
         const length = Date.parse(p.undoUntil) - Date.parse(p.createdAt);
-        return { ...p, undoUntil: new Date(now.getTime() + length).toISOString() };
+        return { ...p, undoUntil: isoAt(now.getTime() + length) };
       }
       // A refusal kept before the runner reversed its batch: the server answered, so it failed.
       if (refusedWhileSending(p)) return { ...p, state: 'failed' };

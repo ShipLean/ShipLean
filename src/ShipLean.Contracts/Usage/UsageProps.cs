@@ -54,6 +54,9 @@ public static class UsageProps
     // Which kind of sprint was opened on Inspection, on inspection_metrics.period_opened: finished or running.
     public const string Period = "period";
 
+    // Why an agent session ended, on agent_session.finished: one of AgentEndReasons.
+    public const string EndReason = "end_reason";
+
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)
         .Where(f => f.IsLiteral)

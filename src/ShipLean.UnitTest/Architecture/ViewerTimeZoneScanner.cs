@@ -18,11 +18,6 @@ public static partial class ViewerTimeZoneScanner
     // - DisplayDate is where the viewer's zone is applied and every display format lives.
     private const string DisplayDatePath = "src/ShipLean.Core/DisplayDate.cs";
 
-    // - SprintLabels keeps its "d MMM" formats: sprint dates are calendar days with no zone (D8). Any other format there
-    //   (say "HH:mm") and zone code there still fail.
-    private const string SprintLabelsPath = "src/ShipLean.Core/SprintLabels.cs";
-    private static readonly string[] SprintLabelsFormats = ["d MMM", "d MMM yyyy"];
-
     public const string UsingStatic = "using static TimeZoneInfo";
     public const string UsingAlias = "using alias TimeZoneInfo";
 
@@ -54,7 +49,7 @@ public static partial class ViewerTimeZoneScanner
     public static IReadOnlyList<string> ScanFile(string path, string source) =>
         path == DisplayDatePath
             ? []
-            : Scan(source).Where(t => path != SprintLabelsPath || !SprintLabelsFormats.Any(f => t == FormatToken(f))).ToList();
+            : Scan(source);
 
     // The tokens found in one piece of C# source, one entry per occurrence.
     public static IReadOnlyList<string> Scan(string source)

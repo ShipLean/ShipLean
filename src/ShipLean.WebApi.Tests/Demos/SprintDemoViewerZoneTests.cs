@@ -15,7 +15,7 @@ namespace ShipLean.WebApi.Tests.Demos;
 
 // The Demo read dates the request and the upload link in the viewer's zone. One demo requested at ViewerZoneTestData.LateEveningUtc
 // (20:00 UTC, the next day in Bangkok); Joel reads in Asia/Bangkok, Priya has no zone and reads in UTC. Time is never frozen:
-// expected labels come from DisplayDate with the zone.
+// expected labels are written out from the instants.
 [TestFixture]
 public class SprintDemoViewerZoneTests : ApiFixture
 {
@@ -51,6 +51,14 @@ public class SprintDemoViewerZoneTests : ApiFixture
 
     private sealed record SprintRunLabels(string Requested, string? Expires);
 
+    // Requested at 20:00 UTC two years ago, so the label is the short day with its year; the link expired 24 hours on. The expected
+    // labels are written here from the instants, not taken from DisplayDate.
+    private static string Expected(string prefix, DateTimeOffset at, int offsetHours)
+    {
+        var local = at.ToOffset(TimeSpan.FromHours(offsetHours));
+        return $"{prefix} {local.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)} at {local.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}";
+    }
+
     // The fallback: a user with no zone reads UTC.
     // Mutation: hardcode TimeZoneInfo.Utc at the DayAt calls in SprintDemoReader (then the Bangkok test fails; this one passes).
     [Test]
@@ -59,8 +67,9 @@ public class SprintDemoViewerZoneTests : ApiFixture
         var labels = await ReadAsync(TestUser.Priya);
 
         var at = ViewerZoneTestData.LateEveningUtc;
-        labels.Requested.ShouldBe("Requested " + DisplayDate.DayAt(at, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
-        labels.Expires.ShouldBe("Link expired " + DisplayDate.DayAt(at.AddHours(24), TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
+        labels.Requested.ShouldBe(Expected("Requested", at, 0));
+        labels.Expires.ShouldBe(Expected("Link expired", at.AddHours(24), 0));
+        labels.Requested.ShouldEndWith("at 20:00");
     }
 
     // Mutation: hardcode TimeZoneInfo.Utc at the DayAt calls in SprintDemoReader.
@@ -69,12 +78,10 @@ public class SprintDemoViewerZoneTests : ApiFixture
     {
         var labels = await ReadAsync(TestUser.Joel);
 
-        var now = TimeProvider.System.GetUtcNow();
         var at = ViewerZoneTestData.LateEveningUtc;
-        var requested = "Requested " + DisplayDate.DayAt(at, now, ViewerZoneTestData.Bangkok);
-        requested.ShouldNotBe("Requested " + DisplayDate.DayAt(at, now, TimeZoneInfo.Utc));
-        labels.Requested.ShouldBe(requested);
-        labels.Expires.ShouldBe("Link expired " + DisplayDate.DayAt(at.AddHours(24), now, ViewerZoneTestData.Bangkok));
+        labels.Requested.ShouldBe(Expected("Requested", at, 7));
+        labels.Expires.ShouldBe(Expected("Link expired", at.AddHours(24), 7));
         labels.Requested.ShouldEndWith("at 03:00");
+        labels.Requested.ShouldNotBe(Expected("Requested", at, 0));
     }
 }
