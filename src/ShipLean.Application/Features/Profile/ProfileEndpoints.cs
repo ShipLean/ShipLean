@@ -12,6 +12,7 @@ using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Profile;
 using ShipLean.Contracts.Users;
+using ShipLean.Core;
 using ShipLean.Core.People;
 
 namespace ShipLean.Application.Features.Profile;
@@ -19,7 +20,8 @@ namespace ShipLean.Application.Features.Profile;
 // The caller's own identity: display name, avatar colour and photo. Every action acts on ICurrentUser, never on an id from
 // the request, so there is nobody else's profile to reach. Each answers the caller's MeDto.
 [RegisterPerRequest]
-public sealed class ProfileEndpoints(NpgsqlDataSource dataSource, ICurrentUser currentUser, IBlobStore blobs, MeReader me, TimeProvider clock, ProxySignInSettings proxy)
+public sealed class ProfileEndpoints(NpgsqlDataSource dataSource, ICurrentUser currentUser, IBlobStore blobs, MeReader me, TimeProvider clock, ProxySignInSettings proxy,
+    UserSessions sessions)
 {
     public const long MaxPhotoBytes = 2L * 1024 * 1024;
 
@@ -90,6 +92,37 @@ public sealed class ProfileEndpoints(NpgsqlDataSource dataSource, ICurrentUser c
             new { }, cancellationToken);
         return await me.GetAsync(currentUser.Id, cancellationToken);
     }
+
+    // The caller's time zone: a Browser value only fills an empty setting, a Profile value always applies. Answers the
+    // MeDto with the zone now stored, and whether the stored value changed (the controller tracks only a change). Forget
+    // drops the cached user, so the next request's labels use the new zone.
+    public async Task<(MeDto Me, bool Changed)> SetTimeZoneAsync(SetTimeZoneRequest request, CancellationToken cancellationToken)
+    {
+        var userId = currentUser.Id;
+        if (!DisplayDate.TryZone(request.TimeZone, out var zone))
+        {
+            throw ApiException.Validation("The time zone must be an IANA name such as Asia/Bangkok.");
+        }
+
+        int changed;
+        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
+        {
+            changed = await connection.ExecuteAsync(new CommandDefinition(
+                """
+                UPDATE app_user SET time_zone = @zone, updated_at = @now
+                WHERE id = @id AND (@fromProfile OR time_zone IS NULL) AND time_zone IS DISTINCT FROM @zone
+                """,
+                new { zone = zone.Id, now = clock.GetUtcNow(), id = userId, fromProfile = request.Source == TimeZoneSource.Profile },
+                cancellationToken: cancellationToken));
+        }
+
+        sessions.Forget(userId);
+        return (await me.GetWithStoredZoneAsync(userId, cancellationToken), changed > 0);
+    }
+
+    // Every IANA zone the server knows, for the Profile page's select.
+    public TimeZoneChoicesDto TimeZoneChoices() =>
+        new(DisplayDate.ZoneChoices(clock.GetUtcNow()).Select(choice => new TimeZoneChoiceDto(choice.Id, choice.Label)).ToList());
 
     // Any signed-in user may read any user's photo (it is what a card or the presence stack shows). The blob's content type
     // is the one the upload's bytes proved; versionIsCurrent says whether v (the ?v= the address carries, whatever it holds)

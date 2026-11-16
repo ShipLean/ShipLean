@@ -39,6 +39,7 @@ public static class UsageProps
     public const string Reason = "reason";
 
     // Where a Feature timeline was opened from, on timeline.opened: "feature" (Open timeline on the Feature page) or "link".
+    // Where a time zone came from, on profile.time_zone_set: "browser" (the first-load capture) or "profile".
     public const string From = "from";
 
     // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.

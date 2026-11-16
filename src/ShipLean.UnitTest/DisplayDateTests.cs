@@ -233,6 +233,95 @@ public class DisplayDateTests
             .ShouldBe(new DateTimeOffset(2026, 2, 21, 2, 0, 0, TimeSpan.Zero));
     }
 
+    // 23:02:05 UTC on 4 Oct 2026: Bangkok (+07) reads 06:02 on Mon 5 Oct; London is on summer time (+01).
+    // 23:02:05 UTC on 4 Nov 2026: London is back on GMT (+00), so it reads 23:02 like UTC.
+    [TestCase("Asia/Bangkok", "2026-10-04T23:02:05Z", "06:02", "06:02:05", "Mon")]
+    [TestCase("UTC", "2026-10-04T23:02:05Z", "23:02", "23:02:05", "Sun")]
+    [TestCase("Europe/London", "2026-10-04T23:02:05Z", "00:02", "00:02:05", "Mon")]
+    [TestCase("Europe/London", "2026-11-04T23:02:05Z", "23:02", "23:02:05", "Wed")]
+    public void Time_WhenZoneGiven_ShouldReadTheZonesClock(string id, string instant, string time, string logTime, string weekday)
+    {
+        var value = Parse(instant);
+
+        DisplayDate.Time(value, Zone(id)).ShouldBe(time);
+        DisplayDate.LogTime(value, Zone(id)).ShouldBe(logTime);
+        DisplayDate.ShortWeekday(value, Zone(id)).ShouldBe(weekday);
+    }
+
+    // now is 10:00 UTC on 19 Oct 2026 (17:00 in Bangkok, 11:00 in London on summer time).
+    [TestCase("Asia/Bangkok", "2026-10-19T00:02:00Z", "today at 07:02")]
+    [TestCase("UTC", "2026-10-19T00:02:00Z", "today at 00:02")]
+    [TestCase("Asia/Bangkok", "2026-10-18T20:00:00Z", "today at 03:00")]
+    [TestCase("UTC", "2026-10-18T20:00:00Z", "yesterday at 20:00")]
+    [TestCase("Europe/London", "2026-10-18T23:30:00Z", "today at 00:30")]
+    [TestCase("UTC", "2026-10-18T23:30:00Z", "yesterday at 23:30")]
+    [TestCase("Asia/Bangkok", "2026-10-19T17:30:00Z", "tomorrow at 00:30")]
+    [TestCase("UTC", "2026-10-19T17:30:00Z", "today at 17:30")]
+    [TestCase("Asia/Bangkok", "2026-03-02T00:02:00Z", "2 Mar at 07:02")]
+    [TestCase("Europe/London", "2026-03-02T00:02:00Z", "2 Mar at 00:02")]
+    [TestCase("UTC", "2025-03-02T00:02:00Z", "2 Mar 2025 at 00:02")]
+    public void DayAt_WhenZoneGiven_ShouldNameTheDayInThatZone(string id, string instant, string expected)
+    {
+        var now = Parse("2026-10-19T10:00:00Z");
+
+        DisplayDate.DayAt(Parse(instant), now, Zone(id)).ShouldBe(expected);
+    }
+
+    // London's label follows the offset in force at now: +01:00 in summer, +00:00 after the October change.
+    [TestCase("Asia/Bangkok", "2026-07-01T00:00:00Z", "Asia/Bangkok (UTC+07:00)")]
+    [TestCase("UTC", "2026-07-01T00:00:00Z", "UTC (UTC+00:00)")]
+    [TestCase("Europe/London", "2026-07-01T00:00:00Z", "Europe/London (UTC+01:00)")]
+    [TestCase("Europe/London", "2026-11-01T00:00:00Z", "Europe/London (UTC+00:00)")]
+    [TestCase("America/New_York", "2026-11-16T00:00:00Z", "America/New_York (UTC-05:00)")]
+    public void ZoneLabel_WhenZoneGiven_ShouldNameItWithTheOffsetNow(string id, string now, string expected)
+    {
+        DisplayDate.ZoneLabel(Zone(id), Parse(now)).ShouldBe(expected);
+    }
+
+    [Test]
+    public void ZoneLabel_WhenUtc_ShouldReadUtc()
+    {
+        DisplayDate.ZoneLabel(TimeZoneInfo.Utc, Parse("2026-07-01T00:00:00Z")).ShouldBe("UTC (UTC+00:00)");
+    }
+
+    [Test]
+    public void ZoneChoices_WhenRead_ShouldListIanaZonesByOffsetThenId()
+    {
+        var now = Parse("2026-07-01T00:00:00Z");
+
+        var choices = DisplayDate.ZoneChoices(now);
+
+        choices.ShouldContain(("Asia/Bangkok", "Asia/Bangkok (UTC+07:00)"));
+        choices.ShouldContain(("Europe/London", "Europe/London (UTC+01:00)"));
+        choices.ShouldAllBe(choice => DisplayDate.TryZone(choice.Id, out _));
+        var offsets = choices.Select(choice => Zone(choice.Id).GetUtcOffset(now)).ToList();
+        offsets.ShouldBe(offsets.Order().ToList());
+    }
+
+    [TestCase("Asia/Bangkok", true)]
+    [TestCase("Europe/London", true)]
+    [TestCase("UTC", true)]
+    [TestCase("Bangkok", false)]
+    [TestCase("SE Asia Standard Time", false)]
+    [TestCase("+07:00", false)]
+    [TestCase("", false)]
+    [TestCase(null, false)]
+    [TestCase("Mars/Olympus", false)]
+    public void TryZone_WhenIdGiven_ShouldAcceptOnlyKnownIanaIds(string? id, bool expected)
+    {
+        DisplayDate.TryZone(id, out var zone).ShouldBe(expected);
+        if (!expected)
+        {
+            zone.ShouldBe(TimeZoneInfo.Utc);
+        }
+    }
+
+    private static DateTimeOffset Parse(string instant) =>
+        DateTimeOffset.Parse(instant, System.Globalization.CultureInfo.InvariantCulture);
+
+    private static TimeZoneInfo Zone(string id) =>
+        DisplayDate.TryZone(id, out var zone) ? zone : throw new ArgumentException($"Not a zone on this host: {id}", nameof(id));
+
     // A -03 zone with summer time (-02) from midnight on 1 Nov until 01:00 summer time on 21 Feb: both transitions touch
     // midnight, as some real zones' do.
     private static TimeZoneInfo MidnightTransitions()
