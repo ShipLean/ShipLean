@@ -71,55 +71,52 @@ export const QualityView: ComponentType<InspectionViewProps> = ({
           by {unit}, counted in the {unit} the bug was filed or in their cause&apos;s {unit}
         </span>
       </div>
-      <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="grid min-w-0 gap-3">
-          <QualityCards headline={view.headline} range={view.quality} />
-          <section className="rounded-md border border-edge bg-panel">
-            <header className="flex flex-wrap items-baseline gap-2 border-b border-edge px-3 py-2">
-              <h3 className="m-0 text-[length:var(--text-md)] font-semibold">
-                Escaping bugs by {unit}
-              </h3>
-              <span className="text-[length:var(--text-sm)] text-ink-muted">
-                small number: per 100 merged PRs
-              </span>
-              <span className="ml-auto">
-                <QualityLegend />
-              </span>
-            </header>
-            <div className="p-3">
-              <QualityChart periods={view.periods} />
-              <QualityChartAxis periods={view.periods} />
-            </div>
-          </section>
-          <QualityRows periods={view.periods} quarters={view.quarters} unit={unit} />
-          <QualityBugs projectKey={project.key} bugs={view.bugs} periods={view.periods} />
+
+      <QualityCards headline={view.headline} range={view.quality} />
+      <section className="rounded-md border border-edge bg-panel">
+        <header className="flex flex-wrap items-baseline gap-2 border-b border-edge px-3 py-2">
+          <h3 className="m-0 text-[length:var(--text-md)] font-semibold">
+            Escaping bugs by {unit}
+          </h3>
+          <span className="text-[length:var(--text-sm)] text-ink-muted">
+            small number: per 100 merged PRs
+          </span>
+          <span className="ml-auto">
+            <QualityLegend />
+          </span>
+        </header>
+        <div className="p-3">
+          <QualityChart periods={view.periods} />
+          <QualityChartAxis periods={view.periods} />
         </div>
-        <aside className="grid gap-4 text-[length:var(--text-sm)]">
-          <section className="grid gap-1.5">
-            <span className={OVERLINE}>Found before release</span>
-            <p className="m-0">
-              A field on the Bug form, off by default. Tick it when the bug was caught before its
-              change reached users: in review, in testing, by the agent that wrote it. A ticked bug
-              isn&apos;t counted as escaping. Agents set it with{' '}
-              <code>found_before_release: true</code> when they file a bug in their own review.
-            </p>
-          </section>
-          <section className="grid gap-1.5">
-            <span className={OVERLINE}>Caused by</span>
-            <p className="m-0">
-              A link from a bug to the task that introduced it. Once a bug has one, it counts in the{' '}
-              {unit} its cause ended in instead of the {unit} it was filed.
-            </p>
-          </section>
-          <section className="grid gap-1.5">
-            <span className={OVERLINE}>Per 100 merged PRs</span>
-            <p className="m-0">
-              Pull requests linked to an item in this project, by the {unit} they merged. Unlinked
-              PRs are left out.
-            </p>
-          </section>
-        </aside>
-      </div>
+      </section>
+      <QualityRows periods={view.periods} quarters={view.quarters} unit={unit} />
+      <QualityBugs projectKey={project.key} bugs={view.bugs} periods={view.periods} />
+      <aside className="grid gap-4 text-[length:var(--text-sm)] text-ink-muted md:grid-cols-3">
+        <section className="grid gap-1.5">
+          <span className={OVERLINE}>Found before release</span>
+          <p className="m-0">
+            A field on the Bug form, off by default. Tick it when the bug was caught before its
+            change reached users: in review, in testing, by the agent that wrote it. A ticked bug
+            isn&apos;t counted as escaping. Agents set it with{' '}
+            <code>found_before_release: true</code> when they file a bug in their own review.
+          </p>
+        </section>
+        <section className="grid gap-1.5">
+          <span className={OVERLINE}>Caused by</span>
+          <p className="m-0">
+            A link from a bug to the task that introduced it. Once a bug has one, it counts in the{' '}
+            {unit} its cause ended in instead of the {unit} it was filed.
+          </p>
+        </section>
+        <section className="grid gap-1.5">
+          <span className={OVERLINE}>Per 100 merged PRs</span>
+          <p className="m-0">
+            Pull requests linked to an item in this project, by the {unit} they merged. Unlinked PRs
+            are left out.
+          </p>
+        </section>
+      </aside>
     </section>
   );
 };
