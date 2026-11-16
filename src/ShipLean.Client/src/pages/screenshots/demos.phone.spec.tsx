@@ -42,7 +42,9 @@ const failedSaid: SprintDemoDto = {
   run: { ...demoStates.failed.run!, sessionState: 'failed' },
 };
 
-// Scrolls the page so the box sits just under the pinned top bar, as the design's chapters and script states show it.
+// Scrolls the page so the box sits just under the pinned top bar, as the design's chapters state shows it. The fixture's
+// demo is short, so the page bottoms out with Chapters, Features covered and the Script's start in view (the design's
+// chapters and script states in one shot).
 const scrollTo = (testId: string) => async (page: Page) => {
   const box = page.getByTestId(testId);
   await box.evaluate((el) => {
@@ -68,10 +70,6 @@ phonePageShots([
   {
     ...demoShot('sprint-demo-ready-chapters', demoStates.ready, withPlayer(demoStates.ready, 'video')),
     act: scrollTo(ids.demoChapters),
-  },
-  {
-    ...demoShot('sprint-demo-ready-script', demoStates.ready, withPlayer(demoStates.ready, 'video')),
-    act: scrollTo(ids.demoScript),
   },
   demoShot(
     'sprint-demo-youtube-unlisted',
