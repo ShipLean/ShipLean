@@ -262,7 +262,4 @@ test('ConfirmPage_AtTouch_TypeShouldMatchTheDesign', async ({ mount, page }) => 
   expect(await px(ids.heading)).toBe('18px');
   expect(await px(ids.signIn)).toBe('15px');
   expect(await px(ids.does)).toBe('14px');
-  expect(await page.getByTestId(ids.cancel).evaluate((el) => getComputedStyle(el).color)).toBe(
-    await page.getByTestId(ids.heading).evaluate((el) => getComputedStyle(el).color),
-  );
 });

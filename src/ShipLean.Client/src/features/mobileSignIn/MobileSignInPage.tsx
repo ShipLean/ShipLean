@@ -279,7 +279,7 @@ export function MobileSignInPage() {
             <button
               type="button"
               data-testid={ids.cancel}
-              className={`btn-ghost ${fullWidth} touch:text-ink`}
+              className={`btn-ghost ${fullWidth}`}
               disabled={post.isPending}
               onClick={() => {
                 setOutcome({ kind: 'cancelled' });

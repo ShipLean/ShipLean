@@ -8,6 +8,7 @@ import {
   stubJson,
   stubProxyInstance,
 } from './authFixtures';
+import { componentTestIds } from '../../components/testIds';
 import { authTestIds as ids } from './testIds';
 
 // Sign in, Choose your own password, No projects yet and proxy sign-in on a phone (390×844, SHIP-736 L736a), as page
@@ -351,8 +352,24 @@ test('NoProjectsCard_ShouldShowAvatarAndA40pxSignOut', async ({ mount, page }) =
   await mount(<AppRoutes />, { hooksConfig: { route: '/login?state=no-projects' } });
   const card = page.getByTestId(ids.noProjects);
   await expect(card).toBeVisible();
-  await expect(card.getByTestId('avatar')).toBeVisible();
+  await expect(card.getByTestId(componentTestIds.avatar)).toBeVisible();
   const heading = card.getByRole('heading', { name: "You're not in any projects yet" });
   expect(await heading.evaluate((el) => getComputedStyle(el).fontWeight)).toBe('600');
   expect((await page.getByTestId(ids.signOut).boundingBox())!.height).toBe(40);
+});
+
+test('SignInCard_AtTouch_GoogleLinkShouldBe15px', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stubGoogleInstance(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  expect(await size(page.getByTestId(ids.googleSignIn))).toBe('15px');
+});
+
+test('ProxySignInPage_AtTouch_TryAgainShouldBe15px', async ({ mount, page }) => {
+  phoneOnly(page);
+  await page.evaluate(() => window.history.replaceState(null, '', '/login'));
+  await stubProxyInstance(page);
+  await stubJson(page, '/api/me', { error: 'Sign in.', code: 'unauthorized' }, 401);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  expect(await size(page.getByTestId(ids.proxyRetry))).toBe('15px');
 });

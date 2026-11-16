@@ -27,19 +27,21 @@ export function NoProjectsCard({
         ) : null}
       </h1>
       <div className="grid justify-items-center gap-2 px-4 py-6 text-center touch:justify-items-stretch touch:p-4">
-        <span className="inline-flex items-center justify-center gap-2 text-[length:var(--text-sm)]">
-          <Avatar
-            name={me.name}
-            initials={me.initials}
-            avatarColour={me.avatarColour}
-            photoUrl={me.photoUrl}
-            size="lg"
-          />
+        <span className="text-[length:var(--text-sm)] touch:inline-flex touch:items-center touch:justify-center touch:gap-2">
+          <span className="hidden touch:inline-flex">
+            <Avatar
+              name={me.name}
+              initials={me.initials}
+              avatarColour={me.avatarColour}
+              photoUrl={me.photoUrl}
+              size="lg"
+            />
+          </span>
           <span>
             Signed in as <b>{me.name}</b>
           </span>
         </span>
-        <h2 className="m-0 text-[length:var(--text-md)] font-semibold">
+        <h2 className="m-0 text-[length:var(--text-md)] touch:font-semibold">
           You're not in any projects yet
         </h2>
         <p className="m-0 max-w-[360px] text-[length:var(--text-sm)] text-ink-muted">
