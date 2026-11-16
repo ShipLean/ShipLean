@@ -261,6 +261,15 @@ declare -A shots=(
   [sprints-new]="sprints.html?new"
   [sprints-new-overlap]="sprints.html?new=overlap"
   [sprints-empty]="sprints.html?empty"
+  # Sprint capacity on a phone (SHIP-1626 Q4, for SHIP-726). The plain page is over capacity (the desktop's data).
+  [capacity]="capacity.html"
+  [capacity-people]="capacity.html?at=people"
+  [capacity-days]="capacity.html?sheet=days&p=ana"
+  [capacity-dirty]="capacity.html?dirty"
+  [capacity-dirty-people]="capacity.html?dirty&at=people"
+  [capacity-more]="capacity.html?sheet=more"
+  [capacity-add]="capacity.html?rm=mei&sheet=add"
+  [capacity-empty]="capacity.html?empty"
 )
 
 names=("$@")
