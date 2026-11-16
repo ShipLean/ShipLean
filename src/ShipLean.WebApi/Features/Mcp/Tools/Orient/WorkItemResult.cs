@@ -6,6 +6,7 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 // Goal, Status, Verified, Slug and Started are a Feature's and are left out of the JSON for any other type (Started is the day, as the app labels it).
 // commits and open_code_comments are a Task's or Bug's; both are empty for any other type.
+// found_before_release is a Bug's (SHIP-1398 QK2) and is left out of the JSON for any other type.
 // parents are nearest first. comments and history are newest first: the last 5 comments and the last 10 revisions.
 // comments_older is the `at` of the oldest comment in this page when older comments exist; pass it as comments_before for the next page.
 public sealed record WorkItemResult(
@@ -43,7 +44,8 @@ public sealed record WorkItemResult(
     [property: JsonPropertyName("status")] string? Status = null,
     [property: JsonPropertyName("verified")] VerifiedLine? Verified = null,
     [property: JsonPropertyName("slug")] string? Slug = null,
-    [property: JsonPropertyName("started")] string? Started = null) : McpResult(Project, OpenUrl)
+    [property: JsonPropertyName("started")] string? Started = null,
+    [property: JsonPropertyName("found_before_release")] bool? FoundBeforeRelease = null) : McpResult(Project, OpenUrl)
 {
     public sealed record Criterion(
         [property: JsonPropertyName("text")] string Text,

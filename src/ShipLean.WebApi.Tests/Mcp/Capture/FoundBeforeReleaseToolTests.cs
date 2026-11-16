@@ -54,4 +54,22 @@ public class FoundBeforeReleaseToolTests : McpFixture
         reply.IsToolError().ShouldBeFalse();
         (await StoredAsync(key)).ShouldBeTrue();
     }
+
+    // get_work_item shows a Bug's flag and leaves it out for any other type (SHIP-2040). Mutation: always send false.
+    [Test]
+    public async Task GetWorkItem_WhenBugFlagged_ShouldShowFoundBeforeRelease()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+        var created = await CallToolAsync(
+            token,
+            "capture_work",
+            """{"project":"SHIP","items":[{"type":"bug","title":"Found in review","found_before_release":true},{"type":"story","title":"Not a bug"}]}""");
+        var items = created.Structured().GetProperty("items");
+
+        var bug = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{items[0].GetProperty("key").GetString()}}"}""");
+        var story = await CallToolAsync(token, "get_work_item", $$"""{"key":"{{items[1].GetProperty("key").GetString()}}"}""");
+
+        bug.Structured().GetProperty("found_before_release").GetBoolean().ShouldBeTrue();
+        story.Structured().TryGetProperty("found_before_release", out _).ShouldBeFalse();
+    }
 }
