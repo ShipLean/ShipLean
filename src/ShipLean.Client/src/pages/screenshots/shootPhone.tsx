@@ -27,11 +27,7 @@ export async function liveDotMask(page: Page) {
       // Computed colours are rgb(…), rgba(…, a) or a colour function ending in "/ a".
       const slash = /\/\s*([\d.]+)(%?)\s*\)$/.exec(style.backgroundColor);
       const rgba = /^rgba\(.*,\s*([\d.]+)\)$/.exec(style.backgroundColor);
-      const alpha = slash
-        ? Number(slash[1]) / (slash[2] ? 100 : 1)
-        : rgba
-          ? Number(rgba[1])
-          : 1;
+      const alpha = slash ? Number(slash[1]) / (slash[2] ? 100 : 1) : rgba ? Number(rgba[1]) : 1;
       if (alpha === 1 && style.opacity === '1') return true;
     }
     return false;
