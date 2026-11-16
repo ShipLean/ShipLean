@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.FeaturesOverview;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.UnitTest.Screens;
 
@@ -14,12 +15,8 @@ public class FeaturesSinceTests
     // Local midnight today is 17:00 UTC the day before TestDates.Today.
     private static DateTimeOffset LocalMidnight => TestDates.Today.AddHours(-7);
 
-    private static FakeTimeProvider Clock()
-    {
-        var clock = new FakeTimeProvider(TestDates.Today.AddHours(10));
-        clock.SetLocalTimeZone(Plus7);
-        return clock;
-    }
+    // The clock's own zone stays UTC: only the zone passed in decides the labels.
+    private static FakeTimeProvider Clock() => new(TestDates.Today.AddHours(10));
 
     [TestCase(0, 9 * 60 + 12, "since 09:12")]
     [TestCase(0, 0, "since 00:00")]
@@ -34,7 +31,7 @@ public class FeaturesSinceTests
         var seenAt = LocalMidnight.AddDays(days).AddMinutes(minutes);
         var weekday = LocalMidnight.AddDays(days).AddHours(7).ToString("ddd", CultureInfo.InvariantCulture);
 
-        var (since, label) = FeaturesSince.Of(seenAt, Clock());
+        var (since, label) = FeaturesSince.Of(seenAt, Clock(), Plus7);
 
         since.ShouldBe(seenAt);
         label.ShouldBe(string.Format(CultureInfo.InvariantCulture, expected, weekday));
@@ -45,9 +42,24 @@ public class FeaturesSinceTests
     {
         var clock = Clock();
 
-        var (since, label) = FeaturesSince.Of(null, clock);
+        var (since, label) = FeaturesSince.Of(null, clock, Plus7);
 
         since.ShouldBe(clock.GetUtcNow().AddHours(-24));
         label.ShouldBe("since yesterday");
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc to FeaturesSince's DaysUntil, Time or ShortWeekday. Now is Mon 2026-11-16 10:00 UTC; the change
+    // was Thu 2026-11-12 20:00 UTC, which is Fri 03:00 in Bangkok.
+    [Test]
+    public void Since_WhenViewerIsInBangkok_ShouldNameTheBangkokTimeAndWeekday()
+    {
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 11, 16, 10, 0, 0, TimeSpan.Zero));
+        var seenAt = new DateTimeOffset(2026, 11, 12, 20, 0, 0, TimeSpan.Zero);
+
+        var (_, bangkok) = FeaturesSince.Of(seenAt, clock, ViewerZoneTestData.Bangkok);
+        var (_, utc) = FeaturesSince.Of(seenAt, clock, TimeZoneInfo.Utc);
+
+        bangkok.ShouldBe("since Fri 03:00");
+        utc.ShouldBe("since Thu 20:00");
     }
 }

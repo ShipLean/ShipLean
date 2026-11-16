@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 
@@ -9,7 +10,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 // Reads an item's sessions for the Agent panel: newest first, with their newest 200 activities each, oldest first. Ephemeral activities are
 // transient status lines: only the newest activity of the session can be one worth showing, so an ephemeral one that is
 // the newest is kept (alone) and every other is dropped. Times are labelled here, never in the browser.
-public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider time)
+public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider time, IViewerZone viewerZone)
 {
     // Only the newest this many activities of a session are read; a session with more shows its tail.
     public const int MaxActivities = 200;
@@ -40,14 +41,16 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider t
             """,
             new { workItemId, cap = MaxActivities }, cancellationToken: cancellationToken))).ToLookup(a => a.SessionId);
 
-        return sessions.Select(session => ToDto(session, activities[session.Id].ToList())).ToList();
+        var now = time.GetUtcNow();
+        var zone = viewerZone.Zone;
+        return sessions.Select(session => ToDto(session, activities[session.Id].ToList(), now, zone)).ToList();
     }
 
-    private AgentSessionDto ToDto(SessionRow session, List<ActivityRow> activities)
+    private static AgentSessionDto ToDto(SessionRow session, List<ActivityRow> activities, DateTimeOffset now, TimeZoneInfo zone)
     {
         var newest = activities.Count == 0 ? null : activities[^1];
         var shown = activities.Where(a => !a.Ephemeral || a == newest).Select(a => new AgentActivityDto(
-            a.Id, a.Type, a.Body, a.Action, a.Parameter, a.Result, a.Ephemeral, a.Signal, a.CreatedAt, DisplayDate.Relative(a.CreatedAt, time))).ToList();
+            a.Id, a.Type, a.Body, a.Action, a.Parameter, a.Result, a.Ephemeral, a.Signal, a.CreatedAt, DisplayDate.Relative(a.CreatedAt, now, zone))).ToList();
         return new AgentSessionDto(
             session.Id,
             session.ConnectionName,
@@ -55,10 +58,10 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider t
             session.State is AgentSessionStates.Submitted or AgentSessionStates.Working or AgentSessionStates.InputRequired,
             session.StopRequestedAt is not null,
             session.StartedAt,
-            DisplayDate.Relative(session.StartedAt, time),
+            DisplayDate.Relative(session.StartedAt, now, zone),
             session.LastActivityAt,
-            DisplayDate.Relative(session.LastActivityAt, time),
-            session.EndedAt is { } ended ? DisplayDate.Relative(ended, time) : null,
+            DisplayDate.Relative(session.LastActivityAt, now, zone),
+            session.EndedAt is { } ended ? DisplayDate.Relative(ended, now, zone) : null,
             JsonSerializer.Deserialize<List<AgentUrlDto>>(session.Urls, Json) ?? [],
             JsonSerializer.Deserialize<List<AgentPlanStepDto>>(session.Plan, Json) ?? [],
             shown);
