@@ -40,8 +40,8 @@ public class AgentConnectionHealthTests : ApiFixture
 
     private static int _attempt;
 
-    private static Task AddAsync(NpgsqlConnection database, Guid delivery, Guid connection, DateTimeOffset at, int? status, string? error)
-        => AgentDeliveryAttemptRows.InsertAsync(database, new(delivery, connection, Interlocked.Increment(ref _attempt), at, status, error, 50, null)).ContinueWith(_ => { });
+    private static async Task AddAsync(NpgsqlConnection database, Guid delivery, Guid connection, DateTimeOffset at, int? status, string? error)
+        => await AgentDeliveryAttemptRows.InsertAsync(database, new(delivery, connection, Interlocked.Increment(ref _attempt), at, status, error, 50, null));
 
     private Task<AgentConnectionHealthDto> HealthAsync(Guid connectionId)
         => Host.Services.GetRequiredService<IAgentConnectionHealth>().ForConnectionAsync(connectionId, CancellationToken.None);
@@ -104,6 +104,44 @@ public class AgentConnectionHealthTests : ApiFixture
         await AddAsync(database, delivery, connection, Ago(TimeSpan.FromHours(3)), null, "No answer within 5 seconds.");
 
         (await WarningAsync(connection)).ShouldBe("The last delivery to this connection failed 3h ago.");
+    }
+
+    // The deliverer treats only 200 OK as success: a 202 becomes the error "The receiver answered 202 Accepted." and the session ends deliveryFailed.
+    private const string Accepted = "The receiver answered 202 Accepted.";
+
+    [Test]
+    public async Task Health_WhenTheReceiverAnswered202AndTheDelivererRecordedItAsAFailure_ShouldNotCountItAsDelivered()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var connection = await AgentSessionSeeds.InsertConnectionAsync(database);
+        var delivery = await NewDeliveryAsync(database, connection);
+        var at = Ago(TimeSpan.FromHours(1));
+        await AddAsync(database, delivery, connection, at, 202, Accepted);
+
+        (await HealthAsync(connection)).ShouldBe(new AgentConnectionHealthDto(null, null, 1, at, DisplayDate.Relative(at, Clock), Accepted));
+        (await WarningAsync(connection)).ShouldBe("The last delivery to this connection failed 1h ago.");
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Warning_WhenASuccessAndAFailureShareATime_ShouldBeNullWhicheverWasWrittenFirst(bool successFirst)
+    {
+        await using var database = await OpenDatabaseAsync();
+        var connection = await AgentSessionSeeds.InsertConnectionAsync(database);
+        var delivery = await NewDeliveryAsync(database, connection);
+        var at = Ago(TimeSpan.FromHours(1));
+        if (successFirst)
+        {
+            await AddAsync(database, delivery, connection, at, 200, null);
+        }
+
+        await AddAsync(database, delivery, connection, at, 502, "Bad gateway.");
+        if (!successFirst)
+        {
+            await AddAsync(database, delivery, connection, at, 200, null);
+        }
+
+        (await WarningAsync(connection)).ShouldBeNull();
     }
 
     [Test]
