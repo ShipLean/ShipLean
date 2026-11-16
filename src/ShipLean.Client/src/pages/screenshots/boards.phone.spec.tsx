@@ -1,4 +1,5 @@
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { card as boardCard, cell, lane, storiesBoard } from '../../features/board/ct/fixtures';
 import { stubBoard } from '../../features/board/ct/stubApi';
 import { cardsPreferenceName } from '../../features/board/lanes/boardPreferences';
@@ -225,3 +226,16 @@ phonePageShots([
     act: (page) => holdCardOver(page, 'SHIP-102', 'SHIP-101'),
   },
 ]);
+
+// SHIP-1626 TBOARD-2: at 390px the second page starts inside the screen and inside the track, so it peeks.
+test('TouchPager_OnTheStoriesBoardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubBoard(page, storiesBoard());
+  await mount(<AppRoutes />, { hooksConfig: { route: '/p/SHIP/boards/stories' } });
+  await expect(page.getByTestId(boardTestIds.card).first()).toBeVisible();
+  const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
+  const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
+  expect(second.x).toBeGreaterThanOrEqual(354);
+  expect(second.x).toBeLessThan(390);
+  expect(second.x).toBeLessThan(track.x + track.width);
+});

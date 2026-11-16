@@ -1,6 +1,7 @@
 // The Feature board on a phone (SHIP-722): one state a page, lanes on every page, and a task's ⋯ sheet. Regenerate with
 // scripts/update-page-shots.sh src/pages/screenshots/featureBoard.phone.spec.tsx.
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { featureBoardTestIds } from '../../features/featureBoard/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -148,3 +149,15 @@ phonePageShots([
     },
   },
 ]);
+
+// SHIP-1626 TBOARD-2: at 390px the second page starts inside the screen and inside the track, so it peeks.
+test('TouchPager_OnTheFeatureBoardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
+  const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
+  expect(second.x).toBeGreaterThanOrEqual(354);
+  expect(second.x).toBeLessThan(390);
+  expect(second.x).toBeLessThan(track.x + track.width);
+});

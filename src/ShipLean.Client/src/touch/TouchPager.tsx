@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { StateDot, type StateCategory } from '../components/StateDot';
+import { InsidePagerContext } from './insidePager';
 import { touchTestIds } from './testIds';
 import { pageInView, scrollTarget } from './pagerScroll';
 import './TouchPager.css';
@@ -8,6 +10,8 @@ export interface TouchPagerPage {
   label: string;
   count?: number;
   limit?: number;
+  /** A page that is one state (or category): its chip starts with that state's colour dot. */
+  category?: StateCategory;
   /** Change this value to pulse the page's chip once. The pager never turns the page for it. */
   pulse?: number;
 }
@@ -148,6 +152,7 @@ export function TouchPager({
   };
 
   return (
+    <InsidePagerContext.Provider value={true}>
     <div>
       {chips ? (
         <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
@@ -171,6 +176,7 @@ export function TouchPager({
                   })
                 }
               >
+                {page.category ? <StateDot category={page.category} /> : null}
                 <span>{page.label}</span>
                 {text ? <span className="touch-pager-chip-count">{text}</span> : null}
               </button>
@@ -198,5 +204,6 @@ export function TouchPager({
         ))}
       </div>
     </div>
+    </InsidePagerContext.Provider>
   );
 }

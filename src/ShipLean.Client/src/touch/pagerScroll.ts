@@ -1,8 +1,8 @@
 // Pure helpers for TouchPager: which page is on screen, from the track's scroll position and the page geometry.
 
-/** A page is the viewport minus 48px (so the next one peeks), at most 340px. The same formula as the CSS `min()`. */
-export function pageWidth(viewportWidth: number): number {
-  return Math.min(viewportWidth - 48, 340);
+/** A page is the track's width minus 24px (so the next one peeks past the gap), at most 340px. The same formula as the CSS `min()`. */
+export function pageWidth(trackWidth: number): number {
+  return Math.min(trackWidth - 24, 340);
 }
 
 /** The index of the page nearest the start edge for a scroll position, clamped to the pages that exist. */

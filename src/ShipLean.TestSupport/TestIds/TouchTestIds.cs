@@ -45,4 +45,5 @@ public static class TouchTestIds
     public const string ImageViewer = "touch-image-viewer";
     public const string ImageViewerImage = "touch-image-viewer-image";
     public const string ImageViewerClose = "touch-image-viewer-close";
+    public const string DragEdgeHint = "touch-drag-edge-hint";
 }

@@ -39,4 +39,6 @@ export const touchTestIds = {
   imageViewer: 'touch-image-viewer',
   imageViewerImage: 'touch-image-viewer-image',
   imageViewerClose: 'touch-image-viewer-close',
+  // K6 touch drag, under a pager (SHIP-1626)
+  dragEdgeHint: 'touch-drag-edge-hint',
 } as const;

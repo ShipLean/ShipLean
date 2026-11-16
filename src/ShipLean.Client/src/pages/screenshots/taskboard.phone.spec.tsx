@@ -1,4 +1,5 @@
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import type { MemberDto } from '@shiplean/core/api/projects';
 import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/ct/stubSettings';
 import { stubTaskboard } from '../../features/taskboard/ct/stubApi';
@@ -197,3 +198,15 @@ phonePageShots([
     act,
   })),
 ]);
+
+// SHIP-1626 TBOARD-2: at 390px the second page starts inside the screen and inside the track, so it peeks.
+test('TouchPager_OnTheTaskboardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
+  const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
+  expect(second.x).toBeGreaterThanOrEqual(354);
+  expect(second.x).toBeLessThan(390);
+  expect(second.x).toBeLessThan(track.x + track.width);
+});

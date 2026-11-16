@@ -3,10 +3,11 @@ import { TouchPager, type TouchPagerPage } from '../TouchPager';
 import { pagerHarnessIds as ids } from './pagerHarnessIds';
 
 const initial: TouchPagerPage[] = [
-  { id: 'todo', label: 'To do', count: 3, limit: 5 },
-  { id: 'doing', label: 'Doing', count: 4, limit: 3 },
+  { id: 'todo', label: 'To do', count: 3, limit: 5, category: 'proposed' },
+  { id: 'doing', label: 'Doing', count: 4, limit: 3, category: 'inProgress' },
+  // No category: its chip has no dot.
   { id: 'review', label: 'Review', count: 2 },
-  { id: 'done', label: 'Done', count: 12, pulse: 5 },
+  { id: 'done', label: 'Done', count: 12, pulse: 5, category: 'completed' },
 ];
 
 // Tall and short pages, so the track's height follows the tallest and the document scrolls vertically.
@@ -55,6 +56,8 @@ export function PagerHarness() {
       </div>
       <p data-testid={ids.ctPagerCurrent}>{current}</p>
       <p data-testid={ids.ctPagerReports}>{reports.join(',')}</p>
+      {/* The pager adds no side gutter; the page's 12px gutter (the sprint tabs' at touch) is the harness's. */}
+      <div className="px-3">
       <TouchPager
         pages={pages.map((page) => ({ ...page }))}
         current={current}
@@ -75,6 +78,7 @@ export function PagerHarness() {
           </div>
         )}
       />
+      </div>
     </div>
   );
 }
