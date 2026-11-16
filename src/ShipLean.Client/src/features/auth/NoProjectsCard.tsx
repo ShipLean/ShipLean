@@ -39,7 +39,9 @@ export function NoProjectsCard({
             Signed in as <b>{me.name}</b>
           </span>
         </span>
-        <h2 className="m-0 text-[length:var(--text-md)] font-semibold">You're not in any projects yet</h2>
+        <h2 className="m-0 text-[length:var(--text-md)] font-semibold">
+          You're not in any projects yet
+        </h2>
         <p className="m-0 max-w-[360px] text-[length:var(--text-sm)] text-ink-muted">
           A project admin adds you from Project settings → Members. Once they do, the project opens
           here.
@@ -77,7 +79,10 @@ export function NoProjectsCard({
         <span className="flex-1 text-[length:var(--text-xs)] text-ink-muted touch:text-center touch:text-[length:var(--text-sm)]">
           Ask your ShipLean admin to add you.
         </span>
-        <SignOutInstead label="Sign out" className="btn-ghost touch:h-10 touch:text-[length:15px]" />
+        <SignOutInstead
+          label="Sign out"
+          className="btn-ghost touch:h-10 touch:text-[length:15px]"
+        />
       </footer>
     </div>
   );

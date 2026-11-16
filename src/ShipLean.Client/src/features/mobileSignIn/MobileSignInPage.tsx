@@ -292,7 +292,10 @@ export function MobileSignInPage() {
         }
       >
         {facts}
-        <div data-testid={ids.does} className="grid gap-2 text-[length:var(--text-sm)] touch:text-[length:var(--text-md)]">
+        <div
+          data-testid={ids.does}
+          className="grid gap-2 text-[length:var(--text-sm)] touch:text-[length:var(--text-md)]"
+        >
           <p className="m-0 text-[length:var(--text-xs)] font-semibold tracking-wider text-ink-muted uppercase">
             What this does
           </p>
