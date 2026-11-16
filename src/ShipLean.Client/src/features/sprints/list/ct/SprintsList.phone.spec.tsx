@@ -168,7 +168,10 @@ test('SprintsList_WhenOpenedOnPhone_ShouldGroupSprintsUnderCurrentFuturePastHead
 
   const sections = page.getByTestId(ids.listSection);
   await expect(sections.locator('h2')).toHaveText(['Current', 'Future · 1', 'Past · 1']);
-  await expect(sections.nth(1).getByTestId(ids.listRow)).toHaveAttribute('data-sprint', 'Sprint 25');
+  await expect(sections.nth(1).getByTestId(ids.listRow)).toHaveAttribute(
+    'data-sprint',
+    'Sprint 25',
+  );
   await expect(page.getByTestId(ids.rowStatus)).toHaveCount(0);
 });
 
@@ -181,7 +184,9 @@ test('SprintsList_WhenRowShownOnPhone_ShouldLabelCapacityCommittedAndCompleted',
   await mount(<SprintsList project={project} sprints={sprints} />);
 
   await expect(rowOf(page, 'Sprint 24')).toContainText('Capacity 21Committed 20Completed 9 so far');
-  await expect(rowOf(page, 'Sprint 25')).toContainText('Capacity 19 · velocityCommitted 20Completed —');
+  await expect(rowOf(page, 'Sprint 25')).toContainText(
+    'Capacity 19 · velocityCommitted 20Completed —',
+  );
 });
 
 // ND1-4 (P4). Mutation: removing after:inset-0 from the name link made the goal's centre hit the li, not the link.

@@ -113,9 +113,7 @@ export function SprintsList({ project, sprints }: { project: ProjectDto; sprints
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {ordered.map((sprint) => row(sprint))}
-            </tbody>
+            <tbody>{ordered.map((sprint) => row(sprint))}</tbody>
           </table>
         </section>
       )}

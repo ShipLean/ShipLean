@@ -24,7 +24,8 @@ export function SprintsTouchHead({
       className={`flex min-w-0 items-start gap-2 ${count === 0 ? 'mb-2' : ''}`}
     >
       <span className="flex min-h-[var(--touch-target)] min-w-0 flex-1 items-center truncate text-[length:var(--text-sm)] text-ink-muted">
-        {project.name} · {count === 0 ? 'no sprints' : `${count} ${count === 1 ? 'sprint' : 'sprints'}`}
+        {project.name} ·{' '}
+        {count === 0 ? 'no sprints' : `${count} ${count === 1 ? 'sprint' : 'sprints'}`}
       </span>
       {count === 0 ? null : (
         <>
