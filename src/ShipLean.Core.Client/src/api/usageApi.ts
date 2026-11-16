@@ -86,3 +86,14 @@ export function postInspectionMetricsTaskOpened(
     { from },
   );
 }
+
+/** POST api/projects/{id}/usage/retro-theme-sheet-opened: a sheet opened on the retro insights Themes tab: one theme's ('theme') or the Unthemed one ('unthemed'). The server answers 204. */
+export function postRetroThemeSheetOpened(
+  projectId: string,
+  sheet: 'theme' | 'unthemed',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/retro-theme-sheet-opened`,
+    { sheet },
+  );
+}

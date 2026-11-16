@@ -580,3 +580,31 @@ test('RenameTheme_ShouldShowTheHelperLine', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.retroThemeSheetRename)).toHaveCount(0);
   await expect(page.getByTestId(ids.retroThemeSheetMerge)).toHaveCount(0);
 });
+
+test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningOnce', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/*/usage/retro-theme-sheet-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<ThemesAddressHarness insights={withUnthemed} />, open('?range=6'));
+  const card = page
+    .getByTestId(ids.retroThemeCard)
+    .and(page.locator(`[data-theme-id="${helped.theme.id}"]`));
+  await card.getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
+  // Staying open while the sheet re-renders (its loads arriving) reports nothing more.
+  await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroHeatStrip).tap();
+  await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+
+  await expect.poll(() => opened).toEqual([{ sheet: 'theme' }, { sheet: 'unthemed' }]);
+});
