@@ -142,4 +142,8 @@ export const sprintsTestIds = {
   endError: 'sprints-end-error',
   endDone: 'sprints-end-done',
   endDoneClose: 'sprints-end-done-close',
+  // SHIP-1834 phone Close sprint
+  endRowTitle: 'sprints-end-row-title',
+  endSetAllSelect: 'sprints-end-set-all-select',
+  endUnfinished: 'sprints-end-unfinished',
 } as const;

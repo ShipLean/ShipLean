@@ -146,4 +146,7 @@ public static class SprintsTestIds
     public const string EndError = "sprints-end-error";
     public const string EndDone = "sprints-end-done";
     public const string EndDoneClose = "sprints-end-done-close";
+    public const string EndRowTitle = "sprints-end-row-title";
+    public const string EndSetAllSelect = "sprints-end-set-all-select";
+    public const string EndUnfinished = "sprints-end-unfinished";
 }

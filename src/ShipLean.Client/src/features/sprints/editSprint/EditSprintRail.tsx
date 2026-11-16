@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import { Dialog } from '../../../components/Dialog';
+import { SaveBar } from '../../../touch/SaveBar';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import type { SprintDto, SprintUpdate } from '@shiplean/core/api/sprints';
 import { SprintForm, type SprintFormIds, type SprintFormValues } from '../form/SprintForm';
 import { useUpdateSprint } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
+import { changedSummary, SPRINT_FIELDS } from './changedSummary';
 import { DeleteSprint } from './DeleteSprint';
 
 const EDIT_SPRINT_IDS: SprintFormIds = {
@@ -32,7 +34,8 @@ interface EditSprintRailProps {
  * The Edit sprint form: the sprint's name, dates and goal, prefilled. An ended sprint's dates are shown but locked (the
  * server refuses them). It sends only what changed, so a name edit never touches the dates. A refusal from the server
  * (overlap, name taken) shows beside Save. Delete sprint sits under the form. Mount it with `key={sprint.id}` so a
- * different sprint starts clean. At 900px and below it opens in the full-screen Dialog (SHIP-724 D9), whose ✕ cancels.
+ * different sprint starts clean. At 900px and below it opens in the full-screen Dialog titled "Edit {sprint}" (SHIP-724
+ * D9), whose ✕ cancels; the form has no buttons and the K5 Save bar says what changed, with Discard (closes) and Save.
  */
 export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSprintRailProps) {
   const { touch } = useTouchShell();
@@ -58,8 +61,8 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
     ...edited,
   };
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function submit(event?: FormEvent) {
+    event?.preventDefault();
     if (update.isPending) return;
     if (form.startDate === '' || form.endDate === '' || form.endDate < form.startDate) {
       setRangeError(true);
@@ -87,6 +90,12 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
     setEdited({ ...edited, [field]: value });
   };
 
+  const fields = SPRINT_FIELDS.filter(
+    (field) => edited[field] !== undefined && form[field] !== base[field],
+  );
+  const datesError =
+    rangeError || (update.error instanceof ApiRequestError && update.error.code === 'validation');
+
   const error = rangeError
     ? 'End must be on or after the start.'
     : update.error instanceof ApiRequestError
@@ -110,6 +119,9 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
         datesLocked={ended}
         datesHint="This sprint has ended, so its dates can't change. Its name and goal can."
         onCancel={onDone}
+        hideSubmit={touch}
+        datesError={datesError}
+        datesNote="Dates can't overlap another sprint. An ended sprint's dates are locked."
       />
       <DeleteSprint projectId={projectId} sprint={sprint} onDeleted={onDeleted} />
     </>
@@ -117,8 +129,17 @@ export function EditSprintRail({ projectId, sprint, onDone, onDeleted }: EditSpr
 
   if (touch) {
     return (
-      <Dialog title="Edit sprint" onClose={onDone}>
-        <div data-testid={ids.editSprint}>{body}</div>
+      <Dialog title={`Edit ${sprint.name}`} onClose={onDone}>
+        <div data-testid={ids.editSprint} className="grid gap-3">
+          {body}
+        </div>
+        <SaveBar
+          dirty={fields.length > 0}
+          message={changedSummary(fields)}
+          onDiscard={onDone}
+          onSave={() => submit()}
+          saving={update.isPending}
+        />
       </Dialog>
     );
   }
