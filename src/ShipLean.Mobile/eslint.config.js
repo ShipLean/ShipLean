@@ -52,9 +52,12 @@ module.exports = tseslint.config(
         'error',
         {
           exceptions: [
-            // The one clock the actions read (D7).
+            // The one clock the actions read (D7): the rule allows only the first `new Date` in the file,
+            // which is the single construction in clock.ts.
             { file: 'src/actions/clock.ts', allow: ['new Date'] },
-            // Mic tuning's "tested today" label is device-only data (D10).
+            // Mic tuning's "tested today" label is device-only data (D10): the phone stamps the test time
+            // itself, the server never sees or sends it, so there is no server label to render. One `new Date`
+            // parses that stamp; getTimezoneOffset buckets it into the phone's local days.
             {
               file: 'src/screens/micTuning/input/inputLabels.ts',
               allow: ['new Date', 'getTimezoneOffset'],

@@ -18,7 +18,10 @@ const filename = (file: string) => path.join(process.cwd(), file);
 const harness = filename('src/features/harness/Harness.tsx');
 const options = [
   {
-    exceptions: [{ file: 'src/features/harness/zone.ts', allow: ['Intl.DateTimeFormat'] }],
+    exceptions: [
+      { file: 'src/features/harness/zone.ts', allow: ['Intl.DateTimeFormat'] },
+      { file: 'src/features/harness/clock.ts', allow: ['new Date'] },
+    ],
   },
 ];
 
@@ -30,6 +33,7 @@ const banned = (code: string, construct: string, file = harness) => ({
 });
 const allowed = (code: string, file = harness) => ({ code, filename: file, options });
 const zone = filename('src/features/harness/zone.ts');
+const clock = filename('src/features/harness/clock.ts');
 
 // The phone app and @shiplean/core carry copies of this rule; every case below runs against all three.
 async function copy(packageFolder: string): Promise<Rule.RuleModule> {
@@ -130,6 +134,21 @@ describe.each(copies)('no-client-dates (%s)', (_name, load) => {
           zone,
         ),
         banned('const r = new Intl.RelativeTimeFormat();', 'Intl.RelativeTimeFormat', zone),
+      ],
+    });
+  });
+
+  it('noClientDates_WhenTheNewDateExceptionIsUsedTwice_ShouldReportTheSecond', async () => {
+    const rule = await load();
+    ruleTester.run('no-client-dates', rule, {
+      valid: [allowed('const at = (ms) => new Date(ms);', clock)],
+      invalid: [
+        {
+          code: 'const a = new Date(1);\nconst b = new Date(2);',
+          filename: clock,
+          options,
+          errors: [{ messageId: 'banned', data: { construct: 'new Date' }, line: 2 }],
+        },
       ],
     });
   });

@@ -11,8 +11,9 @@ import path from 'node:path';
 // `toLocaleString`, is not told apart (no type information).
 //
 // Options: `exceptions`, permanent `{ file, allow }` entries that allow only the named constructs
-// in that one file (e.g. `{ file: 'src/actions/clock.ts', allow: ['new Date'] }`). An allowed 'Intl.DateTimeFormat'
-// covers only one read of the browser's zone, `Intl.DateTimeFormat().resolvedOptions().timeZone`, once in the file.
+// in that one file (e.g. `{ file: 'src/actions/clock.ts', allow: ['new Date'] }`). An allowed 'new Date' covers only
+// the first construction in the file. An allowed 'Intl.DateTimeFormat' covers only one read of the browser's zone,
+// `Intl.DateTimeFormat().resolvedOptions().timeZone`, once in the file.
 
 const GETTERS = new Set([
   'getHours',
@@ -116,8 +117,13 @@ export const noClientDates = {
     );
 
     let zoneReads = 0;
+    let dateConstructions = 0;
     function isAllowed(node, construct) {
       if (!allowed.has(construct)) return false;
+      if (construct === 'new Date') {
+        dateConstructions += 1;
+        return dateConstructions === 1;
+      }
       if (construct !== 'Intl.DateTimeFormat') return true;
       if (!isZoneRead(node)) return false;
       zoneReads += 1;
