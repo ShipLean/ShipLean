@@ -10,7 +10,9 @@ const relay: AgentConnectionDto = {
   id: 'c-1',
   type: 'linear-compatible',
   name: 'Home relay',
-  receiverUrl: 'https://relay.example.com/hook',
+  // A long receiver URL must truncate, not widen the row past the screen.
+  receiverUrl:
+    'https://relay-connection.internal.example.com:8443/webhooks/shiplean/agent-sessions/deliveries',
   signingSecretLast4: 'a1b2',
   callbackTokenLast4: 'c3d4',
   createdAt: '2026-10-28T09:00:00Z',

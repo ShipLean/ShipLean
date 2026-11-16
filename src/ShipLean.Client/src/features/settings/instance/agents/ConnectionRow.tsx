@@ -85,7 +85,7 @@ export function ConnectionRow({
         />
       ) : (
         <>
-          <div className="flex items-baseline gap-2 text-[length:var(--text-sm)]">
+          <div className="flex min-w-0 items-baseline gap-2 text-[length:var(--text-sm)]">
             <b data-testid={ids.agentsName} className="text-ink">
               {connection.name}
             </b>
@@ -94,7 +94,7 @@ export function ConnectionRow({
                 Archived
               </span>
             ) : null}
-            <span data-testid={ids.agentsUrl} className="truncate font-mono text-ink-muted">
+            <span data-testid={ids.agentsUrl} className="min-w-0 truncate font-mono text-ink-muted">
               {connection.receiverUrl}
             </span>
           </div>
