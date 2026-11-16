@@ -1,0 +1,96 @@
+/* The sprint Demo tab in the touch shell (SHIP-1626 Q4, for SHIP-889); behaviour in demo-touch.js. 900px and below
+   only; above it nothing changes. Builds on shiplean.css and the SHIP-805 rules (32px targets, sheets with Close, only
+   the top bar pinned) and doesn't restate them. */
+.dm-hmore, .dm-sheet, .dm-said { display: none; }
+
+@media (max-width: 900px) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+
+  /* Sprint header: as every sprint tab (SHIP-724 D10, one SprintHeader). Picker, state and the header's ⋯ on one line
+     (All sprints moves into the ⋯), the dates, the goal clamped to two lines, the three numbers as one row of tiles. */
+  .sprint-head { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); padding: var(--space-3) var(--space-3) var(--space-2); border-bottom: 0; }
+  .sprint-head .row { gap: 8px; flex-wrap: nowrap; }
+  .sprint-head .row > a { display: none; }
+  .sprint-head .dm-hmore { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); margin-left: auto; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+  .sprint-head .picker { height: var(--touch-target); font-size: 20px; }
+  .sprint-head .picker span { font-size: var(--text-sm); }
+  .sprint-head .sm.muted { font-size: var(--text-sm); }
+  .sprint-head .goal { margin-top: 4px; font-size: var(--text-base); }
+  .sprint-head .goal > span:last-child { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sprint-head .kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .sprint-head .kpi { display: grid; align-content: start; gap: 1px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); }
+  .sprint-head .kpi .v { font-size: 18px; }
+  .sprint-head .kpi .l { font-size: var(--text-xs); line-height: 1.25; }
+
+  /* The sprint tabs on their own row, scrolling sideways (rule 7). The Demo tab has no other toolbar controls. */
+  .toolbar { padding: 0; border-bottom: 0; background: var(--color-bg); }
+  .toolbar > .tabs { flex: 1 0 100%; padding: 0 var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+  .toolbar > .tabs .tab { height: 38px; padding: 0 12px; font-size: var(--text-base); }
+
+  /* One column with 12px gutters; nothing pinned but the top bar (rule 12). */
+  .scroll { overflow: visible; }
+  .page { padding: var(--space-3) var(--space-3) calc(var(--space-5) + env(safe-area-inset-bottom)); gap: var(--space-3); }
+
+  /* The status band stacks (P2): the state chip (and the working pulse) on top, the message, the line under it, the BAU
+     item as its own 32px row, then the action across the width. A disabled action keeps its place: the message says why. */
+  .band { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: var(--space-3); }
+  .band > .chip { grid-column: 1; justify-self: start; }
+  .band > .pulse { grid-column: 2; grid-row: 1; }
+  .band .msg { grid-column: 1 / -1; min-width: 0; gap: 4px; font-size: var(--text-base); }
+  .band .msg b { font-size: var(--text-md); line-height: 1.3; }
+  .band .msg .muted { font-size: var(--text-sm); line-height: 1.45; }
+  .band .dm-item { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; min-height: var(--touch-target); margin: 0 calc(-1 * var(--space-2)); padding: 0 var(--space-2); border-radius: var(--radius-sm); font-size: var(--text-base); }
+  .band .dm-item .key { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .band .dm-item { text-decoration: none; }
+  .band .dm-item::after { content: "›"; display: inline-block; margin-left: auto; color: var(--color-muted); font-size: var(--text-md); }
+  .band > .btn { grid-column: 1 / -1; justify-content: center; width: 100%; height: 40px; font-size: var(--text-base); }
+
+  /* Failed after the session ended: what the agent said, quoted as plain text under the message (SHIP-1709). */
+  .band .dm-said { display: block; grid-column: 1 / -1; margin: 0; padding: 6px 10px; border-left: 3px solid var(--color-border); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: var(--color-surface-2); font-size: var(--text-sm); line-height: 1.45; overflow-wrap: anywhere; }
+  .band .dm-said > span { display: block; margin-bottom: 2px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); }
+
+  /* Ready: the player across the width, the YouTube line and notice under it, the facts as a two-column grid, then
+     Chapters, Features covered and the Script in that order (P3). */
+  .stage { gap: var(--space-3); }
+  .stage > div:last-child { gap: var(--space-3) !important; }
+  .player { border-radius: var(--radius-md); }
+  .player .bar { height: 40px; font-size: var(--text-sm); }
+  .under { margin-top: var(--space-2); }
+  .under .btn { height: 40px; font-size: var(--text-base); }
+  .under > .muted { flex: 1 0 100%; }
+  .note { font-size: var(--text-sm); line-height: 1.45; }
+  .notice { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: var(--space-3); }
+  .notice > .chip { justify-self: start; }
+  .notice .t { min-width: 0; line-height: 1.45; }
+  .notice > .btn { justify-content: center; width: 100%; height: 40px; font-size: var(--text-base); }
+  .facts { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px var(--space-3); font-size: var(--text-sm); }
+  .facts > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .facts > span:nth-child(3) { grid-column: 1 / -1; }
+  .box > header { min-height: 40px; }
+  .box > header h2 { font-size: var(--text-md); }
+  .box > header .xs { font-size: var(--text-sm); }
+  /* Chapters: 40px rows, the whole row seeks (P4); the Feature key stays at the end of the row. */
+  .chapters li { grid-template-columns: 44px minmax(0, 1fr) auto; min-height: 40px; font-size: var(--text-base); }
+  .chapters .at { font-size: var(--text-sm); }
+  .chapters li .key { font-size: var(--text-xs); color: var(--color-muted); }
+  .feats li { min-height: 40px; font-size: var(--text-base); }
+  .script { padding: var(--space-3); max-width: none; gap: 6px; font-size: var(--text-base); line-height: 1.5; }
+  .script h3 { font-size: var(--text-md); }
+  .script .at { font-size: var(--text-sm); }
+
+  /* With ?shot, ?at= hides what is above a section: Chrome's --screenshot ignores scrolling. */
+  :root[data-at] .sprint-head, :root[data-at] .toolbar, :root[data-at] .band { display: none; }
+  :root[data-at="chapters"] .stage > div:first-child { display: none; }
+  :root[data-at="script"] .stage { display: none; }
+
+  /* The header's ⋯ sheet (the same sheet on every sprint tab, SHIP-724) */
+  .dm-sheet { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); background: var(--color-surface); border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
+  .dm-sheet[hidden] { display: none; }
+  .dm-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
+  .dm-sheet .sheet-head { flex: none; gap: var(--space-2); }
+  .dm-sheet .sb { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-3); display: grid; gap: var(--space-2); align-content: start; }
+  .dm-sheet .hint { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
+  .dm-sheet .srow { display: flex; align-items: center; gap: var(--space-2); min-height: var(--touch-target); padding: 0 var(--space-2); margin: 0 calc(-1 * var(--space-2)); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; text-decoration: none; }
+  .dm-sheet .srow:active { background: var(--color-accent-soft); }
+  .dm-sheet .srow .sub { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+}

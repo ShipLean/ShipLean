@@ -75,6 +75,7 @@
 @media (max-width: 1100px) { .stage { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 900px) { .sprint-head { grid-template-columns: minmax(0, 1fr); } }
 </style>
+<link rel="stylesheet" href="demo-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -195,5 +196,6 @@
   SL.preview(STATES.map(s => ({ label: s, run: () => { state = s; render(); } })));
 })();
 </script>
+<script src="demo-touch.js"></script>
 </body>
 </html>

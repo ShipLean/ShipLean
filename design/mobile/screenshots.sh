@@ -253,6 +253,20 @@ declare -A shots=(
   [decisions-empty]="decisions.html?state=empty&at=Decisions"
   [decisions-feature]="decisions.html?state=feature&at=Decisions"
   [decisions-rail]="decisions.html?state=waiting&at=History"
+  # The sprint Demo tab on a phone (SHIP-1626 Q4, for SHIP-889). The plain page is Ready (the desktop's default).
+  [demo-closable]="sprint-demo.html?state=closable"
+  [demo-none]="sprint-demo.html?state=none"
+  [demo-blocked]="sprint-demo.html?state=blocked"
+  [demo-working]="sprint-demo.html?state=working"
+  [demo-failed]="sprint-demo.html?state=failed"
+  [demo-failed-said]="sprint-demo.html?state=failed&said"
+  [demo-ready]="sprint-demo.html?state=ready"
+  [demo-ready-chapters]="sprint-demo.html?state=ready&at=chapters"
+  [demo-ready-script]="sprint-demo.html?state=ready&at=script"
+  [demo-youtube-unlisted]="sprint-demo.html?state=youtube-unlisted"
+  [demo-youtube-private]="sprint-demo.html?state=youtube-private"
+  [demo-youtube-failed]="sprint-demo.html?state=youtube-failed"
+  [demo-sprint]="sprint-demo.html?state=closable&sheet=sprint"
 )
 
 names=("$@")
