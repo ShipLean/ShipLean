@@ -111,16 +111,7 @@ export function SprintRetroPanel({
               data-testid={ids.sprintRetroPanel}
               className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4"
             >
-              {touch ? (
-                <RetroNumbers
-                  kpis={retro.kpis}
-                  decide={decide}
-                  onOpen={setSheet}
-                  onToggleDecide={() => setDecide(retro, !decide)}
-                />
-              ) : (
-                <SprintRetroHeader {...props} />
-              )}
+              {touch ? null : <SprintRetroHeader {...props} />}
               <div
                 data-testid={ids.retroToolbar}
                 className="sticky top-0 z-10 flex flex-wrap items-center gap-3 bg-canvas py-1 touch:static touch:flex-nowrap touch:gap-2"

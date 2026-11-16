@@ -9,9 +9,7 @@ export function SprintRetroPage() {
     <SprintScreen routeId={pageRouteIds.sprintRetro} testId={pagesTestIds.sprintRetroPage}>
       {(project, sprint, sprints) => {
         const slots = sprintRetroSlots(project, sprint, sprints);
-        return (
-          <SprintRetroSlot {...slots.sprintRetro} />
-        );
+        return <SprintRetroSlot {...slots.sprintRetro} />;
       }}
     </SprintScreen>
   );

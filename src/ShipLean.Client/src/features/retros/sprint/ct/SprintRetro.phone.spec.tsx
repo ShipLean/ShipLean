@@ -61,9 +61,7 @@ test('SprintRetro_AtTouch_NumbersShouldComeBeforeTabs', async ({ mount, page }) 
   const tabs = await page.getByTestId(headerIds.tabs).boundingBox();
   expect(numbers!.y + numbers!.height).toBeLessThanOrEqual(tabs!.y + 1);
   // Inside the header, not left under it.
-  await expect(
-    page.getByTestId(headerIds.header).getByTestId(ids.retroNumbers),
-  ).toBeVisible();
+  await expect(page.getByTestId(headerIds.header).getByTestId(ids.retroNumbers)).toBeVisible();
 });
 
 test('SprintRetro_WhenOnTablet_ShouldShowTilesInOneRowAndNotesInTwoColumns', async ({

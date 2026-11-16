@@ -30,7 +30,14 @@ export interface SprintHeaderProps {
 
 // One header for every sprint tab. At 900px and below (SHIP-724 D5, D10) both variants render the same phone header:
 // picker · status · ⋯, then the dates, the goal and the tabs; it scrolls with the page.
-export function SprintHeader({ variant, project, sprint, sprints, tab, beforeTabs }: SprintHeaderProps) {
+export function SprintHeader({
+  variant,
+  project,
+  sprint,
+  sprints,
+  tab,
+  beforeTabs,
+}: SprintHeaderProps) {
   const { touch } = useTouchShell();
   const slim = variant === 'slim';
   const navigate = useNavigate();
