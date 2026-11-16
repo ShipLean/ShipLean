@@ -35,7 +35,7 @@ export function AttachmentUnavailable({
       {tooLargeOnPhone && file ? (
         <header
           data-testid={ids.header}
-          className="-mx-4 -mt-4 mb-2 grid w-[calc(100%+2rem)] gap-1 border-b border-edge bg-surface px-3 pt-2 pb-3"
+          className="-mx-4 -mt-4 mb-2 grid w-[calc(100%+2rem)] gap-1 border-b border-edge px-3 pt-2 pb-3"
         >
           <h1 className="m-0 flex min-h-[var(--touch-target)] min-w-0 items-center gap-2 font-[family-name:var(--font-mono)] text-[length:var(--text-lg)] font-semibold">
             <FileBadge />
