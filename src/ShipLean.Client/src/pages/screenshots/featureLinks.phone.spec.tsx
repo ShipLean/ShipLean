@@ -6,6 +6,7 @@ import { stubApi } from '../../features/workItem/ct/stubApi';
 import { stubComments } from '../../features/workItem/ct/stubDetails';
 import { attachment, stubSide } from '../../features/workItem/ct/stubSide';
 import { WorkItemFormHarness } from '../../features/workItem/ct/WorkItemFormHarness';
+import { stubImages } from './fixtures/images';
 import type { Page } from './shoot';
 
 // The Feature's links, Add link form and attachment rows on a phone (SHIP-714, L714f), as element shots of this task's
@@ -32,6 +33,7 @@ async function arrange(page: StubbedPage) {
   await stubSide(page, priya, attached, []);
   await stubComments(page, priya, []);
   await stubFeature(page, { cards: settled });
+  await stubImages(page);
 }
 
 const phoneOnly = (page: Page & { viewportSize(): { width: number } | null }) =>

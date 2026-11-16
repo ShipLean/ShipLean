@@ -19,12 +19,22 @@ const json = (body: unknown, status = 200) => ({
 const failure = (message: string, status = 400) =>
   json({ error: message, code: 'validation' }, status);
 
+/** The server's rendering (Markdig) of the Markdown fixtures use: bold, italic and inline code in one paragraph. */
+export const markdownHtml = (body: string) =>
+  `<p>${body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')}</p>`;
+
 export const comment = (id: string, author: UserRef | null, body: string): CommentDto => ({
   id,
   workItemId: 'w141',
   author,
   body,
-  bodyHtml: `<p>${body}</p>`,
+  bodyHtml: markdownHtml(body),
   createdAt: '2026-10-20T09:00:00+00:00',
   createdLabel: '2 days ago',
   editedAt: null,
@@ -83,7 +93,7 @@ export async function stubComments(page: Page, me: UserRef, initial: CommentDto[
     const changed = {
       ...(comments.find((c) => c.id === id) as CommentDto),
       body,
-      bodyHtml: `<p>${body}</p>`,
+      bodyHtml: markdownHtml(body),
       editedLabel: 'Just now',
     };
     comments = comments.map((c) => (c.id === id ? changed : c));

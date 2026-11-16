@@ -101,3 +101,14 @@ for (const theme of THEMES) {
     });
   });
 }
+
+test('ItemDiscussion_WhenCommentHasMarkdown_ShouldRenderIt', async ({ mount, page }) => {
+  phoneOnly(page);
+  await stubApi(page, story);
+  await stubComments(page, mei, comments);
+  const screen = await mount(<WorkItemDetailsHarness itemKey="SHIP-141" />, route);
+
+  const body = screen.getByTestId(ids.comment).first().getByTestId(ids.commentBody);
+  await expect(body).toHaveText('Which vault do we use for the saved cards?');
+  await expect(body.locator('strong')).toHaveText('vault');
+});

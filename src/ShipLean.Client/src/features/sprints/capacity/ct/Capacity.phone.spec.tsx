@@ -128,24 +128,31 @@ test('Capacity_WhenATeammateChangedVelocityOnPhone_ShouldShowTheWholeConflictInT
   expect(clipped).toBe(false);
 });
 
-test('Capacity_WhenOnPhone_ShouldMatchItsScreenshot_capacity-phone', async ({ mount, page }) => {
-  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
-  await open(page, mount);
+for (const theme of ['light', 'dark'] as const) {
+  test(`Capacity_WhenOnPhone_ShouldMatchItsScreenshot_capacity-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await open(page, mount);
 
-  await expect(page.getByTestId(ids.capacity)).toHaveScreenshot('capacity-phone.light.png', {
-    animations: 'disabled',
+    await expect(page.getByTestId(ids.capacity)).toHaveScreenshot(`capacity-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
   });
-});
 
-test('Capacity_WhenDirtyOnPhone_ShouldMatchItsScreenshot_capacity-phone-dirty', async ({
-  mount,
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
-  await open(page, mount);
+  test(`Capacity_WhenDirtyOnPhone_ShouldMatchItsScreenshot_capacity-phone-dirty_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await open(page, mount);
 
-  await page.getByTestId(ids.capacityDays).first().fill('6');
+    await page.getByTestId(ids.capacityDays).first().fill('6');
 
-  await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
-  await expect(page).toHaveScreenshot('capacity-phone-dirty.light.png', { animations: 'disabled' });
-});
+    await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
+    await expect(page).toHaveScreenshot(`capacity-phone-dirty.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+}
