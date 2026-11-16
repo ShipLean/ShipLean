@@ -4,9 +4,9 @@ import { ActionSheet, type SheetAction } from '../../../touch/ActionSheet';
 import { featureTestIds as ids } from '../testIds';
 
 const toneOf: Record<FeatureHealth, string> = {
-  onTrack: 'bg-ok',
-  atRisk: 'bg-warn',
-  blocked: 'bg-danger',
+  onTrack: 'var(--color-ok)',
+  atRisk: 'var(--color-warn)',
+  blocked: 'var(--color-danger)',
 };
 
 const options: readonly { value: FeatureHealth; label: string; hint: string }[] = [
@@ -22,7 +22,8 @@ function HealthDot({ health }: { health: FeatureHealth | null }) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-block size-2.5 rounded-full ${health === null ? 'border border-ink-muted' : toneOf[health]}`}
+      className={`inline-block size-2.5 rounded-full ${health === null ? 'border border-ink-muted' : ''}`}
+      style={health === null ? undefined : { background: toneOf[health] }}
     />
   );
 }

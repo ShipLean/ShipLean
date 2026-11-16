@@ -218,11 +218,11 @@ test('FeatureHealth_WhenSaveFails_ShouldKeepThePreviousHealthAndSaySo', async ({
 
   await screen.getByTestId(ids.statusHealthButton).tap();
   await page.getByTestId(touchTestIds.actionSheetRow).nth(2).tap();
-  await screen.getByTestId(workItemTestIds.save).tap();
+  await screen.getByTestId(touchTestIds.saveBarSave).tap();
   await expect(screen.getByTestId(ids.statusError)).toHaveText('Health could not be saved.');
 
   // Nothing was written: discarding the edit shows the health the Feature still has.
-  await screen.getByTestId(workItemTestIds.discard).tap();
+  await screen.getByTestId(touchTestIds.saveBarDiscard).tap();
   await expect(screen.getByTestId(ids.statusHealthButton)).toContainText('At risk');
 });
 

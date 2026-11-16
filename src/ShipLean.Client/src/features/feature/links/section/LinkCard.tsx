@@ -88,7 +88,7 @@ export function LinkCard({
                   href={card.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="min-w-0 flex-1 truncate font-medium hover:text-signal hover:underline touch:-my-1.5 touch:py-2"
+                  className="min-w-0 flex-1 truncate font-medium hover:text-signal hover:underline touch:-my-1.5 touch:overflow-visible touch:py-2 touch:break-words touch:whitespace-normal"
                 >
                   {card.title}
                 </a>
