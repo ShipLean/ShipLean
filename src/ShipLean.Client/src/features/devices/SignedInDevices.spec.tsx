@@ -191,3 +191,21 @@ test('a failed revoke shows the error, closes the confirm and reads the list aga
   await expect.poll(() => reads).toBe(2);
   await expect(page.getByTestId(ids.row)).toHaveCount(2);
 });
+
+test('DevicesSignOutConfirm_ButtonsShouldShareTheRowAt32px', async ({ mount, page }) => {
+  await look(page, 'light', phone);
+  await stubList(page, twoDevices);
+  await mount(panel);
+  await page.getByTestId(ids.signOut).first().click();
+  const cancel = await page.getByTestId(ids.confirmCancel).boundingBox();
+  const go = await page.getByTestId(ids.confirmGo).boundingBox();
+  if (!cancel || !go) throw new Error('both confirm buttons should render');
+  expect(cancel.y).toBe(go.y);
+  expect(cancel.height).toBeGreaterThanOrEqual(32);
+  expect(go.height).toBeGreaterThanOrEqual(32);
+  expect(Math.abs(cancel.width - go.width)).toBeLessThanOrEqual(1);
+  await expect(page.getByTestId(ids.confirmGo)).toHaveClass(/btn-danger-ghost/);
+  expect(
+    (await page.getByTestId(ids.signOut).first().boundingBox())?.height,
+  ).toBeGreaterThanOrEqual(32);
+});

@@ -1,4 +1,5 @@
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { agentsTestIds } from '../../features/agents/testIds';
 import { devicesTestIds } from '../../features/devices/testIds';
 import { pagesTestIds } from '../../features/pages/testIds';
@@ -34,8 +35,6 @@ const ready = async (page: Page) => {
   await expect(page.getByTestId(ids.myProjectsList)).toBeVisible();
   await expect(page.getByTestId(agentsTestIds.connectedRow)).toHaveCount(1);
   await expect(page.getByTestId(devicesTestIds.row)).toHaveCount(2);
-  // SPRINT-13: the intro line sits above the panels (Profile_ShouldShowTheIntroLine).
-  await expect(page.getByTestId('profile-intro')).toBeVisible();
 };
 
 // Scrolls a panel to just under the top bar.
@@ -44,6 +43,20 @@ const scrollToTop = (page: Page, testId: string) =>
     el.style.scrollMarginTop = '64px';
     el.scrollIntoView({ block: 'start' });
   });
+
+test('Profile_ShouldShowTheIntroLine', async ({ mount, page }) => {
+  await arrange(false)(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/profile' } });
+  await ready(page);
+  const intro = page.getByTestId('profile-intro');
+  await expect(intro).toHaveText(
+    'Only you see these settings. Your name and avatar show wherever your work does.',
+  );
+  const introBox = await intro.boundingBox();
+  const identityBox = await page.getByTestId(pagesTestIds.slotProfileIdentity).boundingBox();
+  if (!introBox || !identityBox) throw new Error('the intro and the identity slot should render');
+  expect(introBox.y).toBeLessThan(identityBox.y);
+});
 
 phonePageShots([
   { name: 'profile', route: '/profile', shell: false, arrange: arrange(false), ready },
