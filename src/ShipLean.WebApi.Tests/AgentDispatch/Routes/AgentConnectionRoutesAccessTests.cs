@@ -1,5 +1,5 @@
 using System.Net;
-using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
 
