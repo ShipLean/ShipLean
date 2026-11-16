@@ -31,8 +31,7 @@ internal sealed class WorkTools(
     StaleWrites writes,
     NoteWriter notes,
     ICurrentUser currentUser,
-    AgentBaseUrl baseUrls,
-    IServiceProvider services)
+    AgentBaseUrl baseUrls)
 {
     [McpServerTool(Name = "find_work_to_pick_up"), McpScope(McpScopes.Read)]
     [Description("List work nobody has taken yet in a sprint (the current sprint unless you name one), top of the stack first. Only unassigned items that have not been started. Optionally only one type (epic, feature, story, bug, task) or only what sits under a parent item such as a story or feature.")]
@@ -231,7 +230,7 @@ internal sealed class WorkTools(
 
     private static string ProjectKey(string itemKey) => itemKey[..itemKey.LastIndexOf('-')];
 
-    // The server's own address for open_url: the request's, through the accessor (this is a tool, not a request handler).
+    // The server's own address for open_url: the current request's (this is a tool, not a request handler).
     private async Task<string> BaseUrlAsync(CancellationToken cancellationToken)
-        => (await baseUrls.ReadAsync(services.GetRequiredService<IHttpContextAccessor>().HttpContext!.Request, cancellationToken)).Issuer;
+        => (await baseUrls.ReadAsync(cancellationToken)).Issuer;
 }

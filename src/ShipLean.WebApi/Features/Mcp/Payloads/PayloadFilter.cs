@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Mcp.Transport;
@@ -54,9 +55,9 @@ public static class PayloadFilter
                 expanded.TryAdd(name, value);
             }
             parameters.Arguments = expanded;
-            if (services.GetService<IHttpContextAccessor>()?.HttpContext is { } httpContext)
+            if (services.GetService<ICurrentRequest>()?.Items is { } items)
             {
-                httpContext.Items[McpPayloadTargets.UsedItem] = true;
+                items[McpPayloadTargets.UsedItem] = true;
             }
             return await next(request, cancellationToken);
         };
