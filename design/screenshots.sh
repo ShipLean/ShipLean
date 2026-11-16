@@ -70,6 +70,7 @@ declare -A variants=(
   [retro-insights-impact]="retro-insights.html?view=impact"
   [sprint-demo-closable]="sprint-demo.html?state=closable"
   [sprint-demo-none]="sprint-demo.html?state=none"
+  [sprint-demo-requested]="sprint-demo.html?state=requested"
   [sprint-demo-blocked]="sprint-demo.html?state=blocked"
   [sprint-demo-working]="sprint-demo.html?state=working"
   [sprint-demo-failed]="sprint-demo.html?state=failed"

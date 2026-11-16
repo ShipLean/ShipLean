@@ -301,6 +301,8 @@ declare -A shots=(
   [settings-board-styles]="board-settings.html?pane=styles"
   [settings-board-styles-drag]="board-settings.html?pane=styles&drag=0"
   [settings-board-styles-dirty]="board-settings.html?pane=styles&dirty"
+  # Sprint demo: the requested status (SHIP-1908); Remake demo shows on every Ready state (demo-ready*, demo-youtube-*)
+  [demo-requested]="sprint-demo.html?state=requested"
 )
 
 names=("$@")
