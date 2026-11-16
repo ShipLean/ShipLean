@@ -11,12 +11,10 @@ export function ChangesImpact({ insights }: RetroInsightsSlotProps) {
   return (
     <div className="flex flex-col gap-3">
       {touch ? (
-        <>
-          <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
-            For each closed action item: how often its theme came up before and after it shipped.
-          </p>
+        <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
+          For each closed action item: how often its theme came up before and after it shipped.{' '}
           <HowVerdictsWork />
-        </>
+        </p>
       ) : (
         <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">
           For each closed action item: how often its theme came up before and after it shipped. Bars

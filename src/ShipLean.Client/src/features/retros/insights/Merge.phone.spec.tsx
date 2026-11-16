@@ -58,3 +58,36 @@ for (const colour of THEMES) {
     });
   });
 }
+
+const merge = { hooksConfig: { route: '/p/SHIP/retros/insights?view=themes&merge=' } };
+
+test('InsightsMerge_Checkboxes_ShouldBeTouchSized', async ({ mount, page }) => {
+  expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
+  await stubRetros(page);
+  await mount(<RetroInsightsPanel project={insightsProject} />, merge);
+  const boxes = page.getByTestId(ids.retroMergeSource);
+  await expect(boxes.first()).toBeVisible();
+  expect(await boxes.count()).toBeGreaterThan(1);
+  for (const box of await boxes.all()) {
+    const size = (await box.boundingBox())!;
+    expect(size.width).toBeGreaterThanOrEqual(20);
+    expect(size.height).toBeGreaterThanOrEqual(20);
+  }
+});
+
+test('InsightsMerge_DisabledMerge_ShouldStillLookLikeAButton', async ({ mount, page }) => {
+  expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
+  await stubRetros(page);
+  await mount(<RetroInsightsPanel project={insightsProject} />, merge);
+  const save = page.getByTestId(ids.retroMergeSave);
+  await expect(save).toBeVisible();
+  await expect(save).toBeDisabled();
+  await expect(save).toHaveCSS('border-top-width', '1px');
+  const background = await save.evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(background).not.toBe('rgba(0, 0, 0, 0)');
+  expect((await save.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  // Ticking a source and choosing Into enables it.
+  await page.getByTestId(ids.retroMergeSource).first().check();
+  await page.getByTestId(ids.retroMergeTarget).selectOption({ index: 2 });
+  await expect(save).toBeEnabled();
+});

@@ -66,7 +66,7 @@ export function ActionItemCard({
           {theme.name}
           {recurring ? (
             <span data-recurring="">
-              <Chip tone="warn">↻</Chip>
+              <Chip tone="warn">↻ Recurring</Chip>
             </span>
           ) : null}
         </div>
@@ -85,10 +85,31 @@ export function ActionItemCard({
             <Avatar {...owner} />
             {owner.name}
           </span>
+        ) : open ? (
+          <span
+            data-testid={ids.retroActionUnassigned}
+            data-cell="owner"
+            className="inline-flex items-center gap-1.5 text-ink-muted"
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block size-[var(--text-lg)] rounded-full border border-dashed border-edge"
+            />
+            Unassigned
+          </span>
         ) : null}
         <span className="flex-1" />
         <span data-cell="impact" className="relative">
-          {row.impact ? <VerdictChip verdict={row.impact} mode={mode} /> : null}
+          {row.impact ? (
+            <VerdictChip verdict={row.impact} mode={mode} />
+          ) : open ? (
+            <span
+              data-testid={ids.retroActionImpactPending}
+              className="text-[length:var(--text-xs)] text-ink-muted italic"
+            >
+              impact when done
+            </span>
+          ) : null}
         </span>
       </div>
     </article>

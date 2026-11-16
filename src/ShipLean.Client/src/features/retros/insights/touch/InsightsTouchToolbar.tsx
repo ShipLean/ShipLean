@@ -9,7 +9,7 @@ import { rangeLabel } from '../RangeSelect';
 import { defsSheetValue, withMerge, withSheet } from './insightsAddress';
 
 /**
- * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, then one row with Range ▾ and ⋯. Not sticky.
+ * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, full-bleed out of the page's 16px gutter, then one row with Range ▾ and ⋯. Not sticky.
  * `merge` is Merge themes, kept mounted because at touch it shows the full-screen merge the address names.
  */
 export function InsightsTouchToolbar({
@@ -36,12 +36,11 @@ export function InsightsTouchToolbar({
   const navigate = useNavigate();
   const write = (next: URLSearchParams) => setParams(next, { replace: true });
   const actions: SheetAction[] = [
-    { id: 'merge', label: 'Merge themes…', onSelect: () => write(withMerge(params)) },
     {
-      id: 'unthemed',
-      label: `Give unthemed points themes (${unthemedTotal})`,
-      disabled: unthemedTotal === 0,
-      onSelect: () => void navigate(routePath('retros', { key: projectKey }, { unthemed: 'true' })),
+      id: 'merge',
+      label: 'Merge themes…',
+      hint: 'Fold one theme into another',
+      onSelect: () => write(withMerge(params)),
     },
     {
       id: 'defs',
@@ -49,13 +48,26 @@ export function InsightsTouchToolbar({
       onSelect: () => write(withSheet(params, defsSheetValue())),
     },
     {
+      id: 'unthemed',
+      label: 'Give unthemed points themes',
+      group: 'Go to',
+      detail: unthemedTotal,
+      trailing: 'chevron',
+      disabled: unthemedTotal === 0,
+      onSelect: () => void navigate(routePath('retros', { key: projectKey }, { unthemed: 'true' })),
+    },
+    {
       id: 'search',
       label: 'Search retrospectives',
+      group: 'Go to',
+      trailing: 'chevron',
       onSelect: () => void navigate(routePath('retros', { key: projectKey })),
     },
     {
       id: 'features',
       label: 'Retrospectives by Feature',
+      group: 'Go to',
+      trailing: 'chevron',
       onSelect: () => void navigate(routePath('retroFeatures', { key: projectKey })),
     },
   ];
@@ -64,7 +76,7 @@ export function InsightsTouchToolbar({
       <div
         role="group"
         aria-label="Insight"
-        className="grid grid-cols-3 border-b border-edge bg-panel"
+        className="-mx-4 grid grid-cols-3 border-b border-edge bg-panel"
       >
         {views.map((v) => (
           <button
@@ -96,7 +108,7 @@ export function InsightsTouchToolbar({
         </button>
         <span className="flex-1" />
         {merge}
-        <MoreButton label="Insights" actions={actions} />
+        <MoreButton label="Insights" variant="bordered" actions={actions} />
       </div>
     </div>
   );

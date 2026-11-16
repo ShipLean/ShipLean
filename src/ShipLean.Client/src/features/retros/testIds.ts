@@ -227,4 +227,8 @@ export const retrosTestIds = {
   retrosOpenRetroTypeKey: 'retros-open-retro-type-key',
   retrosOpenRetroKey: 'retros-open-retro-key',
   retrosOpenRetroSteps: 'retros-open-retro-steps',
+  retroActionDoneHeading: 'retro-action-done-heading',
+  retroActionUnassigned: 'retro-action-unassigned',
+  retroActionImpactPending: 'retro-action-impact-pending',
+  retroImpactHint: 'retro-impact-hint',
 } as const;

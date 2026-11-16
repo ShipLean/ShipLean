@@ -122,7 +122,7 @@ test('ImpactPhone_WhenABarIsTapped_ShouldOutlineItAndReadOutItsColumnAndCount', 
   await expect(card.getByTestId(ids.retroImpactReadout)).toHaveCount(0);
 });
 
-test('ImpactPhone_WhenOpened_ShouldKeepTheNumbersAndReplaceTheExplanationWithAButton', async ({
+test('ImpactPhone_WhenOpened_ShouldKeepTheNumbersAndPutHowVerdictsWorkInTheIntro', async ({
   mount,
   page,
 }) => {
@@ -136,9 +136,52 @@ test('ImpactPhone_WhenOpened_ShouldKeepTheNumbersAndReplaceTheExplanationWithABu
   await expect(view).not.toContainText('after at most half of before');
   const how = page.getByTestId(ids.retroImpactHowVerdicts);
   expect((await how.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  // Inline: it sits inside the intro paragraph, not in a row of its own.
+  await expect(page.locator('p', { has: how })).toContainText('before and after it shipped.');
   await how.tap();
   await expect(page.getByTestId('location-probe')).toContainText('sheet=defs');
   await expect(page.getByTestId('location-probe')).toContainText('view=impact');
+});
+
+test('InsightsImpact_WhenNoBarSelected_ShouldShowTheHint', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<ActionsImpactHarness view="impact" insights={retroInsights} />, route('impact'));
+  const cards = page.getByTestId(ids.retroImpactCard);
+  await expect(cards).toHaveCount(retroInsights.impact.length);
+  const card = cards.first();
+  await expect(card.getByTestId(ids.retroImpactHint)).toHaveText('Tap a bar to read it');
+  await expect(card.getByTestId(ids.retroImpactReadout)).toHaveCount(0);
+  await card.getByTestId(ids.retroImpactBar).nth(1).tap();
+  await expect(card.getByTestId(ids.retroImpactReadout)).toBeVisible();
+  await expect(card.getByTestId(ids.retroImpactHint)).toHaveCount(0);
+});
+
+test('ActionItemsPhone_WhenOpened_ShouldBeFlatWithADoneHeadingAndTheDesignsCardDetails', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await stubSprints(page);
+  await mount(<ActionsImpactHarness view="actions" insights={retroInsights} />, route('actions'));
+  const cards = page.getByTestId(ids.retroActionCard);
+  await expect(cards).toHaveCount(retroInsights.actionItems.length);
+  // No nested panel: the cards' container sits directly in a section with no border.
+  await expect(page.locator('section')).toHaveCSS('border-top-width', '0px');
+  const done = retroInsights.actionItems.filter((r) => !isOpen(r.action.state.category));
+  expect(done.length).toBeGreaterThan(0);
+  await expect(page.getByTestId(ids.retroActionDoneHeading)).toHaveText('Done');
+  const unowned = retroInsights.actionItems.filter(
+    (r) => isOpen(r.action.state.category) && !r.owner,
+  );
+  const noImpact = retroInsights.actionItems.filter(
+    (r) => isOpen(r.action.state.category) && !r.impact,
+  );
+  await expect(page.getByTestId(ids.retroActionUnassigned)).toHaveCount(unowned.length);
+  await expect(page.getByTestId(ids.retroActionImpactPending)).toHaveCount(noImpact.length);
+  await expect(page.getByTestId(ids.retroActionImpactPending).first()).toHaveText(
+    'impact when done',
+  );
+  await expect(page.locator('[data-recurring]').first()).toContainText('Recurring');
 });
 
 test('ImpactPhone_WhenOpened_ShouldShowOneCardARow', async ({ mount, page }) => {

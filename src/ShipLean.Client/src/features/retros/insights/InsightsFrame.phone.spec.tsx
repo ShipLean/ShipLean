@@ -39,6 +39,7 @@ for (const colour of THEMES) {
     await page.getByTestId(touchTestIds.moreButton).tap();
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(5);
+    await expect(sheet.getByTestId(touchTestIds.actionSheetGroup)).toHaveText(['Go to']);
     await expect(sheet).toHaveScreenshot(`retro-insights-more.${colour}.png`, {
       animations: 'disabled',
     });
@@ -119,14 +120,15 @@ test('InsightsFrame_WhenMoreIsUsed_ShouldWriteMergeAndDefsAndShowTheUnthemedCoun
   await mount(<InsightsAddressHarness project={insightsProject} />, route());
   await page.getByTestId(touchTestIds.moreButton).tap();
   const rows = page.getByTestId(touchTestIds.actionSheetRow);
-  await expect(rows.nth(1)).toHaveText(/^Give unthemed points themes \(\d+\)$/);
+  await expect(rows.nth(2)).toContainText('Give unthemed points themes');
+  await expect(rows.nth(2).getByTestId(touchTestIds.actionSheetDetail)).toHaveText(/^\d+$/);
   await rows.nth(0).tap();
   await expect(address(page)).toHaveText('?merge=');
   // Merge themes is full screen now: closing it takes `merge` out of the address before ⋯ is reachable again.
   await page.getByTestId(touchTestIds.dialogClose).tap();
   await expect(address(page)).toHaveText('');
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await rows.nth(2).tap();
+  await rows.nth(1).tap();
   await expect(address(page)).toHaveText('?sheet=defs');
 });
 
@@ -150,4 +152,42 @@ test('InsightsFrame_WhenAChipInsideACardIsTapped_ShouldNotOpenTheCard', async ({
   await page.getByTestId(ids.retroStatusChip).tap();
   await expect(page.getByTestId('card')).toHaveAttribute('data-opened', 'false');
   await expect(page.getByTestId('card')).toBeVisible();
+});
+
+test('InsightsMore_ShouldShowAGroupHeading', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<InsightsAddressHarness project={insightsProject} />, route());
+  await page.getByTestId(touchTestIds.moreButton).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(5);
+  const heading = sheet.getByTestId(touchTestIds.actionSheetGroup);
+  await expect(heading).toHaveText('Go to');
+  // The heading sits above the three navigation rows and below Merge themes and What these mean.
+  const rows = await sheet
+    .getByTestId(touchTestIds.actionSheetRow)
+    .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+  const headingTop = (await heading.boundingBox())!.y;
+  expect(rows.filter((top) => top < headingTop)).toHaveLength(2);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText(
+    'Fold one theme into another',
+  );
+});
+
+test('InsightsFrame_WhenOpened_ShouldHaveTabsFullBleedAndABorderedMore', async ({ mount, page }) => {
+  await stubRetros(page);
+  // A 16px page gutter around the panel, as ProjectScreen gives a retros page.
+  await mount(
+    <div className="p-4">
+      <InsightsAddressHarness project={insightsProject} />
+    </div>,
+    route(),
+  );
+  const tabs = page.getByTestId(ids.retroInsightsTab);
+  await expect(tabs).toHaveCount(3);
+  const first = (await tabs.first().boundingBox())!;
+  const last = (await tabs.last().boundingBox())!;
+  expect(first.x).toBe(0);
+  expect(last.x + last.width).toBe(390);
+  const more = page.getByTestId(touchTestIds.moreButton);
+  await expect(more).toHaveCSS('border-top-width', '1px');
 });

@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { retrosTestIds as ids } from '../../testIds';
 
-/** The Changes & impact explanation on a phone: one 32px button that writes `sheet=defs` (the definitions sheet reads it). */
+/** The Changes & impact explanation on a phone: an inline link, a 32px-tall button, that writes `sheet=defs` (the definitions sheet reads it). */
 export function HowVerdictsWork() {
   const [params, setParams] = useSearchParams();
   const open = () => {
@@ -13,7 +13,7 @@ export function HowVerdictsWork() {
     <button
       type="button"
       data-testid={ids.retroImpactHowVerdicts}
-      className="btn-ghost cursor-pointer self-start whitespace-nowrap touch:min-h-[var(--touch-target)]"
+      className="inline-flex min-h-[var(--touch-target)] cursor-pointer items-center border-0 bg-transparent p-0 align-middle text-[length:inherit] text-signal underline"
       onClick={open}
     >
       How verdicts work

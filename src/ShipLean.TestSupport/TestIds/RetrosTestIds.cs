@@ -232,4 +232,8 @@ public static class RetrosTestIds
     public const string RetrosOpenRetroTypeKey = "retros-open-retro-type-key";
     public const string RetrosOpenRetroKey = "retros-open-retro-key";
     public const string RetrosOpenRetroSteps = "retros-open-retro-steps";
+    public const string RetroActionDoneHeading = "retro-action-done-heading";
+    public const string RetroActionUnassigned = "retro-action-unassigned";
+    public const string RetroActionImpactPending = "retro-action-impact-pending";
+    public const string RetroImpactHint = "retro-impact-hint";
 }
