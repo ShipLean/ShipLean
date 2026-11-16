@@ -1,5 +1,6 @@
 using System.Globalization;
 using Agoda.IoC.Core;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Application.Features.Inspection.Settings;
 using ShipLean.Contracts.Errors;
 using ShipLean.Core;
@@ -14,6 +15,8 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
 {
     // The section shows the newest runs; it assembles each one for its timeline, so it is capped.
     public const int MaxSectionRuns = 50;
+
+    private const int MaxParallelReads = 4;
 
     private const int RowLineCap = 40;
 
@@ -40,12 +43,27 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         var window = WindowOf(item);
         var found = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
         var now = time.GetUtcNow();
+        // The port reads one run per call, so the section reads its runs side by side (a few at a time) instead of one after the other.
+        using var slots = new SemaphoreSlim(MaxParallelReads);
+        var newest = found.Runs.OrderByDescending(r => r.StartedAt).Take(MaxSectionRuns).ToList();
+        var assembledRuns = await Task.WhenAll(newest.Select(async summary =>
+        {
+            await slots.WaitAsync(ct);
+            try
+            {
+                var raw = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, summary.RunId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+                return raw is null ? null : assembler.Assemble(raw);
+            }
+            finally
+            {
+                slots.Release();
+            }
+        }));
         var rows = new List<AgentRunRowDto>();
         var waits = 0L;
-        foreach (var summary in found.Runs.OrderByDescending(r => r.StartedAt).Take(MaxSectionRuns))
+        for (var i = 0; i < newest.Count; i++)
         {
-            var raw = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, summary.RunId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
-            var assembled = raw is null ? null : assembler.Assemble(raw);
+            var (summary, assembled) = (newest[i], assembledRuns[i]);
             var agent = AgentId(summary.Agent);
             waits += assembled is null ? 0 : WaitMs(assembled);
             rows.Add(new AgentRunRowDto(
@@ -62,6 +80,10 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     {
         var read = await ReadAsync(projectKey, itemKey, runId, ct);
         var (settings, raw) = (read.Settings, read.Run);
+        if (raw is null)
+        {
+            return ExpiredPage(read.Expired!, itemKey, read.Runs);
+        }
         var run = assembler.Assemble(raw);
         var summary = raw.Summary;
         var totalMs = DurationMs(summary.StartedAt, summary.EndedAt);
@@ -95,7 +117,6 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
                 filter.ErrorsOnly ? RunRowFilter.ErrorsWithAncestors(rows) : rows);
         }).Where(t => !filter.ErrorsOnly || t.Rows.Count > 0).ToList();
 
-        // TODO: expired runs answer 200 with expired=true once ITraceSource can tell an expired run from an unlinked one; it answers null for both.
         return new RunPageDto(false, header, run.LogOnly, run.LogOnly ? Banners.GetValueOrDefault(agent) : null, raw.Truncated, Grafana(raw.Spans.FirstOrDefault()?.TraceId),
             settings.ShowContent, overview, axis, turns);
     }
@@ -122,6 +143,10 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     {
         var read = await ReadAsync(projectKey, itemKey, runId, ct);
         var (settings, raw) = (read.Settings, read.Run);
+        if (raw is null)
+        {
+            throw ApiException.NotFound("Row not found: the run is no longer available.");
+        }
         var row = assembler.Assemble(raw).Turns.SelectMany(t => t.Rows).FirstOrDefault(r => r.Id == rowId) ?? throw ApiException.NotFound("Row not found.");
         var shown = settings.ShowContent;
         var (input, _) = Capped(shown ? row.Input : null);
@@ -134,24 +159,66 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
             row.FilePath, row.CommitSha, Grafana(raw.Spans.FirstOrDefault(s => s.SpanId == rowId)?.TraceId));
     }
 
-    private async Task<(InspectionProjectStore.ProjectSettings Settings, RawRun Run, IReadOnlyList<RunSummary> Runs)> ReadAsync(string projectKey, string itemKey, string runId, CancellationToken ct)
+    // Run is null for an expired run: listed for the item, but the store no longer returns its data. Expired then holds its listing.
+    private async Task<(InspectionProjectStore.ProjectSettings Settings, RawRun? Run, RunSummary? Expired, IReadOnlyList<RunSummary> Runs)> ReadAsync(string projectKey, string itemKey, string runId, CancellationToken ct)
     {
         var settings = await gate.RequireRunsAsync(projectKey, ct);
         var item = await items.RequireAsync(projectKey, itemKey, ct);
         var window = WindowOf(item);
         var found = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
         var run = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, runId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
-        if (run is null)
+        var ordered = found.Runs.OrderBy(r => r.StartedAt).ToList();
+        if (run is not null)
         {
-            // The store answers null for an expired or unknown run and also when it is down; an outage must not read as "no longer available".
-            if (found.Reachable)
+            return (settings, run, null, ordered);
+        }
+        // The store answers null for an expired or unknown run, and also when a read fails or times out; only a run past retention reads as expired.
+        var listed = ordered.FirstOrDefault(r => r.RunId == runId);
+        var all = ordered;
+        if (listed is null && found.Reachable)
+        {
+            // The listing window stops at MaxSearchDays, but an expired run ended before retention: look again, wider, for this item only.
+            var widest = time.GetUtcNow().AddDays(-(gate.Instance.RetentionDays + ClickHouseViewSql.ExpiredKeepDays));
+            var from = item.CreatedAt > widest ? item.CreatedAt : widest;
+            if (from < window.From)
             {
-                throw ApiException.NotFound("Run not found.");
+                var wider = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, from, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+                listed = wider.Runs.FirstOrDefault(r => r.RunId == runId);
+                found = wider.Reachable ? found : wider;
+                if (listed is not null)
+                {
+                    all = wider.Runs.OrderBy(r => r.StartedAt).ToList();
+                }
             }
-            var why = found.Problem is null ? "" : ": " + found.Problem;
+        }
+        var health = listed is null ? null : await source.CheckAsync(ct);
+        if (!found.Reachable || health is { Reachable: false })
+        {
+            var problem = found.Reachable ? health?.Problem : found.Problem;
+            var why = problem is null ? "" : ": " + problem;
             throw ApiException.Conflict($"The trace store is unreachable{why}. The run may still exist; try again shortly.");
         }
-        return (settings, run, [.. found.Runs.OrderBy(r => r.StartedAt)]);
+        if (listed is null)
+        {
+            throw ApiException.NotFound("Run not found.");
+        }
+        // Expired (D31): listed for the item and ended before the store's retention. A listed run that ended recently was a failed read.
+        if (listed.EndedAt >= time.GetUtcNow().AddDays(-gate.Instance.RetentionDays))
+        {
+            throw ApiException.Conflict("The store didn't return this run. It may still exist; try again shortly.");
+        }
+        return (settings, null, listed, all);
+    }
+
+    private RunPageDto ExpiredPage(RunSummary summary, string itemKey, IReadOnlyList<RunSummary> runs)
+    {
+        var agent = AgentId(summary.Agent);
+        var older = runs.LastOrDefault(r => r.StartedAt < summary.StartedAt);
+        var newer = runs.FirstOrDefault(r => r.StartedAt > summary.StartedAt);
+        var header = new RunHeaderDto(
+            agent, Label(agent), StartedLabel(summary.StartedAt), summary.StartedBy, summary.Links.First(l => l.ItemKey == itemKey).Source,
+            older?.RunId, newer?.RunId, DurationMs(summary.StartedAt, summary.EndedAt), 0, summary.SpanCount + summary.LogCount, summary.TokensIn, summary.TokensOut, summary.ErrorCount, 0);
+        return new RunPageDto(true, header, false, null, false, null, false, [], new RunAxisDto(0, 0), []);
     }
 
     private (DateTimeOffset From, DateTimeOffset To) WindowOf(InspectionItemInfo item) => RunWindow.For(item.CreatedAt, time.GetUtcNow(), gate.Instance.MaxSearchDays);

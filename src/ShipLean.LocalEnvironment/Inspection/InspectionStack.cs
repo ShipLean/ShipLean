@@ -175,6 +175,9 @@ public sealed class InspectionStack
         var clickHouse = Base(ClickHouseImage, "clickhouse", network, 1024)
             .WithEnvironment("CLICKHOUSE_USER", ClickHouseUser)
             .WithEnvironment("CLICKHOUSE_PASSWORD", ClickHouseSecret)
+            // Testcontainers leaves resource mappings out of the reuse hash: bump this whenever clickhouse-memory.xml changes, so hosts start a capped container.
+            .WithEnvironment("SHIPLEAN_CLICKHOUSE_CONFIG", "memory-v1")
+            .WithResourceMapping(new FileInfo(Path.Combine(configs, "clickhouse-memory.xml")), "/etc/clickhouse-server/config.d/")
             .WithPortBinding(8123, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8123).ForPath("/ping")))
             .Build();
