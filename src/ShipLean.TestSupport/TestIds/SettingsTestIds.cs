@@ -341,4 +341,9 @@ public static class SettingsTestIds
     public const string SettingsIndexCount = "settings-index-count";
     public const string UnsavedChip = "settings-unsaved-chip";
     public const string ChangePane = "settings-change-pane";
+    public const string StateAddOpen = "settings-state-add-open";
+    public const string StateAddCancel = "settings-state-add-cancel";
+    public const string StateTypeRow = "settings-state-type-row";
+    public const string MembersSummary = "settings-members-summary";
+    public const string StateSummary = "settings-state-summary";
 }

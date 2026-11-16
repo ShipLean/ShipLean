@@ -5,7 +5,7 @@ import { StatesHarness } from '../ct/StatesHarness';
 import { settingsTestIds as ids } from '../testIds';
 import { touchTestIds } from '../../../touch/testIds';
 
-// The States tab on a phone (SHIP-732, L732b, P5): the type select, two-line rows, the stacked delete form and the add
+// The States tab on a phone (SHIP-732, L732b, P5): the type chip row, two-line rows, the stacked delete form and the add
 // form, as element shots of the States panel. Regenerate with
 // scripts/update-page-shots.sh src/features/settings/states/SettingsStates.phone.spec.tsx.
 
@@ -342,6 +342,157 @@ test('SettingsStatesPhone_WhenDragCancelled_ShouldClearTheDropLine', async ({ mo
   ).toEqual(['New', 'Active', 'Closed']);
 });
 
+// ND3a-6 (SHIP-1809 P4): the types are a sideways row of chips (no select), and "+ Add state" sits above the rows.
+test('SettingsStatesPhone_WhenOpened_ShouldShowTypeChipsAndAddStateAboveTheRows', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  await expect(panel.getByTestId(ids.stateTypeSelect)).toHaveCount(0);
+  await expect(panel.getByTestId(ids.stateAddName)).toHaveCount(0);
+  const chip = panel.getByTestId(ids.stateTypeStory);
+  await expect(chip).toBeVisible();
+  await expect(chip).toHaveAttribute('aria-pressed', 'true');
+  const chipBox = await chip.boundingBox();
+  const add = await panel.getByTestId(ids.stateAddOpen).boundingBox();
+  const firstRow = await panel.getByTestId(ids.stateRow).first().boundingBox();
+  if (!chipBox || !add || !firstRow) throw new Error('not drawn');
+  expect(chipBox.height).toBeGreaterThanOrEqual(32);
+  expect(add.height).toBeGreaterThanOrEqual(32);
+  expect(add.y).toBeGreaterThan(chipBox.y + chipBox.height - 1);
+  expect(add.y + add.height).toBeLessThanOrEqual(firstRow.y);
+  // The chips stay on one line and scroll in their own box; nothing else in the panel or page spills.
+  const row = await panel.getByTestId(ids.stateTypeRow).evaluate((e) => ({
+    scrolls: e.scrollWidth > e.clientWidth,
+    tops: new Set(Array.from(e.children).map((c) => c.getBoundingClientRect().top)).size,
+    page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  expect(row.scrolls).toBe(true);
+  expect(row.tops).toBe(1);
+  expect(row.page).toBe(0);
+});
+
+// ND3a-6 (P4): picking a chip that the row cuts off scrolls the row so the picked chip is whole.
+test('SettingsStatesPhone_WhenACutOffChipIsPicked_ShouldScrollItIntoView', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  const row = panel.getByTestId(ids.stateTypeRow);
+  const rowBox = await row.boundingBox();
+  if (!rowBox) throw new Error('no row');
+  const right = rowBox.x + rowBox.width;
+  // The chip the row's right edge cuts through; tapped on its visible part, so Playwright doesn't scroll it first.
+  const cut = await row.evaluate((e, edge) => {
+    const chips = Array.from(e.children) as HTMLElement[];
+    const index = chips.findIndex((c) => {
+      const b = c.getBoundingClientRect();
+      return b.left < edge - 8 && b.right > edge + 1;
+    });
+    const b = chips[index]?.getBoundingClientRect();
+    return b === undefined ? undefined : { index, x: (b.left + edge) / 2, y: b.top + b.height / 2 };
+  }, right);
+  if (cut === undefined) throw new Error('no chip is cut off at the right edge');
+  await page.touchscreen.tap(cut.x, cut.y);
+  const picked = row.locator(':scope > *').nth(cut.index);
+  await expect(picked).toHaveAttribute('aria-pressed', 'true');
+  await expect
+    .poll(async () => {
+      const b = await picked.boundingBox();
+      return b === null ? Infinity : b.x + b.width - right;
+    })
+    .toBeLessThanOrEqual(0.5);
+});
+
+// ND3a-6 (P4): "+ Add state" opens the name and category form in its place; adding closes it and the row joins the draft.
+test('SettingsStatesPhone_WhenAddStateTappedAndAdded_ShouldCloseTheFormAndAddTheRow', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+
+  await panel.getByTestId(ids.stateAddOpen).tap();
+  await expect(panel.getByTestId(ids.stateAddOpen)).toHaveCount(0);
+  await expect(panel.getByTestId(ids.stateAddName)).toBeFocused();
+  await panel.getByTestId(ids.stateAddCancel).tap();
+  await expect(panel.getByTestId(ids.stateAddName)).toHaveCount(0);
+
+  await panel.getByTestId(ids.stateAddOpen).tap();
+  await panel.getByTestId(ids.stateAddName).fill('In review');
+  await panel.getByTestId(ids.stateAdd).tap();
+
+  await expect(panel.getByTestId(ids.stateAddName)).toHaveCount(0);
+  await expect(panel.getByTestId(ids.stateAddOpen)).toBeVisible();
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(4);
+  await expect(panel.getByTestId(ids.stateTypeStory)).toContainText('4');
+  await expect(page.getByText('In review will be added on save')).toBeVisible();
+});
+
+// SHIP-2046 (SHIP-1809 P4): under the chips, the picked type's summary: type · state count · item count.
+test('SettingsStatesPhone_WhenATypeIsPicked_ShouldSummariseItsStatesAndItems', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  await expect(panel.getByTestId(ids.stateSummary)).toHaveText('User Story · 3 states · 7 items');
+
+  await panel.getByTestId(ids.stateTypeBug).tap();
+  await expect(panel.getByTestId(ids.stateSummary)).toHaveText('Bug · 2 states · 0 items');
+});
+
+// SHIP-2046 (SHIP-1809 P4): the chip row runs from one edge of the panel to the other, inside its border.
+test('SettingsStatesPhone_WhenOpened_ShouldRunTheTypeChipRowToThePanelEdges', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  const edges = await panel.getByTestId(ids.stateTypeRow).evaluate((row, id) => {
+    const box = row.getBoundingClientRect();
+    const outer = document.querySelector(`[data-testid="${id}"]`);
+    if (outer === null) throw new Error('no panel');
+    const p = outer.getBoundingClientRect();
+    const border = parseFloat(getComputedStyle(outer).borderLeftWidth);
+    return {
+      left: box.left - (p.left + border),
+      right: p.right - border - box.right,
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  }, ids.statesPanel);
+  expect(Math.abs(edges.left)).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(edges.right)).toBeLessThanOrEqual(0.5);
+  expect(edges.page).toBe(0);
+});
+
 for (const theme of THEMES) {
   const open = async (
     mount: Parameters<Parameters<typeof test>[2]>[0]['mount'],
@@ -366,7 +517,7 @@ for (const theme of THEMES) {
   }) => {
     const { panel } = await open(mount, page);
 
-    await expect(panel.getByTestId(ids.stateTypeSelect)).toBeVisible();
+    await expect(panel.getByTestId(ids.stateTypeStory)).toHaveAttribute('aria-pressed', 'true');
     await expect(panel).toHaveScreenshot(`settings-states-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -396,6 +547,7 @@ for (const theme of THEMES) {
   }) => {
     const { panel } = await open(mount, page);
 
+    await panel.getByTestId(ids.stateAddOpen).tap();
     await panel.getByTestId(ids.stateAddName).fill('In review');
 
     await expect(panel.getByTestId(ids.stateAdd)).toBeEnabled();

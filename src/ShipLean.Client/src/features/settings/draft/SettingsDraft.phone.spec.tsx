@@ -263,6 +263,33 @@ test('SettingsPhone_WhenChangesTapped_ShouldJumpToTheTab', async ({ mount, page 
   await expect(page.getByTestId(ids.membersPanel)).toBeVisible();
 });
 
+// ND3a-8 (SHIP-1809 P6): under the title, "n people · n admin" from the draft, then Add member, both above the rows.
+test('SettingsPhone_WhenMembersOpened_ShouldShowThePeopleSummaryAndAddMemberAboveTheRows', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('members'));
+  const panel = page.getByTestId(ids.membersPanel);
+  const summary = panel.getByTestId(ids.membersSummary);
+  await expect(summary).toHaveText('2 people · 1 admin');
+  const add = await panel.getByTestId(ids.memberAddEmail).boundingBox();
+  const button = await panel.getByTestId(ids.memberAdd).boundingBox();
+  const said = await summary.boundingBox();
+  const firstRow = await panel.getByTestId(ids.memberRow).first().boundingBox();
+  if (!add || !button || !said || !firstRow) throw new Error('not drawn');
+  expect(add.y).toBeGreaterThan(said.y + said.height - 1);
+  expect(add.y + add.height).toBeLessThanOrEqual(firstRow.y);
+  // The field and its Add button share one line.
+  expect(Math.abs(button.y + button.height / 2 - (add.y + add.height / 2))).toBeLessThanOrEqual(2);
+  expect(button.x).toBeGreaterThan(add.x + add.width - 1);
+
+  await panel.getByTestId(ids.memberRemove).last().tap();
+  await expect(summary).toHaveText('1 person · 1 admin');
+  await panel.getByTestId(ids.memberRole).first().selectOption('member');
+  await expect(summary).toHaveText('1 person · 0 admins');
+});
+
 test('SettingsPhone_WhenMemberRemoved_ShouldKeepRemoveVisibleAndUndoable', async ({
   mount,
   page,
