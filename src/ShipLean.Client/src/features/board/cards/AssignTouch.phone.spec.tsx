@@ -59,7 +59,15 @@ test('AssignSheet_ShouldShowAvatarsAndUnassignedLast', async ({ mount, page }) =
     route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ...TOM, hasProjects: true, canCreateProjects: false, theme: 'os', density: 'comfortable', timeZone: null, timeZoneLabel: '' }),
+      body: JSON.stringify({
+        ...TOM,
+        hasProjects: true,
+        canCreateProjects: false,
+        theme: 'os',
+        density: 'comfortable',
+        timeZone: null,
+        timeZoneLabel: '',
+      }),
     }),
   );
   await mount(<BoardHarness />, stories);

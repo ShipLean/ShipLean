@@ -25,10 +25,7 @@ export function moveTargets(view: BoardViewDto, itemId: string): MoveTarget[] {
       columnId: column.id,
       done: doneHalf,
       label: column.split ? `${column.name} · ${doneHalf ? 'Done' : 'Doing'}` : column.name,
-      wip:
-        column.wipLimit === null
-          ? `${count}`
-          : `${column.count}/${column.wipLimit}`,
+      wip: column.wipLimit === null ? `${count}` : `${column.count}/${column.wipLimit}`,
       over: column.overLimit,
       current: at?.columnId === column.id && at.done === doneHalf,
     };

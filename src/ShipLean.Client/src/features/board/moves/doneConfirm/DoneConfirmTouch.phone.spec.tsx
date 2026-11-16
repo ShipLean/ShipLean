@@ -51,7 +51,9 @@ test('DoneCheck_TitleShouldAskTheDesignsQuestion', async ({ mount, page }) => {
   await mount(<BoardHarness level="features" />, route);
   await askForDone(page);
 
-  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move SHIP-102 to Done?');
+  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText(
+    'Move SHIP-102 to Done?',
+  );
 });
 
 test('DoneConfirm_WhenTouch_ShouldBeASheetWithMoveAnywayOnTop', async ({ mount, page }) => {
@@ -60,7 +62,9 @@ test('DoneConfirm_WhenTouch_ShouldBeASheetWithMoveAnywayOnTop', async ({ mount, 
   await mount(<BoardHarness level="features" />, route);
   await askForDone(page);
 
-  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move SHIP-102 to Done?');
+  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText(
+    'Move SHIP-102 to Done?',
+  );
   await expect(sheet(page).getByTestId(ids.doneConfirmChild)).toHaveCount(2);
   const move = (await page.getByTestId(ids.doneConfirmMove).boundingBox())!;
   const cancel = (await page.getByTestId(ids.doneConfirmCancel).boundingBox())!;

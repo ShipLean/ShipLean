@@ -26,7 +26,11 @@ export function AssignSheet({
   const me = useMe().data?.id;
   const options = [...people, null];
   return (
-    <Sheet open={card !== undefined} title={`${owner ? 'Owner' : 'Assign'} ${card?.key ?? ''}`.trim()} onClose={onClose}>
+    <Sheet
+      open={card !== undefined}
+      title={`${owner ? 'Owner' : 'Assign'} ${card?.key ?? ''}`.trim()}
+      onClose={onClose}
+    >
       <div data-testid={ids.assignSheet} className="grid">
         {options.map((person) => {
           const here = (person?.id ?? null) === (card?.assignee?.id ?? null);
@@ -45,9 +49,7 @@ export function AssignSheet({
             >
               <Avatar {...(person ?? { initials: null })} size="lg" />
               <span>{person?.name ?? (owner ? 'No owner' : 'Unassigned')}</span>
-              {person && person.id === me ? (
-                <span className="text-ink-muted">(you)</span>
-              ) : null}
+              {person && person.id === me ? <span className="text-ink-muted">(you)</span> : null}
             </button>
           );
         })}

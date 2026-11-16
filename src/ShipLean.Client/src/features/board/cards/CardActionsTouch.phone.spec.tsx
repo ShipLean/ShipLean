@@ -56,7 +56,9 @@ test('CardMore_ShouldShowTheCardHeaderAndWipOverColour', async ({ mount, page })
   // The column the card is in is ticked "here"; the one over its WIP limit is in the danger tone.
   await expect(row(page, 'column:col-new:false')).toHaveAttribute('aria-current', 'true');
   await expect(row(page, 'column:col-new:false')).toContainText('here');
-  await expect(row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail)).toHaveText('3/2');
+  await expect(
+    row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail),
+  ).toHaveText('3/2');
   await expect(
     row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail).locator('span'),
   ).toHaveClass(/text-alert/);

@@ -4,7 +4,14 @@ import type { SheetAction } from '../../../../touch/ActionSheet';
 import { locate } from '../../moves/applyMove';
 import { useBoardMoves } from '../../moves/BoardMovesContext';
 import type { CardActions } from './CardActionsContext';
-import { dropAtBottom, dropAtEnd, dropAtTop, dropInLane, moveTargets, otherLanes } from './moveTargets';
+import {
+  dropAtBottom,
+  dropAtEnd,
+  dropAtTop,
+  dropInLane,
+  moveTargets,
+  otherLanes,
+} from './moveTargets';
 
 // The child type a Feature or an Epic lists under it, as its roll-up opens it.
 const BELOW: Partial<Record<WorkItemTypeId, WorkItemTypeId>> = {
