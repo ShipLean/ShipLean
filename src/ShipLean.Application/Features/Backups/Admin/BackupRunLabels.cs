@@ -12,7 +12,7 @@ namespace ShipLean.Application.Features.Backups.Admin;
 // abandoned run, whose finish time is when another instance marked it, not when it stopped.
 public static class BackupRunLabels
 {
-    public static BackupRunDto ToDto(BackupRunRow row, UserRef? startedBy, TimeProvider time) => new(
+    public static BackupRunDto ToDto(BackupRunRow row, UserRef? startedBy, TimeProvider time, TimeZoneInfo zone) => new(
         row.Id,
         row.Trigger switch
         {
@@ -28,7 +28,7 @@ public static class BackupRunLabels
             _ => throw new UnreachableException($"A {row.State} backup run is never listed."),
         },
         row.StartedAt,
-        DisplayDate.Relative(row.StartedAt, time),
+        DisplayDate.Relative(row.StartedAt, time.GetUtcNow(), zone),
         row.FinishedAt,
         Duration(row),
         startedBy,
