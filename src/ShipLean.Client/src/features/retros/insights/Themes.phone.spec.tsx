@@ -432,10 +432,7 @@ test('InsightsUnthemedCard_WhenGiveThemThemesIsTapped_ShouldGoToSearchNotTheShee
 }) => {
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={withUnthemed} />, open('?range=6'));
-  await page
-    .getByTestId(ids.retroInsightsUnthemed)
-    .getByTestId(ids.retroUnthemedLink)
-    .tap();
+  await page.getByTestId(ids.retroInsightsUnthemed).getByTestId(ids.retroUnthemedLink).tap();
   await expect(address(page)).toHaveText('?unthemed=true');
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 });
@@ -475,7 +472,10 @@ test('ThemeCards_WhenAThemeHasActionItems_ShouldShowThemWithoutAddAction', async
   page,
 }) => {
   await stubRetros(page);
-  const bare = { ...base, themes: base.themes.map((row, i) => (i === 1 ? { ...row, actionItems: [] } : row)) };
+  const bare = {
+    ...base,
+    themes: base.themes.map((row, i) => (i === 1 ? { ...row, actionItems: [] } : row)),
+  };
   await mount(<ThemesAddressHarness insights={bare} />, open());
   const cards = page.getByTestId(ids.retroThemeCard);
   await expect(cards).toHaveCount(base.themes.length);
@@ -503,10 +503,7 @@ test('ThemeCards_WhenAChangeShipped_ShouldLabelItsVerdictLastChange', async ({ m
   await expect(page.getByTestId(ids.retroThemeCardLastChange)).toHaveCount(shipped);
 });
 
-test('ThemeCards_WhenNoPointHasNoSprint_ShouldLeaveOutTheNoSprintLine', async ({
-  mount,
-  page,
-}) => {
+test('ThemeCards_WhenNoPointHasNoSprint_ShouldLeaveOutTheNoSprintLine', async ({ mount, page }) => {
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={base} />, open());
   const cards = page.getByTestId(ids.retroThemeCard);
