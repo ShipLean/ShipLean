@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using ShipLean.Contracts.Agents;
 using ShipLean.TestSupport;
@@ -16,6 +17,8 @@ public class AgentSessionsMcpTests : McpFixture
     private const string Detail = "relay-host.internal:8443 refused the connection";
 
     protected override bool WithProbeTools => false;
+
+    private DateTimeOffset Now => Host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
 
     [Test]
     public async Task GetWorkItem_WhenSevenSessions_ShouldListTheNewestFiveNewestFirst()
@@ -56,15 +59,15 @@ public class AgentSessionsMcpTests : McpFixture
             var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
             key = await KeyAsync(connection, item);
             var relay = await AgentSessionSeeds.InsertConnectionAsync(connection);
-            await new AgentSessionSeeds(item, relay).WithState("stale").WithEndReason(AgentEndReasons.Stale).WithCreatedAt(DateTimeOffset.UtcNow.AddHours(-3)).InsertAsync(connection);
-            await new AgentSessionSeeds(item, relay).WithState("working").WithCreatedAt(DateTimeOffset.UtcNow.AddHours(-1)).InsertAsync(connection);
+            await new AgentSessionSeeds(item, relay).WithState("stale").WithEndReason(AgentEndReasons.Stale).WithCreatedAt(Now.AddHours(-3)).InsertAsync(connection);
+            await new AgentSessionSeeds(item, relay).WithState("working").WithCreatedAt(Now.AddHours(-1)).InsertAsync(connection);
         }
 
         var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "get_work_item", $$"""{"key":"{{key}}"}""");
 
         var sessions = reply.Structured().GetProperty("agent_sessions").EnumerateArray().ToList();
         sessions.Select(s => s.GetProperty("state").GetString()).ShouldBe(["working", "stale"]);
-        sessions.ShouldAllBe(s => !s.TryGetProperty("ended", out _));
+        sessions.Any(s => s.TryGetProperty("ended", out _)).ShouldBeFalse();
         sessions[0].TryGetProperty("end_reason", out _).ShouldBeFalse();
         sessions[1].GetProperty("end_reason").GetString().ShouldBe(AgentEndReasons.Stale);
     }
@@ -92,7 +95,7 @@ public class AgentSessionsMcpTests : McpFixture
         var text = reply.Structured().GetProperty("agent_sessions")[0].GetProperty("end_text").GetString();
         text.ShouldBe(AgentEndText.For(AgentEndReasons.DeliveryFailed, Detail));
         // TODO: red until the per-reason wording makes AgentEndText.For carry the detail (its stub sentence ignores it).
-        text.ShouldContain(Detail);
+        text!.ShouldContain(Detail);
     }
 
     [Test]
@@ -175,7 +178,7 @@ public class AgentSessionsMcpTests : McpFixture
         var actual = System.Text.Json.Nodes.JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
         actual.Remove("project");
         actual.Remove("open_url");
-        var expected = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(
+        var expected = System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(
             Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "mcp", "get-agent-session.json")))!["admin"]!.AsObject();
         expected["session"]!["end_text"] = AgentEndText.For(AgentEndReasons.DeliveryFailed, expected["session"]!["end_detail"]!.GetValue<string>());
         System.Text.Json.Nodes.JsonNode.DeepEquals(actual, expected).ShouldBeTrue(actual.ToJsonString());
@@ -196,7 +199,7 @@ public class AgentSessionsMcpTests : McpFixture
         await using var connection = await OpenDatabaseAsync();
         var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
         var relay = await AgentSessionSeeds.InsertConnectionAsync(connection);
-        var oldest = DateTimeOffset.UtcNow.AddDays(-count);
+        var oldest = Now.AddDays(-count);
         var ids = new List<Guid>();
         for (var i = 0; i < count; i++)
         {
