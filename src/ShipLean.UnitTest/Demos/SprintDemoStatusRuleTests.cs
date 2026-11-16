@@ -18,7 +18,7 @@ public class SprintDemoStatusRuleTests
         DateTimeOffset? expires = null,
         string? sessionState = null,
         DateTimeOffset? sessionEnded = null)
-        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded);
+        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded, null, null);
 
     [Test]
     public void Decide_WhenNotRequestedAndNotClosed_ShouldBeClosable()

@@ -39,7 +39,7 @@ public sealed class SprintDemoReader(
         }
 
         var live = session is { Live: true };
-        var facts = new SprintDemoFacts(row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt);
+        var facts = new SprintDemoFacts(row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, null, null);
         var (status, message) = SprintDemoStatusRule.Decide(facts, now);
 
         var chapters = await ChaptersAsync(row, files, cancellationToken);
@@ -218,17 +218,17 @@ public sealed class SprintDemoReader(
         var retry = row.YouTubeState == "failed" && row.VideoAttachmentId is not null;
         if (!row.Closed)
         {
-            return new SprintDemoActionsDto(false, SprintDemoStatusRule.CloseFirst, retry);
+            return new SprintDemoActionsDto(false, SprintDemoStatusRule.CloseFirst, retry, null);
         }
 
         if (live)
         {
-            return new SprintDemoActionsDto(false, LiveSessionMessage, retry);
+            return new SprintDemoActionsDto(false, LiveSessionMessage, retry, null);
         }
 
         return await sessions.PlanProjectAsync(row.ProjectId, null, cancellationToken) is { } block
-            ? new SprintDemoActionsDto(false, AgentStartMessages.For(block), retry)
-            : new SprintDemoActionsDto(true, null, retry);
+            ? new SprintDemoActionsDto(false, AgentStartMessages.For(block), retry, null)
+            : new SprintDemoActionsDto(true, null, retry, null);
     }
 
     private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt);

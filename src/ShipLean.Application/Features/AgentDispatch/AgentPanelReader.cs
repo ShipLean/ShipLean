@@ -61,7 +61,12 @@ public sealed class AgentPanelReader(NpgsqlDataSource dataSource, TimeProvider t
             session.EndedAt is { } ended ? DisplayDate.Relative(ended, time) : null,
             JsonSerializer.Deserialize<List<AgentUrlDto>>(session.Urls, Json) ?? [],
             JsonSerializer.Deserialize<List<AgentPlanStepDto>>(session.Plan, Json) ?? [],
-            shown);
+            shown,
+            null,
+            null,
+            null,
+            null,
+            []);
     }
 
     private sealed record SessionRow(
