@@ -187,6 +187,28 @@ public class AgentRunLogVisibilityTests : McpFixture
         await ShouldStillBeTheRunLogAsync(arranged, runLogId);
     }
 
+    // D10 in the next session's context: the `created` body lists the item's attachments to the agent, which may run for a member, so an
+    // earlier session's run log is left out. Mutation: drop the run-log filter from AgentContextLoader's attachment query.
+    [Test]
+    public async Task NextSession_WhenAnEarlierSessionLeftARunLog_ShouldNotListItInTheCreatedBody()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+        using var content = new MultipartFormDataContent { { new StringContent("notes"), "file", "notes.txt" } };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{arranged.ItemId}/attachments") { Content = content };
+        request.Headers.Add(TestAuthentication.UserHeader, TestUser.Priya.Id.ToString());
+        using var added = await Client.SendAsync(request);
+        added.StatusCode.ShouldBe(HttpStatusCode.OK, await added.Content.ReadAsStringAsync());
+
+        using var started = await Api.ActingAs(TestUser.Priya).PostJsonAsync($"api/work-items/{arranged.ItemId}/agent-session");
+        started.IsSuccessStatusCode.ShouldBeTrue(await started.Content.ReadAsStringAsync());
+
+        await using var database = await OpenDatabaseAsync();
+        var body = (await AgentDispatchArrange.DeliveriesAsync(database, arranged.ItemId)).Single(d => d.Action == "created" && d.SessionId != arranged.SessionId).Body;
+        body.ShouldContain("notes.txt", Case.Sensitive, "the item's other attachments are still listed");
+        body.ShouldNotContain(name, Case.Sensitive);
+        body.ShouldNotContain(runLogId.ToString(), Case.Sensitive);
+    }
+
     // The run log's name is fixed and session ids are visible to members, so an upload of that name must not archive it. Mutation: remove the guard.
     [Test]
     public async Task RunLog_WhenAMemberUploadsItsNameOverTheApi_ShouldBeRefusedAndStayLive()
