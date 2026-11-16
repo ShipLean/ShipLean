@@ -93,6 +93,7 @@ async function holdRowOver(page: Page, from: string, over: string) {
     });
   }
   await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+  await expect(page.getByTestId(backlogTestIds.touchDropLine)).toHaveCount(1);
 }
 
 phonePageShots([
