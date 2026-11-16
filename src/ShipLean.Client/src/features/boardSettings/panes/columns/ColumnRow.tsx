@@ -2,9 +2,10 @@ import type { KeyboardEvent } from 'react';
 import type { BoardTypeStatesDto } from '@shiplean/core/api/boards';
 import type { BoardColumnJson } from '@shiplean/core/api/persisted';
 import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
-import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
 import { useTouchShell } from '../../../../touch/useTouchShell';
 import { boardSettingsTestIds as ids } from '../../testIds';
+import { dropLineCellsClass, type DropLineProps } from '../useDropLine';
+import { useRowTouchDrag } from '../useRowTouchDrag';
 import { liveStates, parseWipLimit, setState, stateOf } from './columnEdits';
 import { DefinitionOfDonePreview } from './DefinitionOfDonePreview';
 import { StateSelect } from './StateSelect';
@@ -31,7 +32,10 @@ export function ColumnRow({
   onDragStart,
   onDrop,
   onTouchDrop,
-}: {
+  dropLine,
+  onTouchOver,
+  onTouchDragEnd,
+}: DropLineProps & {
   column: BoardColumnJson;
   states: BoardTypeStatesDto[];
   fixed: boolean;
@@ -50,10 +54,7 @@ export function ColumnRow({
   onTouchDrop(targetId: string | null): void;
 }) {
   const { touch } = useTouchShell();
-  const drag = useLongPressDrag({
-    handle: true,
-    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
-  });
+  const drag = useRowTouchDrag({ onOver: onTouchOver, onDrop: onTouchDrop, onEnd: onTouchDragEnd });
   const keyDown = (event: KeyboardEvent) => {
     if (!event.altKey || fixed) return;
     if (event.key === 'ArrowUp') onMove(-1);
@@ -67,7 +68,7 @@ export function ColumnRow({
       <tr
         data-testid={ids.columnRow}
         data-drop-target={fixed ? undefined : column.id}
-        className={`border-b border-edge ${drag.lifted ? 'opacity-40' : ''}`}
+        className={`border-b border-edge ${drag.lifted ? 'opacity-40' : ''} ${dropLineCellsClass(dropLine)}`}
         onDragOver={(event) => {
           if (!fixed) event.preventDefault();
         }}

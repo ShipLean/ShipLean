@@ -3,9 +3,10 @@ import { CriteriaBuilder } from '../../../../criteria/CriteriaBuilder';
 import { newClause } from '../../../../criteria/defaultClause';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
-import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
 import { useTouchShell } from '../../../../touch/useTouchShell';
 import { SWATCH_NAMES } from '../swatchNames';
+import { dropLineClass, type DropLineProps } from '../useDropLine';
+import { useRowTouchDrag } from '../useRowTouchDrag';
 import { SWATCHES, type Swatch, type SwimlaneJson } from '@shiplean/core/api/persisted';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { acceptsDrops, withColour, withCriteria } from './laneEdits';
@@ -29,7 +30,10 @@ export function LaneRow({
   onDragStart,
   onDrop,
   onTouchDrop,
-}: {
+  dropLine,
+  onTouchOver,
+  onTouchDragEnd,
+}: DropLineProps & {
   lane: SwimlaneJson;
   lists: PickLists;
   readOnly: boolean;
@@ -43,10 +47,7 @@ export function LaneRow({
   onTouchDrop(targetId: string | null): void;
 }) {
   const { touch } = useTouchShell();
-  const drag = useLongPressDrag({
-    handle: true,
-    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
-  });
+  const drag = useRowTouchDrag({ onOver: onTouchOver, onDrop: onTouchDrop, onEnd: onTouchDragEnd });
   const isDefault = lane.kind === 'default';
   const keyDown = (event: KeyboardEvent) => {
     if (!event.altKey) return;
@@ -65,7 +66,7 @@ export function LaneRow({
     <div
       data-testid={ids.laneRow}
       data-drop-target={lane.id}
-      className={`grid gap-2 rounded-panel border border-edge bg-panel p-2.5 ${drag.lifted ? 'opacity-40' : ''}`}
+      className={`grid gap-2 rounded-panel border border-edge bg-panel p-2.5 ${drag.lifted ? 'opacity-40' : ''} ${dropLineClass(dropLine)}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >

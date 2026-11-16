@@ -3,10 +3,11 @@ import { SWATCHES, type StyleRuleJson, type Swatch } from '@shiplean/core/api/pe
 import { CriteriaBuilder } from '../../../../criteria/CriteriaBuilder';
 import type { PickLists } from '../../../../criteria/valueOptions';
 import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
-import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
 import { useTouchShell } from '../../../../touch/useTouchShell';
 import { boardSettingsTestIds as ids } from '../../testIds';
 import { SWATCH_NAMES } from '../swatchNames';
+import { dropLineClass, type DropLineProps } from '../useDropLine';
+import { useRowTouchDrag } from '../useRowTouchDrag';
 import { withCriteria } from './ruleEdits';
 
 const iconButton =
@@ -28,7 +29,10 @@ export function RuleRow({
   onDragStart,
   onDrop,
   onTouchDrop,
-}: {
+  dropLine,
+  onTouchOver,
+  onTouchDragEnd,
+}: DropLineProps & {
   rule: StyleRuleJson;
   lists: PickLists;
   readOnly: boolean;
@@ -42,10 +46,7 @@ export function RuleRow({
   onTouchDrop(targetId: string | null): void;
 }) {
   const { touch } = useTouchShell();
-  const drag = useLongPressDrag({
-    handle: true,
-    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
-  });
+  const drag = useRowTouchDrag({ onOver: onTouchOver, onDrop: onTouchDrop, onEnd: onTouchDragEnd });
   const keyDown = (event: KeyboardEvent) => {
     if (!event.altKey) return;
     if (event.key === 'ArrowUp') onMove(-1);
@@ -57,7 +58,7 @@ export function RuleRow({
     <div
       data-testid={ids.styleRow}
       data-drop-target={rule.id}
-      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''}`}
+      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''} ${dropLineClass(dropLine)}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
@@ -109,6 +110,7 @@ export function RuleRow({
             </option>
           ))}
         </select>
+        {/* At touch this breaks the head after ✕; B then indents by touch:ml-10 (the 32px grip and the 0.5rem gap) to sit under the name. */}
         <span aria-hidden="true" className="hidden touch:order-1 touch:block touch:basis-full" />
         <button
           type="button"

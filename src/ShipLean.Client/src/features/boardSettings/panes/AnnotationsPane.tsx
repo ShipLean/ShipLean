@@ -30,7 +30,7 @@ export function AnnotationsPane({
             return (
               <label
                 key={row.key}
-                className={`flex items-center gap-2 text-[length:var(--text-sm)] ${effect ? '' : 'text-ink-muted'}`}
+                className={`flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)] ${effect ? '' : 'text-ink-muted'}`}
               >
                 <input
                   type="checkbox"
