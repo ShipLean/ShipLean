@@ -1,10 +1,10 @@
-# Inspection: lead time
+# Inspection: lead time and quality
 
 Inspection (`/p/:key/inspection`, the side menu's **Inspection** section) shows how long a project's tasks take from start to
-last commit, per sprint, so a team can see where to look. Every page carries the same caveat: *these numbers tell you where to
+last commit, per sprint, and how many bugs escaped, so a team can see where to look. Every page carries the same caveat: *these numbers tell you where to
 look, not what caused a change.* The design and its decisions are in `design/ship-1398-inspection.md`; the code is named
 `InspectionMetrics` (`Features/InspectionMetrics`, `features/inspectionMetrics`) because `Inspection` belongs to agent runs.
-Quality (escaping bugs) and cost (tokens) are later waves of the same page.
+Cost (tokens) is a later wave of the same page.
 
 ## What it shows
 
@@ -13,6 +13,7 @@ Quality (escaping bugs) and cost (tokens) are later waves of the same page.
 | Overview | `overview` (default) | The lead-time card: the last finished sprint's mean, its change against the sprint before, the running sprint *so far*, and this quarter to date against last quarter. The six slowest tasks of the range. A banner when commit coverage is low. |
 | Lead time | `leadtime` | A chart with one bar per sprint (its mean) and one dot per task; dots over two days sit on the top edge. A row per sprint with the mean split into active, blocked and rework, quarter rows, an optional cut by Feature or by who did the task, and the tasks *left out*. |
 | One sprint | `period` | The sprint's numbers, its tasks slowest first (or its Features), and a rail for the selected task: its segments on one track and how it was measured, event by event, with links to the task and its Feature timeline. |
+| Quality | `quality` | Cards for the last finished sprint (escaping bugs, per 100 merged PRs, severity-weighted, found before release), a bar per sprint stacked by severity, a row per sprint and quarter, and the bugs counted in the range, newest first, each with its cause or a *+ Caused by* link. The Overview gains a quality card with the change against the sprint before. |
 | JSON | `json` | The view model as the API and the `inspection_metrics` MCP tool return it. |
 
 The range picker shows the last 6 sprints (default), this quarter, last quarter or all sprints. Desktop only for now.
@@ -38,6 +39,27 @@ The range picker shows the last 6 sprints (default), this quarter, last quarter 
   quarter to date compares with last quarter up to the same day.
 - **Who** is the agent connection that started the task, else the person who started it, else its assignee.
 - Hours are rounded to one decimal on the server, and every label is made on the server in the viewer's time zone.
+
+## Quality: escaping bugs
+
+- An **escaping bug** is every live Bug not marked **Found before release**. The flag is on bugs only: the Bug form's checkbox,
+  the API, `capture_work`, `refine_work_item` (`found_before_release`), and `get_work_item` shows it. Found bugs are listed
+  and counted as *found before release*, never as escaping.
+- A bug counts in the sprint it was **filed** in, until it has a **Caused by** link to the Task that introduced it; then it
+  counts in the sprint that Task's lead time **ended** in (the rules above, weekend grace included). A cause with no end yet
+  leaves the bug in its filed sprint.
+- **Caused by** joins a Bug to a Task only. Add it from the bug's Links (*+ Caused by*, or open the bug with
+  `?addLink=causedBy`, which the Quality list's *+ Caused by* does), or over MCP with `link` and `type: caused_by`. The Task shows
+  the bug under *Caused*. A Feature's link picker never offers it.
+- **Severity-weighted** sums the project's weights over the escaping bugs: 8, 4, 2 and 1 for severity 1 to 4 by default, set by a
+  project admin on Settings › General. A bug with no severity weighs 0 and shows as *Unset* in the severity split.
+- **Merged PRs** counts the pull requests linked (a url link) to an item of the project that merged in the sprint, from GitHub's
+  and GitLab's merged time; a PR with no link to the project is left out. **Per 100 merged PRs** is escaping bugs per 100 of
+  them, to one decimal, and reads *—* when no PR merged.
+- The change on the Overview's quality card is the whole-percent change in escaping bugs against the previous started sprint.
+  There is none for the first sprint, for a quarter or the range, or when the sprint before had no escaping bug.
+- Quarter rows and the range sum their sprints as lead time's do. With no live bug in the project at all, every quality figure
+  is null and the view and card say *No bugs yet*.
 
 ## Commit times and coverage
 
