@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint capacity on a phone (SHIP-1808 review)</title>
+<!-- SHIP-1626 Q4 / SHIP-1808: the phone design for the sprint Capacity tab (SHIP-726), which only had a desktop screen.
+     Images are made by screenshots.sh (capacity-*); the live mock is ../screens/capacity.html in a window 900px wide or
+     less. capacity-today*.png are copies of the built app's phone page shots (pages/screenshots/capacity.phone.spec.tsx). -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); vertical-align: middle; }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { padding: 6px; border-radius: 26px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame img { display: block; width: 100%; height: auto; border-radius: 20px; }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; color: var(--color-text); text-decoration: none; }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; scroll-margin-top: 16px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.opts li { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); }
+.opts li.rec { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts b { font-weight: 600; }
+.opts .tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+@media (max-width: 600px) { .wrap { padding: 20px 16px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SHIP-1808 · Sprint capacity on a phone</h1>
+    <p class="lede">The sprint Capacity tab (SHIP-726) at 900px and below, drawn at 390 × 844 for SHIP-1626 (Joel's Q4: it only had a desktop screen). It sits in the touch shell under SHIP-724's shared sprint header and follows the SHIP-805 rules as they stand on this branch: 32px targets, a 48px top bar, 16px inputs, sheets with a title and Close, the Save bar with Discard. The figures are the desktop mock's own (<code>screens/capacity.html</code> drives them), so a phone and a desktop always agree. Open the live mock in a narrow window: <a href="../screens/capacity.html">screens/capacity.html</a>.</p>
+    <div class="chips">
+      <span class="chip">Task SHIP-1808 · wave 0.1 of SHIP-1626</span><span class="chip">Desktop reference: screens/capacity.html (unchanged above 900px)</span>
+      <span class="chip">Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-t="light">Light</button><button type="button" aria-pressed="false" data-t="dark">Dark</button></span></span>
+    </div>
+    <div class="rules">SHIP-805 rules this design leans on: <span>1 · 900px</span><span>3 · bottom sheets</span><span>7 · tabs scroll sideways</span><span>8 · ⋯ = action sheet</span><span>12 · only the top bar pins</span><span>13 · 32px</span><span>14 · 16px inputs</span><span>15 · Save bar / Discard</span><span>805 D1 · Close on sheets</span></div>
+  </header>
+
+  <section class="block">
+    <h2>Today at 390px</h2>
+    <p class="sub">The built page (phone page shots, for orientation only; the design follows the rules and the desktop's content, not this).</p>
+    <div class="phones">
+      <figure class="phone" style="margin:0"><div class="frame"><img data-src="capacity-today" alt="Today: the Capacity tab"></div><figcaption class="muted">The summary, then velocity, then a card per person with a days field and a note field side by side.</figcaption></figure>
+      <figure class="phone" style="margin:0"><div class="frame"><img data-src="capacity-today-editing" alt="Today: editing days"></div><figcaption class="muted">Editing days: the note field runs off the right edge.</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li>The days and note inputs sit on one line under each name, so the note is cut off at the right edge (R1a's finding: the day-off input is clipped).</li>
+      <li>The days field is the only way to change days; a half day means typing on a numeric keyboard.</li>
+      <li>Remove (×) is a 16px glyph beside the points, easy to hit by mistake and under the 32px target.</li>
+      <li>Nothing on the row shows how much of the sprint a person is in; only the field's number.</li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>Proposed</h2>
+    <p class="sub">Each phone is one state of the mock; the chips under it name the decisions it shows. Everything scrolls with the page except the top bar.</p>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="block">
+    <h2>What wave 1 audits the built page against</h2>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>Part</th><th>At 900px and below</th><th>Decisions</th></tr></thead>
+      <tbody>
+        <tr><td>Sprint header</td><td>SHIP-724's shared header: picker · Current · ⋯, dates and days left, the goal clamped to two lines, the tabs in their own sideways strip with Capacity current.</td><td>SHIP-724 D5, D6, D10</td></tr>
+        <tr><td>Toolbar</td><td>One row: <b>Copy from Sprint 23</b> and a 32px ⋯ (Add member, Clear). No select on the page.</td><td>P5</td></tr>
+        <tr><td>Sprint as a whole</td><td>First on the page: three tiles in one row (Team capacity, Committed, Velocity (last 3)), the 8px bar, the room or over line, the velocity check callout.</td><td>P1</td></tr>
+        <tr><td>Team velocity</td><td>One row: label and hint on the left, a 96 × 40px field at 16px on the right; the working days and holidays under a rule.</td><td>—</td></tr>
+        <tr><td>People</td><td>A header with the count and Team capacity; a 56px two-line row per person: avatar, name, points; a bar of days available out of the working days, "9 / 10 days · default"; the note on a third line when there is one; › . "Unsaved" marks a changed row. + Add member at the foot while anyone is out of the table.</td><td>P2, P6</td></tr>
+        <tr><td>Days sheet</td><td>Tap a row: the person and Close; − and + by half a day around a 16px field, "of 10 working days"; the default and Use default; the person's capacity with its sum; the note at 16px; Remove from Sprint 24.</td><td>P3</td></tr>
+        <tr><td>Saving</td><td>Every change is a draft: the shared Save bar (Unsaved capacity changes · Discard · Save) appears while the draft differs.</td><td>P4</td></tr>
+        <tr><td>Nobody in the table</td><td>"No capacity entered" in the People card with + Add member; the summary says the sprint plans against velocity.</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions for Joel</h2>
+    <div class="card" style="margin-bottom:12px">The design is drawn on the recommended answers, which are also recorded with record_decisions on SHIP-1808. SHIP-1626 D11: no approval gate; wave 1 audits against these, and a change here changes the design task.</div>
+    <div class="qs" id="qs"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const Q = [
+    { id: 'P1', t: 'What comes first on the page', see: ['capacity', 'dirty'], o: [
+      ['"Sprint 24 as a whole" first, then velocity, then people', 'The question a phone answers is "can we take this on?"; the bar and the over line are on the first screen.', 1],
+      ['Velocity and people first, the summary last, as the desktop reads left to right', 'Editing first; the over warning is a scroll away.'],
+    ] },
+    { id: 'P2', t: 'How a person shows', see: ['people', 'dirtyp'], o: [
+      ['Two-line rows that open a days sheet', 'Name and points, then a bar and "9 / 10 days"; nothing to cut off at 390px.', 1],
+      ['Inline days and note fields under each name, as built', 'One tap less to edit, but two fields per row don\'t fit at 390px (the clipped day-off input).'],
+    ] },
+    { id: 'P3', t: 'Changing someone\'s days', see: ['days'], o: [
+      ['A sheet with − / + by half a day around a 16px field, Use default, the note and Remove', 'No keyboard for the usual change; Remove moves off the row into the sheet.', 1],
+      ['A native number field on the row', 'Platform keyboard every time; × stays on the row.'],
+    ] },
+    { id: 'P4', t: 'When changes save', see: ['dirty', 'dirtyp'], o: [
+      ['A draft with the shared Save bar (Discard · Save), as the built page does', 'Rule 15; a half-finished set of days never reaches planning.', 1],
+      ['Each change saves when the sheet closes', 'No Save bar; one person at a time, but the team total moves while you are still adjusting.'],
+    ] },
+    { id: 'P5', t: 'Copy, Clear and Add member', see: ['capacity', 'more', 'add'], o: [
+      ['Copy from Sprint 23 on the toolbar; Add member and Clear in its ⋯; + Add member also at the foot of People', 'Copy is how most sprints start; Clear is rare and destructive.', 1],
+      ['All three in the sprint header\'s ⋯', 'One ⋯ on the page, but that sheet is shared by every sprint tab.'],
+    ] },
+    { id: 'P6', t: 'What a person\'s bar shows', see: ['people'], o: [
+      ['Days available out of the working days', 'Availability only. Nobody\'s number is compared with work assigned to them (the desktop\'s rule).', 1],
+      ['No bar: the numbers only', 'Plainer rows; harder to spot who is out.'],
+    ] },
+  ];
+  const P = [
+    { id: 'capacity', img: 'capacity', title: 'Top of the page: over capacity', dec: ['P1', 'P5'], notes: ['The mock\'s own data: 20 pts against 21 committed, so the bar is red and the line says 1 pt over', 'Velocity 25 against 21: the warn callout'] },
+    { id: 'people', img: 'capacity-people', title: 'People with capacity bars', dec: ['P2', 'P6'], notes: ['Default days show "· default"; Sam and Ana typed theirs', 'Tap a row for the days sheet'] },
+    { id: 'days', img: 'capacity-days', title: 'A person\'s days sheet', dec: ['P3'], notes: ['− / + by half a day; Use default because Ana\'s days are typed', 'Remove is in the sheet, not on the row'] },
+    { id: 'dirty', img: 'capacity-dirty', title: 'Dirty, with the Save bar', dec: ['P4', 'P1'], notes: ['Ana 5 → 8 days: 21.5 pts, back under the 21 committed', 'Discard returns the saved table'] },
+    { id: 'dirtyp', img: 'capacity-dirty-people', title: 'Dirty: the changed row', dec: ['P4', 'P2'], notes: ['"Unsaved" marks Ana\'s row'] },
+    { id: 'more', img: 'capacity-more', title: 'Toolbar ⋯', dec: ['P5'], notes: ['Add member is off while everyone is in the table'] },
+    { id: 'add', img: 'capacity-add', title: 'Add member', dec: ['P5'], notes: ['Mei taken out first; picking opens her days sheet'] },
+    { id: 'empty', img: 'capacity-empty', title: 'Nobody in the table', dec: [], notes: ['The sprint plans against velocity (21)'] },
+  ];
+  let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === theme));
+  const draw = () => {
+    let n = 0;
+    document.getElementById('phones').innerHTML = P.map(p => `<article class="phone" id="${p.id}"><div class="ph"><span class="no">${++n}</span><b>${p.title}</b></div>
+      <div class="frame"><img loading="lazy" alt="${p.title}" src="images/${p.img}.${theme}.png"></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(x => `<li>${x}</li>`).join('')}</ul></article>`).join('');
+    document.querySelectorAll('img[data-src]').forEach(i => { i.src = `images/${i.dataset.src}.${theme}.png`; });
+  };
+  draw();
+  document.getElementById('theme').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  document.getElementById('qs').innerHTML = Q.map(q => `<div class="q" id="q-${q.id}"><h3><span class="id">${q.id}</span>${q.t}</h3>
+    <div class="see">See ${q.see.map(s => `<a href="#${s}">${P.find(p => p.id === s).title}</a>`).join(', ')}</div>
+    <ul class="opts">${q.o.map(([b, s, r]) => `<li${r ? ' class="rec"' : ''}><b>${b}</b>${r ? '<span class="tag">Recommended</span>' : ''}<small>${s}</small></li>`).join('')}</ul></div>`).join('');
+})();
+</script>
+</body>
+</html>

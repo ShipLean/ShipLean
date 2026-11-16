@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Project settings on a phone (SHIP-1809 review)</title>
+<!-- SHIP-1809 (SHIP-1626 K7, Joel's Q4): the phone design for Project settings (SHIP-732) and the Stories board settings
+     it links to, which only had desktop screens. Images are ../screens/settings.html (settings-touch.css/js) and
+     ../screens/board-settings.html (board-settings-touch.css/js) at 390 × 844, made by screenshots.sh (settings-*).
+     Decisions P1–P9 are recorded on SHIP-1809; Joel confirms or changes them there (SHIP-1626 D11: no approval gate). -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; } h2 { margin: 40px 0 10px; font-size: 20px; } h3 { margin: 0; font-size: 15px; }
+.muted { color: var(--color-muted); } code { font: 12px var(--font-mono); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 28px 20px; }
+.ph { margin: 0; display: grid; gap: 8px; align-content: start; }
+.ph .h { display: flex; gap: 8px; align-items: baseline; }
+.no { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair img { width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figcaption { font-size: 13px; } figcaption ul { margin: 4px 0 0; padding-left: 18px; }
+.qs { display: grid; gap: 10px; max-width: 980px; }
+.q { padding: 12px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.q p { margin: 4px 0 0; } .q .id { font: 700 12px var(--font-mono); color: var(--color-accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Project settings on a phone</h1>
+<p class="muted">SHIP-1809 for SHIP-1626 (K7, Joel's Q4). Project settings (SHIP-732) had only a desktop screen, so the built phone page could not be audited. This draws it on the SHIP-805 rules: 48px top bar, 32px targets, Close on sheets, Discard on the Save bar, ‹ back on the left of the top bar, only the top bar pinned. Desktop above 900px is unchanged (renders byte-identical). Live: <a href="../screens/settings.html">settings.html</a>, <a href="../screens/board-settings.html?pane=styles">board-settings.html</a> in a window under 900px wide.</p>
+<h2>States (light and dark)</h2>
+<div class="grid">
+<figure class="ph"><div class="h"><span class="no">P1</span><b>Pane index</b></div><div class="pair"><img src="images/settings.light.png" alt="Pane index, light" loading="lazy"><img src="images/settings.dark.png" alt="Pane index, dark" loading="lazy"></div><figcaption><code>settings</code><ul><li>Opens on the index, not on States</li><li>Each row: name, what it holds, count, dot for unsaved or errors, ›</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P2</span><b>General</b></div><div class="pair"><img src="images/settings-general.light.png" alt="General, light" loading="lazy"><img src="images/settings-general.dark.png" alt="General, dark" loading="lazy"></div><figcaption><code>settings-general</code><ul><li>‹ back at the far left, Menu at the far right (as the built TouchTopBar); the crumb names the pane</li><li>Form one column; the seven days fill the row</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P3</span><b>General with edits</b></div><div class="pair"><img src="images/settings-general-dirty.light.png" alt="General with edits, light" loading="lazy"><img src="images/settings-general-dirty.dark.png" alt="General with edits, dark" loading="lazy"></div><figcaption><code>settings-general-dirty</code><ul><li>The Save bar: unsaved count · Discard · Save</li><li>Shows on every pane and the index while the draft has changes</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P3</span><b>Unsaved changes list</b></div><div class="pair"><img src="images/settings-changes.light.png" alt="Unsaved changes list, light" loading="lazy"><img src="images/settings-changes.dark.png" alt="Unsaved changes list, dark" loading="lazy"></div><figcaption><code>settings-changes</code><ul><li>Tap the count: the list as a sheet with Close</li><li>Tap a change to go to its pane</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P4</span><b>States</b></div><div class="pair"><img src="images/settings-states.light.png" alt="States, light" loading="lazy"><img src="images/settings-states.dark.png" alt="States, dark" loading="lazy"></div><figcaption><code>settings-states</code><ul><li>Type as a sideways chip row, the picked one kept in view</li><li>Each state two lines: ⠿ 32px · name · ⋯ 32px, then category, items and board column</li><li>Legend and callouts dropped at touch</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P4</span><b>States: dragging</b></div><div class="pair"><img src="images/settings-states-drag.light.png" alt="States: dragging, light" loading="lazy"><img src="images/settings-states-drag.dark.png" alt="States: dragging, dark" loading="lazy"></div><figcaption><code>settings-states-drag</code><ul><li>Press the ⠿ handle and drag; the row lifts, the drop line shows where it lands</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P5</span><b>State ⋯ sheet</b></div><div class="pair"><img src="images/settings-states-menu.light.png" alt="State ⋯ sheet, light" loading="lazy"><img src="images/settings-states-menu.dark.png" alt="State ⋯ sheet, dark" loading="lazy"></div><figcaption><code>settings-states-menu</code><ul><li>The desktop row menu as a sheet: Rename, Move up, Move down, Delete…</li><li>Title and Close (805 D1)</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P6</span><b>Members</b></div><div class="pair"><img src="images/settings-members.light.png" alt="Members, light" loading="lazy"><img src="images/settings-members.dark.png" alt="Members, dark" loading="lazy"></div><figcaption><code>settings-members</code><ul><li>A row per person: role select and remove at 32px, email and open items under the name</li><li>Joined date dropped at touch</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P7</span><b>Sprints & forecast</b></div><div class="pair"><img src="images/settings-sprints.light.png" alt="Sprints & forecast, light" loading="lazy"><img src="images/settings-sprints.dark.png" alt="Sprints & forecast, dark" loading="lazy"></div><figcaption><code>settings-sprints</code><ul><li>Desktop form, one column; the velocity summary under it</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P7</span><b>Integrations</b></div><div class="pair"><img src="images/settings-integrations.light.png" alt="Integrations, light" loading="lazy"><img src="images/settings-integrations.dark.png" alt="Integrations, dark" loading="lazy"></div><figcaption><code>settings-integrations</code><ul><li>Jira facts one column; Test connection and Open Jira import share a row</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P7</span><b>Demos</b></div><div class="pair"><img src="images/settings-demos.light.png" alt="Demos, light" loading="lazy"><img src="images/settings-demos.dark.png" alt="Demos, dark" loading="lazy"></div><figcaption><code>settings-demos</code><ul><li>Automatic demos and Demo brand keep their own Save buttons (not the draft)</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P7</span><b>Demos: YouTube connected</b></div><div class="pair"><img src="images/settings-demos-yt.light.png" alt="Demos: YouTube connected, light" loading="lazy"><img src="images/settings-demos-yt.dark.png" alt="Demos: YouTube connected, dark" loading="lazy"></div><figcaption><code>settings-demos-yt</code><ul><li>The YouTube panel; yt= picks its state as on desktop</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P9</span><b>Board settings: style rules</b></div><div class="pair"><img src="images/settings-board-styles.light.png" alt="Board settings: style rules, light" loading="lazy"><img src="images/settings-board-styles.dark.png" alt="Board settings: style rules, dark" loading="lazy"></div><figcaption><code>settings-board-styles</code><ul><li>Full screen as the Taskboard settings (SHIP-725 D15), ✕ top left, sections as chips</li><li>Rule: ⠿ · name · colour · ✕, then B I U and Enabled; previews hidden</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P4</span><b>Board settings: dragging a rule</b></div><div class="pair"><img src="images/settings-board-styles-drag.light.png" alt="Board settings: dragging a rule, light" loading="lazy"><img src="images/settings-board-styles-drag.dark.png" alt="Board settings: dragging a rule, dark" loading="lazy"></div><figcaption><code>settings-board-styles-drag</code><ul><li>Same press-and-drag on the 32px handle for rules, lanes and columns</li></ul></figcaption></figure>
+<figure class="ph"><div class="h"><span class="no">P9</span><b>Board settings with edits</b></div><div class="pair"><img src="images/settings-board-styles-dirty.light.png" alt="Board settings with edits, light" loading="lazy"><img src="images/settings-board-styles-dirty.dark.png" alt="Board settings with edits, dark" loading="lazy"></div><figcaption><code>settings-board-styles-dirty</code><ul><li>Footer is the Save bar: Unsaved: Styles · Discard · Save</li></ul></figcaption></figure>
+</div>
+<h2>Decisions for Joel</h2>
+<p class="muted">Built to the first answer; recorded on SHIP-1809, where Joel confirms or changes each one.</p>
+<div class="qs">
+<div class="q" id="P1"><h3><span class="id">P1</span> At touch, Settings opens on an index of the six panes (desktop opens on States).</h3><p class="muted">Alternative: Open States as desktop, with the tabs as a sideways chip row (the built page does this).</p></div>
+<div class="q" id="P2"><h3><span class="id">P2</span> A pane is its own page: ‹ back at the far left of the top bar and Menu at the far right, as the built TouchTopBar draws a bar with back set; the crumb SHIP › Settings › &lt;pane&gt;.</h3><p class="muted">Alternative: Tabs as a sticky chip row above the pane (breaks rule 12: only the top bar is pinned).</p></div>
+<div class="q" id="P3"><h3><span class="id">P3</span> One draft across panes, as desktop: the Save bar (count ▾ · Discard · Save) shows on every pane and the index while it has changes; the count opens the list as a sheet.</h3><p class="muted">Alternative: Save per pane (changes the desktop model).</p></div>
+<div class="q" id="P4"><h3><span class="id">P4</span> Reorder by pressing the 32px ⠿ handle and dragging (states, board columns, lanes, rules); ⋯ keeps Move up / Move down.</h3><p class="muted">Alternative: ↑/↓ buttons on every row (the built States page), which crowds each row with two more 32px targets.</p></div>
+<div class="q" id="P5"><h3><span class="id">P5</span> The state row menu is a sheet with plain rows (Rename, Move up, Move down, Delete…), title and Close; no icons or sub-lines. Wave 1 builds it on the shared ActionSheet (plain rows are ActionSheet rows without the Q1 icon or sub-line), never a page-local sheet.</h3><p class="muted">Alternative: Extended ActionSheet with icons and sub-lines (Q1) if Joel wants them here too.</p></div>
+<div class="q" id="P6"><h3><span class="id">P6</span> Members: name, (you) and chips on line 1 with role and remove; email and open items on line 2; joined date hidden at touch.</h3><p class="muted">Alternative: Keep joined date as a third line.</p></div>
+<div class="q" id="P7"><h3><span class="id">P7</span> Sprints & forecast, Integrations and Demos are the desktop forms in one column; Demos keeps its own Save buttons.</h3><p class="muted">Alternative: Fold Demos into the draft and the Save bar.</p></div>
+<div class="q" id="P8"><h3><span class="id">P8</span> Nothing is desktop only: every pane can be changed on a phone, so no "open on a computer" state.</h3><p class="muted">Alternative: Make Demo brand tokens (a CSS textarea) desktop only.</p></div>
+<div class="q" id="P9"><h3><span class="id">P9</span> Board settings at touch matches the Taskboard settings (D15): full screen, ✕ top left, section chips, preview cards hidden, footer as the Save bar with Discard.</h3><p class="muted">Alternative: Keep the preview cards under each pane.</p></div>
+</div>
+</div>
+</body>
+</html>

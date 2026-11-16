@@ -1,0 +1,143 @@
+/* Project settings in the touch shell (SHIP-1809, K7); behaviour in settings-touch.js. 900px and below only; above it
+   nothing changes. Builds on shiplean.css and the SHIP-805 rules (48px top bar, 32px targets, Close on sheets, Discard
+   on the Save bar) without overriding them. Decisions P1–P9 are on SHIP-1809 and the review page. */
+.set-back, .set-savebar { display: none; }
+@media (max-width: 900px) {
+
+  /* Index or pane (P1, P2): the index shows the list, a pane shows only its content; ‹ back far left and Menu far right on a pane (settings-touch.js). */
+  :root:not(.set-index) .appbar .set-back { display: inline-grid; }
+  :root.set-index .content { display: none; }
+  :root:not(.set-index) .stabs, :root:not(.set-index) .head { display: none; }
+  .head { padding: var(--space-3) var(--space-3) 0; background: transparent; border-bottom: 0; }
+  .head h1 { display: none; }
+  .head .sm { font-size: var(--text-sm); }
+  .sbody { display: block; }
+
+  /* The index (P1): a row per pane, its name and what it holds, the count, the unsaved/error dot, › */
+  .stabs { display: block; margin: var(--space-2) var(--space-3) 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+  .stabs .stab { display: flex; align-items: center; gap: var(--space-2); height: auto; min-height: 56px; padding: 8px var(--space-2) 8px var(--space-3); border-top: 1px solid var(--color-border); border-radius: 0; color: var(--color-text); font-size: var(--text-md); background: var(--color-surface); }
+  .stabs .stab:first-child { border-top: 0; }
+  .stabs .stab[aria-current="page"] { background: var(--color-surface); font-weight: var(--weight-medium); }
+  .stabs .stab .tx { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .stabs .stab .tx small { font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stabs .stab .meta { margin-left: 0; font-size: var(--text-sm); }
+  .stabs .stab::after { content: "›"; flex: none; width: 16px; text-align: center; color: var(--color-muted); font-size: var(--text-lg); }
+  .stabs .stab .dot { order: 2; }
+  .stabs .foot { display: block; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); font-size: var(--text-sm); }
+
+  /* A pane: full width, panels edge to edge inside the 12px gutter. */
+  .content { overflow: visible; padding: var(--space-3) var(--space-3) calc(var(--space-5) + env(safe-area-inset-bottom)); gap: var(--space-3); }
+  :root.set-dirty .content, :root.set-dirty.set-index .stabs { margin-bottom: 72px; }
+  .panel > header { min-height: var(--touch-target); padding: var(--space-2) var(--space-3); row-gap: 4px; }
+  .panel > header .sm { flex-basis: 100%; font-size: var(--text-sm); }
+  .panel > header .btn { height: var(--touch-target); }
+  .form > .lbl { padding-top: var(--space-3); }
+  .form > .ctl { padding-top: 6px; }
+  .field, .cat-sel, .role-sel { min-height: var(--touch-target); }
+  .w-md, .w-lg { width: 100%; }
+  .hint { font-size: var(--text-sm); }
+  .btn, .seg { min-height: var(--touch-target); }
+  .seg button { min-width: var(--touch-target); }
+  .pfoot { font-size: var(--text-sm); }
+  .banner { align-items: flex-start; }
+
+  /* General: the seven days fill the row. */
+  .seg[aria-label="Working days"] { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); width: 100%; }
+  .seg[aria-label="Working days"] button { padding: 0; justify-content: center; }
+
+  /* States (P4): the type a sideways segmented row; each state two lines, ⠿ and ⋯ at 32px. */
+  .cols { display: grid; gap: var(--space-3); }
+  .cols .stack { display: none; } /* the legend and callouts: the category select and the footer say the same */
+  .typeseg { display: flex; width: calc(100% + var(--space-3) * 2); margin: 0 calc(var(--space-3) * -1); padding: 0 var(--space-3); overflow-x: auto; border: 0; border-radius: 0; background: none; gap: 6px; scrollbar-width: none; }
+  .typeseg button { flex: none; height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); }
+  .typeseg button:last-child { border-right: 1px solid var(--color-border); }
+  .panel[aria-label="States"] > header .spacer { display: none; }
+  .panel[aria-label="States"] > header [data-act="add-state"] { width: 100%; justify-content: center; }
+  .sub { padding: var(--space-2) var(--space-3) 0; row-gap: 2px; }
+  .sub .spacer { display: none; }
+  .sub .xs { flex-basis: 100%; font-size: var(--text-sm); }
+  table.states, table.states tbody { display: block; }
+  table.states thead { display: none; }
+  table.states tr.srow { display: grid; grid-template-columns: var(--touch-target) minmax(0, 1fr) auto var(--touch-target); grid-template-areas: "grip name name menu" ". cat items ." ". col col ."; align-items: center; row-gap: 4px; padding: 8px 4px 10px; border-top: 1px solid var(--color-border); }
+  table.states tr.srow > td { display: block; height: auto; padding: 0; border: 0; width: auto !important; }
+  table.states tr.srow > td:nth-child(1) { grid-area: grip; }
+  table.states tr.srow > td:nth-child(2) { display: none; }
+  table.states tr.srow > td:nth-child(3) { grid-area: name; min-width: 0; }
+  table.states tr.srow > td:nth-child(4) { grid-area: cat; }
+  table.states tr.srow > td:nth-child(5) { grid-area: items; text-align: left; padding-left: var(--space-3); font-size: var(--text-sm); }
+  table.states tr.srow > td:nth-child(5)::before { content: "Items "; color: var(--color-muted); }
+  table.states tr.srow > td:nth-child(6) { grid-area: col; font-size: var(--text-sm); }
+  table.states tr.srow > td:nth-child(6)::before { content: "Board column · "; color: var(--color-muted); }
+  table.states tr.srow > td:nth-child(7) { grid-area: menu; }
+  table.states td.grip { padding: 0; }
+  .grip-btn { width: var(--touch-target); height: var(--touch-target); opacity: 1; font-size: var(--text-lg); touch-action: none; cursor: grab; }
+  table.states .ib[data-menu] { width: var(--touch-target); height: var(--touch-target); }
+  .namecell { flex-wrap: wrap; }
+  .name-in { flex: 1; max-width: none; height: var(--touch-target); border-color: var(--color-border); background: var(--color-surface); font-size: var(--text-input-touch); }
+  .cat-sel { height: var(--touch-target); font-size: var(--text-input-touch); }
+  .cell-err { padding-left: 0; }
+  tr.changed td:first-child { box-shadow: none; }
+  table.states tr.srow.changed { box-shadow: inset 3px 0 0 var(--color-warn); }
+  table.states tr.srow.drop-before { box-shadow: inset 0 3px 0 var(--color-accent); }
+  table.states tr.srow.drop-after { box-shadow: inset 0 -3px 0 var(--color-accent); }
+  table.states tr.srow.drop-before td, table.states tr.srow.drop-after td { box-shadow: none; }
+  table.states tr.srow.set-lifted { position: relative; z-index: 2; background: var(--color-surface); box-shadow: var(--shadow-raised); outline: 1px solid var(--color-accent); border-radius: var(--radius-sm); }
+  table.states tr.srow.set-lifted .grip-btn { color: var(--color-accent); background: var(--color-accent-soft); }
+  table.states tr.inline { display: block; }
+  table.states tr.inline td { display: block; padding: var(--space-2) var(--space-3); }
+  table.states tr.inline .row { flex-wrap: wrap; }
+  table.states tr.inline select { flex-basis: 100%; height: var(--touch-target); }
+  table.states tr.inline .acts { margin-left: 0; flex-basis: 100%; }
+
+  /* Members (P6): a row per person; role and remove at 32px; joined date dropped. */
+  .addwrap { flex-basis: 100%; }
+  .addwrap .field { width: 100%; height: 40px; font-size: var(--text-input-touch); }
+  .pop { left: 0; right: 0; width: auto; }
+  .pop button { min-height: var(--touch-target); }
+  .panel[aria-label="Members"] table.list, .panel[aria-label="Members"] tbody { display: block; }
+  .panel[aria-label="Members"] thead { display: none; }
+  .panel[aria-label="Members"] tr.item { display: grid; grid-template-columns: minmax(0, 1fr) auto var(--touch-target); grid-template-areas: "who role rm" "mail open ."; align-items: center; column-gap: var(--space-2); row-gap: 2px; padding: 8px var(--space-2) 8px var(--space-3); border-top: 1px solid var(--color-border); }
+  .panel[aria-label="Members"] tr.item > td { display: block; height: auto; padding: 0; border: 0; width: auto !important; text-align: left !important; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(1) { grid-area: who; min-width: 0; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(2) { grid-area: mail; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 28px; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(3) { grid-area: role; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(4) { display: none; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(5) { grid-area: open; color: var(--color-muted); }
+  .panel[aria-label="Members"] tr.item > td:nth-child(5)::after { content: " open"; }
+  .panel[aria-label="Members"] tr.item > td:nth-child(6) { grid-area: rm; }
+  .panel[aria-label="Members"] .who { flex-wrap: wrap; min-width: 0; }
+  .panel[aria-label="Members"] .ib, .panel[aria-label="Members"] [data-undo] { width: var(--touch-target); height: var(--touch-target) !important; padding: 0; justify-content: center; }
+  .panel[aria-label="Members"] [data-undo] { width: auto; padding: 0 8px; }
+  .panel[aria-label="Members"] tr.inline { display: block; padding: 0 var(--space-3) var(--space-2); }
+  .panel[aria-label="Members"] tr.inline td { display: block; padding: 0 !important; }
+
+  /* Sprints & forecast, Integrations, Demos (P7): one column. */
+  .vsum { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+  .num-in { height: var(--touch-target); }
+  .panel[aria-label="Jira"] > header .spacer { flex-basis: 100%; height: 0; }
+  .panel[aria-label="Jira"] > header .btn { flex: 1; justify-content: center; }
+  .logo-prev { width: 100%; }
+  .hint-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .rad { min-height: var(--touch-target); }
+  .rad input { width: 18px; height: 18px; }
+  :root.set-at-yt .content > section:not([data-testid="youtube-panel"]) { display: none; }
+
+  /* The Save bar (P3; SHIP-805 rule 15): the unsaved count (tap for the list) · Discard · Save. */
+  .set-savebar:not([hidden]) { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; align-items: center; gap: var(--space-2); padding: 10px max(var(--space-3), env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left)); background: var(--color-surface); border-top: 1px solid var(--color-border); box-shadow: 0 -8px 24px rgb(0 0 0 / .12); }
+  .set-savebar #status { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+  .set-savebar .dirty { height: var(--touch-target); padding: 0 10px; font-size: var(--text-sm); }
+  .set-savebar .errsum { font-size: var(--text-sm); }
+  .set-savebar .btn { height: 40px; }
+  .set-savebar .btn.primary { padding: 0 18px; }
+
+  /* Sheets (P5): the row menu and the unsaved-changes list, on the K1 anatomy: grab bar, title, Close, 32px rows. */
+  .menu:not([hidden]), body > .changes:not([hidden]) { position: fixed; inset: auto 0 0 0 !important; z-index: 70; width: auto; min-width: 0; max-height: 85dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 0; padding: 0 var(--space-2) calc(var(--space-3) + env(safe-area-inset-bottom)); border: 0; border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--color-surface); box-shadow: var(--shadow-dialog); }
+  .menu::before, body > .changes::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin: 6px 0 2px; border-radius: 2px; background: var(--color-border); }
+  .menu .sheet-head, body > .changes .sheet-head { flex: none; min-height: var(--touch-target); padding-left: var(--space-2); padding-right: 0; }
+  .menu button:not(.btn) { height: auto; min-height: var(--touch-target); padding: 4px var(--space-2); font-size: var(--text-md); }
+  .menu hr { margin: 6px var(--space-2); }
+  body > .changes .overline { display: none; }
+  body > .changes button:not(.btn) { min-height: var(--touch-target); padding: 6px var(--space-2); align-items: baseline; font-size: var(--text-base); }
+  body > .changes button:not(.btn) span:first-child { width: 64px; font-size: var(--text-sm); }
+  body > .changes .sheet-head .btn { align-items: center; padding: 0 var(--space-2); }
+}

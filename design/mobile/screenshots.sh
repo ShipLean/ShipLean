@@ -267,6 +267,40 @@ declare -A shots=(
   [demo-youtube-private]="sprint-demo.html?state=youtube-private"
   [demo-youtube-failed]="sprint-demo.html?state=youtube-failed"
   [demo-sprint]="sprint-demo.html?state=closable&sheet=sprint"
+  # All sprints on a phone (SHIP-1807, SHIP-1626 K7): screens/sprints.html with sprints-touch.css/js
+  [sprints]="sprints.html"
+  [sprints-list]="sprints.html?at=list"
+  [sprints-more]="sprints.html?sheet=more:s24"
+  [sprints-more-past]="sprints.html?sheet=more:s21"
+  [sprints-new]="sprints.html?new"
+  [sprints-new-overlap]="sprints.html?new=overlap"
+  [sprints-empty]="sprints.html?empty"
+  # Sprint capacity on a phone (SHIP-1626 Q4, for SHIP-726). The plain page is over capacity (the desktop's data).
+  [capacity]="capacity.html"
+  [capacity-people]="capacity.html?at=people"
+  [capacity-days]="capacity.html?sheet=days&p=ana"
+  [capacity-dirty]="capacity.html?dirty"
+  [capacity-dirty-people]="capacity.html?dirty&at=people"
+  [capacity-more]="capacity.html?sheet=more"
+  [capacity-add]="capacity.html?rm=mei&sheet=add"
+  [capacity-empty]="capacity.html?empty"
+  # Project settings on a phone (SHIP-1809, SHIP-1626 K7): screens/settings.html with settings-touch.css/js, and the
+  # Stories board settings (screens/board-settings.html with board-settings-touch.css/js)
+  [settings]="settings.html"
+  [settings-general]="settings.html?tab=general"
+  [settings-general-dirty]="settings.html?tab=general&dirty"
+  [settings-changes]="settings.html?tab=states&dirty&changes"
+  [settings-states]="settings.html?tab=states"
+  [settings-states-drag]="settings.html?tab=states&drag=bug-triaged"
+  [settings-states-menu]="settings.html?tab=states&menu=bug-triaged"
+  [settings-members]="settings.html?tab=members"
+  [settings-sprints]="settings.html?tab=sprints"
+  [settings-integrations]="settings.html?tab=integrations"
+  [settings-demos]="settings.html?tab=demos"
+  [settings-demos-yt]="settings.html?tab=demos&yt=connected&at=yt"
+  [settings-board-styles]="board-settings.html?pane=styles"
+  [settings-board-styles-drag]="board-settings.html?pane=styles&drag=0"
+  [settings-board-styles-dirty]="board-settings.html?pane=styles&dirty"
 )
 
 names=("$@")

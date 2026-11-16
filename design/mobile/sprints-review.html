@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · All sprints on a phone (SHIP-1807 review)</title>
+<!-- SHIP-1807 (SHIP-1626 K7, Joel's Q4): the phone design for All sprints (SHIP-723), which only had a desktop screen. The
+     states are live frames of ../screens/sprints.html at 390px (sprints-touch.css/js), and images/sprints-*.png for audits.
+     Decisions P1–P8 are recorded on SHIP-1807; Joel confirms or changes them there (SHIP-1626 D11: no approval gate).
+     Open over HTTP or directly; iframes may render blank under file:// in some browsers. -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); vertical-align: middle; }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.today { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 1000px) { .today { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; width: 100%; height: auto; border: 1px solid var(--color-border); border-radius: 14px; }
+figure.tall img { max-height: 900px; object-fit: cover; object-position: top; }
+figcaption { margin-top: 6px; font-size: 12px; color: var(--color-muted); }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+.groups { display: grid; gap: 34px; }
+.grp h3 { font-size: 16px; margin-bottom: 10px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(404px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { width: 404px; max-width: 100%; padding: 7px; border-radius: 30px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame iframe { display: block; width: 390px; height: 844px; max-width: 100%; border: 0; border-radius: 24px; background: var(--color-surface); }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; max-width: 404px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--color-text); text-decoration: none; }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; scroll-margin-top: 16px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); cursor: pointer; background: var(--color-bg); }
+.opts label:has(input:checked) { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts input { margin-top: 3px; }
+.opts b { font-weight: 600; }
+.rec { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.q textarea { width: 100%; min-height: 34px; padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); font: inherit; font-size: 13px; resize: vertical; }
+.submit { position: sticky; bottom: 0; margin-top: 16px; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-dialog); }
+.submit .st { flex: 1; min-width: 200px; font-size: 13px; color: var(--color-muted); }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 13px; cursor: pointer; }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-fg); font-weight: 600; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.card ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SHIP-1807 · All sprints on a phone</h1>
+    <p class="lede">Sprints › All sprints at 900px and below, drawn at 390 × 844 on the reference screen <code>screens/sprints.html</code> (its touch layer is <code>sprints-touch.css</code> and <code>sprints-touch.js</code>). It sits in the SHIP-713 touch shell and follows the SHIP-805 rules as S0e1/S0e2 set them in tokens.css and shiplean.css; it overrides neither. The content is the desktop's: the velocity chart, every sprint with its dates, status, goal, team capacity, committed and completed, and the New sprint form. Above 900px nothing changes.</p>
+    <div class="chips">
+      <span class="chip">Task SHIP-1807 · Feature SHIP-1626 (K7)</span><span class="chip">Desktop: SHIP-723</span><span class="chip">Images: images/sprints-*.png</span>
+      <span class="chip">Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-t="light">Light</button><button type="button" aria-pressed="false" data-t="dark">Dark</button></span></span>
+    </div>
+    <div class="rules">SHIP-805 rules this design leans on: <span>1 · 900px</span><span>3 · bottom sheets</span><span>4 · forms full screen</span><span>5 · nothing hover-only</span><span>8 · ⋯ = action sheet</span><span>11 · 32px targets</span><span>12 · only the top bar pinned</span><span>13 · 48px top bar</span><span>14 · 16px inputs</span><span>15 · Save bar: Discard · primary</span><span>805 D1 · sheet title, Close on the right</span><span>K1 · icon, hint, value, ›, groups</span></div>
+  </header>
+
+  <section class="block">
+    <h2>Today</h2>
+    <p class="sub">The desktop reference (1440px) and what is built on a phone (the page-shot baselines on the shared branch, 16 Nov), for orientation only: the design follows the rules and the desktop's content, not the build.</p>
+    <div class="today">
+      <figure><img src="../screens/sprints.light.png" alt="Desktop All sprints"><figcaption>Desktop: velocity chart, a seven-column table newest first, the New sprint rail. A member's capacity note is a hover title on a dotted number.</figcaption></figure>
+      <figure><img src="../../src/ShipLean.Client/src/pages/screenshots/sprints.phone.spec.tsx-snapshots/sprints-light-linux.png" alt="Built phone page"><figcaption>Built phone page: rows with a status chip and ⋯, in the order Current, Future, Past without headings.</figcaption></figure>
+      <figure><img src="../../src/ShipLean.Client/src/pages/screenshots/sprints.phone.spec.tsx-snapshots/sprints-new-light-linux.png" alt="Built New sprint"><figcaption>Built New sprint: full screen with Create in the top bar and no Save bar; no Copy capacity.</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li>On desktop the capacity note is hover-only (rule 5).</li>
+      <li>The desktop chart at 366px has 7px labels; the built chart's numbers are fine but it has no headings for past and future.</li>
+      <li>New sprint is a rail form on desktop (rule 4 makes it full screen; rule 15 puts Discard · Create in a Save bar).</li>
+      <li>Nothing is designed for a project with no sprints yet.</li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>Proposed</h2>
+    <p class="sub">Each phone is the reference screen in one state; the P-numbers match the decisions below. Everything scrolls with the page except the top bar.</p>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <section class="block">
+    <h2>What the built page should match</h2>
+    <p class="sub">For wave 1's audit of the built phone page against this design. No server change; desktop unchanged.</p>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>Piece</th><th>At 900px and below</th><th>Decision</th></tr></thead>
+      <tbody>
+        <tr><td>Head</td><td>No "Sprints" heading (the top bar names the page). One row: "Storefront · 8 sprints", Plan sprints, + New sprint (primary), 32px.</td><td>P1</td></tr>
+        <tr><td>Velocity</td><td>The card stays first, full width; the chart is drawn for the phone with every bar labelled (no hover), the velocity line dashed, a one-line caption with the number.</td><td>P3</td></tr>
+        <tr><td>List</td><td>Sections Current, Future · n (soonest first), Past · n (newest first), each a card of rows. The current row keeps the desktop's tint. No status chips: the heading says it.</td><td>P2</td></tr>
+        <tr><td>Row</td><td>Name and dates; the goal up to two lines ("No goal yet" in italics); Capacity · Committed · Completed with labels ("21 · velocity" when nobody entered capacity; "5 so far" on the current one); the capacity note as its own line. The whole row opens the sprint's Backlog; ⋯ (32px) opens its sheet.</td><td>P4, P8</td></tr>
+        <tr><td>⋯ sheet</td><td>The shared <code>ActionSheet</code> on K1: title = sprint name, subtitle = dates · status, Close. Group "Open": Backlog (value: committed pts), Taskboard, Capacity (value: team capacity), Retro and Demo (not on future sprints), each with ›. Then Edit sprint (hint "Name, dates and goal"), and Close sprint (hint, ›) on the current sprint only. Footnote on past sprints.</td><td>P6</td></tr>
+        <tr><td>New sprint</td><td>Full screen, ✕ at the top left (as Edit sprint, SHIP-724 D9). Name; Start and End side by side (40px, 16px text) with the length under them; Goal; Copy each member's capacity as a switch row; the defaults hint. Save bar: "Not created yet" · Discard · Create sprint. An overlap is shown under the dates on Create, and the Save bar says why.</td><td>P5</td></tr>
+        <tr><td>Empty</td><td>No chart and no head buttons: one panel, "No sprints yet", what a sprint is, + New sprint. New sprint then defaults to Sprint 1 with no dates and no Copy capacity.</td><td>P7</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions</h2>
+    <div class="card" style="margin-bottom:12px">Recorded on <b>SHIP-1807</b> with the recommended answer selected. Joel confirms or changes them on the task; wave 1 builds to the recommendation meanwhile (SHIP-1626 D11).</div>
+    <div id="dform" class="qs"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const Q = [
+    { id: 'P1', t: 'The head', see: ['top'], o: [
+      ['row', 'No heading; count, Plan sprints and + New sprint in one row', 'The top bar already says All sprints (as SHIP-733 D7). New sprint is the page\'s primary action, so it is a visible button rather than in a ⋯.', 1],
+      ['more', 'Keep "Sprints" and put Plan sprints in a page ⋯', 'One button fewer; Plan sprints, the way to fill sprints, is two taps away.'],
+    ] },
+    { id: 'P2', t: 'Order of the sprints', see: ['list'], o: [
+      ['sections', 'Sections Current, Future (soonest first), Past (newest first)', 'The sprint you are in comes first and the next one under it. Headings replace the status chips.', 1],
+      ['desktop', 'One list newest first with status chips, as desktop', 'Matches desktop; the current sprint sits under every future one.'],
+    ] },
+    { id: 'P3', t: 'Velocity chart', see: ['top'], o: [
+      ['top', 'Above the list, redrawn for the phone with every bar labelled', 'Velocity is what people come to this page for besides the list; labels mean nothing is hover-only.', 1],
+      ['folded', 'A "Velocity 21" row that opens the chart in a sheet', 'The list starts 330px higher; the chart is one tap away.'],
+    ] },
+    { id: 'P4', t: 'A sprint row', see: ['list'], o: [
+      ['labelled', 'Name and dates; goal (2 lines); Capacity · Committed · Completed with labels', 'Three numbers side by side without labels are easy to misread. The whole row opens the sprint\'s Backlog, as the name does on desktop.', 1],
+      ['numbers', 'Committed and completed as numbers on the first line, capacity with the dates', 'As built: shorter rows, labels as words after the numbers.'],
+    ] },
+    { id: 'P5', t: 'New sprint', see: ['new', 'overlap'], o: [
+      ['full', 'Full screen, ✕ top left, the Save bar with Discard · Create sprint', 'Rule 4 (forms full screen) and rule 15; matches Edit sprint (SHIP-724 D9). Copy capacity is a switch row; the length shows under the dates.', 1],
+      ['topbar', 'Full screen with Create in the top bar, as built', 'No Save bar; the primary is at the top, away from the thumb.'],
+    ] },
+    { id: 'P6', t: 'What a sprint\'s ⋯ holds', see: ['more', 'morepast'], o: [
+      ['tabs', 'The sprint\'s tabs, Edit sprint, and Close sprint on the current one', 'Opens any tab of any sprint without going through its Backlog. Retro and Demo only once the sprint has started.', 1],
+      ['none', 'No ⋯: the row opens the Backlog, as desktop', 'Simpler; Edit and Close are in the sprint header\'s ⋯ (SHIP-724 D5).'],
+      ['edits', 'Only Edit sprint and Close sprint', 'A short sheet; tabs through the Backlog.'],
+    ] },
+    { id: 'P7', t: 'No sprints yet', see: ['empty'], o: [
+      ['panel', 'One panel with what a sprint is and + New sprint; no chart, no head buttons', 'One thing to do. Desktop has no empty state; it would show an empty chart and table.', 1],
+      ['chart', 'Keep the empty chart frame and the head', 'Same layout as with sprints.'],
+    ] },
+    { id: 'P8', t: 'A member\'s capacity note', see: ['list'], o: [
+      ['line', 'Its own line under the row\'s figures', 'On desktop it is a hover title on a dotted number (rule 5 rules that out). Notes are rare and short.', 1],
+      ['sheet', 'In the ⋯ sheet under Capacity', 'Rows stay the same height; the note is one tap away.'],
+    ] },
+  ];
+  const P = [
+    { g: 'The page', items: [
+      { id: 'top', q: '', title: 'Top of the page', dec: ['P1', 'P3'], notes: ['Head in one row; velocity chart with labels', 'Scroll the phone for the sections'] },
+      { id: 'list', q: 'at=list', title: 'Current, Future and Past', dec: ['P2', 'P4', 'P8'], notes: ['Tap a row to open the sprint', 'Sprint 21 carries a capacity note'] },
+      { id: 'empty', q: 'empty', title: 'No sprints yet', dec: ['P7'], notes: ['+ New sprint opens the form with Sprint 1'] },
+    ] },
+    { g: 'Sheets', items: [
+      { id: 'more', q: 'sheet=more:s24', title: 'The current sprint\'s ⋯', dec: ['P6'], notes: ['K1: icons, values, ›, the Open group', 'Close sprint last'] },
+      { id: 'morepast', q: 'sheet=more:s21', title: 'A past sprint\'s ⋯', dec: ['P6'], notes: ['No Close sprint; a footnote'] },
+    ] },
+    { g: 'New sprint', items: [
+      { id: 'new', q: 'new', title: 'New sprint', dec: ['P5'], notes: ['Desktop defaults: Sprint 27, 30 Nov – 11 Dec, Copy capacity on', 'Discard closes without creating'] },
+      { id: 'overlap', q: 'new=overlap', title: 'Dates overlap', dec: ['P5'], notes: ['Shown on Create, under the dates; the Save bar says why'] },
+    ] },
+  ];
+  let theme = 'light';
+  const src = q => `../screens/sprints.html?${q}${q ? '&' : ''}theme=${theme}`;
+  document.getElementById('groups').innerHTML = (() => { let n = 0; return P.map(g => `<div class="grp"><h3>${g.g}</h3><div class="phones">${g.items.map(p => `
+    <article class="phone" id="${p.id}"><div class="ph"><span class="no">${++n}</span><b>${p.title}</b></div>
+      <div class="frame"><iframe loading="lazy" title="${p.title}" data-q="${p.q}" src="${src(p.q)}"></iframe></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(x => `<li>${x}</li>`).join('')}</ul></article>`).join('')}</div></div>`).join(''); })();
+  document.getElementById('theme').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    document.querySelectorAll('.phone iframe').forEach(f => { f.src = src(f.dataset.q); });
+  });
+  const all = P.flatMap(g => g.items);
+  document.getElementById('dform').innerHTML = Q.map(q => `<div class="q" id="q-${q.id}"><h3><span class="id">${q.id}</span>${q.t}</h3>
+    <div class="see">See ${q.see.map(s => `<a href="#${s}">${all.find(i => i.id === s).title}</a>`).join(', ')}</div>
+    <div class="opts">${q.o.map(([v, b, s, r]) => `<label><input type="radio" name="${q.id}" value="${v}"${r ? ' checked' : ''} disabled><span><b>${b}</b>${r ? '<span class="rec">Recommended</span>' : ''}<small>${s}</small></span></label>`).join('')}</div></div>`).join('');
+})();
+</script>
+</body>
+</html>
