@@ -48,9 +48,7 @@ phonePageShots([
       await stubShell(page);
       await stubBacklog(page, backlogView(ROWS), {
         answer: (search) =>
-          search.get('filter')
-            ? { status: 200, body: backlogView(ROWS.slice(0, 2)) }
-            : undefined,
+          search.get('filter') ? { status: 200, body: backlogView(ROWS.slice(0, 2)) } : undefined,
       });
     },
     ready,

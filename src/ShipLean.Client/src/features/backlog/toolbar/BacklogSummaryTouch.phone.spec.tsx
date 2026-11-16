@@ -82,7 +82,10 @@ test('BacklogSummary_WhenFiltered_ShouldSayShowingNOfM', async ({ mount, page })
   await expect(page.getByTestId(ids.filterCount)).toContainText('Showing 2 of 4');
 });
 
-test('BacklogSummary_WhenSearchNarrowsWithNoFilter_ShouldSayShowingNOfM', async ({ mount, page }) => {
+test('BacklogSummary_WhenSearchNarrowsWithNoFilter_ShouldSayShowingNOfM', async ({
+  mount,
+  page,
+}) => {
   const rows = [open('SHIP-1', 5), open('SHIP-2', 8), open('SHIP-3', 3), open('SHIP-4', 1)];
   await stubBacklog(page, backlogView(rows));
   await mount(<ListMode project={PROJECT} />, stories);
