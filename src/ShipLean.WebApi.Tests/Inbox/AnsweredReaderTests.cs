@@ -332,6 +332,26 @@ public class AnsweredReaderTests : ApiFixture
         answered.AnsweredToday.ShouldBe(55);
     }
 
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the StartOfDay and Today bound in AnsweredReader.
+    [Test]
+    public async Task Answered_WhenViewerIsInBangkok_ShouldCountTodayFromBangkokMidnight()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var bangkok = await MemberAsync(connection);
+        var utc = await MemberAsync(connection);
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Of(bangkok), ViewerZoneTestData.BangkokId);
+        var item = await ItemAsync(connection, "Answered at 18:00 UTC yesterday");
+        var at = TestDates.Today.AddHours(-6);
+        await DecisionEventsAsync(connection, item, bangkok, "confirmed", at, 1);
+        await DecisionEventsAsync(connection, item, utc, "confirmed", at, 1);
+
+        var bangkokView = await GetAsync(bangkok);
+        var utcView = await GetAsync(utc);
+
+        bangkokView.AnsweredToday.ShouldBe(1);
+        utcView.AnsweredToday.ShouldBe(0);
+    }
+
     [Test]
     public async Task GetAnswered_WhenAnsweredTodayAndPickedUp_ShouldCountBoth()
     {
