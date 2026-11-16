@@ -509,3 +509,39 @@ test('Draft_WhenSaveFindsAnError_ShouldMarkItsTabAndTheChangedMemberRow', async 
 
   await expect(view.getByTestId(ids.tabError)).toHaveCount(1);
 });
+
+test('Draft_WhenSeverityWeightsEdited_ShouldMarkGeneralAndSaveThem', async ({ mount, page }) => {
+  const puts = await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  await expect(view.getByTestId(ids.severityWeightsPanel)).toBeVisible();
+  await expect(view.getByTestId(ids.severityWeight1)).toHaveValue('8');
+  await expect(view.getByTestId(ids.severityWeight4)).toHaveValue('1');
+
+  await view.getByTestId(ids.severityWeight1).fill('10');
+  await expect(view.getByTestId(ids.unsaved)).toContainText('1 unsaved change');
+  await view.getByTestId(ids.severityWeight2).fill('0');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.fieldError)).toHaveAttribute(
+    'data-field',
+    'bugSeverityWeight-2',
+  );
+  expect(puts).toHaveLength(0);
+
+  await view.getByTestId(ids.severityWeight2).fill('5');
+  await view.getByTestId(ids.save).click();
+
+  await expect(view.getByTestId(ids.unsaved)).toHaveCount(0);
+  expect(puts[0].general.bugSeverityWeights).toEqual({ 1: 10, 2: 5, 3: 2, 4: 1 });
+});
+
+test('Draft_WhenMember_ShouldShowSeverityWeightsReadOnly', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<SettingsDraftHarness role="member" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+
+  await expect(view.getByTestId(ids.severityWeight1)).toBeDisabled();
+});

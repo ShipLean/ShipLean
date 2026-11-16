@@ -59,7 +59,7 @@ internal static partial class GitHubPayload
     }
 
     // GitHub sends merge_commit_sha for open pull requests too (its test merge), so it is read only once merged.
-    internal static string? MergeCommitOf(JsonElement pull)
+    private static string? MergeCommitOf(JsonElement pull)
     {
         var sha = PayloadJson.OptionalText(pull, "merge_commit_sha")?.ToLowerInvariant();
         return sha is null || Sha().IsMatch(sha) ? sha : throw ApiException.Validation("The payload's merge_commit_sha is not a commit.");

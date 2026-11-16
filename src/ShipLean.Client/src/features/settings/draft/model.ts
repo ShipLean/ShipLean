@@ -35,6 +35,8 @@ export interface SettingsDraft {
   repoBaseBranch: string;
   /** ISO code of the country whose public holidays the project skips; empty for None. */
   holidayCountry: string;
+  /** Severity 1 (critical) to 4 (low) to its weight, as typed; each must be a whole number of at least 1. */
+  bugSeverityWeights: Record<SeverityKey, string>;
   members: DraftMember[];
   velocityWindow: string;
   velocityOverride: string;
@@ -42,6 +44,9 @@ export interface SettingsDraft {
   sprintNaming: SprintNaming;
   states: StateChanges;
 }
+
+export const SEVERITY_KEYS = ['1', '2', '3', '4'] as const;
+export type SeverityKey = (typeof SEVERITY_KEYS)[number];
 
 /** A state row's name is `state-<id>`; a type's picker button, which a type-wide problem points at, is `stateType-<type>`. */
 export type DraftField =
@@ -51,6 +56,7 @@ export type DraftField =
   | 'repoUrl'
   | 'repoBaseBranch'
   | 'holidayCountry'
+  | `bugSeverityWeight-${SeverityKey}`
   | 'velocityWindow'
   | 'velocityOverride'
   | `state-${string}`
@@ -82,6 +88,12 @@ export function toDraft(settings: ProjectSettingsDto): SettingsDraft {
     repoUrl: settings.general.repoUrl ?? '',
     repoBaseBranch: settings.general.repoBaseBranch ?? '',
     holidayCountry: settings.general.holidayCountry ?? '',
+    bugSeverityWeights: {
+      '1': String(settings.general.bugSeverityWeights['1']),
+      '2': String(settings.general.bugSeverityWeights['2']),
+      '3': String(settings.general.bugSeverityWeights['3']),
+      '4': String(settings.general.bugSeverityWeights['4']),
+    },
     members: settings.members.map((m) => ({
       email: m.email,
       user: m.user,
@@ -114,6 +126,7 @@ function parseOverride(text: string): number | null | undefined {
 export interface ParsedDraft {
   velocityWindow: number;
   velocityOverride: number | null;
+  bugSeverityWeights: Record<SeverityKey, number>;
 }
 
 /** The rules the server enforces on the tabs this draft owns, so Save can jump to the field before sending anything. */
@@ -148,11 +161,34 @@ export function parse(
       message: 'The override is zero or more points, with at most two decimal places.',
     });
   }
+  const weights = SEVERITY_KEYS.map(
+    (key) => [key, parseWindow(draft.bugSeverityWeights[key])] as const,
+  );
+  for (const [key, weight] of weights) {
+    if (weight === undefined) {
+      errors.push({
+        tab: 'general',
+        field: `bugSeverityWeight-${key}`,
+        message: 'A weight is a whole number, at least 1.',
+      });
+    }
+  }
   errors.push(...stateErrors(states, draft.states));
   if (velocityWindow === undefined || velocityOverride === undefined || errors.length > 0) {
     return { errors };
   }
-  return { parsed: { velocityWindow, velocityOverride } };
+  return {
+    parsed: {
+      velocityWindow,
+      velocityOverride,
+      bugSeverityWeights: {
+        '1': weights[0][1]!,
+        '2': weights[1][1]!,
+        '3': weights[2][1]!,
+        '4': weights[3][1]!,
+      },
+    },
+  };
 }
 
 /** What the server refuses on each type's list: a blank or repeated name (at the row), no Proposed or Completed state (at the type). */
@@ -187,6 +223,7 @@ export function toPut(draft: SettingsDraft, parsed: ParsedDraft): ProjectSetting
       repoUrl: draft.repoUrl.trim() === '' ? null : draft.repoUrl.trim(),
       repoBaseBranch: draft.repoBaseBranch.trim() === '' ? null : draft.repoBaseBranch.trim(),
       holidayCountry: draft.holidayCountry === '' ? null : draft.holidayCountry,
+      bugSeverityWeights: parsed.bugSeverityWeights,
     },
     members: draft.members.filter((m) => !m.removed).map((m) => ({ email: m.email, role: m.role })),
     sprints: {
@@ -236,6 +273,7 @@ export function rebase(
       repoUrl: mine('repoUrl'),
       repoBaseBranch: mine('repoBaseBranch'),
       holidayCountry: mine('holidayCountry'),
+      bugSeverityWeights: mine('bugSeverityWeights'),
       velocityWindow: mine('velocityWindow'),
       velocityOverride: mine('velocityOverride'),
       sprintNaming: mine('sprintNaming'),
@@ -267,6 +305,9 @@ export function changesBetween(
   }
   if (base.holidayCountry !== draft.holidayCountry) {
     changes.push({ tab: 'general', label: 'Public holidays' });
+  }
+  if (JSON.stringify(base.bugSeverityWeights) !== JSON.stringify(draft.bugSeverityWeights)) {
+    changes.push({ tab: 'general', label: 'Bug severity weights' });
   }
   for (const member of draft.members) {
     const saved = base.members.find((m) => m.user.id === member.user.id);

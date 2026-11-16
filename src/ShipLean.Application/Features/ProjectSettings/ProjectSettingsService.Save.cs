@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Data.Common;
 using System.Globalization;
 using System.Text.Json;
@@ -154,6 +153,7 @@ public sealed partial class ProjectSettingsService
     private static ProjectGeneralPut CheckGeneral(ProjectGeneralPut general)
     {
         var days = general.WorkingDays?.Distinct().Order().ToArray() ?? [];
+        CheckWeights(general.BugSeverityWeights);
         if (string.IsNullOrWhiteSpace(general.Name))
         {
             throw ApiException.Validation("A project needs a name.");
@@ -165,15 +165,15 @@ public sealed partial class ProjectSettingsService
         }
 
         return new ProjectGeneralPut(
-            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.HolidayCountry, general.Provided, CheckWeights(general.BugSeverityWeights));
+            general.Name.Trim(), general.Description ?? string.Empty, days, general.AgentConnectionId, ProjectAgentRules.RepoUrl(general.RepoUrl), ProjectAgentRules.BaseBranch(general.RepoBaseBranch), general.HolidayCountry, general.Provided, general.BugSeverityWeights);
     }
 
     // Exactly the severities 1 (critical) to 4 (low), each a positive whole number: Inspection's weighted count reads all four.
-    private static ReadOnlyDictionary<int, int>? CheckWeights(IReadOnlyDictionary<int, int>? weights)
+    private static void CheckWeights(IReadOnlyDictionary<int, int>? weights)
     {
         if (weights is null)
         {
-            return null;
+            return;
         }
 
         if (weights.Count != 4 || !Enumerable.Range(1, 4).All(weights.ContainsKey))
@@ -185,8 +185,6 @@ public sealed partial class ProjectSettingsService
         {
             throw ApiException.Validation("A severity weight is a whole number of at least 1.", "bugSeverityWeights");
         }
-
-        return new ReadOnlyDictionary<int, int>(weights.ToDictionary(w => w.Key, w => w.Value));
     }
 
     // An agent field the body left out keeps its saved value (already valid, so it is not checked again).
