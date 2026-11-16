@@ -62,7 +62,7 @@ test('BacklogSummary_ShouldShowCountAndOpenPoints_OnEpics', async ({ mount, page
   await mount(<LevelHarness project={PROJECT} level="epics" />, {
     hooksConfig: { route: '/p/SHIP/backlogs/epics' },
   });
-  await expect(page.getByTestId(ids.summary)).toContainText(`${EPIC_ROWS.length} Epics`);
+  await expect(page.getByTestId(ids.summary)).toContainText(`${EPIC_ROWS.length} Epic`);
 });
 
 test('BacklogSummary_WhenFiltered_ShouldSayShowingNOfM', async ({ mount, page }) => {
