@@ -246,4 +246,6 @@ public static class RetrosTestIds
     public const string RetroImpactHint = "retro-impact-hint";
     public const string RetroImpactIntro = "retro-impact-intro";
     public const string RetroActionsSection = "retro-actions-section";
+    public const string RetroUnthemedCardOpen = "retro-unthemed-card-open";
+    public const string RetroMergeSourceRow = "retro-merge-source-row";
 }

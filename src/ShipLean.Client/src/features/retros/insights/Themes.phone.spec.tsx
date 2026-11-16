@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { Page } from 'playwright';
 import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../touch/testIds';
 import { itemPeekTestIds } from '../../itemPeek/testIds';
@@ -14,6 +13,7 @@ import { retroSharedTestIds as shared } from '../../retroShared/testIds';
 import { InsightsAddressHarness } from '../ct/InsightsAddressHarness';
 import { retrosTestIds as ids } from '../testIds';
 import { insightsProject } from './ct/insightsProject';
+import { holdWhatTheSheetLoads, afterTheNextPaint } from './ct/holdWhatTheSheetLoads';
 import { ThemesAddressHarness } from './ct/ThemesAddressHarness';
 import { ThemesItemPeekHarness } from './ct/ThemesItemPeekHarness';
 
@@ -58,32 +58,6 @@ const withUnthemed: RetroInsightsDto = {
   unthemed: { counts: unthemedCounts, noSprint: 6, total: 12 },
 };
 const unthemedQuery = '?sheet=theme:unthemed';
-
-/**
- * Holds what a theme sheet loads (its mentions from Search, its open points) until the returned function is called. A
- * sheet that grows when they arrive is
- * bottom-anchored with a fractional height, so it moves by a fraction of a pixel, and the lines it had already painted
- * keep their old pixel rounding (some land a pixel lower). An answer that raced the sheet's first paint gave one shot or
- * the other at random (SHIP-2110); answering after the paint gives the same one every run.
- */
-async function holdWhatTheSheetLoads(page: Page): Promise<() => void> {
-  let answer!: () => void;
-  const held = new Promise<void>((resolve) => (answer = resolve));
-  await page.route(
-    (url) => /^\/api\/projects\/[^/]+\/retros(\/action-dialog)?$/.test(url.pathname),
-    async (route) => {
-      await held;
-      await route.fallback();
-    },
-  );
-  return answer;
-}
-
-/** Resolves once the browser has painted the current page: a frame callback runs before a paint, its next one after it. */
-const afterTheNextPaint = (page: Page) =>
-  page.evaluate(
-    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
-  );
 
 for (const colour of THEMES) {
   test(`ThemeCards_WhenOpened_ShouldMatchItsScreenshot_retro-insights-phone_${colour}`, async ({
@@ -284,7 +258,7 @@ test('ThemeCards_WhenAnActionChipIsTapped_ShouldOpenTheItemNotTheSheet', async (
 }) => {
   await stubRetros(page);
   await mount(<ThemesAddressHarness insights={base} />, open());
-  const chip = page.getByTestId(ids.retroThemeCard).first().locator('a').first();
+  const chip = page.getByTestId(ids.retroThemeCard).first().getByTestId(itemPeekTestIds.link).first();
   expect((await chip.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   await chip.tap();
   await expect(address(page)).toContainText('item=');
@@ -469,7 +443,7 @@ test('InsightsUnthemedCard_WhenTapped_ShouldOpenTheUnthemedSheet', async ({ moun
   await expect(sheet).toHaveCount(0);
   await expect(address(page)).toHaveText('?range=6');
   // Its name opens it too.
-  await card.getByTestId(ids.retroThemeCardOpen).tap();
+  await card.getByTestId(ids.retroUnthemedCardOpen).tap();
   await expect(page.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
 });
 
@@ -526,7 +500,7 @@ test('ThemeCards_WhenAThemeHasActionItems_ShouldShowThemWithoutAddAction', async
   await mount(<ThemesAddressHarness insights={bare} />, open());
   const cards = page.getByTestId(ids.retroThemeCard);
   await expect(cards).toHaveCount(base.themes.length);
-  await expect(cards.nth(0).locator('a')).toHaveCount(base.themes[0].actionItems.length);
+  await expect(cards.nth(0).getByTestId(itemPeekTestIds.link)).toHaveCount(base.themes[0].actionItems.length);
   await expect(cards.nth(0).getByTestId(ids.retroInsightsThemeAction)).toHaveCount(0);
   await expect(cards.nth(1).getByTestId(ids.retroInsightsThemeAction)).toHaveCount(1);
   await expect(page.getByTestId(ids.retroInsightsThemeAction)).toHaveCount(1);
