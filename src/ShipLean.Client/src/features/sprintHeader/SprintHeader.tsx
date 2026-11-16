@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
@@ -24,11 +24,13 @@ export interface SprintHeaderProps {
   // Every sprint of the project, for the sprint picker.
   sprints: SprintDto[];
   tab: SprintTab;
+  // Touch only: shown just before the tabs (the retro's four numbers, SHIP-1626 D2). Above 900px it is not rendered.
+  beforeTabs?: ReactNode;
 }
 
 // One header for every sprint tab. At 900px and below (SHIP-724 D5, D10) both variants render the same phone header:
 // picker · status · ⋯, then the dates, the goal and the tabs; it scrolls with the page.
-export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintHeaderProps) {
+export function SprintHeader({ variant, project, sprint, sprints, tab, beforeTabs }: SprintHeaderProps) {
   const { touch } = useTouchShell();
   const slim = variant === 'slim';
   const navigate = useNavigate();
@@ -110,6 +112,7 @@ export function SprintHeader({ variant, project, sprint, sprints, tab }: SprintH
           onEditingChange={(editing) => setGoalEditingId(editing ? sprint.id : null)}
         />
         {editSprintRail}
+        {beforeTabs}
         <SprintTabs project={project} sprint={sprint} tab={tab} />
         <CloseSprintSlot
           project={project}

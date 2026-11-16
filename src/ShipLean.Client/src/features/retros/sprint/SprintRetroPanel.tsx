@@ -11,10 +11,10 @@ import { pagesTestIds } from '../../pages/testIds';
 import { RetroQueryState } from '../RetroQueryState';
 import { retrosTestIds as ids } from '../testIds';
 import { useSprintRetro } from '../useRetroQueries';
+import { useSetDecide } from './useSetDecide';
 import { DecideFilter } from './DecideFilter';
 import { RetroRail } from './rail/RetroRail';
 import { RetroFilterSheet } from './RetroFilterSheet';
-import { RetroNumbers } from './RetroNumbers';
 import { RetroRailSheets, type RailSheet } from './RetroRailSheets';
 import { SprintRetroHeader } from './SprintRetroHeader';
 import { parseSprintRetroAddress, withSprintRetroValue } from './sprintRetroAddress';
@@ -34,24 +34,25 @@ const VIEWS = [
  * At 900px and below (SHIP-727): the four numbers are buttons, the rail's sections open as sheets, the toolbar holds the
  * view, Filter (n) and ⋯ and doesn't stick, and the category tiles (kept in the address as `cat`) pick one column.
  */
-export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; sprint: SprintDto }) {
+export function SprintRetroPanel({
+  project,
+  sprint,
+  sheet,
+  onSheet,
+}: {
+  project: ProjectDto;
+  sprint: SprintDto;
+  /** The rail sheet that is open at touch. The four numbers (above the tabs) and the ⋯ both open one, so the slot holds it. */
+  sheet: RailSheet | null;
+  onSheet: (sheet: RailSheet | null) => void;
+}) {
   const [params, setParams] = useSearchParams();
   const { view, writtenBy, decide, point, cat } = parseSprintRetroAddress(params);
   const query = useSprintRetro(project.id, sprint.id);
   const { touch } = useTouchShell();
   const navigate = useNavigate();
-  const [sheet, setSheet] = useState<RailSheet | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  // Turning on To decide while the picked category has nothing to decide (Went well never has) moves to the first
-  // category that has points to decide (D7).
-  const setDecide = (retro: SprintRetroDto, on: boolean) => {
-    let next = withSprintRetroValue(params, 'decide', on ? 'open' : 'all');
-    const shown = retro.categories.find((c) => c.category === cat);
-    const first = retro.categories.find((c) => c.toDecide > 0);
-    if (on && (shown?.toDecide ?? 0) === 0 && first)
-      next = withSprintRetroValue(next, 'cat', first.category);
-    setParams(next);
-  };
+  const setDecide = useSetDecide();
   const filterCount = (writtenBy === 'all' ? 0 : 1) + (decide ? 1 : 0);
   const openInsights = () => navigate(routePath('retroInsights', { key: project.key }));
   // The retro's ⋯ (K1): what each rail sheet holds on the right, then the Go to group.
@@ -61,21 +62,21 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
       label: 'Coverage',
       detail: `${retro.kpis.withRetro} of ${retro.kpis.finished} with a retro`,
       trailing: 'chevron' as const,
-      onSelect: () => setSheet('coverage'),
+      onSelect: () => onSheet('coverage'),
     },
     {
       id: 'actions',
       label: 'Action items',
       detail: `${retro.kpis.actionItemsRaised} new`,
       trailing: 'chevron' as const,
-      onSelect: () => setSheet('actions'),
+      onSelect: () => onSheet('actions'),
     },
     {
       id: 'recurring',
       label: 'Recurring themes',
       detail: String(retro.kpis.recurringThemes),
       trailing: 'chevron' as const,
-      onSelect: () => setSheet('recurring'),
+      onSelect: () => onSheet('recurring'),
     },
     {
       id: 'insights',
@@ -192,7 +193,7 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                           onCategory={(value) =>
                             setParams(withSprintRetroValue(params, 'cat', value))
                           }
-                          onRecurring={() => setSheet('recurring')}
+                          onRecurring={() => onSheet('recurring')}
                         />
                       ) : (
                         <ByCategory {...props} writtenBy={writtenBy} onAdded={clearHidingFilters} />
@@ -209,7 +210,7 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                   <RetroRailSheets
                     retro={retro}
                     open={sheet}
-                    onClose={() => setSheet(null)}
+                    onClose={() => onSheet(null)}
                     onOpenInsights={openInsights}
                   />
                   <RetroFilterSheet

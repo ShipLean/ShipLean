@@ -4,6 +4,7 @@ import { AppRoutes } from '../../../../AppRoutes';
 import { stubShell } from '../../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { stubRetros } from '../../ct/retroFixtures';
+import { sprintHeaderTestIds as headerIds } from '../../../sprintHeader/testIds';
 import { retrosTestIds as ids } from '../../testIds';
 
 async function open(
@@ -52,6 +53,17 @@ test('SprintRetro_WhenOnPhone_ShouldHideRailAndNotStickToolbar', async ({ mount,
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(sideways).toBeLessThanOrEqual(0);
+});
+
+test('SprintRetro_AtTouch_NumbersShouldComeBeforeTabs', async ({ mount, page }) => {
+  await open(page, mount);
+  const numbers = await page.getByTestId(ids.retroNumbers).boundingBox();
+  const tabs = await page.getByTestId(headerIds.tabs).boundingBox();
+  expect(numbers!.y + numbers!.height).toBeLessThanOrEqual(tabs!.y + 1);
+  // Inside the header, not left under it.
+  await expect(
+    page.getByTestId(headerIds.header).getByTestId(ids.retroNumbers),
+  ).toBeVisible();
 });
 
 test('SprintRetro_WhenOnTablet_ShouldShowTilesInOneRowAndNotesInTwoColumns', async ({

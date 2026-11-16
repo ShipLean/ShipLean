@@ -1,4 +1,3 @@
-import { SprintHeader } from '../features/sprintHeader/SprintHeader';
 import { pagesTestIds } from '../features/pages/testIds';
 import { SprintRetroSlot } from '../slots/SprintRetroSlot';
 import { pageRouteIds } from './pageRouteIds';
@@ -11,10 +10,7 @@ export function SprintRetroPage() {
       {(project, sprint, sprints) => {
         const slots = sprintRetroSlots(project, sprint, sprints);
         return (
-          <>
-            <SprintHeader {...slots.header} />
-            <SprintRetroSlot {...slots.sprintRetro} />
-          </>
+          <SprintRetroSlot {...slots.sprintRetro} />
         );
       }}
     </SprintScreen>
