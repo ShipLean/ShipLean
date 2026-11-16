@@ -472,7 +472,8 @@ public class SprintDemoReaderTests : ApiFixture
         var now = TimeProvider.System.GetUtcNow();
         await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
         var older = await SessionAsync(database, demo, "completed", now.AddMinutes(-20));
-        await ActivityAsync(database, older, "response", "The older session's answer.", now.AddMinutes(-19));
+        // Written after the newer session's response, so only the session filter keeps it out of the quote.
+        await ActivityAsync(database, older, "response", "The older session's answer.", now.AddMinutes(-4));
         var newer = await SessionAsync(database, demo, "completed", now.AddMinutes(-10));
         await ActivityAsync(database, newer, "response", "An early response.", now.AddMinutes(-9));
         await ActivityAsync(database, newer, "response", "I couldn't make the **demo**.\nMy first Bash call was denied.\n\nMore detail.", now.AddMinutes(-8));
