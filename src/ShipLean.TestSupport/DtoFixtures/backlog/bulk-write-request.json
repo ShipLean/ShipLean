@@ -9,6 +9,7 @@
         "acceptanceCriteria": null,
         "reproSteps": null,
         "severity": null,
+        "foundBeforeRelease": null,
         "state": null,
         "assignee": null,
         "sprint": {
@@ -50,6 +51,7 @@
         "acceptanceCriteria": null,
         "reproSteps": null,
         "severity": null,
+        "foundBeforeRelease": null,
         "state": null,
         "assignee": null,
         "sprint": null,
