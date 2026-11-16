@@ -33,7 +33,7 @@
   const agents = {
     claude: { name: 'Claude Code', initials: 'CC' },
     cursor: { name: 'Cursor', initials: 'Cu' },
-    codex: { name: 'Codex', initials: 'Cx' },
+    gemini: { name: 'Gemini CLI', initials: 'Gm' },
   };
   const isAgent = w => w in agents;
 
@@ -100,7 +100,7 @@
     const lastDay = s.current ? NOW - 2 * H : s.end - 8 * H;
     for (let i = 0; i < n; i++) {
       const agent = rnd() < (+s.id.slice(1) - 10) / 14;
-      const who = agent ? pick(['claude', 'claude', 'cursor', 'codex']) : pick(['priya', 'tom', 'mei', 'sam', 'ana']);
+      const who = agent ? pick(['claude', 'claude', 'cursor', 'gemini']) : pick(['priya', 'tom', 'mei', 'sam', 'ana']);
       // Agents finish in hours, people in a day or two; a few long tails.
       let lead = agent ? 1.5 + rnd() * target * 0.6 : target * (0.6 + rnd() * 1.4);
       let blocked = 0, rework = 0, blockedWhy = null;

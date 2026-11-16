@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Links;
+using ShipLean.Contracts.TaskChanges;
+using ShipLean.TestSupport.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -18,6 +20,12 @@ namespace ShipLean.WebApi.Tests.Mcp.Planning.Status;
 public class PlanStatusTests : McpFixture
 {
     private PlanSeedKeys _keys = null!;
+
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        base.ConfigureTestServices!(services);
+        services.AddFakeCodeHost();
+    };
 
     [SetUp]
     public async Task SeedPlanAsync()
@@ -174,6 +182,30 @@ public class PlanStatusTests : McpFixture
         commits.Select(commit => commit.GetProperty("subject").GetString()).ShouldBe(["First change", "Second change"]);
         commits.Select(commit => commit.GetProperty("url").GetString())
             .ShouldBe(["https://git.example.test/repo/commit/aaaaaaa1", "https://git.example.test/repo/commit/bbbbbbb2"]);
+    }
+
+    [Test]
+    public async Task PlanStatus_WhenCommitsInTable_ShouldListThem()
+    {
+        var title = PlanFixture.FeatureEditor.Stories[0].Tasks[0].Title;
+        var id = _keys.Ids[_keys.Tasks[title]];
+        Host.ActAs(SeedIds.Users.Joel);
+        using (var scope = Host.Services.CreateScope())
+        {
+            var links = scope.ServiceProvider.GetRequiredService<ILinkCards>();
+            await links.AddUrlAsync(id, FakeCodeHost.StorefrontRepo.CommitUrl(FakeCodeHost.Shas.First), PlanMarkers.Commit(FakeCodeHost.Shas.First, "Same commit as a card"), null, null);
+            await links.AddUrlAsync(id, "https://git.example.test/repo/commit/ccccccc3", PlanMarkers.Commit("ccccccc3456", "Still a card"), null, null);
+            var commits = scope.ServiceProvider.GetRequiredService<ITaskCommits>();
+            await commits.AddAsync(id, [new CommitRef(FakeCodeHost.StorefrontRepo.WebUrl, FakeCodeHost.Shas.First), new CommitRef(FakeCodeHost.StorefrontRepo.WebUrl, FakeCodeHost.Shas.Second)], CommitSource.AddCommits);
+        }
+
+        var status = await StatusAsync(_keys.Feature);
+
+        var task = TasksOf(status).Single(candidate => candidate.GetProperty("title").GetString() == title);
+        var listed = task.GetProperty("commits").EnumerateArray().ToList();
+        listed.Select(commit => commit.GetProperty("sha").GetString()).ShouldBe([FakeCodeHost.Shas.First[..7], FakeCodeHost.Shas.Second[..7], "ccccccc"]);
+        listed[0].GetProperty("subject").GetString().ShouldBe(FakeCodeHost.MetaOf(FakeCodeHost.Storefront, FakeCodeHost.Shas.First).Subject);
+        listed[0].GetProperty("url").GetString().ShouldBe(FakeCodeHost.StorefrontRepo.CommitUrl(FakeCodeHost.Shas.First));
     }
 
     [Test]

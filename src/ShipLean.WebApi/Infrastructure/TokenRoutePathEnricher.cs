@@ -9,7 +9,7 @@ namespace ShipLean.WebApi.Infrastructure;
 // credential, so this swaps it for the route pattern. Every other request keeps its RequestPath.
 // Added after Enrich.FromLogContext() in Program.cs: the scope property is already on the event (scopes are added
 // only if absent, so the provider's own pass afterwards leaves this value alone). currentEndpoint reads the request's
-// matched endpoint through IHttpContextAccessor (a Func, like RequestOrigin: AG0009 refuses the accessor itself).
+// matched endpoint (ICurrentRequest.Endpoint in Program.cs). A Func, because Serilog builds its enrichers before a request exists.
 public sealed class TokenRoutePathEnricher(Func<Endpoint?> currentEndpoint) : ILogEventEnricher
 {
     public const string PropertyName = "RequestPath";

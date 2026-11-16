@@ -66,6 +66,13 @@ public static class UsageEventNames
     public const string LinkCardEdited = "link_card.edited";
     public const string LinkCardArchived = "link_card.archived";
     public const string LinkCardRefreshed = "link_card.refreshed";
+    public const string TaskChangesViewed = "task_changes.viewed";
+    public const string TaskCommitsAdded = "task_commits.added";
+    public const string CodeCommentAdded = "code_comment.added";
+    public const string CodeCommentReplied = "code_comment.replied";
+    public const string CodeCommentResolved = "code_comment.resolved";
+    public const string TaskChangesApproved = "task_changes.approved";
+    public const string TaskChangesRequested = "task_changes.requested";
     public const string SprintCreated = "sprint.created";
     public const string SprintPlanned = "sprint.planned";
     public const string SprintUpdated = "sprint.updated";

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Mcp.Errors;
 using ShipLean.WebApi.Features.Mcp.Transport;
@@ -35,8 +36,8 @@ public static class ToolScopeFilter
                 ? "the SDK matched no tool for a registered name"
                 : null;
         }
-        var httpContext = request.Services?.GetService<IHttpContextAccessor>()?.HttpContext;
-        if (request.User is not { } user || httpContext is null)
+        var items = request.Services?.GetService<ICurrentRequest>()?.Items;
+        if (request.User is not { } user || items is null)
         {
             return "no caller";
         }
@@ -53,7 +54,7 @@ public static class ToolScopeFilter
         {
             return $"the token lacks {required}";
         }
-        if (ToolScopes.IsWriting(required) && httpContext.Items[McpPipeline.WritingUserItem] is not string)
+        if (ToolScopes.IsWriting(required) && items[McpPipeline.WritingUserItem] is not string)
         {
             return "a writing call the gate did not count";
         }

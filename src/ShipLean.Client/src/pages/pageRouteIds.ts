@@ -17,6 +17,7 @@ export const boardRouteIds: Record<Level, RouteId> = {
 export const pageRouteIds = {
   workItem: 'workItem',
   workItemAttachment: 'workItemAttachment',
+  taskChanges: 'taskChanges',
   featureBoard: 'featureBoard',
   featureTimeline: 'featureTimeline',
   sprints: 'sprints',

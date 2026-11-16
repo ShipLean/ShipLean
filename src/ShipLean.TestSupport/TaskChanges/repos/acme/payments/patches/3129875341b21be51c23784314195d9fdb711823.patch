@@ -1,0 +1,7 @@
+diff --git a/pay.ts b/pay.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..d34025fb9ed6a7d67cc36142fb64b409c963aa8c
+--- /dev/null
++++ b/pay.ts
+@@ -0,0 +1 @@
++export const charge = (n: number) => n;

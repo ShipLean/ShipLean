@@ -1,15 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Immutable;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Usage;
 
-// The distinct projects one HTTP request touched and the extra properties its command added, kept in HttpContext.Items, and the
-// request's viewport header. A singleton like RequestCurrentAgent: it reads the request at call time. With no request, or in a
-// SignalR hub call (its HttpContext lives as long as the connection), it does nothing.
-public sealed class UsageScope(IServiceProvider services) : IUsageScope
+// The distinct projects one HTTP request touched and the extra properties its command added, kept in the request's items, and the
+// request's viewport header. A singleton like RequestCurrentAgent: it reads the request (ICurrentRequest) at call time. With no
+// request, or in a SignalR hub call (its request lives as long as the connection), it does nothing.
+public sealed class UsageScope(ICurrentRequest request) : IUsageScope
 {
     private const string ItemKey = "shiplean.usage.projects";
     private const string PropertiesKey = "shiplean.usage.properties";
@@ -17,16 +16,16 @@ public sealed class UsageScope(IServiceProvider services) : IUsageScope
 
     public void ProjectTouched(Guid projectId)
     {
-        if (Plain is not { } context)
+        if (!TryPlain(out var items))
         {
             return;
         }
-        lock (context.Items)
+        lock (items)
         {
-            if (context.Items[ItemKey] is not HashSet<Guid> touched)
+            if (items[ItemKey] is not HashSet<Guid> touched)
             {
                 touched = [];
-                context.Items[ItemKey] = touched;
+                items[ItemKey] = touched;
             }
             touched.Add(projectId);
         }
@@ -36,7 +35,7 @@ public sealed class UsageScope(IServiceProvider services) : IUsageScope
 
     public int ProjectCount => Snapshot.Length;
 
-    public string? Viewport => UsageViewports.Parse(Plain?.Request.Headers[ViewportHeader.Name].FirstOrDefault());
+    public string? Viewport => UsageViewports.Parse(TryPlain(out _) ? request.Header(ViewportHeader.Name) : null);
 
     public void AddProperty(string key, object value)
     {
@@ -44,13 +43,13 @@ public sealed class UsageScope(IServiceProvider services) : IUsageScope
         {
             throw new ArgumentException($"'{key}' is not a usage property key.", nameof(key));
         }
-        if (Plain is not { } context)
+        if (!TryPlain(out var items))
         {
             return;
         }
-        lock (context.Items)
+        lock (items)
         {
-            context.Items[PropertiesKey] = PropertiesIn(context.Items).SetItem(key, value);
+            items[PropertiesKey] = PropertiesIn(items).SetItem(key, value);
         }
     }
 
@@ -59,13 +58,13 @@ public sealed class UsageScope(IServiceProvider services) : IUsageScope
     {
         get
         {
-            if (Plain is not { } context)
+            if (!TryPlain(out var items))
             {
                 return ImmutableDictionary<string, object>.Empty;
             }
-            lock (context.Items)
+            lock (items)
             {
-                return PropertiesIn(context.Items);
+                return PropertiesIn(items);
             }
         }
     }
@@ -77,19 +76,21 @@ public sealed class UsageScope(IServiceProvider services) : IUsageScope
     {
         get
         {
-            if (Plain is not { } context)
+            if (!TryPlain(out var items))
             {
                 return [];
             }
-            lock (context.Items)
+            lock (items)
             {
-                return context.Items[ItemKey] is HashSet<Guid> touched ? [.. touched] : [];
+                return items[ItemKey] is HashSet<Guid> touched ? [.. touched] : [];
             }
         }
     }
 
-    private HttpContext? Plain
-        => services.GetService<IHttpContextAccessor>()?.HttpContext is { } context && !context.Request.Path.StartsWithSegments(HubPrefix.TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
-            ? context
-            : null;
+    // The request's items, unless there is no request or this is a hub call.
+    private bool TryPlain([NotNullWhen(true)] out IDictionary<object, object?>? items)
+    {
+        items = request.Items;
+        return items is not null && !request.Path.StartsWithSegments(HubPrefix.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
+    }
 }

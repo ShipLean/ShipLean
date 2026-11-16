@@ -11,15 +11,18 @@ using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Mcp;
+using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 using ShipLean.WebApi.Features.Mcp.Resolve;
+using ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 [McpServerToolType]
-internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses, IItemAsks asks)
+internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses, IItemAsks asks, ITaskCommits taskCommits, ICodeComments codeComments)
 {
     [McpServerTool(Name = "get_brief"), McpScope(McpScopes.Read)]
     [Description("The brief to work from for an item of a plan capture_plan created. For a task, the whole brief its agent follows: the common brief, the task's own brief, the shared branch and the report to send back with report_task. For a story, the lead's brief for that lane. For a feature, the conductor's view: its waves in order, each with its stories and whether they are done, and the first wave that can start.")]
@@ -42,7 +45,7 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         }
         else if (tree.Stories.FirstOrDefault(story => story.Id == itemId) is { } story)
         {
-            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForStory(tree, story))), null, null);
+            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForStory(tree, story))), null, null, [], []);
         }
         else
         {
@@ -89,14 +92,16 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
             wave.Wave.Text,
             wave.Done,
             [.. wave.Stories.Select(story => new BriefStory(story.Key, story.Title, story.Lane, story.StateName, PlanWaves.IsDone(story)))])).ToList();
-        return new BriefResult(projectKey, openUrl, tree.Feature.Key, "feature", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForFeature(tree, waves, startable))), view, startable?.Text);
+        return new BriefResult(projectKey, openUrl, tree.Feature.Key, "feature", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForFeature(tree, waves, startable))), view, startable?.Text, [], []);
     }
 
     private async Task<BriefResult> TaskBriefAsync(PlanTree tree, Guid taskId, string projectKey, string openUrl, string key, string prefix, string? asksMarkdown, CancellationToken cancellationToken)
     {
         var task = tree.Stories.SelectMany(story => story.Tasks).First(candidate => candidate.Id == taskId);
         var markdown = BriefMarkdown.ForTask(tree, task, await CommonBriefAsync(tree.Feature.Id, cancellationToken), PlanGuide.Read(PlanGuidePart.Report));
-        return new BriefResult(projectKey, openUrl, key, "task", Prefix(prefix, WithAsks(asksMarkdown, markdown)), null, null);
+        var (commits, open) = await ItemCodeReads.ReadAsync(taskCommits, codeComments, WorkItemTypeId.Task, taskId, cancellationToken);
+        var header = BriefMarkdown.OpenCodeComments(open) is { } section ? WithAsks(asksMarkdown, section) : asksMarkdown;
+        return new BriefResult(projectKey, openUrl, key, "task", Prefix(prefix, WithAsks(header, markdown)), null, null, commits, open);
     }
 
     // The Feature's live common-brief.md, null when it has none.

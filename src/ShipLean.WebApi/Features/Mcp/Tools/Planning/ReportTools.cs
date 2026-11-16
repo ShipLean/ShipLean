@@ -14,6 +14,7 @@ using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Features.Mcp.Planning.Reports;
@@ -34,10 +35,13 @@ internal sealed class ReportTools(
     ILinkCards linkCards,
     IWorkItemTreeWriter treeWriter,
     StaleWrites writes,
+    ICodeComments codeComments,
+    ITaskCommits taskCommits,
+    IRepoAddresses repoAddresses,
     ICurrentAgent agent)
 {
     [McpServerTool(Name = "report_task"), McpScope(McpScopes.Write)]
-    [Description("Hand in the report for a task of a plan when you stop work on it, in the shape its brief asks for. The report lands as a comment on the task, each commit and the pull request become links on it, and the task moves on. Done moves it to the first Completed state. Blocked unassigns it and returns it to the first Proposed state, with your reason. Partial leaves it as it is, or moves it to the first InProgress state if it has not started or was Completed. Each left_undone item becomes an orphan task. A report on a Completed task is accepted: done leaves it there, blocked and partial reopen it. Send it once per stop, done or not. At most 25 commits and 25 left_undone items a call.")]
+    [Description("Hand in the report for a task of a plan when you stop work on it, in the shape its brief asks for. The report lands as a comment on the task, its commits are added to the task's Changes (each commit with repo and its full sha), the pull request becomes a link on it, and the task moves on. A commit that cannot be added, because its repository is unreadable or the commit is missing, stays a link and is listed in commits_not_added. answered_comments replies to open code comments and resolves them. Done moves it to the first Completed state. Blocked unassigns it and returns it to the first Proposed state, with your reason. Partial leaves it as it is, or moves it to the first InProgress state if it has not started or was Completed. Each left_undone item becomes an orphan task. A report on a Completed task is accepted: done leaves it there, blocked and partial reopen it. Send it once per stop, done or not. At most 25 commits and 25 left_undone items a call.")]
     public async Task<CallToolResult> ReportTask(
         [Description("The task's key, such as SHIP-12.")] string item,
         [Description("done, blocked or partial.")] string status,
@@ -45,6 +49,7 @@ internal sealed class ReportTools(
         [Description("The pull request's URL, when there is one.")] string? pr_url = null,
         [Description("Each test command you ran, with its pass and fail counts and how long it took. Left out means none.")] IReadOnlyList<string>? tests_run = null,
         [Description("The acceptance tests that define done, each with pass or fail. Left out means none.")] IReadOnlyList<string>? acceptance_tests = null,
+        [Description("The open code comments on the task you answered, each with its id and a reply. Each is replied to and resolved; an id that is not on the task fails the report with nothing written.")] IReadOnlyList<AnsweredComment>? answered_comments = null,
         [Description("Config files you changed and why.")] string? config_files_changed = null,
         [Description("Red tests, each with the task that owns it.")] string? red_tests = null,
         [Description("About how much context you used, in thousands of tokens.")] int? context_used_k = null,
@@ -56,37 +61,45 @@ internal sealed class ReportTools(
         [Description("A constraint of the brief you could not meet, and why.")] string? constraint_not_met = null,
         CancellationToken cancellationToken = default)
     {
-        var resolved = await items.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);
-        var projectKey = PlanningReply.ProjectKeyOf(resolved.Key);
+        var target = await items.ResolveAsync(item, ProjectRole.Member, cancellationToken: cancellationToken);
+        var projectKey = PlanningReply.ProjectKeyOf(target.Key);
         var parsedStatus = ReportChecks.ParseStatus(status);
         var commitList = commits ?? [];
         var undone = ReportChecks.LeftUndone(left_undone);
         ReportChecks.CheckLinks(commitList, pr_url);
         ReportChecks.CheckLists(tests_run, acceptance_tests);
+        var answers = ReportChecks.Answers(answered_comments);
         var blockedReason = parsedStatus == ReportStatus.Blocked ? ReportChecks.BlockedReason(constraint_not_met, undone) : null;
 
-        var (tree, taskId) = await plans.TreeOfAsync(resolved.Id, cancellationToken);
+        var (tree, taskId) = await plans.TreeOfAsync(target.Id, cancellationToken);
         var story = tree.Stories.FirstOrDefault(s => s.Tasks.Any(t => t.Id == taskId))
-            ?? throw ApiException.Validation($"{resolved.Key} is not a task of a plan, and only a task can be reported.", "item");
+            ?? throw ApiException.Validation($"{target.Key} is not a task of a plan, and only a task can be reported.", "item");
         var task = story.Tasks.Single(t => t.Id == taskId);
         var snapshot = await store.GetAsync(taskId, cancellationToken);
         var allStates = await catalog.ListAsync(snapshot.ProjectId, cancellationToken);
         var category = WorkStates.CategoryOf(allStates, snapshot.StateId);
         if (category == StateCategory.Removed)
         {
-            throw ApiException.Validation($"{resolved.Key} is {category.ToString().ToLowerInvariant()}, so it takes no reports.", "item");
+            throw ApiException.Validation($"{target.Key} is {category.ToString().ToLowerInvariant()}, so it takes no reports.", "item");
         }
 
         var fields = new ReportFields(
             tests_run ?? [], acceptance_tests ?? [], config_files_changed, red_tests, context_used_k, public_surface, decisions, gotchas, undone, temporary_behaviour, constraint_not_met);
-        var report = ReportBody.Build(parsedStatus, blockedReason, commitList, pr_url, fields);
+        var resolved = await ResolveCommitsAsync(commitList, cancellationToken);
+        var report = ReportBody.Build(parsedStatus, blockedReason, [.. resolved.Select(r => new ReportCommitLine(r.Sha, r.Input.Subject, r.Url ?? r.Input.Repo!.Trim()))], pr_url, fields);
         if (report.Length > MarkdownRenderer.MaxLength)
         {
             throw ApiException.Validation($"The report is too long: {report.Length:N0} characters, the limit is {MarkdownRenderer.MaxLength:N0}.");
         }
 
-        // Links, orphans, the comment, then the state move: a call that fails part-way can be sent again.
-        var linksAdded = await AddLinksAsync(taskId, commitList, pr_url, cancellationToken);
+        // Answers first (atomic: a refusal writes nothing, and an empty list is skipped because it always publishes), then
+        // links, orphans, the comment and the state move: a call that fails part-way can be sent again.
+        if (answers.Count > 0)
+        {
+            await codeComments.AnswerAsync(taskId, answers, cancellationToken);
+        }
+        var (commitsAdded, notAdded) = await AddCommitsAsync(taskId, resolved, cancellationToken);
+        var linksAdded = await AddLinksAsync(taskId, notAdded, pr_url, cancellationToken);
         var orphans = await AddOrphansAsync(snapshot.ProjectId, story, task, undone, cancellationToken);
         var added = await comments.AddAsync(taskId, new CommentCreate(report), cancellationToken);
         await SupersedeEarlierReportsAsync(taskId, added.Id, cancellationToken);
@@ -100,30 +113,78 @@ internal sealed class ReportTools(
 
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
         var result = new ReportResult(
-            projectKey, McpOpenUrls.WorkItem(issuer, projectKey, resolved.Key), resolved.Key, allStates.Single(s => s.Id == after.StateId).Name, added.Id, linksAdded, orphans);
-        return PlanningReply.Of(result, $"Report for {resolved.Key} received; it is now {result.State}.");
+            projectKey, McpOpenUrls.WorkItem(issuer, projectKey, target.Key), target.Key, allStates.Single(s => s.Id == after.StateId).Name, added.Id, linksAdded, orphans, answers.Count, commitsAdded, [.. notAdded.Select(n => n.Entry)]);
+        return PlanningReply.Of(result, $"Report for {target.Key} received; it is now {result.State}.");
     }
 
-    // Each commit and the pull request become a link titled by PlanMarkers; an address the task already has, or that this call repeats, is skipped.
+    // Parsed one commit at a time, before anything is written: reads only. A repository that is unreadable, or a string that does not parse, leaves the commit unresolved with its reason.
+    private async Task<IReadOnlyList<ResolvedCommit>> ResolveCommitsAsync(IReadOnlyList<ReportCommit> commits, CancellationToken cancellationToken)
+    {
+        var resolved = new List<ResolvedCommit>();
+        foreach (var commit in commits)
+        {
+            var sha = commit.Sha!.Trim();
+            var url = string.IsNullOrWhiteSpace(commit.Url) ? null : commit.Url.Trim();
+            try
+            {
+                var repo = string.IsNullOrWhiteSpace(commit.Repo)
+                    ? (await repoAddresses.ParseCommitUrlAsync(url!, cancellationToken)).Repo
+                    : await repoAddresses.ParseAsync(commit.Repo.Trim(), cancellationToken);
+                resolved.Add(new ResolvedCommit(commit, sha, repo, url ?? repo.CommitUrl(sha), null));
+            }
+            catch (ApiException e) when (e.Code is ApiErrorCodes.RepoUnreadable or ApiErrorCodes.Validation)
+            {
+                resolved.Add(new ResolvedCommit(commit, sha, null, url, e.Code));
+            }
+        }
+        return resolved;
+    }
+
+    // One AddAsync per repository. A repository that is unreadable, or a commit it does not have, keeps its commits as link cards; any other error fails the call.
+    private async Task<(int Added, IReadOnlyList<NotAdded> NotAdded)> AddCommitsAsync(Guid taskId, IReadOnlyList<ResolvedCommit> resolved, CancellationToken cancellationToken)
+    {
+        var added = 0;
+        var notAdded = resolved.Where(r => r.Repo is null).Select(r => new NotAdded(r, new CommitNotAdded(r.Sha, r.Input.Repo?.Trim() ?? r.Url ?? string.Empty, r.Reason!))).ToList();
+        foreach (var group in resolved.Where(r => r.Repo is not null).GroupBy(r => r.Repo!))
+        {
+            try
+            {
+                await taskCommits.AddAsync(taskId, [.. group.Select(r => new CommitRef(group.Key.WebUrl, r.Sha))], CommitSource.ReportTask, cancellationToken);
+                added += group.Count();
+            }
+            catch (ApiException e) when (e.Code is ApiErrorCodes.RepoUnreadable or ApiErrorCodes.BadSha)
+            {
+                notAdded.AddRange(group.Select(r => new NotAdded(r, new CommitNotAdded(r.Sha, group.Key.Name, e.Code))));
+            }
+        }
+        return (added, notAdded);
+    }
+
+    // The pull request and each commit that was not added become a link titled by PlanMarkers; an address the task already has, or that this call repeats, is skipped.
+    // A commit that has no address (an unparsed repository without a url) gets no card.
     // Saved without reading the address: up to 26 reads in one request would hold it for minutes. The cards' refresh reads them later.
-    private async Task<int> AddLinksAsync(Guid taskId, IReadOnlyList<ReportCommit> commits, string? prUrl, CancellationToken cancellationToken)
+    private async Task<int> AddLinksAsync(Guid taskId, IReadOnlyList<NotAdded> notAdded, string? prUrl, CancellationToken cancellationToken)
     {
         var existing = await linkCards.ListAsync(taskId, cancellationToken);
         var seen = existing.Code.Concat(existing.Pages).Select(l => l.Url).ToHashSet(StringComparer.Ordinal);
-        var wanted = commits.Select(c => (Url: c.Url!.Trim(), Title: PlanMarkers.Commit(c.Sha!.Trim(), c.Subject ?? string.Empty)))
+        var wanted = notAdded.Where(n => n.Commit.Url is not null).Select(n => (Url: n.Commit.Url!, Title: PlanMarkers.Commit(n.Commit.Sha, n.Commit.Input.Subject ?? string.Empty)))
             .Concat(prUrl is null ? [] : [(Url: prUrl.Trim(), Title: PlanMarkers.PullRequest(prUrl))]);
 
-        var added = 0;
+        var count = 0;
         foreach (var (url, title) in wanted)
         {
             if (seen.Add(url))
             {
                 await linkCards.AddUrlAsync(taskId, url, title, null, AgentStamp.Of(agent), readPreview: false, cancellationToken: cancellationToken);
-                added++;
+                count++;
             }
         }
-        return added;
+        return count;
     }
+
+    private sealed record ResolvedCommit(ReportCommit Input, string Sha, RepoRef? Repo, string? Url, string? Reason);
+
+    private sealed record NotAdded(ResolvedCommit Commit, CommitNotAdded Entry);
 
     // One orphan task per left-undone item under the task's story, tagged with the task's wave, lane and model. An item the story
     // already has as a live orphan with that exact title is not made again.
