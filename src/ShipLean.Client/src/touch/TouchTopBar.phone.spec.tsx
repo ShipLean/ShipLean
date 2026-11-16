@@ -151,6 +151,27 @@ test('TouchDrawer_WhenScrimEscOrCloseUsed_ShouldClose', async ({ mount, page }) 
   await expect(page.getByTestId(ids.drawerScrim)).toHaveCount(0);
 });
 
+test('Drawer_CloseShouldShareTheWordmarkRow', async ({ mount, page }) => {
+  await mountShell(mount, page);
+  await page.getByTestId(ids.topBarMenu).tap();
+  const drawer = page.getByTestId(ids.drawer);
+  await expect(drawer).toBeVisible();
+
+  const panel = (await drawer.boundingBox())!;
+  const menu = (await drawer.getByTestId(shellTestIds.sideMenu).boundingBox())!;
+  const wordmark = drawer.getByTestId(shellTestIds.sideMenuWordmark);
+  // Close is in the wordmark row itself, not a row of its own above the menu.
+  await expect(wordmark.getByTestId(ids.drawerClose)).toBeVisible();
+  expect(menu.y).toBe(panel.y);
+  const row = (await wordmark.boundingBox())!;
+  const close = (await page.getByTestId(ids.drawerClose).boundingBox())!;
+  expect(close.y).toBeGreaterThanOrEqual(row.y);
+  expect(close.y + close.height).toBeLessThanOrEqual(row.y + row.height);
+  expect(close.y + close.height / 2).toBeCloseTo(row.y + row.height / 2, 0);
+  expect(close.x + close.width).toBeCloseTo(row.x + row.width, 0);
+  expect(Math.min(close.width, close.height)).toBeGreaterThanOrEqual(32);
+});
+
 for (const theme of THEMES) {
   for (const variant of ['plain', 'back'] as const) {
     const name = variant === 'plain' ? 'touch-top-bar' : 'touch-top-bar-back';

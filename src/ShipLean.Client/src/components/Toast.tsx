@@ -18,7 +18,7 @@ export function Toast({ toast, durationMs }: { toast: ToastItem; durationMs: num
         toast.tone === 'default' ? undefined : { borderLeft: `3px solid ${toneColour[toast.tone]}` }
       }
     >
-      <span>{toast.message}</span>
+      <span className="touch:flex-1">{toast.message}</span>
       {toast.action ? (
         <button
           type="button"

@@ -106,6 +106,37 @@
     height: var(--control-height);
     font-size: var(--text-sm);
   }
+
+  /* A destructive confirm (Leave, Revoke, Sign out): outlined in the danger colour, not filled (SHIP-733 D3/D4). */
+  .btn-danger-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-control border border-alert px-3
+           font-medium text-alert transition-colors hover:bg-alert/10
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-alert;
+    height: var(--control-height);
+    font-size: var(--text-sm);
+  }
+
+  /* Disabled buttons look disabled (K3, RETRO-1): faded, the default cursor, and hover or press leave them at their
+     resting colours. Both :disabled and aria-disabled="true". A page's own utilities (a later layer) still win. */
+  .btn-signal:is(:disabled, [aria-disabled='true']),
+  .btn-ghost:is(:disabled, [aria-disabled='true']),
+  .btn-danger-ghost:is(:disabled, [aria-disabled='true']) {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .btn-signal:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: var(--color-accent);
+  }
+
+  .btn-ghost:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: transparent;
+    color: var(--color-muted);
+  }
+
+  .btn-danger-ghost:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: transparent;
+  }
 }
 
 /* Paper cards (design/README.md, "Paper"). Declared after the layers, unlayered, so .paper-sheet wins over the
