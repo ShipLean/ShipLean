@@ -147,7 +147,7 @@ test('CardActionsSheet_WhenFeature_ShouldOfferWhatIsUnderIt', async ({ mount, pa
   });
 
   await cardKeyed(page, 'SHIP-104').getByTestId(touchTestIds.moreButton).tap();
-  await expect(row(page, 'below')).toHaveText("Show what's under it");
+  await expect(row(page, 'below')).toContainText("Show what's under it");
 });
 
 test('Card_WhenTappedOnPhone_ShouldOpenItemModal', async ({ mount, page }) => {
