@@ -14,6 +14,7 @@ using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Users;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Screens;
 
 namespace ShipLean.WebApi.Tests.Screens;
@@ -88,6 +89,47 @@ public class FeatureDigestApiTests : ApiFixture
     private static string StatusLine(string text) => $$"""[{"field":"statusLine","from":null,"to":"{{text}}","fromLabel":null,"toLabel":null}]""";
 
     private static string Health(string from, string to) => $$"""[{"field":"health","from":"{{from}}","to":"{{to}}","fromLabel":null,"toLabel":null}]""";
+
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone in DigestLines or FeatureDigest. 2024-03-02 20:00 UTC (a Saturday) is
+    // Sunday 3 Mar 03:00 in Bangkok; the person last saw the digest an hour earlier. The brief names LateEveningUtc; a fixed instant
+    // lets the expected labels be literals.
+    [Test]
+    public async Task Digest_WhenViewerIsInBangkok_ShouldLabelChangesByTheBangkokDay()
+    {
+        var mei = TestUser.Of(await MemberAsync());
+        var at = new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero);
+        var item = await FeatureAsync();
+        await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new DigestSeenBuilder(mei.Id!.Value, Ship).WithSeenAt(at.AddHours(-1)).InsertAsync(connection);
+        }
+
+        await ViewerZoneArrange.SetAsync(Api, mei, ViewerZoneTestData.BangkokId);
+
+        var pages = await PagesAsync(mei);
+
+        pages[0].SinceLabel.ShouldBe("since Sun 02:00");
+        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe("3 Mar 2024");
+    }
+
+    [Test]
+    public async Task Digest_WhenViewerHasNoZone_ShouldLabelChangesByTheUtcDay()
+    {
+        var mei = TestUser.Of(await MemberAsync());
+        var at = new DateTimeOffset(2024, 3, 2, 20, 0, 0, TimeSpan.Zero);
+        var item = await FeatureAsync();
+        await RevisionAsync(item, 2, at, StatusLine("Waiting on the fraud check API."));
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await new DigestSeenBuilder(mei.Id!.Value, Ship).WithSeenAt(at.AddHours(-1)).InsertAsync(connection);
+        }
+
+        var pages = await PagesAsync(mei);
+
+        pages[0].SinceLabel.ShouldBe("since Sat 19:00");
+        LinesOf(pages, item).ShouldHaveSingleItem().AtLabel.ShouldBe("2 Mar 2024");
+    }
 
     [Test]
     public async Task Digest_WhenSeenTwoDaysAgo_ShouldListChangesSinceThen()
@@ -182,7 +224,7 @@ public class FeatureDigestApiTests : ApiFixture
         }
 
         await using var dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(ConnectionString));
-        var digest = new FeatureDigest(dataSource, new WorkItemChanges(dataSource), new SettableCurrentUser { Id = me }, TimeProvider.System);
+        var digest = new FeatureDigest(dataSource, new WorkItemChanges(dataSource), new SettableCurrentUser { Id = me }, TimeProvider.System, new FixedViewerZone());
 
         var whileMember = await digest.GetAsync(Ship, null, CancellationToken.None);
         await connection.ExecuteAsync("UPDATE project_member SET archived_at = now() WHERE project_id = @Ship AND user_id = @me", new { Ship, me });
