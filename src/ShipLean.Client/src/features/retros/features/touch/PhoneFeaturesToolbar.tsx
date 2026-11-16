@@ -17,6 +17,7 @@ export function PhoneFeaturesToolbar({
   if (searching) {
     return (
       <div className="flex items-center gap-2">
+        {/* Not .field: that class fixes the height at --control-height, and this input is a touch control at --touch-target. The rest copies its look and focus ring. (The 16px text against iOS focus zoom comes from the global input rule, not from .field.) */}
         <input
           type="text"
           inputMode="search"
