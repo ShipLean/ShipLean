@@ -105,6 +105,8 @@
   .cpt-sheet .opt .tx small { font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
   .cpt-sheet .opt .chk { width: 18px; flex: none; color: var(--color-accent); text-align: center; font-weight: 700; }
   .cpt-sheet .opt .go { flex: none; color: var(--color-muted); }
+  .cpt-sheet .opt .g { flex: none; display: inline-grid; place-items: center; width: 20px; color: var(--color-muted); }
+  .cpt-sheet .opt .g svg { width: 16px; height: 16px; }
   .cpt-sheet .opt .av { width: 24px; height: 24px; font-size: 10px; }
   .cpt-sheet .opt .chip { flex: none; }
   .cpt-sheet .note { margin: 6px 0 0; font-size: var(--text-sm); color: var(--color-muted); }

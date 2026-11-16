@@ -84,6 +84,7 @@ table.data tr:last-child td { border-bottom: 0; }
       <li>The sprint's three numbers (committed, completed, Features moved) are gone on the phone; the desktop header shows them.</li>
       <li>The BAU item shows as a bare key: no type icon, no title, and a small tap target.</li>
       <li>The Requested line drops who asked for the demo.</li>
+      <li>Not drawn here, follow-up SHIP-1908: the "requested" status (docs and built page; no desktop state) and Remake demo on a Ready demo.</li>
     </ol>
   </section>
 
@@ -99,13 +100,13 @@ table.data tr:last-child td { border-bottom: 0; }
       <thead><tr><th>Part</th><th>At 900px and below</th><th>Decisions</th></tr></thead>
       <tbody>
         <tr><td>Top bar</td><td>The crumb reads SHIP › Sprints › Sprint 23 › Demo (SHIP-1626 K2).</td><td>P1</td></tr>
-        <tr><td>Sprint header</td><td>SHIP-724's shared header: picker · state · a bordered 32px ⋯ (Edit goal, Edit sprint, All sprints, and Close sprint while open), the dates, the goal clamped to two lines, the three numbers as one row of tiles. All sprints leaves the header row for the ⋯.</td><td>P7, SHIP-724 D10</td></tr>
-        <tr><td>Tabs</td><td>Their own row under the header, scrolling sideways, Demo current. No toolbar row: the tab has no other controls.</td><td>—</td></tr>
+        <tr><td>Sprint header</td><td>SHIP-724's shared header: picker · state · a bordered 32px ⋯, the dates, the goal clamped to two lines. All sprints leaves the header row for the ⋯. The ⋯ sheet is the Sprint backlog's (sprint-backlog-more): Edit goal, Edit sprint with "Name, dates and goal" under it, All sprints ›, then a divider and Close sprint with "Choose where unfinished work goes" (only while the sprint is open), each row with its icon.</td><td>P7, SHIP-724 D10</td></tr>
+        <tr><td>Tabs</td><td>Their own row under the header, scrolling sideways, the current tab underlined (as the Taskboard and Capacity designs). No toolbar row: the tab has no other controls. The sprint's three numbers follow as one row of tiles, as the Sprint backlog's numbers do.</td><td>P7</td></tr>
         <tr><td>Status band</td><td>Stacked in one card with the tone's left edge: the state chip (Working adds the pulse on the right), the message, the line under it (who asked, when, the link's expiry), the BAU item as its own 32px row with its type icon, key and title and a ›, then the action across the width (40px). A disabled action stays in place; the message says why.</td><td>P2, P6</td></tr>
         <tr><td>Failed after the session ended</td><td>The server's message ("The agent session ended as &lt;state&gt; before a video came back.") and the agent's words, at most 280 characters of plain text, in a quote block headed "It said", above the BAU item.</td><td>P5</td></tr>
         <tr><td>Ready</td><td>One column: the 16:9 player across the width (source chip, 40px control bar), the YouTube line or notice under it, the facts in two columns (File on its own line), then Chapters, Features covered and the Script, all open.</td><td>P3</td></tr>
         <tr><td>YouTube</td><td>Unlisted: Watch on YouTube ↗ (40px) and the unlisted line under it. Private: the same button and the dashed note. Failed: a notice card with the chip, the reason and Retry upload across the width.</td><td>P3</td></tr>
-        <tr><td>Chapters, Features</td><td>40px rows; a whole chapter row seeks the player; the Feature key stays at the end of the chapter row.</td><td>P4</td></tr>
+        <tr><td>Chapters, Features</td><td>Rows and section headers at <code>var(--touch-target)</code>; a whole chapter row seeks the player; the Feature key stays at the end of the chapter row.</td><td>P4</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -134,8 +135,8 @@ table.data tr:last-child td { border-bottom: 0; }
       ['Chapters and Features as collapsed sections, the Script behind "Show script"', 'Shorter page; one more tap for the content most people came for.'],
     ] },
     { id: 'P4', t: 'Chapter rows', see: ['chapters'], o: [
-      ['40px rows; the whole row seeks; the Feature key stays at the end', 'Tapping a chapter is the main action under the player; 40px keeps rows apart without a separator.', 1],
-      ['32px rows (the minimum) and no Feature key', 'Denser; loses which Feature each chapter shows.'],
+      ['Rows and section headers at var(--touch-target); the whole row seeks; the Feature key stays at the end', 'The shared row height (SHIP-805 rule 13), no page-local size; tapping a chapter is the main action under the player.', 1],
+      ['A taller page-local row (40px) and no Feature key', 'Easier to hit, but a literal size outside the touch-target token; loses which Feature each chapter shows.'],
     ] },
     { id: 'P5', t: 'What the agent said when its session ended without a video (ShipLean#147)', see: ['said'], o: [
       ['A quote block headed "It said" under the message, the text in full (at most 280 characters)', 'Reads as the agent\'s words, not ShipLean\'s; a URL or a long word wraps inside the block.', 1],
@@ -145,9 +146,9 @@ table.data tr:last-child td { border-bottom: 0; }
       ['Not drawn: the desktop reference has none. Wave 1 keeps the built Remake demo in the band\'s action slot (full width, P2)', 'docs/sprint-demos.md and the built page offer Remake demo when Ready; the desktop reference predates it. The band rule places it without a new pattern.', 1],
       ['Remake demo in the sprint header\'s ⋯', 'Keeps the Ready band quiet, but that sheet is shared by every sprint tab.'],
     ] },
-    { id: 'P7', t: 'The sprint\'s numbers in the header', see: ['ready', 'closable'], o: [
-      ['Keep them as one row of three tiles, not tappable', 'The desktop shows them; on the Retro tab the tiles open sheets, here there is nothing to open, so no ›.', 1],
-      ['Drop them at touch, as built', 'Shorter header; the Demo tab is the one place the sprint\'s result is summed up.'],
+    { id: 'P7', t: 'The sprint\'s numbers', see: ['ready', 'closable'], o: [
+      ['Moved below the tabs as one row of three tiles, not tappable, as the Sprint backlog shows its numbers', 'The shared header (SHIP-724 D10) stays identical on every tab; the Demo tab is where the sprint\'s result is summed up, so the numbers stay.', 1],
+      ['Drop them at touch, as built', 'Shorter page; loses the sprint\'s result.'],
     ] },
   ];
   const P = [
@@ -163,7 +164,7 @@ table.data tr:last-child td { border-bottom: 0; }
     { id: 'unlisted', img: 'demo-youtube-unlisted', title: 'YouTube unlisted', dec: ['P3'], notes: ['The embed plays; Watch on YouTube ↗'] },
     { id: 'private', img: 'demo-youtube-private', title: 'YouTube private', dec: ['P3'], notes: ['The file plays here; the note says why'] },
     { id: 'ytfailed', img: 'demo-youtube-failed', title: 'YouTube upload failed', dec: ['P3'], notes: ['Notice card with Retry upload across the width'] },
-    { id: 'sprint', img: 'demo-sprint', title: 'The sprint header\'s ⋯', dec: ['P7'], notes: ['The same sheet on every sprint tab (SHIP-724)', 'Close sprint only while the sprint is open'] },
+    { id: 'sprint', img: 'demo-sprint', title: 'The sprint header\'s ⋯', dec: ['P7'], notes: ['The Sprint backlog\'s ⋯ sheet (SHIP-724): icons, the Edit sprint line, a divider before Close sprint', 'Close sprint only while the sprint is open'] },
   ];
   let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === theme));

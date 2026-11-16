@@ -175,11 +175,13 @@
       </div>`;
     } else if (kind === 'sprintmore') {
       sheet.setAttribute('aria-label', 'Sprint 24');
+      // Icons as the Sprint backlog's ⋯ (sprint-backlog-more): flag, pencil, list, check.
+      const ic = d => `<span class="g"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
       sheet.innerHTML = `${shHead('<b>Sprint 24</b>')}<div class="body">
-        <button class="opt" type="button"><span class="tx"><span>Edit goal</span></span></button>
-        <button class="opt" type="button"><span class="tx"><span>Edit sprint</span><small>Name, dates and goal</small></span></button>
-        <a class="opt" href="sprints.html"><span class="tx"><span>All sprints</span></span><span class="go">${chev}</span></a>
-        <hr><a class="opt" href="sprint-end.html"><span class="tx"><span>Close sprint</span><small>Choose where unfinished work goes</small></span><span class="go">${chev}</span></a>
+        <button class="opt" type="button">${ic('M3.5 14V2.5M3.5 3h8l-1.6 3 1.6 3h-8')}<span class="tx"><span>Edit goal</span></span></button>
+        <button class="opt" type="button">${ic('M10.5 2.5 13.5 5.5 6 13H3v-3z')}<span class="tx"><span>Edit sprint</span><small>Name, dates and goal</small></span></button>
+        <a class="opt" href="sprints.html">${ic('M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01')}<span class="tx"><span>All sprints</span></span><span class="go">${chev}</span></a>
+        <hr><a class="opt" href="sprint-end.html">${ic('m3.5 8.5 3 3 6-7')}<span class="tx"><span>Close sprint</span><small>Choose where unfinished work goes</small></span><span class="go">${chev}</span></a>
       </div>`;
     }
   }

@@ -2,8 +2,9 @@
  * The sprint Demo tab in the touch shell (SHIP-1626 Q4, for SHIP-889); styles in demo-touch.css. Loaded at the end of
  * sprint-demo.html, after its own script, and re-applied after every render of the tab. At 900px and below:
  *   - the breadcrumb reads SHIP › Sprints › Sprint 23 › Demo (SHIP-1626 K2; shared.js has no entry for this page) (P1)
- *   - SHIP-724's sprint header: picker · state · ⋯ (All sprints moves into the ⋯), dates, the goal, three number tiles
- *   - the sprint tabs on their own row; no toolbar row, the tab has no other controls
+ *   - SHIP-724's sprint header: picker · state · ⋯ (All sprints moves into the ⋯), dates, the goal
+ *   - the sprint tabs on their own row, the current one underlined; no toolbar row, the tab has no other controls
+ *   - the three numbers as one row of tiles under the tabs, as on the Sprint backlog (P7)
  *   - the status band stacks: chip, message, the line under it, the BAU item as its own row, the action full width (P2)
  *   - Ready: player, YouTube line or notice, facts in two columns, Chapters, Features covered, Script (P3, P4)
  * Above 900px nothing changes; ?notouch shows the desktop page at any width.
@@ -34,6 +35,11 @@
   hmore.type = 'button'; hmore.setAttribute('aria-label', 'Sprint actions'); hmore.setAttribute('aria-haspopup', 'dialog');
   $('.sprint-head .row').append(hmore);
 
+  /* The numbers move under the tabs (P7) */
+  const kpiBox = el('div', 'dm-kpis');
+  kpiBox.append($('.sprint-head .kpis'));
+  $('.toolbar').after(kpiBox);
+
   const sheet = el('div', 'dm-sheet');
   sheet.hidden = true;
   sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true');
@@ -42,12 +48,14 @@
   function openSprint() {
     const open = $('#sprintChip').textContent !== 'Ended';
     sheet.querySelector('.sheet-head b').textContent = 'Sprint 23';
-    sheet.querySelector('.sb').innerHTML = `
-      <button class="srow" type="button">Edit goal</button>
-      <button class="srow" type="button">Edit sprint<span class="sub">name, dates, goal</span></button>
-      <a class="srow" href="sprints.html">All sprints<span class="sub">›</span></a>
-      ${open ? '<button class="srow" type="button">Close sprint</button>' : ''}
-      <p class="hint">The sprint header's ⋯, the same on every sprint tab (SHIP-724). Close sprint shows only while the sprint is open.</p>`;
+    const ic = d => `<span class="g"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+    const flag = 'M3.5 14V2.5M3.5 3h8l-1.6 3 1.6 3h-8', edit = 'M10.5 2.5 13.5 5.5 6 13H3v-3z', list = 'M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01', check = 'm3.5 8.5 3 3 6-7';
+    // The same sheet as the Sprint backlog's ⋯ (sprint-backlog-more): Close sprint only while the sprint is open.
+    sheet.querySelector('.sb').innerHTML = `<ul>
+      <li><button class="srow" type="button">${ic(flag)}<span class="tx">Edit goal</span></button></li>
+      <li><button class="srow" type="button">${ic(edit)}<span class="tx"><span>Edit sprint</span><small>Name, dates and goal</small></span></button></li>
+      <li><a class="srow" href="sprints.html">${ic(list)}<span class="tx">All sprints</span><span class="r">›</span></a></li>
+      ${open ? `<li><hr></li><li><a class="srow" href="sprint-end.html">${ic(check)}<span class="tx"><span>Close sprint</span><small>Choose where unfinished work goes</small></span></a></li>` : ''}</ul>`;
     sheet.hidden = false; root.dataset.sheet = 'demo';
   }
   function closeSheet() { sheet.hidden = true; if (root.dataset.sheet === 'demo') delete root.dataset.sheet; }
