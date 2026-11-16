@@ -9,6 +9,7 @@ import { BOARD_ID, CHECKOUT_V2_STORIES, featuresBoardByEpic } from './fixtures/b
 import {
   boardWithExpediteInReady,
   boardWithPointsHidden,
+  boardWithTwoLanesInNew,
   boardWithTwoNew,
 } from './fixtures/boardDetails';
 import { holdCardOver } from './fixtures/holdCardOver';
@@ -160,7 +161,7 @@ test('BoardDrag_WhileOverTheEndOfAnotherCell_ShouldOutlineThatCellOnly', async (
 }) => {
   await page.clock.install({ time: 0 });
   await stubShell(page);
-  await stubBoard(page, boardWithTwoNew());
+  await stubBoard(page, boardWithTwoLanesInNew());
   await mount(<AppRoutes />, stories);
   const cellOf = (laneId: string) =>
     page.getByTestId(ids.cell).and(page.locator(`[data-lane="${laneId}"][data-column="col-new"]`));
