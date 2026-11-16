@@ -9,6 +9,7 @@ import {
 import { registerInvalidation } from '../../../realtime';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { showToast } from '../../../components/toastStore';
+import { TypeIcon } from '../../../components/TypeIcon';
 import { SettingsDraftContext } from '../draft/LoadedSettings';
 import { Panel } from '../draft/Panel';
 import { projectSettingsKey } from '../settingsApi';
@@ -53,6 +54,8 @@ const EVENTS = [
   'workItemMoved',
   'workItemRemoved',
 ] as const;
+
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
 
 const countsOf = (states: StateDto[], changes: Parameters<typeof rowsOf>[1]) =>
   Object.fromEntries(
@@ -169,10 +172,26 @@ export function SettingsStates({ projectId }: { projectId: string }) {
           }}
         />
       ) : null}
-      <div className="text-[length:var(--text-sm)] text-ink-muted">
-        <b className="text-ink">{typeLabel(type)}</b> · {rows.length} states. The order is the order
-        in state menus. New items start in the first Proposed state.
-      </div>
+      {touch ? (
+        <div className="text-[length:var(--text-sm)] text-ink-muted">
+          <div className="flex items-center gap-1.5">
+            <TypeIcon type={type} />
+            <span data-testid={settingsTestIds.stateSummary}>
+              <b className="text-ink">{typeLabel(type)}</b> · {plural(rows.length, 'state')} ·{' '}
+              {plural(
+                rows.reduce((sum, row) => sum + itemsIn(row), 0),
+                'item',
+              )}
+            </span>
+          </div>
+          The order is the order in state menus.
+        </div>
+      ) : (
+        <div className="text-[length:var(--text-sm)] text-ink-muted">
+          <b className="text-ink">{typeLabel(type)}</b> · {rows.length} states. The order is the
+          order in state menus. New items start in the first Proposed state.
+        </div>
+      )}
       {typeError === undefined ? null : (
         <div
           role="alert"

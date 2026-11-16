@@ -446,6 +446,53 @@ test('SettingsStatesPhone_WhenAddStateTappedAndAdded_ShouldCloseTheFormAndAddThe
   await expect(page.getByText('In review will be added on save')).toBeVisible();
 });
 
+// SHIP-2046 (SHIP-1809 P4): under the chips, the picked type's summary: type · state count · item count.
+test('SettingsStatesPhone_WhenATypeIsPicked_ShouldSummariseItsStatesAndItems', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  await expect(panel.getByTestId(ids.stateSummary)).toHaveText('User Story · 3 states · 7 items');
+
+  await panel.getByTestId(ids.stateTypeBug).tap();
+  await expect(panel.getByTestId(ids.stateSummary)).toHaveText('Bug · 2 states · 0 items');
+});
+
+// SHIP-2046 (SHIP-1809 P4): the chip row runs from one edge of the panel to the other, inside its border.
+test('SettingsStatesPhone_WhenOpened_ShouldRunTheTypeChipRowToThePanelEdges', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await expect(panel.getByTestId(ids.stateRow)).toHaveCount(3);
+  const edges = await panel.getByTestId(ids.stateTypeRow).evaluate((row, id) => {
+    const box = row.getBoundingClientRect();
+    const outer = document.querySelector(`[data-testid="${id}"]`);
+    if (outer === null) throw new Error('no panel');
+    const p = outer.getBoundingClientRect();
+    const border = parseFloat(getComputedStyle(outer).borderLeftWidth);
+    return {
+      left: box.left - (p.left + border),
+      right: p.right - border - box.right,
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  }, ids.statesPanel);
+  expect(Math.abs(edges.left)).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(edges.right)).toBeLessThanOrEqual(0.5);
+  expect(edges.page).toBe(0);
+});
+
 for (const theme of THEMES) {
   const open = async (
     mount: Parameters<Parameters<typeof test>[2]>[0]['mount'],

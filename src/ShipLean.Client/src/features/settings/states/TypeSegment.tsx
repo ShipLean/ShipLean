@@ -18,7 +18,7 @@ export const typeLabel = (type: WorkItemTypeId) => TYPE_LABELS[type];
 
 /**
  * Picks which work item type's states are shown, with how many each has. At touch the types are a sideways row of chips
- * that scrolls in its own box, the picked one kept in view (SHIP-1809 P4).
+ * that scrolls in its own box from one edge of the panel to the other, the picked one kept in view (SHIP-1809 P4).
  */
 export function TypeSegment({
   active,
@@ -48,7 +48,7 @@ export function TypeSegment({
       role="group"
       aria-label="Work item type"
       data-testid={settingsTestIds.stateTypeRow}
-      className="flex gap-1 touch:gap-2 touch:overflow-x-auto touch:[scrollbar-width:none]"
+      className="flex gap-1 touch:relative touch:-mx-4 touch:gap-2 touch:overflow-x-auto touch:px-4 touch:[scrollbar-width:none]"
     >
       {WORK_ITEM_TYPE_IDS.map((type) => (
         <button
