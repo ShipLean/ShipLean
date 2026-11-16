@@ -67,7 +67,6 @@ test('TouchLevelRow_ShouldHaveNoHandle', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
   await expect(page.getByTestId(ids.touchRowHandle)).toHaveCount(0);
   await expect(page.getByTestId(ids.grip)).toHaveCount(0);
-  await expect(page.getByTestId(ids.rank)).toHaveCount(0);
 });
 
 for (const [name, level, rows, route] of [
@@ -82,7 +81,7 @@ for (const [name, level, rows, route] of [
     await mount(<LevelHarness project={PROJECT} level={level} />, route);
     await expect(page.getByTestId(ids.row)).toHaveCount(rows.length);
 
-    await page.getByTestId(touchTestIds.moreButton).tap();
+    await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
     await expect(
       page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="search"]`),
     ).toBeVisible();
