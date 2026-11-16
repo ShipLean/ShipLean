@@ -1,7 +1,7 @@
 namespace ShipLean.Contracts.Agents;
 
 // What a live transfer token lets its holder do: AttachmentId is set for a download. UserId is who asked for the URL,
-// AgentStamp the agent as it was then (AgentStamp.Of), ContentType what the agent declared.
+// AgentStamp the agent as it was then (AgentStamp.Of), ContentType what the agent declared. SessionId is set for an agentLog token.
 public sealed record TransferGrant(
     TransferKind Kind,
     Guid WorkItemId,
@@ -10,4 +10,5 @@ public sealed record TransferGrant(
     string ContentType,
     Guid UserId,
     string AgentStamp,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt,
+    Guid? SessionId);

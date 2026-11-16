@@ -17,6 +17,10 @@ public interface ILinkCards
     // now (for a caller adding many links in one request); the card is then due, and a refresh reads it.
     Task<LinkCardDto> AddUrlAsync(Guid workItemId, string url, string? title, string? note, string? agentStamp, bool readPreview = true, CancellationToken cancellationToken = default);
 
+    // Sets the time of the commit a url link records, on the item's live link with this address whose title is a commit marker, and only
+    // when it has none: a time already set is never changed. Answers whether it was set. Publishes nothing: the card does not show it.
+    Task<bool> SetCommitTimeAsync(Guid workItemId, string url, DateTimeOffset committedAt, CancellationToken cancellationToken = default);
+
     // Throws NotFound for an unknown key, Validation for Url, a link to itself or another project's item, Conflict for a repeat.
     Task<WorkItemLinkRowDto> AddWorkItemLinkAsync(Guid workItemId, string targetKey, LinkType type, CancellationToken cancellationToken = default);
 

@@ -1,0 +1,836 @@
+{
+  "project": {
+    "id": "00000002-0000-4000-8000-000000000001",
+    "key": "SHIP",
+    "name": "ShipLean"
+  },
+  "cadence": "sprints",
+  "range": "last6",
+  "cut": "feature",
+  "aggregate": "mean",
+  "generatedAt": "2026-10-24T14:00:00+00:00",
+  "caveat": "These numbers tell you where to look, not what caused a change.",
+  "coverage": {
+    "tasks": 5,
+    "withCommitTime": 4,
+    "percent": 80
+  },
+  "headline": {
+    "finished": {
+      "periodId": "00000004-0000-4000-8001-000000000023",
+      "name": "Sprint 23",
+      "leadTime": {
+        "tasks": 2,
+        "meanHours": 63.7,
+        "meanLabel": "2.7 days",
+        "meanActiveHours": 7.5,
+        "meanActiveLabel": "7.5 h",
+        "meanBlockedHours": 45.6,
+        "meanBlockedLabel": "1.9 days",
+        "meanReworkHours": 10.6,
+        "meanReworkLabel": "10.6 h",
+        "meanUnresolvedTailHours": 0.6,
+        "meanUnresolvedTailLabel": "36 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": 1492
+      }
+    },
+    "soFar": {
+      "periodId": "00000004-0000-4000-8001-000000000024",
+      "name": "Sprint 24",
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 6.6,
+        "meanLabel": "6.6 h",
+        "meanActiveHours": 6.6,
+        "meanActiveLabel": "6.6 h",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0.9,
+        "meanUnresolvedTailLabel": "54 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": -90
+      }
+    },
+    "quarterToDate": {
+      "quarter": "Q4 2026",
+      "toDate": true,
+      "periodIds": [
+        "00000004-0000-4000-8001-000000000022",
+        "00000004-0000-4000-8001-000000000023",
+        "00000004-0000-4000-8001-000000000024"
+      ],
+      "leadTime": {
+        "tasks": 4,
+        "meanHours": 34.5,
+        "meanLabel": "1.4 days",
+        "meanActiveHours": 6.4,
+        "meanActiveLabel": "6.4 h",
+        "meanBlockedHours": 22.8,
+        "meanBlockedLabel": "22.8 h",
+        "meanReworkHours": 5.3,
+        "meanReworkLabel": "5.3 h",
+        "meanUnresolvedTailHours": 0.6,
+        "meanUnresolvedTailLabel": "36 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": null
+      }
+    },
+    "lastQuarter": {
+      "quarter": "Q3 2026",
+      "toDate": false,
+      "periodIds": [
+        "00000004-0000-4000-8001-000000000019",
+        "00000004-0000-4000-8001-000000000020",
+        "00000004-0000-4000-8001-000000000021"
+      ],
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 30.2,
+        "meanLabel": "1.3 days",
+        "meanActiveHours": 30.2,
+        "meanActiveLabel": "1.3 days",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0,
+        "meanUnresolvedTailLabel": "0 min",
+        "endedAtResolved": 1,
+        "changePctVsPrevious": null
+      }
+    }
+  },
+  "periods": [
+    {
+      "id": "00000004-0000-4000-8001-000000000021",
+      "name": "Sprint 21",
+      "shortName": "S21",
+      "startDate": "2026-09-07",
+      "endDate": "2026-09-18",
+      "datesLabel": "7 Sep – 18 Sep",
+      "quarter": "Q3 2026",
+      "inProgress": false,
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 30.2,
+        "meanLabel": "1.3 days",
+        "meanActiveHours": 30.2,
+        "meanActiveLabel": "1.3 days",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0,
+        "meanUnresolvedTailLabel": "0 min",
+        "endedAtResolved": 1,
+        "changePctVsPrevious": -12
+      },
+      "dots": [
+        {
+          "taskKey": "SHIP-420",
+          "title": "Report export and download",
+          "leadHours": 30.2,
+          "leadLabel": "1.3 days",
+          "endedBy": "resolved",
+          "overTwoDays": false,
+          "longest": true
+        }
+      ]
+    },
+    {
+      "id": "00000004-0000-4000-8001-000000000022",
+      "name": "Sprint 22",
+      "shortName": "S22",
+      "startDate": "2026-09-21",
+      "endDate": "2026-10-02",
+      "datesLabel": "21 Sep – 2 Oct",
+      "quarter": "Q4 2026",
+      "inProgress": false,
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 4,
+        "meanLabel": "4 h",
+        "meanActiveHours": 4,
+        "meanActiveLabel": "4 h",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0.3,
+        "meanUnresolvedTailLabel": "18 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": -87
+      },
+      "dots": [
+        {
+          "taskKey": "SHIP-425",
+          "title": "API endpoint and contract test",
+          "leadHours": 4,
+          "leadLabel": "4 h",
+          "endedBy": "lastCommit",
+          "overTwoDays": false,
+          "longest": true
+        }
+      ]
+    },
+    {
+      "id": "00000004-0000-4000-8001-000000000023",
+      "name": "Sprint 23",
+      "shortName": "S23",
+      "startDate": "2026-10-05",
+      "endDate": "2026-10-16",
+      "datesLabel": "5 Oct – 16 Oct",
+      "quarter": "Q4 2026",
+      "inProgress": false,
+      "leadTime": {
+        "tasks": 2,
+        "meanHours": 63.7,
+        "meanLabel": "2.7 days",
+        "meanActiveHours": 7.5,
+        "meanActiveLabel": "7.5 h",
+        "meanBlockedHours": 45.6,
+        "meanBlockedLabel": "1.9 days",
+        "meanReworkHours": 10.6,
+        "meanReworkLabel": "10.6 h",
+        "meanUnresolvedTailHours": 0.6,
+        "meanUnresolvedTailLabel": "36 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": 1492
+      },
+      "dots": [
+        {
+          "taskKey": "SHIP-192",
+          "title": "Stacking rules (percent + fixed)",
+          "leadHours": 24.7,
+          "leadLabel": "1 day",
+          "endedBy": "lastCommit",
+          "overTwoDays": false,
+          "longest": false
+        },
+        {
+          "taskKey": "SHIP-194",
+          "title": "API: validate and apply",
+          "leadHours": 102.7,
+          "leadLabel": "4.3 days",
+          "endedBy": "lastCommit",
+          "overTwoDays": true,
+          "longest": true
+        }
+      ]
+    },
+    {
+      "id": "00000004-0000-4000-8001-000000000024",
+      "name": "Sprint 24",
+      "shortName": "S24",
+      "startDate": "2026-10-19",
+      "endDate": "2026-10-30",
+      "datesLabel": "19 Oct – 30 Oct",
+      "quarter": "Q4 2026",
+      "inProgress": true,
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 6.6,
+        "meanLabel": "6.6 h",
+        "meanActiveHours": 6.6,
+        "meanActiveLabel": "6.6 h",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0.9,
+        "meanUnresolvedTailLabel": "54 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": -90
+      },
+      "dots": [
+        {
+          "taskKey": "SHIP-430",
+          "title": "Debounce apply and make it idempotent",
+          "leadHours": 6.6,
+          "leadLabel": "6.6 h",
+          "endedBy": "lastCommit",
+          "overTwoDays": false,
+          "longest": true
+        }
+      ]
+    }
+  ],
+  "quarters": [
+    {
+      "quarter": "Q3 2026",
+      "toDate": false,
+      "periodIds": [
+        "00000004-0000-4000-8001-000000000019",
+        "00000004-0000-4000-8001-000000000020",
+        "00000004-0000-4000-8001-000000000021"
+      ],
+      "leadTime": {
+        "tasks": 1,
+        "meanHours": 30.2,
+        "meanLabel": "1.3 days",
+        "meanActiveHours": 30.2,
+        "meanActiveLabel": "1.3 days",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0,
+        "meanUnresolvedTailLabel": "0 min",
+        "endedAtResolved": 1,
+        "changePctVsPrevious": null
+      }
+    },
+    {
+      "quarter": "Q4 2026",
+      "toDate": true,
+      "periodIds": [
+        "00000004-0000-4000-8001-000000000022",
+        "00000004-0000-4000-8001-000000000023",
+        "00000004-0000-4000-8001-000000000024"
+      ],
+      "leadTime": {
+        "tasks": 4,
+        "meanHours": 34.5,
+        "meanLabel": "1.4 days",
+        "meanActiveHours": 6.4,
+        "meanActiveLabel": "6.4 h",
+        "meanBlockedHours": 22.8,
+        "meanBlockedLabel": "22.8 h",
+        "meanReworkHours": 5.3,
+        "meanReworkLabel": "5.3 h",
+        "meanUnresolvedTailHours": 0.6,
+        "meanUnresolvedTailLabel": "36 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": null
+      }
+    }
+  ],
+  "cuts": [
+    {
+      "key": "SHIP-101",
+      "label": "Checkout v2",
+      "agent": false,
+      "cells": [
+        {
+          "tasks": 1,
+          "meanHours": 30.2,
+          "meanLabel": "1.3 days",
+          "meanActiveHours": 30.2,
+          "meanActiveLabel": "1.3 days",
+          "meanBlockedHours": 0,
+          "meanBlockedLabel": "0 min",
+          "meanReworkHours": 0,
+          "meanReworkLabel": "0 min",
+          "meanUnresolvedTailHours": 0,
+          "meanUnresolvedTailLabel": "0 min",
+          "endedAtResolved": 1,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 1,
+          "meanHours": 4,
+          "meanLabel": "4 h",
+          "meanActiveHours": 4,
+          "meanActiveLabel": "4 h",
+          "meanBlockedHours": 0,
+          "meanBlockedLabel": "0 min",
+          "meanReworkHours": 0,
+          "meanReworkLabel": "0 min",
+          "meanUnresolvedTailHours": 0.3,
+          "meanUnresolvedTailLabel": "18 min",
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 0,
+          "meanHours": null,
+          "meanLabel": null,
+          "meanActiveHours": null,
+          "meanActiveLabel": null,
+          "meanBlockedHours": null,
+          "meanBlockedLabel": null,
+          "meanReworkHours": null,
+          "meanReworkLabel": null,
+          "meanUnresolvedTailHours": null,
+          "meanUnresolvedTailLabel": null,
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 1,
+          "meanHours": 6.6,
+          "meanLabel": "6.6 h",
+          "meanActiveHours": 6.6,
+          "meanActiveLabel": "6.6 h",
+          "meanBlockedHours": 0,
+          "meanBlockedLabel": "0 min",
+          "meanReworkHours": 0,
+          "meanReworkLabel": "0 min",
+          "meanUnresolvedTailHours": 0.9,
+          "meanUnresolvedTailLabel": "54 min",
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        }
+      ],
+      "all": {
+        "tasks": 3,
+        "meanHours": 13.6,
+        "meanLabel": "13.6 h",
+        "meanActiveHours": 13.6,
+        "meanActiveLabel": "13.6 h",
+        "meanBlockedHours": 0,
+        "meanBlockedLabel": "0 min",
+        "meanReworkHours": 0,
+        "meanReworkLabel": "0 min",
+        "meanUnresolvedTailHours": 0.4,
+        "meanUnresolvedTailLabel": "24 min",
+        "endedAtResolved": 1,
+        "changePctVsPrevious": null
+      }
+    },
+    {
+      "key": "SHIP-99",
+      "label": "Coupons v2",
+      "agent": false,
+      "cells": [
+        {
+          "tasks": 0,
+          "meanHours": null,
+          "meanLabel": null,
+          "meanActiveHours": null,
+          "meanActiveLabel": null,
+          "meanBlockedHours": null,
+          "meanBlockedLabel": null,
+          "meanReworkHours": null,
+          "meanReworkLabel": null,
+          "meanUnresolvedTailHours": null,
+          "meanUnresolvedTailLabel": null,
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 0,
+          "meanHours": null,
+          "meanLabel": null,
+          "meanActiveHours": null,
+          "meanActiveLabel": null,
+          "meanBlockedHours": null,
+          "meanBlockedLabel": null,
+          "meanReworkHours": null,
+          "meanReworkLabel": null,
+          "meanUnresolvedTailHours": null,
+          "meanUnresolvedTailLabel": null,
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 2,
+          "meanHours": 63.7,
+          "meanLabel": "2.7 days",
+          "meanActiveHours": 7.5,
+          "meanActiveLabel": "7.5 h",
+          "meanBlockedHours": 45.6,
+          "meanBlockedLabel": "1.9 days",
+          "meanReworkHours": 10.6,
+          "meanReworkLabel": "10.6 h",
+          "meanUnresolvedTailHours": 0.6,
+          "meanUnresolvedTailLabel": "36 min",
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        },
+        {
+          "tasks": 0,
+          "meanHours": null,
+          "meanLabel": null,
+          "meanActiveHours": null,
+          "meanActiveLabel": null,
+          "meanBlockedHours": null,
+          "meanBlockedLabel": null,
+          "meanReworkHours": null,
+          "meanReworkLabel": null,
+          "meanUnresolvedTailHours": null,
+          "meanUnresolvedTailLabel": null,
+          "endedAtResolved": 0,
+          "changePctVsPrevious": null
+        }
+      ],
+      "all": {
+        "tasks": 2,
+        "meanHours": 63.7,
+        "meanLabel": "2.7 days",
+        "meanActiveHours": 7.5,
+        "meanActiveLabel": "7.5 h",
+        "meanBlockedHours": 45.6,
+        "meanBlockedLabel": "1.9 days",
+        "meanReworkHours": 10.6,
+        "meanReworkLabel": "10.6 h",
+        "meanUnresolvedTailHours": 0.6,
+        "meanUnresolvedTailLabel": "36 min",
+        "endedAtResolved": 0,
+        "changePctVsPrevious": null
+      }
+    }
+  ],
+  "longest": [
+    {
+      "key": "SHIP-194",
+      "title": "API: validate and apply",
+      "parentKey": "SHIP-186",
+      "parentType": "story",
+      "featureKey": "SHIP-99",
+      "featureTitle": "Coupons v2",
+      "who": "Priya Shah",
+      "agent": false,
+      "startedAt": "2026-10-08T09:00:00+00:00",
+      "startedLabel": "Thu 8 Oct, 09:00",
+      "endedAt": "2026-10-12T15:42:00+00:00",
+      "endedLabel": "Mon 12 Oct, 15:42",
+      "endedBy": "lastCommit",
+      "leadHours": 102.7,
+      "leadLabel": "4.3 days",
+      "activeHours": 11.5,
+      "blockedHours": 91.2,
+      "reworkHours": 0,
+      "unresolvedTailHours": 0.6,
+      "reviews": 1,
+      "commits": 1,
+      "periodId": "00000004-0000-4000-8001-000000000023"
+    },
+    {
+      "key": "SHIP-420",
+      "title": "Report export and download",
+      "parentKey": "SHIP-410",
+      "parentType": "story",
+      "featureKey": "SHIP-101",
+      "featureTitle": "Checkout v2",
+      "who": "Tom Reed",
+      "agent": false,
+      "startedAt": "2026-09-14T09:00:00+00:00",
+      "startedLabel": "Mon 14 Sep, 09:00",
+      "endedAt": "2026-09-15T15:12:00+00:00",
+      "endedLabel": "Tue 15 Sep, 15:12",
+      "endedBy": "resolved",
+      "leadHours": 30.2,
+      "leadLabel": "1.3 days",
+      "activeHours": 30.2,
+      "blockedHours": 0,
+      "reworkHours": 0,
+      "unresolvedTailHours": 0,
+      "reviews": 0,
+      "commits": 1,
+      "periodId": "00000004-0000-4000-8001-000000000021"
+    },
+    {
+      "key": "SHIP-192",
+      "title": "Stacking rules (percent + fixed)",
+      "parentKey": "SHIP-185",
+      "parentType": "story",
+      "featureKey": "SHIP-99",
+      "featureTitle": "Coupons v2",
+      "who": "Claude Code",
+      "agent": true,
+      "startedAt": "2026-10-06T10:30:00+00:00",
+      "startedLabel": "Tue 6 Oct, 10:30",
+      "endedAt": "2026-10-07T11:12:00+00:00",
+      "endedLabel": "Wed 7 Oct, 11:12",
+      "endedBy": "lastCommit",
+      "leadHours": 24.7,
+      "leadLabel": "1 day",
+      "activeHours": 3.5,
+      "blockedHours": 0,
+      "reworkHours": 21.2,
+      "unresolvedTailHours": 0.6,
+      "reviews": 2,
+      "commits": 2,
+      "periodId": "00000004-0000-4000-8001-000000000023"
+    },
+    {
+      "key": "SHIP-430",
+      "title": "Debounce apply and make it idempotent",
+      "parentKey": "SHIP-412",
+      "parentType": "bug",
+      "featureKey": "SHIP-101",
+      "featureTitle": "Checkout v2",
+      "who": "Cursor",
+      "agent": true,
+      "startedAt": "2026-10-20T10:00:00+00:00",
+      "startedLabel": "Tue 20 Oct, 10:00",
+      "endedAt": "2026-10-20T16:36:00+00:00",
+      "endedLabel": "Tue 20 Oct, 16:36",
+      "endedBy": "lastCommit",
+      "leadHours": 6.6,
+      "leadLabel": "6.6 h",
+      "activeHours": 6.6,
+      "blockedHours": 0,
+      "reworkHours": 0,
+      "unresolvedTailHours": 0.9,
+      "reviews": 1,
+      "commits": 1,
+      "periodId": "00000004-0000-4000-8001-000000000024"
+    },
+    {
+      "key": "SHIP-425",
+      "title": "API endpoint and contract test",
+      "parentKey": "SHIP-411",
+      "parentType": "story",
+      "featureKey": "SHIP-101",
+      "featureTitle": "Checkout v2",
+      "who": "Claude Code",
+      "agent": true,
+      "startedAt": "2026-09-23T10:00:00+00:00",
+      "startedLabel": "Wed 23 Sep, 10:00",
+      "endedAt": "2026-09-23T14:00:00+00:00",
+      "endedLabel": "Wed 23 Sep, 14:00",
+      "endedBy": "lastCommit",
+      "leadHours": 4,
+      "leadLabel": "4 h",
+      "activeHours": 4,
+      "blockedHours": 0,
+      "reworkHours": 0,
+      "unresolvedTailHours": 0.3,
+      "reviews": 1,
+      "commits": 1,
+      "periodId": "00000004-0000-4000-8001-000000000022"
+    }
+  ],
+  "leftOut": [
+    {
+      "key": "SHIP-198",
+      "title": "Bulk code import",
+      "featureKey": "SHIP-99",
+      "reason": "Closed in one bulk edit with no start recorded",
+      "at": "2026-10-16T17:30:00+00:00",
+      "atLabel": "Fri 16 Oct, 17:30"
+    }
+  ],
+  "periodDetail": {
+    "periodId": "00000004-0000-4000-8001-000000000023",
+    "name": "Sprint 23",
+    "datesLabel": "5 Oct – 16 Oct",
+    "quarter": "Q4 2026",
+    "previous": {
+      "id": "00000004-0000-4000-8001-000000000022",
+      "shortName": "S22"
+    },
+    "next": {
+      "id": "00000004-0000-4000-8001-000000000024",
+      "shortName": "S24"
+    },
+    "inProgress": false,
+    "leadTime": {
+      "tasks": 2,
+      "meanHours": 63.7,
+      "meanLabel": "2.7 days",
+      "meanActiveHours": 7.5,
+      "meanActiveLabel": "7.5 h",
+      "meanBlockedHours": 45.6,
+      "meanBlockedLabel": "1.9 days",
+      "meanReworkHours": 10.6,
+      "meanReworkLabel": "10.6 h",
+      "meanUnresolvedTailHours": 0.6,
+      "meanUnresolvedTailLabel": "36 min",
+      "endedAtResolved": 0,
+      "changePctVsPrevious": 1492
+    },
+    "tasks": [
+      {
+        "key": "SHIP-194",
+        "title": "API: validate and apply",
+        "parentKey": "SHIP-186",
+        "parentType": "story",
+        "featureKey": "SHIP-99",
+        "featureTitle": "Coupons v2",
+        "who": "Priya Shah",
+        "agent": false,
+        "startedAt": "2026-10-08T09:00:00+00:00",
+        "startedLabel": "Thu 8 Oct, 09:00",
+        "endedAt": "2026-10-12T15:42:00+00:00",
+        "endedLabel": "Mon 12 Oct, 15:42",
+        "endedBy": "lastCommit",
+        "leadHours": 102.7,
+        "leadLabel": "4.3 days",
+        "activeHours": 11.5,
+        "blockedHours": 91.2,
+        "reworkHours": 0,
+        "unresolvedTailHours": 0.6,
+        "reviews": 1,
+        "commits": 1,
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      {
+        "key": "SHIP-192",
+        "title": "Stacking rules (percent + fixed)",
+        "parentKey": "SHIP-185",
+        "parentType": "story",
+        "featureKey": "SHIP-99",
+        "featureTitle": "Coupons v2",
+        "who": "Claude Code",
+        "agent": true,
+        "startedAt": "2026-10-06T10:30:00+00:00",
+        "startedLabel": "Tue 6 Oct, 10:30",
+        "endedAt": "2026-10-07T11:12:00+00:00",
+        "endedLabel": "Wed 7 Oct, 11:12",
+        "endedBy": "lastCommit",
+        "leadHours": 24.7,
+        "leadLabel": "1 day",
+        "activeHours": 3.5,
+        "blockedHours": 0,
+        "reworkHours": 21.2,
+        "unresolvedTailHours": 0.6,
+        "reviews": 2,
+        "commits": 2,
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      }
+    ],
+    "features": [
+      {
+        "key": "SHIP-99",
+        "title": "Coupons v2",
+        "tasksEnded": 2,
+        "tasksEndedBefore": 1,
+        "tasksTotal": 8,
+        "leadTime": {
+          "tasks": 2,
+          "meanHours": 63.7,
+          "meanLabel": "2.7 days",
+          "meanActiveHours": 7.5,
+          "meanActiveLabel": "7.5 h",
+          "meanBlockedHours": 45.6,
+          "meanBlockedLabel": "1.9 days",
+          "meanReworkHours": 10.6,
+          "meanReworkLabel": "10.6 h",
+          "meanUnresolvedTailHours": 0.6,
+          "meanUnresolvedTailLabel": "36 min",
+          "endedAtResolved": 0,
+          "changePctVsPrevious": 1492
+        },
+        "longestTaskKey": "SHIP-194",
+        "longestLeadLabel": "4.3 days",
+        "executionLabel": "11 days so far"
+      }
+    ],
+    "selected": {
+      "task": {
+        "key": "SHIP-192",
+        "title": "Stacking rules (percent + fixed)",
+        "parentKey": "SHIP-185",
+        "parentType": "story",
+        "featureKey": "SHIP-99",
+        "featureTitle": "Coupons v2",
+        "who": "Claude Code",
+        "agent": true,
+        "startedAt": "2026-10-06T10:30:00+00:00",
+        "startedLabel": "Tue 6 Oct, 10:30",
+        "endedAt": "2026-10-07T11:12:00+00:00",
+        "endedLabel": "Wed 7 Oct, 11:12",
+        "endedBy": "lastCommit",
+        "leadHours": 24.7,
+        "leadLabel": "1 day",
+        "activeHours": 3.5,
+        "blockedHours": 0,
+        "reworkHours": 21.2,
+        "unresolvedTailHours": 0.6,
+        "reviews": 2,
+        "commits": 2,
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      "segments": [
+        {
+          "kind": "active",
+          "from": "2026-10-06T10:30:00+00:00",
+          "to": "2026-10-06T14:00:00+00:00",
+          "fromHours": 0,
+          "hours": 3.5,
+          "label": "3.5 h",
+          "counted": true
+        },
+        {
+          "kind": "rework",
+          "from": "2026-10-06T14:00:00+00:00",
+          "to": "2026-10-07T11:12:00+00:00",
+          "fromHours": 3.5,
+          "hours": 21.2,
+          "label": "21.2 h",
+          "counted": true
+        },
+        {
+          "kind": "unresolvedTail",
+          "from": "2026-10-07T11:12:00+00:00",
+          "to": "2026-10-07T11:48:00+00:00",
+          "fromHours": 24.7,
+          "hours": 0.6,
+          "label": "36 min",
+          "counted": false
+        }
+      ],
+      "events": [
+        {
+          "kind": "started",
+          "at": "2026-10-06T10:30:00+00:00",
+          "atLabel": "Tue 6 Oct, 10:30",
+          "hours": 0,
+          "text": "Active"
+        },
+        {
+          "kind": "commit",
+          "at": "2026-10-06T13:40:00+00:00",
+          "atLabel": "Tue 6 Oct, 13:40",
+          "hours": 3.2,
+          "text": "b71e0d4"
+        },
+        {
+          "kind": "resolved",
+          "at": "2026-10-06T14:00:00+00:00",
+          "atLabel": "Tue 6 Oct, 14:00",
+          "hours": 3.5,
+          "text": "Resolved"
+        },
+        {
+          "kind": "reviewChangesRequested",
+          "at": "2026-10-06T16:00:00+00:00",
+          "atLabel": "Tue 6 Oct, 16:00",
+          "hours": 5.5,
+          "text": "Changes requested"
+        },
+        {
+          "kind": "blocked",
+          "at": "2026-10-06T16:10:00+00:00",
+          "atLabel": "Tue 6 Oct, 16:10",
+          "hours": 5.7,
+          "text": "Blocked"
+        },
+        {
+          "kind": "unblocked",
+          "at": "2026-10-06T16:40:00+00:00",
+          "atLabel": "Tue 6 Oct, 16:40",
+          "hours": 6.2,
+          "text": "Unblocked"
+        },
+        {
+          "kind": "commit",
+          "at": "2026-10-07T11:12:00+00:00",
+          "atLabel": "Wed 7 Oct, 11:12",
+          "hours": 24.7,
+          "text": "9f3c2a1"
+        },
+        {
+          "kind": "reviewApproved",
+          "at": "2026-10-07T11:30:00+00:00",
+          "atLabel": "Wed 7 Oct, 11:30",
+          "hours": 25,
+          "text": "Approved"
+        },
+        {
+          "kind": "resolved",
+          "at": "2026-10-07T11:48:00+00:00",
+          "atLabel": "Wed 7 Oct, 11:48",
+          "hours": 25.3,
+          "text": "Resolved"
+        }
+      ]
+    }
+  }
+}

@@ -28,6 +28,7 @@ public static class AgentContextRenderer
 
     public static JsonObject RenderCreated(AgentContextInput input)
     {
+        input = input with { Guidance = WithRunLogLine(input.Guidance, input.RunLogUrl) };
         var body = Envelope("created", input, input.SessionCreatedAt, AgentSessionStatuses.Pending, input.SessionCreatedAt);
         // ShipLean's own field, not Linear's: the relay runs a propose session read-only (D9). Implement sessions leave it out,
         // so their payload stays as it was. A propose session's promptContext is the allowlisted one; its envelope carries only what
@@ -62,6 +63,18 @@ public static class AgentContextRenderer
         var body = Envelope("prompted", input, prompt.CreatedAt, sessionStatus, sessionUpdatedAt ?? prompt.CreatedAt);
         body["agentActivity"] = Activity(input, prompt);
         return body;
+    }
+
+    // C10's one guidance line, after any other guidance, so both the envelope's guidance and the promptContext carry it.
+    private static string? WithRunLogLine(string? guidance, string? runLogUrl)
+    {
+        if (string.IsNullOrEmpty(runLogUrl))
+        {
+            return guidance;
+        }
+
+        var line = $"If you end with an error, POST your last 200 lines of output as text/plain to {runLogUrl}.";
+        return string.IsNullOrWhiteSpace(guidance) ? line : $"{guidance}\n\n{line}";
     }
 
     public static string ToJson(JsonObject body) => body.ToJsonString(Indented);

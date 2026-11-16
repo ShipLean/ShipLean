@@ -24,6 +24,9 @@ public sealed class FeatureTimelinePage(IPage page)
 
     public ILocator Bar(string key) => Bars.Filter(new() { HasTextString = key });
 
+    // The last-commit tick on a task's bar; its title reads "Last commit <label>" and data-key names the task.
+    public ILocator CommitTicks => Page.GetByTestId(TimelineTestIds.ChartCommitTick);
+
     public ILocator Rail => Page.GetByTestId(TimelineTestIds.Rail);
 
     public ILocator RailSelected => Page.GetByTestId(TimelineTestIds.RailSelected);

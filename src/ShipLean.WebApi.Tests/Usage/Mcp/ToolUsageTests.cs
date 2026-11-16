@@ -98,6 +98,28 @@ public class ToolUsageTests : McpFixture
     }
 
     [Test]
+    public async Task GetAgentSession_WhenCalled_ShouldTrackAgentSessionViewed()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new ShipLean.TestSupport.Builders.WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            key = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @item", new { item });
+            await new ShipLean.TestSupport.Builders.AgentSessionSeeds(item, await ShipLean.TestSupport.Builders.AgentSessionSeeds.InsertConnectionAsync(connection)).InsertAsync(connection);
+        }
+
+        var reply = await CallToolAsync(token, "get_agent_session", $$"""{"item":"{{key}}"}""");
+
+        reply.IsToolError().ShouldBeFalse();
+        var tracked = await NextAsync("tool:get_agent_session");
+        tracked.Name.ShouldBe(UsageEventNames.AgentSessionViewed);
+        tracked.Outcome.ShouldBe(UsageOutcome.Ok);
+        tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+        CallsOf("tool:get_agent_session").ShouldHaveSingleItem();
+    }
+
+    [Test]
     public async Task ListProjects_WhenCalled_ShouldTrackWithNoProjectId()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);
@@ -110,6 +132,34 @@ public class ToolUsageTests : McpFixture
         tracked.ProjectId.ShouldBeNull();
         tracked.ProjectCount.ShouldBe(0);
         CallsOf("tool:list_projects").ShouldHaveSingleItem();
+    }
+
+    [Test]
+    public async Task InspectionMetrics_WhenCalled_ShouldTrackToolReadWithTheProject()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        var reply = await CallToolAsync(token, "inspection_metrics", """{"project":"SHIP"}""");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var tracked = await NextAsync("tool:inspection_metrics");
+        tracked.Name.ShouldBe(UsageEventNames.InspectionMetricsToolRead);
+        tracked.Outcome.ShouldBe(UsageOutcome.Ok);
+        tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+    }
+
+    [Test]
+    public async Task BackfillCommitTimes_WhenCalled_ShouldTrackCommitTimesBackfilledWithNoProject()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "backfill_commit_times");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var tracked = await NextAsync("tool:backfill_commit_times");
+        tracked.Name.ShouldBe(UsageEventNames.InspectionMetricsCommitTimesBackfilled);
+        tracked.Outcome.ShouldBe(UsageOutcome.Ok);
+        tracked.ProjectId.ShouldBeNull();
     }
 
     // The gate in front of the SDK refuses a missing scope with HTTP 403 before any filter runs, so nothing is tracked.

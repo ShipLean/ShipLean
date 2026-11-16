@@ -6,6 +6,7 @@ using Npgsql;
 using ShipLean.Application.Features.WorkItemDetails.Comments;
 using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
+using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Inbox;
@@ -185,5 +186,41 @@ public class AgentFollowUpTests : ApiFixture
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         (await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem();
+    }
+
+    // C2: a response is how an agent answers Stop, so after Stop it ends the session as canceled (no detail: who pressed Stop is not stored).
+    [Test]
+    public async Task Stop_WhenTheAgentThenResponds_ShouldEndTheSessionAsCanceledWithNoDetail()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, sessionId, arranged) = await OpenSessionAsync(database);
+        (await Api.PostJsonAsync($"api/work-items/{itemId}/agent-session/stop")).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        await RespondAsync(arranged, sessionId, "Stopped as asked.");
+
+        var session = await database.QuerySingleAsync<(string State, string? Reason, string? Detail)>(
+            "SELECT state, end_reason, end_detail FROM agent_session WHERE id = @sessionId", new { sessionId });
+        session.ShouldBe(("canceled", AgentEndReasons.Canceled, null));
+    }
+
+    [Test]
+    public async Task Response_WhenNoStopWasRequested_ShouldEndTheSessionAsCompletedWithNoDetail()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (_, sessionId, arranged) = await OpenSessionAsync(database);
+
+        await RespondAsync(arranged, sessionId, "Done.");
+
+        var session = await database.QuerySingleAsync<(string State, string? Reason, string? Detail)>(
+            "SELECT state, end_reason, end_detail FROM agent_session WHERE id = @sessionId", new { sessionId });
+        session.ShouldBe(("completed", AgentEndReasons.Completed, null));
+    }
+
+    private async Task RespondAsync(AgentDispatchArrange arranged, Guid sessionId, string body)
+    {
+        await using var scope = Host.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IAgentReports>().CreateActivityAsync(
+            new AgentReporter(arranged.ConnectionId!.Value, "Relay"),
+            new AgentActivityCreate(sessionId, "response", body, null, null, null, false, null, null));
     }
 }

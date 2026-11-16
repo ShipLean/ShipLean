@@ -20,5 +20,9 @@ public sealed class AgentConnectionsRows : IAccessSweepRows
             Url: $"api/instance/agent-connections/{AgentConnectionSweepIds.Live}/regenerate-token", InstanceScoped: true),
         new("POST", "api/instance/agent-connections/{id:guid}/archive", ProjectRole.Member,
             Url: $"api/instance/agent-connections/{AgentConnectionSweepIds.ToArchive}/archive", InstanceScoped: true),
+        new("GET", "api/instance/agent-connections/{id:guid}/health", ProjectRole.Member,
+            Url: $"api/instance/agent-connections/{AgentConnectionSweepIds.Live}/health", InstanceScoped: true),
+        new("POST", "api/instance/agent-connections/{id:guid}/test", ProjectRole.Member,
+            Url: $"api/instance/agent-connections/{AgentConnectionSweepIds.Live}/test", InstanceScoped: true),
     ];
 }

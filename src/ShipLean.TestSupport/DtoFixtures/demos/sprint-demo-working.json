@@ -27,7 +27,8 @@
   "actions": {
     "canCreate": false,
     "createBlockedMessage": "An agent session is already making this demo.",
-    "canRetryYouTube": false
+    "canRetryYouTube": false,
+    "createWarning": null
   },
   "numbers": {
     "committed": 23,

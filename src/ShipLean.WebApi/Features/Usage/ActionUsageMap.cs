@@ -105,6 +105,10 @@ public static class ActionUsageMap
             "AgentConnections.Archive",
             "AgentConnections.RegenerateSecret",
             "AgentConnections.RegenerateToken");
+        Add(ActionUsage.Track(UsageEventNames.InstanceAgentConnectionTested), "AgentConnections.Test");
+        // Anonymous caller: UsageActionFilter records nothing without an actor, so the upload fires the event itself after it succeeds (E1, SHIP-1652).
+        Add(ActionUsage.SelfEmitted, "AgentLogUpload.Upload");
+        Add(ActionUsage.Untracked("A settings read."), "AgentConnections.Health");
         Add(ActionUsage.Track(UsageEventNames.InstanceUserAdded), "UsersAdmin.Add");
         Add(
             ActionUsage.Track(UsageEventNames.InstanceUserChanged),
@@ -146,7 +150,8 @@ public static class ActionUsageMap
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
-            "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected", "ProjectUsage.BoardFilterOpened", "ProjectUsage.BoardHealthFiltered");
+            "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected", "ProjectUsage.BoardFilterOpened", "ProjectUsage.BoardHealthFiltered",
+            "ProjectUsage.InspectionMetricsViewed", "ProjectUsage.InspectionMetricsPeriodOpened", "ProjectUsage.InspectionMetricsTaskOpened");
 
         // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
         Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");
@@ -215,6 +220,7 @@ public static class ActionUsageMap
             "ImportJobs.List",
             "ImportJobs.ListForProject",
             "ImportJobs.Log",
+            "InspectionMetrics.Get",
             "Instance.GetSettings",
             "IssueIntakeSettings.Get",
             "Instance.ListProjects",

@@ -27,6 +27,7 @@ public static class TimelineTestIds
     public const string ChartBracket = "timeline-chart-bracket";
     public const string ChartDiamond = "timeline-chart-diamond";
     public const string ChartReviewDot = "timeline-chart-review-dot";
+    public const string ChartCommitTick = "timeline-chart-commit-tick";
     public const string ChartNowLine = "timeline-chart-now-line";
     public const string ChartWeekend = "timeline-chart-weekend";
     public const string ChartSprintBand = "timeline-chart-sprint-band";

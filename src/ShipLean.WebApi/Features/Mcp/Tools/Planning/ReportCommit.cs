@@ -15,6 +15,9 @@ public sealed record ReportCommit
     [JsonPropertyName("subject"), Description("The commit's subject line.")]
     public string? Subject { get; init; }
 
+    [JsonPropertyName("committed_at"), Description("When the commit was authored, ISO 8601 with an offset, from git log -1 --format=%aI <sha>, such as 2026-11-16T09:30:00+02:00. Stored as UTC on the commit's link, once: a time already stored is never changed. Not later than one day from now.")]
+    public string? CommittedAt { get; init; }
+
     [JsonPropertyName("url"), Description("The commit's web URL. Needed only when repo is left out.")]
     public string? Url { get; init; }
 }

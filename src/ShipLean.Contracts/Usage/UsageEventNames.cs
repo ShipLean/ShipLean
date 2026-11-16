@@ -19,6 +19,8 @@ public static class UsageEventNames
     public const string AgentSessionStopped = "agent_session.stopped";
     public const string AgentSessionOpened = "agent_session.opened";
     public const string AgentSessionFinished = "agent_session.finished";
+    public const string AgentSessionViewed = "agent_session.viewed";
+    public const string AgentSessionRunLogUploaded = "agent_session.run_log_uploaded";
     public const string ProjectCreated = "project.created";
     public const string ProjectJoined = "project.joined";
     public const string ProjectLeft = "project.left";
@@ -127,6 +129,14 @@ public static class UsageEventNames
     public const string FeatureTimelineViewed = "feature.timeline_viewed";
     public const string ReviewLogged = "review.logged";
 
+    // Inspection's lead time (SHIP-1398 K11). viewed, period_opened and task_opened are self-emitted by the page's reports;
+    // tool_read is the MCP tool inspection_metrics and commit_times_backfilled the temporary MCP tool backfill_commit_times.
+    public const string InspectionMetricsViewed = "inspection_metrics.viewed";
+    public const string InspectionMetricsPeriodOpened = "inspection_metrics.period_opened";
+    public const string InspectionMetricsTaskOpened = "inspection_metrics.task_opened";
+    public const string InspectionMetricsToolRead = "inspection_metrics.tool_read";
+    public const string InspectionMetricsCommitTimesBackfilled = "inspection_metrics.commit_times_backfilled";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";
@@ -141,6 +151,7 @@ public static class UsageEventNames
     public const string InstanceAnalyticsChanged = "instance.analytics_changed";
     public const string InstanceAgentConnectionCreated = "instance.agent_connection_created";
     public const string InstanceAgentConnectionChanged = "instance.agent_connection_changed";
+    public const string InstanceAgentConnectionTested = "instance.agent_connection_tested";
     public const string InstanceUserAdded = "instance.user_added";
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";

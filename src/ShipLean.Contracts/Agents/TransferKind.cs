@@ -6,4 +6,5 @@ public enum TransferKind
     Download,
     Demo,
     DemoLogo,
+    AgentLog,
 }

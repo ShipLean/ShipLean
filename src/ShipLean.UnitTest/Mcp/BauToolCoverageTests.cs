@@ -28,7 +28,9 @@ public class BauToolCoverageTests
         ["sprint_status"] = Kind.ListsItems,
         ["sprint_review"] = Kind.ListsItems,
         ["feature_progress"] = Kind.ListsItems,
+        ["inspection_metrics"] = Kind.ListsItems,
         ["get_work_item"] = Kind.ByKeyOnly,
+        ["get_agent_session"] = Kind.ByKeyOnly,
         ["feature_timeline"] = Kind.ByKeyOnly,
         ["log_review"] = Kind.ByKeyOnly,
         ["read_attachment"] = Kind.ByKeyOnly,
@@ -63,6 +65,8 @@ public class BauToolCoverageTests
         ["create_sprint"] = Kind.NoItems,
         ["create_sprint_demo"] = Kind.NoItems,
         ["list_projects"] = Kind.NoItems,
+        // Names no project and no item: it lists commit links and sets their times, instance admins only.
+        ["backfill_commit_times"] = Kind.NoItems,
         ["planning_guide"] = Kind.NoItems,
         ["list_retrospectives"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,

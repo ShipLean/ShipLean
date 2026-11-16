@@ -3,6 +3,8 @@ import type {
   AgentPlanStatus,
   AgentSessionDto,
 } from '@shiplean/core/api/agentSessions';
+import { SessionDeliveries } from './SessionDeliveries';
+import { SessionEnd } from './SessionEnd';
 import { agentPanelTestIds as ids } from './testIds';
 
 const planGlyph: Record<AgentPlanStatus, { glyph: string; label: string }> = {
@@ -150,6 +152,12 @@ export function SessionBody({ session }: { session: AgentSessionDto }) {
         <p data-testid={ids.empty} className="m-0 text-[length:var(--text-sm)] text-ink-muted">
           No activity yet.
         </p>
+      )}
+      {session.live ? null : (
+        <>
+          <SessionEnd session={session} />
+          <SessionDeliveries session={session} />
+        </>
       )}
     </div>
   );

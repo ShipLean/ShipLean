@@ -36,4 +36,7 @@ test('useInstanceUsers_WhenProjectChangedByTeammate_ShouldReadUsersAgain', () =>
   handlers.find(([type]) => type === 'projectChanged')?.[1]();
 
   expect(spy).toHaveBeenCalledWith({ queryKey: instanceUsersKey });
+  // Unmount before the file ends: a read still in flight would otherwise render after jsdom is torn down.
+  act(() => root.unmount());
+  client.clear();
 });
