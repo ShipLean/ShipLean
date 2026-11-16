@@ -29,7 +29,7 @@ function Choices({
     <div role="group" aria-label={title} className="grid gap-1.5">
       <span className="text-[length:var(--text-sm)] font-medium text-ink-muted">{title}</span>
       <div className="flex flex-wrap gap-1.5">
-        {[{ value: '', label: anyLabel } as Option, ...options].map((option) => {
+        {[{ value: '', label: anyLabel }, ...options].map((option) => {
           const any = option.value === '';
           return (
             <button
@@ -225,7 +225,7 @@ export function FilterSheet({
           <Switch
             testId={ids.retrosFilterRecurring}
             label="Recurring themes only"
-            description="Only points whose theme has come up before"
+            description="Themes that keep coming back"
             on={query.recurring === true}
             onChange={(on) => set({ recurring: on || undefined })}
           />

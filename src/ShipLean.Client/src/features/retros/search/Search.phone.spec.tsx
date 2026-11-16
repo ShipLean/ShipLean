@@ -347,13 +347,17 @@ test('RetroSearchFilter_ShouldFollowD3Order', async ({ mount, page }) => {
     '[data-filter="category"][data-value="wentWell"] span[aria-hidden]',
   );
   await expect(wentWell).toHaveCount(1);
-  expect(
-    (await sheet.getByTestId(ids.retrosFilterSprint).boundingBox())!.height,
-  ).toBeGreaterThanOrEqual(40);
+  const height = async (id: string) => (await sheet.getByTestId(id).boundingBox())!.height;
+  expect(await height(ids.retrosFilterSprint)).toBeGreaterThanOrEqual(40);
+  expect(await height(ids.retrosFilterTheme)).toBeGreaterThanOrEqual(40);
   const show = (await sheet.getByTestId(ids.retrosFilterShow).boundingBox())!;
   const clear = (await sheet.getByTestId(ids.retrosFilterSheetClear).boundingBox())!;
-  expect(show.width).toBeGreaterThan(show.x > clear.x ? 200 : 0);
+  expect(clear.x).toBeLessThan(show.x);
+  expect(show.width).toBeGreaterThan(200);
+  await expect(sheet.getByText('Only', { exact: true })).toBeVisible();
   await expect(sheet.getByText('Only retros logged outside a sprint')).toBeVisible();
+  await expect(sheet.getByText('Only points with no theme yet')).toBeVisible();
+  await expect(sheet.getByText('Themes that keep coming back')).toBeVisible();
   // Tapping Any clears the filter.
   await sheet.locator('[data-filter="category"][data-value="wentWell"]').tap();
   await expect(first('category')).toHaveAttribute('aria-pressed', 'false');

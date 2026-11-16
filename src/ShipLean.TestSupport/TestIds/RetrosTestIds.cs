@@ -229,4 +229,7 @@ public static class RetrosTestIds
     public const string RetrosFilterUnthemed = "retros-filter-unthemed";
     public const string RetroRowChevron = "retro-row-chevron";
     public const string RetroFeaturesSearchIcon = "retro-features-search-icon";
+    public const string RetrosOpenRetroTypeKey = "retros-open-retro-type-key";
+    public const string RetrosOpenRetroKey = "retros-open-retro-key";
+    public const string RetrosOpenRetroSteps = "retros-open-retro-steps";
 }

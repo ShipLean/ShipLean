@@ -54,18 +54,28 @@ export function OpenRetroView({
       title={title}
       titleIcon={
         item ? (
-          <span className="inline-flex flex-none items-center gap-1.5">
+          <span
+            data-testid={ids.retrosOpenRetroTypeKey}
+            className="inline-flex flex-none items-center gap-1.5"
+          >
             <TypeIcon type={item.type.id} />
-            <span className="font-mono text-[length:var(--text-sm)] text-ink-muted">
+            <span
+              data-testid={ids.retrosOpenRetroKey}
+              className="font-mono text-[length:var(--text-sm)] text-ink-muted"
+            >
               {item.key}
             </span>
           </span>
         ) : null
       }
+      subtitle={[position, sprint].filter(Boolean).join(' · ')}
       onClose={steps.close}
       testId={ids.retrosOpenRetro}
       primaryAction={
-        <div className="inline-flex divide-x divide-edge overflow-hidden rounded-control border border-edge">
+        <div
+          data-testid={ids.retrosOpenRetroSteps}
+          className="inline-flex divide-x divide-edge overflow-hidden rounded-control border border-edge"
+        >
           <button
             type="button"
             data-testid={ids.retrosOpenRetroPrevious}
@@ -90,12 +100,6 @@ export function OpenRetroView({
       }
     >
       <div ref={body} data-testid={ids.retrosSelected} className="grid min-w-0 gap-3">
-        <p
-          data-testid={ids.retrosOpenRetroPosition}
-          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
-        >
-          {[position, sprint].filter(Boolean).join(' · ')}
-        </p>
         <article
           data-testid={shared.retroCard}
           data-feature={isFeature ? 'true' : 'false'}
