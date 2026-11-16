@@ -1,4 +1,1 @@
-# Zone code and ad-hoc date formats that ViewerTimeZoneTests allows for now, owned by the SHIP-1702 wave-1 demo lane, which empties this file.
-# One line per file and token: path<TAB>token<TAB>count. Fixing a use lowers its count; at zero delete the line. Never add a line.
-src/ShipLean.Application/Features/Demos/Reads/SprintDemoLabels.cs	DisplayDate.Clock(	1
-src/ShipLean.Application/Features/Demos/Reads/SprintDemoLabels.cs	LocalTimeZone	1
+

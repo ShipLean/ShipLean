@@ -1,9 +1,10 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Demos.Reads;
 using ShipLean.Application.Integrations;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.YouTube;
 
@@ -12,7 +13,7 @@ namespace ShipLean.Application.Features.Demos.YouTube;
 // with the reason. A delete that failed is named in the result either way, and is never stored as a refusal on a connected channel. The channel row is the only thing written, and only after the video is gone or the delete is known to have failed.
 // This has been exercised against the fake and the stub, not against Google.
 public sealed class YouTubeCheck(
-    NpgsqlDataSource dataSource, IYouTubeClient client, IYouTubeSettings settings, IntegrationTokens tokens, TimeProvider clock) : IYouTubeCheck
+    NpgsqlDataSource dataSource, IYouTubeClient client, IYouTubeSettings settings, IntegrationTokens tokens, TimeProvider clock, IViewerZone viewerZone) : IYouTubeCheck
 {
     private const string Resource = "sprint-demo/youtube-check.mp4";
     private const string UploadTitle = "ShipLean connection check";
@@ -36,7 +37,7 @@ public sealed class YouTubeCheck(
             outcome.Passed ? YouTubeConnectionStatus.Connected : YouTubeConnectionStatus.Pending,
             channel.Title,
             outcome.Passed ? visibility : null,
-            outcome.Passed ? $"Checked {SprintDemoLabels.When(checkedAt, clock)}" : null,
+            outcome.Passed ? $"Checked {DisplayDate.DayAt(checkedAt, checkedAt, viewerZone.Zone)}" : null,
             outcome.Refusal);
     }
 
