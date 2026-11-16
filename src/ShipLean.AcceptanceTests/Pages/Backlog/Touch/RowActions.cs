@@ -16,9 +16,10 @@ public sealed class RowActions(IPage page)
     // The rows that have no estimate: their points show a ? chip.
     public ILocator ParentSheet => page.GetByTestId(BacklogTestIds.RowParentSheet);
 
-    public ILocator UnestimatedCheck => page.GetByTestId(BacklogTestIds.PlanCheck).Filter(new() { HasTextString = "not estimated" });
+    // The not-estimated banner at touch (SHIP-1626 D5) and its Estimate button, which opens the queue as a sheet.
+    public ILocator NotEstimatedBanner => page.GetByTestId(BacklogTestIds.NotEstimatedBanner);
 
-    public ILocator QueueBanner => page.GetByTestId(BacklogTestIds.QueueBanner);
+    public ILocator Estimate => page.GetByTestId(BacklogTestIds.NotEstimatedEstimate);
 
     public ILocator QueueStepKey => page.GetByTestId(BacklogTestIds.QueueStepKey);
 

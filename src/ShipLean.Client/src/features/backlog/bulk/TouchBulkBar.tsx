@@ -30,6 +30,7 @@ export interface TouchBulkBarProps {
   stateNames: readonly string[];
   parentTypes: WorkItemTypeId[];
   onMoveTo: (target: MoveTarget) => void;
+  onMoveToBacklog: () => void;
   onMoveToEdge: (slot: 'first' | 'last') => void;
   onSetPoints: (points: number | null) => void;
   onSetState: (name: string) => void;
@@ -141,8 +142,10 @@ export function TouchBulkBar(props: TouchBulkBarProps) {
           targets={targets}
           selected={selected}
           velocity={velocity}
+          projectId={props.projectId}
           disabled={tooMany}
           onPick={props.onMoveTo}
+          onPickBacklog={props.onMoveToBacklog}
           onClose={close}
         />
       ) : null}

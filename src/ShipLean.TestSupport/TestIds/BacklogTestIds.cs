@@ -203,4 +203,19 @@ public static class BacklogTestIds
     public const string PlanQueueExit = "backlog-plan-queue-exit";
     public const string KeysButton = "backlog-keys-button";
     public const string KeysDialog = "backlog-keys-dialog";
+    public const string LevelProgressBar = "backlog-level-progress-bar";
+    public const string Summary = "backlog-summary";
+    public const string SummaryNote = "backlog-summary-note";
+    public const string FilterCount = "backlog-filter-count";
+    public const string PointsScale = "backlog-points-scale";
+    public const string PointsSheetError = "backlog-points-sheet-error";
+    public const string QueuePosition = "backlog-queue-position";
+    public const string QueueEmpty = "backlog-queue-empty";
+    public const string NotEstimatedBanner = "backlog-not-estimated-banner";
+    public const string NotEstimatedEstimate = "backlog-not-estimated-estimate";
+    public const string PlanningSectionCapacityLink = "backlog-planning-section-capacity-link";
+    public const string BulkMoveBacklog = "backlog-bulk-move-backlog";
+    public const string BulkUnestimatedNote = "backlog-bulk-unestimated-note";
+    public const string TouchDropLine = "backlog-touch-drop-line";
+    public const string AddHelp = "backlog-add-help";
 }

@@ -153,6 +153,9 @@ export function BulkBar({ mode, projectId, view }: BulkBarProps) {
           stateNames={stateNamesFor(selected, states)}
           parentTypes={parentTypes ?? []}
           onMoveTo={(target) => void moveTo(target)}
+          onMoveToBacklog={() =>
+            void apply({ plan: moveToSprintPlan(selected, null), skipped: null }, true)
+          }
           onMoveToEdge={(slot) => void moveToEdge(slot)}
           onSetPoints={(points) => void apply(setPointsPlan(selected, points))}
           onSetState={(name) => void apply(setStatePlan(selected, states, name))}
