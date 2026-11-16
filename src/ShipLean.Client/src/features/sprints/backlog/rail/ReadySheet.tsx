@@ -15,12 +15,14 @@ export function ReadySheet({
   onClose: () => void;
 }) {
   return (
-    <Sheet
-      open={open}
-      title={`Ready to pick up · ${ready.length}`}
-      subtitle="Unassigned and not started, in backlog order. Tap one to open it."
-      onClose={onClose}
-    >
+    <Sheet open={open} title={`Ready to pick up · ${ready.length}`} onClose={onClose}>
+      {/* A wrapping body line, not the Sheet subtitle: the subtitle is one line and would cut this short at 390px. */}
+      <p
+        data-testid={ids.glanceReadyHint}
+        className="m-0 px-1 pb-1 text-[length:var(--text-sm)] text-ink-muted"
+      >
+        Unassigned and not started, in backlog order. Tap one to open it.
+      </p>
       {ready.length === 0 ? (
         <p
           data-testid={ids.railReadyEmpty}

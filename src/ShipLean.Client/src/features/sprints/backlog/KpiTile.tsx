@@ -15,7 +15,7 @@ interface KpiTileProps {
 }
 
 const TILE =
-  'min-w-24 rounded-md border border-edge bg-panel px-3 py-1.5 touch:grid touch:min-w-0 touch:content-start touch:gap-px touch:px-1.5 touch:py-[7px]';
+  'min-w-24 rounded-md border border-edge bg-panel px-3 py-1.5 touch:grid touch:min-w-0 touch:content-start touch:gap-px touch:px-2 touch:py-[7px]';
 
 /** One figure of the Sprint backlog's row: the value with its unit, and what it measures underneath. On a phone the four sit in one row. */
 export function KpiTile({ testId, value, unit, label, to, linkTestId, wrap }: KpiTileProps) {
@@ -40,7 +40,7 @@ export function KpiTile({ testId, value, unit, label, to, linkTestId, wrap }: Kp
         <span className="touch:min-w-0 touch:truncate">{label}</span>
         {/* A tile that is a link says so with a › (SHIP-724 D7 design), outside the truncated label so it never cuts the label short. */}
         {to === undefined ? null : (
-          <span aria-hidden="true" className="touch:flex-none touch:pl-0.5">
+          <span aria-hidden="true" className="touch:flex-none touch:pl-[3px]">
             {' ›'}
           </span>
         )}

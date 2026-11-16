@@ -71,7 +71,7 @@ export function BacklogTable({ projectId, sprintId, stories, unparented }: Backl
   const empty = stories.length === 0 && unparented.length === 0;
   if (touch)
     return (
-      <section className="grid">
+      <section className="-mx-3 grid">
         <div className="flex items-center gap-2 px-3 pt-3.5 pb-1.5 text-[length:var(--text-sm)] text-ink-muted">
           <b className="text-[length:var(--text-base)] font-semibold text-ink">Stories and bugs</b>
           <span data-testid={ids.listPoints}>

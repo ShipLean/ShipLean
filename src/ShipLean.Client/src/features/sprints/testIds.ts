@@ -153,4 +153,5 @@ export const sprintsTestIds = {
   listPoints: 'sprints-backlog-list-points',
   burndownDay: 'sprints-backlog-burndown-day',
   glanceIcon: 'sprints-backlog-glance-icon',
+  glanceReadyHint: 'sprints-backlog-glance-ready-hint',
 } as const;

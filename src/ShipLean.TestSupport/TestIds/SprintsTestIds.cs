@@ -155,4 +155,5 @@ public static class SprintsTestIds
     public const string ListPoints = "sprints-backlog-list-points";
     public const string BurndownDay = "sprints-backlog-burndown-day";
     public const string GlanceIcon = "sprints-backlog-glance-icon";
+    public const string GlanceReadyHint = "sprints-backlog-glance-ready-hint";
 }

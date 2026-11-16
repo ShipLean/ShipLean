@@ -148,7 +148,11 @@ test('GlanceRows_WhenReadyOpened_ShouldShowKeysAndTheTapHint', async ({ mount, p
   await expect(page.getByTestId(ids.glanceRows).getByTestId(ids.glanceIcon)).toHaveCount(2);
   await page.getByTestId(ids.glanceReady).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
-  await expect(sheet).toContainText('Tap one to open it.');
+  // The hint wraps in the sheet body; nothing of it is clipped at 390px (the one-line Sheet subtitle cut it short).
+  const hint = sheet.getByTestId(ids.glanceReadyHint);
+  await expect(hint).toHaveText('Unassigned and not started, in backlog order. Tap one to open it.');
+  expect(await hint.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  expect(await hint.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
   await expect(sheet.getByTestId(ids.glanceItemKey)).toHaveText([
     /^SHIP-\d+$/,
     /^SHIP-\d+$/,
