@@ -78,9 +78,12 @@ const marked = () =>
 const deliver = (sprintIds: string[], workItemIds: string[]) =>
   act(() => handlers.forEach((handler) => handler({ sprintIds, workItemIds })));
 
-test('RetroChanged_WhenEventIsForAnotherSprintAndItem_ShouldMarkOnlyTheProjectWideReads', () => {
+// A handler cancels the read in flight before it invalidates, so the mark lands a few promise turns after the event.
+const expectMarked = (names: string[]) => vi.waitFor(() => expect(marked()).toEqual(names));
+
+test('RetroChanged_WhenEventIsForAnotherSprintAndItem_ShouldMarkOnlyTheProjectWideReads', async () => {
   deliver(['s23'], ['w-other']);
-  expect(marked()).toEqual([
+  await expectMarked([
     'search',
     'insights',
     'themes',
@@ -91,9 +94,9 @@ test('RetroChanged_WhenEventIsForAnotherSprintAndItem_ShouldMarkOnlyTheProjectWi
   ]);
 });
 
-test('RetroChanged_WhenEventIsForThisSprintAndItem_ShouldMarkThemAndTheProjectReads', () => {
+test('RetroChanged_WhenEventIsForThisSprintAndItem_ShouldMarkThemAndTheProjectReads', async () => {
   deliver(['s24'], ['w1']);
-  expect(marked()).toEqual([
+  await expectMarked([
     'sprint',
     'item',
     'search',
@@ -106,10 +109,10 @@ test('RetroChanged_WhenEventIsForThisSprintAndItem_ShouldMarkThemAndTheProjectRe
   ]);
 });
 
-test('RetroChanged_WhenListsAreEmpty_ShouldMarkEveryOpenRetroRead', () => {
+test('RetroChanged_WhenListsAreEmpty_ShouldMarkEveryOpenRetroRead', async () => {
   deliver([], []);
   // The other sprint's query has no screen open, so nothing refetches it; the event must not reach it through a prefix.
-  expect(marked()).toEqual([
+  await expectMarked([
     'sprint',
     'item',
     'search',
