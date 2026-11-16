@@ -9,7 +9,9 @@ using Npgsql;
 using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Features.Demos.Runs;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Agents;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Logging;
 using ShipLean.TestSupport.Secrets;
 using ShipLean.TestSupport.Usage;
@@ -46,7 +48,8 @@ public class DemoUploadLinkLeakTests : McpFixture
         services.AddSingleton<ILoggerFactory>(_logs);
     };
 
-    protected override Task BeforeHostStartAsync()
+    [SetUp]
+    public void StartListening()
     {
         _listener = new ActivityListener
         {
@@ -61,10 +64,9 @@ public class DemoUploadLinkLeakTests : McpFixture
             },
         };
         ActivitySource.AddActivityListener(_listener);
-        return Task.CompletedTask;
     }
 
-    [OneTimeTearDown]
+    [TearDown]
     public void StopListening() => _listener?.Dispose();
 
     // A relay that answers every send by failing with its own request body in the message.
