@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.InspectionMetrics.Aggregate;
+using ShipLean.Application.Features.InspectionMetrics.Cost;
 using ShipLean.Application.Features.InspectionMetrics.Facts;
 using ShipLean.Application.Features.InspectionMetrics.Measure;
 using ShipLean.Application.Features.InspectionMetrics.Periods;
@@ -21,5 +22,6 @@ public sealed class InspectionMetricsServices : IServiceModule
         services.AddSingleton<ILeadTimeAggregator, LeadTimeAggregator>();
         services.AddSingleton<IQualityFactsReader, QualityFactsReader>();
         services.AddSingleton<IQualityAggregator, QualityAggregator>();
+        services.AddSingleton<ICostAggregator, CostAggregator>();
     }
 }
