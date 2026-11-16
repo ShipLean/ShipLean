@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { sprintsTestIds as ids } from '../testIds';
@@ -17,6 +18,27 @@ function averageLabel(velocity: VelocityDto): string {
   return velocity.override === null
     ? `velocity ${velocity.average} (last ${velocity.sprints.length})`
     : `velocity ${velocity.override} (override)`;
+}
+
+/** The touch caption under the chart: what the dashed line is (SHIP-1807 P3). */
+function touchCaption(velocity: VelocityDto): ReactNode {
+  return velocity.override === null ? (
+    <>
+      Velocity <b className="text-ink">{velocity.average}</b> (dashed): the average completed over
+      the last {velocity.window} sprints.
+    </>
+  ) : (
+    <>
+      Velocity <b className="text-ink">{velocity.override}</b> (dashed): the project&apos;s
+      override.
+    </>
+  );
+}
+
+/** A sprint's name under its bars at 900px and below: "Sprint 19" becomes "S19" so five fit; other names stay. */
+function touchSprintLabel(name: string): string {
+  const number = /^Sprint (\d+)$/.exec(name)?.[1];
+  return number === undefined ? name : `S${number}`;
 }
 
 /** Grouped committed/completed bars per ended sprint on one y scale, with the velocity line across. Inline SVG, no chart library. */
@@ -98,7 +120,7 @@ export function VelocityChart({ velocity }: { velocity: VelocityDto }) {
               </rect>
             ))}
             <text x={centre} y={HEIGHT - 6} textAnchor="middle">
-              {sprint.sprintName}
+              {touch ? touchSprintLabel(sprint.sprintName) : sprint.sprintName}
             </text>
             {touch || index === velocity.sprints.length - 1
               ? bars.map((bar) => (
@@ -111,6 +133,7 @@ export function VelocityChart({ velocity }: { velocity: VelocityDto }) {
                     x={bar.x + BAR / 2}
                     y={y(bar.value) - 4}
                     textAnchor="middle"
+                    {...(touch ? { fill: 'var(--color-ink)', fontWeight: 600 } : {})}
                   >
                     {bar.value}
                   </text>
@@ -128,9 +151,9 @@ export function VelocityChart({ velocity }: { velocity: VelocityDto }) {
       {chart}
       <p
         data-testid={ids.velocityLabel}
-        className="m-0 text-[length:var(--text-xs)] text-ink-muted"
+        className="m-0 text-[length:var(--text-sm)] text-ink-muted"
       >
-        {averageLabel(velocity)}
+        {touchCaption(velocity)}
       </p>
     </>
   );
