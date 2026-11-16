@@ -8,8 +8,8 @@
   SHIP-736 reference: /login and the steps around it on a phone, in password mode and proxy mode.
   Designed at 390 × 844; it applies at 900px and below and follows the shared mobile rules on SHIP-805 (it doesn't
   restate them). Above 900px the desktop reference (../screens/signin.html) is unchanged. Open directly in a browser.
-  Uses ../tokens.css only; no build step. SHIP-805 rules 11 and 13 (48px bar, 32px minimum) aren't in tokens.css on
-  this branch yet, so this page sets them.
+  Uses ../tokens.css only; no build step. --touch-target (32px) and --mobile-bar-height (48px) come from tokens.css
+  (SHIP-805 rules 11 and 13).
   ?state=                 (none) sign in · error · signed-out · ended · google-failed · google-refused
                           change · no-projects · no-projects-member · proxy · proxy-disabled · proxy-ended
   ?google=0               Google sign-in turned off on the instance (password only)
@@ -39,7 +39,7 @@
   })();
 </script>
 <style>
-:root { --touch-target: 32px; --mobile-bar-height: 48px; --auth-control: 40px; --kb-height: 336px; }
+:root { --auth-control: 40px; --kb-height: 336px; }
 :root.alt-h32 { --auth-control: 32px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
