@@ -152,3 +152,13 @@ test('AddStoryBox_AtTouch_ShouldStayOnOneRowWithAHelperLine', async ({ mount, pa
     'Title of the story or bug',
   );
 });
+
+for (const theme of THEMES) {
+  test(`AddStoryBox_AtTouch_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await page.getByTestId(ids.addStory).tap();
+    await expect(page.getByTestId(ids.addStoryBox)).toHaveScreenshot(`add-story-box.${theme}.png`);
+  });
+}

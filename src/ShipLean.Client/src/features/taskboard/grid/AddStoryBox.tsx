@@ -45,58 +45,57 @@ export function AddStoryBox({
   }
 
   return (
-    <div
-      data-testid={ids.addStoryBox}
-      className="flex items-center gap-2 px-4 py-2 touch:flex-wrap touch:gap-x-2 touch:px-3"
-    >
-      <select
-        data-testid={ids.addStoryType}
-        aria-label="Type"
-        className="field"
-        value={type}
-        onChange={(event) => setType(event.target.value as WorkItemTypeId)}
-        onKeyDown={onKeyDown}
-      >
-        {types.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <input
-        ref={input}
-        autoFocus
-        data-testid={ids.addStoryTitle}
-        aria-label="Title"
-        className="field flex-1 touch:min-w-0"
-        placeholder={
-          touch
-            ? 'Title of the story or bug'
-            : scope.kind === 'sprint'
-            ? 'Title, then Enter to add to this sprint'
-            : 'Title, then Enter to add under this Feature'
-        }
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        onKeyDown={onKeyDown}
-      />
-      <button
-        type="button"
-        data-testid={ids.addStorySubmit}
-        className="btn-signal touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
-        onClick={add}
-      >
-        Add
-      </button>
-      <button
-        type="button"
-        data-testid={ids.addStoryClose}
-        className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
-        aria-label={touch ? 'Close' : undefined}
-        onClick={onClose}
-      >
-        {touch ? '✕' : 'Esc'}
-      </button>
+    <div data-testid={ids.addStoryBox} className="grid gap-1 px-4 py-2 touch:px-3">
+      <div className="flex items-center gap-2">
+        <select
+          data-testid={ids.addStoryType}
+          aria-label="Type"
+          className="field"
+          value={type}
+          onChange={(event) => setType(event.target.value as WorkItemTypeId)}
+          onKeyDown={onKeyDown}
+        >
+          {types.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <input
+          ref={input}
+          autoFocus
+          data-testid={ids.addStoryTitle}
+          aria-label="Title"
+          className="field flex-1 touch:min-w-0"
+          placeholder={
+            touch
+              ? 'Title of the story or bug'
+              : scope.kind === 'sprint'
+                ? 'Title, then Enter to add to this sprint'
+                : 'Title, then Enter to add under this Feature'
+          }
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          onKeyDown={onKeyDown}
+        />
+        <button
+          type="button"
+          data-testid={ids.addStorySubmit}
+          className="btn-signal touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+          onClick={add}
+        >
+          Add
+        </button>
+        <button
+          type="button"
+          data-testid={ids.addStoryClose}
+          className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+          aria-label={touch ? 'Close' : undefined}
+          onClick={onClose}
+        >
+          {touch ? '✕' : 'Esc'}
+        </button>
+      </div>
       {touch ? (
         <p
           data-testid={ids.addStoryHelp}

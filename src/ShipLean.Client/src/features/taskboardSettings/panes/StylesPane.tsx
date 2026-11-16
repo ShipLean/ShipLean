@@ -18,7 +18,10 @@ export function StylesPane({
   const [dragFrom, setDragFrom] = useState<number>();
   const setRules = (styleRules: StyleRuleJson[]) => onChange({ ...draft, styleRules });
   return (
-    <div data-testid={ids.stylesPane} className="grid grid-cols-[minmax(0,1fr)] content-start gap-3">
+    <div
+      data-testid={ids.stylesPane}
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-3"
+    >
       <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
         Style rules make task cards that need attention stand out on the Taskboard. When a card
         matches more than one rule, the first rule wins. Drag the grip to reorder.

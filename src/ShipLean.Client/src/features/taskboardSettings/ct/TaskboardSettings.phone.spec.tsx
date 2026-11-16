@@ -269,8 +269,9 @@ test('TaskboardSettingsStyles_AtPhoneWidth_ShouldNotOverflow', async ({ mount, p
   await expect(page.getByTestId(ids.styleRow)).toHaveCount(TASKBOARD_STYLE_RULES.length);
   const pane = page.getByTestId(ids.stylesPane);
   const widths = await pane.evaluate((el) => {
-    let scroller: HTMLElement | null = el;
-    while (scroller && scroller.scrollWidth <= scroller.clientWidth) scroller = scroller.parentElement;
+    let scroller: Element | null = el;
+    while (scroller && scroller.scrollWidth <= scroller.clientWidth)
+      scroller = scroller.parentElement;
     return {
       pane: el.getBoundingClientRect().right,
       scroll: scroller ? scroller.scrollWidth - scroller.clientWidth : 0,
