@@ -191,10 +191,12 @@ test('PlanningTouchRow_InItsOwnSprintSection_ShouldHideTheSprintChipAndStackPoin
   await stubBacklog(page, planningView(), { saved });
   await mount(<PlanningMode project={PROJECT} />, route);
 
-  const rows = section(page, 'Sprint 25').getByTestId(ids.row);
-  await expect(rows.first()).toBeVisible();
-  await expect(section(page, 'Sprint 25').getByTestId(ids.sprintChip)).toHaveCount(0);
-  const row = rows.first();
+  // SHIP-158 is the Sprint 25 row.
+  const row = page
+    .getByTestId(ids.row)
+    .filter({ has: page.getByTestId(ids.key).getByText('SHIP-158', { exact: true }) });
+  await expect(row).toBeVisible();
+  await expect(row.getByTestId(ids.sprintChip)).toHaveCount(0);
   const points = await row.getByTestId(ids.points).boundingBox();
   const avatar = await row.getByTestId(ids.assignee).boundingBox();
   expect(points).not.toBeNull();
