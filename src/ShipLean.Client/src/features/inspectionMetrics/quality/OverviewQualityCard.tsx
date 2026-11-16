@@ -1,4 +1,5 @@
 import type { InspectionMetricsViewDto } from '@shiplean/core/api/views';
+import { ChangeChip } from '../overview/LeadTimeCard';
 import { OVERLINE } from '../overview/overviewStyles';
 import { inspectionMetricsTestIds as ids } from '../testIds';
 import { per100 } from './severity';
@@ -8,7 +9,7 @@ const CARD =
 
 /**
  * The Overview's quality card (design ?view=overview, "Quality · escaping bugs"): the last finished sprint's escaping bugs
- * and per 100 merged PRs, a bar per sprint, and severity-weighted beside the running sprint, this quarter and last. With no
+ * and per 100 merged PRs with the change against the sprint before, a bar per sprint, and severity-weighted beside the running sprint, this quarter and last. With no
  * bug in the project it says so. Opens ?view=quality.
  */
 export function OverviewQualityCard({
@@ -44,6 +45,9 @@ export function OverviewQualityCard({
         <span className="text-ink-muted">
           in {finished.name} · {per100(last.per100Prs)} per 100 merged PRs
         </span>
+        {last.changePctVsPrevious === null ? null : (
+          <ChangeChip change={last.changePctVsPrevious} testId={ids.overviewQualityCardChange} />
+        )}
       </div>
       <div
         data-testid={ids.overviewQualityBySprint}

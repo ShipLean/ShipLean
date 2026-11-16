@@ -17,7 +17,7 @@ public class InspectionMetricsApiTests : ApiFixture
         "cuts", "longest", "leftOut", "periodDetail", "quality", "bugs",
     ];
 
-    private static readonly string[] QualityKeys = ["escaping", "weighted", "foundBeforeRelease", "mergedPrs", "per100Prs", "escapingBySeverity"];
+    private static readonly string[] QualityKeys = ["escaping", "weighted", "foundBeforeRelease", "mergedPrs", "per100Prs", "escapingBySeverity", "changePctVsPrevious"];
 
     private static readonly string[] SeverityKeys = ["sev1", "sev2", "sev3", "sev4", "unset"];
 

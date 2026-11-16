@@ -47,6 +47,7 @@ export const story: WorkItemDto = {
   position: { columnId: null, done: false, laneId: null, columnOrder: null },
   backlogOrder: 'a0',
   links: [],
+  caused: [],
   children: [],
   originalSystem: null,
   revision: 7,

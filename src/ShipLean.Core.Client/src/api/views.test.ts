@@ -176,6 +176,10 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   ).toBe(true);
   expect(view.quarters.every((q) => q.quality !== null)).toBe(true);
   expect(view.headline.finished?.quality).not.toBeNull();
+  // The change chip (SHIP-2059): sprints compare with the one before; quarters and the range carry none.
+  expect(view.periods.some((p) => (p.quality?.changePctVsPrevious ?? 0) !== 0)).toBe(true);
+  expect(view.quarters.every((q) => q.quality?.changePctVsPrevious === null)).toBe(true);
+  expect(view.quality?.changePctVsPrevious).toBeNull();
   const bugs = view.periodDetail?.bugs ?? [];
   expect(bugs.some((b) => b.causedByKey !== null)).toBe(true);
   expect(bugs.some((b) => b.foundBeforeRelease)).toBe(true);

@@ -97,4 +97,25 @@ public class QualityAggregatorTests
         view.Periods.Select(period => period.Quality?.MergedPrs).ShouldBe([null, 1, null]);
         view.Periods[1].Quality.ShouldNotBeNull().Per100Prs.ShouldBe(100.0);
     }
+
+    // The change chip (SHIP-2059): escaping bugs against the started sprint before, in whole percent. Sprint 2 follows Sprint 1, which
+    // had none, so it has no change; Sprint 3 doubles; Sprint 4, running, halves. Quarters and the range carry none. Mutation: compare
+    // with the sprint after instead of the one before.
+    [Test]
+    public void Apply_WhenEscapingChangesBetweenSprints_ShouldGiveChangeAgainstThePreviousSprint()
+    {
+        var view = Apply(
+        [
+            Bug("SHIP-1", 2, At(9, 22, 9)),
+            Bug("SHIP-2", 2, At(10, 6, 9)),
+            Bug("SHIP-3", null, At(10, 7, 9)),
+            Bug("SHIP-4", 3, At(10, 20, 9)),
+        ]);
+
+        view.Periods.Select(period => period.Quality?.ChangePctVsPrevious).ShouldBe([null, 100, -50]);
+        view.Headline.Finished.ShouldNotBeNull().Quality.ShouldNotBeNull().ChangePctVsPrevious.ShouldBe(100);
+        view.Headline.SoFar.ShouldNotBeNull().Quality.ShouldNotBeNull().ChangePctVsPrevious.ShouldBe(-50);
+        view.Quarters.ShouldAllBe(quarter => quarter.Quality!.ChangePctVsPrevious == null);
+        view.Quality.ShouldNotBeNull().ChangePctVsPrevious.ShouldBeNull();
+    }
 }

@@ -94,6 +94,7 @@
       "autoLinked": null
     }
   ],
+  "caused": [],
   "children": [],
   "originalSystem": {
     "system": "jira",

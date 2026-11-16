@@ -9,7 +9,14 @@ import { OVERLINE } from './overviewStyles';
 /** A change under this many percent reads as the same (C2's ChangeChip). */
 const SAME_PCT = 3;
 
-function ChangeChip({ change }: { change: number }) {
+/** The change against the sprint before; down is better, for lead time and for escaping bugs alike. */
+export function ChangeChip({
+  change,
+  testId = ids.overviewLeadCardChange,
+}: {
+  change: number;
+  testId?: string;
+}) {
   const same = Math.abs(change) < SAME_PCT;
   // Lead time going down is better.
   const background = same
@@ -19,7 +26,7 @@ function ChangeChip({ change }: { change: number }) {
       : 'color-mix(in srgb, var(--color-danger) 16%, transparent)';
   return (
     <span
-      data-testid={ids.overviewLeadCardChange}
+      data-testid={testId}
       title="Against the sprint before"
       className={`rounded-full px-2 py-0.5 text-[length:var(--text-xs)] font-semibold text-ink ${same ? 'bg-sunken' : ''}`}
       style={{ background }}

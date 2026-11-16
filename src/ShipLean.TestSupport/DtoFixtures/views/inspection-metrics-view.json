@@ -46,7 +46,8 @@
           "sev3": 1,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": 0
       }
     },
     "soFar": {
@@ -79,7 +80,8 @@
           "sev3": 0,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": -100
       }
     },
     "quarterToDate": {
@@ -117,7 +119,8 @@
           "sev3": 2,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": null
       }
     },
     "lastQuarter": {
@@ -155,7 +158,8 @@
           "sev3": 0,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": null
       }
     }
   },
@@ -207,7 +211,8 @@
           "sev3": 0,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": null
       }
     },
     {
@@ -257,7 +262,8 @@
           "sev3": 1,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": 100
       }
     },
     {
@@ -316,7 +322,8 @@
           "sev3": 1,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": 0
       }
     },
     {
@@ -366,7 +373,8 @@
           "sev3": 0,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": -100
       }
     }
   ],
@@ -406,7 +414,8 @@
           "sev3": 0,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": null
       }
     },
     {
@@ -444,7 +453,8 @@
           "sev3": 2,
           "sev4": 0,
           "unset": 0
-        }
+        },
+        "changePctVsPrevious": null
       }
     }
   ],
@@ -984,7 +994,8 @@
         "sev3": 1,
         "sev4": 0,
         "unset": 0
-      }
+      },
+      "changePctVsPrevious": 0
     },
     "bugs": [
       {
@@ -1034,7 +1045,8 @@
       "sev3": 2,
       "sev4": 0,
       "unset": 0
-    }
+    },
+    "changePctVsPrevious": null
   },
   "bugs": [
     {
