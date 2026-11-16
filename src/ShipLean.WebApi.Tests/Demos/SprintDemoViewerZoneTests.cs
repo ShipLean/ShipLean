@@ -30,6 +30,8 @@ public class SprintDemoViewerZoneTests : ApiFixture
         var project = await AgentDispatchArrange.CreateAsync(database, Api.ActingAs(TestUser.Joel), connection: true, repository: true);
         _sprintId = await DemoRunArrange.NewSprintAsync(database, project.Project.Id);
         await database.ExecuteAsync("UPDATE sprint SET rollover_status = 'decided' WHERE id = @_sprintId", new { _sprintId });
+        await database.ExecuteAsync(
+            "INSERT INTO project_member (id, project_id, user_id, role) VALUES (gen_random_uuid(), @id, @user, 'member')", new { project.Project.Id, user = SeedIds.Users.Priya });
         using var scope = Host.Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IDemoRunStarter>().GetOrCreateItemAsync(project.Project.Id, _sprintId, "Sprint 23", CancellationToken.None);
         await database.ExecuteAsync(
