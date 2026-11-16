@@ -11,13 +11,13 @@ namespace ShipLean.Application.Features.Usage;
 [RegisterPerRequest]
 public sealed class InspectionMetricsUsage(IProjectAccess access, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)
 {
-    private static readonly HashSet<string> Views = new(StringComparer.Ordinal) { "overview", "leadtime", "period", "json" };
+    private static readonly HashSet<string> Views = new(StringComparer.Ordinal) { "overview", "leadtime", "period", "quality", "json" };
     private static readonly HashSet<string> Periods = new(StringComparer.Ordinal) { "finished", "running" };
     private static readonly HashSet<string> Froms = new(StringComparer.Ordinal) { "rail", "longest", "chart" };
 
     public Task ViewedAsync(Guid projectId, InspectionMetricsViewedDto viewed, CancellationToken cancellationToken)
         => ReportAsync(projectId, UsageEventNames.InspectionMetricsViewed, "api:ProjectUsage.InspectionMetricsViewed",
-            UsageProps.View, viewed.View, Views, "View must be overview, leadtime, period or json.", cancellationToken);
+            UsageProps.View, viewed.View, Views, "View must be overview, leadtime, period, quality or json.", cancellationToken);
 
     public Task PeriodOpenedAsync(Guid projectId, InspectionMetricsPeriodOpenedDto opened, CancellationToken cancellationToken)
         => ReportAsync(projectId, UsageEventNames.InspectionMetricsPeriodOpened, "api:ProjectUsage.InspectionMetricsPeriodOpened",
