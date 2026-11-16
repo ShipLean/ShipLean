@@ -15,6 +15,8 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     // The section shows the newest runs; it assembles each one for its timeline, so it is capped.
     public const int MaxSectionRuns = 50;
 
+    private const int MaxParallelReads = 4;
+
     private const int RowLineCap = 40;
 
     private static readonly Dictionary<string, string> Labels = new(StringComparer.Ordinal)
@@ -40,12 +42,27 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         var window = WindowOf(item);
         var found = await source.FindRunsAsync(new RunQuery(item.ProjectKey, item.ItemKey, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
         var now = time.GetUtcNow();
+        // The port reads one run per call, so the section reads its runs side by side (a few at a time) instead of one after the other.
+        using var slots = new SemaphoreSlim(MaxParallelReads);
+        var newest = found.Runs.OrderByDescending(r => r.StartedAt).Take(MaxSectionRuns).ToList();
+        var assembledRuns = await Task.WhenAll(newest.Select(async summary =>
+        {
+            await slots.WaitAsync(ct);
+            try
+            {
+                var raw = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, summary.RunId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
+                return raw is null ? null : assembler.Assemble(raw);
+            }
+            finally
+            {
+                slots.Release();
+            }
+        }));
         var rows = new List<AgentRunRowDto>();
         var waits = 0L;
-        foreach (var summary in found.Runs.OrderByDescending(r => r.StartedAt).Take(MaxSectionRuns))
+        for (var i = 0; i < newest.Count; i++)
         {
-            var raw = await source.GetRunAsync(new RunRef(item.ProjectKey, item.ItemKey, summary.RunId, window.From, window.To, settings.TenantOverride, settings.SelectorOverride), ct);
-            var assembled = raw is null ? null : assembler.Assemble(raw);
+            var (summary, assembled) = (newest[i], assembledRuns[i]);
             var agent = AgentId(summary.Agent);
             waits += assembled is null ? 0 : WaitMs(assembled);
             rows.Add(new AgentRunRowDto(
