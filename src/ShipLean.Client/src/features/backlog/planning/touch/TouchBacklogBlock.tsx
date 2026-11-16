@@ -1,5 +1,6 @@
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import type { BacklogSectionDto } from '@shiplean/core/api/views';
+import { itemCount } from '../itemCount';
 import { backlogTestIds as ids } from '../../testIds';
 import { sectionDropId } from '../planningTarget';
 import { SectionToggle } from '../SectionToggle';
@@ -47,7 +48,7 @@ export function TouchBacklogBlock({
           data-testid={ids.planningSectionCount}
           className="text-[length:var(--text-sm)] text-ink-muted"
         >
-          {section.rows.length} items · {section.points} pts
+          {itemCount(section.rows.length)} · {section.points} pts
         </span>
       </div>
       {forecast && velocity !== null && planned !== null ? (

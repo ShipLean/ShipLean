@@ -384,3 +384,37 @@ test('RowActionsSheet_WhenMovedToTopOnListWithPlanningCached_ShouldKeepItsSprint
   expect(item.placement.slot).toBe('first');
   expect(item.changes).toBeNull();
 });
+
+test('RowMore_ShouldShowTheCurrentSprintAndParentAsValues', async ({ mount, page }) => {
+  const placed = itemRow({
+    key: 'SHIP-7',
+    rank: 5,
+    revision: 5,
+    points: 8,
+    sprint: { id: 'sp25', name: 'Sprint 25', status: 'future' },
+    parent: {
+      id: 'f1',
+      key: 'SHIP-90',
+      type: { id: 'feature', name: 'Feature' },
+      title: 'Checkout v2',
+    },
+  });
+  await stubBacklog(page, backlogView([...ROWS, placed]), { sprints: SPRINTS });
+  await mount(<RowActionsHarness project={PROJECT} />, route);
+
+  const detail = (action: string) =>
+    page
+      .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${action}"]`)
+      .getByTestId(touchTestIds.actionSheetDetail);
+  await openMore(page, 'SHIP-7');
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Title of SHIP-7');
+  await expect(detail('sprint')).toHaveText('Sprint 25');
+  await expect(detail('parent')).toHaveText('Checkout v2');
+  await expect(detail('points')).toHaveText('8');
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  // A row in no sprint and with no parent says so.
+  await openMore(page, 'SHIP-1');
+  await expect(detail('sprint')).toHaveText('Backlog');
+  await expect(detail('parent')).toHaveText('None');
+});

@@ -24,7 +24,7 @@ export function TouchPullLine({ line }: { line: PullLine }) {
           type="button"
           data-testid={ids.pullGrip}
           aria-label="Move the pull line: drag it, or use the up and down buttons"
-          className="inline-grid min-h-[var(--touch-target)] min-w-[var(--touch-target)] touch-none place-items-center rounded-control border border-accent bg-panel text-accent"
+          className="inline-grid min-h-[var(--touch-target)] min-w-[var(--touch-target)] touch-none place-items-center rounded-control text-ink-muted"
           {...line.grip}
         >
           ⠿
@@ -52,7 +52,7 @@ export function TouchPullLine({ line }: { line: PullLine }) {
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {limit === null ? null : (
-          <span className="w-24 flex-none">
+          <span className="w-16 flex-none">
             <CapacityBar used={sum.after} capacity={limit} />
           </span>
         )}

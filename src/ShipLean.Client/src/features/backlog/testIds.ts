@@ -211,4 +211,7 @@ export const backlogTestIds = {
   queueEmpty: 'backlog-queue-empty',
   notEstimatedBanner: 'backlog-not-estimated-banner',
   notEstimatedEstimate: 'backlog-not-estimated-estimate',
+  planningSectionCapacityLink: 'backlog-planning-section-capacity-link',
+  bulkMoveBacklog: 'backlog-bulk-move-backlog',
+  bulkUnestimatedNote: 'backlog-bulk-unestimated-note',
 } as const;
