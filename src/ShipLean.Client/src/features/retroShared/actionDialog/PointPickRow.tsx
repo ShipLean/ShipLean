@@ -15,13 +15,13 @@ export function PointPickRow({
   return (
     <label
       data-testid={ids.retroActionPick}
-      className={`grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-1.5 rounded-[var(--radius-xs)] p-1 text-[length:var(--text-sm)] text-ink touch:min-h-[var(--touch-target)] touch:py-1.5 touch:text-[length:var(--text-base)] ${checked ? 'bg-signal-soft' : 'hover:bg-sunken'}`}
+      className={`grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-1.5 rounded-[var(--radius-xs)] p-1 text-[length:var(--text-sm)] text-ink touch:min-h-10 touch:items-center touch:gap-3 touch:py-1.5 touch:text-[length:var(--text-base)] ${checked ? 'bg-signal-soft' : 'hover:bg-sunken'}`}
     >
       <input
         type="checkbox"
         data-testid={ids.retroActionPickCheck}
         checked={checked}
-        className="mt-0.5 accent-[var(--color-accent)]"
+        className="mt-0.5 accent-[var(--color-accent)] touch:mt-0 touch:size-[22px]"
         onChange={onToggle}
       />
       <span>
