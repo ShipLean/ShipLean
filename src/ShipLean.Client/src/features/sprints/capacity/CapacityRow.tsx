@@ -86,7 +86,7 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
         <span data-testid={ids.capacityPoints}>{points ?? '—'}</span>
         <span className="ml-1 text-ink-muted">pts</span>
       </td>
-      <td className={`${cell} touch:order-5 touch:col-span-3 touch:min-w-0`}>
+      <td className={`${cell} touch:order-5 touch:col-span-4 touch:min-w-0`}>
         {readOnly ? (
           <span data-testid={ids.capacityNote} className="text-ink-muted">
             {row.note}

@@ -51,7 +51,7 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
   expect(boxes[0]!.x).toBeLessThan(boxes[1]!.x);
   expect(boxes[1]!.x).toBeLessThan(boxes[2]!.x);
   for (const box of boxes) expect(box.y + box.height).toBeLessThan(firstRow.y);
-  // Two lines per member: the days field sits under the name, the note beside it.
+  // The days field sits under the name; the note gets a line of its own under that.
   const name = (await page.getByTestId(ids.capacityPoints).first().boundingBox())!;
   const days = (await page.getByTestId(ids.capacityDays).first().boundingBox())!;
   expect(days.y).toBeGreaterThan(name.y + name.height - 1);
@@ -73,15 +73,18 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
 test('Capacity_WhenEditingDaysOnPhone_ShouldShowTheWholeNoteField', async ({ mount, page }) => {
   await open(page, mount);
   // The edited row shows reset beside the days field, which widened that line and cut the note field off (R1a).
-  await page.getByTestId(ids.capacityDays).first().fill('6');
-  await expect(page.getByTestId(ids.capacityDaysReset)).toBeVisible();
-
   const row = page.getByTestId(ids.capacityRow).first();
+  await row.getByTestId(ids.capacityDays).fill('6');
+  await expect(row.getByTestId(ids.capacityDaysReset)).toBeVisible();
+
   const note = row.getByTestId(ids.capacityNote);
   const rowBox = (await row.boundingBox())!;
   const noteBox = (await note.boundingBox())!;
   expect(noteBox.x).toBeGreaterThanOrEqual(rowBox.x);
   expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width);
+  // On a line of its own, under the days field and reset.
+  const daysBox = (await row.getByTestId(ids.capacityDays).boundingBox())!;
+  expect(noteBox.y).toBeGreaterThanOrEqual(daysBox.y + daysBox.height);
   // Its placeholder fits inside the field, not cut off at the right edge.
   const room = await note.evaluate((el) => {
     const input = el as HTMLInputElement;

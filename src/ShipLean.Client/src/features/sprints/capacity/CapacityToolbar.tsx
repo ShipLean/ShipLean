@@ -38,11 +38,11 @@ export function CapacityToolbar({
     // At 900px and below: Copy and ⋯ More in one row; Save is the SaveBar's.
     return (
       <div className="grid gap-1">
-        <div data-testid={ids.capacityPhoneToolbar} className="flex items-center gap-2">
+        <div data-testid={ids.capacityPhoneToolbar} className="flex items-center justify-between gap-2">
           <button
             type="button"
             data-testid={ids.capacityCopy}
-            className="inline-flex h-[var(--touch-target)] min-w-0 flex-1 items-center justify-center rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] font-medium text-ink active:bg-signal-soft disabled:opacity-50"
+            className="inline-flex h-[var(--touch-target)] min-w-0 items-center justify-center rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] font-medium text-ink active:bg-signal-soft disabled:opacity-50"
             disabled={copyBlocked !== undefined}
             onClick={onCopy}
           >
@@ -53,6 +53,7 @@ export function CapacityToolbar({
             </span>
           </button>
           <MoreButton
+            variant="bordered"
             actions={[
               { id: 'clear', label: 'Clear', tone: 'danger', onSelect: onClear },
               ...addable.map((user) => ({
