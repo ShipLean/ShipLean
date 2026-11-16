@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -8,8 +9,11 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Contracts.Users;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.WebApi.Tests.Sprints.Api;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
@@ -20,9 +24,11 @@ public class AgentSessionsReadTests : ApiFixture
 {
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
 
-    private async Task<AgentPanelDto> PanelAsync(Guid itemId)
+    private Task<AgentPanelDto> PanelAsync(Guid itemId) => PanelAsync(itemId, null);
+
+    private async Task<AgentPanelDto> PanelAsync(Guid itemId, TestUser? user)
     {
-        using var response = await Api.GetAsync($"api/work-items/{itemId}/agent-sessions");
+        using var response = await (user is null ? Api : Api.ActingAs(user)).GetAsync($"api/work-items/{itemId}/agent-sessions");
         var text = await response.Content.ReadAsStringAsync();
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         return JsonSerializer.Deserialize<AgentPanelDto>(text, Wire)!;
@@ -46,6 +52,45 @@ public class AgentSessionsReadTests : ApiFixture
         => database.ExecuteAsync(
             "INSERT INTO agent_activity (id, session_id, type, body, ephemeral, created_at) VALUES (@id, @sessionId, @type, @body, @ephemeral, @at)",
             new { id = Guid.CreateVersion7(), sessionId, type, body, ephemeral, at });
+
+    // Mutation: pass TimeZoneInfo.Utc instead of the viewer's zone to the Relative calls in AgentPanelReader. LateEveningUtc is 20:00 UTC, the next day in Bangkok; the expected day is plain arithmetic on it, not DisplayDate.
+    [Test]
+    public async Task Panel_WhenViewerIsInBangkok_ShouldLabelASessionByTheBangkokDay()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        await database.ExecuteAsync(
+            "INSERT INTO project_member (id, project_id, user_id, role) VALUES (@id, @projectId, @userId, 'admin')",
+            new { id = Guid.NewGuid(), projectId = arranged.Project.Id, userId = SeedIds.Users.Mei });
+        var item = await arranged.CreateItemAsync(Api);
+        var at = ViewerZoneTestData.LateEveningUtc;
+        var session = await InsertSessionAsync(database, arranged, item.Id, "completed", at);
+        await InsertActivityAsync(database, session, "response", "Done.", ephemeral: false, at);
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
+
+        var panel = await PanelAsync(item.Id, TestUser.Mei);
+
+        var shown = panel.Sessions.ShouldHaveSingleItem();
+        var expected = at.AddHours(7).ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+        shown.StartedLabel.ShouldBe(expected);
+        shown.LastActivityLabel.ShouldBe(expected);
+        shown.EndedLabel.ShouldBe(expected);
+        shown.Activities.ShouldHaveSingleItem().CreatedLabel.ShouldBe(expected);
+    }
+
+    // The fallback: a user with no zone (Joel here) reads UTC labels.
+    [Test]
+    public async Task Panel_WhenViewerHasNoZone_ShouldLabelASessionByTheUtcDay()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        await InsertSessionAsync(database, arranged, item.Id, "completed", ViewerZoneTestData.LateEveningUtc);
+
+        var panel = await PanelAsync(item.Id);
+
+        panel.Sessions.ShouldHaveSingleItem().StartedLabel.ShouldBe(ViewerZoneTestData.LateEveningUtc.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
+    }
 
     [Test]
     public async Task Sessions_WhenProjectHasNoConnectionAndNoSession_ShouldBeHidden()
@@ -113,7 +158,7 @@ public class AgentSessionsReadTests : ApiFixture
         first.Live.ShouldBeTrue();
         first.StopRequested.ShouldBeFalse();
         first.ConnectionName.ShouldStartWith("Relay ");
-        first.StartedLabel.ShouldBe(ShipLean.Core.DisplayDate.Relative(first.StartedAt, TimeProvider.System));
+        first.StartedLabel.ShouldBe(ShipLean.Core.DisplayDate.Relative(first.StartedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
         first.EndedLabel.ShouldBeNull();
         first.Urls.ShouldBe([new AgentUrlDto("Pull request", "https://github.com/ShipLean/ShipLean/pull/9")]);
         first.Plan.ShouldBe([new AgentPlanStepDto("Write the test", "completed"), new AgentPlanStepDto("Fix it", "inProgress")]);
