@@ -9,6 +9,7 @@ import { RowActionsHarness } from '../ct/RowActionsHarness';
 import { rowActionsHarnessIds } from '../ct/rowActionsHarnessIds';
 import { stubBacklog } from '../ct/stubApi';
 import { ListMode } from '../list/ListMode';
+import { PlanningMode } from '../planning/PlanningMode';
 import { backlogTestIds as ids } from '../testIds';
 
 // The row ⋯, the Points sheet and the not-estimated queue on a phone (SHIP-716 D9). Runs in the CT phone project.
@@ -205,6 +206,23 @@ test('PointsSheet_WhenKeepTheirsAfterAConflict_ShouldStayOnTheItemWithNoError', 
   expect(server.patches).toHaveLength(1);
 });
 
+test('PointsSheet_WhileASaveIsInFlight_ShouldDisableSkip', async ({ mount, page }) => {
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]), { holdFirstPatch: held });
+  await mount(<ListMode project={PROJECT} />, route);
+  await openQueue(page);
+
+  await scale(page, 5).tap();
+
+  await expect(page.getByTestId(ids.queueSkip)).toBeDisabled();
+  release();
+  await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-3');
+  await expect(page.getByTestId(ids.queueSkip)).toBeEnabled();
+});
+
 test('PointsSheet_FromTheQueue_ShouldShowPositionAndSkip', async ({ mount, page }) => {
   const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
   await mount(<ListMode project={PROJECT} />, route);
@@ -261,7 +279,9 @@ test('EstimateSheet_OnPlanning_ShouldKeepEveryRowBehindItAndDraggingOn', async (
   page,
 }) => {
   await stubBacklog(page, { ...planningView(), review: review({ unestimated: ['id-SHIP-171'] }) });
-  await mount(<RowActionsHarness project={PROJECT} mode="planning" />, route);
+  await mount(<PlanningMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories?mode=planning' },
+  });
   await expect(rowOf(page, 'SHIP-170')).toBeVisible();
   await openQueue(page);
 
