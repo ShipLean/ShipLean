@@ -42,6 +42,7 @@ svg text { fill: currentColor; }
 /* The SHIP-713 top bar, as ../screens/shiplean.css draws it under 900px. */
 .appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: var(--space-1); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) var(--space-1) 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .tbtn { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.back-ch { font-size: var(--text-lg); text-decoration: none; }
 .crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: var(--space-1); font-size: var(--text-base); color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
 .crumbs > * { flex: none; }
 .crumbs b { color: var(--color-text); font-size: var(--text-md); font-weight: var(--weight-semibold); }
@@ -183,7 +184,6 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
-  <symbol id="i-back" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
   <symbol id="i-close" viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
   <symbol id="i-link" viewBox="0 0 16 16"><path d="M6.5 9.5l3-3M7 4.5l1.2-1.2a2.6 2.6 0 013.7 3.7L10.7 8.2M9 11.5l-1.2 1.2a2.6 2.6 0 01-3.7-3.7L5.3 7.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
@@ -195,7 +195,7 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 </svg>
 
 <header class="appbar" aria-label="Top bar (SHIP-713 touch shell)">
-  <a class="tbtn" href="#" data-toast="Back to SHIP-101" aria-label="Back to SHIP-101"><svg class="ic" width="18" height="18"><use href="#i-back"/></svg></a>
+  <a class="tbtn back-ch" href="#" data-toast="Back to SHIP-101" aria-label="Back to SHIP-101"><span aria-hidden="true">‹</span></a>
   <nav class="crumbs" aria-label="You are here"><span>SHIP</span><span>›</span><span>Backlogs</span><span>›</span><span>SHIP-101</span><span>›</span><b>design-v0.2.md</b></nav>
   <span class="live" title="Real-time updates connected" aria-label="Live"></span>
   <button class="tbtn" type="button" aria-label="Quick search"><svg class="ic"><use href="#i-search"/></svg></button>
