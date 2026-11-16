@@ -107,7 +107,7 @@ export function RailTask({ view, bar, onSelect }: Common & { bar: TimelineBarDto
           </div>
         )}
         {bar.lastCommitLabel !== null && <div>Last commit {bar.lastCommitLabel}</div>}
-        {bar.onCriticalPath &&<div className="font-medium">On the critical path</div>}
+        {bar.onCriticalPath && <div className="font-medium">On the critical path</div>}
       </div>
       <section>
         <h3 className="m-0 mb-1 text-[length:var(--text-sm)] font-semibold">History</h3>
