@@ -80,4 +80,6 @@ public static class TaskboardTestIds
     public const string TaskTitle = "taskboard-task-title";
     public const string TaskError = "taskboard-task-error";
     public const string ClosedLineHere = "taskboard-closed-line-here";
+    public const string FilterFaces = "taskboard-filter-faces";
+    public const string FilterCount = "taskboard-filter-count";
 }

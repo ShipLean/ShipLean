@@ -31,7 +31,7 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
 
   await rows.nth(1).tap();
   await expect(rows.nth(1).getByRole('checkbox')).toBeChecked();
-  await expect(filter).toHaveText('Filter (1)');
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('1');
   const assignees = () =>
     page
       .getByTestId(ids.card)
@@ -44,6 +44,26 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
   await page.getByTestId(ids.filterSheetClear).tap();
   await expect(rows.nth(1).getByRole('checkbox')).not.toBeChecked();
   await expect(filter).toHaveText('Filter');
+});
+
+test('PhoneToolbar_WhenFiltered_ShouldShowChosenFacesAndCount', async ({ mount, page }) => {
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(slot, route);
+  await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+  const filter = page.getByTestId(ids.filterButton);
+  await expect(filter.getByTestId(ids.filterFaces)).toHaveCount(0);
+  await expect(filter.getByTestId(ids.filterCount)).toHaveCount(0);
+
+  await filter.tap();
+  const rows = page.getByTestId(ids.filterSheetRow);
+  await rows.nth(0).tap();
+  await rows.nth(1).tap();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('2');
+  await expect(
+    filter.getByTestId(ids.filterFaces).getByTestId(componentTestIds.avatar),
+  ).toHaveCount(2);
 });
 
 test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async ({
@@ -125,6 +145,21 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
     await expect(page.getByTestId(touchTestIds.sheet)).toHaveScreenshot(
       `phone-toolbar-more.${theme}.png`,
+    );
+  });
+}
+
+for (const theme of THEMES) {
+  test(`PhoneToolbar_WhenFiltered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+    await page.getByTestId(ids.filterButton).tap();
+    await page.getByTestId(ids.filterSheetRow).nth(1).tap();
+    await page.getByTestId(touchTestIds.sheetClose).tap();
+    await expect(page.getByTestId(ids.toolbar)).toHaveScreenshot(
+      `phone-toolbar-filtered.${theme}.png`,
     );
   });
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { UserRef } from '@shiplean/core/api/refs';
+import { Avatar } from '../../../components/Avatar';
 import type { SheetAction } from '../../../touch/ActionSheet';
 import { MoreButton } from '../../../touch/MoreButton';
 import type { TaskboardGrouping } from '../taskboardApi';
@@ -23,6 +24,8 @@ export function TaskboardToolbar({
   onFaceToggle,
   onFacesClear,
   more,
+  moreLabel = 'More',
+  moreSubtitle,
   onAddStory,
 }: {
   grouping: TaskboardGrouping;
@@ -35,6 +38,9 @@ export function TaskboardToolbar({
   onFacesClear: () => void;
   /** The ⋯ sheet's actions at 900px and below; each board passes its own. */
   more: readonly SheetAction[];
+  /** The ⋯ sheet's title ("Feature board", "Taskboard") and the line under it. */
+  moreLabel?: string;
+  moreSubtitle?: string;
   onAddStory: () => void;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -52,21 +58,37 @@ export function TaskboardToolbar({
       <button
         type="button"
         data-testid={ids.filterButton}
-        className="btn hidden touch:inline-flex touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+        className={`btn-ghost hidden gap-1.5 touch:inline-flex touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)] ${faces.size > 0 ? 'border-signal text-ink' : ''}`}
         onClick={() => setFilterOpen(true)}
       >
-        Filter{faces.size > 0 ? ` (${faces.size})` : ''}
+        <FunnelIcon />
+        {faces.size > 0 ? (
+          <span data-testid={ids.filterFaces} className="flex -space-x-1">
+            {[...faces].slice(0, 3).map((id) => (
+              <Avatar key={id} {...(people.find((p) => p.id === id) ?? {})} />
+            ))}
+          </span>
+        ) : null}
+        Filter
+        {faces.size > 0 ? (
+          <span
+            data-testid={ids.filterCount}
+            className="rounded-full bg-signal px-1.5 text-[length:var(--text-xs)] text-signal-ink"
+          >
+            {faces.size}
+          </span>
+        ) : null}
       </button>
       <button
         type="button"
         data-testid={ids.settingsOpen}
-        className="btn touch:hidden"
+        className="btn-ghost touch:hidden"
         onClick={openSettings}
       >
         ⚙ Settings
       </button>
       <span className="hidden touch:contents">
-        <MoreButton actions={more} label="More" />
+        <MoreButton actions={more} label={moreLabel} subtitle={moreSubtitle} variant="bordered" />
       </span>
       <button
         type="button"
@@ -87,5 +109,21 @@ export function TaskboardToolbar({
         onClear={onFacesClear}
       />
     </div>
+  );
+}
+
+function FunnelIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="size-3.5 flex-none"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    >
+      <path d="M2 3h12l-4.5 5.5V13l-3-1.5V8.5z" />
+    </svg>
   );
 }
