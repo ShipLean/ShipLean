@@ -32,14 +32,14 @@ export function SprintRow({
           </span>
         )}
       </span>
-      <span className="flex items-center justify-end gap-2 text-[length:var(--text-xs)] text-ink-muted touch:col-start-2 touch:row-start-2 touch:justify-start">
+      <span className="flex items-center justify-end gap-2 text-[length:var(--text-xs)] text-ink-muted">
         {current ? (
           <span className="rounded-full bg-signal-soft px-2 py-px font-medium text-ink">
             current
           </span>
         ) : null}
         <span>{datesLabel}</span>
-        <span className="min-w-[62px] text-right font-mono touch:order-first touch:min-w-0 touch:text-left text-ink">
+        <span className="min-w-[62px] text-right font-mono text-ink">
           {projectKey}
         </span>
       </span>

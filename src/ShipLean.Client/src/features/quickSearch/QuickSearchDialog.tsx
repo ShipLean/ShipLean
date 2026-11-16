@@ -10,6 +10,7 @@ import {
   type Ref,
 } from 'react';
 import { useModalFocus } from '../../components/useModalFocus';
+import { useTouchShell } from '../../touch/useTouchShell';
 import { QuickSearchFooter } from './QuickSearchFooter';
 import { ActionRow } from './rows/ActionRow';
 import { ItemRow } from './rows/ItemRow';
@@ -56,9 +57,13 @@ export function QuickSearchDialog({
   const rows = results.groups.flatMap((group) => group.rows);
   // The highlight belongs to one query and row list; when either changes it is back on the first row.
   const signature = `${query}\n${rows.map((row) => row.id).join('\n')}`;
-  const [highlight, setHighlight] = useState({ signature, index: 0 });
-  const index = highlight.signature === signature ? highlight.index : 0;
-  const move = (to: number) => setHighlight({ signature, index: to });
+  // At touch widths no row looks picked until the person moves the highlight (arrow keys); Enter still opens the first.
+  const { touch } = useTouchShell();
+  const [highlight, setHighlight] = useState({ signature, index: 0, moved: false });
+  const current = highlight.signature === signature ? highlight : null;
+  const index = current?.index ?? 0;
+  const showHighlight = !touch || (current?.moved ?? false);
+  const move = (to: number) => setHighlight({ signature, index: to, moved: true });
   const optionId = (at: number) => `${listId}-option-${at}`;
 
   useEffect(() => {
@@ -168,6 +173,20 @@ export function QuickSearchDialog({
             onKeyDown={onInputKeyDown}
             className="min-w-0 flex-1 bg-transparent text-[length:var(--text-md)] text-ink outline-none placeholder:text-ink-muted"
           />
+          {query !== '' ? (
+            <button
+              type="button"
+              data-testid={ids.clear}
+              aria-label="Clear search"
+              className="hidden size-(--touch-target) flex-none items-center justify-center rounded-control border-0 bg-transparent text-ink-muted touch:inline-flex"
+              onClick={() => {
+                onQueryChange('');
+                input.current?.focus();
+              }}
+            >
+              ✕
+            </button>
+          ) : null}
           <kbd className="rounded-xs border border-edge bg-canvas px-1.5 font-mono text-[length:var(--text-2xs)] text-ink-muted touch:hidden">
             Esc
           </kbd>
@@ -255,7 +274,7 @@ export function QuickSearchDialog({
                       data-highlighted={highlighted}
                       {...rowDataAttributes(row)}
                       className={`grid min-h-[34px] cursor-pointer grid-cols-[16px_1fr_auto] items-center gap-x-2.5 rounded-control px-2 py-1 touch:min-h-[52px] ${
-                        highlighted ? 'bg-signal-soft' : ''
+                        highlighted && showHighlight ? 'bg-signal-soft' : ''
                       }`}
                       onMouseEnter={() => move(position)}
                       onClick={() => pick(row)}

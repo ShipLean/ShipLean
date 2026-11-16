@@ -22,6 +22,20 @@ test('Toast_AtTouchWidth_ShouldSpanTheWidthAboveTheSafeArea', async ({ mount, pa
   expect(dismiss.x + dismiss.width).toBeGreaterThan(box.x + box.width - 24);
 });
 
+test('Toast_AtTouchWidth_ShouldGiveTheDismissCrossATouchTargetSizedHitArea', async ({
+  mount,
+  page,
+}) => {
+  await mount(<ToastHarness message="Priya moved SHIP-141 while you were editing" />);
+  await page.getByTestId(harness.ctShowToast).tap();
+  const dismiss = page.getByTestId(ids.toast).getByTestId(ids.toastDismiss);
+  await expect(dismiss).toBeVisible();
+
+  const box = (await dismiss.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(32);
+  expect(box.height).toBeGreaterThanOrEqual(32);
+});
+
 for (const theme of THEMES) {
   test(`Toast_AtTouchWidth_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });

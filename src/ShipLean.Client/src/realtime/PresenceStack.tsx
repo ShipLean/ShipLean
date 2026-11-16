@@ -40,7 +40,7 @@ export function PresenceStack({
           data-testid={ids.presenceCount}
           aria-expanded={open}
           aria-label={label}
-          className="inline-flex size-(--touch-target) items-center justify-center rounded-control border-0 bg-transparent text-[length:var(--text-sm)] font-semibold text-ink"
+          className="inline-flex h-(--touch-target) min-w-(--touch-target) items-center justify-center rounded-full px-2.5 border-0 bg-sunken text-[length:var(--text-sm)] font-semibold text-ink"
           onClick={() => setOpen(true)}
         >
           +{users.length}

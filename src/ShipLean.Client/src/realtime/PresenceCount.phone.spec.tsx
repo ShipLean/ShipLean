@@ -40,6 +40,20 @@ test('PresenceCount_WhenFourOthersHere_ShouldShowPlusFourAndListThemInSheet', as
   await expect(sheet).toHaveCount(0);
 });
 
+test('Presence_ShouldShowTheCountInAPill', async ({ mount, page }) => {
+  await mount(
+    <PresenceStack userIds={['user-1', 'user-2', 'user-3']} members={members} meId="user-1" />,
+  );
+  const count = page.getByTestId(ids.presenceCount);
+  await expect(count).toHaveText('+2');
+
+  // A soft filled background and full rounding: not transparent, and the radius is at least half the height.
+  await expect(count).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  const radius = await count.evaluate((node) => parseFloat(getComputedStyle(node).borderRadius));
+  const box = (await count.boundingBox())!;
+  expect(radius).toBeGreaterThanOrEqual(box.height / 2);
+});
+
 test('LiveDot_WhenReconnecting_ShouldSayReconnecting', async ({ mount, page }) => {
   const dot = page.getByTestId(ids.liveDot);
   const component = await mount(<LiveDot state="live" />);

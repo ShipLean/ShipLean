@@ -19,4 +19,5 @@ export const quickSearchTestIds = {
   note: 'quick-search-note',
   scrim: 'quick-search-scrim',
   cancel: 'quick-search-cancel',
+  clear: 'quick-search-clear',
 } as const;
