@@ -109,11 +109,12 @@ test('SprintHeader_WhenMoreTappedOnPhone_ShouldOfferEditGoalEditSprintAllSprints
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
+  // Each row's text is its label, then its hint or › (SPRINT-3).
   expect(await actionLabels(page)).toEqual([
     'Edit goal',
-    'Edit sprint',
-    'All sprints',
-    'Close sprint',
+    'Edit sprintName, dates and goal',
+    'All sprints›',
+    'Close sprintChoose where unfinished work goes',
   ]);
   await action(page, 'all-sprints').tap();
   await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints');
@@ -164,7 +165,11 @@ test('SprintHeader_WhenSprintEndedAndClosed_ShouldLeaveCloseSprintOut', async ({
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
-  expect(await actionLabels(page)).toEqual(['Edit goal', 'Edit sprint', 'All sprints']);
+  expect(await actionLabels(page)).toEqual([
+    'Edit goal',
+    'Edit sprintName, dates and goal',
+    'All sprints›',
+  ]);
 });
 
 test('SprintHeader_WhenPickerTappedOnPhone_ShouldListPastCurrentFutureWithTheSprintTicked', async ({
