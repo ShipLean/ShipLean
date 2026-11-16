@@ -143,9 +143,11 @@ phonePageShots([
             );
           await expect(entries.last()).toHaveAttribute('data-row', 'unparented');
           await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
-          await entries.last().evaluate((el) =>
-            el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
-          );
+          await entries
+            .last()
+            .evaluate((el) =>
+              el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+            );
           await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
         },
       ],

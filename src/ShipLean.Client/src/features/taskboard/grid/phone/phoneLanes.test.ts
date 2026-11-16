@@ -91,13 +91,9 @@ describe('phoneLanes', () => {
     const loose: TaskboardRowDto = { parent: null, offerResolve: false, cells: [] };
     // Unparented arrives first in the input; A and C are closed, between and before the open B and D.
     const { entries } = phoneLanes([loose, ...ROWS], 'new', new Set());
-    expect(entries.map((e) => `${e.kind}:${e.kind === 'lane' ? e.lane.rowId : e.story.rowId}`)).toEqual([
-      'closed:A',
-      'lane:B',
-      'closed:C',
-      'lane:D',
-      'lane:unparented',
-    ]);
+    expect(
+      entries.map((e) => `${e.kind}:${e.kind === 'lane' ? e.lane.rowId : e.story.rowId}`),
+    ).toEqual(['closed:A', 'lane:B', 'closed:C', 'lane:D', 'lane:unparented']);
   });
 
   it('PhoneLanes_WhenFilterHidesTasks_ShouldCountTheHiddenOnes', () => {

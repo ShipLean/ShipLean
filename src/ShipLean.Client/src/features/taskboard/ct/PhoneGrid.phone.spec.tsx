@@ -84,7 +84,9 @@ test('ClosedStoryLine_WhenToggled_ShouldShowItsTasks', async ({ mount, page }) =
   const line = closedPage.locator(`[data-testid="${ids.closedLine}"][data-row="id-SHIP-138"]`);
   // The Closed page has SHIP-138's one task: the line says so.
   await expect(line.getByTestId(ids.closedLineHere)).toHaveText('1 here');
-  await expect(closedPage.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`)).toHaveCount(0);
+  await expect(
+    closedPage.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-138"]`),
+  ).toHaveCount(0);
 
   await line.getByTestId(ids.rowToggle).tap();
 

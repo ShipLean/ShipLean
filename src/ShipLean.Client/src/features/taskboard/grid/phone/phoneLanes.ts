@@ -23,8 +23,7 @@ export interface ClosedStory<Row extends TaskboardRowDto = TaskboardRowDto> {
 
 /** One entry of a page's list: an open story's lane or a closed story's line. */
 export type PhoneEntry<Row extends TaskboardRowDto = TaskboardRowDto> =
-  | { kind: 'lane'; lane: StoryLane<Row> }
-  | { kind: 'closed'; story: ClosedStory<Row> };
+  { kind: 'lane'; lane: StoryLane<Row> } | { kind: 'closed'; story: ClosedStory<Row> };
 
 /** The id a story row goes by: its story's id, or `unparented`. */
 export const storyRowId = (row: TaskboardRowDto): string => row.parent?.id ?? 'unparented';
