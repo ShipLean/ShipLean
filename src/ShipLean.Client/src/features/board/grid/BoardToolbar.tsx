@@ -54,7 +54,7 @@ export function BoardToolbar({
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const toggleFilter = () => {
-    if (!filterOpen) postBoardFilterOpened(projectId).catch(() => undefined);
+    if (!filterOpen) postBoardFilterOpened(projectId, level).catch(() => undefined);
     setFilterOpen(!filterOpen);
   };
   const lanes = useBoardLanes(projectId, boardId);

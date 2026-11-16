@@ -41,10 +41,11 @@ public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage tim
 
     [HttpPost("board-filter-opened")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
-    public async Task<NoContentResult> BoardFilterOpened(Guid id, CancellationToken cancellationToken)
+    public async Task<NoContentResult> BoardFilterOpened(Guid id, BoardFilterOpenedDto request, CancellationToken cancellationToken)
     {
-        await boardFilter.OpenedAsync(id, cancellationToken);
+        await boardFilter.OpenedAsync(id, request, cancellationToken);
         return NoContent();
     }
 

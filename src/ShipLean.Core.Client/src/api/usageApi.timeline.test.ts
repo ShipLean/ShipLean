@@ -34,13 +34,13 @@ describe('timeline usage', () => {
 });
 
 describe('board filter usage', () => {
-  it('postBoardFilterOpened POSTs an empty body', async () => {
+  it('postBoardFilterOpened POSTs the board level', async () => {
     const fetchStub = stubFetch(noContent());
-    await postBoardFilterOpened('p/1');
+    await postBoardFilterOpened('p/1', 'features');
     expect(sent(fetchStub)).toEqual({
       url: '/api/projects/p%2F1/usage/board-filter-opened',
       method: 'POST',
-      body: {},
+      body: { level: 'features' },
     });
   });
 
