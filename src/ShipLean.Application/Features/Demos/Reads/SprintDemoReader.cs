@@ -129,7 +129,7 @@ public sealed class SprintDemoReader(
             file.SizeBytes,
             duration,
             SprintDemoLabels.Duration(duration),
-            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, now, viewerZone.Zone)}" : string.Empty);
+            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, time.GetUtcNow(), viewerZone.Zone)}" : string.Empty);
     }
 
     // A missing, archived or unreadable chapters file is no chapters, not an error.

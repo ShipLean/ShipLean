@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Npgsql;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Demos;
 using ShipLean.AcceptanceTests.Pages.Realtime;
@@ -28,13 +29,22 @@ public class DemoViewerZoneTests : BangkokViewerTest
         await tab.CreateDemoAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "working", new() { Timeout = 30_000 });
 
-        var requestedAt = await ReadScalarAsync<DateTimeOffset>($"SELECT demo_requested_at FROM sprint WHERE id = '{sprint}'");
-        var expiresAt = await ReadScalarAsync<DateTimeOffset>($"SELECT demo_upload_expires_at FROM sprint WHERE id = '{sprint}'");
+        var requestedAt = await ReadInstantAsync($"SELECT demo_requested_at FROM sprint WHERE id = '{sprint}'");
+        var expiresAt = await ReadInstantAsync($"SELECT demo_upload_expires_at FROM sprint WHERE id = '{sprint}'");
         var requested = "Requested " + ExpectedLabels.DayAt(requestedAt, ViewerZoneTestData.Bangkok);
         var expiry = "Link valid until " + ExpectedLabels.DayAt(expiresAt, ViewerZoneTestData.Bangkok);
         requested.ShouldNotBe("Requested " + ExpectedLabels.DayAt(requestedAt, TimeZoneInfo.Utc));
         await Expect(tab.StatusBand).ToContainTextAsync(requested);
         await Expect(tab.StatusBand).ToContainTextAsync(expiry);
+    }
+
+    private async Task<DateTimeOffset> ReadInstantAsync(string sql)
+    {
+        await using var connection = new NpgsqlConnection(ConnectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(sql, connection);
+        var value = await command.ExecuteScalarAsync() ?? throw new InvalidOperationException($"No row for: {sql}");
+        return value is DateTime utc ? new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)) : (DateTimeOffset)value;
     }
 
     private async Task ArrangeAgentAsync()
