@@ -143,7 +143,8 @@ export function StateRow({
             data-testid={settingsTestIds.stateName}
             id={`settings-field-state-${row.id}`}
             aria-label="State name"
-            className={`${field} touch:min-w-0 touch:flex-1`}
+            // w-0: an input's min-content is its intrinsic width (~20 characters), which pushed the row past 390px.
+            className={`${field} touch:w-0 touch:flex-1`}
             value={row.name}
             maxLength={30}
             disabled={readOnly}
@@ -214,11 +215,12 @@ export function StateRow({
         ) : null}
       </td>
       <td
-        data-testid={settingsTestIds.stateColumn}
         className={`px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] ${editable ? 'touch:pl-10' : ''}`}
       >
-        {/* The label is CSS so the cell's text stays the column name; \00b7 is the middle dot (·). */}
-        <span className="touch:before:content-['Board_column_\00b7__']">{column ?? 'Not mapped'}</span>
+        <span data-testid={settingsTestIds.stateColumnLabel} className="hidden touch:inline">
+          Board column ·{' '}
+        </span>
+        <span data-testid={settingsTestIds.stateColumn}>{column ?? 'Not mapped'}</span>
       </td>
       <td className="px-3 py-2 text-right touch:contents">
         {readOnly ? null : (

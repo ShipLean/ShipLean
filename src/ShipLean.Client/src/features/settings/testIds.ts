@@ -327,4 +327,5 @@ export const settingsTestIds = {
   timeZoneError: 'settings-time-zone-error',
   timeZoneChoicesError: 'settings-time-zone-choices-error',
   stateHandle: 'settings-state-handle',
+  stateColumnLabel: 'settings-state-column-label',
 } as const;

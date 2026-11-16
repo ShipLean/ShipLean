@@ -153,16 +153,23 @@ test('SettingsStatesPhone_WhenColumnIsLong_ShouldShowItWholeOnItsOwnLine', async
   const unmapped = rows.nth(2).getByTestId(ids.stateColumn);
   await expect(long).toHaveText('Ready for QA sign-off and release');
   await expect(unmapped).toHaveText('Not mapped');
+  for (const i of [1, 2]) {
+    // The label is its own element, shown only at touch, so the column cell's text stays the column name.
+    await expect(rows.nth(i).getByTestId(ids.stateColumnLabel)).toBeVisible();
+    await expect(rows.nth(i).getByTestId(ids.stateColumnLabel)).toHaveText('Board column ·');
+  }
   for (const cell of [long, unmapped]) {
-    const fits = await cell.evaluate((e) => ({
-      clipped: e.scrollWidth > e.clientWidth,
-      label: e.firstElementChild ? getComputedStyle(e.firstElementChild, '::before').content : '',
-      ellipsis: getComputedStyle(e).textOverflow === 'ellipsis',
-      wide: e.getBoundingClientRect().width,
-    }));
+    const fits = await cell.evaluate((e) => {
+      const td = e.parentElement;
+      if (!td) throw new Error('no cell');
+      return {
+        clipped: td.scrollWidth > td.clientWidth,
+        ellipsis: getComputedStyle(td).textOverflow === 'ellipsis',
+        wide: td.getBoundingClientRect().width,
+      };
+    });
     expect(fits.clipped).toBe(false);
     expect(fits.ellipsis).toBe(false);
-    expect(fits.label).toContain('Board column ·');
     expect(fits.wide).toBeGreaterThan(300);
   }
 });
@@ -177,8 +184,19 @@ test('SettingsStatesPhone_WhenOpened_ShouldPutHandleNameAndMoreOnTheFirstLine', 
   const view = await mount(<StatesHarness role="admin" />, {
     hooksConfig: { route: '/p/SHIP/settings/states' },
   });
-  const rows = view.getByTestId(ids.statesPanel).getByTestId(ids.stateRow);
+  const panel = view.getByTestId(ids.statesPanel);
+  const rows = panel.getByTestId(ids.stateRow);
   await expect(rows).toHaveCount(3);
+  // Nothing in the panel is wider than the panel: every row, and its ⋯, fits the 390px screen.
+  const spill = await panel.evaluate((p) => ({
+    panel: p.scrollWidth - p.clientWidth,
+    page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    right: p.getBoundingClientRect().right,
+    rows: Array.from(p.querySelectorAll('tr')).map((r) => r.getBoundingClientRect().right),
+  }));
+  expect(spill.panel).toBe(0);
+  expect(spill.page).toBe(0);
+  for (const right of spill.rows) expect(right).toBeLessThanOrEqual(spill.right);
   for (let i = 0; i < 3; i++) {
     const row = rows.nth(i);
     for (const id of [ids.stateMoveUp, ids.stateMoveDown, ids.stateDelete])
@@ -197,6 +215,7 @@ test('SettingsStatesPhone_WhenOpened_ShouldPutHandleNameAndMoreOnTheFirstLine', 
     expect(more.x).toBeGreaterThan(name.x + name.width - 1);
     expect(category.y).toBeGreaterThan(name.y + name.height - 1);
     expect(category.x).toBeGreaterThanOrEqual(name.x - 16);
+    expect(more.x + more.width).toBeLessThanOrEqual(spill.right);
   }
   const label = await rows
     .nth(1)
