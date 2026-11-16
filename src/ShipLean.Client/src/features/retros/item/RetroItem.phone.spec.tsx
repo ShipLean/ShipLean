@@ -133,6 +133,11 @@ test('PhoneChildRow_ShouldShowAChevron', async ({ mount, page }) => {
     const chevron = rows.nth(index).getByTestId(ids.retroRowChevron);
     await expect(chevron).toHaveText('›');
     await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    const row = (await rows.nth(index).boundingBox())!;
+    const arrow = (await chevron.boundingBox())!;
+    expect(arrow.width).toBeGreaterThan(0);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
+    expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
   }
 });
 
