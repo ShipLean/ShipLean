@@ -1,4 +1,6 @@
 using ShipLean.Application.Fakes.WorkItems;
+using ShipLean.Contracts;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.TestSupport.Contracts.WorkItems;
 using ShipLean.TestSupport.Identity;
