@@ -61,4 +61,18 @@ public class FeaturesSinceTests
         bangkok.ShouldBe($"since {seenAt.AddHours(7).ToString("ddd", CultureInfo.InvariantCulture)} 03:00");
         utc.ShouldBe($"since {seenAt.ToString("ddd", CultureInfo.InvariantCulture)} 20:00");
     }
+
+    // Mutation: pass TimeZoneInfo.Utc to FeaturesSince's DaysUntil only. The change was at 20:00 UTC the day before today, which is 03:00 today in
+    // Bangkok, so Bangkok says "since 03:00" (today) where UTC says "since yesterday": the two take different branches of the label.
+    [Test]
+    public void Since_WhenChangeCrossedMidnightOnlyInBangkok_ShouldTakeTheTodayBranchThere()
+    {
+        var seenAt = TestDates.Today.AddDays(-1).AddHours(20);
+
+        var (_, bangkok) = FeaturesSince.Of(seenAt, Clock(), ViewerZoneTestData.Bangkok);
+        var (_, utc) = FeaturesSince.Of(seenAt, Clock(), TimeZoneInfo.Utc);
+
+        bangkok.ShouldBe("since 03:00");
+        utc.ShouldBe("since yesterday");
+    }
 }

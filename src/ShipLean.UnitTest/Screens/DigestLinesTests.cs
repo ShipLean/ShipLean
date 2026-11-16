@@ -28,6 +28,7 @@ public class DigestLinesTests
     private static ChangeEntryDto Comment(string body, string? agent = null) =>
         new(Guid.NewGuid(), "SHIP-101", "Checkout v2", ChangeKind.Comment, SeedIds.Users.Tom, "Tom Okafor", At, null, body, null, agent, "feature");
 
+    // At is 09:00 UTC and the clock reads 12:00 UTC the same day, so the label is hours ago.
     [Test]
     public void Lines_WhenRevisionChangesStateAndHealth_ShouldGiveTwoLines()
     {
@@ -39,7 +40,7 @@ public class DigestLinesTests
         var lines = DigestLines.Of(entry, Tom, Clock, TimeZoneInfo.Utc);
 
         lines.Select(l => (l.Kind, l.Text)).ShouldBe([(DigestLineKind.State, "Active → Closed"), (DigestLineKind.Health, "On track → At risk")]);
-        lines.ShouldAllBe(l => l.By == Tom && l.AgentName == null && l.At == At && l.AtLabel == DisplayDate.Relative(At, Clock.GetUtcNow(), TimeZoneInfo.Utc));
+        lines.ShouldAllBe(l => l.By == Tom && l.AgentName == null && l.At == At && l.AtLabel == "3h ago");
     }
 
     [Test]
