@@ -253,6 +253,23 @@ declare -A shots=(
   [decisions-empty]="decisions.html?state=empty&at=Decisions"
   [decisions-feature]="decisions.html?state=feature&at=Decisions"
   [decisions-rail]="decisions.html?state=waiting&at=History"
+  # Project settings on a phone (SHIP-1809, SHIP-1626 K7): screens/settings.html with settings-touch.css/js, and the
+  # Stories board settings (screens/board-settings.html with board-settings-touch.css/js)
+  [settings]="settings.html"
+  [settings-general]="settings.html?tab=general"
+  [settings-general-dirty]="settings.html?tab=general&dirty"
+  [settings-changes]="settings.html?tab=states&dirty&changes"
+  [settings-states]="settings.html?tab=states"
+  [settings-states-drag]="settings.html?tab=states&drag=bug-triaged"
+  [settings-states-menu]="settings.html?tab=states&menu=bug-triaged"
+  [settings-members]="settings.html?tab=members"
+  [settings-sprints]="settings.html?tab=sprints"
+  [settings-integrations]="settings.html?tab=integrations"
+  [settings-demos]="settings.html?tab=demos"
+  [settings-demos-yt]="settings.html?tab=demos&yt=connected&at=yt"
+  [settings-board-styles]="board-settings.html?pane=styles"
+  [settings-board-styles-drag]="board-settings.html?pane=styles&drag=0"
+  [settings-board-styles-dirty]="board-settings.html?pane=styles&dirty"
 )
 
 names=("$@")
