@@ -8,8 +8,8 @@ using ShipLean.Contracts.Views.Timeline;
 namespace ShipLean.Application.Features.Timeline;
 
 // A Feature's timeline (C2, C3): member access first, then the key must name a Feature of the project, then the facts as of now
-// go through the pure builder in the clock's zone.
-public sealed class FeatureTimeline(IProjectAccess access, NpgsqlDataSource dataSource, ITimelineFactsReader reader, TimeProvider clock)
+// go through the pure builder in the viewer's zone.
+public sealed class FeatureTimeline(IProjectAccess access, NpgsqlDataSource dataSource, ITimelineFactsReader reader, TimeProvider clock, IViewerZone viewerZone)
     : IFeatureTimeline
 {
     public async Task<FeatureTimelineViewDto> GetAsync(Guid projectId, string featureKey, CancellationToken ct)
@@ -30,6 +30,6 @@ public sealed class FeatureTimeline(IProjectAccess access, NpgsqlDataSource data
 
         var asOf = clock.GetUtcNow();
         var facts = await reader.ReadAsync(projectId, id, asOf, ct);
-        return TimelineBuilder.Build(facts, asOf, clock.LocalTimeZone);
+        return TimelineBuilder.Build(facts, asOf, viewerZone.Zone);
     }
 }

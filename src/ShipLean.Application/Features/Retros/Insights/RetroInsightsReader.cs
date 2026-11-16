@@ -200,6 +200,7 @@ public sealed class RetroInsightsReader(NpgsqlDataSource dataSource, TimeProvide
         for (var monday = first; monday <= thisMonday; monday = monday.AddDays(7))
         {
             var sunday = monday.AddDays(6);
+            // A week column is a calendar week (Monday to Sunday) shared by every viewer, so its label is of the UTC calendar day, not of an instant in the viewer's zone.
             var label = DisplayDate.ShortDay(new DateTimeOffset(monday.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), clock.GetUtcNow(), TimeZoneInfo.Utc);
             result.Add(new InsightColumn(new RetroSeriesSprint(RetroWeeks.IdOf(monday), monday, sunday, sunday < today), new RetroInsightColumnDto(monday.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), label, RetroInsightColumnKind.Week, monday == thisMonday), null));
         }

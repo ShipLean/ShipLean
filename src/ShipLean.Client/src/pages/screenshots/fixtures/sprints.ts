@@ -249,11 +249,11 @@ export const sprintItems: WorkItemDto[] = [
 ];
 
 const burndown: SprintMetricsDto['burndown'] = [
-  { date: '2026-10-19', remaining: 21, ideal: 21 },
-  { date: '2026-10-20', remaining: 21, ideal: 18.7 },
-  { date: '2026-10-21', remaining: 19, ideal: 16.3 },
-  { date: '2026-10-22', remaining: 19, ideal: 14 },
-  { date: '2026-10-23', remaining: 16, ideal: 11.7 },
+  { date: '2026-10-19', label: '19 Oct', day: '19', remaining: 21, ideal: 21 },
+  { date: '2026-10-20', label: '20 Oct', day: '20', remaining: 21, ideal: 18.7 },
+  { date: '2026-10-21', label: '21 Oct', day: '21', remaining: 19, ideal: 16.3 },
+  { date: '2026-10-22', label: '22 Oct', day: '22', remaining: 19, ideal: 14 },
+  { date: '2026-10-23', label: '23 Oct', day: '23', remaining: 16, ideal: 11.7 },
 ];
 
 export async function stubSprintBacklog(page: Page) {
