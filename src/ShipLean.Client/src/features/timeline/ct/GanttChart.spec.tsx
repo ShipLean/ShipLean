@@ -54,6 +54,31 @@ test('GanttChart_WhenReviewed_ShouldDrawDotsAfterBar', async ({ mount, page }) =
   }
 });
 
+test('GanttChart_WhenTaskHasLastCommit_ShouldDrawTickAtItsTime', async ({ mount, page }) => {
+  await mountChart(mount, FINISHED_TIMELINE);
+  const bar = FINISHED_TIMELINE.bars.find((b) => b.key === 'SHIP-192')!;
+  const barBox = (await page
+    .getByTestId(ids.chartBar)
+    .and(page.locator('[data-key="SHIP-192"]'))
+    .boundingBox())!;
+  const tick = page.getByTestId(ids.chartCommitTick).and(page.locator('[data-key="SHIP-192"]'));
+  await expect(tick).toHaveCount(1);
+  const tickBox = (await tick.boundingBox())!;
+  // The bar spans startHours to endHours, so the tick sits at the same share of its width.
+  const share = (bar.lastCommitHours! - bar.startHours!) / (bar.endHours! - bar.startHours!);
+  expect(tickBox.x + tickBox.width / 2).toBeCloseTo(barBox.x + share * barBox.width, 0);
+  await expect(tick.locator('title')).toHaveText(`Last commit ${bar.lastCommitLabel}`);
+});
+
+test('GanttChart_WhenTaskHasNoCommitTime_ShouldDrawNoTick', async ({ mount, page }) => {
+  await mountChart(mount, FINISHED_TIMELINE);
+  const timed = FINISHED_TIMELINE.bars.filter((b) => b.lastCommitHours !== null);
+  await expect(page.getByTestId(ids.chartCommitTick)).toHaveCount(timed.length);
+  await expect(
+    page.getByTestId(ids.chartCommitTick).and(page.locator('[data-key="SHIP-193"]')),
+  ).toHaveCount(0);
+});
+
 test('GanttChart_WhenBarClicked_ShouldCallOnSelect', async ({ mount, page }) => {
   const picks: (string | null)[] = [];
   await mountChart(mount, FINISHED_TIMELINE, { picks });
