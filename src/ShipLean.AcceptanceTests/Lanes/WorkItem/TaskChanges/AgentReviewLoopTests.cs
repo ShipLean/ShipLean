@@ -31,7 +31,7 @@ public class AgentReviewLoopTests : SeededAcceptanceTest
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
         services.AddFakeCodeHost();
-        services.AddSingleton<ActingCurrentUser>(sp => new ActingCurrentUser(sp, new CurrentUser(sp)));
+        services.AddSingleton<ActingCurrentUser>(sp => new ActingCurrentUser(sp, new CurrentUser(sp.GetRequiredService<ICurrentRequest>())));
         services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<ActingCurrentUser>());
     };
 
