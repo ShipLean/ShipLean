@@ -2,7 +2,11 @@ import type { SprintRef } from '@shiplean/core/api/refs';
 import type { BacklogRowDto, BacklogSectionDto } from '@shiplean/core/api/views';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
 import { CapacityBar } from '../../../components/CapacityBar';
-import { ActionSheetFootnote, ActionSheetRowFace, actionSheetRowClass } from '../../../touch/ActionSheet';
+import {
+  ActionSheetFootnote,
+  ActionSheetRowFace,
+  actionSheetRowClass,
+} from '../../../touch/ActionSheet';
 import { Sheet } from '../../../touch/Sheet';
 import { useSprintDates } from '../planning/useSprintDates';
 import { backlogTestIds as ids } from '../testIds';
@@ -16,14 +20,17 @@ export interface MoveTarget {
 
 const NOTE_KEYS = 3;
 
-function hint(...parts: (string | null | undefined)[]): string | null {
+function hint(...parts: (string | null | undefined)[]): string | undefined {
   const text = parts.filter((part) => part).join(' · ');
-  return text === '' ? null : text;
+  return text === '' ? undefined : text;
 }
 
 // The footnote names a few keys, then counts the rest.
 function noteKeys(rows: readonly BacklogRowDto[]): string {
-  const shown = rows.slice(0, NOTE_KEYS).map((row) => row.key).join(', ');
+  const shown = rows
+    .slice(0, NOTE_KEYS)
+    .map((row) => row.key)
+    .join(', ');
   return rows.length > NOTE_KEYS ? `${shown} and ${rows.length - NOTE_KEYS} more` : shown;
 }
 
