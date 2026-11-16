@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Refs;
 using ShipLean.Core;
@@ -9,7 +10,7 @@ namespace ShipLean.Application.Features.Asks.History;
 
 // A work item's ask lines from ask_event, newest first. Decisions raised (or questions asked) by the same person and agent at
 // the same moment fold into one line when their numbers run on: "D1–D5". Trusts its caller to have checked access.
-public sealed class AskHistory(NpgsqlDataSource dataSource, TimeProvider clock) : IAskHistory
+public sealed class AskHistory(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IAskHistory
 {
     public async Task<IReadOnlyList<AskHistoryLineDto>> ListAsync(Guid workItemId, CancellationToken cancellationToken = default)
     {
@@ -56,7 +57,7 @@ public sealed class AskHistory(NpgsqlDataSource dataSource, TimeProvider clock) 
         var kind = Enum.Parse<AskEventKind>(e.Kind, true);
         return new AskHistoryLineDto(
             kind, badge, e.FromAnswer, kind == AskEventKind.Withdrawn ? null : e.ToAnswer, e.Note,
-            e.ByUser is { } by ? users.GetValueOrDefault(by) : null, e.AgentName, e.At, DisplayDate.Relative(e.At, clock));
+            e.ByUser is { } by ? users.GetValueOrDefault(by) : null, e.AgentName, e.At, DisplayDate.Relative(e.At, clock.GetUtcNow(), viewerZone.Zone));
     }
 
     private static List<List<EventRow>> Runs(List<EventRow> sorted)

@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.Inbox;
 // The status lines on the user's Features that need checking: a Feature the user owns (AskOwnerSql.OwnedByUser), not Completed,
 // with a non-empty line that was never verified or was last verified more than InboxRules.StatusStaleAfter ago. A Feature
 // with no status line asks nothing. Ordering is the reader's.
-public sealed class StatusLineInboxSource(NpgsqlDataSource dataSource, TimeProvider clock) : IInboxAskSource
+public sealed class StatusLineInboxSource(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IInboxAskSource
 {
     private const string StaleFeatures =
         $"""
@@ -41,7 +42,7 @@ public sealed class StatusLineInboxSource(NpgsqlDataSource dataSource, TimeProvi
         {
             var at = f.VerifiedAt ?? f.CreatedAt;
             return new InboxAskRow(f.Id, new InboxAskDto(
-                InboxAskKind.Status, "Status", at, DisplayDate.Relative(at, clock),
+                InboxAskKind.Status, "Status", at, DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone),
                 f.VerifiedBy is { } by ? users[by] : null, f.AgentName, null, null, null,
                 new InboxStatusDto(f.StatusLine, f.VerifiedAt)));
         })];

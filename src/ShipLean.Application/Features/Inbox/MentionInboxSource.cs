@@ -1,3 +1,4 @@
+using ShipLean.Contracts;
 using System.Text.RegularExpressions;
 using Dapper;
 using Npgsql;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.Inbox;
 // The user's open @mentions: comment_mention rows for the user still open, on a comment that isn't archived, on an item not in
 // the Removed category, in a project the user is still a live member of. From is the comment's author and AgentName its agent
 // stamp; At is when the mention was made. Labels stay "@": the reader numbers them per item. Ordering is the reader's.
-public sealed partial class MentionInboxSource(NpgsqlDataSource dataSource, TimeProvider clock) : IInboxAskSource
+public sealed partial class MentionInboxSource(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IInboxAskSource
 {
     private const string Ellipsis = "…";
 
@@ -47,7 +48,7 @@ public sealed partial class MentionInboxSource(NpgsqlDataSource dataSource, Time
             new { authorIds }, cancellationToken: cancellationToken))).ToDictionary(u => u.Id);
 
         return [.. mentions.Select(m => new InboxAskRow(m.WorkItemId, new InboxAskDto(
-            InboxAskKind.Mention, "@", m.CreatedAt, DisplayDate.Relative(m.CreatedAt, clock),
+            InboxAskKind.Mention, "@", m.CreatedAt, DisplayDate.Relative(m.CreatedAt, clock.GetUtcNow(), viewerZone.Zone),
             m.AuthorId is { } author ? authors[author] : null, m.AgentName, null, null,
             new InboxMentionDto(m.MentionId, m.CommentId, Excerpt(m.Body)), null)))];
     }
