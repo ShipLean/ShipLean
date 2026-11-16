@@ -101,8 +101,8 @@ export function CapacityPeople({
         </div>
       ) : (
         <p className={`m-0 px-3 py-2.5 text-[length:var(--text-sm)] ${muted}`}>
-          Capacity is the velocity shared out by days available. Only the team total is compared with
-          what the sprint has committed.
+          Capacity is the velocity shared out by days available. Only the team total is compared
+          with what the sprint has committed.
         </p>
       )}
       {readOnly || addable.length === 0 ? null : (

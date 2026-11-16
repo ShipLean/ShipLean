@@ -28,10 +28,7 @@ export function CapacityRow({ line, shape, readOnly, onChange, onRemove }: Capac
   const { user, row, points } = line;
   const isDefault = row.days === '';
   return (
-    <tr
-      data-testid={ids.capacityRow}
-      className="border-t border-edge"
-    >
+    <tr data-testid={ids.capacityRow} className="border-t border-edge">
       <td className={cell}>
         <div className="flex min-w-0 items-center gap-2">
           <Avatar {...user} />
