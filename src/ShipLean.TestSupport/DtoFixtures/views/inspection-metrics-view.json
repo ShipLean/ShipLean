@@ -136,7 +136,7 @@
           "leadLabel": "1.3 days",
           "endedBy": "resolved",
           "overTwoDays": false,
-          "longest": false
+          "longest": true
         }
       ]
     },
@@ -172,7 +172,7 @@
           "leadLabel": "4 h",
           "endedBy": "lastCommit",
           "overTwoDays": false,
-          "longest": false
+          "longest": true
         }
       ]
     },
@@ -253,7 +253,7 @@
           "leadLabel": "6.6 h",
           "endedBy": "lastCommit",
           "overTwoDays": false,
-          "longest": false
+          "longest": true
         }
       ]
     }
