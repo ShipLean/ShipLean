@@ -59,7 +59,8 @@ export function Cell({
           ? 'color-mix(in srgb, var(--color-surface-2) 30%, transparent)'
           : 'color-mix(in srgb, var(--color-surface-2) 55%, transparent)',
         border: track.doneHalf ? '1px dashed var(--color-border)' : undefined,
-        outline: isOver ? '2px solid var(--color-accent)' : undefined,
+        // The cell a card would land in is outlined, for a mouse drag (dnd-kit) and a touch drag alike.
+        outline: isOver || touchOver ? '2px solid var(--color-accent)' : undefined,
       }}
     >
       {offersNew ? <NewCard projectId={projectId} boardId={boardId} level={level} /> : null}

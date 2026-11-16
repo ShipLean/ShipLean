@@ -110,9 +110,32 @@ test('CardMore_OnAFeatureWithNoPoints_ShouldSitAtTheRight', async ({ mount, page
   // The warn ? shows and the ⋯ is at the card's right edge (inside its padding), not beside the key.
   await expect(feature.getByTestId(ids.cardPoints)).toHaveText('?');
   expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
-  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so a `display: contents` wrapper goes red here. The ⋯ itself reaches the right only because the "?" chip carries ml-auto; a spacer in Card.tsx is the real fix.
+  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so a `display: contents` wrapper goes red here.
+  // The ⋯ sits at the right because Card.tsx puts a flex-1 spacer after the key, not because of the "?" chip's ml-auto:
+  // CardMore_WhenPointsHidden_ShouldStillSitAtTheRight holds that with no chip at all.
   const wrapper = await feature.getByTestId(ids.cardMore).boundingBox();
   expect(wrapper?.width ?? 0).toBeGreaterThan(0);
+});
+
+test('CardMore_WhenPointsHidden_ShouldStillSitAtTheRight', async ({ mount, page }) => {
+  // A board style that hides points on stories: no "?" chip and no points pill to push the ⋯ along.
+  const board = storiesBoard();
+  const view: BoardViewDto = {
+    ...board,
+    cardFields: board.cardFields.map((f) => ({ ...f, showPoints: false })),
+  };
+  await stubBoard(page, view);
+  await mount(<BoardHarness />, route);
+
+  const story = cardKeyed(page, 'SHIP-160');
+  await expect(story.getByTestId(ids.cardKey)).toBeVisible();
+  await expect(story.getByTestId(ids.cardPoints)).toHaveCount(0);
+  const more = (await story.getByTestId(touchTestIds.moreButton).boundingBox())!;
+  const key = (await story.getByTestId(ids.cardKey).boundingBox())!;
+  const box = (await story.boundingBox())!;
+  // At the card's right edge (inside its padding), and far from the key it would otherwise sit beside.
+  expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
+  expect(more.x - (key.x + key.width)).toBeGreaterThan(100);
 });
 
 test('CardActionsSheet_WhenLanePicked_ShouldMoveToLane', async ({ mount, page }) => {

@@ -32,7 +32,8 @@ test('CardActionsSheet_WhenFeature_ShouldSayOwner', async ({ mount, page }) => {
   await expect(row(page, 'assign')).toContainText('Owner');
   await row(page, 'assign').tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Owner SHIP-104');
-  await expect(sheet(page).getByTestId(ids.assignOption).last()).toContainText('No owner');
+  // Exact: the last row is "No owner" (✓ while the Feature has none), with nothing else in it.
+  await expect(sheet(page).getByTestId(ids.assignOption).last()).toHaveText(/^No owner✓?$/);
 });
 
 test('CardActionsSheet_WhenStory_ShouldSayAssign', async ({ mount, page }) => {
@@ -51,10 +52,32 @@ test('CardActionsSheet_WhenStory_ShouldSayAssign', async ({ mount, page }) => {
     ...assignMembers.map((member) => new RegExp(`${member.name}✓?$`)),
     /Unassigned✓?$/,
   ]);
+  // SHIP-160 has no assignee: Unassigned is the current row, and only it.
+  await expect(sheet(page).getByTestId(ids.assignOption).last()).toHaveAttribute(
+    'aria-current',
+    'true',
+  );
+  await expect(sheet(page).locator('[aria-current="true"]')).toHaveCount(1);
 });
 
 test('AssignSheet_ShouldShowAvatarsAndUnassignedLast', async ({ mount, page }) => {
-  await stubBoard(page, storiesBoard(), { members: assignMembers });
+  const ann = assignMembers[1];
+  // SHIP-160 is Ann's, so her row is the current one.
+  const board = storiesBoard();
+  await stubBoard(
+    page,
+    {
+      ...board,
+      lanes: board.lanes.map((l) => ({
+        ...l,
+        cells: l.cells.map((c) => ({
+          ...c,
+          cards: c.cards.map((x) => (x.key === 'SHIP-160' ? { ...x, assignee: ann } : x)),
+        })),
+      })),
+    },
+    { members: assignMembers },
+  );
   await page.route('**/api/me', (route) =>
     route.fulfill({
       status: 200,
@@ -93,6 +116,10 @@ test('AssignSheet_ShouldShowAvatarsAndUnassignedLast', async ({ mount, page }) =
   );
   await expect(options.filter({ hasText: TOM.name })).toContainText('(you)');
   await expect(options.filter({ hasText: 'Ann Lee' })).not.toContainText('(you)');
+  // The current person's row carries aria-current (the ✓ alone is only in the page shot); no other row does.
+  await expect(options.filter({ hasText: ann.name })).toHaveAttribute('aria-current', 'true');
+  await expect(options.filter({ hasText: TOM.name })).not.toHaveAttribute('aria-current');
+  await expect(options.last()).not.toHaveAttribute('aria-current');
 });
 
 test('CardActionsSheet_WhenLongPressOpened_ShouldOfferAssign', async ({ mount, page }) => {
