@@ -146,4 +146,9 @@ public static class SprintsTestIds
     public const string EndError = "sprints-end-error";
     public const string EndDone = "sprints-end-done";
     public const string EndDoneClose = "sprints-end-done-close";
+    public const string ListSection = "sprints-list-section";
+    public const string ListHead = "sprints-list-head";
+    public const string PlanSprints = "sprints-plan-sprints";
+    public const string ListEmpty = "sprints-list-empty";
+    public const string ListEmptyNew = "sprints-list-empty-new";
 }

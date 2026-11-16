@@ -1,22 +1,11 @@
-import { useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
+import { Link } from 'react-router-dom';
+import type { SprintCapacityDto } from '@shiplean/core/api/sprints';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
-import { MoreButton } from '../../../touch/MoreButton';
 import { useTouchShell } from '../../../touch/useTouchShell';
-import type { SprintFigures } from '../sprintsApi';
 import { sprintsTestIds as ids } from '../testIds';
-
-interface SprintRowProps {
-  projectKey: string;
-  sprint: SprintDto;
-  figures: SprintFigures | undefined;
-  /** What a sprint with no entered capacity plans against; undefined while it loads. */
-  velocity: number | undefined;
-  /** Opens the Edit sprint rail for this sprint; `trigger` is the button to return focus to, none from the ⋯ sheet. */
-  onEdit: (trigger: HTMLButtonElement | null) => void;
-}
+import type { SprintRowProps } from './sprintRowProps';
+import { SprintTouchRow } from './SprintTouchRow';
 
 const STATUS_CHIP = {
   past: { tone: 'muted', label: 'Past' },
@@ -118,96 +107,5 @@ function CapacityTotal({ capacity }: { capacity: SprintCapacityDto }) {
     >
       {capacity.teamTotal}
     </span>
-  );
-}
-
-/** The team capacity as a plain line: the total, or the planning velocity when nobody entered any. */
-function capacityText(
-  capacity: SprintCapacityDto | undefined,
-  velocity: number | undefined,
-): string {
-  if (capacity === undefined) return '—';
-  if (capacity.members.length > 0) return `${capacity.teamTotal} capacity`;
-  return velocity === undefined ? 'velocity' : `${velocity} · velocity`;
-}
-
-/** At 900px and below (SHIP-723, the SHIP-724 D2 row): name and status over the points, dates and capacity, the goal and any notes under. */
-function SprintTouchRow({ projectKey, sprint, figures, velocity, onEdit }: SprintRowProps) {
-  const navigate = useNavigate();
-  // The ⋯ button lives in the shared MoreButton, so focus goes back to it through its wrapper when Edit sprint closes.
-  const more = useRef<HTMLSpanElement>(null);
-  const chip = STATUS_CHIP[sprint.status];
-  const metrics = figures?.metrics;
-  const capacity = figures?.capacity;
-  const committed =
-    metrics === undefined || metrics.committed === 0 ? '—' : String(metrics.committed);
-  const completed =
-    metrics === undefined || sprint.status === 'future'
-      ? '—'
-      : sprint.status === 'current'
-        ? `${metrics.completed} so far`
-        : String(metrics.completed);
-  const notes = (capacity?.members ?? [])
-    .filter((member) => member.note !== null && member.note !== '')
-    .map((member) => `${member.user.name}: ${member.note}`);
-  const backlog = routePath('sprintBacklog', { key: projectKey, sprintId: sprint.id });
-  return (
-    <li
-      data-testid={ids.listRow}
-      data-sprint={sprint.name}
-      data-status={sprint.status}
-      className={`grid min-w-0 gap-0.5 border-b border-edge py-1 pr-1 pl-3 ${sprint.status === 'current' ? 'bg-signal-soft/50' : ''}`}
-    >
-      <div className="flex min-w-0 items-center gap-2">
-        <Link
-          data-testid={ids.rowLink}
-          className="inline-flex min-h-[var(--touch-target)] min-w-0 items-center truncate font-semibold text-inherit no-underline"
-          to={backlog}
-        >
-          {sprint.name}
-        </Link>
-        <span data-testid={ids.rowStatus} className="flex-none">
-          <Chip tone={chip.tone}>{chip.label}</Chip>
-        </span>
-        <span className="flex-1" />
-        <span className="flex-none text-[length:var(--text-sm)] tabular-nums">
-          <b data-testid={ids.rowCommitted}>{committed}</b>
-          <span className="text-ink-muted"> committed · </span>
-          <b data-testid={ids.rowCompleted}>{completed}</b>
-          <span className="text-ink-muted"> done</span>
-        </span>
-        <span ref={more} className="flex-none">
-          <MoreButton
-            label={sprint.name}
-            actions={[
-              { id: 'open', label: 'Open', onSelect: () => void navigate(backlog) },
-              {
-                id: 'edit-sprint',
-                label: 'Edit sprint',
-                onSelect: () => onEdit(more.current?.querySelector('button') ?? null),
-              },
-            ]}
-          />
-        </span>
-      </div>
-      <div className="pr-2 text-[length:var(--text-sm)] text-ink-muted">
-        {sprint.datesLabel} ·{' '}
-        <span data-testid={ids.rowCapacity}>{capacityText(capacity, velocity)}</span>
-      </div>
-      <p
-        data-testid={ids.rowGoal}
-        className="m-0 line-clamp-2 pr-2 text-[length:var(--text-sm)] text-ink-muted"
-      >
-        {sprint.goal === '' ? <i>No goal yet</i> : sprint.goal}
-      </p>
-      {notes.length === 0 ? null : (
-        <p
-          data-testid={ids.rowNotes}
-          className="m-0 pr-2 text-[length:var(--text-xs)] whitespace-pre-line text-ink-muted"
-        >
-          {notes.join('\n')}
-        </p>
-      )}
-    </li>
   );
 }

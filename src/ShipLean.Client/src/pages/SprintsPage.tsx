@@ -1,4 +1,5 @@
 import { pagesTestIds } from '../features/pages/testIds';
+import { SprintsTouchHead } from '../features/sprints/list/SprintsTouchHead';
 import { NewSprintRailSlot } from '../slots/NewSprintRailSlot';
 import { SprintsListSlot } from '../slots/SprintsListSlot';
 import { useTouchShell } from '../touch/useTouchShell';
@@ -17,7 +18,11 @@ export function SprintsPage() {
             const slots = sprintsSlots(project, sprints);
             return (
               <>
-                {touch ? <NewSprintRailSlot {...slots.newSprintRail} /> : null}
+                {touch ? (
+                  <SprintsTouchHead project={project} count={sprints.length}>
+                    <NewSprintRailSlot {...slots.newSprintRail} />
+                  </SprintsTouchHead>
+                ) : null}
                 <SprintsListSlot {...slots.sprintsList} />
                 {touch ? null : <NewSprintRailSlot {...slots.newSprintRail} />}
               </>

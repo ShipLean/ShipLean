@@ -142,4 +142,10 @@ export const sprintsTestIds = {
   endError: 'sprints-end-error',
   endDone: 'sprints-end-done',
   endDoneClose: 'sprints-end-done-close',
+  // ND1 phone (SHIP-1846)
+  listSection: 'sprints-list-section',
+  listHead: 'sprints-list-head',
+  planSprints: 'sprints-plan-sprints',
+  listEmpty: 'sprints-list-empty',
+  listEmptyNew: 'sprints-list-empty-new',
 } as const;
