@@ -40,7 +40,7 @@ An unknown address (under `/p/:key` or anywhere else, such as `/nowhere`), an un
 - Retries: one policy for every query, the `QueryClient` default in `main.tsx` (`queries/retry.ts`): a 4xx answer is final, a network error or 5xx is retried up to three times. Do not set `retry` on a query.
 - Router: `main.tsx` uses a data router (`createBrowserRouter([{ path: '*', element: <AppRoutes /> }])`) and the component test harness the same shape with `createMemoryRouter`, so a screen can use `useBlocker`.
 - `ProjectScreen` (project page root: presence, project, not found), `SprintScreen` (also the sprint), `InstallScreen` (install-level root), `WithSprints` (reads the sprints for the part of a page that needs them).
-- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog, Capacity and Retro, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit` and `closeSprint`; the page does not.
+- Sprint pages render `SprintHeader` above their slots: `full` on the Sprint backlog, Capacity and Retro, `slim` on the Taskboard. `SprintHeader` renders `sprintGoalEdit` and `closeSprint`; the page does not. The Retro page is the exception: its `sprintRetro` slot renders the `SprintHeader` itself (from the `header` props), so that at touch the four retro numbers can sit before the tabs through the header's optional `beforeTabs`.
 - `?settings=` on the boards and the Taskboard: the page reads it as `section`; `onSectionChange(section)` sets it (replacing the history entry), `onClose()` removes it. The slot renders its dialog only while `section` is set. To open a dialog from elsewhere, link to `?settings=<section>` (for example `columns` or `fields`).
 - `sprintGoalEdit`: the slot calls `onDone()` after the goal PATCH succeeds, having invalidated `['projects', projectId, 'sprints']`, and on Cancel or Escape. The header closes the editor and returns focus to its Edit button; the slot moves focus into its input when it mounts.
 - Backlogs: Stories show `listMode`, `planningMode` or `treeMode` by `?mode=` (list when absent or invalid); Features and Epics show `levelBacklog`.
@@ -50,7 +50,7 @@ An unknown address (under `/p/:key` or anywhere else, such as `/nowhere`), an un
 
 ## Slots
 
-`src/slots/<SlotName>Slot.tsx` exports `<SlotName>Slot` and `<SlotName>SlotProps`. One file per slot; a slot mounts its feature and the page is not edited to change what fills it. Each slot's root carries the `data-testid` from `pagesTestIds.slot<SlotName>` (`slot-<slotName>`); keep that id on the root so page-level tests still find it. `Level` is `'stories' | 'features' | 'epics'`.
+`src/slots/<SlotName>Slot.tsx` exports `<SlotName>Slot` and `<SlotName>SlotProps`. One file per slot; a slot mounts its feature and the page is not edited to change what fills it. Each slot's root carries the `data-testid` from `pagesTestIds.slot<SlotName>` (`slot-<slotName>`); keep that id on the root so page-level tests still find it. `slot-sprintRetro` wraps only the Retro panel, not the sprint header. `Level` is `'stories' | 'features' | 'epics'`.
 
 The five work item slots read the item through the query key `['projects', projectId, 'work-items', 'by-key', itemKey]`.
 
@@ -72,7 +72,7 @@ The five work item slots read the item through the query key `['projects', proje
 | `featureBoardSettings` | Feature board | `{ project, itemKey, section, onSectionChange, onClose }` (the Taskboard's dialog) |
 | `sprintsList`, `newSprintRail` | Sprints | `{ project, sprints }` |
 | `capacity` | Capacity | `{ project, sprint, sprints }` |
-| `sprintRetro` | Sprint Retro | `{ project, sprint, sprints }`; the slot mounts `SprintRetroPanel`, which reads the sprint's `SprintRetroDto` and gives each of its parts (`SprintRetroHeader`, `AddPoint`, `views/ByCategory`, `views/ByWorkItem`, `rail/RetroRail`) `{ project, sprint, retro }` |
+| `sprintRetro` | Sprint Retro | `{ project, sprint, header }` (`header` is the full `SprintHeaderProps`); the slot renders `SprintHeader` and holds the open rail sheet and the touch `RetroNumbers` (passed to the header as `beforeTabs`), then mounts `SprintRetroPanel` with `{ project, sprint, sheet, onSheet }`, which reads the sprint's `SprintRetroDto` and gives each of its parts (`SprintRetroHeader`, `AddPoint`, `views/ByCategory`, `views/ByWorkItem`, `rail/RetroRail`) `{ project, sprint, retro }` |
 | `retrosSearch` | Retrospectives › Search | `{ project }`; `RetrosSearchPanel` owns the filters in the address and gives `SearchFilters`, `SearchRows` and `SelectedRetro` `{ project, query, search, change(patch), select(retroId \| null) }` |
 | `retroFeatures` | Retrospectives › Features | `{ project }`; `RetroFeaturesPanel` owns its address (`show`, `q`) and reads the Features list |
 | `retroItem` | Retrospectives › one item | `{ project, itemKey }`; `RetroItemPanel` owns `retro`, `decide` and `point` in the address and gives the header, toolbar, board, rail and failure logs their parts |

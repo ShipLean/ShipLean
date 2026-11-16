@@ -15,7 +15,6 @@ import { useTouchShell } from '../touch/useTouchShell';
 export interface SprintRetroSlotProps {
   project: ProjectDto;
   sprint: SprintDto;
-  sprints: SprintDto[];
   header: SprintHeaderProps;
 }
 
@@ -41,13 +40,7 @@ export function SprintRetroSlot({ project, sprint, header }: SprintRetroSlotProp
     <>
       <SprintHeader {...header} beforeTabs={numbers} />
       <div data-testid={pagesTestIds.slotSprintRetro}>
-        <SprintRetroPanel
-          key={sprint.id}
-          project={project}
-          sprint={sprint}
-          sheet={sheet}
-          onSheet={setSheet}
-        />
+        <SprintRetroPanel project={project} sprint={sprint} sheet={sheet} onSheet={setSheet} />
       </div>
     </>
   );

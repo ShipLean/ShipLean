@@ -10,5 +10,5 @@ export function sprintRetroSlots(
   sprints: SprintDto[],
 ): { sprintRetro: SprintRetroSlotProps } {
   const header: SprintHeaderProps = { variant: 'full', project, sprint, sprints, tab: 'retro' };
-  return { sprintRetro: { project, sprint, sprints, header } };
+  return { sprintRetro: { project, sprint, header } };
 }
