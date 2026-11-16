@@ -175,6 +175,7 @@ public sealed class InspectionStack
         var clickHouse = Base(ClickHouseImage, "clickhouse", network, 1024)
             .WithEnvironment("CLICKHOUSE_USER", ClickHouseUser)
             .WithEnvironment("CLICKHOUSE_PASSWORD", ClickHouseSecret)
+            .WithResourceMapping(new FileInfo(Path.Combine(configs, "clickhouse-memory.xml")), "/etc/clickhouse-server/config.d/")
             .WithPortBinding(8123, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8123).ForPath("/ping")))
             .Build();
