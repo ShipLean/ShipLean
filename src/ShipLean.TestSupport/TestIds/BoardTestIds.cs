@@ -107,4 +107,12 @@ public static class BoardTestIds
 
     // SHIP-916 W1
     public const string CardHealth = "board-card-health";
+
+    // SHIP-1826
+    public const string CardSheetHeader = "board-card-sheet-header";
+    public const string CardMoveWip = "board-card-move-wip";
+
+    // SHIP-1827
+    public const string FilterHealth = "board-filter-health";
+    public const string FilterCount = "board-filter-count";
 }
