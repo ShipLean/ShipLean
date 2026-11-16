@@ -17,8 +17,9 @@ public class SprintDemoStatusRuleTests
         DateTimeOffset? delivered = null,
         DateTimeOffset? expires = null,
         string? sessionState = null,
-        DateTimeOffset? sessionEnded = null)
-        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded);
+        DateTimeOffset? sessionEnded = null,
+        string? message = null)
+        => new(closed, requested ? Requested : null, blocked, live, delivered, expires, sessionState, sessionEnded, message);
 
     [Test]
     public void Decide_WhenNotRequestedAndNotClosed_ShouldBeClosable()
@@ -124,10 +125,67 @@ public class SprintDemoStatusRuleTests
         SprintDemoStatusRule.Decide(Facts(sessionState: "failed", sessionEnded: Requested.AddMinutes(-10)), Now).Status.ShouldBe(SprintDemoStatus.Requested);
     }
 
+    // C5 changed this: a completed session with no video after the request used to stay Requested.
     [Test]
-    public void Decide_WhenLatestSessionCompletedWithoutVideo_ShouldBeRequested()
+    public void Decide_WhenSessionCompletedWithoutVideo_ShouldBeFailed()
     {
-        SprintDemoStatusRule.Decide(Facts(expires: Now.AddHours(1), sessionState: "completed", sessionEnded: Now), Now).ShouldBe((SprintDemoStatus.Requested, null));
+        var facts = Facts(expires: Now.AddHours(1), sessionState: "completed", sessionEnded: Now, message: "I could not render the video.\n\nMore detail.");
+
+        SprintDemoStatusRule.Decide(facts, Now)
+            .ShouldBe((SprintDemoStatus.Failed, "The agent session ended without uploading a video. It said: \"I could not render the video.\""));
+    }
+
+    [Test]
+    public void Decide_WhenSessionCompletedAtTheRequestInstant_ShouldBeFailed()
+    {
+        SprintDemoStatusRule.Decide(Facts(expires: Now.AddHours(1), sessionState: "completed", sessionEnded: Requested), Now)
+            .ShouldBe((SprintDemoStatus.Failed, "The agent session ended without uploading a video."));
+    }
+
+    [Test]
+    public void Decide_WhenSessionCompletedBeforeTheRequest_ShouldStayRequested()
+    {
+        var facts = Facts(expires: Now.AddHours(1), sessionState: "completed", sessionEnded: Requested.AddSeconds(-1), message: "Done.");
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Requested, null));
+    }
+
+    [Test]
+    public void Decide_WhenVideoDelivered_ShouldBeReadyEvenIfMessage()
+    {
+        var facts = Facts(delivered: Requested.AddMinutes(5), sessionState: "completed", sessionEnded: Requested.AddMinutes(6), message: "Here is your demo.");
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Ready, null));
+    }
+
+    [Test]
+    public void Decide_WhenLinkExpired_ShouldSayLinkExpired()
+    {
+        var facts = Facts(expires: Now.AddMinutes(-1), sessionState: "completed", sessionEnded: Now, message: "I gave up.");
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Failed, "The upload link expired before a video came back."));
+    }
+
+    [TestCase("failed", null, "The agent session ended as failed before a video came back.")]
+    [TestCase("canceled", null, "The agent session ended as canceled before a video came back.")]
+    [TestCase("stale", null, "The agent session ended as stale before a video came back.")]
+    [TestCase("failed", "Claude Code timed out.", "The agent session ended as failed before a video came back. It said: \"Claude Code timed out.\"")]
+    [TestCase("canceled", "Stopped by **Joel**.", "The agent session ended as canceled before a video came back. It said: \"Stopped by Joel.\"")]
+    [TestCase("stale", "Still rendering", "The agent session ended as stale before a video came back. It said: \"Still rendering\"")]
+    public void Decide_WhenSessionFailedCanceledOrStale_ShouldKeepTodaysTextAndAddTheQuote(string state, string? message, string expected)
+    {
+        var facts = Facts(expires: Now.AddHours(1), sessionState: state, sessionEnded: Requested.AddMinutes(10), message: message);
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Failed, expected));
+    }
+
+    [TestCase("completed", "The agent session ended without uploading a video.")]
+    [TestCase("failed", "The agent session ended as failed before a video came back.")]
+    public void Decide_WhenMessageBlank_ShouldHaveNoQuote(string state, string expected)
+    {
+        var facts = Facts(expires: Now.AddHours(1), sessionState: state, sessionEnded: Now, message: " \n\t ");
+
+        SprintDemoStatusRule.Decide(facts, Now).ShouldBe((SprintDemoStatus.Failed, expected));
     }
 
     [Test]

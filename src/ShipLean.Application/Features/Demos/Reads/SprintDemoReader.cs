@@ -39,7 +39,7 @@ public sealed class SprintDemoReader(
         }
 
         var live = session is { Live: true };
-        var facts = new SprintDemoFacts(row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt);
+        var facts = new SprintDemoFacts(row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, session?.Message);
         var (status, message) = SprintDemoStatusRule.Decide(facts, now);
 
         var chapters = await ChaptersAsync(row, files, cancellationToken);
@@ -61,9 +61,15 @@ public sealed class SprintDemoReader(
     private static async Task<SessionRow?> LatestSessionAsync(NpgsqlConnection connection, Guid itemId, CancellationToken cancellationToken)
         => await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
             $"""
-            SELECT state, state IN {AgentSessionLiveStates.Sql} AS live, coalesce(ended_at, last_activity_at) AS endedAt
-            FROM agent_session WHERE work_item_id = @itemId
-            ORDER BY (state IN {AgentSessionLiveStates.Sql}) DESC, created_at DESC LIMIT 1
+            SELECT s.state, s.state IN {AgentSessionLiveStates.Sql} AS live, coalesce(s.ended_at, s.last_activity_at) AS endedAt, last.body AS message
+            FROM agent_session s
+            LEFT JOIN LATERAL (
+                SELECT a.body FROM agent_activity a
+                WHERE a.session_id = s.id AND a.type IN ('response', 'error') AND a.replaced_at IS NULL
+                ORDER BY a.created_at DESC, a.id DESC LIMIT 1
+            ) last ON true
+            WHERE s.work_item_id = @itemId
+            ORDER BY (s.state IN {AgentSessionLiveStates.Sql}) DESC, s.created_at DESC LIMIT 1
             """,
             new { itemId }, cancellationToken: cancellationToken));
 
@@ -231,7 +237,7 @@ public sealed class SprintDemoReader(
             : new SprintDemoActionsDto(true, null, retry);
     }
 
-    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt);
+    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt, string? Message);
 
     private sealed record FileRow(Guid Id, string Name, long SizeBytes);
 
