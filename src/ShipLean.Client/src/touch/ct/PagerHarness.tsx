@@ -3,10 +3,11 @@ import { TouchPager, type TouchPagerPage } from '../TouchPager';
 import { pagerHarnessIds as ids } from './pagerHarnessIds';
 
 const initial: TouchPagerPage[] = [
-  { id: 'todo', label: 'To do', count: 3, limit: 5 },
-  { id: 'doing', label: 'Doing', count: 4, limit: 3 },
+  { id: 'todo', label: 'To do', count: 3, limit: 5, category: 'proposed' },
+  { id: 'doing', label: 'Doing', count: 4, limit: 3, category: 'inProgress' },
+  // No category: its chip has no dot.
   { id: 'review', label: 'Review', count: 2 },
-  { id: 'done', label: 'Done', count: 12, pulse: 5 },
+  { id: 'done', label: 'Done', count: 12, pulse: 5, category: 'completed' },
 ];
 
 // Tall and short pages, so the track's height follows the tallest and the document scrolls vertically.
@@ -55,26 +56,29 @@ export function PagerHarness() {
       </div>
       <p data-testid={ids.ctPagerCurrent}>{current}</p>
       <p data-testid={ids.ctPagerReports}>{reports.join(',')}</p>
-      <TouchPager
-        pages={pages.map((page) => ({ ...page }))}
-        current={current}
-        onPageChange={(id) => {
-          setCurrent(id);
-          setReports((now) => [...now, id]);
-        }}
-        renderPage={(id) => (
-          <div
-            data-testid={ids.ctPagerPageBody}
-            className="grid gap-2 rounded border border-border bg-surface p-2"
-          >
-            {Array.from({ length: rows[id] ?? 1 }, (_, i) => (
-              <div key={i} className="h-10 rounded bg-accent-soft p-2 text-sm">
-                {id} card {i + 1}
-              </div>
-            ))}
-          </div>
-        )}
-      />
+      {/* A page's 16px gutter: the pager bleeds out of it to the screen edges. */}
+      <div className="px-4">
+        <TouchPager
+          pages={pages.map((page) => ({ ...page }))}
+          current={current}
+          onPageChange={(id) => {
+            setCurrent(id);
+            setReports((now) => [...now, id]);
+          }}
+          renderPage={(id) => (
+            <div
+              data-testid={ids.ctPagerPageBody}
+              className="grid gap-2 rounded border border-border bg-surface p-2"
+            >
+              {Array.from({ length: rows[id] ?? 1 }, (_, i) => (
+                <div key={i} className="h-10 rounded bg-accent-soft p-2 text-sm">
+                  {id} card {i + 1}
+                </div>
+              ))}
+            </div>
+          )}
+        />
+      </div>
     </div>
   );
 }

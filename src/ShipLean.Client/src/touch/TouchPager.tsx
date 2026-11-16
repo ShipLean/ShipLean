@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { StateDot, type StateCategory } from '../components/StateDot';
+import { InsidePagerContext } from './insidePager';
 import { touchTestIds } from './testIds';
 import { pageInView, scrollTarget } from './pagerScroll';
 import './TouchPager.css';
@@ -8,6 +10,8 @@ export interface TouchPagerPage {
   label: string;
   count?: number;
   limit?: number;
+  /** A page that is one state (or category): its chip starts with that state's colour dot. */
+  category?: StateCategory;
   /** Change this value to pulse the page's chip once. The pager never turns the page for it. */
   pulse?: number;
 }
@@ -41,6 +45,7 @@ export function TouchPager({
   renderPage,
   chips = true,
 }: TouchPagerProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const settleTimer = useRef<number>(0);
@@ -52,6 +57,25 @@ export function TouchPager({
   useLayoutEffect(() => {
     latest.current = { pages, current, onPageChange };
   });
+
+  // Bleed to the edges of the window's content area, out of whatever gutter the page has (K5). Measured, not `100vw`:
+  // a classic scrollbar is inside `vw`, so a vw bleed would scroll the page sideways by its width.
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const fit = () => {
+      const box = root.getBoundingClientRect();
+      const left = box.left - (parseFloat(root.style.marginLeft) || 0);
+      const right = box.right + (parseFloat(root.style.marginRight) || 0);
+      root.style.marginLeft = `${-left}px`;
+      root.style.marginRight = `${right - document.documentElement.clientWidth}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    if (root.parentElement) observer.observe(root.parentElement);
+    observer.observe(document.documentElement);
+    return () => observer.disconnect();
+  }, []);
 
   const geometry = useCallback(() => {
     const track = trackRef.current;
@@ -148,55 +172,58 @@ export function TouchPager({
   };
 
   return (
-    <div>
-      {chips ? (
-        <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
-          {pages.map((page) => {
-            const text = chipText(page);
-            return (
-              <button
-                key={page.id}
-                type="button"
-                className={`touch-pager-chip${pulsing.has(page.id) ? ' is-pulsing' : ''}`}
-                data-testid={touchTestIds.pagerChip}
-                data-page-id={page.id}
-                data-over={isOver(page)}
-                aria-current={page.id === current ? 'true' : undefined}
-                onClick={() => turnTo(page.id)}
-                onAnimationEnd={() =>
-                  setPulsing((now) => {
-                    const next = new Set(now);
-                    next.delete(page.id);
-                    return next;
-                  })
-                }
-              >
-                <span>{page.label}</span>
-                {text ? <span className="touch-pager-chip-count">{text}</span> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-      <div
-        ref={trackRef}
-        className="touch-pager"
-        data-testid={touchTestIds.pager}
-        onScroll={onScroll}
-      >
-        {pages.map((page) => (
-          <div
-            key={page.id}
-            className="touch-pager-page"
-            role="group"
-            aria-label={page.label}
-            data-testid={touchTestIds.pagerPage}
-            data-page-id={page.id}
-          >
-            {renderPage(page.id)}
+    <InsidePagerContext.Provider value={true}>
+      <div ref={rootRef}>
+        {chips ? (
+          <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
+            {pages.map((page) => {
+              const text = chipText(page);
+              return (
+                <button
+                  key={page.id}
+                  type="button"
+                  className={`touch-pager-chip${pulsing.has(page.id) ? ' is-pulsing' : ''}`}
+                  data-testid={touchTestIds.pagerChip}
+                  data-page-id={page.id}
+                  data-over={isOver(page)}
+                  aria-current={page.id === current ? 'true' : undefined}
+                  onClick={() => turnTo(page.id)}
+                  onAnimationEnd={() =>
+                    setPulsing((now) => {
+                      const next = new Set(now);
+                      next.delete(page.id);
+                      return next;
+                    })
+                  }
+                >
+                  {page.category ? <StateDot category={page.category} /> : null}
+                  <span>{page.label}</span>
+                  {text ? <span className="touch-pager-chip-count">{text}</span> : null}
+                </button>
+              );
+            })}
           </div>
-        ))}
+        ) : null}
+        <div
+          ref={trackRef}
+          className="touch-pager"
+          data-testid={touchTestIds.pager}
+          onScroll={onScroll}
+        >
+          {pages.map((page) => (
+            <div
+              key={page.id}
+              className="touch-pager-page"
+              role="group"
+              aria-label={page.label}
+              data-testid={touchTestIds.pagerPage}
+              data-page-id={page.id}
+            >
+              {renderPage(page.id)}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </InsidePagerContext.Provider>
   );
 }

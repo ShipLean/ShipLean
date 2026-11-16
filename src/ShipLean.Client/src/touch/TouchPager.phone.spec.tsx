@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { componentTestIds } from '../components/testIds';
 import { PagerHarness } from './ct/PagerHarness';
 import { pagerHarnessIds as ids } from './ct/pagerHarnessIds';
 import { touchTestIds } from './testIds';
@@ -182,6 +183,18 @@ test('TouchPager_WhenOpen_ShouldNotScrollThePageSideways', async ({ mount, page 
   await chipById(page, 'done').click();
   await expect(chipById(page, 'done')).toHaveAttribute('aria-current', 'true');
   expect(await fitsTheWidth(page)).toBe(true);
+});
+
+test('TouchPager_WhenPageHasCategory_ShouldDrawAStateDotInItsChip', async ({ mount, page }) => {
+  await mount(<PagerHarness />);
+  const dot = (id: string) => chipById(page, id).getByTestId(componentTestIds.stateDot);
+  await expect(dot('doing')).toHaveAttribute('data-category', 'inProgress');
+  await expect(dot('done')).toHaveAttribute('data-category', 'completed');
+  await expect(dot('review')).toHaveCount(0);
+  // The dot comes before the label, as the design's "● Doing 4/3".
+  const dotBox = (await dot('doing').boundingBox())!;
+  const labelBox = (await chipById(page, 'doing').getByText('Doing').boundingBox())!;
+  expect(dotBox.x).toBeLessThan(labelBox.x);
 });
 
 for (const theme of ['light', 'dark'] as const) {

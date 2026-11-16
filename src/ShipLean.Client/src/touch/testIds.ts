@@ -45,4 +45,6 @@ export const touchTestIds = {
   actionSheetDetail: 'touch-action-sheet-detail',
   actionSheetFooter: 'touch-action-sheet-footer',
   actionSheetToggle: 'touch-action-sheet-toggle',
+  // K6 touch drag, under a pager (SHIP-1626)
+  dragEdgeHint: 'touch-drag-edge-hint',
 } as const;

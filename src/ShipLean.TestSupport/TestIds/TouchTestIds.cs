@@ -52,4 +52,6 @@ public static class TouchTestIds
     public const string ActionSheetDetail = "touch-action-sheet-detail";
     public const string ActionSheetFooter = "touch-action-sheet-footer";
     public const string ActionSheetToggle = "touch-action-sheet-toggle";
+
+    public const string DragEdgeHint = "touch-drag-edge-hint";
 }

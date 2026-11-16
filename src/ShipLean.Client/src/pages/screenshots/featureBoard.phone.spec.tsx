@@ -1,6 +1,7 @@
 // The Feature board on a phone (SHIP-722): one state a page, lanes on every page, and a task's ⋯ sheet. Regenerate with
 // scripts/update-page-shots.sh src/pages/screenshots/featureBoard.phone.spec.tsx.
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { featureBoardTestIds } from '../../features/featureBoard/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -148,3 +149,39 @@ phonePageShots([
     },
   },
 ]);
+
+// SHIP-1626 TBOARD-2 (K5): at 390px the second page peeks 30-36px at the right edge.
+test('TouchPager_OnTheFeatureBoardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  const first = (await page.getByTestId(touchTestIds.pagerPage).nth(0).boundingBox())!;
+  const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
+  const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
+  // The design's page: 340px from x=12, whatever the page's own gutter.
+  expect(first.x).toBe(12);
+  expect(first.width).toBe(340);
+  // K5: the next page peeks 30-36px at 390px, on screen and inside the track (the pager bleeds to the screen edges).
+  const peek = Math.min(390, track.x + track.width) - second.x;
+  expect(peek).toBeGreaterThanOrEqual(30);
+  expect(peek).toBeLessThanOrEqual(36);
+  // And nothing clips it: 15px in from the screen edge is the second page itself.
+  const secondId = await page
+    .getByTestId(touchTestIds.pagerPage)
+    .nth(1)
+    .getAttribute('data-page-id');
+  const hit = await page.evaluate(
+    ({ x, y, pageTestId }) =>
+      document
+        .elementFromPoint(x, y)
+        ?.closest(`[data-testid="${pageTestId}"]`)
+        ?.getAttribute('data-page-id'),
+    { x: 375, y: second.y + 10, pageTestId: touchTestIds.pagerPage },
+  );
+  expect(hit).toBe(secondId);
+  // The bleed reaches the screen edges and no further: the page never scrolls sideways.
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(sideways).toBe(false);
+});

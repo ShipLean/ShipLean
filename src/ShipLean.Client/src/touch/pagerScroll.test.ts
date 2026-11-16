@@ -13,9 +13,10 @@ describe('pagerScroll', () => {
   });
 
   it('pageWidth_WhenOnAPhone_ShouldBeAtMost340', () => {
-    expect(pageWidth(390)).toBe(340);
-    expect(pageWidth(375)).toBe(327);
-    expect(pageWidth(768)).toBe(340);
+    // The track's content width: 366px at 390px (full bleed, 12px padding each side).
+    expect(pageWidth(366)).toBe(340);
+    expect(pageWidth(351)).toBe(325);
+    expect(pageWidth(744)).toBe(340);
   });
 
   it('scrollTarget_WhenPastTheEnd_ShouldStopAtTheMostTheTrackScrolls', () => {

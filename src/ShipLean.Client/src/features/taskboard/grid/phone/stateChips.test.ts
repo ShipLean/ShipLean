@@ -24,8 +24,8 @@ const ROWS = [
 describe('stateChips', () => {
   it('StateChips_WhenNoFace_ShouldCountEveryTaskPerStateAndLeaveRemovedOut', () => {
     expect(stateChips(COLUMNS, ROWS, new Set())).toEqual([
-      { id: 'new', label: 'New', count: 3 },
-      { id: 'active', label: 'Active', count: 1 },
+      { id: 'new', label: 'New', count: 3, category: 'proposed' },
+      { id: 'active', label: 'Active', count: 1, category: 'inProgress' },
     ]);
   });
 
