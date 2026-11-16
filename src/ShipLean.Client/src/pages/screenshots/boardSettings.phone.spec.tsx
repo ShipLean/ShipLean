@@ -111,12 +111,12 @@ phonePageShots([
     ...pane('board-settings-columns-drag', 'columns', (page) =>
       expect(page.getByTestId(ids.columnRow)).toHaveCount(5),
     ),
-    // Hold Ready's grip for the K5 lift, then move onto In review and keep holding (SHIP-1985).
+    // Hold Ready's grip for the K5 lift, then move onto In review's name and keep holding (SHIP-1985).
     act: (page: Page) =>
       holdAndDrag(
         page,
         page.getByTestId(ids.columnGrip).nth(1),
-        page.getByTestId(ids.columnRow).nth(3),
+        page.getByTestId(ids.columnName).nth(3),
       ),
   },
   pane('board-settings-tags', 'tags', (page) =>

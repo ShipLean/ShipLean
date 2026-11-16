@@ -17,7 +17,7 @@ const modeButton =
 
 /**
  * One lane: name, colour, how cards get in (criteria or by hand), and the criteria. The default lane takes the rest.
- * At touch the grip is a long-press drag (K5).
+ * At touch the head wraps (grip, name and colour first) and the grip is a long-press drag (K5).
  */
 export function LaneRow({
   lane,
@@ -69,7 +69,7 @@ export function LaneRow({
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 touch:flex-wrap">
         <button
           type="button"
           data-testid={ids.laneGrip}
@@ -91,7 +91,7 @@ export function LaneRow({
         ) : null}
         <input
           data-testid={ids.laneName}
-          className="field h-[26px] min-w-20 flex-1"
+          className="field h-[26px] min-w-20 flex-1 touch:h-[var(--touch-target)]"
           aria-label="Lane name"
           value={lane.name}
           readOnly={readOnly}
@@ -99,7 +99,7 @@ export function LaneRow({
         />
         <select
           data-testid={ids.laneColour}
-          className="field h-[26px]"
+          className="field h-[26px] touch:h-[var(--touch-target)] touch:max-w-32"
           aria-label={`Colour of ${lane.name}`}
           value={lane.colour ?? ''}
           disabled={readOnly}

@@ -307,6 +307,22 @@ test('ColumnAndLaneGrips_WhenOnPhone_ShouldBe32pxTargets', async ({ mount, page 
   expect(laneGrip?.height, 'lane grip height').toBeGreaterThanOrEqual(32);
 });
 
+test('Lanes_WhenOnPhone_ShouldWrapTheHeadInsideTheScreen', async ({ mount, page }) => {
+  await stubBoard(page, lanesDto(), []);
+  await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="swimlanes" />,
+  );
+  await expect(page.getByTestId(paneIds.laneRow)).toHaveCount(3);
+  const width = page.viewportSize()?.width ?? 0;
+  const expedite = page.getByTestId(paneIds.laneRow).first();
+  for (const id of [paneIds.laneColour, paneIds.laneModeManual, paneIds.laneDelete]) {
+    const box = await expedite.getByTestId(id).boundingBox();
+    expect((box?.x ?? 0) + (box?.width ?? 0), `${id} stays on the screen`).toBeLessThanOrEqual(
+      width - 12,
+    );
+  }
+});
+
 // SHIP-1988: at touch the reorder hint names the grip as the design draws it (settings-board-styles).
 
 test('ReorderHint_WhenOnPhone_ShouldShowTheGripGlyph', async ({ mount, page }) => {
