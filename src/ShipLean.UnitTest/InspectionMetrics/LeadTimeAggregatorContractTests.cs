@@ -41,7 +41,7 @@ public class LeadTimeAggregatorContractTests
 
     // Mutation: use the median instead of the mean.
     [Test]
-    public void Periods_WhenTasksEndInASprint_ShouldShowTheirMean_TurnedGreenByB3()
+    public void Periods_WhenTasksEndInASprint_ShouldShowTheirMeanTurnedGreenByB3()
     {
         var view = Build([S3, S4], Task("SHIP-1", At(10, 8, 12), 10), Task("SHIP-2", At(10, 9, 12), 20), Task("SHIP-3", At(10, 14, 12), 60), Task("SHIP-4", At(10, 21, 12), 5));
 
@@ -51,7 +51,7 @@ public class LeadTimeAggregatorContractTests
 
     // Mutation: headline the running sprint instead of the last finished one.
     [Test]
-    public void Headline_WhenASprintIsRunning_ShouldBeTheLastFinishedWithTheRunningOneSoFar_TurnedGreenByB3()
+    public void Headline_WhenASprintIsRunning_ShouldBeTheLastFinishedWithTheRunningOneSoFarTurnedGreenByB3()
     {
         var view = Build([S2, S3, S4], Task("SHIP-1", At(10, 8, 12), 10), Task("SHIP-2", At(10, 21, 12), 40), Task("SHIP-3", At(9, 24, 12), 90));
 
@@ -62,7 +62,7 @@ public class LeadTimeAggregatorContractTests
 
     // Mutation: sum only the shown sprints of the quarter.
     [Test]
-    public void Quarters_WhenASprintOfTheQuarterIsNotShown_ShouldStillSumIt_TurnedGreenByB3()
+    public void Quarters_WhenASprintOfTheQuarterIsNotShown_ShouldStillSumItTurnedGreenByB3()
     {
         var view = Build(
             [S3, S4],
@@ -78,7 +78,7 @@ public class LeadTimeAggregatorContractTests
 
     // Mutation: place the task in the sprint it started in.
     [Test]
-    public void Periods_WhenATaskStartedInOneSprintAndEndedInTheNext_ShouldCountItInTheOneItEndedIn_TurnedGreenByB3()
+    public void Periods_WhenATaskStartedInOneSprintAndEndedInTheNext_ShouldCountItInTheOneItEndedInTurnedGreenByB3()
     {
         var view = Build([S2, S3], Task("SHIP-1", At(10, 6, 10), 150));
 
@@ -87,7 +87,7 @@ public class LeadTimeAggregatorContractTests
 
     // Mutation: end a sprint's tasks at its last day, ignoring the weekend after it.
     [Test]
-    public void Periods_WhenATaskEndsOnTheWeekendAfterASprint_ShouldCountItInThatSprint_TurnedGreenByB3()
+    public void Periods_WhenATaskEndsOnTheWeekendAfterASprint_ShouldCountItInThatSprintTurnedGreenByB3()
     {
         var view = Build([S2, S3], Task("SHIP-1", At(10, 3, 10), 5));
 

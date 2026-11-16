@@ -24,7 +24,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: start at the last move to In progress instead of the first.
     [Test]
-    public void Start_WhenMovedToInProgressTwice_ShouldBeTheFirstMove_TurnedGreenByB2()
+    public void Start_WhenMovedToInProgressTwice_ShouldBeTheFirstMoveTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithMove(Key, T0.AddHours(1), "New", StateCategory.Proposed)
@@ -37,7 +37,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: end at the first commit instead of the latest.
     [Test]
-    public void End_WhenCommitsHaveTimes_ShouldBeTheLastCommitAndTheTailRunsToResolved_TurnedGreenByB2()
+    public void End_WhenCommitsHaveTimes_ShouldBeTheLastCommitAndTheTailRunsToResolvedTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithStart(Key, T0)
@@ -50,7 +50,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: end at the last commit even when no commit has a time (reading the null as the start).
     [Test]
-    public void End_WhenNoCommitHasATime_ShouldBeTheFirstResolved_TurnedGreenByB2()
+    public void End_WhenNoCommitHasATime_ShouldBeTheFirstResolvedTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithStart(Key, T0)
@@ -63,7 +63,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: count blocked time twice (once in blocked and once in active).
     [Test]
-    public void Parts_WhenBlockedAndReworked_ShouldAddUpToTheLeadTime_TurnedGreenByB2()
+    public void Parts_WhenBlockedAndReworked_ShouldAddUpToTheLeadTimeTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithStart(Key, T0)
@@ -78,7 +78,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: start rework at the last resolve instead of the first.
     [Test]
-    public void Rework_WhenResolvedBeforeTheLastCommit_ShouldRunFromTheFirstResolve_TurnedGreenByB2()
+    public void Rework_WhenResolvedBeforeTheLastCommit_ShouldRunFromTheFirstResolveTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithStart(Key, T0)
@@ -92,7 +92,7 @@ public class TaskLeadTimeMeasureContractTests
 
     // Mutation: give a task with no start the time of its first resolve as its start.
     [Test]
-    public void Measure_WhenEndedWithNoStart_ShouldBeLeftOutWithAReasonAndNoStart_TurnedGreenByB2()
+    public void Measure_WhenEndedWithNoStart_ShouldBeLeftOutWithAReasonAndNoStartTurnedGreenByB2()
     {
         var measured = Measure(Task()
             .WithResolved(Key, T0.AddHours(5)));

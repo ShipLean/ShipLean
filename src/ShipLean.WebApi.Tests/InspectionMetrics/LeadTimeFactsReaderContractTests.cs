@@ -74,7 +74,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: read the assignee from the creator instead of assigned_to.
     [Test]
-    public void Read_WhenTaskPickedUp_ShouldReturnTheTaskWithItsParentFeatureAndAssignee_TurnedGreenByB1()
+    public void Read_WhenTaskPickedUp_ShouldReturnTheTaskWithItsParentFeatureAndAssigneeTurnedGreenByB1()
     {
         var task = _facts.Tasks.SingleOrDefault(t => t.Key == _task);
 
@@ -84,7 +84,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: take the revision's creation time as the move's time.
     [Test]
-    public void Read_WhenTaskPickedUpAndSentToReview_ShouldReturnEveryMoveWithItsTimeAndCategory_TurnedGreenByB1()
+    public void Read_WhenTaskPickedUpAndSentToReview_ShouldReturnEveryMoveWithItsTimeAndCategoryTurnedGreenByB1()
     {
         var moves = _facts.Moves.Where(m => m.ItemKey == _task).OrderBy(m => m.At).Select(m => (m.At, m.Category, m.UserId)).ToList();
 
@@ -99,7 +99,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: return the commit's link creation time instead of committed_at.
     [Test]
-    public void Read_WhenCommitsReported_ShouldReturnEachShaWithItsCommitTime_TurnedGreenByB1()
+    public void Read_WhenCommitsReported_ShouldReturnEachShaWithItsCommitTimeTurnedGreenByB1()
     {
         var commits = _facts.Commits.Where(c => c.ItemKey == _task).OrderBy(c => c.CommittedAt).Select(c => (c.Sha7, c.CommittedAt)).ToList();
 
@@ -108,7 +108,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: read only the tag change that added Blocked.
     [Test]
-    public void Read_WhenTaskBlockedThenUnblocked_ShouldReturnBothTagChanges_TurnedGreenByB1()
+    public void Read_WhenTaskBlockedThenUnblocked_ShouldReturnBothTagChangesTurnedGreenByB1()
     {
         var tags = _facts.BlockedTags.Where(t => t.ItemKey == _task).OrderBy(t => t.At).Select(t => (t.At, t.BlockedAfter)).ToList();
 
@@ -117,7 +117,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: read only the approving review.
     [Test]
-    public void Read_WhenChangesRequestedThenApproved_ShouldReturnBothReviewsInOrder_TurnedGreenByB1()
+    public void Read_WhenChangesRequestedThenApproved_ShouldReturnBothReviewsInOrderTurnedGreenByB1()
     {
         var reviews = _facts.Reviews.Where(r => r.ItemKey == _task).OrderBy(r => r.At).Select(r => (r.At, r.Verdict)).ToList();
 
@@ -126,7 +126,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
 
     // Mutation: keep only the revisions and commits inside the window's days.
     [Test]
-    public void Read_WhenWindowStartsAfterTheTaskStarted_ShouldReturnItsWholeHistory_TurnedGreenByB1()
+    public void Read_WhenWindowStartsAfterTheTaskStarted_ShouldReturnItsWholeHistoryTurnedGreenByB1()
     {
         _laterWindow.Tasks.Select(t => t.Key).ShouldContain(_task);
         _laterWindow.Moves.Where(m => m.ItemKey == _task).Select(m => m.Category).ShouldBe(

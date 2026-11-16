@@ -207,7 +207,7 @@ public sealed class LeadTimeFactsBuilder
 
         private static bool IsAgent(string who) => Array.IndexOf(Agents, who) >= 0;
 
-        private void HandWritten(LeadTimeFactsBuilder builder)
+        private static void HandWritten(LeadTimeFactsBuilder builder)
         {
             // key, parent, title, who, start, last commit, resolved, blocked hours, rework hours, reviews
             var rows = new (string Key, string Parent, string Title, string Who, DateTimeOffset Start, DateTimeOffset Commit, DateTimeOffset Resolved, double Blocked, double Rework, int Reviews)[]
@@ -282,7 +282,16 @@ public sealed class LeadTimeFactsBuilder
             var feature = Pick(Running[number]);
             var bug = Rnd() < 0.15;
             var title = Pick(Titles);
-            var reviews = agent ? 1 + (rework > 0 ? 1 : 0) : (Rnd() < 0.7 ? 1 : 0);
+            var reviews = 0;
+            if (agent)
+            {
+                reviews = rework > 0 ? 2 : 1;
+            }
+            else if (Rnd() < 0.7)
+            {
+                reviews = 1;
+            }
+
             Rnd(); // the design's runs per task, drawn here and not used
 
             // The design's "resolved" source is the one whose commit has no time: it ends at the first Resolved.
@@ -295,15 +304,15 @@ public sealed class LeadTimeFactsBuilder
 
         private static void Add(LeadTimeFactsBuilder builder, SampleTask task)
         {
-            var agent = IsAgent(task.Who);
-            var person = SamplePerson(task.Who);
+            var agent = IsAgent(task.Person);
+            var person = SamplePerson(task.Person);
             builder.WithTask(
-                task.Key, task.Title, task.Parent, task.ParentType, task.Feature, Features[task.Feature], person, Name(task.Who),
-                agent ? Name(task.Who) : null, ResolvedState, StateCategory.Resolved);
-            builder.WithMove(task.Key, task.Start, InProgressState, StateCategory.InProgress, agent ? Name(task.Who) : null, person);
+                task.Key, task.Title, task.Parent, task.ParentType, task.Feature, Features[task.Feature], person, Name(task.Person),
+                agent ? Name(task.Person) : null, ResolvedState, StateCategory.Resolved);
+            builder.WithMove(task.Key, task.StartAt, InProgressState, StateCategory.InProgress, agent ? Name(task.Person) : null, person);
             if (task.Blocked > 0)
             {
-                builder.WithBlocked(task.Key, task.Start.AddHours(2), task.Start.AddHours(2 + task.Blocked));
+                builder.WithBlocked(task.Key, task.StartAt.AddHours(2), task.StartAt.AddHours(2 + task.Blocked));
             }
 
             var lastCommit = task.Commits.Max(c => c.At) ?? task.Resolved;
@@ -316,7 +325,7 @@ public sealed class LeadTimeFactsBuilder
                 builder.WithReview(task.Key, task.Resolved.AddMinutes(30), ReviewVerdict.Approved);
             }
 
-            builder.WithResolved(task.Key, task.Resolved, agent ? Name(task.Who) : null, person);
+            builder.WithResolved(task.Key, task.Resolved, agent ? Name(task.Person) : null, person);
             for (var i = 0; i < task.Commits.Count; i++)
             {
                 builder.WithCommit(task.Key, task.Commits[i].Sha, task.Commits[i].At);
@@ -334,7 +343,7 @@ public sealed class LeadTimeFactsBuilder
         }
 
         private sealed record SampleTask(
-            string Key, string Parent, InspectionParentType ParentType, string Title, string Feature, string Who, DateTimeOffset Start,
+            string Key, string Parent, InspectionParentType ParentType, string Title, string Feature, string Person, DateTimeOffset StartAt,
             IReadOnlyList<(string Sha, DateTimeOffset? At)> Commits, DateTimeOffset Resolved, double Blocked, double Rework, int Reviews);
     }
 }

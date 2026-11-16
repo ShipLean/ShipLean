@@ -30,7 +30,7 @@ public class LeadTimeFactsBuilderTests
 
         var blocked = facts.BlockedTags.Where(b => b.ItemKey == "SHIP-194").OrderBy(b => b.At).ToList();
         (blocked[1].At - blocked[0].At).TotalHours.ShouldBe(91);
-        facts.Commits.Where(c => c.ItemKey == "SHIP-192").Count().ShouldBe(2);
+        facts.Commits.Count(c => c.ItemKey == "SHIP-192").ShouldBe(2);
         facts.Moves.Single(m => m.ItemKey == "SHIP-194" && m.Category == StateCategory.InProgress).At.ShouldBe(new DateTimeOffset(2026, 10, 8, 9, 0, 0, TimeSpan.Zero));
         facts.Moves.Where(m => m.ItemKey == LeadTimeFactsBuilder.SampleLeftOutKey).Select(m => m.Category).ShouldBe([StateCategory.Resolved]);
     }
