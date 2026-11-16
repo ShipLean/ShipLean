@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Sprint demo on a phone (SHIP-1810 review)</title>
+<!-- SHIP-1626 Q4 / SHIP-1810: the phone design for the sprint Demo tab (SHIP-889, built as SHIP-303), which only had a desktop screen.
+     Images are made by screenshots.sh (demo-*); the live mock is ../screens/sprint-demo.html in a window 900px wide or
+     less. demo-today*.png are copies of the built app's phone page shots (pages/screenshots/demos.phone.spec.tsx). -->
+<link rel="stylesheet" href="../tokens.css">
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1340px; margin: 0 auto; padding: 28px 24px 90px; }
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; }
+h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+p { margin: 0 0 8px; }
+.muted { color: var(--color-muted); }
+a { color: var(--color-accent); }
+code { font: 12px var(--font-mono); overflow-wrap: anywhere; }
+.lede { max-width: 920px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 12px; }
+.seg { display: inline-flex; height: 30px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; background: var(--color-surface); vertical-align: middle; }
+.seg button { padding: 0 12px; border: 0; border-right: 1px solid var(--color-border); background: transparent; color: var(--color-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: 600; }
+.rules { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rules span { padding: 2px 8px; border-radius: 999px; background: var(--color-accent-soft); font-size: 12px; }
+section.block { margin-top: 44px; }
+.sub { margin: 0 0 14px; color: var(--color-muted); max-width: 960px; }
+.phones { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 20px; }
+.phone { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.phone .ph { display: flex; gap: 8px; align-items: baseline; }
+.phone .no { flex: none; display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 6px; border-radius: 6px; background: var(--color-accent); color: var(--color-accent-fg); font-weight: 700; font-size: 12px; }
+.frame { padding: 6px; border-radius: 26px; background: #0b0f17; box-shadow: var(--shadow-raised); }
+.frame img { display: block; width: 100%; height: auto; border-radius: 20px; }
+.phone ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 13px; }
+.dec { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--color-surface-2); font-size: 11px; font-weight: 600; color: var(--color-text); text-decoration: none; }
+.problems { margin: 16px 0 0; padding: 14px 16px 14px 34px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); display: grid; gap: 6px; max-width: 980px; }
+.problems li::marker { font-weight: 700; color: var(--color-danger); }
+table.data { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); font-size: 13px; }
+table.data th { padding: 7px 10px; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); text-align: left; font-size: 12px; font-weight: 600; }
+table.data td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }
+table.data tr:last-child td { border-bottom: 0; }
+.scroll-x { overflow-x: auto; }
+.qs { display: grid; gap: 12px; }
+.q { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); display: grid; gap: 8px; scroll-margin-top: 16px; }
+.q h3 { display: flex; gap: 8px; align-items: baseline; }
+.q h3 .id { flex: none; font: 700 12px var(--font-mono); color: var(--color-accent); }
+.q .see { font-size: 12px; }
+.opts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.opts li { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); }
+.opts li.rec { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.opts b { font-weight: 600; }
+.opts .tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); font-size: 11px; font-weight: 700; }
+.opts small { display: block; color: var(--color-muted); font-size: 12.5px; }
+.card { padding: 14px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+@media (max-width: 600px) { .wrap { padding: 20px 16px 60px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SHIP-1810 · Sprint demo on a phone</h1>
+    <p class="lede">The sprint Demo tab (SHIP-889, built in SHIP-303) at 900px and below, drawn at 390 × 844 for SHIP-1626 (Joel's Q4: it only had a desktop screen). It sits in the touch shell under SHIP-724's shared sprint header and follows the SHIP-805 rules as they stand on this branch: 32px targets, a 48px top bar, sheets with a title and Close, only the top bar pinned. The content is the desktop's (screens/sprint-demo.html), plus the Failed wording that ShipLean#147 (SHIP-1702/1703, relay-made demos) added: a session that ends without uploading shows Failed at once, with the start of what the agent said. #147 also shows every time in the viewer's zone; the labels read the same, so nothing else on the tab changes.</p>
+    <div class="chips">
+      <span class="chip">Task SHIP-1810 · wave 0.1 of SHIP-1626</span><span class="chip">Desktop reference: screens/sprint-demo.html (unchanged above 900px)</span>
+      <span class="chip">Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-t="light">Light</button><button type="button" aria-pressed="false" data-t="dark">Dark</button></span></span>
+    </div>
+    <div class="rules">SHIP-805 rules this design leans on: <span>1 · 900px</span><span>3 · bottom sheets</span><span>7 · tabs scroll sideways</span><span>8 · ⋯ = action sheet</span><span>12 · only the top bar pins</span><span>13 · 32px</span><span>805 D1 · Close on sheets</span></div>
+  </header>
+
+  <section class="block">
+    <h2>Today at 390px</h2>
+    <p class="sub">The built page (phone page shots, for orientation only; the design follows the rules and the desktop's content, not this). These baselines predate wave 0's crumb and are flagged unstable (the video spinner, SHIP-1871).</p>
+    <div class="phones">
+      <figure class="phone" style="margin:0"><div class="frame"><img data-src="demo-today" alt="Today: Ready"></div><figcaption class="muted">Ready: the band with Remake demo, the native video player, facts, chapters.</figcaption></figure>
+      <figure class="phone" style="margin:0"><div class="frame"><img data-src="demo-today-failed" alt="Today: Failed"></div><figcaption class="muted">Failed: the band with Create demo again.</figcaption></figure>
+    </div>
+    <ol class="problems">
+      <li>The header's ⋯ is a bare glyph, under the 32px target and without the border the other sprint tabs' ⋯ has (rule 13, SHIP-724 D10).</li>
+      <li>The sprint's three numbers (committed, completed, Features moved) are gone on the phone; the desktop header shows them.</li>
+      <li>The BAU item shows as a bare key: no type icon, no title, and a small tap target.</li>
+      <li>The Requested line drops who asked for the demo.</li>
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2>Proposed</h2>
+    <p class="sub">Each phone is one state of the mock; the chips under it name the decisions it shows. Everything scrolls with the page except the top bar.</p>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="block">
+    <h2>What wave 1 audits the built page against</h2>
+    <div class="scroll-x"><table class="data">
+      <thead><tr><th>Part</th><th>At 900px and below</th><th>Decisions</th></tr></thead>
+      <tbody>
+        <tr><td>Top bar</td><td>The crumb reads SHIP › Sprints › Sprint 23 › Demo (SHIP-1626 K2).</td><td>P1</td></tr>
+        <tr><td>Sprint header</td><td>SHIP-724's shared header: picker · state · a bordered 32px ⋯ (Edit goal, Edit sprint, All sprints, and Close sprint while open), the dates, the goal clamped to two lines, the three numbers as one row of tiles. All sprints leaves the header row for the ⋯.</td><td>P7, SHIP-724 D10</td></tr>
+        <tr><td>Tabs</td><td>Their own row under the header, scrolling sideways, Demo current. No toolbar row: the tab has no other controls.</td><td>—</td></tr>
+        <tr><td>Status band</td><td>Stacked in one card with the tone's left edge: the state chip (Working adds the pulse on the right), the message, the line under it (who asked, when, the link's expiry), the BAU item as its own 32px row with its type icon, key and title and a ›, then the action across the width (40px). A disabled action stays in place; the message says why.</td><td>P2, P6</td></tr>
+        <tr><td>Failed after the session ended</td><td>The server's message ("The agent session ended as &lt;state&gt; before a video came back.") and the agent's words, at most 280 characters of plain text, in a quote block headed "It said", above the BAU item.</td><td>P5</td></tr>
+        <tr><td>Ready</td><td>One column: the 16:9 player across the width (source chip, 40px control bar), the YouTube line or notice under it, the facts in two columns (File on its own line), then Chapters, Features covered and the Script, all open.</td><td>P3</td></tr>
+        <tr><td>YouTube</td><td>Unlisted: Watch on YouTube ↗ (40px) and the unlisted line under it. Private: the same button and the dashed note. Failed: a notice card with the chip, the reason and Retry upload across the width.</td><td>P3</td></tr>
+        <tr><td>Chapters, Features</td><td>40px rows; a whole chapter row seeks the player; the Feature key stays at the end of the chapter row.</td><td>P4</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="block" id="decisions">
+    <h2>Decisions for Joel</h2>
+    <div class="card" style="margin-bottom:12px">The design is drawn on the recommended answers, which are also recorded with record_decisions on SHIP-1810. SHIP-1626 D11: no approval gate; wave 1 audits against these, and a change here changes the design task.</div>
+    <div class="qs" id="qs"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const Q = [
+    { id: 'P1', t: 'Where the Demo crumb comes from in the mock', see: ['ready'], o: [
+      ['demo-touch.js writes SHIP › Sprints › Sprint 23 › Demo at touch widths', 'shared.js has no crumb entry for sprint-demo.html, so the desktop mock shows only "SHIP"; the touch layer fixes the phone without touching the shared file or the desktop render.', 1],
+      ['Add sprint-demo to crumbsFor in shared.js', 'Right for both widths, but it is a shared file outside this task, and it changes the desktop render (the brief requires it unchanged). A follow-up for the conductor or S0g.'],
+    ] },
+    { id: 'P2', t: 'How the status band lays out', see: ['none', 'working', 'failed', 'closable'], o: [
+      ['Stacked: chip, message, the line under it, the BAU item as its own row, the action across the width', 'Nothing competes for the 366px; the action sits where the thumb is and in the same place in every state.', 1],
+      ['The desktop row: chip, message and action side by side, wrapping', 'At 390px the action wraps under the message at an odd width and the message squeezes to a narrow column.'],
+      ['As built: chip, message, the item key only, a full-width action', 'Close to the recommendation, but the item is a bare key with no title or icon and under the 32px target.'],
+    ] },
+    { id: 'P3', t: 'The order of a Ready demo', see: ['ready', 'chapters', 'script', 'unlisted', 'private', 'ytfailed'], o: [
+      ['Player, YouTube line or notice, facts, Chapters, Features covered, Script, all open', 'The desktop\'s order with the side column folded under the player; the script is what the agent said, so it stays readable without a tap.', 1],
+      ['Chapters and Features as collapsed sections, the Script behind "Show script"', 'Shorter page; one more tap for the content most people came for.'],
+    ] },
+    { id: 'P4', t: 'Chapter rows', see: ['chapters'], o: [
+      ['40px rows; the whole row seeks; the Feature key stays at the end', 'Tapping a chapter is the main action under the player; 40px keeps rows apart without a separator.', 1],
+      ['32px rows (the minimum) and no Feature key', 'Denser; loses which Feature each chapter shows.'],
+    ] },
+    { id: 'P5', t: 'What the agent said when its session ended without a video (ShipLean#147)', see: ['said'], o: [
+      ['A quote block headed "It said" under the message, the text in full (at most 280 characters)', 'Reads as the agent\'s words, not ShipLean\'s; a URL or a long word wraps inside the block.', 1],
+      ['The docs\' sentence inline: … It said: "…" in the line under the message', 'One paragraph, as the server sends it; harder to tell ShipLean\'s message from the agent\'s.'],
+    ] },
+    { id: 'P6', t: 'Remake demo on a Ready demo', see: ['ready'], o: [
+      ['Not drawn: the desktop reference has none. Wave 1 keeps the built Remake demo in the band\'s action slot (full width, P2)', 'docs/sprint-demos.md and the built page offer Remake demo when Ready; the desktop reference predates it. The band rule places it without a new pattern.', 1],
+      ['Remake demo in the sprint header\'s ⋯', 'Keeps the Ready band quiet, but that sheet is shared by every sprint tab.'],
+    ] },
+    { id: 'P7', t: 'The sprint\'s numbers in the header', see: ['ready', 'closable'], o: [
+      ['Keep them as one row of three tiles, not tappable', 'The desktop shows them; on the Retro tab the tiles open sheets, here there is nothing to open, so no ›.', 1],
+      ['Drop them at touch, as built', 'Shorter header; the Demo tab is the one place the sprint\'s result is summed up.'],
+    ] },
+  ];
+  const P = [
+    { id: 'none', img: 'demo-none', title: 'Closed, no demo yet', dec: ['P2'], notes: ['Create demo across the width', 'Says the demo never counts in velocity'] },
+    { id: 'closable', img: 'demo-closable', title: 'Sprint still open', dec: ['P2', 'P7'], notes: ['Create demo off; the message says why', 'The header reads Active · 1 day left'] },
+    { id: 'blocked', img: 'demo-blocked', title: 'Blocked', dec: ['P2'], notes: ['The reason, and where to fix it (Settings)'] },
+    { id: 'working', img: 'demo-working', title: 'Working', dec: ['P2'], notes: ['The pulse on the chip row; no action', 'Who asked, when, and when the upload link runs out', 'The BAU item as its own row'] },
+    { id: 'failed', img: 'demo-failed', title: 'Failed: the link expired', dec: ['P2'], notes: ['Create demo again'] },
+    { id: 'said', img: 'demo-failed-said', title: 'Failed: the session ended (#147)', dec: ['P5'], notes: ['The server\'s message for a session that ended as failed', 'What the agent said, quoted'] },
+    { id: 'ready', img: 'demo-ready', title: 'Ready', dec: ['P3', 'P6', 'P1'], notes: ['Player across the width; the facts in two columns'] },
+    { id: 'chapters', img: 'demo-ready-chapters', title: 'Ready: Chapters and Features', dec: ['P3', 'P4'], notes: ['Scrolled down (the shot hides what is above)'] },
+    { id: 'script', img: 'demo-ready-script', title: 'Ready: the Script', dec: ['P3'], notes: ['Open, chapter by chapter'] },
+    { id: 'unlisted', img: 'demo-youtube-unlisted', title: 'YouTube unlisted', dec: ['P3'], notes: ['The embed plays; Watch on YouTube ↗'] },
+    { id: 'private', img: 'demo-youtube-private', title: 'YouTube private', dec: ['P3'], notes: ['The file plays here; the note says why'] },
+    { id: 'ytfailed', img: 'demo-youtube-failed', title: 'YouTube upload failed', dec: ['P3'], notes: ['Notice card with Retry upload across the width'] },
+    { id: 'sprint', img: 'demo-sprint', title: 'The sprint header\'s ⋯', dec: ['P7'], notes: ['The same sheet on every sprint tab (SHIP-724)', 'Close sprint only while the sprint is open'] },
+  ];
+  let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === theme));
+  const draw = () => {
+    let n = 0;
+    document.getElementById('phones').innerHTML = P.map(p => `<article class="phone" id="${p.id}"><div class="ph"><span class="no">${++n}</span><b>${p.title}</b></div>
+      <div class="frame"><img loading="lazy" alt="${p.title}" src="images/${p.img}.${theme}.png"></div>
+      <div>${p.dec.map(d => `<a class="dec" href="#q-${d}">${d}</a>`).join(' ')}</div>
+      <ul>${p.notes.map(x => `<li>${x}</li>`).join('')}</ul></article>`).join('');
+    document.querySelectorAll('img[data-src]').forEach(i => { i.src = `images/${i.dataset.src}.${theme}.png`; });
+  };
+  draw();
+  document.getElementById('theme').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    theme = b.dataset.t;
+    document.querySelectorAll('#theme button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    draw();
+  });
+  document.getElementById('qs').innerHTML = Q.map(q => `<div class="q" id="q-${q.id}"><h3><span class="id">${q.id}</span>${q.t}</h3>
+    <div class="see">See ${q.see.map(s => `<a href="#${s}">${P.find(p => p.id === s).title}</a>`).join(', ')}</div>
+    <ul class="opts">${q.o.map(([b, s, r]) => `<li${r ? ' class="rec"' : ''}><b>${b}</b>${r ? '<span class="tag">Recommended</span>' : ''}<small>${s}</small></li>`).join('')}</ul></div>`).join('');
+})();
+</script>
+</body>
+</html>
