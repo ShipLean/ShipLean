@@ -6,6 +6,7 @@ using ShipLean.Contracts.Views.InspectionMetrics;
 using ShipLean.Contracts.Views.Timeline;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Mcp.Planning.Reports;
 
 namespace ShipLean.WebApi.Tests.InspectionMetrics;
