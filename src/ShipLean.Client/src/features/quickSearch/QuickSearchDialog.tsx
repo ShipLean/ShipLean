@@ -63,6 +63,8 @@ export function QuickSearchDialog({
   const current = highlight.signature === signature ? highlight : null;
   const index = current?.index ?? 0;
   const showHighlight = !touch || (current?.moved ?? false);
+  // The row assistive tech and the highlight style treat as active; none until the highlight is shown.
+  const active = showHighlight ? index : undefined;
   const move = (to: number) => setHighlight({ signature, index: to, moved: true });
   const optionId = (at: number) => `${listId}-option-${at}`;
 
@@ -90,7 +92,9 @@ export function QuickSearchDialog({
       event.preventDefault();
       if (rows.length === 0) return;
       const step = event.key === 'ArrowDown' ? 1 : -1;
-      move((index + step + rows.length) % rows.length);
+      // Nothing is highlighted yet (touch): the first ArrowDown lands on row 0, ArrowUp on the last row.
+      if (active === undefined) move(step === 1 ? 0 : rows.length - 1);
+      else move((index + step + rows.length) % rows.length);
     } else if (event.key === 'Enter') {
       const row = rows[index];
       if (!row) return;
@@ -163,7 +167,7 @@ export function QuickSearchDialog({
             aria-expanded="true"
             aria-controls={listId}
             aria-autocomplete="list"
-            aria-activedescendant={rows.length > 0 ? optionId(index) : undefined}
+            aria-activedescendant={rows.length > 0 && active !== undefined ? optionId(active) : undefined}
             aria-label="Search"
             autoComplete="off"
             spellCheck={false}
@@ -262,7 +266,7 @@ export function QuickSearchDialog({
                 </div>
                 {group.rows.map((row, rowAt) => {
                   const position = start + rowAt;
-                  const highlighted = position === index;
+                  const highlighted = position === active;
                   return (
                     <div
                       key={row.id}
@@ -274,7 +278,7 @@ export function QuickSearchDialog({
                       data-highlighted={highlighted}
                       {...rowDataAttributes(row)}
                       className={`grid min-h-[34px] cursor-pointer grid-cols-[16px_1fr_auto] items-center gap-x-2.5 rounded-control px-2 py-1 touch:min-h-[52px] ${
-                        highlighted && showHighlight ? 'bg-signal-soft' : ''
+                        highlighted ? 'bg-signal-soft' : ''
                       }`}
                       onMouseEnter={() => move(position)}
                       onClick={() => pick(row)}

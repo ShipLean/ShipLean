@@ -146,3 +146,25 @@ test('QuickSearch_WhenRowsListedOnPhone_ShouldRightAlignStateAndHintsAndPickNoRo
     'rgba(0, 0, 0, 0)',
   );
 });
+
+test('QuickSearch_WhenNothingIsHighlightedOnPhone_ShouldMarkNoRowActiveUntilAnArrowKey', async ({
+  mount,
+  page,
+}) => {
+  await mount(<QuickSearchDialogHarness results={results} initialQuery="proxy" />);
+  const input = page.getByTestId(ids.input);
+  const options = page.getByTestId(ids.option);
+  await expect(options.first()).toBeVisible();
+  // Before any arrow key no row is active for assistive tech either.
+  await expect(input).not.toHaveAttribute('aria-activedescendant', /.+/);
+  await expect(options.first()).toHaveAttribute('aria-selected', 'false');
+  await expect(options.first()).toHaveAttribute('data-highlighted', 'false');
+
+  await input.focus();
+  await page.keyboard.press('ArrowDown');
+
+  // The first ArrowDown lands on row 0, not row 1.
+  await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(options.nth(1)).toHaveAttribute('aria-selected', 'false');
+  await expect(input).toHaveAttribute('aria-activedescendant', (await options.first().getAttribute('id'))!);
+});

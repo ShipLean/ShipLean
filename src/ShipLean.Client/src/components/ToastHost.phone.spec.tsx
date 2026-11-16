@@ -34,6 +34,9 @@ test('Toast_AtTouchWidth_ShouldGiveTheDismissCrossATouchTargetSizedHitArea', asy
   const box = (await dismiss.boundingBox())!;
   expect(box.width).toBeGreaterThanOrEqual(32);
   expect(box.height).toBeGreaterThanOrEqual(32);
+  // The hit area sits in the toast's padding: a one-line toast stays the 34px it was before the target grew.
+  const toast = (await page.getByTestId(ids.toast).boundingBox())!;
+  expect(toast.height).toBeLessThanOrEqual(36);
 });
 
 for (const theme of THEMES) {

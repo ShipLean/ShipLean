@@ -36,7 +36,7 @@ export function Toast({ toast, durationMs }: { toast: ToastItem; durationMs: num
         type="button"
         data-testid={componentTestIds.toastDismiss}
         aria-label="Dismiss"
-        className="touch:grid touch:min-h-(--touch-target) touch:min-w-(--touch-target) touch:place-items-center"
+        className="touch:-my-2 touch:-mr-2 touch:grid touch:min-h-(--touch-target) touch:min-w-(--touch-target) touch:place-items-center"
         onClick={() => dismissToast(toast.id)}
       >
         ×
