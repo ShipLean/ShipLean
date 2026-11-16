@@ -6,6 +6,10 @@ namespace ShipLean.UnitTest.Agents;
 [TestFixture]
 public class AgentErrorTextTests
 {
+    // "a.a.a…" with no "://": the URL pattern tries a scheme at every "a" and scans the whole run each time, so it passes its
+    // 1 second timeout (about 1 s for 300,000 pairs on this host; this is 500,000).
+    private static readonly string PatternTimeoutInput = "a" + string.Concat(Enumerable.Repeat(".a", 500_000));
+
     [Test]
     public void Scrub_WhenNull_ShouldBeNull()
     {
@@ -61,7 +65,47 @@ public class AgentErrorTextTests
     [Test]
     public void Scrub_WhenLongWordWithoutDigits_ShouldKeepIt()
     {
-        AgentErrorText.Scrub("linear-compatible-relay-connection-refused").ShouldBe("linear-compatible-relay-connection-refused");
+        AgentErrorText.Scrub("compatible-relay-connection-refused").ShouldBe("compatible-relay-connection-refused");
+    }
+
+    [Test]
+    public void Scrub_WhenFortyCharacterBase64UrlRunHasNoDigit_ShouldRedactIt()
+    {
+        AgentErrorText.Scrub("sent dBjftJeZqCVPxmBzaKwiuhbUJUapqrHwWsgFWFOEjXk to relay").ShouldBe("sent [redacted] to relay");
+    }
+
+    [Test]
+    public void Scrub_WhenBearerHeader_ShouldRedactTheValue()
+    {
+        AgentErrorText.Scrub("401 for Authorization: Bearer abc.def").ShouldBe("401 for Authorization: Bearer [redacted]");
+    }
+
+    [Test]
+    public void Scrub_WhenTokenKeyInsideEscapedJson_ShouldRedactTheValue()
+    {
+        AgentErrorText.Scrub("""{"error":"bad body {\"uploadToken\":\"q1w2e3\"}"}""")
+            .ShouldBe("""{"error":"bad body {\"uploadToken\":\"[redacted]\"}"}""");
+    }
+
+    [Test]
+    public void Scrub_WhenPathWithoutSchemeHasQueryString_ShouldStripIt()
+    {
+        AgentErrorText.Scrub("POST /hook?sig=abc failed: 404").ShouldBe("POST /hook failed: 404");
+    }
+
+    [Test]
+    public void Scrub_WhenUrlHasUserInfoAndFragment_ShouldRemoveThem()
+    {
+        AgentErrorText.Scrub("POST https://user:pass@relay.example.com/hook#sig=abc failed")
+            .ShouldBe("POST https://relay.example.com/hook failed");
+    }
+
+    [Test]
+    public void Scrub_WhenAPatternTimesOut_ShouldWithholdTheText()
+    {
+        var scrubbed = AgentErrorText.Scrub(PatternTimeoutInput);
+
+        scrubbed.ShouldBe("The error text could not be checked and was withheld.");
     }
 
     [Test]
@@ -82,8 +126,8 @@ public class AgentErrorTextTests
     [Test]
     public void Scrub_WhenTheCutFallsInsideASurrogatePair_ShouldNotSplitIt()
     {
-        var scrubbed = AgentErrorText.Scrub(new string('a', 999) + "\U0001F600 more")!;
+        var scrubbed = AgentErrorText.Scrub(new string('.', 999) + "\U0001F600 more")!;
 
-        scrubbed.ShouldBe(new string('a', 999));
+        scrubbed.ShouldBe(new string('.', 999));
     }
 }

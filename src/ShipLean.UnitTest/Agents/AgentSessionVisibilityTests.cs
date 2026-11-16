@@ -4,7 +4,8 @@ using Shouldly;
 
 namespace ShipLean.UnitTest.Agents;
 
-// C3: members see the end reason and its sentence; a deliveryFailed detail, its attempts and every run log are for admins.
+// C3 as amended by D9: members see the end reason and its sentence; a deliveryFailed detail, every delivery attempt and every
+// run log are for admins.
 [TestFixture]
 public class AgentSessionVisibilityTests
 {
@@ -23,13 +24,13 @@ public class AgentSessionVisibilityTests
     }
 
     [Test]
-    public void Apply_WhenMemberAndAgentError_ShouldShowTheDetailButNoRunLog()
+    public void Apply_WhenMemberAndAgentError_ShouldShowTheDetailButNoRunLogOrDeliveries()
     {
         var view = AgentSessionVisibility.Apply(AgentEndReasons.AgentError, "The tests failed.", RunLog, ProjectRole.Member);
 
         view.EndDetail.ShouldBe("The tests failed.");
         view.RunLog.ShouldBeNull();
-        view.ShowDeliveries.ShouldBeTrue();
+        view.ShowDeliveries.ShouldBeFalse();
         view.EndText.ShouldBe(AgentEndText.For(AgentEndReasons.AgentError, "The tests failed."));
     }
 
@@ -40,6 +41,12 @@ public class AgentSessionVisibilityTests
     }
 
     [TestCaseSource(typeof(AgentEndReasons), nameof(AgentEndReasons.All))]
+    public void Apply_WhenMember_ShouldNeverGetDeliveries(string reason)
+    {
+        AgentSessionVisibility.Apply(reason, "detail", RunLog, ProjectRole.Member).ShowDeliveries.ShouldBeFalse();
+    }
+
+    [TestCaseSource(typeof(AgentEndReasons), nameof(AgentEndReasons.All))]
     public void Apply_WhenAdmin_ShouldGetEverything(string reason)
     {
         var view = AgentSessionVisibility.Apply(reason, "detail", RunLog, ProjectRole.Admin);
@@ -47,10 +54,10 @@ public class AgentSessionVisibilityTests
         view.ShouldBe(new AgentSessionEndView(reason, AgentEndText.For(reason, "detail"), "detail", RunLog, ShowDeliveries: true));
     }
 
-    [TestCase(ProjectRole.Member)]
-    [TestCase(ProjectRole.Admin)]
-    public void Apply_WhenLive_ShouldHaveNoEnd(ProjectRole role)
+    [TestCase(ProjectRole.Member, false)]
+    [TestCase(ProjectRole.Admin, true)]
+    public void Apply_WhenLive_ShouldHaveNoEndAndDeliveriesForAdminsOnly(ProjectRole role, bool showDeliveries)
     {
-        AgentSessionVisibility.Apply(null, null, null, role).ShouldBe(new AgentSessionEndView(null, null, null, null, ShowDeliveries: true));
+        AgentSessionVisibility.Apply(null, null, null, role).ShouldBe(new AgentSessionEndView(null, null, null, null, showDeliveries));
     }
 }

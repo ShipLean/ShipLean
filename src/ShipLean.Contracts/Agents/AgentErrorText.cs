@@ -8,10 +8,14 @@ public static partial class AgentErrorText
 {
     public const int MaxLength = 1000;
 
+    // What Scrub returns when a pattern times out: the raw text can't be shown unchecked, and Scrub must never throw to the sender.
+    public const string Withheld = "The error text could not be checked and was withheld.";
+
     private const string Redacted = "[redacted]";
 
-    // Strips URL query strings, replaces shl_ tokens, token= values and 32+ character base64 or hex runs (with a digit in them,
-    // so a long readable word survives) with [redacted], then cuts to MaxLength characters.
+    // Strips URL userinfo, query strings and fragments (and the query of a bare /path), replaces Bearer values, shl_ tokens,
+    // token= values (also inside escaped JSON), 32+ character base64 or hex runs with a digit in them, and 40+ character
+    // base64url runs with [redacted], then cuts to MaxLength characters. A pattern timeout gives Withheld instead.
     public static string? Scrub(string? raw)
     {
         if (raw is null)
@@ -19,11 +23,25 @@ public static partial class AgentErrorText
             return null;
         }
 
-        var text = QueryString().Replace(raw, match => match.Groups["url"].Value);
+        try
+        {
+            return Cut(Redact(raw));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return Withheld;
+        }
+    }
+
+    private static string Redact(string raw)
+    {
+        var text = Url().Replace(raw, match => match.Groups["scheme"].Value + match.Groups["rest"].Value);
+        text = PathQuery().Replace(text, match => match.Groups["path"].Value);
+        text = BearerValue().Replace(text, match => match.Groups["key"].Value + Redacted);
         text = TokenValue().Replace(text, match => match.Groups["key"].Value + Redacted);
         text = ShipLeanToken().Replace(text, Redacted);
         text = LongRun().Replace(text, match => match.Value.Any(char.IsAsciiDigit) ? Redacted : match.Value);
-        return Cut(text);
+        return LongTokenRunPattern().Replace(text, Redacted);
     }
 
     private static string Cut(string text)
@@ -37,10 +55,18 @@ public static partial class AgentErrorText
         return text[..end];
     }
 
-    [GeneratedRegex(@"(?<url>\b[A-Za-z][A-Za-z0-9+.\-]*://[^\s?#""'<>]*)\?[^\s#""'<>]*", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex QueryString();
+    // scheme://[userinfo@]host/path[?query][#fragment]: keeps the scheme, host and path.
+    [GeneratedRegex(@"(?<scheme>\b[A-Za-z][A-Za-z0-9+.\-]*://)(?:[^\s/?#@""'<>]*@)?(?<rest>[^\s?#""'<>]*)(?:\?[^\s#""'<>]*)?(?:#[^\s""'<>]*)?", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Url();
 
-    [GeneratedRegex(@"(?<key>\b[A-Za-z_]*token[""']?\s*[=:]\s*[""']?)[^\s&""',;]+", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1000)]
+    // A path with no scheme, such as /hook?sig=abc, at the start of a word: keeps the path.
+    [GeneratedRegex(@"(?<![^\s""'(<=:,;])(?<path>/[^\s?#""'<>]*)\?[^\s#""'<>]*", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PathQuery();
+
+    [GeneratedRegex(@"(?<key>\bBearer\s+)[^\s""',;\\]+", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex BearerValue();
+
+    [GeneratedRegex(@"(?<key>\b[A-Za-z_]*token(?:\\?[""'])?\s*[=:]\s*(?:\\?[""'])?)[^\s&""',;\\]+", RegexOptions.IgnoreCase, matchTimeoutMilliseconds: 1000)]
     private static partial Regex TokenValue();
 
     [GeneratedRegex(@"\bshl_[A-Za-z0-9_\-]+", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
@@ -48,4 +74,8 @@ public static partial class AgentErrorText
 
     [GeneratedRegex(@"[A-Za-z0-9+/_\-]{32,}={0,2}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex LongRun();
+
+    // A 40+ character base64url run is redacted even with no digit in it: a random 43-character token has none about 0.07% of the time.
+    [GeneratedRegex(@"[A-Za-z0-9_\-]{40,}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex LongTokenRunPattern();
 }

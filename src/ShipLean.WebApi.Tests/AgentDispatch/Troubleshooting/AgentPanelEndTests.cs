@@ -12,8 +12,8 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch.Troubleshooting;
 
-// The Agent panel's end fields (C3, C4): every member sees why a session ended; a deliveryFailed detail and its delivery attempts
-// are for project admins only. Sessions and attempts are seeded with the TestSupport builders, never through the writers. Each
+// The Agent panel's end fields (C3 as amended by D9, C4): every member sees why a session ended; a deliveryFailed detail, every
+// delivery attempt and the run log are for project admins only. Sessions and attempts are seeded with the TestSupport builders, never through the writers. Each
 // test owns a project with Joel as admin and Priya as member.
 [TestFixture]
 public class AgentPanelEndTests : ApiFixture
@@ -49,6 +49,19 @@ public class AgentPanelEndTests : ApiFixture
         await AgentDeliveryAttemptRows.InsertAsync(database, new AgentDeliveryAttemptCreate(deliveryId, connectionId, 2, Sent.AddMinutes(1), 502, ReceiverDetail, 90, null));
     }
 
+    // The run log attachment as C10 stores it: agent-run-<session id>.log on the item.
+    private static async Task<Guid> InsertRunLogAsync(NpgsqlConnection database, Guid itemId, Guid sessionId, bool archived)
+    {
+        var id = Guid.NewGuid();
+        await database.ExecuteAsync(
+            """
+            INSERT INTO attachment (id, work_item_id, name, content_type, size_bytes, storage_ref, archived_at)
+            VALUES (@id, @itemId, @name, 'text/plain', 4096, 'blob/run-log', @archivedAt)
+            """,
+            new { id, itemId, name = $"agent-run-{sessionId}.log", archivedAt = archived ? Sent : (DateTimeOffset?)null });
+        return id;
+    }
+
     [Test]
     public async Task Sessions_WhenDeliveryFailed_ShouldShowTheDetailAndAttemptsToAdminsOnly()
     {
@@ -70,6 +83,58 @@ public class AgentPanelEndTests : ApiFixture
         member.EndText.ShouldNotContain("relay-host-7");
         member.EndDetail.ShouldBeNull();
         member.Deliveries.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Sessions_WhenAgentErrorAfterAFailedThenSuccessfulAttempt_ShouldShowTheAttemptsToAdminsOnly()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, connectionId) = await ArrangeAsync(database);
+        var sessionId = await new AgentSessionSeeds(itemId, connectionId)
+            .WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("dotnet build failed: CS0103").InsertAsync(database);
+        var deliveryId = await AgentDeliveryAttemptRows.InsertDeliveryAsync(database, sessionId, status: "sent");
+        await AgentDeliveryAttemptRows.InsertAsync(database, new AgentDeliveryAttemptCreate(deliveryId, connectionId, 1, Sent, null, "Connection refused (relay-host-7.internal:8443)", 15, Sent.AddMinutes(1)));
+        await AgentDeliveryAttemptRows.InsertAsync(database, new AgentDeliveryAttemptCreate(deliveryId, connectionId, 2, Sent.AddMinutes(1), 202, null, 80, null));
+
+        var admin = await SessionAsync(TestUser.Joel, itemId, sessionId);
+        var member = await SessionAsync(TestUser.Priya, itemId, sessionId);
+
+        admin.Deliveries.Select(d => (d.Attempt, d.HttpStatus, d.Error)).ShouldBe([(1, null, "Connection refused (relay-host-7.internal:8443)"), (2, 202, null)]);
+        member.EndDetail.ShouldBe("dotnet build failed: CS0103");
+        member.Deliveries.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Sessions_WhenARunLogIsAttached_ShouldGiveItToAdminsOnly()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, connectionId) = await ArrangeAsync(database);
+        var sessionId = Guid.NewGuid();
+        var attachmentId = await InsertRunLogAsync(database, itemId, sessionId, archived: false);
+        await new AgentSessionSeeds(itemId, connectionId).WithId(sessionId)
+            .WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("tests failed").WithRunLogAttachment(attachmentId).InsertAsync(database);
+
+        var admin = await SessionAsync(TestUser.Joel, itemId, sessionId);
+        var member = await SessionAsync(TestUser.Priya, itemId, sessionId);
+
+        admin.RunLog.ShouldBe(new AgentRunLogDto(attachmentId, $"agent-run-{sessionId}.log", 4096, $"/api/attachments/{attachmentId}/content"));
+        member.RunLog.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Sessions_WhenTheRunLogAttachmentIsArchived_ShouldGiveNoRunLog()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, connectionId) = await ArrangeAsync(database);
+        var sessionId = Guid.NewGuid();
+        var attachmentId = await InsertRunLogAsync(database, itemId, sessionId, archived: true);
+        await new AgentSessionSeeds(itemId, connectionId).WithId(sessionId)
+            .WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("tests failed").WithRunLogAttachment(attachmentId).InsertAsync(database);
+
+        var admin = await SessionAsync(TestUser.Joel, itemId, sessionId);
+
+        admin.EndReason.ShouldBe(AgentEndReasons.AgentError);
+        admin.RunLog.ShouldBeNull();
     }
 
     [Test]
