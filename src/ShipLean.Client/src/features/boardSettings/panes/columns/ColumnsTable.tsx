@@ -37,7 +37,7 @@ export function ColumnsTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-panel border border-edge bg-panel">
+    <div className="overflow-hidden rounded-panel border border-edge bg-panel touch:overflow-x-auto">
       <table className="w-full border-collapse text-[length:var(--text-sm)]">
         <thead>
           <tr className="border-b border-edge bg-panel text-left text-[length:var(--text-xs)] text-ink-muted">

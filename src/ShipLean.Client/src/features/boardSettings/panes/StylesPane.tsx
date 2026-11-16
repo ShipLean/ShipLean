@@ -24,14 +24,14 @@ export function StylesPane({
         Style rules make cards that need attention stand out. When a card matches more than one
         rule, the first rule wins. Drag the grip to reorder.
       </p>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
         <div className="grid gap-2">
           <div>
             <button
               type="button"
               data-testid={ids.stylesAdd}
               disabled={readOnly}
-              className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50"
+              className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50 touch:h-[var(--touch-target)]"
               onClick={() => setRules([...draft.styleRules, blankRule(lists)])}
             >
               + Add styling rule
@@ -52,6 +52,10 @@ export function StylesPane({
               onDelete={() => setRules(draft.styleRules.filter((r) => r.id !== rule.id))}
               onMove={(step) => setRules(moveRule(draft.styleRules, index, index + step))}
               onDragStart={() => setDragFrom(index)}
+              onTouchDrop={(targetId) => {
+                const to = draft.styleRules.findIndex((r) => r.id === targetId);
+                if (to >= 0) setRules(moveRule(draft.styleRules, index, to));
+              }}
               onDrop={() => {
                 if (dragFrom !== undefined) setRules(moveRule(draft.styleRules, dragFrom, index));
                 setDragFrom(undefined);
