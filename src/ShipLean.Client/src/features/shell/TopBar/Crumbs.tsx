@@ -56,11 +56,15 @@ export function Crumbs() {
   // Every sprint tab names its sprint ("Sprint 24"), as the design does (SHIP-1626 D1: phone and desktop); until the
   // sprints load the crumb says "Sprint". The project and its sprints are the queries the page itself makes, so this
   // reads the cache.
-  const sprintId =
+  const sprintParams =
     route !== undefined && SPRINT_TABS.has(route.id)
-      ? (route.params as { sprintId: string }).sprintId
+      ? (route.params as { key: string; sprintId: string })
       : undefined;
-  const project = useQuery({ ...projectByKeyQuery(key ?? ''), enabled: sprintId !== undefined });
+  const sprintId = sprintParams?.sprintId;
+  const project = useQuery({
+    ...projectByKeyQuery(sprintParams?.key ?? ''),
+    enabled: sprintId !== undefined,
+  });
   const sprints = useQuery({
     ...sprintsQuery(project.data?.id ?? ''),
     enabled: sprintId !== undefined && project.data !== undefined,
