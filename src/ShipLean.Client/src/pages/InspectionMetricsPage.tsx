@@ -2,7 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, type ComponentType } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ApiRequestError } from '@shiplean/core/api/client';
-import { getInspectionMetrics, inspectionMetricsKeys } from '@shiplean/core/api/inspectionMetrics';
+import {
+  getInspectionMetrics,
+  inspectionMetricsKeys,
+  type InspectionMetricsQuery,
+} from '@shiplean/core/api/inspectionMetrics';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import { postInspectionMetricsViewed } from '@shiplean/core/api/usageApi';
 import { InspectionHeader } from '../features/inspectionMetrics/InspectionHeader';
