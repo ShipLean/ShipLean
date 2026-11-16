@@ -45,6 +45,7 @@ export function TouchPager({
   renderPage,
   chips = true,
 }: TouchPagerProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
   const settleTimer = useRef<number>(0);
@@ -56,6 +57,25 @@ export function TouchPager({
   useLayoutEffect(() => {
     latest.current = { pages, current, onPageChange };
   });
+
+  // Bleed to the edges of the window's content area, out of whatever gutter the page has (K5). Measured, not `100vw`:
+  // a classic scrollbar is inside `vw`, so a vw bleed would scroll the page sideways by its width.
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const fit = () => {
+      const box = root.getBoundingClientRect();
+      const left = box.left - (parseFloat(root.style.marginLeft) || 0);
+      const right = box.right + (parseFloat(root.style.marginRight) || 0);
+      root.style.marginLeft = `${-left}px`;
+      root.style.marginRight = `${right - document.documentElement.clientWidth}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    if (root.parentElement) observer.observe(root.parentElement);
+    observer.observe(document.documentElement);
+    return () => observer.disconnect();
+  }, []);
 
   const geometry = useCallback(() => {
     const track = trackRef.current;
@@ -153,7 +173,7 @@ export function TouchPager({
 
   return (
     <InsidePagerContext.Provider value={true}>
-      <div className="touch-pager-root">
+      <div ref={rootRef}>
         {chips ? (
           <div ref={chipsRef} className="touch-pager-chips" data-testid={touchTestIds.pagerChips}>
             {pages.map((page) => {
