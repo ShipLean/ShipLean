@@ -10,6 +10,6 @@ public enum LinkType
     Url,
 
     // From a Bug to the Task that introduced it (SHIP-1398 item D18); shown as Caused by on the bug and Caused on the task.
-    // TODO: accepted on any pair; the Bug-to-Task rule in Features/Links replaces it.
+    // Only a Bug links to a Task this way (CausedByRule).
     CausedBy,
 }

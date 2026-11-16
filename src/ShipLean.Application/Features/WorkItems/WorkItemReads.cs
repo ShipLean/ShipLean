@@ -165,7 +165,8 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             row.Tags,
             new BoardPositionDto(row.ColumnId, row.ColumnDone, row.LaneId, row.ColumnOrder),
             row.BacklogOrder,
-            [.. links.Where(l => l.SourceId == row.Id).Select(l => l.ToDto(time.GetUtcNow(), viewerZone.Zone))],
+            [.. links.Where(l => !l.Incoming && l.SourceId == row.Id).Select(l => l.ToDto(time.GetUtcNow(), viewerZone.Zone))],
+            [.. links.Where(l => l.Incoming && l.SourceId == row.Id).Select(l => new CausedRefDto(l.TargetId!.Value, l.TargetKey!, l.TargetTitle!))],
             [.. children.Where(c => c.ParentId == row.Id).Select(c => new ChildSummaryDto(
                 c.Id, c.Key, WorkItemTypes.Ref(WorkItemTypes.Parse(c.Type)), c.Title, states[c.StateId], Lookup(users, c.AssigneeId), WorkItemPoints.Normalise(c.Points)))],
             row.Original,

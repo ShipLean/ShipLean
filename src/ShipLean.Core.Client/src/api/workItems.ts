@@ -53,6 +53,12 @@ export interface AutoLinkDto {
   matchedOn: 'title' | 'branch' | 'body';
 }
 
+export interface CausedRefDto {
+  id: string;
+  key: string;
+  title: string;
+}
+
 export interface LinkDto {
   id: string;
   type: LinkType;
@@ -101,6 +107,8 @@ export interface WorkItemDto {
   position: BoardPositionDto;
   backlogOrder: string;
   links: LinkDto[];
+  /** Bugs that point at this item with a Caused by link (a Task's Caused rows); LinkDto is outgoing only. Optional only while the shared CT fixtures lack it; the server always sends it. */
+  caused?: CausedRefDto[];
   children: ChildSummaryDto[];
   originalSystem: OriginalSystemDto | null;
   revision: number;

@@ -186,6 +186,15 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
         JOIN state s ON s.id = t.state_id
         """;
 
+    // The types of these items, for a rule that depends on both ends of a link.
+    public async Task<IReadOnlyDictionary<Guid, WorkItemTypeId>> TypesOfAsync(Guid[] ids, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var rows = await connection.QueryAsync<(Guid Id, string Type)>(new CommandDefinition(
+            "SELECT id, type FROM work_item WHERE id = ANY(@ids)", new { ids }, cancellationToken: cancellationToken));
+        return rows.ToDictionary(r => r.Id, r => Enum.Parse<WorkItemTypeId>(r.Type, ignoreCase: true));
+    }
+
     private static WorkItemLinkRowDto ToDto(WorkItemLinkQueryRow row)
     {
         var type = Enum.Parse<WorkItemTypeId>(row.ItemType, ignoreCase: true);

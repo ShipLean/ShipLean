@@ -37,6 +37,7 @@ public sealed record WorkItemDto(
     BoardPositionDto Position,
     string BacklogOrder,
     IReadOnlyList<LinkDto> Links,
+    IReadOnlyList<CausedRefDto> Caused,
     IReadOnlyList<ChildSummaryDto> Children,
     OriginalSystemDto? OriginalSystem,
     int Revision,

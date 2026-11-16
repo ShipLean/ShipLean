@@ -81,6 +81,7 @@ internal sealed class InMemoryDtoBuilder(
             new BoardPositionDto(item.ColumnId, item.ColumnDone, item.LaneId, item.ColumnOrder),
             item.BacklogOrder,
             item.Links.Select(Link).ToList(),
+            [],
             Children(item, project),
             item.OriginalSystem,
             item.Revision,
