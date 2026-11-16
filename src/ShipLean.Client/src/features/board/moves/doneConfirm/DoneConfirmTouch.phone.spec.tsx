@@ -41,10 +41,18 @@ async function askForDone(page: Page) {
     .filter({ hasText: 'SHIP-102' })
     .getByTestId(touchTestIds.moreButton)
     .tap();
-  await page.locator('[data-action-id="move-to"]').tap();
   await page.locator('[data-action-id^="column:col-done"]').tap();
   await expect(page.getByTestId(ids.doneConfirm)).toBeVisible();
 }
+
+test('DoneCheck_TitleShouldAskTheDesignsQuestion', async ({ mount, page }) => {
+  await stubBoard(page, featuresBoard(), { level: 'features' });
+  await stubChildren(page);
+  await mount(<BoardHarness level="features" />, route);
+  await askForDone(page);
+
+  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move SHIP-102 to Done?');
+});
 
 test('DoneConfirm_WhenTouch_ShouldBeASheetWithMoveAnywayOnTop', async ({ mount, page }) => {
   await stubBoard(page, featuresBoard(), { level: 'features' });
@@ -52,7 +60,7 @@ test('DoneConfirm_WhenTouch_ShouldBeASheetWithMoveAnywayOnTop', async ({ mount, 
   await mount(<BoardHarness level="features" />, route);
   await askForDone(page);
 
-  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('2 stories still open');
+  await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Move SHIP-102 to Done?');
   await expect(sheet(page).getByTestId(ids.doneConfirmChild)).toHaveCount(2);
   const move = (await page.getByTestId(ids.doneConfirmMove).boundingBox())!;
   const cancel = (await page.getByTestId(ids.doneConfirmCancel).boundingBox())!;

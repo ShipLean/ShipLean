@@ -107,4 +107,7 @@ public static class BoardTestIds
 
     // SHIP-916 W1
     public const string CardHealth = "board-card-health";
+
+    // SHIP-1826
+    public const string CardSheetHeader = "board-card-sheet-header";
 }

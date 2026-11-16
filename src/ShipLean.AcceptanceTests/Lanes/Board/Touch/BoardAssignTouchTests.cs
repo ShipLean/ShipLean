@@ -39,7 +39,7 @@ public class BoardAssignTouchTests : SeededAcceptanceTest
         var card = board.Card("SHIP-144");
 
         await sheets.OpenAssignAsync(card, "SHIP-144", "Assign");
-        var sheet = sheets.AssignSheet("Assign");
+        var sheet = sheets.AssignSheet("Assign", "SHIP-144");
         await Expect(sheet).ToBeVisibleAsync();
         (await TouchRules.ViolationsAsync(Page, sheet)).ShouldBeEmpty();
         var patched = await Page.RunAndWaitForResponseAsync(
@@ -60,7 +60,7 @@ public class BoardAssignTouchTests : SeededAcceptanceTest
         await Expect(BoardMoves.Assignee(card).First).ToHaveAttributeAsync("title", "Tom Okafor");
 
         await sheets.OpenAssignAsync(card, "SHIP-104", "Owner");
-        var sheet = sheets.AssignSheet("Owner");
+        var sheet = sheets.AssignSheet("Owner", "SHIP-104");
         await Expect(sheet).ToBeVisibleAsync();
         (await TouchRules.ViolationsAsync(Page, sheet)).ShouldBeEmpty();
         var patched = await Page.RunAndWaitForResponseAsync(

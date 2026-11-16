@@ -21,7 +21,8 @@ describe('moveTargets', () => {
       ['col-prog', false, 'In progress'],
       ['col-done', false, 'Done'],
     ]);
-    expect(targets.find((t) => t.columnId === 'col-prog')?.wip).toBe('3 of 2 (over)');
+    expect(targets.find((t) => t.columnId === 'col-prog')?.wip).toBe('3/2');
+    expect(targets.find((t) => t.columnId === 'col-prog')?.over).toBe(true);
     expect(targets.find((t) => t.columnId === 'col-new')?.current).toBe(true);
     expect(targets.filter((t) => t.current)).toHaveLength(1);
   });

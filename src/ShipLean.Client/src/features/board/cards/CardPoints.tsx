@@ -1,12 +1,16 @@
 import type { CardDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { boardTestIds as ids } from '../testIds';
 import { pointsText } from './cardStyle';
 
 // The points pill. Stories and bugs show their points, a warn ? when unestimated. Features and Epics show their own
 // points with the stories and bugs below greyed beside them (20 · Σ26), warn when the sum is over by more than 25 %.
 export function CardPoints({ card, level }: { card: CardDto; level: Level }) {
-  if (level === 'stories') {
+  const { touch } = useTouchShell();
+  // At touch widths a Feature or Epic with no points of its own or below shows the warn ? a story does, which also keeps its ⋯ at the right.
+  const bare = card.points === null && card.childPoints === null;
+  if (level === 'stories' || (touch && bare)) {
     const unestimated = card.points === null;
     return (
       <span
