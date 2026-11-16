@@ -5,13 +5,22 @@ import boardStories from '../../../ShipLean.TestSupport/DtoFixtures/views/board-
 import featureBoard from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-board-view.json';
 import timelineRunning from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-timeline-running-view.json';
 import timelineFinished from '../../../ShipLean.TestSupport/DtoFixtures/views/feature-timeline-view.json';
+import inspectionMetrics from '../../../ShipLean.TestSupport/DtoFixtures/views/inspection-metrics-view.json';
 import taskboard from '../../../ShipLean.TestSupport/DtoFixtures/views/taskboard-view.json';
 import { STATE_CATEGORIES } from './refs';
 import {
   BACKLOG_MODES,
   BACKLOG_ROW_KINDS,
   BOARD_LANE_KINDS,
+  INSPECTION_AGGREGATES,
+  INSPECTION_CADENCES,
+  INSPECTION_CUTS,
+  INSPECTION_EVENT_KINDS,
+  INSPECTION_PARENT_TYPES,
+  INSPECTION_RANGES,
+  INSPECTION_SEGMENT_KINDS,
   KEY_DATE_POINTS,
+  LEAD_TIME_ENDED_BY,
   REVIEW_VERDICTS,
   TIMELINE_BAR_STATES,
   TIMELINE_EDGE_KINDS,
@@ -23,6 +32,7 @@ import type {
   BoardViewDto,
   FeatureBoardViewDto,
   FeatureTimelineViewDto,
+  InspectionMetricsViewDto,
   TaskboardViewDto,
 } from './views';
 
@@ -121,4 +131,35 @@ test('views_ShouldTypeTheTimelineFixtures', () => {
   expect(running.keyDates[3]?.at).toBeNull();
   expect(running.gaps.at(-1)?.soFar).toBe(true);
   expect(running.bars.some((b) => b.state === 'inFlight' && b.end === null)).toBe(true);
+});
+
+test('views_ShouldTypeTheInspectionMetricsFixture', () => {
+  const view = typed<InspectionMetricsViewDto>()(inspectionMetrics);
+
+  // JSON imports widen literal unions to string, so check every enum value against its union.
+  expect(INSPECTION_CADENCES).toContain(view.cadence);
+  expect(INSPECTION_RANGES).toContain(view.range);
+  expect(INSPECTION_CUTS).toContain(view.cut);
+  expect(INSPECTION_AGGREGATES).toContain(view.aggregate);
+  const tasks = [...view.longest, ...(view.periodDetail?.tasks ?? [])];
+  for (const task of tasks) {
+    expect(LEAD_TIME_ENDED_BY).toContain(task.endedBy);
+    if (task.parentType !== null) expect(INSPECTION_PARENT_TYPES).toContain(task.parentType);
+  }
+  for (const dot of view.periods.flatMap((p) => p.dots))
+    expect(LEAD_TIME_ENDED_BY).toContain(dot.endedBy);
+  expect(new Set(tasks.map((t) => t.parentType))).toEqual(new Set(INSPECTION_PARENT_TYPES));
+  expect(view.headline.quarterToDate?.toDate).toBe(true);
+  expect(view.headline.lastQuarter?.toDate).toBe(false);
+  expect(view.periodDetail?.previous).not.toBeNull();
+  expect(view.periodDetail?.next).not.toBeNull();
+  const selected = view.periodDetail?.selected;
+  for (const segment of selected?.segments ?? [])
+    expect(INSPECTION_SEGMENT_KINDS).toContain(segment.kind);
+  expect(new Set(selected?.events.map((e) => e.kind))).toEqual(new Set(INSPECTION_EVENT_KINDS));
+
+  expect(view.caveat).not.toBe('');
+  expect(view.periods.filter((p) => p.inProgress)).toHaveLength(1);
+  expect(view.longest.filter((t) => t.endedBy === 'resolved')).toHaveLength(1);
+  expect(view.cuts?.every((row) => row.cells.length === view.periods.length)).toBe(true);
 });

@@ -31,3 +31,36 @@ export function postTimelineBarSelected(projectId: string): Promise<void> {
     {},
   );
 }
+
+/** POST api/projects/{id}/usage/inspection-metrics-viewed: an Inspection view shown. The server answers 204. */
+export function postInspectionMetricsViewed(
+  projectId: string,
+  view: 'overview' | 'leadtime' | 'period' | 'json',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-viewed`,
+    { view },
+  );
+}
+
+/** POST api/projects/{id}/usage/inspection-metrics-period-opened: a sprint opened on Inspection, by kind (not its id). The server answers 204. */
+export function postInspectionMetricsPeriodOpened(
+  projectId: string,
+  period: 'finished' | 'running',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-period-opened`,
+    { period },
+  );
+}
+
+/** POST api/projects/{id}/usage/inspection-metrics-task-opened: a task opened on Inspection, from the rail, Longest tasks or a chart dot. The server answers 204. */
+export function postInspectionMetricsTaskOpened(
+  projectId: string,
+  from: 'rail' | 'longest' | 'chart',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-task-opened`,
+    { from },
+  );
+}
