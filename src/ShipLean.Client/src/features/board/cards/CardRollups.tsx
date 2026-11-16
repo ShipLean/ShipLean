@@ -15,6 +15,7 @@ export function CardRollups({
   inDone = false,
   level,
   onRollupClick,
+  openType,
 }: {
   rollups: RollupCountDto[];
   annotations: CardAnnotationsJson;
@@ -22,6 +23,9 @@ export function CardRollups({
   inDone?: boolean;
   level: Level;
   onRollupClick?: (type: WorkItemTypeId) => void;
+  /** At touch widths, the child type whose list is open inside the card (null: none); its roll-up shows ▲. Left out
+   * where the list is a floating panel, so the roll-ups make no claim about it. */
+  openType?: WorkItemTypeId | null;
 }) {
   const shown = visibleRollups(rollups, annotations);
   if (shown.length === 0) {
@@ -35,9 +39,11 @@ export function CardRollups({
           data-testid={ids.cardRollup}
           data-type={type}
           data-empty={true}
+          aria-expanded={openType === undefined ? undefined : openType === type}
           className="inline-flex items-center gap-1 text-[length:var(--text-2xs)] text-ink-muted touch:min-h-[var(--touch-target)]"
         >
           {level === 'epics' ? 'No Features yet' : 'No stories yet'}
+          {openType === type ? <span aria-hidden>▲</span> : null}
         </button>
       </div>
     );
@@ -53,6 +59,9 @@ export function CardRollups({
             key={rollup.type}
             type={onRollupClick ? 'button' : undefined}
             onClick={onRollupClick ? () => onRollupClick(rollup.type) : undefined}
+            aria-expanded={
+              onRollupClick && openType !== undefined ? openType === rollup.type : undefined
+            }
             data-warn={warn}
             data-testid={ids.cardRollup}
             data-type={rollup.type}
@@ -68,6 +77,7 @@ export function CardRollups({
           >
             <TypeIcon type={rollup.type} />
             {rollup.closed}/{total}
+            {openType === rollup.type ? <span aria-hidden>▲</span> : null}
           </Tag>
         );
       })}
