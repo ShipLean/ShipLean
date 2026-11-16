@@ -25,7 +25,9 @@ export function HealthFilter({
       value={value ?? ''}
       onChange={(event) =>
         onChange(
-          event.target.value === '' ? undefined : (event.target.value as FeatureHealth | typeof NONE),
+          event.target.value === ''
+            ? undefined
+            : (event.target.value as FeatureHealth | typeof NONE),
         )
       }
     >

@@ -57,7 +57,10 @@ phonePageShots([
     ready: (page) => expect(page.getByTestId(ids.card).first()).toBeVisible(),
     act: async (page) => {
       await page.getByTestId(ids.filterToggle).tap();
-      await page.getByTestId(touchTestIds.sheet).getByTestId(ids.filterHealth).selectOption('atRisk');
+      await page
+        .getByTestId(touchTestIds.sheet)
+        .getByTestId(ids.filterHealth)
+        .selectOption('atRisk');
       await expect(page.getByTestId(ids.filterCount)).toContainText('Showing 12 of 14 cards');
     },
   },

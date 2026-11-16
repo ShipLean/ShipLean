@@ -27,7 +27,8 @@ export function featuresWithHealth(): BoardViewDto {
 export function filteredByHealth(base: BoardViewDto, search: URLSearchParams): BoardViewDto {
   const wanted = search.get('health');
   if (wanted === null) return base;
-  const shows = (health: string | null) => (wanted === 'none' ? health === null : health === wanted);
+  const shows = (health: string | null) =>
+    wanted === 'none' ? health === null : health === wanted;
   let hidden = 0;
   const lanes = base.lanes.map((lane) => ({
     ...lane,

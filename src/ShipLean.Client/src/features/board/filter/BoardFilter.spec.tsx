@@ -141,11 +141,9 @@ test('BoardFilter_WhenOnEpics_ShouldOfferNeitherSprintNorEpic', async ({ mount, 
 });
 
 test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
-  const server = await stubBoard(
-    page,
-    (search) => filteredByHealth(featuresWithHealth(), search),
-    { level: 'features' },
-  );
+  const server = await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
   await mount(<BoardHarness level="features" />, features);
   await expect(page.getByTestId(ids.card)).toHaveCount(3);
   await page.getByTestId(ids.filterToggle).click();

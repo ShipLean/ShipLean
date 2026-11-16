@@ -253,15 +253,16 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
 
   await expect(toggle).toHaveAttribute('data-active', 'true');
   await expect(toggle).toHaveCSS('border-top-width', '1px');
-  await expect(toggle).not.toHaveCSS('border-top-color', await more.evaluate((el) => getComputedStyle(el).borderTopColor));
+  await expect(toggle).not.toHaveCSS(
+    'border-top-color',
+    await more.evaluate((el) => getComputedStyle(el).borderTopColor),
+  );
 });
 
 test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
-  const server = await stubBoard(
-    page,
-    (search) => filteredByHealth(featuresWithHealth(), search),
-    { level: 'features' },
-  );
+  const server = await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
   await mount(<BoardHarness level="features" />, features);
   await expect(page.getByTestId(ids.card)).toHaveCount(3);
   await page.getByTestId(ids.filterToggle).tap();
