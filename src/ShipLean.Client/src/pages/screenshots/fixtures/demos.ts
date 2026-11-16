@@ -114,40 +114,58 @@ export async function stubDemo(page: Page, demo: SprintDemoDto) {
   );
 }
 
-/** The pseudo of the spinner inside Chromium's own <video> controls; the browser removes it once the spinner is down. */
-const NATIVE_SPINNER = '-internal-media-controls-loading-panel-spinner-frame';
+/** The pseudo of the loading panel inside Chromium's own <video> controls. It stays once the video is settled; the
+ * spinner inside it (any element under it) is removed when the spinner is down. */
+const LOADING_PANEL = '-internal-media-controls-loading-panel';
 
 interface DomNode {
+  nodeType: number;
   attributes?: string[];
   children?: DomNode[];
   shadowRoots?: DomNode[];
 }
 
-const hasSpinner = (node: DomNode): boolean => {
+const inside = (node: DomNode) => [...(node.children ?? []), ...(node.shadowRoots ?? [])];
+
+const findPanel = (node: DomNode): DomNode | null => {
   const at = node.attributes?.indexOf('pseudo') ?? -1;
-  if (at >= 0 && node.attributes![at + 1] === NATIVE_SPINNER) return true;
-  return [...(node.children ?? []), ...(node.shadowRoots ?? [])].some(hasSpinner);
+  if (at >= 0 && node.attributes![at + 1] === LOADING_PANEL) return node;
+  for (const child of inside(node)) {
+    const panel = findPanel(child);
+    if (panel !== null) return panel;
+  }
+  return null;
 };
+
+const ELEMENT_NODE = 1;
+const hasElements = (node: DomNode): boolean =>
+  inside(node).some((child) => child.nodeType === ELEMENT_NODE || hasElements(child));
 
 /**
  * Waits until the demo <video> has settled on its error state (stubDemo answers its file with a 404) and the browser
  * has taken its loading spinner down. The spinner does not stop when the error lands: Chromium lets it finish its turn
  * (up to about 1.5s) before removing it, and it lives in the browser's own shadow DOM, which no locator or page script
  * reaches, so the check reads the DOM through DevTools. Without it a shot catches the spinner at a different angle, or
- * not at all, from run to run (SHIP-1871, SHIP-1926).
+ * not at all, from run to run (SHIP-1871, SHIP-1926). The panel must be found: if a browser update renames it, the
+ * wait times out instead of passing with the spinner still turning.
  */
 export async function videoSettled(page: Page) {
   const video = page.getByTestId(demosTestIds.demoVideo);
   // NETWORK_NO_SOURCE: the 404 has landed, so no new loading spinner can start.
   await expect(video).toHaveJSProperty('networkState', 3);
   const devTools = await page.context().newCDPSession(page);
-  await expect
-    .poll(async () => {
-      const { root } = await devTools.send('DOM.getDocument', { depth: -1, pierce: true });
-      return hasSpinner(root);
-    })
-    .toBe(false);
-  await devTools.detach();
+  try {
+    await expect
+      .poll(async () => {
+        const { root } = await devTools.send('DOM.getDocument', { depth: -1, pierce: true });
+        const panel = findPanel(root as DomNode);
+        if (panel === null) return 'no loading panel';
+        return hasElements(panel) ? 'spinner turning' : 'spinner down';
+      })
+      .toBe('spinner down');
+  } finally {
+    await devTools.detach();
+  }
 }
 
 // ---- Demos settings (design/screens/settings-demos*.png) ----
