@@ -41,6 +41,31 @@ test('FeatureBoardHeader_WhenOnPhone_ShouldDropBackLinkAndWrapJumpTo', async ({ 
   expect(width[0]).toBeLessThanOrEqual(width[1]);
 });
 
+test('FeatureBoardHeader_ShouldShowTasksDoneOfTotal', async ({ mount, page }) => {
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(<FeatureBoardSlot project={PROJECT} itemKey={PARENT_KEY} />, route);
+
+  const { tasksClosed, tasksTotal } = PARENT_VIEW.header;
+  await expect(page.getByTestId(ids.tasks)).toHaveText(`Tasks ${tasksClosed}/${tasksTotal}`);
+  // On the bar's line, beside the points; the sprint pills are on the next row.
+  const points = (await page.getByTestId(ids.points).boundingBox())!;
+  const tasks = (await page.getByTestId(ids.tasks).boundingBox())!;
+  const sprints = (await page.getByTestId(ids.sprints).boundingBox())!;
+  expect(Math.abs(tasks.y - points.y)).toBeLessThan(points.height);
+  expect(sprints.y).toBeGreaterThan(tasks.y + tasks.height - 1);
+});
+
+test('FeatureSectionHeader_WhenDirectBand_ShouldShowClosedOfTotal', async ({ mount, page }) => {
+  await stubFeatureBoard(page, PARENT_VIEW);
+  await mount(<FeatureBoardSlot project={PROJECT} itemKey={PARENT_KEY} />, route);
+
+  const direct = PARENT_VIEW.sections[0];
+  const band = page.getByTestId(ids.band).first();
+  await expect(band.getByTestId(ids.sectionStories)).toHaveText(
+    `${direct.storiesClosed}/${direct.storiesTotal} closed`,
+  );
+});
+
 for (const theme of THEMES) {
   test(`FeatureBoardHeader_WhenOnPhone_ShouldMatchItsScreenshot_${theme}`, async ({
     mount,

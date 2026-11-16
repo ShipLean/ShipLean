@@ -67,26 +67,28 @@ export function FeatureBoardHeader({
           <b className="text-ink">{header.storiesClosed}</b> of{' '}
           <b className="text-ink">{header.storiesTotal}</b> stories and bugs closed
         </span>
-        <span data-testid={ids.points} className="inline-flex items-center gap-1.5 touch:w-full">
-          <span
-            data-testid={ids.pointsBar}
-            data-percent={percent}
-            className="relative inline-block h-1.5 w-40 overflow-hidden rounded-[3px] bg-sunken touch:min-w-0 touch:flex-1"
-          >
-            <i className="absolute inset-y-0 left-0 bg-good" style={{ width: `${percent}%` }} />
+        <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 touch:w-full">
+          <span data-testid={ids.points} className="inline-flex items-center gap-1.5 touch:flex-1">
+            <span
+              data-testid={ids.pointsBar}
+              data-percent={percent}
+              className="relative inline-block h-1.5 w-40 overflow-hidden rounded-[3px] bg-sunken touch:min-w-0 touch:flex-1"
+            >
+              <i className="absolute inset-y-0 left-0 bg-good" style={{ width: `${percent}%` }} />
+            </span>
+            <span className="whitespace-nowrap">
+              <b className="text-ink">{header.pointsClosed ?? 0}</b>/
+              <b className="text-ink">{header.pointsTotal ?? 0}</b> pts
+            </span>
           </span>
-          <span>
-            <b className="text-ink">{header.pointsClosed ?? 0}</b>/
-            <b className="text-ink">{header.pointsTotal ?? 0}</b> pts
+          <span data-testid={ids.tasks} className="whitespace-nowrap">
+            Tasks <b className="text-ink">{header.tasksClosed}</b>/
+            <b className="text-ink">{header.tasksTotal}</b>
           </span>
-        </span>
-        <span data-testid={ids.tasks}>
-          Tasks <b className="text-ink">{header.tasksClosed}</b>/
-          <b className="text-ink">{header.tasksTotal}</b>
         </span>
         <span
           data-testid={ids.sprints}
-          className="inline-flex flex-wrap items-center gap-1 touch:[&>*]:min-h-[var(--touch-target)]"
+          className="inline-flex flex-wrap items-center gap-1 touch:w-full touch:[&>*]:min-h-[var(--touch-target)]"
         >
           {header.sprints.map((sprint) => (
             <SprintPill key={sprint.id} sprint={sprint} />

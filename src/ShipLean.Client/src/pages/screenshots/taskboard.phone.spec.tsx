@@ -132,18 +132,21 @@ phonePageShots([
         },
       ],
       [
-        // Closed stories come after Unparented today (TBOARD-1): this shoots that order, not the designed one.
+        // Backlog order: the closed lines sit where their rows are, and Unparented is the last lane (TBOARD-1).
         'taskboard-end',
         async (page: Page) => {
-          const last = page
+          const entries = page
             .getByTestId(touchTestIds.pagerPage)
             .first()
-            .getByTestId(taskboardTestIds.closedLine)
-            .last();
-          await last.evaluate((el) =>
+            .locator(
+              `[data-testid="${taskboardTestIds.lane}"],[data-testid="${taskboardTestIds.closedLine}"]`,
+            );
+          await expect(entries.last()).toHaveAttribute('data-row', 'unparented');
+          await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+          await entries.last().evaluate((el) =>
             el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
           );
-          await expect(last).toBeInViewport({ ratio: 0.9 });
+          await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
         },
       ],
       [

@@ -77,7 +77,12 @@ export function FeatureSectionHeader({
           )}
         </span>
         {direct ? (
-          <span />
+          <span
+            data-testid={ids.sectionStories}
+            className="whitespace-nowrap pr-2 text-[length:var(--text-xs)] text-ink-muted"
+          >
+            {section.storiesClosed}/{section.storiesTotal} closed
+          </span>
         ) : (
           <Link
             data-testid={ids.sectionOpen}
