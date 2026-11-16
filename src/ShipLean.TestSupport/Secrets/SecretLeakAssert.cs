@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Net;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport.Logging;
 using Shouldly;
@@ -13,7 +15,8 @@ namespace ShipLean.TestSupport.Secrets;
 // ShouldAssertException (not Assert.Fail, which marks the running test failed even when a test of this helper catches it).
 public sealed class SecretLeakAssert
 {
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    // Writes strings unescaped, so a secret holding '+', '/' or '&' is found as it is, not as \u002B.
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     private readonly string[] _forms;
 
@@ -33,7 +36,8 @@ public sealed class SecretLeakAssert
     public static IReadOnlyList<string> Attributes(Activity activity)
         => [activity.DisplayName, .. activity.TagObjects.Select(tag => $"{tag.Key}={tag.Value}"), .. activity.Baggage.Select(item => $"{item.Key}={item.Value}")];
 
-    public void NotInJson(string json) => NotIn("the JSON body", [json]);
+    // A response body as sent: a serializer may escape a secret's characters (\u002B for '+'), so it is also read back unescaped.
+    public void NotInJson(string json) => NotIn("the JSON body", [json, Unescaped(json)]);
 
     // An MCP tool result (the CallToolResult or its structured content), serialised as the client receives it.
     public void NotInMcpResult(object result) => NotIn("the MCP result", [JsonSerializer.Serialize(result, result.GetType(), Json)]);
@@ -43,6 +47,8 @@ public sealed class SecretLeakAssert
     public void NotInTraceAttributes(IEnumerable<string> attributes) => NotIn("a trace attribute", attributes);
 
     public void NotInUsageEvents(IEnumerable<UsageEvent> events) => NotIn("a usage event", events.Select(e => JsonSerializer.Serialize(e, Json)));
+
+    private static string Unescaped(string json) => JsonNode.Parse(json)?.ToJsonString(Json) ?? string.Empty;
 
     private void NotIn(string surface, IEnumerable<string> texts)
     {

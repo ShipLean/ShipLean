@@ -1,6 +1,6 @@
 {
   "healthy": {
-    "lastDeliveredAt": "2026-10-24T13:58:00Z",
+    "lastDeliveredAt": "2026-10-24T13:58:00+00:00",
     "lastDeliveredLabel": "2 minutes ago",
     "failedLast24h": 0,
     "lastFailedAt": null,
@@ -8,10 +8,10 @@
     "lastError": null
   },
   "failing": {
-    "lastDeliveredAt": "2026-10-23T09:00:00Z",
+    "lastDeliveredAt": "2026-10-23T09:00:00+00:00",
     "lastDeliveredLabel": "yesterday",
     "failedLast24h": 3,
-    "lastFailedAt": "2026-10-24T12:00:30Z",
+    "lastFailedAt": "2026-10-24T12:00:30+00:00",
     "lastFailedLabel": "2 hours ago",
     "lastError": "The receiver answered 502 Bad Gateway."
   },

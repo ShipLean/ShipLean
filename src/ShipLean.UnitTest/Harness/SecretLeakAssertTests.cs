@@ -74,6 +74,15 @@ public class SecretLeakAssertTests
     }
 
     [Test]
+    public void NotInJson_WhenTheSerializerEscapedTheSecret_ShouldFail()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new { endDetail = Secret });
+
+        json.ShouldNotContain(Secret);
+        Should.Throw<ShouldAssertException>(() => Leak.NotInJson(json)).Message.ShouldContain("the JSON body");
+    }
+
+    [Test]
     public void NotInMcpResult_WhenTheResultHoldsTheSecret_ShouldFail()
     {
         Should.Throw<ShouldAssertException>(() => Leak.NotInMcpResult(new { session = new { endDetail = Secret } }))
