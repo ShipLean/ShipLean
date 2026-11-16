@@ -242,8 +242,7 @@ public class GetAgentSessionTests : McpFixture
 
         reply.Structured().GetProperty("deliveries").GetArrayLength().ShouldBe(1);
         var leak = new SecretLeakAssert(token);
-        leak.NotInJson(reply.Body);
-        reply.Texts().ToList().ForEach(leak.NotInJson);
+        leak.NotInJson(reply.Json().GetRawText());
     }
 
     [TestCase(0)]
