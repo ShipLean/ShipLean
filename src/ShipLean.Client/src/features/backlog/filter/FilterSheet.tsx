@@ -26,7 +26,7 @@ export function FilterSheet({
   return (
     <Sheet open title="Filter" onClose={onClose}>
       <div data-testid={ids.filterSheet} className="grid gap-3 pb-1">
-        <CriteriaBuilder value={criteria} onChange={onChange} showChips={false} {...lists} />
+        <CriteriaBuilder value={criteria} onChange={onChange} showChips={false} layout="sheet" {...lists} />
         {error ? (
           <p
             role="alert"

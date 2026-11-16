@@ -45,6 +45,8 @@ export interface BacklogToolbarProps {
   sort?: { label: string; onClear: () => void };
   // At 900px and below: the line under the toolbar that says what the list holds and what it leaves out. Absent (Planning), no line.
   summary?: BacklogSummary;
+  // At 900px and below: a strip shown above the summary line (the not-estimated banner on Stories List).
+  banner?: ReactNode;
 }
 
 export function BacklogToolbar({
@@ -65,6 +67,7 @@ export function BacklogToolbar({
   moreActions,
   sort,
   summary,
+  banner,
 }: BacklogToolbarProps) {
   const { touch } = useTouchShell();
   const [chipsHost, setChipsHost] = useState<HTMLElement | null>(null);
@@ -114,6 +117,7 @@ export function BacklogToolbar({
         {triage && chipsHost
           ? createPortal(<TriageChip count={triage.count} onShow={triage.onShow} />, chipsHost)
           : null}
+        {banner}
         {summary ? (
           <div
             data-testid={ids.summary}

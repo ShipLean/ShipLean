@@ -153,10 +153,12 @@ test('FilterSheet_WhenClauseAdded_ShouldStackItsControlsAndKeepThemTouchSized', 
   const op = await page.getByTestId(criteriaTestIds.op).boundingBox();
   const value = await page.getByTestId(criteriaTestIds.value).boundingBox();
   const remove = await page.getByTestId(criteriaTestIds.remove).boundingBox();
-  // Field and operator share a row, the value and ✕ the next one.
+  // Field, a narrow operator and ✕ share the first line; the value sits under them, in a boxed clause.
   expect(Math.abs(field!.y - op!.y)).toBeLessThan(2);
+  expect(Math.abs(field!.y - remove!.y)).toBeLessThan(6);
+  expect(op!.width).toBeLessThan(field!.width);
   expect(value!.y).toBeGreaterThanOrEqual(field!.y + field!.height);
-  expect(Math.abs(value!.y - remove!.y)).toBeLessThan(6);
+  await expect(page.getByTestId(criteriaTestIds.clause)).toHaveCSS('border-top-width', '1px');
   expect(remove!.width).toBeGreaterThanOrEqual(32);
   expect(remove!.height).toBeGreaterThanOrEqual(32);
   const sheet = await page

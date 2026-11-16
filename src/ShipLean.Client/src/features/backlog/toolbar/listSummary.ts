@@ -41,11 +41,13 @@ export function summarise(
   };
 }
 
-/** The filter sheet's footer count: the same two numbers as the summary line. */
+/** The filter sheet's footer count: the same two numbers as the summary line, and none where the summary has none. */
 export function shownOf(
   rows: readonly BacklogRowDto[],
   whole: number | undefined,
 ): { shown: number; whole: number } | undefined {
   if (whole === undefined) return undefined;
-  return { shown: rows.filter((row) => row.kind === 'item').length, whole };
+  const shown = rows.filter((row) => row.kind === 'item').length;
+  // Nothing hidden: no count, as the summary line says no "Showing n of m" then.
+  return shown === whole ? undefined : { shown, whole };
 }

@@ -26,6 +26,7 @@ export function BacklogFrame({
   rowCount,
   shownRows,
   quietBanner = false,
+  banner,
   filtering: narrowed,
   options,
   search,
@@ -44,6 +45,8 @@ export function BacklogFrame({
   shownRows?: readonly BacklogRowDto[];
   // At 900px and below a search alone leaves the moving-is-off banner out: the handles are already gone.
   quietBanner?: boolean;
+  // At 900px and below: a strip the toolbar shows above the summary line (Stories List's Before-you-plan strip).
+  banner?: ReactNode;
   // Whether the rows are narrowed by anything (a filter, a search, a check queue); the filter alone when left out.
   filtering?: boolean;
   // Extra toolbar controls, the toolbar's own slots. Tree mode gives none.
@@ -69,6 +72,7 @@ export function BacklogFrame({
       keys={keys}
       moreActions={moreActions}
       sort={sort}
+      banner={banner}
       summary={summarise(counted, {
         one: 'item',
         many: 'items',

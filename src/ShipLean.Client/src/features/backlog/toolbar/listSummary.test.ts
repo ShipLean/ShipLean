@@ -34,6 +34,9 @@ describe('summarise', () => {
     );
     expect(shownOf(rows.slice(0, 2), 14)).toEqual({ shown: 2, whole: 14 });
   });
+  it('ShownOf_WhenNothingIsHidden_ShouldGiveNoCount', () => {
+    expect(shownOf(rows, rows.length)).toBeUndefined();
+  });
   it('Summarise_WhenOneRow_ShouldUseTheSingularNoun', () => {
     expect(summarise(rows.slice(0, 1), { ...base, one: 'Epic', many: 'Epics' }).count).toBe(
       '1 Epic',

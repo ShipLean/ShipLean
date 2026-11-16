@@ -3,6 +3,7 @@ import { actionSheetRowClass, ActionSheetRow, type SheetAction } from '../../../
 import type { BacklogMode, Level } from '../../../routes';
 import { MoreButton } from '../../../touch/MoreButton';
 import { backlogTestIds as ids } from '../testIds';
+import { searchIcon } from './moreIcons';
 
 const TITLES: Record<Level, string> = { stories: 'Stories', features: 'Features', epics: 'Epics' };
 
@@ -65,6 +66,7 @@ export function MoreSheet({
               action={{
                 id: 'search',
                 label: 'Search this list',
+                icon: searchIcon,
                 onSelect: onSearch,
               }}
               onClose={close}

@@ -43,7 +43,16 @@ phonePageShots([
     name: 'backlogs-filter',
     route,
     shell: true,
-    arrange,
+    // The filtered read answers with two rows, the unfiltered one with the whole list: "Showing 2 of n".
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubBacklog(page, backlogView(ROWS), {
+        answer: (search) =>
+          search.get('filter')
+            ? { status: 200, body: backlogView(ROWS.slice(0, 2)) }
+            : undefined,
+      });
+    },
     ready,
     act: async (page) => {
       await page.getByTestId(ids.filterButton).tap();

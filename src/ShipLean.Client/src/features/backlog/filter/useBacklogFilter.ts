@@ -81,6 +81,7 @@ export function useBacklogFilter(
 
   // What the list holds with no filter on, for "Showing n of m": read only while a filter is on (with none on it is the
   // read above, already cached under the same key).
+  // TODO: an unfiltered item count on BacklogViewDto replaces this second read.
   const unfiltered = useQuery({
     queryKey: backlogKey(project.id, level, mode, '', includeCompleted),
     queryFn: () =>
@@ -127,13 +128,16 @@ export function useBacklogFilter(
     view,
     backlog,
     queryKey,
-    /** The items the list holds with no filter on; undefined until read. */
-    unfilteredCount: unfiltered.data?.rows.filter((row) => row.kind === 'item').length,
+    /** The items the list holds with no server filter on: the rows already loaded, or the second read while filtering; undefined until read. */
+    unfilteredCount: itemCount(sent !== '' ? unfiltered.data?.rows : read?.rows),
     /** The rows of the last read that worked. */
     rows: read?.rows ?? NO_ROWS,
     /** The server's message for a filter it refused, or null. */
     refused,
   };
 }
+
+const itemCount = (rows: BacklogViewDto['rows'] | undefined) =>
+  rows?.filter((row) => row.kind === 'item').length;
 
 export type BacklogFilterState = ReturnType<typeof useBacklogFilter>;

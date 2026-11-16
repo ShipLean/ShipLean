@@ -3,7 +3,7 @@ import type { ProjectDto } from '@shiplean/core/api/projects';
 import { isStoryLevel } from '@shiplean/core/api/workItemTypes';
 import { NEW_ITEM_KINDS, type NewItemKind } from '../../../routes';
 import { AddBelowProvider } from '../add/AddBelowProvider';
-import { AddManyButton } from '../add/AddManyButton';
+import { AddManyAction, AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
 import { BulkBar } from '../bulk/BulkBar';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
@@ -73,6 +73,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
         <OpenCommandHost rows={rows} projectKey={project.key} />
         <AddBelowProvider projectId={project.id} projectKey={project.key}>
           <PasteHost projectId={project.id} projectKey={project.key}>
+            <AddManyAction>
+              {(addMany) => (
             <BacklogFrame
               project={project}
               mode="list"
@@ -84,10 +86,15 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                 touch && search.active && !state.filtering && !queue.active && !sort.sorted
               }
               filtering={filtering}
-              options={() => <AddManyButton />}
+              options={touch ? undefined : () => <AddManyButton />}
+              banner={
+                touch ? (
+                  <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                ) : undefined
+              }
               search={() => <BacklogSearchBox search={search} />}
               keys={() => <KeysButton />}
-              moreActions={selectActions}
+              moreActions={addMany ? [addMany, ...selectActions] : selectActions}
               sort={
                 sort.sort
                   ? {
@@ -104,9 +111,11 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
             >
               {(columns) => (
                 <>
-                  <div className="sticky top-0 z-[5] flex-none touch:static">
-                    <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
-                  </div>
+                  {touch ? null : (
+                    <div className="sticky top-0 z-[5] flex-none">
+                      <BeforeYouPlan review={state.backlog.data?.review ?? null} queue={queue} />
+                    </div>
+                  )}
                   <BulkOutcomeHost projectId={project.id} />
                   <SelectBar />
                   {touch ? (
@@ -165,6 +174,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                 </>
               )}
             </BacklogFrame>
+              )}
+            </AddManyAction>
           </PasteHost>
         </AddBelowProvider>
       </SelectionProvider>
