@@ -36,10 +36,14 @@ const forSprint = (demo: SprintDemoDto, id: string, name: string): SprintDemoDto
   sprintName: name,
 });
 
-// The pins are written for Sprint 24; the script names its sprint, so it moves with it.
+// The pins are written for Sprint 24; the script and the BAU item's title name the sprint, so they move with it.
 const ended = (demo: SprintDemoDto): SprintDemoDto => ({
   ...forSprint(demo, ENDED_SPRINT, 'Sprint 23'),
   scriptHtml: demo.scriptHtml?.replaceAll('Sprint 24', 'Sprint 23') ?? null,
+  run:
+    demo.run === null
+      ? null
+      : { ...demo.run, itemTitle: demo.run.itemTitle.replaceAll('Sprint 24', 'Sprint 23') },
 });
 
 const noneDemo = ended(asDemo(none));
