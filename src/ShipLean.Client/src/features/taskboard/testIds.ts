@@ -14,6 +14,7 @@ export const taskboardTestIds = {
   addStoryTitle: 'taskboard-add-story-title',
   addStorySubmit: 'taskboard-add-story-submit',
   addStoryClose: 'taskboard-add-story-close',
+  addStoryHelp: 'taskboard-add-story-help',
   addStoryError: 'taskboard-add-story-error',
   // L722b phone toolbar
   filterButton: 'taskboard-filter-button',

@@ -4,6 +4,7 @@ import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs
 import { isStoryLevel, typeName } from '@shiplean/core/api/workItemTypes';
 import { useCreateOnTaskboard } from '../taskboardApi';
 import type { TaskboardScope } from '../taskboardScope';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { taskboardTestIds as ids } from '../testIds';
 
 const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: typeName(id) }));
@@ -22,6 +23,7 @@ export function AddStoryBox({
   const [title, setTitle] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const create = useCreateOnTaskboard(projectId, scope);
+  const { touch } = useTouchShell();
 
   function add() {
     const text = title.trim();
@@ -45,7 +47,7 @@ export function AddStoryBox({
   return (
     <div
       data-testid={ids.addStoryBox}
-      className="flex items-center gap-2 px-4 py-2 touch:flex-wrap"
+      className="flex items-center gap-2 px-4 py-2 touch:flex-wrap touch:gap-x-2 touch:px-3"
     >
       <select
         data-testid={ids.addStoryType}
@@ -66,9 +68,11 @@ export function AddStoryBox({
         autoFocus
         data-testid={ids.addStoryTitle}
         aria-label="Title"
-        className="field flex-1 touch:min-w-0 touch:basis-full"
+        className="field flex-1 touch:min-w-0"
         placeholder={
-          scope.kind === 'sprint'
+          touch
+            ? 'Title of the story or bug'
+            : scope.kind === 'sprint'
             ? 'Title, then Enter to add to this sprint'
             : 'Title, then Enter to add under this Feature'
         }
@@ -88,10 +92,21 @@ export function AddStoryBox({
         type="button"
         data-testid={ids.addStoryClose}
         className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+        aria-label={touch ? 'Close' : undefined}
         onClick={onClose}
       >
-        Esc
+        {touch ? '✕' : 'Esc'}
       </button>
+      {touch ? (
+        <p
+          data-testid={ids.addStoryHelp}
+          className="m-0 basis-full text-[length:var(--text-sm)] text-ink-muted"
+        >
+          {scope.kind === 'sprint'
+            ? 'Adds it to this sprint, at the bottom. Stays open for the next one.'
+            : 'Adds it under this Feature, in the Backlog. Stays open for the next one.'}
+        </p>
+      ) : null}
       {create.error ? (
         <span
           data-testid={ids.addStoryError}

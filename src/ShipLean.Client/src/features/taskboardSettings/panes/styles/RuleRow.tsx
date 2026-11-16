@@ -8,6 +8,7 @@ import { taskboardSettingsTestIds as ids } from '../../testIds';
 import { withCriteria } from '../../../boardSettings/panes/styles/ruleEdits';
 import { TouchDragGhost } from '../../../../touch/TouchDragGhost';
 import { useLongPressDrag } from '../../../../touch/useLongPressDrag';
+import { SWATCH_NAMES } from '../../../boardSettings/panes/swatchNames';
 import { useTouchShell } from '../../../../touch/useTouchShell';
 import { useHeldRules } from './HeldRulesContext';
 
@@ -105,11 +106,11 @@ export function RuleRow({
     <div
       data-testid={ids.styleRow}
       data-drop-target={rule.id}
-      className={`grid gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''}`}
+      className={`grid grid-cols-[minmax(0,1fr)] gap-2 rounded-panel border border-edge p-2.5 ${rule.enabled ? 'bg-panel' : 'bg-sunken'} ${drag.lifted ? 'opacity-40' : ''}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex items-center gap-2 touch:grid">
+      <div className="flex items-center gap-2 touch:grid touch:grid-cols-[minmax(0,1fr)]">
         <div className="contents touch:flex touch:items-center touch:gap-2">
           <button
             type="button"
@@ -132,7 +133,7 @@ export function RuleRow({
           ) : null}
           <input
             data-testid={ids.styleName}
-            className="field h-[26px] min-w-20 flex-1 touch:h-[var(--touch-target)]"
+            className="field h-[26px] min-w-20 flex-1 touch:h-[var(--touch-target)] touch:min-w-0"
             aria-label="Rule name"
             value={name}
             readOnly={readOnly}
@@ -144,7 +145,7 @@ export function RuleRow({
           />
           <select
             data-testid={ids.styleColour}
-            className="field h-[26px] touch:h-[var(--touch-target)]"
+            className="field h-[26px] touch:h-[var(--touch-target)] touch:min-w-0"
             aria-label={`Card colour for ${rule.name}`}
             value={rule.colour ?? ''}
             disabled={readOnly}
@@ -158,7 +159,7 @@ export function RuleRow({
             <option value="">No colour</option>
             {SWATCHES.map((swatch) => (
               <option key={swatch} value={swatch}>
-                {swatch}
+                {SWATCH_NAMES[swatch]}
               </option>
             ))}
           </select>

@@ -279,3 +279,14 @@ test('TaskboardSettingsStyles_AtPhoneWidth_ShouldNotOverflow', async ({ mount, p
   expect(widths.scroll, 'nothing on the screen scrolls sideways').toBe(0);
   expect(widths.pane, 'the pane ends inside the 390px screen').toBeLessThanOrEqual(390);
 });
+
+test('TagColours_ShouldShowTheColourName', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ tagColours: [{ tag: 'Blocked', colour: 'danger' }] }), [
+    'Blocked',
+  ]);
+  await mount(dialog('tags'));
+  const row = page.getByTestId(ids.tagRow);
+  await expect(row).toContainText('Red');
+  await expect(row).not.toContainText('danger');
+  await expect(row.getByRole('button', { name: 'Red' })).toBeVisible();
+});
