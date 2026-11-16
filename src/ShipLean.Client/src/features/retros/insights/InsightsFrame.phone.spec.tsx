@@ -179,7 +179,10 @@ test('InsightsMore_ShouldShowAGroupHeading', async ({ mount, page }) => {
   );
 });
 
-test('InsightsFrame_WhenOpened_ShouldHaveTabsFullBleedAndABorderedMore', async ({ mount, page }) => {
+test('InsightsFrame_WhenOpened_ShouldHaveTabsFullBleedAndABorderedMore', async ({
+  mount,
+  page,
+}) => {
   await stubRetros(page);
   // A 16px page gutter around the panel, as ProjectScreen gives a retros page.
   await mount(
