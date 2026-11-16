@@ -72,7 +72,10 @@ phonePageShots([
     act: async (page) => {
       const closed = states.find((s) => s.type === 'story' && s.name === 'Closed')!;
       await page.getByTestId(ids.storyRow).first().getByTestId(ids.stateButton).tap();
-      await page.getByTestId(componentTestIds.stateMenuOption).filter({ hasText: closed.name }).tap();
+      await page
+        .getByTestId(componentTestIds.stateMenuOption)
+        .filter({ hasText: closed.name })
+        .tap();
       await expect(page.getByText('SHIP-141 was changed by someone else')).toBeVisible();
       await expect(page.getByTestId(ids.storyRow).first()).toHaveAttribute('data-flash', 'true');
     },

@@ -81,7 +81,9 @@ test('SprintStatesSheet_ShouldNameTheItemAndMarkCurrent', async ({ mount, page }
   const row = page.getByTestId(ids.taskRow).first();
   const key = (await row.getAttribute('data-key'))!;
   const title = (await row.getByTestId(itemPeekTestIds.link).first().textContent())!;
-  const state = (await row.getByTestId(ids.stateButton).getAttribute('aria-label'))!.split(': ')[1]!;
+  const state = (await row.getByTestId(ids.stateButton).getAttribute('aria-label'))!.split(
+    ': ',
+  )[1]!;
   await row.getByTestId(ids.stateButton).tap();
 
   const sheet = page.getByTestId(touchTestIds.sheet);
@@ -110,7 +112,10 @@ test('TouchTaskRow_WhenUnassigned_ShouldDrawTheDashedPlaceholder', async ({ moun
   await open(page, mount);
   const placeholder = page.getByTestId(ids.unassignedAvatar).first();
   await expect(placeholder).toBeVisible();
-  await expect(placeholder.getByTestId(componentTestIds.avatar)).toHaveCSS('border-top-style', 'dashed');
+  await expect(placeholder.getByTestId(componentTestIds.avatar)).toHaveCSS(
+    'border-top-style',
+    'dashed',
+  );
 });
 
 for (const theme of THEMES) {

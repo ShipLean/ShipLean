@@ -94,7 +94,16 @@ test('SprintBacklog_WhenReadyRowTapped_ShouldListUnassignedItemsAndOpenOneInTheM
 test('Burndown_ShouldDrawEverySprintDay', async ({ mount, page }) => {
   await open(page, mount);
   await expect(page.getByTestId(ids.burndownDay)).toHaveText([
-    '19', '20', '21', '22', '23', '26', '27', '28', '29', '30',
+    '19',
+    '20',
+    '21',
+    '22',
+    '23',
+    '26',
+    '27',
+    '28',
+    '29',
+    '30',
   ]);
 });
 
@@ -128,7 +137,11 @@ test('GlanceRows_WhenReadyOpened_ShouldShowKeysAndTheTapHint', async ({ mount, p
   await page.getByTestId(ids.glanceReady).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet).toContainText('Tap one to open it.');
-  await expect(sheet.getByTestId(ids.glanceItemKey)).toHaveText([/^SHIP-\d+$/, /^SHIP-\d+$/, /^SHIP-\d+$/]);
+  await expect(sheet.getByTestId(ids.glanceItemKey)).toHaveText([
+    /^SHIP-\d+$/,
+    /^SHIP-\d+$/,
+    /^SHIP-\d+$/,
+  ]);
 });
 
 for (const theme of THEMES) {

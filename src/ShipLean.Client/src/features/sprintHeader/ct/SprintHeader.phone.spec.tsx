@@ -131,7 +131,9 @@ test('SprintHeaderMore_ShouldShowHintsAndChevrons', async ({ mount, page }) => {
 
   const hints = page.getByTestId(touchTestIds.actionSheetHint);
   await expect(hints).toHaveText(['Name, dates and goal', 'Choose where unfinished work goes']);
-  await expect(action(page, 'edit-sprint').getByTestId(touchTestIds.actionSheetHint)).toHaveCount(1);
+  await expect(action(page, 'edit-sprint').getByTestId(touchTestIds.actionSheetHint)).toHaveCount(
+    1,
+  );
   await expect(action(page, 'all-sprints')).toContainText('›');
   await expect(action(page, 'edit-goal')).not.toContainText('›');
   for (const id of ['edit-goal', 'edit-sprint', 'all-sprints', 'close-sprint']) {
