@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@shiplean/core/api/client';
-import type { AgentConnectionDto, AgentConnectionIssuedDto, AgentConnectionPut } from './model';
+import type {
+  AgentConnectionDto,
+  AgentConnectionHealth,
+  AgentConnectionIssuedDto,
+  AgentConnectionPut,
+  AgentConnectionTest,
+} from './model';
 
 export const agentConnectionsKey = ['instance', 'agent-connections'] as const;
 
@@ -39,3 +45,19 @@ export const useRegenerateToken = () =>
 
 export const useArchiveConnection = () =>
   useChange((id: string) => api.post<AgentConnectionDto>(`${route}/${id}/archive`));
+
+export const agentConnectionHealthKey = (id: string) =>
+  ['instance', 'agent-connections', id, 'health'] as const;
+
+/** GET .../{id}/health: the last delivery and the failures of the last 24 hours. */
+export const health = (id: string) => api.get<AgentConnectionHealth>(`${route}/${id}/health`);
+
+/** POST .../{id}/test: a signed ping with no item data. Reached is true for any HTTP answer. */
+export const test = (id: string) => api.post<AgentConnectionTest>(`${route}/${id}/test`);
+
+/** The health read for one connection row. */
+export const useConnectionHealth = (id: string) =>
+  useQuery({ queryKey: agentConnectionHealthKey(id), queryFn: () => health(id) });
+
+/** Test connection. A test is not stored, so nothing is invalidated. */
+export const useTestConnection = () => useMutation({ mutationFn: test });

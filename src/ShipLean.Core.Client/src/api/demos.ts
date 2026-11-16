@@ -74,6 +74,8 @@ export interface SprintDemoYouTubeDto {
 export interface SprintDemoActionsDto {
   canCreate: boolean;
   createBlockedMessage: string | null;
+  /** A sentence for a person when the connection's newest delivery failed; null otherwise. */
+  createWarning: string | null;
   canRetryYouTube: boolean;
 }
 

@@ -24,4 +24,9 @@ public static class AgentPanelTestIds
     public const string Empty = "agent-panel-empty";
     public const string Earlier = "agent-panel-earlier";
     public const string EarlierSession = "agent-panel-earlier-session";
+    public const string SessionEnd = "agent-panel-session-end";
+    public const string SessionEndRunLog = "agent-panel-session-end-run-log";
+    public const string SessionDeliveries = "agent-panel-session-deliveries";
+    public const string SessionDeliveryRow = "agent-panel-session-delivery-row";
+    public const string StartWarning = "agent-panel-start-warning";
 }

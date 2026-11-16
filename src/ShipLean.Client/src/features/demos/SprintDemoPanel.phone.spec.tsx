@@ -56,6 +56,7 @@ const blocked: SprintDemoDto = {
   actions: {
     canCreate: false,
     createBlockedMessage: 'Connect an agent to this project, then create the demo here.',
+    createWarning: null,
     canRetryYouTube: false,
   },
 };

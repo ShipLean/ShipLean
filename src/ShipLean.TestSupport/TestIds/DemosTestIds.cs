@@ -60,4 +60,5 @@ public static class DemosTestIds
 
     // SHIP-889 touch
     public const string DemoCreateReason = "demo-create-reason";
+    public const string DemoCreateWarning = "demo-create-warning";
 }
