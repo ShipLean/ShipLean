@@ -42,7 +42,13 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
 
   const glyph = (text: string) => <span className="text-ink-muted">{text}</span>;
   const richActions = [
-    { id: 'open', label: 'Open', icon: glyph('↗'), detail: 'full screen', onSelect: () => setLastAction('open') },
+    {
+      id: 'open',
+      label: 'Open',
+      icon: glyph('↗'),
+      detail: 'full screen',
+      onSelect: () => setLastAction('open'),
+    },
     {
       id: 'assign',
       label: 'Assign',
@@ -50,7 +56,13 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
       trailing: 'chevron' as const,
       onSelect: () => setLastAction('assign'),
     },
-    { id: 'download', label: 'Download', icon: glyph('↓'), hint: '14 KB', onSelect: () => setLastAction('download') },
+    {
+      id: 'download',
+      label: 'Download',
+      icon: glyph('↓'),
+      hint: '14 KB',
+      onSelect: () => setLastAction('download'),
+    },
     {
       id: 'new',
       label: 'New',
@@ -87,7 +99,13 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
         setLastAction('tasks');
       },
     },
-    { id: 'about', label: 'About this file', icon: glyph('ⓘ'), group: '', onSelect: () => setLastAction('about') },
+    {
+      id: 'about',
+      label: 'About this file',
+      icon: glyph('ⓘ'),
+      group: '',
+      onSelect: () => setLastAction('about'),
+    },
   ];
 
   const sheet = (

@@ -87,7 +87,10 @@ test('MoreButton_ShouldBeAtLeast32pxSquare', async ({ mount, page }) => {
 
 // Rows with none of the K1 fields: the baselines from before K1, unchanged.
 for (const theme of THEMES) {
-  test(`ActionSheet_WhenRowsHaveNoAnatomy_ShouldMatchTodaysShot_${theme}`, async ({ mount, page }) => {
+  test(`ActionSheet_WhenRowsHaveNoAnatomy_ShouldMatchTodaysShot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await mount(<SheetHarness variant="actions" />);
     await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
@@ -110,7 +113,8 @@ test('MoreButton_WhenChildrenGiven_ShouldRenderThemBeforeTheActionRowsAndCloseOn
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 });
 
-const richRow = (id: string) => `[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`;
+const richRow = (id: string) =>
+  `[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`;
 
 for (const theme of THEMES) {
   test(`ActionSheet_WhenRowsHaveIconHintDetail_ShouldMatchItsScreenshot_action-sheet-rich_${theme}`, async ({
@@ -122,10 +126,12 @@ for (const theme of THEMES) {
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet).toBeVisible();
     await expect(sheet.getByTestId(touchTestIds.actionSheetHint).first()).toHaveText('14 KB');
-    await expect(page.locator(richRow('open')).getByTestId(touchTestIds.actionSheetDetail)).toHaveText(
-      'full screen',
-    );
-    await expect(sheet).toHaveScreenshot(`action-sheet-rich.${theme}.png`, { animations: 'disabled' });
+    await expect(
+      page.locator(richRow('open')).getByTestId(touchTestIds.actionSheetDetail),
+    ).toHaveText('full screen');
+    await expect(sheet).toHaveScreenshot(`action-sheet-rich.${theme}.png`, {
+      animations: 'disabled',
+    });
   });
 }
 
@@ -168,7 +174,9 @@ for (const theme of THEMES) {
     const box = (await more.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(32);
     expect(box.width).toBe(box.height);
-    await expect(more).toHaveScreenshot(`more-button-bordered.${theme}.png`, { animations: 'disabled' });
+    await expect(more).toHaveScreenshot(`more-button-bordered.${theme}.png`, {
+      animations: 'disabled',
+    });
   });
 }
 

@@ -94,6 +94,8 @@ for (const theme of THEMES) {
     );
     const sheet = page.getByTestId(touchTestIds.sheet);
     await expect(sheet.getByTestId(ids.stateMenuOption)).toHaveCount(6);
-    await expect(sheet).toHaveScreenshot(`state-menu-sheet.${theme}.png`, { animations: 'disabled' });
+    await expect(sheet).toHaveScreenshot(`state-menu-sheet.${theme}.png`, {
+      animations: 'disabled',
+    });
   });
 }

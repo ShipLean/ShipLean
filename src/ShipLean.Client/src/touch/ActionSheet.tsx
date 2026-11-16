@@ -109,7 +109,9 @@ export function ActionSheetRowFace({
 export function ActionSheetGroupHeading({ label, divider }: { label: string; divider: boolean }) {
   return (
     <>
-      {divider ? <hr aria-hidden="true" className="-mx-3 my-1 border-0 border-t border-edge" /> : null}
+      {divider ? (
+        <hr aria-hidden="true" className="-mx-3 my-1 border-0 border-t border-edge" />
+      ) : null}
       {label !== '' ? (
         <div
           data-testid={touchTestIds.actionSheetGroup}
@@ -235,7 +237,9 @@ function ActionSheetRows({
           </Fragment>
         );
       })}
-      {footer !== undefined && footer !== null ? <ActionSheetFootnote>{footer}</ActionSheetFootnote> : null}
+      {footer !== undefined && footer !== null ? (
+        <ActionSheetFootnote>{footer}</ActionSheetFootnote>
+      ) : null}
     </>
   );
 }

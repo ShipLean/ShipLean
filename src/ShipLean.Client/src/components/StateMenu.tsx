@@ -1,4 +1,12 @@
-import { Fragment, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import {
   actionSheetCheckedClass,
   ActionSheetFootnote,
@@ -16,7 +24,13 @@ export interface StateOption {
   category: StateCategory;
 }
 
-const categoryOrder: StateCategory[] = ['proposed', 'inProgress', 'resolved', 'completed', 'removed'];
+const categoryOrder: StateCategory[] = [
+  'proposed',
+  'inProgress',
+  'resolved',
+  'completed',
+  'removed',
+];
 
 function byCategory(states: StateOption[]): StateOption[] {
   return categoryOrder.flatMap((category) => states.filter((state) => state.category === category));
