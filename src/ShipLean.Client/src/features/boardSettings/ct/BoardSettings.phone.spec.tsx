@@ -1,4 +1,5 @@
-import { expect, test, type Locator } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import type { Locator } from 'playwright';
 import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { touchTestIds } from '../../../touch/testIds';
 import { settingsDialogTestIds as ids } from '../../settingsDialog/testIds';
@@ -227,8 +228,7 @@ const lanes: SwimlaneJson[] = [
   { id: 'lane-default', name: 'Default lane', colour: null, kind: 'default', criteria: null },
 ];
 
-const lanesDto = () =>
-  boardSettingsDto({ settings: { ...emptySettings(), swimlanes: lanes } });
+const lanesDto = () => boardSettingsDto({ settings: { ...emptySettings(), swimlanes: lanes } });
 
 test('Columns_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ mount, page }) => {
   await stubBoard(page, storiesDto(), []);
@@ -285,7 +285,11 @@ test('Lanes_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ mount
 });
 
 test('ColumnAndLaneGrips_WhenOnPhone_ShouldBe32pxTargets', async ({ mount, page }) => {
-  await stubBoard(page, storiesDto({ settings: { ...storiesDto().settings, swimlanes: lanes } }), []);
+  await stubBoard(
+    page,
+    storiesDto({ settings: { ...storiesDto().settings, swimlanes: lanes } }),
+    [],
+  );
   const component = await mount(
     <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="columns" />,
   );

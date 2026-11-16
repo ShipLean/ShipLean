@@ -1,4 +1,5 @@
-import { expect, type Locator } from '@playwright/experimental-ct-react';
+import { expect } from '@playwright/experimental-ct-react';
+import type { Locator } from 'playwright';
 import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { stubBoard } from '../../features/board/ct/stubApi';
 import { boardSettingsTestIds as ids } from '../../features/boardSettings/testIds';
@@ -97,7 +98,11 @@ phonePageShots([
     ),
     // Hold the first rule's grip for the K5 lift, then move halfway down the second rule and keep holding.
     act: (page: Page) =>
-      holdAndDrag(page, page.getByTestId(ids.styleGrip).first(), page.getByTestId(ids.styleRow).nth(1)),
+      holdAndDrag(
+        page,
+        page.getByTestId(ids.styleGrip).first(),
+        page.getByTestId(ids.styleRow).nth(1),
+      ),
   },
   pane('board-settings-columns', 'columns', (page) =>
     expect(page.getByTestId(ids.columnRow)).toHaveCount(5),
@@ -108,7 +113,11 @@ phonePageShots([
     ),
     // Hold Ready's grip for the K5 lift, then move onto In review and keep holding (SHIP-1985).
     act: (page: Page) =>
-      holdAndDrag(page, page.getByTestId(ids.columnGrip).nth(1), page.getByTestId(ids.columnRow).nth(3)),
+      holdAndDrag(
+        page,
+        page.getByTestId(ids.columnGrip).nth(1),
+        page.getByTestId(ids.columnRow).nth(3),
+      ),
   },
   pane('board-settings-tags', 'tags', (page) =>
     expect(page.getByTestId(ids.tagRow).first()).toBeVisible(),
@@ -126,7 +135,12 @@ phonePageShots([
     arrange: async (page: Page) => {
       await arrange(page);
       await page.route(`**/api/boards/${BOARD_ID}/settings`, (route) =>
-        route.fulfill({ json: { ...storiesSettings(), settings: { ...storiesSettings().settings, swimlanes: lanes } } }),
+        route.fulfill({
+          json: {
+            ...storiesSettings(),
+            settings: { ...storiesSettings().settings, swimlanes: lanes },
+          },
+        }),
       );
     },
   },
