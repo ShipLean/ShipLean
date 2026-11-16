@@ -39,7 +39,7 @@ public class AgentDeliveriesJourneyTests : SeededAcceptanceTest
         var panel = Page.GetByTestId(AgentPanelTestIds.Panel);
         await Expect(panel).ToBeVisibleAsync();
         var deliveries = panel.GetByTestId(AgentPanelTestIds.SessionDeliveries);
-        await deliveries.ClickAsync(); // collapsed, the list is just its summary line
+        await deliveries.GetByTestId(AgentPanelTestIds.SessionDeliveriesToggle).ClickAsync(); // collapsed, the list is just its summary line
 
         // Assert: both tries, oldest first, with what the receiver answered.
         var rows = deliveries.GetByTestId(AgentPanelTestIds.SessionDeliveryRow);

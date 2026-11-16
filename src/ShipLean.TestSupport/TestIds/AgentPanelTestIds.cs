@@ -29,5 +29,6 @@ public static class AgentPanelTestIds
     public const string SessionDeliveries = "agent-panel-session-deliveries";
     public const string SessionDeliveryRow = "agent-panel-session-delivery-row";
     public const string SessionDeliveryOutcome = "agent-panel-session-delivery-outcome";
+    public const string SessionDeliveriesToggle = "agent-panel-session-deliveries-toggle";
     public const string StartWarning = "agent-panel-start-warning";
 }

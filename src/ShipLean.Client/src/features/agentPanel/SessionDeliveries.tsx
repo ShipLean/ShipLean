@@ -10,7 +10,10 @@ export function SessionDeliveries({ session }: { session: AgentSessionDto }) {
       data-testid={ids.sessionDeliveries}
       className="rounded-control border border-edge/60 text-[length:var(--text-sm)]"
     >
-      <summary className="cursor-pointer px-2 py-1.5 font-semibold">
+      <summary
+        data-testid={ids.sessionDeliveriesToggle}
+        className="cursor-pointer px-2 py-1.5 font-semibold"
+      >
         Delivery ({session.deliveries.length})
       </summary>
       <ol className="m-0 grid list-none gap-0 p-0">
