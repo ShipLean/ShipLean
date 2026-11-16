@@ -6,6 +6,7 @@ import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';
 import { blankLane, moveLane, replaceLane } from './swimlanes/laneEdits';
 import { LaneRow } from './swimlanes/LaneRow';
+import { useDropLine } from './useDropLine';
 import { useLanePickLists } from './swimlanes/useLanePickLists';
 
 const DEFAULT_REFUSAL =
@@ -23,6 +24,7 @@ export function SwimlanesPane({
   const { touch } = useTouchShell();
   const [refusedId, setRefusedId] = useState<string>();
   const [dragFrom, setDragFrom] = useState<number>();
+  const dropLineOf = useDropLine(draft.swimlanes.map((l) => l.id));
   const setLanes = (swimlanes: SwimlaneJson[]) => onChange({ ...draft, swimlanes });
 
   if (context.level === 'epics') {
@@ -66,6 +68,7 @@ export function SwimlanesPane({
             lane={lane}
             lists={lists}
             readOnly={readOnly}
+            {...dropLineOf(lane.id)}
             onChange={(next) => setLanes(replaceLane(draft.swimlanes, next))}
             onDelete={() => remove(lane)}
             onMove={(step) => setLanes(moveLane(draft.swimlanes, index, index + step))}

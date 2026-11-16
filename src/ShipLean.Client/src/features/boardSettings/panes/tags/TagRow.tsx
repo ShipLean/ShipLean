@@ -20,6 +20,7 @@ export function TagRow({
       data-testid={ids.tagRow}
       className="flex items-center gap-3 border-b border-edge/60 py-1.5 last:border-b-0 touch:flex-wrap"
     >
+      {/* At touch line 1 is the tag and its colour name: 7.5rem = the name's w-24 (6rem), the gap-3 (0.75rem) and 0.75rem to spare, so the two never wrap apart. */}
       <span className="w-44 min-w-0 touch:w-[calc(100%-7.5rem)]">
         <span
           className="inline-flex h-4 items-center rounded-[var(--radius-xs)] px-1.5 text-[length:var(--text-2xs)] font-medium whitespace-nowrap text-ink"

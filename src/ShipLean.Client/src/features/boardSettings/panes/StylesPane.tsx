@@ -7,6 +7,7 @@ import { boardSettingsTestIds as ids } from '../testIds';
 import { useLanePickLists } from './swimlanes/useLanePickLists';
 import { blankRule, moveRule, replaceRule } from './styles/ruleEdits';
 import { RuleRow } from './styles/RuleRow';
+import { useDropLine } from './useDropLine';
 import { StylePreview } from './styles/StylePreview';
 
 /** Ordered style rules: a card takes the style of the first enabled rule it matches. */
@@ -20,6 +21,7 @@ export function StylesPane({
   // At touch the hint names the grip as the design draws it (SHIP-1809); desktop keeps its words.
   const { touch } = useTouchShell();
   const [dragFrom, setDragFrom] = useState<number>();
+  const dropLineOf = useDropLine(draft.styleRules.map((r) => r.id));
   const setRules = (styleRules: StyleRuleJson[]) => onChange({ ...draft, styleRules });
   return (
     <div data-testid={ids.stylesPane} className="grid content-start gap-3">
@@ -51,6 +53,7 @@ export function StylesPane({
               rule={rule}
               lists={lists}
               readOnly={readOnly}
+              {...dropLineOf(rule.id)}
               onChange={(next) => setRules(replaceRule(draft.styleRules, next))}
               onDelete={() => setRules(draft.styleRules.filter((r) => r.id !== rule.id))}
               onMove={(step) => setRules(moveRule(draft.styleRules, index, index + step))}

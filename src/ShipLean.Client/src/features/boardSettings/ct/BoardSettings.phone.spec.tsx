@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import type { Locator } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { touchTestIds } from '../../../touch/testIds';
 import { settingsDialogTestIds as ids } from '../../settingsDialog/testIds';
@@ -10,17 +10,16 @@ import { BOARD_ID, boardSettingsDto, emptySettings, PROJECT_ID } from './boardSe
 import { boardHarnessIds } from './harnessIds';
 import { stubBoard, styleRule } from './stubBoard';
 
-type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
-
 interface Point {
   x: number;
   y: number;
 }
 
 // Hold at `from` for the K5 lift (450ms on the installed clock), then move to `to` in 20px steps and let go.
-async function touchDrag(page: Page, from: Point, to: Point) {
+// With `hold`, the finger stays down at `to` and the caller sends the end (touchEnd or touchCancel).
+async function touchDrag(page: Page, from: Point, to: Point, hold = false) {
   const cdp = await page.context().newCDPSession(page);
-  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: Point) =>
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd' | 'touchCancel', point?: Point) =>
     cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
   await send('touchStart', from);
   await page.clock.runFor(450);
@@ -32,7 +31,14 @@ async function touchDrag(page: Page, from: Point, to: Point) {
       y: Math.round(from.y + ((to.y - from.y) * i) / steps),
     });
   }
-  await send('touchEnd');
+  if (!hold) await send('touchEnd');
+  return send;
+}
+
+async function centreOf(locator: Locator): Promise<Point> {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('no box');
+  return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
 }
 
 /** The design sample (Storefront) on this harness's board and project ids. */
@@ -94,16 +100,11 @@ test('StyleRules_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ 
       .getByTestId(paneIds.styleName)
       .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
   expect(await order()).toEqual(['Blocked', 'Spike']);
-  const centre = async (locator: typeof rules): Promise<Point> => {
-    const box = await locator.boundingBox();
-    if (!box) throw new Error('no box');
-    return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
-  };
 
   await touchDrag(
     page,
-    await centre(rules.first().getByTestId(paneIds.styleGrip)),
-    await centre(rules.last()),
+    await centreOf(rules.first().getByTestId(paneIds.styleGrip)),
+    await centreOf(rules.last()),
   );
 
   await expect.poll(order).toEqual(['Spike', 'Blocked']);
@@ -206,15 +207,19 @@ test('Columns_WhenOnPhone_ShouldScrollTheTableSidewaysToReachTheStateMapping', a
   await page.mouse.wheel(2000, 0);
 
   await expect(state).toBeInViewport();
+  // The table scrolled inside its panel: the page itself never scrolls sideways.
+  const scroll = await page.evaluate(() => ({
+    scrollX: window.scrollX,
+    scrollWidth: document.scrollingElement?.scrollWidth ?? 0,
+    width: window.innerWidth,
+  }));
+  expect(scroll.scrollX, 'the page stays put').toBe(0);
+  expect(scroll.scrollWidth, 'the page is no wider than the screen').toBeLessThanOrEqual(
+    scroll.width,
+  );
 });
 
 // SHIP-1985 (ND3b-7): column and lane grips get the K5 long-press drag and 32px targets at touch, as the rule rows do.
-
-async function centreOf(locator: Locator): Promise<Point> {
-  const box = await locator.boundingBox();
-  if (!box) throw new Error('no box');
-  return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
-}
 
 const lanes: SwimlaneJson[] = [
   {
@@ -336,4 +341,132 @@ test('ReorderHint_WhenOnPhone_ShouldShowTheGripGlyph', async ({ mount, page }) =
     <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="swimlanes" />,
   );
   await expect(page.getByTestId(paneIds.swimlanesPane)).toContainText('Drag ⠿ to reorder.');
+});
+
+// SHIP-1989: while a row is lifted, the row under the finger draws the drop line on the side the dragged row lands
+// (design settings-board-styles-drag); a touch the browser cancels clears it and moves nothing.
+
+const dropLineCases = [
+  {
+    pane: 'StyleRules',
+    section: 'styles',
+    dto: () => storiesDto(),
+    tags: ['Blocked', 'Spike'],
+    row: paneIds.styleRow,
+    name: paneIds.styleName,
+    grip: paneIds.styleGrip,
+    from: 0,
+    to: 1,
+    side: 'below',
+    order: ['Blocked', 'Spike', 'Expedite'],
+  },
+  {
+    pane: 'Columns',
+    section: 'columns',
+    dto: () => storiesDto(),
+    tags: [],
+    row: paneIds.columnRow,
+    name: paneIds.columnName,
+    grip: paneIds.columnGrip,
+    from: 3,
+    to: 1,
+    side: 'above',
+    order: ['New', 'Ready', 'In progress', 'In review', 'Done'],
+  },
+  {
+    pane: 'Lanes',
+    section: 'swimlanes',
+    dto: lanesDto,
+    tags: [],
+    row: paneIds.laneRow,
+    name: paneIds.laneName,
+    grip: paneIds.laneGrip,
+    from: 0,
+    to: 1,
+    side: 'below',
+    order: ['Expedite', 'Tech debt', 'Default lane'],
+  },
+] as const;
+
+for (const c of dropLineCases) {
+  test(`${c.pane}_WhenGripDraggedOverARowOnPhone_ShouldDrawTheDropLineUntilCancelled`, async ({
+    mount,
+    page,
+  }) => {
+    await stubBoard(page, c.dto(), [...c.tags]);
+    await mount(
+      <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section={c.section} />,
+    );
+    const rows = page.getByTestId(c.row);
+    await expect(rows).toHaveCount(c.order.length);
+    await page.clock.install({ time: 0 });
+    await page.clock.pauseAt(1000);
+    const order = () =>
+      page.getByTestId(c.name).evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
+    expect(await order()).toEqual(c.order);
+    // The line is an inset signal shadow: on the row itself, or on a table row's cells.
+    const shadow = () =>
+      rows.nth(c.to).evaluate((e) => {
+        const drawn = e.tagName === 'TR' ? e.firstElementChild : e;
+        return drawn ? getComputedStyle(drawn).boxShadow : 'none';
+      });
+    expect(await shadow()).toBe('none');
+
+    const send = await touchDrag(
+      page,
+      await centreOf(rows.nth(c.from).getByTestId(c.grip)),
+      await centreOf(rows.nth(c.to).getByTestId(c.name)),
+      true,
+    );
+
+    await expect.poll(shadow).toContain(c.side === 'below' ? '0px -2px 0px' : '0px 2px 0px');
+    expect(await shadow()).toContain('inset');
+    await send('touchCancel');
+    await expect(page.getByTestId(touchTestIds.dragGhost)).toHaveCount(0);
+    await expect.poll(shadow).toBe('none');
+    expect(await order()).toEqual(c.order);
+  });
+}
+
+// SHIP-1985 D1: the first and last columns are fixed, so holding their grip lifts nothing.
+test('Columns_WhenFixedColumnGripHeldOnPhone_ShouldNotLift', async ({ mount, page }) => {
+  await stubBoard(page, storiesDto(), []);
+  await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="columns" />,
+  );
+  const rows = page.getByTestId(paneIds.columnRow);
+  await expect(rows).toHaveCount(5);
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  const cdp = await page.context().newCDPSession(page);
+
+  for (const row of [rows.first(), rows.last()]) {
+    const grip = await centreOf(row.getByTestId(paneIds.columnGrip));
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [grip] });
+    await page.clock.runFor(450);
+    await expect(page.getByTestId(touchTestIds.dragGhost)).toHaveCount(0);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  }
+  // The control: a movable column's grip does lift on the same hold.
+  const movable = await centreOf(rows.nth(1).getByTestId(paneIds.columnGrip));
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [movable] });
+  await page.clock.runFor(450);
+  await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
+});
+
+// SHIP-1990: each Annotations roll-up row (its checkbox and label) is a 32px target at touch.
+test('Annotations_WhenOnPhone_ShouldHave32pxCheckboxRows', async ({ mount, page }) => {
+  await stubBoard(page, storiesDto(), []);
+  await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="annotations" />,
+  );
+  await expect(page.getByTestId(paneIds.annotationTasks)).toBeVisible();
+  // The Stories board lists three roll-ups (Features is listed on the Features and Epics boards only).
+  for (const id of [paneIds.annotationTasks, paneIds.annotationStories, paneIds.annotationBugs]) {
+    const height = await page
+      .getByTestId(id)
+      .evaluate((e) => e.closest('label')?.getBoundingClientRect().height ?? 0);
+    expect(height, `${id} row height`).toBeGreaterThanOrEqual(32);
+  }
 });

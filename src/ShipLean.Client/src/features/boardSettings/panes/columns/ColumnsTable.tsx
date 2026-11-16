@@ -12,6 +12,7 @@ import {
   typeNames,
 } from './columnEdits';
 import { ColumnRow } from './ColumnRow';
+import { useDropLine } from '../useDropLine';
 
 /** The column table with its Add column footer; the first and last columns are fixed. */
 export function ColumnsTable({
@@ -29,6 +30,7 @@ export function ColumnsTable({
 }) {
   const [dodOpenId, setDodOpenId] = useState<string>();
   const [dragFrom, setDragFrom] = useState<number>();
+  const dropLineOf = useDropLine(columns.map((c) => c.id));
   const last = columns.length - 1;
   const mappedCount = (type: BoardTypeStatesDto['type']) => {
     const live = liveStates(states, type);
@@ -77,6 +79,7 @@ export function ColumnsTable({
               first={index === 0}
               last={index === last}
               readOnly={readOnly}
+              {...dropLineOf(column.id)}
               dodOpen={dodOpenId === column.id}
               onChange={(next) => onChange(replaceColumn(columns, column.id, next))}
               onToggleDod={() => setDodOpenId(dodOpenId === column.id ? undefined : column.id)}
