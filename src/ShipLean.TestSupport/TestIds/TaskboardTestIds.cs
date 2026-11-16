@@ -17,7 +17,6 @@ public static class TaskboardTestIds
     public const string AddStoryTitle = "taskboard-add-story-title";
     public const string AddStorySubmit = "taskboard-add-story-submit";
     public const string AddStoryClose = "taskboard-add-story-close";
-    public const string AddStoryHelp = "taskboard-add-story-help";
     public const string AddStoryError = "taskboard-add-story-error";
     // L722b phone toolbar
     public const string FilterButton = "taskboard-filter-button";
@@ -80,4 +79,5 @@ public static class TaskboardTestIds
     public const string TaskBox = "taskboard-task-box";
     public const string TaskTitle = "taskboard-task-title";
     public const string TaskError = "taskboard-task-error";
+    public const string AddStoryHelp = "taskboard-add-story-help";
 }

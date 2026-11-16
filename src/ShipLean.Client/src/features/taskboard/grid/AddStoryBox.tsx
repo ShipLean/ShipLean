@@ -9,7 +9,7 @@ import { taskboardTestIds as ids } from '../testIds';
 
 const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: typeName(id) }));
 
-/** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it. */
+/** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it on desktop; at touch a ✕ button does. */
 export function AddStoryBox({
   projectId,
   scope,
@@ -102,7 +102,7 @@ export function AddStoryBox({
       {touch ? (
         <p
           data-testid={ids.addStoryHelp}
-          className="m-0 basis-full text-[length:var(--text-sm)] text-ink-muted"
+          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
         >
           {scope.kind === 'sprint'
             ? 'Adds it to this sprint, at the bottom. Stays open for the next one.'
