@@ -20,12 +20,7 @@ test('AttachmentMoreSheet_WhenCopyLinkTapped_ShouldCopyAndClose', async ({
   const sheet = page.getByTestId(touchTestIds.sheet);
   const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
   await expect(rows).toHaveCount(4);
-  await expect(rows).toHaveText([
-    /^Download/,
-    /^Replace…/,
-    /^Copy link/,
-    /^About this file/,
-  ]);
+  await expect(rows).toHaveText([/^Download/, /^Replace…/, /^Copy link/, /^About this file/]);
 
   await sheet.locator('[data-action-id="copy-link"]').tap();
 

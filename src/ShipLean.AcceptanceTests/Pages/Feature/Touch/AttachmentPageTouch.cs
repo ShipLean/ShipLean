@@ -13,6 +13,18 @@ public sealed class AttachmentPageTouch(IPage page)
 
     public ILocator Facts => page.GetByTestId(AttachmentTestIds.Facts);
 
+    public ILocator More => page.GetByTestId(TouchTestIds.MoreButton);
+
+    public ILocator Name => page.GetByTestId(AttachmentTestIds.Name);
+
+    public ILocator TooLargeHeading => page.GetByTestId(AttachmentTestIds.TooLargeHeading);
+
+    public ILocator Download => page.GetByTestId(AttachmentTestIds.LoadFailedDownload);
+
+    public ILocator AboutFacts => page.GetByTestId(AttachmentTestIds.AboutFact);
+
+    public ILocator MissingImageHint => page.GetByTestId(AttachmentTestIds.ImagesMissingHint);
+
     public ILocator ContentsPill => page.GetByTestId(AttachmentTestIds.ContentsPill);
 
     public ILocator ContentsEntries => page.GetByTestId(AttachmentTestIds.ContentsEntry);
@@ -26,6 +38,13 @@ public sealed class AttachmentPageTouch(IPage page)
     public Task<double> HeadingTopAsync(string text) => page.GetByTestId(AttachmentTestIds.Body).EvaluateAsync<double>(
         "(body, text) => [...body.querySelectorAll('h1,h2,h3')].find(h => h.textContent === text).getBoundingClientRect().top",
         text);
+
+    // For a file that cannot be rendered there is no name button to wait for: the heading is the page's first sign.
+    public async Task OpenTooLargeAsync(string projectKey, string itemKey, Guid attachmentId)
+    {
+        await page.GotoAsync($"{Links.WorkItem(projectKey, itemKey)}/attachments/{attachmentId}");
+        await TooLargeHeading.WaitForAsync();
+    }
 
     public async Task OpenAsync(string projectKey, string itemKey, Guid attachmentId)
     {
