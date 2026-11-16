@@ -20,11 +20,18 @@ public class AgentConnectionHealthTests : ApiFixture
 {
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
 
+    private static async Task<T> ReadAsync<T>(HttpResponseMessage response)
+    {
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        return JsonSerializer.Deserialize<T>(text, Wire)!;
+    }
+
     private TimeProvider Clock => Host.Services.GetRequiredService<TimeProvider>();
 
     private DateTimeOffset Ago(TimeSpan age) => DateTimeOffset.FromUnixTimeSeconds(Clock.GetUtcNow().Add(-age).ToUnixTimeSeconds());
 
-    private async Task<Guid> NewDeliveryAsync(NpgsqlConnection database, Guid connectionId)
+    private static async Task<Guid> NewDeliveryAsync(NpgsqlConnection database, Guid connectionId)
     {
         var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(database);
         var session = await new AgentSessionSeeds(item, connectionId).WithState("failed").WithEndReason(AgentEndReasons.DeliveryFailed).InsertAsync(database);
@@ -158,6 +165,8 @@ public class AgentConnectionHealthTests : ApiFixture
 
         var health = await ReadAsync<AgentConnectionHealthDto>(await Api.GetAsync($"api/instance/agent-connections/{connection}/health"));
 
-        (health.FailedLast24h, health.LastError, health.LastDeliveredAt).ShouldBe((1, "Boom.", null));
+        health.FailedLast24h.ShouldBe(1);
+        health.LastError.ShouldBe("Boom.");
+        health.LastDeliveredAt.ShouldBeNull();
     }
 }
