@@ -1,7 +1,8 @@
 import type { Page } from 'playwright';
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { ProjectDto } from '@shiplean/core/api/projects';
-import type { SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
+import type { RolloverDto, SprintCapacityDto, SprintDto } from '@shiplean/core/api/sprints';
+import { componentTestIds } from '../../../../components/testIds';
 import { touchTestIds } from '../../../../touch/testIds';
 import { sprintsTestIds as ids } from '../../testIds';
 import { NewSprintRail } from '../../newSprint/NewSprintRail';
@@ -94,6 +95,29 @@ async function stub(page: Page) {
     return route.fulfill({ json: capacityOf(id) });
   });
 }
+
+const rollover: RolloverDto = {
+  sprint: { id: 's24', name: 'Sprint 24', status: 'current' },
+  status: 'pending',
+  items: [
+    {
+      workItemId: 'w1',
+      key: 'SHIP-141',
+      title: 'Pay with saved card',
+      type: 'story',
+      state: { id: 'st', name: 'Active', category: 'inProgress' },
+      assignee: null,
+      points: 5,
+      openTasks: 3,
+      totalTasks: 3,
+      defaultTargetSprintId: 's25',
+    },
+  ],
+  nextSprint: { id: 's25', name: 'Sprint 25', status: 'future' },
+  nextSprintCapacity: 25,
+  nextSprintPoints: 29,
+  endsEarly: false,
+};
 
 const rowOf = (page: Page, name: string) =>
   page
@@ -257,6 +281,39 @@ test('SprintsList_WhenVelocityDrawn_ShouldShowEveryBarsValueAsText', async ({ mo
   // Two sprints ended: the older one's bars are valued by velocityValue, the latest's by velocityLatest.
   await expect(page.getByTestId(ids.velocityValue)).toHaveText(['18', '16']);
   await expect(page.getByTestId(ids.velocityLatest)).toHaveText(['20', '21']);
+});
+
+// Review round 1, finding 1. The stub's window is 3 but only two sprints have ended, so the average covers two.
+// Mutation: counting velocity.window in the caption again said "the last 3 sprints".
+test('SprintsList_WhenFewerSprintsEndedThanTheWindow_ShouldCaptionTheNumberAveraged', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await expect(page.getByTestId(ids.velocityLabel)).toHaveText(
+    'Velocity 19 (dashed): the average completed over the last 2 sprints.',
+  );
+});
+
+// Review round 1, finding 2. Mutation: dropping the CloseSprintSlot render in SprintsList left no dialog after the tap.
+test('SprintsList_WhenCloseSprintTappedInTheSheet_ShouldOpenTheCloseSprintDialog', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await page.route('**/api/sprints/s24/rollover', (route) => route.fulfill({ json: rollover }));
+  await mount(<SprintsList project={project} sprints={sprints} />);
+
+  await rowOf(page, 'Sprint 24').getByTestId(touchTestIds.moreButton).tap();
+  await page
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="close-sprint"]`)
+    .tap();
+
+  const dialog = page.getByTestId(componentTestIds.dialog);
+  await expect(dialog).toContainText('Close Sprint 24');
+  await expect(dialog.getByTestId(ids.endRow)).toHaveCount(1);
 });
 
 test('SprintsList_WhenEditSprintClosed_ShouldReturnFocusToTheRowMore', async ({ mount, page }) => {

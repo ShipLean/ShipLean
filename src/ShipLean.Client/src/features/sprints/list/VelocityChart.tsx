@@ -20,12 +20,16 @@ function averageLabel(velocity: VelocityDto): string {
     : `velocity ${velocity.override} (override)`;
 }
 
-/** The touch caption under the chart: what the dashed line is (SHIP-1807 P3). */
+/**
+ * The touch caption under the chart: what the dashed line is (SHIP-1807 P3). The average covers the sprints drawn, which
+ * are fewer than the project's window until that many have ended, so it counts those, as the desktop label does.
+ */
 function touchCaption(velocity: VelocityDto): ReactNode {
+  const count = velocity.sprints.length;
   return velocity.override === null ? (
     <>
       Velocity <b className="text-ink">{velocity.average}</b> (dashed): the average completed over
-      the last {velocity.window} sprints.
+      {count === 1 ? ' the last sprint.' : ` the last ${count} sprints.`}
     </>
   ) : (
     <>
