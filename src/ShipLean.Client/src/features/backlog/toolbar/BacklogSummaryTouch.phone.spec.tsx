@@ -114,7 +114,7 @@ test('BacklogToolbar_WhenStoriesList_ShouldPutTheStripAboveTheSummaryLine', asyn
 }) => {
   await stubBacklog(page, { ...backlogView(ROWS), review: review({ unestimated: [ROWS[0].id] }) });
   await mount(<ListMode project={PROJECT} />, stories);
-  const strip = await page.getByTestId(ids.planStrip).boundingBox();
+  const strip = await page.getByTestId(ids.notEstimatedBanner).boundingBox();
   const summary = await page.getByTestId(ids.summary).boundingBox();
   const toolbarRow = await page.getByTestId(ids.toolbarRow).boundingBox();
   expect(strip!.y).toBeGreaterThanOrEqual(toolbarRow!.y + toolbarRow!.height);

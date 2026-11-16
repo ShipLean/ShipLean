@@ -207,4 +207,10 @@ public static class BacklogTestIds
     public const string Summary = "backlog-summary";
     public const string SummaryNote = "backlog-summary-note";
     public const string FilterCount = "backlog-filter-count";
+    public const string PointsScale = "backlog-points-scale";
+    public const string PointsSheetError = "backlog-points-sheet-error";
+    public const string QueuePosition = "backlog-queue-position";
+    public const string QueueEmpty = "backlog-queue-empty";
+    public const string NotEstimatedBanner = "backlog-not-estimated-banner";
+    public const string NotEstimatedEstimate = "backlog-not-estimated-estimate";
 }

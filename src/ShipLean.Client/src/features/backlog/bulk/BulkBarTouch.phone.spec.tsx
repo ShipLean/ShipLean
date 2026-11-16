@@ -160,7 +160,7 @@ test('MoreSheet_WhenEstimateUnpointedTapped_ShouldOpenUnestimatedQueue', async (
 
   await pickMore(page, 'estimate-unpointed');
 
-  await expect(page.getByTestId(ids.queueBanner)).toBeVisible();
+  await expect(page.getByTestId(ids.pointsSheet)).toBeVisible();
   await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-2');
 });
 

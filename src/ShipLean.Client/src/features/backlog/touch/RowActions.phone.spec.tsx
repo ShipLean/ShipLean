@@ -3,6 +3,7 @@ import type { Page } from 'playwright';
 import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { touchTestIds } from '../../../touch/testIds';
 import { backlogView, itemRow, planningView, PROJECT, review } from '../ct/fixtures';
+import { ListAddressHarness } from '../ct/ListAddressHarness';
 import { RowActionsHarness } from '../ct/RowActionsHarness';
 import { rowActionsHarnessIds } from '../ct/rowActionsHarnessIds';
 import { stubBacklog } from '../ct/stubApi';
@@ -108,19 +109,111 @@ const queueView = (flagged: string[]): BacklogViewDto => ({
   review: review({ unestimated: flagged }),
 });
 
-test('BeforeYouPlan_WhenTouchQueueSkipped_ShouldStepToNext', async ({ mount, page }) => {
-  await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
+const scale = (page: Page, points: number) =>
+  page.getByTestId(ids.pointsScale).and(page.locator(`[data-points="${points}"]`));
+const openQueue = async (page: Page) => {
+  await page.getByTestId(ids.notEstimatedEstimate).tap();
+  await expect(page.getByTestId(ids.pointsSheet)).toBeVisible();
+};
+
+test('PointsSheet_WhenAScaleButtonIsTapped_ShouldSaveAndStepToTheNext', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
   await mount(<ListMode project={PROJECT} />, route);
-  await page.getByTestId(ids.planCheck).and(page.locator('[data-check="unestimated"]')).tap();
-
-  await expect(page.getByTestId(ids.queueBanner)).toBeVisible();
+  await openQueue(page);
   await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-2');
-  await expect(page.getByTestId(ids.queueBanner)).toContainText('1 of 2');
 
-  await page.getByTestId(ids.queueSkip).tap();
+  await scale(page, 5).tap();
 
   await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-3');
-  await expect(page.getByTestId(ids.queueBanner)).toContainText('2 of 2');
+  await expect(page.getByTestId(ids.queuePosition)).toContainText('2 of 2');
+  expect(server.patches).toHaveLength(1);
+  expect(server.patches[0].url).toContain('/api/work-items/id-SHIP-2');
+  expect(JSON.stringify(server.patches[0].body)).toContain('"points":{"value":5}');
+});
+
+test('PointsSheet_WhenSaveFails_ShouldStayOnTheItemAndSaySo', async ({ mount, page }) => {
+  const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]), {
+    patchAnswers: [{ status: 500, body: { error: 'The database is down', code: 'internal' } }],
+  });
+  await mount(<ListMode project={PROJECT} />, route);
+  await openQueue(page);
+
+  await scale(page, 3).tap();
+
+  await expect(page.getByTestId(ids.pointsSheetError)).toContainText("SHIP-2 wasn't saved");
+  await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-2');
+  await expect(page.getByTestId(ids.queuePosition)).toContainText('1 of 2');
+  expect(server.patches).toHaveLength(1);
+});
+
+test('PointsSheet_FromTheQueue_ShouldShowPositionAndSkip', async ({ mount, page }) => {
+  const server = await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
+  await mount(<ListMode project={PROJECT} />, route);
+  await openQueue(page);
+  await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Estimate');
+  await expect(page.getByTestId(ids.queuePosition)).toContainText('1 of 2');
+  await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-2');
+
+  await page.getByTestId(ids.queueSkip).tap();
+  await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-3');
+  await expect(page.getByTestId(ids.queuePosition)).toContainText('2 of 2');
+
+  await page.getByTestId(ids.queueSkip).tap();
+  await expect(page.getByTestId(ids.queueEmpty)).toBeVisible();
+  expect(server.patches).toHaveLength(0);
+});
+
+test('PointsSheet_FromTheQueue_WhenScrimTapped_ShouldLeaveTheQueueWithoutOpeningARow', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, queueView([ROWS[1].id, ROWS[2].id]));
+  await mount(<ListAddressHarness project={PROJECT} />, route);
+  await openQueue(page);
+  // The queue lists only its own rows, so SHIP-2's row sits under the scrim.
+  const row = await rowOf(page, 'SHIP-2').boundingBox();
+
+  await page
+    .getByTestId(touchTestIds.sheetScrim)
+    .tap({ position: { x: row!.x + 40, y: row!.y + row!.height / 2 } });
+
+  await expect(page.getByTestId(ids.pointsSheet)).toHaveCount(0);
+  await expect(page.getByTestId(ids.row)).toHaveCount(4);
+  await expect(page.getByTestId(rowActionsHarnessIds.address)).toHaveText(
+    '/p/SHIP/backlogs/stories',
+  );
+});
+
+test('NotEstimatedBanner_AtTouch_ShouldShowOnlyTheUnestimatedCheck', async ({ mount, page }) => {
+  await stubBacklog(page, {
+    ...backlogView(ROWS),
+    review: review({
+      unestimated: [ROWS[1].id, ROWS[2].id],
+      no_parent: [ROWS[0].id],
+      stale: [ROWS[3].id],
+    }),
+  });
+  await mount(<ListMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.notEstimatedBanner)).toHaveText(
+    '2 not estimated in the top 100.Estimate',
+  );
+  await expect(page.getByTestId(ids.planStrip)).toHaveCount(0);
+  await expect(page.getByTestId(ids.planCheck)).toHaveCount(0);
+});
+
+test('NotEstimatedBanner_WhenEverythingIsEstimated_ShouldNotShow', async ({ mount, page }) => {
+  await stubBacklog(page, {
+    ...backlogView(ROWS),
+    review: review({ no_parent: [ROWS[0].id] }),
+  });
+  await mount(<ListMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.row)).toHaveCount(4);
+  await expect(page.getByTestId(ids.notEstimatedBanner)).toHaveCount(0);
 });
 
 test('PointsSheet_WhenSaved_ShouldPatchPoints', async ({ mount, page }) => {
