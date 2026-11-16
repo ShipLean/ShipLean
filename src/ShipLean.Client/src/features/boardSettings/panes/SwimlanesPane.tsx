@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { BoardSettingsJson, SwimlaneJson } from '@shiplean/core/api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';
 import { blankLane, moveLane, replaceLane } from './swimlanes/laneEdits';
@@ -18,6 +19,8 @@ export function SwimlanesPane({
   context,
 }: PaneProps<BoardSettingsJson, BoardSettingsContext>) {
   const lists = useLanePickLists(context.projectId, context.states);
+  // At touch the hint names the grip as the design draws it (SHIP-1809); desktop keeps its words.
+  const { touch } = useTouchShell();
   const [refusedId, setRefusedId] = useState<string>();
   const [dragFrom, setDragFrom] = useState<number>();
   const setLanes = (swimlanes: SwimlaneJson[]) => onChange({ ...draft, swimlanes });
@@ -44,7 +47,7 @@ export function SwimlanesPane({
       <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
         Lanes split the board into rows. Criteria lanes are checked from the top and the first match
         wins. A card that matches none stays in the manual lane it was dragged to, or goes to the
-        default lane. Drag the grip to reorder.
+        default lane. {touch ? 'Drag ⠿ to reorder.' : 'Drag the grip to reorder.'}
       </p>
       <div>
         <button
@@ -67,6 +70,10 @@ export function SwimlanesPane({
             onDelete={() => remove(lane)}
             onMove={(step) => setLanes(moveLane(draft.swimlanes, index, index + step))}
             onDragStart={() => setDragFrom(index)}
+            onTouchDrop={(targetId) => {
+              const to = draft.swimlanes.findIndex((l) => l.id === targetId);
+              if (to >= 0) setLanes(moveLane(draft.swimlanes, index, to));
+            }}
             onDrop={() => {
               if (dragFrom !== undefined) setLanes(moveLane(draft.swimlanes, dragFrom, index));
               setDragFrom(undefined);

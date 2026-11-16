@@ -1,4 +1,5 @@
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, type Locator } from '@playwright/experimental-ct-react';
+import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { stubBoard } from '../../features/board/ct/stubApi';
 import { boardSettingsTestIds as ids } from '../../features/boardSettings/testIds';
 import { settingsDialogTestIds } from '../../features/settingsDialog/testIds';
@@ -25,6 +26,46 @@ async function arrange(page: Page) {
   await page.route(`**/api/boards/${BOARD_ID}/settings`, (route) =>
     route.fulfill({ json: storiesSettings() }),
   );
+}
+
+// Three lanes as the Features board design draws them: a criteria lane, a manual lane and the default lane.
+const lanes: SwimlaneJson[] = [
+  {
+    id: 'lane-expedite',
+    name: 'Expedite',
+    colour: 'warn',
+    kind: 'criteria',
+    criteria: { match: 'all', clauses: [{ field: 'priority', op: '=', value: 1 }] },
+  },
+  { id: 'lane-debt', name: 'Tech debt', colour: null, kind: 'manual', criteria: null },
+  { id: 'lane-default', name: 'Everything else', colour: null, kind: 'default', criteria: null },
+];
+
+// Hold `grip` for the K5 lift (450ms on a paused clock), move to the middle of `over` in ten steps and keep holding.
+async function holdAndDrag(page: Page, grip: Locator, over: Locator) {
+  const from = await grip.boundingBox();
+  const to = await over.boundingBox();
+  if (!from || !to) throw new Error('no box');
+  const start = {
+    x: Math.round(from.x + from.width / 2),
+    y: Math.round(from.y + from.height / 2),
+  };
+  const end = { x: Math.round(to.x + to.width / 2), y: Math.round(to.y + to.height / 2) };
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+  await page.clock.runFor(450);
+  await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+  for (let i = 1; i <= 10; i++) {
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [
+        { x: start.x + ((end.x - start.x) * i) / 10, y: start.y + ((end.y - start.y) * i) / 10 },
+      ],
+    });
+  }
+  await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
 }
 
 const pane = (name: string, settings: string, ready: (page: Page) => Promise<void>) => ({
@@ -55,38 +96,20 @@ phonePageShots([
       expect(page.getByTestId(ids.styleRow)).toHaveCount(3),
     ),
     // Hold the first rule's grip for the K5 lift, then move halfway down the second rule and keep holding.
-    act: async (page: Page) => {
-      const grip = await page.getByTestId(ids.styleGrip).first().boundingBox();
-      const over = await page.getByTestId(ids.styleRow).nth(1).boundingBox();
-      if (!grip || !over) throw new Error('no box');
-      const from = {
-        x: Math.round(grip.x + grip.width / 2),
-        y: Math.round(grip.y + grip.height / 2),
-      };
-      const to = {
-        x: Math.round(over.x + over.width / 2),
-        y: Math.round(over.y + over.height / 2),
-      };
-      await page.clock.install({ time: 0 });
-      await page.clock.pauseAt(1000);
-      const cdp = await page.context().newCDPSession(page);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
-      await page.clock.runFor(450);
-      await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
-      for (let i = 1; i <= 10; i++) {
-        await cdp.send('Input.dispatchTouchEvent', {
-          type: 'touchMove',
-          touchPoints: [
-            { x: from.x + ((to.x - from.x) * i) / 10, y: from.y + ((to.y - from.y) * i) / 10 },
-          ],
-        });
-      }
-      await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
-    },
+    act: (page: Page) =>
+      holdAndDrag(page, page.getByTestId(ids.styleGrip).first(), page.getByTestId(ids.styleRow).nth(1)),
   },
   pane('board-settings-columns', 'columns', (page) =>
     expect(page.getByTestId(ids.columnRow)).toHaveCount(5),
   ),
+  {
+    ...pane('board-settings-columns-drag', 'columns', (page) =>
+      expect(page.getByTestId(ids.columnRow)).toHaveCount(5),
+    ),
+    // Hold Ready's grip for the K5 lift, then move onto In review and keep holding (SHIP-1985).
+    act: (page: Page) =>
+      holdAndDrag(page, page.getByTestId(ids.columnGrip).nth(1), page.getByTestId(ids.columnRow).nth(3)),
+  },
   pane('board-settings-tags', 'tags', (page) =>
     expect(page.getByTestId(ids.tagRow).first()).toBeVisible(),
   ),
@@ -96,6 +119,17 @@ phonePageShots([
   pane('board-settings-swimlanes', 'swimlanes', (page) =>
     expect(page.getByTestId(ids.swimlanesPane)).toBeVisible(),
   ),
+  {
+    ...pane('board-settings-swimlanes-lanes', 'swimlanes', (page) =>
+      expect(page.getByTestId(ids.laneRow)).toHaveCount(3),
+    ),
+    arrange: async (page: Page) => {
+      await arrange(page);
+      await page.route(`**/api/boards/${BOARD_ID}/settings`, (route) =>
+        route.fulfill({ json: { ...storiesSettings(), settings: { ...storiesSettings().settings, swimlanes: lanes } } }),
+      );
+    },
+  },
   pane('board-settings-automations', 'automations', (page) =>
     expect(page.getByTestId(ids.automationsPane)).toBeVisible(),
   ),

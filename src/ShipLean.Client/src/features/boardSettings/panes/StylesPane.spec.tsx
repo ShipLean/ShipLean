@@ -160,3 +160,11 @@ test('StylesPane_WhenTagColoured_ShouldTintTheTagOnThePreview', async ({ mount, 
   const card = page.getByTestId(cardIds.card).filter({ hasText: 'KEY-129' });
   await expect(card.getByTestId(cardIds.cardTag).first()).toHaveAttribute('data-colour', 'warn');
 });
+
+test('StylesPane_WhenOnDesktop_ShouldKeepTheWordedReorderHint', async ({ mount, page }) => {
+  await stubBoard(page, board([blocked]));
+  await mountStyles(mount);
+
+  await expect(page.getByTestId(ids.stylesPane)).toContainText('Drag the grip to reorder.');
+  await expect(page.getByTestId(ids.stylesPane)).not.toContainText('Drag ⠿');
+});

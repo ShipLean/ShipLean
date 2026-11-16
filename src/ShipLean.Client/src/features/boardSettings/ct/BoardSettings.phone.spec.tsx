@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/experimental-ct-react';
+import { expect, test, type Locator } from '@playwright/experimental-ct-react';
+import type { SwimlaneJson } from '@shiplean/core/api/persisted';
 import { touchTestIds } from '../../../touch/testIds';
 import { settingsDialogTestIds as ids } from '../../settingsDialog/testIds';
 import { storiesSettings } from '../../../pages/screenshots/fixtures/boards';
@@ -204,4 +205,115 @@ test('Columns_WhenOnPhone_ShouldScrollTheTableSidewaysToReachTheStateMapping', a
   await page.mouse.wheel(2000, 0);
 
   await expect(state).toBeInViewport();
+});
+
+// SHIP-1985 (ND3b-7): column and lane grips get the K5 long-press drag and 32px targets at touch, as the rule rows do.
+
+async function centreOf(locator: Locator): Promise<Point> {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('no box');
+  return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+}
+
+const lanes: SwimlaneJson[] = [
+  {
+    id: 'lane-expedite',
+    name: 'Expedite',
+    colour: 'danger',
+    kind: 'criteria',
+    criteria: { match: 'all', clauses: [{ field: 'priority', op: '=', value: 1 }] },
+  },
+  { id: 'lane-debt', name: 'Tech debt', colour: null, kind: 'manual', criteria: null },
+  { id: 'lane-default', name: 'Default lane', colour: null, kind: 'default', criteria: null },
+];
+
+const lanesDto = () =>
+  boardSettingsDto({ settings: { ...emptySettings(), swimlanes: lanes } });
+
+test('Columns_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ mount, page }) => {
+  await stubBoard(page, storiesDto(), []);
+  await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="columns" />,
+  );
+  const rows = page.getByTestId(paneIds.columnRow);
+  await expect(rows).toHaveCount(5);
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  const order = () =>
+    page
+      .getByTestId(paneIds.columnName)
+      .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
+  expect(await order()).toEqual(['New', 'Ready', 'In progress', 'In review', 'Done']);
+
+  await touchDrag(
+    page,
+    await centreOf(rows.nth(1).getByTestId(paneIds.columnGrip)),
+    await centreOf(rows.nth(3).getByTestId(paneIds.columnName)),
+  );
+
+  await expect.poll(order).toEqual(['New', 'In progress', 'In review', 'Ready', 'Done']);
+  await expect(page.getByTestId(touchTestIds.saveBar).getByTestId(ids.footerDirty)).toHaveText(
+    'Unsaved: Columns',
+  );
+});
+
+test('Lanes_WhenGripHeldAndDraggedOnPhone_ShouldReorderTheDraft', async ({ mount, page }) => {
+  await stubBoard(page, lanesDto(), []);
+  await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="swimlanes" />,
+  );
+  const rows = page.getByTestId(paneIds.laneRow);
+  await expect(rows).toHaveCount(3);
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  const order = () =>
+    page
+      .getByTestId(paneIds.laneName)
+      .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
+  expect(await order()).toEqual(['Expedite', 'Tech debt', 'Default lane']);
+
+  await touchDrag(
+    page,
+    await centreOf(rows.first().getByTestId(paneIds.laneGrip)),
+    await centreOf(rows.nth(1).getByTestId(paneIds.laneName)),
+  );
+
+  await expect.poll(order).toEqual(['Tech debt', 'Expedite', 'Default lane']);
+  await expect(page.getByTestId(touchTestIds.saveBar).getByTestId(ids.footerDirty)).toHaveText(
+    'Unsaved: Swimlanes',
+  );
+});
+
+test('ColumnAndLaneGrips_WhenOnPhone_ShouldBe32pxTargets', async ({ mount, page }) => {
+  await stubBoard(page, storiesDto({ settings: { ...storiesDto().settings, swimlanes: lanes } }), []);
+  const component = await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="columns" />,
+  );
+  await expect(page.getByTestId(paneIds.columnRow)).toHaveCount(5);
+  const columnGrip = await page.getByTestId(paneIds.columnGrip).nth(1).boundingBox();
+  expect(columnGrip?.width, 'column grip width').toBeGreaterThanOrEqual(32);
+  expect(columnGrip?.height, 'column grip height').toBeGreaterThanOrEqual(32);
+
+  await component.update(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="swimlanes" />,
+  );
+  await expect(page.getByTestId(paneIds.laneRow)).toHaveCount(3);
+  const laneGrip = await page.getByTestId(paneIds.laneGrip).first().boundingBox();
+  expect(laneGrip?.width, 'lane grip width').toBeGreaterThanOrEqual(32);
+  expect(laneGrip?.height, 'lane grip height').toBeGreaterThanOrEqual(32);
+});
+
+// SHIP-1988: at touch the reorder hint names the grip as the design draws it (settings-board-styles).
+
+test('ReorderHint_WhenOnPhone_ShouldShowTheGripGlyph', async ({ mount, page }) => {
+  await stubBoard(page, lanesDto(), []);
+  const component = await mount(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="styles" />,
+  );
+  await expect(page.getByTestId(paneIds.stylesPane)).toContainText('Drag ⠿ to reorder.');
+
+  await component.update(
+    <StoriesBoardSettingsHarness projectId={PROJECT_ID} boardId={BOARD_ID} section="swimlanes" />,
+  );
+  await expect(page.getByTestId(paneIds.swimlanesPane)).toContainText('Drag ⠿ to reorder.');
 });

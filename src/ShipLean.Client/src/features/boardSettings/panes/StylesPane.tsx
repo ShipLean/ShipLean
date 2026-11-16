@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { BoardSettingsJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';
 import { useLanePickLists } from './swimlanes/useLanePickLists';
@@ -16,13 +17,15 @@ export function StylesPane({
   context,
 }: PaneProps<BoardSettingsJson, BoardSettingsContext>) {
   const lists = useLanePickLists(context.projectId, context.states);
+  // At touch the hint names the grip as the design draws it (SHIP-1809); desktop keeps its words.
+  const { touch } = useTouchShell();
   const [dragFrom, setDragFrom] = useState<number>();
   const setRules = (styleRules: StyleRuleJson[]) => onChange({ ...draft, styleRules });
   return (
     <div data-testid={ids.stylesPane} className="grid content-start gap-3">
       <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
         Style rules make cards that need attention stand out. When a card matches more than one
-        rule, the first rule wins. Drag the grip to reorder.
+        rule, the first rule wins. {touch ? 'Drag ⠿ to reorder.' : 'Drag the grip to reorder.'}
       </p>
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
         <div className="grid gap-2">
