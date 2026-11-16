@@ -32,6 +32,7 @@ public abstract class BangkokViewerTest : SeededAcceptanceTest
             DataObject = new { timeZone = zone, source = "profile" },
             Headers = new Dictionary<string, string> { [ClientHeader.Name] = "acceptance-test" },
         });
-        Assert.That(response.Ok, $"Setting the time zone to {zone} answered {response.Status}: {await response.TextAsync()}");
+        var answer = await response.TextAsync();
+        response.Ok.ShouldBeTrue($"Setting the time zone to {zone} answered {response.Status}: {answer}");
     }
 }
