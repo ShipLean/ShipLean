@@ -46,7 +46,10 @@ export function SettingsSaveBar({
             <span data-testid={settingsTestIds.unsaved} className="truncate">
               {count} unsaved {count === 1 ? 'change' : 'changes'}
             </span>
-            <span aria-hidden="true" className="shrink-0 text-[length:var(--text-xs)] text-ink-muted">
+            <span
+              aria-hidden="true"
+              className="shrink-0 text-[length:var(--text-xs)] text-ink-muted"
+            >
               ▾
             </span>
           </button>
