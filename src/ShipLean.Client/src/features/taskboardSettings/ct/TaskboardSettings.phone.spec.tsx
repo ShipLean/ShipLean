@@ -7,6 +7,7 @@ interface Point {
   y: number;
 }
 import type { CardFieldSettingJson } from '@shiplean/core/api/persisted';
+import { TASKBOARD_STYLE_RULES } from '../../../pages/screenshots/fixtures/taskboardView';
 import { PROJECT_ID } from '../../boardSettings/ct/boardSettingsFixtures';
 import { criteriaTestIds } from '../../criteria/testIds';
 import { styleRule } from '../../boardSettings/ct/stubBoard';
@@ -261,3 +262,20 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+test('TaskboardSettingsStyles_AtPhoneWidth_ShouldNotOverflow', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ styleRules: TASKBOARD_STYLE_RULES }), ['Blocked']);
+  await mount(dialog('styles'));
+  await expect(page.getByTestId(ids.styleRow)).toHaveCount(TASKBOARD_STYLE_RULES.length);
+  const pane = page.getByTestId(ids.stylesPane);
+  const widths = await pane.evaluate((el) => {
+    let scroller: HTMLElement | null = el;
+    while (scroller && scroller.scrollWidth <= scroller.clientWidth) scroller = scroller.parentElement;
+    return {
+      pane: el.getBoundingClientRect().right,
+      scroll: scroller ? scroller.scrollWidth - scroller.clientWidth : 0,
+    };
+  });
+  expect(widths.scroll, 'nothing on the screen scrolls sideways').toBe(0);
+  expect(widths.pane, 'the pane ends inside the 390px screen').toBeLessThanOrEqual(390);
+});
