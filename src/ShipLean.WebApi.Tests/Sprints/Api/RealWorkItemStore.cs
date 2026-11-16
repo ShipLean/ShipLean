@@ -6,6 +6,7 @@ using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.WorkItems;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Sprints.Api;
 
@@ -14,5 +15,5 @@ public static class RealWorkItemStore
 {
     public static IWorkItemStore Build(IServiceProvider services) => new WorkItemStore(
         services.GetRequiredService<NpgsqlDataSource>(), services.GetRequiredService<ICurrentUser>(), new PassThroughWorkItemRules(),
-        services.GetRequiredService<IProjectEvents>(), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None);
+        services.GetRequiredService<IProjectEvents>(), new MarkdownRenderer(), TimeProvider.System, AgentIdentity.None, new FixedViewerZone());
 }
