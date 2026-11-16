@@ -17,7 +17,11 @@ export function boardWithTwoNew(): BoardViewDto {
             cells: [
               cell('col-new', [
                 card({ key: 'SHIP-163', title: 'Saved cards on the payment step', points: 5 }),
-                card({ key: 'SHIP-164', title: 'Receipt email shows the wrong currency', points: 3 }),
+                card({
+                  key: 'SHIP-164',
+                  title: 'Receipt email shows the wrong currency',
+                  points: 3,
+                }),
               ]),
               ...candidate.cells.slice(1),
             ],

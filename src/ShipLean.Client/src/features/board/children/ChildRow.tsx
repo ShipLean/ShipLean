@@ -34,7 +34,11 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
         data-testid={ids.childState}
         className="flex-none text-[length:var(--text-2xs)] text-ink-muted"
       >
-        {touch ? <StateDot category={child.state.category} name={child.state.name} /> : child.state.name}
+        {touch ? (
+          <StateDot category={child.state.category} name={child.state.name} />
+        ) : (
+          child.state.name
+        )}
       </span>
     </li>
   );

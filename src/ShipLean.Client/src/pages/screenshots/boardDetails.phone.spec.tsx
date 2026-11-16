@@ -5,11 +5,7 @@ import { rollupBoard } from '../../features/board/ct/fixtures';
 import { stubBoard } from '../../features/board/ct/stubApi';
 import { boardTestIds as ids } from '../../features/board/testIds';
 import { touchTestIds } from '../../touch/testIds';
-import {
-  BOARD_ID,
-  CHECKOUT_V2_STORIES,
-  featuresBoardByEpic,
-} from './fixtures/boards';
+import { BOARD_ID, CHECKOUT_V2_STORIES, featuresBoardByEpic } from './fixtures/boards';
 import {
   boardWithExpediteInReady,
   boardWithPointsHidden,
