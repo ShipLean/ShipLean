@@ -35,4 +35,17 @@ export const selectIcon = glyph(
     <path d="m8.5 12 2.5 2.5 4.5-5" />
   </>,
 );
+export const forecastIcon = glyph(<path d="M3 17l6-6 4 4 8-8M15 7h6v6" />);
+export const velocityIcon = glyph(
+  <>
+    <path d="M4 18a8 8 0 1 1 16 0" />
+    <path d="m12 18 4-6" />
+  </>,
+);
+export const createSprintIcon = glyph(<path d="M12 5v14M5 12h14" />);
 export const estimateIcon = glyph(<path d="M6 20V10M12 20V4M18 20v-7" />);
+export const openIcon = glyph(<path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5" />);
+export const sprintIcon = glyph(<path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5" />);
+export const parentIcon = glyph(<path d="M6 4v9a2 2 0 0 0 2 2h10M14 11l4 4-4 4" />);
+export const moveTopIcon = glyph(<path d="M12 20V5M6 11l6-6 6 6" />);
+export const moveBottomIcon = glyph(<path d="M12 4v15M6 13l6 6 6-6" />);

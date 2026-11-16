@@ -93,7 +93,8 @@ test('PlanningScreen_WhenTouchMoreTapped_ShouldOfferOverrideVelocityAndCreateSpr
   await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
   await expect(page.locator(actionRow('override-velocity'))).toHaveText('Override velocity');
   await expect(page.locator(actionRow('create-sprint'))).toHaveText('Create sprint');
-  await expect(page.getByTestId(ids.planningForecastToggle)).toBeVisible();
+  await expect(page.locator(actionRow('override-velocity'))).toContainText('21');
+  await expect(page.getByTestId(ids.planningForecastToggle)).toHaveCount(0);
 
   await page.locator(actionRow('override-velocity')).tap();
   await page.getByTestId(ids.planningOverrideInput).fill('30');
@@ -158,4 +159,30 @@ test('PlanningTouch_WhenRowLiftedOverSprintHeader_ShouldLightItAndMoveOnDrop', a
   await expect.poll(() => server.patches.length).toBe(1);
   expect(server.patches[0].body).toMatchObject({ changes: { sprint: { value: 'sp25' } } });
   expect(server.reorders).toHaveLength(0);
+});
+
+test('PlanningMore_Forecast_ShouldToggleWithoutClosing', async ({ mount, page }) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+  await expect(page.getByTestId(ids.planningVelocity)).toBeVisible();
+
+  await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
+  const forecast = page.locator(
+    `[data-testid="${touchTestIds.actionSheetToggle}"][data-action-id="forecast"]`,
+  );
+  await expect(forecast).toHaveAttribute('aria-checked', 'true');
+  await forecast.tap();
+  // The switch flips and the sheet stays open; the forecast line leaves the Backlog header behind it.
+  await expect(forecast).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByTestId(touchTestIds.sheetClose)).toBeVisible();
+  await expect(page.locator(actionRow('override-velocity'))).toHaveCount(0);
+});
+
+test('PlanningMore_AddMany_ShouldBeASheetAction', async ({ mount, page }) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
+  await expect(page.locator(actionRow('add-many'))).toContainText('Add many');
+  await expect(page.getByTestId(ids.addMany)).toHaveCount(0);
 });
