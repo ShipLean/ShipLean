@@ -25,7 +25,11 @@ const stubWhole = (rows: ReturnType<typeof open>[]) =>
   }) as const;
 
 test('BacklogSummary_ShouldShowCountAndOpenPoints_OnStoriesList', async ({ mount, page }) => {
-  const rows = [open('SHIP-1', 5), open('SHIP-2', 8), itemRow({ key: 'SHIP-3', points: 13, state: done })];
+  const rows = [
+    open('SHIP-1', 5),
+    open('SHIP-2', 8),
+    itemRow({ key: 'SHIP-3', points: 13, state: done }),
+  ];
   await stubBacklog(page, backlogView(rows));
   await mount(<ListMode project={PROJECT} />, stories);
   await expect(page.getByTestId(ids.summary)).toContainText('3 items');

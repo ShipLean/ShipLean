@@ -9,7 +9,13 @@ const rows: BacklogRowDto[] = [
   itemRow({ key: 'SHIP-2', points: 8 }),
   itemRow({ key: 'SHIP-3', points: 13, state: done }),
 ];
-const base = { one: 'item', many: 'items', withPoints: true, includeCompleted: false, narrowed: false };
+const base = {
+  one: 'item',
+  many: 'items',
+  withPoints: true,
+  includeCompleted: false,
+  narrowed: false,
+};
 
 describe('summarise', () => {
   it('Summarise_WhenCompletedRowsAreShown_ShouldLeaveTheirPointsOutOfOpen', () => {

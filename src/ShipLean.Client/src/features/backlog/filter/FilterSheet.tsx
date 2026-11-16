@@ -38,7 +38,9 @@ export function FilterSheet({
         ) : null}
         <div className="-mx-3 flex items-center gap-3 border-t border-edge px-5 pt-2 text-[length:var(--text-sm)] text-ink-muted">
           <span data-testid={ids.filterCount} className="min-w-0 flex-1">
-            {count ? `Showing ${count.shown} of ${count.whole} · applies as you change it` : 'Applies as you change it'}
+            {count
+              ? `Showing ${count.shown} of ${count.whole} · applies as you change it`
+              : 'Applies as you change it'}
           </span>
           {criteria.clauses.length > 0 ? (
             <button

@@ -83,7 +83,8 @@ export function useBacklogFilter(
   // read above, already cached under the same key).
   const unfiltered = useQuery({
     queryKey: backlogKey(project.id, level, mode, '', includeCompleted),
-    queryFn: () => fetchBacklog({ projectId: project.id, level, mode, filter: '', includeCompleted }),
+    queryFn: () =>
+      fetchBacklog({ projectId: project.id, level, mode, filter: '', includeCompleted }),
     enabled: sent !== '',
   });
   const [read, setRead] = useState<BacklogViewDto | undefined>(undefined);

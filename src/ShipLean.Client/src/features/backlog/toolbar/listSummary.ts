@@ -32,7 +32,8 @@ export function summarise(
     .filter((row) => row.state?.category !== 'completed' && row.state?.category !== 'removed')
     .reduce((sum, row) => sum + (row.points ?? 0), 0);
   let note = options.includeCompleted ? '' : 'Completed hidden';
-  if (options.narrowed && options.whole !== undefined && items.length !== options.whole) note = `Showing ${items.length} of ${options.whole}`;
+  if (options.narrowed && options.whole !== undefined && items.length !== options.whole)
+    note = `Showing ${items.length} of ${options.whole}`;
   return {
     count: noun(items.length, options.one, options.many),
     detail: options.withPoints ? `${open} pts open` : '',
