@@ -107,4 +107,6 @@ export const inspectionMetricsTestIds = {
   overviewQualityCardSoFar: 'inspection-metrics-overview-quality-card-so-far',
   overviewQualityBySprint: 'inspection-metrics-overview-quality-by-sprint',
   overviewQualityEmpty: 'inspection-metrics-overview-quality-empty',
+  // QT5 append: one severity's part of a sprint's bar
+  qualityChartSegment: 'inspection-metrics-quality-chart-segment',
 } as const;

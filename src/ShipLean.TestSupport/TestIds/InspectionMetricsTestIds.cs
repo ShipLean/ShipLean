@@ -117,4 +117,6 @@ public static class InspectionMetricsTestIds
     public const string OverviewQualityCardSoFar = "inspection-metrics-overview-quality-card-so-far";
     public const string OverviewQualityBySprint = "inspection-metrics-overview-quality-by-sprint";
     public const string OverviewQualityEmpty = "inspection-metrics-overview-quality-empty";
+    // QT5 append: one severity's part of a sprint's bar
+    public const string QualityChartSegment = "inspection-metrics-quality-chart-segment";
 }
