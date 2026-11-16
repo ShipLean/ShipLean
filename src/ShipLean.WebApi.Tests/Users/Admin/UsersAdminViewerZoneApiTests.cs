@@ -19,7 +19,7 @@ public class UsersAdminViewerZoneApiTests : ApiFixture
             await connection.ExecuteAsync("UPDATE app_user SET last_sign_in_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = SeedIds.Users.Tom });
         }
 
-        var users = await Api.ActingAs(TestUser.Joel).GetAsync<AdminUsersDto>("api/admin/users");
+        var users = await Api.ActingAs(TestUser.Joel).GetJsonAsync<AdminUsersDto>("api/admin/users");
 
         return users.Users.Single(u => u.Id == SeedIds.Users.Tom).LastSignIn;
     }
