@@ -53,18 +53,42 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
     setParams(next);
   };
   const filterCount = (writtenBy === 'all' ? 0 : 1) + (decide ? 1 : 0);
-  const more = [
-    { id: 'coverage', label: 'Coverage', onSelect: () => setSheet('coverage') },
-    { id: 'actions', label: 'Action items', onSelect: () => setSheet('actions') },
-    { id: 'recurring', label: 'Recurring themes', onSelect: () => setSheet('recurring') },
+  const openInsights = () => navigate(routePath('retroInsights', { key: project.key }));
+  // The retro's ⋯ (K1): what each rail sheet holds on the right, then the Go to group.
+  const moreFor = (retro: SprintRetroDto) => [
+    {
+      id: 'coverage',
+      label: 'Coverage',
+      detail: `${retro.kpis.withRetro} of ${retro.kpis.finished} with a retro`,
+      trailing: 'chevron' as const,
+      onSelect: () => setSheet('coverage'),
+    },
+    {
+      id: 'actions',
+      label: 'Action items',
+      detail: `${retro.kpis.actionItemsRaised} new`,
+      trailing: 'chevron' as const,
+      onSelect: () => setSheet('actions'),
+    },
+    {
+      id: 'recurring',
+      label: 'Recurring themes',
+      detail: String(retro.kpis.recurringThemes),
+      trailing: 'chevron' as const,
+      onSelect: () => setSheet('recurring'),
+    },
     {
       id: 'insights',
       label: 'Retrospective insights',
-      onSelect: () => navigate(routePath('retroInsights', { key: project.key })),
+      group: 'Go to',
+      trailing: 'chevron' as const,
+      onSelect: openInsights,
     },
     {
       id: 'search',
       label: 'Search retrospectives',
+      group: 'Go to',
+      trailing: 'chevron' as const,
       onSelect: () => navigate(routePath('retros', { key: project.key })),
     },
   ];
@@ -137,7 +161,7 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
                       ) : null}
                     </button>
                     <span className="flex-none rounded-control border border-edge bg-panel">
-                      <MoreButton actions={more} />
+                      <MoreButton label={`${sprint.name} retro`} actions={moreFor(retro)} />
                     </span>
                   </>
                 ) : (
@@ -182,7 +206,12 @@ export function SprintRetroPanel({ project, sprint }: { project: ProjectDto; spr
               </div>
               {touch ? (
                 <>
-                  <RetroRailSheets retro={retro} open={sheet} onClose={() => setSheet(null)} />
+                  <RetroRailSheets
+                    retro={retro}
+                    open={sheet}
+                    onClose={() => setSheet(null)}
+                    onOpenInsights={openInsights}
+                  />
                   <RetroFilterSheet
                     open={filterOpen}
                     writtenBy={writtenBy}

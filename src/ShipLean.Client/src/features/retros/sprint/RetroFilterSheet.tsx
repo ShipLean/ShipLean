@@ -54,7 +54,7 @@ export function RetroFilterSheet({
     >
       <div className="grid gap-4">
         <WrittenByFilter value={writtenBy} onChange={onWrittenBy} />
-        <div className="flex items-center gap-2 text-[length:var(--text-sm)] text-ink-muted">
+        <div className="grid gap-1 text-[length:var(--text-sm)] text-ink-muted">
           <span>Points</span>
           <DecideFilter decide={decide} onChange={(value) => onDecide(value === 'open')} />
         </div>
