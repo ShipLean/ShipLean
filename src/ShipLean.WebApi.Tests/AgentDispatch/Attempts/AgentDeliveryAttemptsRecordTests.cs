@@ -90,7 +90,7 @@ public class AgentDeliveryAttemptsRecordTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var (_, deliveryId, connectionId) = await OpenSessionAsync(database);
-        var attempts = Host.Services.GetRequiredService<IAgentDeliveryAttempts>();
+        var attempts = new AgentDeliveryAttempts(Host.Services.GetRequiredService<NpgsqlDataSource>(), _clock, new Logger<AgentDeliveryAttempts>(_logs));
         var first = new AgentDeliveryAttemptCreate(deliveryId, connectionId, 1, Start, 502, "Bad gateway.", 40, Start.AddMinutes(1));
         var resent = first with { At = Start.AddMinutes(1), HttpStatus = 200, Error = null, NextAttemptAt = null };
 
@@ -98,6 +98,7 @@ public class AgentDeliveryAttemptsRecordTests : ApiFixture
         await Should.NotThrowAsync(() => attempts.RecordAsync(resent, CancellationToken.None));
 
         (await RowsAsync(database, deliveryId)).ShouldBe([(1, Start, 502, "Bad gateway.", Start.AddMinutes(1))]);
+        _logs.Events.ShouldNotContain(e => e.StartsWith("Warning", StringComparison.Ordinal), "the repeat is ignored by the insert, not swallowed after it failed");
     }
 
     [Test]
