@@ -189,6 +189,30 @@ public class GetAgentSessionTests : McpFixture
         activity.GetProperty("truncated").GetBoolean().ShouldBeTrue();
     }
 
+    // Every activity text is capped, not only body. Mutation: drop the cap on result (or action, or parameter).
+    [TestCase("action")]
+    [TestCase("parameter")]
+    [TestCase("result")]
+    public async Task GetAgentSession_WhenAnActionTextIs10KB_ShouldCapItAt4KBAndFlagTruncated(string field)
+    {
+        Guid session;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            session = await new AgentSessionSeeds(item, await AgentSessionSeeds.InsertConnectionAsync(connection)).InsertAsync(connection);
+            var big = new string('x', 10 * 1024);
+            await connection.ExecuteAsync(
+                "INSERT INTO agent_activity (id, session_id, type, action, parameter, result, created_at) VALUES (gen_random_uuid(), @session, 'action', @action, @parameter, @result, @at)",
+                new { session, action = field == "action" ? big : "run", parameter = field == "parameter" ? big : "dotnet build", result = field == "result" ? big : "ok", at = Now.AddMinutes(-1) });
+        }
+
+        var reply = await CallAsync(TestUser.Joel, $$"""{"session":"{{session}}"}""");
+
+        var activity = reply.Structured().GetProperty("activities")[0];
+        activity.GetProperty(field).GetString()!.Length.ShouldBe(4096);
+        activity.GetProperty("truncated").GetBoolean().ShouldBeTrue();
+    }
+
     [Test]
     public async Task GetAgentSession_WhenABodyIsShort_ShouldNotFlagTruncated()
     {
