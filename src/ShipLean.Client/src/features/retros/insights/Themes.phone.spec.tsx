@@ -156,7 +156,14 @@ for (const colour of THEMES) {
     await page.setViewportSize({ width: 390, height: 840 });
     await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
     await stubRetros(page);
+    // What the sheet loads always arrives after it has painted, as on a real network (see holdWhatTheSheetLoads).
+    const answer = await holdWhatTheSheetLoads(page);
     await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
+    await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
+    await afterTheNextPaint(page);
+    answer();
+    await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
+    await expect(page.getByTestId(ids.retroThemeSheetAddAction)).toContainText('open point');
     await page.getByTestId(ids.retroThemeSheetRename).tap();
     await page.getByTestId(ids.retroThemeRenameField).fill('Handoff contracts missing');
     await expect(page.getByTestId(ids.retroThemeRenameField)).toBeFocused();
