@@ -336,4 +336,5 @@ export const settingsTestIds = {
   stateAddOpen: 'settings-state-add-open',
   stateAddCancel: 'settings-state-add-cancel',
   stateTypeRow: 'settings-state-type-row',
+  membersSummary: 'settings-members-summary',
 } as const;
