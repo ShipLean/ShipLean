@@ -4,7 +4,9 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Usage;
+using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Logging;
 using ShipLean.TestSupport.Secrets;
@@ -144,6 +146,48 @@ public class AgentRunLogVisibilityTests : McpFixture
         var notesId = JsonDocument.Parse(text).RootElement.GetProperty("id").GetGuid();
 
         (await ListedAsync(TestUser.Priya, arranged.ItemId)).ShouldBe([notesId]);
+    }
+
+    // The run log's name is fixed and session ids are visible to members, so an upload of that name must not archive it. Mutation: remove the guard.
+    [Test]
+    public async Task RunLog_WhenAMemberUploadsItsNameOverTheApi_ShouldBeRefusedAndStayLive()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+        using var content = new MultipartFormDataContent { { new StringContent("forged"), "file", name } };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{arranged.ItemId}/attachments") { Content = content };
+        request.Headers.Add(TestAuthentication.UserHeader, TestUser.Priya.Id.ToString());
+
+        using var added = await Client.SendAsync(request);
+
+        var error = await ApiClient.ReadApiErrorAsync(added, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Error.ShouldBe("That name is reserved for an agent run log.");
+        await ShouldStillBeTheRunLogAsync(arranged, runLogId);
+    }
+
+    // Mutation: remove the guard.
+    [Test]
+    public async Task RunLog_WhenAMemberAttachesItsNameOverMcp_ShouldBeRefusedAndStayLive()
+    {
+        var (arranged, runLogId, name) = await UploadedAsync();
+
+        var reply = await CallToolAsync(
+            await TokenAsync(TestUser.Priya, ReadWrite), "attach_file",
+            $$"""{"feature":"{{arranged.ItemKey}}","name":"{{name}}","content_type":"text/plain","base64":"Zm9yZ2Vk"}""");
+
+        reply.IsToolError().ShouldBeTrue(reply.Body);
+        var error = reply.Structured().GetProperty("error");
+        error.GetProperty("code").GetString().ShouldBe("validation");
+        error.GetProperty("message").GetString().ShouldBe("That name is reserved for an agent run log.");
+        await ShouldStillBeTheRunLogAsync(arranged, runLogId);
+    }
+
+    private async Task ShouldStillBeTheRunLogAsync(AgentRunLogArrange arranged, Guid runLogId)
+    {
+        (await arranged.PanelSessionAsync(Api, TestUser.Joel)).RunLog.ShouldNotBeNull().AttachmentId.ShouldBe(runLogId);
+        using var download = await Api.ActingAs(TestUser.Joel).GetAsync($"api/attachments/{runLogId}/content");
+        download.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await download.Content.ReadAsStringAsync()).ShouldBe("relay-host.internal:8443 said no\n");
     }
 
     // Mutation: log the upload URL at Information when the session starts.

@@ -19,7 +19,7 @@ namespace ShipLean.Application.Features.AgentDispatch.RunLogs;
 // The route records no usage itself (an anonymous caller has no actor for the filter), so agent_session.run_log_uploaded is emitted here, once per stored log.
 public sealed class AgentRunLogs(ITransferTokens tokens, IProjectAccess access, IAttachmentStore attachments, IUsageEvents usage, TimeProvider time) : IAgentRunLogs
 {
-    private const string Via = "agent_log_upload";
+    private const string Via = AttachmentSource.AgentLogUploadVia;
 
     public async Task UploadAsync(string token, HttpRequest request, CancellationToken cancellationToken = default)
     {

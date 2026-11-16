@@ -29,6 +29,8 @@ public sealed class AttachmentStore(
 
     private const string SvgContentType = "image/svg+xml";
 
+    private const string RunLogNameReserved = "That name is reserved for an agent run log.";
+
     private static readonly string SelectLive = $"SELECT {AttachmentRow.Columns} {AttachmentRow.From} WHERE a.id = @id AND a.archived_at IS NULL";
 
     public async Task<IReadOnlyList<AttachmentDto>> ListAsync(Guid workItemId, CancellationToken cancellationToken = default)
@@ -222,6 +224,11 @@ public sealed class AttachmentStore(
             throw ApiException.Validation(limits.ItemFullMessage);
         }
 
+        if (!staged.All(s => s.Source?.Via == AttachmentSource.AgentLogUploadVia))
+        {
+            await RefuseRunLogNameAsync(connection, transaction, workItemId, names, cancellationToken);
+        }
+
         var now = clock.GetUtcNow();
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE attachment SET archived_at = @now WHERE work_item_id = @workItemId AND name = ANY(@names) AND archived_at IS NULL",
@@ -276,6 +283,7 @@ public sealed class AttachmentStore(
             throw ApiException.Validation(limits.ItemFullMessage);
         }
 
+        await RefuseRunLogNameAsync(connection, transaction, row.WorkItemId, [row.Name], cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE attachment SET archived_at = @now WHERE work_item_id = @workItemId AND name = @name AND archived_at IS NULL",
             new { row.WorkItemId, row.Name, now = clock.GetUtcNow() }, transaction, cancellationToken: cancellationToken));
@@ -284,6 +292,23 @@ public sealed class AttachmentStore(
         var stored = await connection.QuerySingleAsync<AttachmentRow>(new CommandDefinition(SelectLive, new { row.Id }, transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
         return stored;
+    }
+
+    // D10: a live attachment referenced by agent_session.run_log_attachment_id is an admin-only run log. An upload of the same name would archive
+    // it (the name is fixed and session ids are visible to members), so any upload but the agent-log link's own is refused. Runs under the item lock.
+    private static async Task RefuseRunLogNameAsync(NpgsqlConnection connection, DbTransaction transaction, Guid workItemId, string[] names, CancellationToken cancellationToken)
+    {
+        var reserved = await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM attachment a JOIN agent_session s ON s.run_log_attachment_id = a.id
+                WHERE a.work_item_id = @workItemId AND a.name = ANY(@names) AND a.archived_at IS NULL)
+            """,
+            new { workItemId, names }, transaction, cancellationToken: cancellationToken));
+        if (reserved)
+        {
+            throw ApiException.Validation(RunLogNameReserved);
+        }
     }
 
     private sealed record NewAttachment(Guid Id, Guid WorkItemId, string Name, string ContentType, long Size, string StorageRef, bool Sanitized, string? SearchText, AttachmentSource? Source);
