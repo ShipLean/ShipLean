@@ -29,7 +29,7 @@ public class DemoFailedJourneyTests : SeededAcceptanceTest
         await new LiveStatus(Page).WaitUntilLiveAsync();
         await tab.CreateDemoAsync();
         await Expect(tab.StatusBand).ToHaveAttributeAsync("data-status", "working", new() { Timeout = 30_000 });
-        var itemId = await ReadScalarAsync<Guid>($"SELECT demo_work_item_id FROM sprint WHERE id = '{sprint}'");
+        var itemId = await ReadScalarAsync<Guid>("SELECT demo_work_item_id FROM sprint WHERE id = @id", sprint);
         var firstSession = await LatestSessionAsync(itemId);
 
         await RespondAsync(callbackToken, firstSession, LastWords);
@@ -109,13 +109,14 @@ public class DemoFailedJourneyTests : SeededAcceptanceTest
     }
 
     private Task<Guid> LatestSessionAsync(Guid itemId) =>
-        ReadScalarAsync<Guid>($"SELECT id FROM agent_session WHERE work_item_id = '{itemId}' ORDER BY created_at DESC LIMIT 1");
+        ReadScalarAsync<Guid>("SELECT id FROM agent_session WHERE work_item_id = @id ORDER BY created_at DESC LIMIT 1", itemId);
 
-    private async Task<T> ReadScalarAsync<T>(string sql)
+    private async Task<T> ReadScalarAsync<T>(string sql, Guid id)
     {
         await using var connection = new NpgsqlConnection(ConnectionString);
         await connection.OpenAsync();
         await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("id", id);
         return (T)(await command.ExecuteScalarAsync() ?? throw new InvalidOperationException($"No row for: {sql}"));
     }
 }
