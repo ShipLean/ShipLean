@@ -16,6 +16,7 @@ using ShipLean.Contracts.Errors;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Logging;
 
 namespace ShipLean.WebApi.Tests.Demos;
 
