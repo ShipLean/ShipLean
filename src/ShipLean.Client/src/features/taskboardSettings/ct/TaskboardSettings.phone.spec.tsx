@@ -291,3 +291,20 @@ test('TagColours_ShouldShowTheColourName', async ({ mount, page }) => {
   await expect(row).not.toContainText('danger');
   await expect(row.getByRole('button', { name: 'Red' })).toBeVisible();
 });
+
+test('TaskboardSettingsFields_AtPhoneWidth_ShouldBeOneColumn', async ({ mount, page }) => {
+  await stubSettings(page, taskboardBoard({ cardFields: [task, { ...task, type: 'story' }] }));
+  await mount(dialog('fields'));
+  const core = page.getByTestId(ids.fieldsCore);
+  const add = page.getByTestId(ids.fieldsAdd);
+  await expect(add).toBeVisible();
+  const [c, a] = [(await core.boundingBox())!, (await add.boundingBox())!];
+  expect(a.y, 'Additional fields sit under Core fields').toBeGreaterThan(c.y + c.height);
+  expect(a.x + a.width, 'both fieldsets span the same column').toBeLessThanOrEqual(c.x + c.width);
+  expect(c.width, 'the column is the screen').toBeGreaterThan(330);
+  const doc = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    document.documentElement.clientWidth,
+  ]);
+  expect(doc[0]).toBeLessThanOrEqual(doc[1]);
+});

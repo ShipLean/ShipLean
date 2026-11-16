@@ -13,10 +13,13 @@ const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: 
 export function AddStoryBox({
   projectId,
   scope,
+  destination,
   onClose,
 }: {
   projectId: string;
   scope: TaskboardScope;
+  /** What the helper line names at touch: the Feature key on the Feature board, the sprint name on the Taskboard. */
+  destination: string;
   onClose: () => void;
 }) {
   const [type, setType] = useState<WorkItemTypeId>('story');
@@ -60,7 +63,7 @@ export function AddStoryBox({
         >
           {types.map((option) => (
             <option key={option.id} value={option.id}>
-              {option.label}
+              {touch ? option.label.replace('User ', '') : option.label}
             </option>
           ))}
         </select>
@@ -89,25 +92,37 @@ export function AddStoryBox({
         >
           Add
         </button>
-        <button
-          type="button"
-          data-testid={ids.addStoryClose}
-          className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
-          aria-label={touch ? 'Close' : undefined}
-          onClick={onClose}
-        >
-          {touch ? '✕' : 'Esc'}
-        </button>
+        {touch ? null : (
+          <button
+            type="button"
+            data-testid={ids.addStoryClose}
+            className="btn-ghost"
+            onClick={onClose}
+          >
+            Esc
+          </button>
+        )}
       </div>
       {touch ? (
-        <p
-          data-testid={ids.addStoryHelp}
-          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
-        >
-          {scope.kind === 'sprint'
-            ? 'Adds it to this sprint, at the bottom. Stays open for the next one.'
-            : 'Adds it under this Feature, in the Backlog. Stays open for the next one.'}
-        </p>
+        <div className="flex items-center gap-2">
+          <p
+            data-testid={ids.addStoryHelp}
+            className="m-0 min-w-0 flex-1 text-[length:var(--text-xs)] text-ink-muted"
+          >
+            {scope.kind === 'sprint'
+              ? `Adds it to ${destination}, at the bottom. Stays open for the next one.`
+              : `Adds it under ${destination}, in the Backlog. Stays open for the next one.`}
+          </p>
+          <button
+            type="button"
+            data-testid={ids.addStoryClose}
+            className="btn-ghost h-[var(--touch-target)] min-w-[var(--touch-target)] shrink-0"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
       ) : null}
       {create.error ? (
         <span

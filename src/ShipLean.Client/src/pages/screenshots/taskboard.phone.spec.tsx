@@ -249,3 +249,51 @@ test('TouchPager_OnTheTaskboardPage_ShouldPeekTheNextPage', async ({ mount, page
   );
   expect(sideways).toBe(false);
 });
+
+const addBox = async (page: Page) => {
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  await expect(page.getByTestId(taskboardTestIds.addStoryBox)).toBeVisible();
+};
+
+test('AddStoryBox_OnTheTaskboard_ShouldNameTheSprintInItsHelperLine', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  await expect(page.getByTestId(taskboardTestIds.addStoryHelp)).toContainText(
+    'Adds it to Sprint 24, at the bottom.',
+  );
+});
+
+test('AddStoryBox_AtPhoneWidth_ShouldShowTheWholePlaceholderAndOneHelperLine', async ({
+  mount,
+  page,
+}) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  const title = page.getByTestId(taskboardTestIds.addStoryTitle);
+  const cut = await title.evaluate((el) => {
+    // The placeholder's own width: a span in the input's font, since an input can't be asked how much it hides.
+    const probe = document.createElement('span');
+    const style = getComputedStyle(el);
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${style.font}`;
+    probe.textContent = (el as HTMLInputElement).placeholder;
+    document.body.append(probe);
+    const text = probe.getBoundingClientRect().width;
+    probe.remove();
+    const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { text, room };
+  });
+  expect(cut.text, 'the placeholder fits inside the title field').toBeLessThanOrEqual(cut.room);
+  const help = await page.getByTestId(taskboardTestIds.addStoryHelp).evaluate((el) => {
+    const line = parseFloat(getComputedStyle(el).lineHeight);
+    return el.getBoundingClientRect().height / line;
+  });
+  expect(help, 'the helper line is one line').toBeLessThan(1.5);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(sideways).toBe(false);
+});

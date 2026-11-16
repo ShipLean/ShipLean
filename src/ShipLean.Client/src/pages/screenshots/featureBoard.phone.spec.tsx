@@ -190,3 +190,16 @@ test('TouchPager_OnTheFeatureBoardPage_ShouldPeekTheNextPage', async ({ mount, p
   );
   expect(sideways).toBe(false);
 });
+
+test('AddStoryBox_OnTheFeatureBoard_ShouldNameTheFeatureInItsHelperLine', async ({
+  mount,
+  page,
+}) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  await expect(page.getByTestId(taskboardTestIds.addStoryHelp)).toContainText(
+    'Adds it under SHIP-101, in the Backlog.',
+  );
+});
