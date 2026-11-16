@@ -19,9 +19,9 @@ public static partial class DigestLines
 
     private static readonly string[] DigestFields = [FieldIds.State, FieldIds.Health, FieldIds.StatusLine];
 
-    public static IReadOnlyList<DigestLineDto> Of(ChangeEntryDto entry, UserRef? by, TimeProvider clock)
+    public static IReadOnlyList<DigestLineDto> Of(ChangeEntryDto entry, UserRef? by, TimeProvider clock, TimeZoneInfo zone)
     {
-        var atLabel = DisplayDate.Relative(entry.At, clock);
+        var atLabel = DisplayDate.Relative(entry.At, clock.GetUtcNow(), zone);
         DigestLineDto Line(DigestLineKind kind, string text) => new(kind, text, by, entry.AgentName, entry.At, atLabel);
 
         if (entry.Kind == ChangeKind.Comment)
