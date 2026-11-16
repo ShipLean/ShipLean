@@ -8,7 +8,8 @@ using static ShipLean.AcceptanceTests.Lanes.Sprints.Capacity.CapacityApi;
 namespace ShipLean.AcceptanceTests.Lanes.Sprints.Capacity;
 
 // Sprint 24's Capacity on a phone (SHIP-726, SHIP-1808): the Save bar replaces the toolbar's Save, Discard reverts the
-// draft, and Copy fills every row. Days are typed in the days sheet a row opens. The touch rules are checked on this task's regions only (summary, toolbar, first row).
+// draft, and Copy fills every row. Days are typed in the days sheet a row opens. The touch rules are checked on this
+// task's regions only (summary, toolbar, first row).
 [TestFixture]
 public class CapacityPhoneTests : SeededAcceptanceTest
 {

@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import type { UserRef } from '@shiplean/core/api/refs';
 import { Avatar } from '../../../components/Avatar';
 import { CapacityBar } from '../../../components/CapacityBar';
+import { ActionSheet } from '../../../touch/ActionSheet';
 import { sprintsTestIds as ids } from '../testIds';
 import { CapacityDaysSheet } from './CapacityDaysSheet';
 import type { CapacityLine } from './CapacityRow';
@@ -18,6 +20,14 @@ interface CapacityPeopleProps {
   typedVelocity: number | undefined;
   /** Whether a member's row differs from what the server holds. */
   unsaved: (userId: string) => boolean;
+  /** Project members who are not in the table yet. */
+  addable: UserRef[];
+  /** The sprint whose table Copy fills from; undefined when there is nothing to copy. */
+  copyFrom: string | undefined;
+  /** Whether the Add member sheet is open (the toolbar's ⋯ opens it too). */
+  adding: boolean;
+  onAdding: (open: boolean) => void;
+  onAdd: (userId: string) => void;
   onChange: (userId: string, row: DraftRow) => void;
   onRemove: (userId: string) => void;
 }
@@ -27,7 +37,8 @@ const muted = 'text-ink-muted';
 /**
  * The people on a phone (SHIP-1808 P2, P6): a People header with the team total, then a two-line row per person (name and
  * points; a bar of days available out of the working days and the days in words; the note under them). A row opens the
- * days sheet. The desktop keeps CapacityTable.
+ * days sheet. + Add member at the foot opens a sheet of the members not in the table; picking one adds them and opens
+ * their days sheet (P5). The desktop keeps CapacityTable.
  */
 export function CapacityPeople({
   lines,
@@ -38,6 +49,11 @@ export function CapacityPeople({
   velocity,
   typedVelocity,
   unsaved,
+  addable,
+  copyFrom,
+  adding,
+  onAdding,
+  onAdd,
   onChange,
   onRemove,
 }: CapacityPeopleProps) {
@@ -71,14 +87,49 @@ export function CapacityPeople({
           onOpen={() => setOpenId(line.user.id)}
         />
       ))}
-      <p
-        data-testid={empty ? ids.capacityEmpty : undefined}
-        className={`m-0 px-3 py-2.5 text-[length:var(--text-sm)] ${muted}`}
-      >
-        {empty
-          ? `No capacity entered: planning uses velocity ${velocity}`
-          : 'Capacity is the velocity shared out by days available. Only the team total is compared with what the sprint has committed.'}
-      </p>
+      {empty ? (
+        <div data-testid={ids.capacityEmpty} className="grid gap-1 px-3 py-3">
+          <p className="m-0 font-semibold text-ink">No capacity entered</p>
+          <p className={`m-0 text-[length:var(--text-sm)] ${muted}`}>
+            {sprintName} plans against velocity ({velocity}).
+            {readOnly
+              ? null
+              : copyFrom === undefined
+                ? ' Add the people who are in.'
+                : ` Add the people who are in, or copy ${copyFrom}'s table.`}
+          </p>
+        </div>
+      ) : (
+        <p className={`m-0 px-3 py-2.5 text-[length:var(--text-sm)] ${muted}`}>
+          Capacity is the velocity shared out by days available. Only the team total is compared with
+          what the sprint has committed.
+        </p>
+      )}
+      {readOnly || addable.length === 0 ? null : (
+        <button
+          type="button"
+          data-testid={ids.capacityAddMember}
+          className="flex min-h-[var(--touch-target)] w-full items-center border-t border-edge px-3 py-2 text-left font-medium text-signal active:bg-signal-soft"
+          onClick={() => onAdding(true)}
+        >
+          + Add member
+        </button>
+      )}
+      <ActionSheet
+        open={adding}
+        title="Add member"
+        actions={addable.map((user) => ({
+          id: `add-${user.id}`,
+          label: user.name,
+          icon: <Avatar {...user} />,
+          hint: `Starts at the default, ${shape.defaultDays} days`,
+          onSelect: () => {
+            onAdd(user.id);
+            setOpenId(user.id);
+          },
+        }))}
+        onClose={() => onAdding(false)}
+      />
       <CapacityDaysSheet
         line={open}
         shape={shape}
@@ -101,18 +152,36 @@ interface PersonRowProps {
   onOpen: () => void;
 }
 
-/** Avatar; name and points; the days bar and "9 / 10 days · default"; the note. An ended sprint's row opens nothing. */
+/**
+ * Avatar; name and points; the days bar and "9 / 10 days · default"; the note. An ended sprint's row opens nothing.
+ * The bar is a div, which a button may not hold, so the tap target is a button laid over the row that carries the row
+ * in words; what it covers is hidden from screen readers.
+ */
 function PersonRow({ line, shape, readOnly, unsaved, onOpen }: PersonRowProps) {
   const { user, row, points } = line;
   const isDefault = row.days === '';
   // An ended sprint's default is the calendar of when it was stored, so it shows as "default" without a number.
   const days = readOnly && isDefault ? undefined : effectiveDaysOf(row, shape);
+  const daysText =
+    days === undefined
+      ? isDefault
+        ? 'default'
+        : `${row.days} days`
+      : `${days} / ${shape.workingDays} days${isDefault ? ' · default' : ''}`;
+  // Over the tap button: painted above it (relative, later in the DOM), letting taps through to it, and hidden from
+  // screen readers (the button says it all).
+  const cover: { 'aria-hidden'?: true; className: string } = readOnly
+    ? { className: '' }
+    : { 'aria-hidden': true, className: 'pointer-events-none relative' };
   const body = (
     <>
-      <span className="pt-0.5">
+      <span {...cover} className={`${cover.className} pt-0.5`}>
         <Avatar {...user} size="lg" />
       </span>
-      <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_7.75rem] items-center gap-x-3 gap-y-1">
+      <span
+        {...cover}
+        className={`${cover.className} grid min-w-0 grid-cols-[minmax(0,1fr)_7.75rem] items-center gap-x-3 gap-y-1`}
+      >
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate font-medium text-ink">{user.name}</span>
           {unsaved ? (
@@ -136,11 +205,7 @@ function PersonRow({ line, shape, readOnly, unsaved, onOpen }: PersonRowProps) {
           data-testid={ids.capacityRowDays}
           className={`text-right text-[length:var(--text-sm)] whitespace-nowrap tabular-nums ${muted}`}
         >
-          {days === undefined
-            ? isDefault
-              ? 'default'
-              : `${row.days} days`
-            : `${days} / ${shape.workingDays} days${isDefault ? ' · default' : ''}`}
+          {daysText}
         </span>
         {row.note === '' ? null : (
           <span
@@ -163,17 +228,31 @@ function PersonRow({ line, shape, readOnly, unsaved, onOpen }: PersonRowProps) {
       </div>
     );
   }
+  const label = [
+    user.name,
+    daysText,
+    `${points ?? '—'} pts`,
+    unsaved ? 'unsaved' : null,
+    row.note === '' ? null : row.note,
+    'edit days',
+  ]
+    .filter((part) => part !== null)
+    .join(', ');
   return (
-    <button
-      type="button"
-      data-testid={ids.capacityRow}
-      className={`${layout} min-h-14 active:bg-signal-soft`}
-      onClick={onOpen}
-    >
+    <div data-testid={ids.capacityRow} className={`relative ${layout} min-h-14`}>
+      <button
+        type="button"
+        aria-label={label}
+        className="absolute inset-0 active:bg-signal-soft"
+        onClick={onOpen}
+      />
       {body}
-      <span aria-hidden="true" className={`self-center text-[length:var(--text-md)] ${muted}`}>
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none relative self-center text-[length:var(--text-md)] ${muted}`}
+      >
         ›
       </span>
-    </button>
+    </div>
   );
 }

@@ -38,7 +38,9 @@ export function CapacityDaysSheet({
   if (line === null) return null;
   const { user, row, points } = line;
   const isDefault = row.days === '';
-  const days = effectiveDaysOf(row, shape) ?? shape.defaultDays;
+  // Undefined while the typed days are not whole or half days within the working days: then there is nothing to step
+  // from or work the points out of, so − / + are off and the sum is hidden, as the points show "—".
+  const days = effectiveDaysOf(row, shape);
   const stepTo = (value: number) => onChange({ ...row, days: `${value}` });
   return (
     <Sheet open title={user.name} onClose={onClose}>
@@ -51,8 +53,8 @@ export function CapacityDaysSheet({
               data-testid={ids.capacityDaysLess}
               className={step}
               aria-label={`Half a day less for ${user.name}`}
-              disabled={days <= 0}
-              onClick={() => stepTo(Math.max(0, days - 0.5))}
+              disabled={days === undefined || days <= 0}
+              onClick={() => days !== undefined && stepTo(Math.max(0, days - 0.5))}
             >
               −
             </button>
@@ -65,6 +67,7 @@ export function CapacityDaysSheet({
               step={0.5}
               inputMode="decimal"
               aria-label={`Days available for ${user.name}`}
+              aria-invalid={days === undefined}
               placeholder={`${shape.defaultDays}`}
               value={row.days}
               onChange={(event) => onChange({ ...row, days: event.target.value })}
@@ -74,8 +77,8 @@ export function CapacityDaysSheet({
               data-testid={ids.capacityDaysMore}
               className={step}
               aria-label={`Half a day more for ${user.name}`}
-              disabled={days >= shape.workingDays}
-              onClick={() => stepTo(Math.min(shape.workingDays, days + 0.5))}
+              disabled={days === undefined || days >= shape.workingDays}
+              onClick={() => days !== undefined && stepTo(Math.min(shape.workingDays, days + 0.5))}
             >
               +
             </button>
@@ -107,8 +110,11 @@ export function CapacityDaysSheet({
               <span data-testid={ids.capacitySheetPoints}>{points ?? '—'}</span> pts
             </span>
           </div>
-          {velocity === undefined ? null : (
-            <span className="text-[length:var(--text-xs)] text-ink-muted">
+          {velocity === undefined || days === undefined ? null : (
+            <span
+              data-testid={ids.capacitySheetFormula}
+              className="text-[length:var(--text-xs)] text-ink-muted"
+            >
               {velocity} velocity ÷ {people} {people === 1 ? 'person' : 'people'} × {days} ÷{' '}
               {shape.workingDays} days
             </span>

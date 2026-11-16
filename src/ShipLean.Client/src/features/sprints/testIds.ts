@@ -156,4 +156,6 @@ export const sprintsTestIds = {
   capacityDaysLess: 'sprints-capacity-days-less',
   capacityDaysMore: 'sprints-capacity-days-more',
   capacitySheetPoints: 'sprints-capacity-sheet-points',
+  capacityAddMember: 'sprints-capacity-add-member',
+  capacitySheetFormula: 'sprints-capacity-sheet-formula',
 } as const;
