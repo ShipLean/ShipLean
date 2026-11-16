@@ -81,10 +81,19 @@ describe('phoneLanes', () => {
     expect(lanes[1].hidden).toBe(0);
   });
 
-  it('PhoneLanes_WhenStoriesClosed_ShouldListThemLastInBacklogOrderWithDoneOfTotal', () => {
+  it('PhoneLanes_WhenStoriesClosed_ShouldListThemInBacklogOrderWithDoneOfTotal', () => {
     const { closed } = phoneLanes(ROWS, 'new', new Set());
     expect(keys(closed)).toEqual(['A', 'C']);
     expect(closed.map((c) => `${c.done}/${c.total}`)).toEqual(['3/3', '1/1']);
+  });
+
+  it('PhoneLanes_WithAClosedStoryBetweenOpenOnes_ShouldKeepBacklogOrderAndUnparentedLast', () => {
+    const loose: TaskboardRowDto = { parent: null, offerResolve: false, cells: [] };
+    // Unparented arrives first in the input; A and C are closed, between and before the open B and D.
+    const { entries } = phoneLanes([loose, ...ROWS], 'new', new Set());
+    expect(
+      entries.map((e) => `${e.kind}:${e.kind === 'lane' ? e.lane.rowId : e.story.rowId}`),
+    ).toEqual(['closed:A', 'lane:B', 'closed:C', 'lane:D', 'lane:unparented']);
   });
 
   it('PhoneLanes_WhenFilterHidesTasks_ShouldCountTheHiddenOnes', () => {

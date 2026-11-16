@@ -74,4 +74,5 @@ export const taskboardTestIds = {
   taskBox: 'taskboard-task-box',
   taskTitle: 'taskboard-task-title',
   taskError: 'taskboard-task-error',
+  closedLineHere: 'taskboard-closed-line-here',
 } as const;

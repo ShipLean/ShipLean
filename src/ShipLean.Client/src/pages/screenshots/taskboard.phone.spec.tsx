@@ -5,6 +5,7 @@ import { taskboardBoard, stubSettings } from '../../features/taskboardSettings/c
 import { stubTaskboard } from '../../features/taskboard/ct/stubApi';
 import { sprintHeaderTestIds as headerIds } from '../../features/sprintHeader/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
+import { componentTestIds } from '../../components/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import {
   TASKBOARD_CARD_FIELDS,
@@ -132,18 +133,32 @@ phonePageShots([
         },
       ],
       [
-        // Closed stories come after Unparented today (TBOARD-1): this shoots that order, not the designed one.
+        // Backlog order: the closed lines sit where their rows are, and Unparented is the last lane (TBOARD-1).
         'taskboard-end',
         async (page: Page) => {
-          const last = page
+          const entries = page
             .getByTestId(touchTestIds.pagerPage)
             .first()
-            .getByTestId(taskboardTestIds.closedLine)
-            .last();
-          await last.evaluate((el) =>
-            el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
-          );
-          await expect(last).toBeInViewport({ ratio: 0.9 });
+            .locator(
+              `[data-testid="${taskboardTestIds.lane}"],[data-testid="${taskboardTestIds.closedLine}"]`,
+            );
+          await expect(entries.last()).toHaveAttribute('data-row', 'unparented');
+          await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+          await entries
+            .last()
+            .evaluate((el) =>
+              el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+            );
+          await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
+        },
+      ],
+      [
+        // The lane card's state opens the K1b StateMenu in a sheet, not a native select (SHIP-1830).
+        'taskboard-lane-state',
+        async (page: Page) => {
+          await page.getByTestId(taskboardTestIds.rowState).first().tap();
+          await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+          await expect(page.getByTestId(componentTestIds.stateMenu)).toBeVisible();
         },
       ],
       [

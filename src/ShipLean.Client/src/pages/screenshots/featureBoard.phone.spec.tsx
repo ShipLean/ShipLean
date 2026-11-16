@@ -96,22 +96,27 @@ phonePageShots([
     },
   },
   {
-    // Closed stories come after every open lane today (TBOARD-1): this shoots that order, not the designed one.
+    // Backlog order: the closed line SHIP-138 sits second, between open lanes (TBOARD-1), and the last line is a closed one too.
     name: 'feature-board-end',
     route: FEATURE_BOARD_ROUTE,
     shell: true,
     arrange: (p) => arrangeFeatureBoard(p, FEATURE_BOARD_VIEW),
     ready: featureBoardReady,
     act: async (page) => {
-      const last = page
+      const entries = page
         .getByTestId(touchTestIds.pagerPage)
         .first()
-        .getByTestId(taskboardTestIds.closedLine)
-        .last();
-      await last.evaluate((el) =>
-        el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
-      );
-      await expect(last).toBeInViewport({ ratio: 0.9 });
+        .locator(
+          `[data-testid="${taskboardTestIds.lane}"],[data-testid="${taskboardTestIds.closedLine}"]`,
+        );
+      await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+      await expect(entries.last()).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+      await entries
+        .last()
+        .evaluate((el) =>
+          el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+        );
+      await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
     },
   },
   {
