@@ -237,7 +237,7 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
   const toggle = page.getByTestId(ids.filterToggle);
   const more = page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton);
   await expect(toggle).toHaveAttribute('data-active', 'false');
-  await expect(toggle).toHaveCSS('border-top-width', '0px');
+  const idleBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
   // Filter and the bordered ⋯ sit together at the right; the level switch is alone at the left.
   const [levels, filter, dots] = await Promise.all(
     [page.getByTestId(ids.levelSwitch), toggle, more].map((part) => part.boundingBox()),
@@ -252,10 +252,18 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
   await page.getByTestId(touchTestIds.sheetClose).tap();
 
   await expect(toggle).toHaveAttribute('data-active', 'true');
-  await expect(toggle).toHaveCSS('border-top-width', '1px');
-  await expect(toggle).not.toHaveCSS(
-    'border-top-color',
-    await more.evaluate((el) => getComputedStyle(el).borderTopColor),
+  const activeBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
+  expect(activeBorder).not.toBe(idleBorder);
+  // The accent border, the same colour as the page's signal colour.
+  expect(activeBorder).toBe(
+    await page.evaluate(() => {
+      const probe = document.createElement('i');
+      probe.style.color = 'var(--color-signal)';
+      document.body.append(probe);
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return colour;
+    }),
   );
 });
 
