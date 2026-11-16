@@ -67,7 +67,7 @@ export function DoneConfirm({
     return (
       <Sheet
         open
-        title={`${text} still open`}
+        title={`Move ${card.key} to Done?`}
         onClose={onCancel}
         footer={
           <div className="flex w-full flex-col gap-2">

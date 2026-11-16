@@ -106,4 +106,8 @@ export const boardTestIds = {
 
   // SHIP-916 W1
   cardHealth: 'board-card-health',
+
+  // SHIP-1826
+  cardSheetHeader: 'board-card-sheet-header',
+  cardMoveWip: 'board-card-move-wip',
 } as const;

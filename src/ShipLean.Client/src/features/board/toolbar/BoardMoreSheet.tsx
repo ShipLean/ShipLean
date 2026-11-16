@@ -27,7 +27,21 @@ export function BoardMoreSheet({
 }) {
   const openSettings = useOpenBoardSettings();
   return (
-    <MoreButton actions={[{ id: 'settings', label: 'Board settings', onSelect: openSettings }]}>
+    <MoreButton
+      label="Board"
+      footer="Lanes and card size are yours alone; Board settings change the board for everyone."
+      actions={[
+        {
+          id: 'settings',
+          label: 'Board settings',
+          group: 'Settings',
+          icon: '⚙',
+          detail: 'columns, WIP, lanes, styles',
+          trailing: 'chevron',
+          onSelect: openSettings,
+        },
+      ]}
+    >
       {(close) => (
         <div data-testid={ids.moreSheet} className="grid gap-1">
           {level === 'epics' ? null : (
@@ -44,7 +58,6 @@ export function BoardMoreSheet({
           )}
           <div className={heading}>Cards</div>
           <CardsSwitch compact={compact} onCompact={onCompact} onPicked={close} />
-          <div className={heading}>Board</div>
         </div>
       )}
     </MoreButton>

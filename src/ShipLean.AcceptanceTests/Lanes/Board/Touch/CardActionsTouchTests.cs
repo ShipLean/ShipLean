@@ -35,11 +35,8 @@ public class CardActionsTouchTests : SeededAcceptanceTest
         await CardActionsSheet.More(card).TapAsync();
         await Expect(sheets.ActionsFor("SHIP-144")).ToBeVisibleAsync();
         (await TouchRules.ViolationsAsync(Page, sheets.ActionsFor("SHIP-144"))).ShouldBeEmpty();
-        await CardActionsSheet.Row(sheets.ActionsFor("SHIP-144"), "Move to").TapAsync();
-        await Expect(sheets.MoveToSheet).ToBeVisibleAsync();
-        (await TouchRules.ViolationsAsync(Page, sheets.MoveToSheet)).ShouldBeEmpty();
         var moved = await Page.RunAndWaitForResponseAsync(
-            () => CardActionsSheet.Row(sheets.MoveToSheet, "In review").TapAsync(),
+            () => CardActionsSheet.Row(sheets.ActionsFor("SHIP-144"), "In review").TapAsync(),
             r => r.Request.Method == "POST" && r.Url.Contains("/moves"));
 
         moved.Ok.ShouldBeTrue(await moved.TextAsync());
@@ -63,8 +60,7 @@ public class CardActionsTouchTests : SeededAcceptanceTest
         var moves = confirm.CountMoves();
 
         await CardActionsSheet.More(card).TapAsync();
-        await CardActionsSheet.Row(sheets.ActionsFor("SHIP-101"), "Move to").TapAsync();
-        await CardActionsSheet.Row(sheets.MoveToSheet, "Done").TapAsync();
+        await CardActionsSheet.Row(sheets.ActionsFor("SHIP-101"), "Done").TapAsync();
 
         await Expect(confirm.Dialog).ToBeVisibleAsync();
         await Expect(confirm.Dialog).ToContainTextAsync("Checkout v2");
