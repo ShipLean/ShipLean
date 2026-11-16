@@ -1,17 +1,1 @@
-[
-  {
-    "file": "src/actions/InMemoryActionRunner.ts",
-    "owner": "closeout",
-    "why": "Builds the undo deadline as an ISO string with Date arithmetic"
-  },
-  {
-    "file": "src/actions/outbox.ts",
-    "owner": "closeout",
-    "why": "Builds undo deadlines as ISO strings with Date arithmetic"
-  },
-  {
-    "file": "src/voice/after/voiceChanges.ts",
-    "owner": "closeout",
-    "why": "Turns an epoch undo deadline into an ISO string"
-  }
-]
+[]
