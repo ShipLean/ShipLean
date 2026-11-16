@@ -45,7 +45,8 @@
   /* Index or pane (P1, P2). The desktop opens on States; a phone opens the index unless the address names a pane. */
   const named = q.get('tab') || location.hash.slice(1);
   const setIndex = on => { root.classList.toggle('set-index', on); syncCrumb(); window.scrollTo(0, 0); };
-  const back = el('button', 'tbtn set-back', '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>');
+  // The text character ‹, as TouchTopBar (SHIP-1863)
+  const back = el('button', 'tbtn set-back', '<span aria-hidden="true">‹</span>');
   back.type = 'button'; back.setAttribute('aria-label', 'Back to Settings');
   const bar0 = $('.appbar');
   bar0.prepend(back);
