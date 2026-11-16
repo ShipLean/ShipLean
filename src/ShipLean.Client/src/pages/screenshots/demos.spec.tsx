@@ -14,6 +14,7 @@ import {
   settingsStates,
   stubDemo,
   stubDemoSettings,
+  videoSettled,
 } from './fixtures/demos';
 import { stubSprintFigures } from './fixtures/sprints';
 import { projectSettings } from './fixtures/workItemSettings';
@@ -45,6 +46,7 @@ const withPlayer = (demo: SprintDemoDto, player: 'video' | 'embed') => async (pa
   await expect(page.getByTestId(player === 'video' ? ids.demoVideo : ids.demoEmbed)).toBeVisible();
   await expect(page.getByTestId(ids.demoChapter)).toHaveCount(demo.chapters.length);
   await expect(page.getByTestId(ids.demoScript)).toBeVisible();
+  if (player === 'video') await videoSettled(page);
 };
 
 pageShots([

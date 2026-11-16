@@ -20,7 +20,7 @@ export function AnnotationsPane({
         Child roll-ups on cards: how many children are done out of how many. Click a roll-up on the
         board to see the children without leaving it.
       </p>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
         <fieldset className="m-0 grid gap-1.5 rounded-panel border border-edge p-3">
           <legend className="px-1 text-[length:var(--text-sm)] font-semibold">
             Roll-ups on cards
@@ -30,7 +30,7 @@ export function AnnotationsPane({
             return (
               <label
                 key={row.key}
-                className={`flex items-center gap-2 text-[length:var(--text-sm)] ${effect ? '' : 'text-ink-muted'}`}
+                className={`flex items-center gap-2 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)] ${effect ? '' : 'text-ink-muted'}`}
               >
                 <input
                   type="checkbox"

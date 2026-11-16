@@ -90,7 +90,7 @@ function Figure({ testId, value, label }: { testId: string; value: number; label
       >
         {value}
       </div>
-      <div className="text-[length:var(--text-xs)] text-ink-muted touch:truncate touch:text-[11.5px]">
+      <div className="text-[length:var(--text-xs)] text-ink-muted touch:text-[11.5px] touch:leading-tight">
         {label}
       </div>
     </div>

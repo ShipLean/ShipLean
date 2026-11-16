@@ -19,6 +19,24 @@ public sealed class CapacityPhone(IPage page)
 
     public ILocator Save => page.GetByTestId(TouchTestIds.SaveBarSave);
 
+    // A person's row (SHIP-1808 P2): "9 / 10 days · default" beside their bar.
+    public ILocator RowDays(string member) =>
+        page.GetByTestId(SprintsTestIds.CapacityRow).Filter(new() { HasText = member }).GetByTestId(SprintsTestIds.CapacityRowDays);
+
+    // The days sheet a row opens (P3).
+    public ILocator Sheet => page.GetByTestId(TouchTestIds.Sheet);
+
+    public ILocator SheetDays => Sheet.GetByTestId(SprintsTestIds.CapacityDays);
+
+    // Opens the member's days sheet, types the days and closes it again.
+    public async Task SetDaysAsync(string member, string days)
+    {
+        await page.GetByTestId(SprintsTestIds.CapacityRow).Filter(new() { HasText = member }).TapAsync();
+        await SheetDays.FillAsync(days);
+        await Sheet.GetByTestId(TouchTestIds.SheetClose).TapAsync();
+        await Assertions.Expect(Sheet).ToHaveCountAsync(0);
+    }
+
     // Presses the bar's Save and returns the capacity PUT response.
     public Task<IResponse> SaveAsync(Guid sprintId) =>
         page.RunAndWaitForApiAsync($"/api/sprints/{sprintId}/capacity", "PUT", () => Save.TapAsync());

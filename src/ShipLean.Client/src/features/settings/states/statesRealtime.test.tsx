@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ProjectSettingsDto } from '@shiplean/core/api/projects';
 import { projectSettingsKey } from '../settingsApi';
 
@@ -16,6 +16,19 @@ vi.mock('../../../realtime', () => ({
 const { SettingsStates } = await import('./SettingsStates');
 const { SettingsDraftContext } = await import('../draft/LoadedSettings');
 const { toDraft } = await import('../draft/model');
+
+beforeEach(() => {
+  // jsdom has no matchMedia, which the states tab reads (through useTouchShell) to know whether the touch layout applies.
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const settings: ProjectSettingsDto = {
   general: {

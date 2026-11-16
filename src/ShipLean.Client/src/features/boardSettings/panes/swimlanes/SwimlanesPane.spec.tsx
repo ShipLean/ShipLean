@@ -203,3 +203,13 @@ test('SwimlanesPane_WhenEpicsBoard_ShouldSayThereAreNoStoredLanes', async ({ mou
   await expect(page.getByTestId(ids.lanesNotStored)).toContainText('no stored lanes');
   await expect(page.getByTestId(ids.laneRow)).toHaveCount(0);
 });
+
+// SHIP-1988 desktop twin of StylesPane_WhenOnDesktop_ShouldKeepTheWordedReorderHint: the glyph hint is touch only.
+test('SwimlanesPane_WhenOnDesktop_ShouldKeepTheWordedReorderHint', async ({ mount, page }) => {
+  await stubBoard(page);
+  await mountLanes(mount);
+
+  await expect(page.getByTestId(ids.laneRow)).toHaveCount(3);
+  await expect(page.getByTestId(ids.swimlanesPane)).toContainText('Drag the grip to reorder.');
+  await expect(page.getByTestId(ids.swimlanesPane)).not.toContainText('Drag ⠿');
+});

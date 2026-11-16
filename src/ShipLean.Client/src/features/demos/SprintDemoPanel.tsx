@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
+import { useTouchShell } from '../../touch/useTouchShell';
+import { KpiTile } from '../sprints/backlog/KpiTile';
 import { DemoChapters } from './DemoChapters';
 import { DemoFeatures } from './DemoFeatures';
 import { DemoPlayer } from './DemoPlayer';
@@ -11,8 +13,12 @@ import { useSprintDemo, useSprintDemoRealtime } from './demosApi';
 import { newPlayerHandle } from './playerHandle';
 import { demosTestIds as ids } from './testIds';
 
-/** The Demo tab: the status band over the player and its side lists, then the script. */
+/**
+ * The Demo tab: the status band over the player and its side lists, then the script. On a phone the sprint's three numbers
+ * sit above the band as one row of tiles (SHIP-1810 P7), and the YouTube notice moves between the player and its facts (P3).
+ */
 export function SprintDemoPanel({ project, sprint }: { project: ProjectDto; sprint: SprintDto }) {
+  const { touch } = useTouchShell();
   const query = useSprintDemo(project.id, sprint.id);
   useSprintDemoRealtime(project.id, sprint.id);
   const player = useMemo(() => newPlayerHandle(), []);
@@ -45,13 +51,36 @@ export function SprintDemoPanel({ project, sprint }: { project: ProjectDto; spri
         )
       ) : (
         <>
+          {touch && (
+            <div data-testid={ids.demoNumbers} className="grid grid-cols-3 gap-1.5">
+              <KpiTile
+                testId={ids.demoNumberCommitted}
+                value={`${demo.numbers.committed}`}
+                label="Points committed"
+              />
+              <KpiTile
+                testId={ids.demoNumberCompleted}
+                value={`${demo.numbers.completed}`}
+                label="Points completed"
+              />
+              <KpiTile
+                testId={ids.demoNumberFeaturesMoved}
+                value={`${demo.numbers.featuresMoved}`}
+                label="Features moved"
+              />
+            </div>
+          )}
           <DemoStatusBand demo={demo} player={player} />
           {demo.video !== null && (
             <>
               <div className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-4 touch:grid-cols-[minmax(0,1fr)]">
                 <div className="grid min-w-0 gap-2">
-                  <DemoPlayer demo={demo} player={player} />
-                  <DemoYouTubeNotice demo={demo} player={player} />
+                  <DemoPlayer
+                    demo={demo}
+                    player={player}
+                    notice={touch ? <DemoYouTubeNotice demo={demo} player={player} /> : undefined}
+                  />
+                  {!touch && <DemoYouTubeNotice demo={demo} player={player} />}
                 </div>
                 <div className="grid min-w-0 gap-3">
                   <DemoChapters demo={demo} player={player} />

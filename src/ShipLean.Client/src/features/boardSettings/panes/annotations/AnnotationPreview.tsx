@@ -32,7 +32,7 @@ export function AnnotationPreview({
     (row) => annotations[row.key] && hasEffect(level, row.key),
   );
   return (
-    <aside className="grid content-start gap-2">
+    <aside className="grid content-start gap-2 touch:hidden">
       <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         Example · this board
       </span>

@@ -313,5 +313,6 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     newProject: 'newProject',
     instanceSettings: 'instanceSettings',
     profile: 'profile',
+    projectSettingsIndex: 'projectSettingsIndex',
   });
 });

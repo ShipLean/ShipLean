@@ -1,9 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Fragment, useContext, useEffect, useState } from 'react';
 import type { StateDto } from '@shiplean/core/api/projects';
-import { WORK_ITEM_TYPE_IDS, type WorkItemTypeId } from '@shiplean/core/api/refs';
+import {
+  WORK_ITEM_TYPE_IDS,
+  type StateCategory,
+  type WorkItemTypeId,
+} from '@shiplean/core/api/refs';
 import { registerInvalidation } from '../../../realtime';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { showToast } from '../../../components/toastStore';
+import { TypeIcon } from '../../../components/TypeIcon';
 import { SettingsDraftContext } from '../draft/LoadedSettings';
 import { Panel } from '../draft/Panel';
 import { projectSettingsKey } from '../settingsApi';
@@ -24,7 +30,7 @@ import {
   type StateRowModel,
 } from './stateModel';
 import { TypeSegment, typeLabel } from './TypeSegment';
-import { TypeSelect } from './touch/TypeSelect';
+import { AddStateTouch } from './touch/AddStateTouch';
 import { useStateColumns } from './useStateColumns';
 
 const BOARD_OF: Record<Exclude<WorkItemTypeId, 'task' | 'bau'>, string> = {
@@ -49,6 +55,8 @@ const EVENTS = [
   'workItemRemoved',
 ] as const;
 
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
 const countsOf = (states: StateDto[], changes: Parameters<typeof rowsOf>[1]) =>
   Object.fromEntries(
     WORK_ITEM_TYPE_IDS.map((t) => [t, rowsOf(states, changes, t).length]),
@@ -61,8 +69,11 @@ export function SettingsStates({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [type, setType] = useState<WorkItemTypeId>('story');
   const [deleting, setDeleting] = useState<string>();
+  // At touch, while a row is dragged by its handle: the row and the row it is over.
+  const [dragging, setDragging] = useState<{ id: string; over: string | null }>();
   const [seenFocus, setSeenFocus] = useState(context?.focus);
   const columns = useStateColumns(projectId, type);
+  const { touch } = useTouchShell();
 
   // Save jumped to a problem on another type: show that type so the field is there to focus.
   if (context !== undefined && context.focus !== seenFocus) {
@@ -100,6 +111,10 @@ export function SettingsStates({ projectId }: { projectId: string }) {
   };
   const stage = (next: (c: typeof changes) => typeof changes) =>
     setDraft((d) => ({ ...d, states: next(d.states) }));
+  const taken = (name: string) =>
+    rows.some((r) => r.name.trim().toLowerCase() === name.toLowerCase());
+  const add = (name: string, category: StateCategory) =>
+    stage((c) => addState(c, saved, { id: crypto.randomUUID(), type, name, category }));
 
   const remove = (id: string, targetId: string) => {
     const row = rows.find((r) => r.id === id);
@@ -113,6 +128,21 @@ export function SettingsStates({ projectId }: { projectId: string }) {
         ? `${row.name} will be deleted on save`
         : `${row.name} will be deleted on save · ${moved} ${moved === 1 ? 'item moves' : 'items move'} to ${target.name}`,
     );
+  };
+  // A drop moves the row one step at a time, as Move up and Move down do, until it sits where the target was.
+  const dropOn = (id: string, targetId: string | null) => {
+    setDragging(undefined);
+    const from = rows.findIndex((r) => r.id === id);
+    const to = rows.findIndex((r) => r.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const by = to > from ? 1 : -1;
+    for (let step = 0; step < Math.abs(to - from); step++)
+      stage((c) => moveState(c, saved, type, id, by));
+  };
+  const dropLineOf = (position: number, id: string) => {
+    if (dragging === undefined || dragging.over !== id || dragging.id === id) return undefined;
+    const from = rows.findIndex((r) => r.id === dragging.id);
+    return position > from ? ('below' as const) : ('above' as const);
   };
   const startDelete = (id: string) => {
     const row = rows.find((r) => r.id === id);
@@ -133,19 +163,35 @@ export function SettingsStates({ projectId }: { projectId: string }) {
           setType(next);
         }}
       />
-      <TypeSelect
-        active={type}
-        counts={countsOf(saved, changes)}
-        errored={erroredTypes}
-        onPick={(next) => {
-          setDeleting(undefined);
-          setType(next);
-        }}
-      />
-      <div className="text-[length:var(--text-sm)] text-ink-muted">
-        <b className="text-ink">{typeLabel(type)}</b> · {rows.length} states. The order is the order
-        in state menus. New items start in the first Proposed state.
-      </div>
+      {touch && !readOnly ? (
+        <AddStateTouch
+          taken={taken}
+          onAdd={(name, category) => {
+            add(name, category);
+            showToast(`${name} will be added on save`);
+          }}
+        />
+      ) : null}
+      {touch ? (
+        <div className="text-[length:var(--text-sm)] text-ink-muted">
+          <div className="flex items-center gap-1.5">
+            <TypeIcon type={type} />
+            <span data-testid={settingsTestIds.stateSummary}>
+              <b className="text-ink">{typeLabel(type)}</b> · {plural(rows.length, 'state')} ·{' '}
+              {plural(
+                rows.reduce((sum, row) => sum + itemsIn(row), 0),
+                'item',
+              )}
+            </span>
+          </div>
+          The order is the order in state menus.
+        </div>
+      ) : (
+        <div className="text-[length:var(--text-sm)] text-ink-muted">
+          <b className="text-ink">{typeLabel(type)}</b> · {rows.length} states. The order is the
+          order in state menus. New items start in the first Proposed state.
+        </div>
+      )}
       {typeError === undefined ? null : (
         <div
           role="alert"
@@ -182,6 +228,10 @@ export function SettingsStates({ projectId }: { projectId: string }) {
                 onCategory={(category) => stage((c) => editState(c, saved, row.id, { category }))}
                 onMove={(by) => stage((c) => moveState(c, saved, type, row.id, by))}
                 onDelete={() => startDelete(row.id)}
+                dropLine={dropLineOf(position, row.id)}
+                onTouchOver={(over) => setDragging({ id: row.id, over })}
+                onTouchDrop={(target) => dropOn(row.id, target)}
+                onTouchDragEnd={() => setDragging((d) => (d?.id === row.id ? undefined : d))}
               />
               {deleting === row.id ? (
                 <tr className="touch:block">
@@ -200,14 +250,7 @@ export function SettingsStates({ projectId }: { projectId: string }) {
           ))}
         </tbody>
       </table>
-      {readOnly ? null : (
-        <AddStateForm
-          taken={(name) => rows.some((r) => r.name.trim().toLowerCase() === name.toLowerCase())}
-          onAdd={(name, category) =>
-            stage((c) => addState(c, saved, { id: crypto.randomUUID(), type, name, category }))
-          }
-        />
-      )}
+      {readOnly || touch ? null : <AddStateForm taken={taken} onAdd={add} />}
     </Panel>
   );
 }
