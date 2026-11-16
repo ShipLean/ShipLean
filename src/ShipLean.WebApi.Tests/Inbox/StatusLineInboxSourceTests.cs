@@ -7,6 +7,7 @@ using ShipLean.Contracts.Inbox;
 using ShipLean.Core;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 
@@ -30,7 +31,7 @@ public class StatusLineInboxSourceTests
         _database = await FreshDatabase.CreateAsync();
         _dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(_database.ConnectionString));
         _clock = new FakeTimeProvider(AskDefaults.Now().AddHours(1));
-        _source = new StatusLineInboxSource(_dataSource, _clock);
+        _source = new StatusLineInboxSource(_dataSource, _clock, new FixedViewerZone());
     }
 
     [OneTimeTearDown]
@@ -55,7 +56,7 @@ public class StatusLineInboxSourceTests
         row.Ask.Kind.ShouldBe(InboxAskKind.Status);
         row.Ask.Label.ShouldBe("Status");
         row.Ask.At.ShouldBe(verifiedAt);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(verifiedAt, _clock));
+        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(verifiedAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
         row.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         row.Ask.AgentName.ShouldBe("Claude Code");
         row.Ask.Status.ShouldBe(new InboxStatusDto(Line, verifiedAt));
@@ -95,7 +96,7 @@ public class StatusLineInboxSourceTests
         var row = (await _source.OpenAsync(owner, SeedIds.Projects.Ship)).Single();
 
         row.Ask.At.ShouldBe(createdAt);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(createdAt, _clock));
+        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(createdAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
         row.Ask.From.ShouldBeNull();
         row.Ask.AgentName.ShouldBeNull();
         row.Ask.Status!.VerifiedAt.ShouldBeNull();

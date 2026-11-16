@@ -7,6 +7,7 @@ using ShipLean.Contracts.Inbox;
 using ShipLean.Core;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 
@@ -28,7 +29,7 @@ public class AskInboxSourceTests
         _database = await FreshDatabase.CreateAsync();
         _dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(_database.ConnectionString));
         _clock = new FakeTimeProvider(AskDefaults.Now().AddHours(1));
-        _source = new AskInboxSource(_dataSource, _clock);
+        _source = new AskInboxSource(_dataSource, _clock, new FixedViewerZone());
     }
 
     [OneTimeTearDown]
@@ -36,6 +37,28 @@ public class AskInboxSourceTests
     {
         await _dataSource.DisposeAsync();
         await _database.DisposeAsync();
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative calls in AskInboxSource.
+    [Test]
+    public async Task AskRow_WhenViewerIsInBangkok_ShouldDateTheRowByTheBangkokDay()
+    {
+        await using var connection = await _database.OpenAsync();
+        var owner = await MemberAsync(connection, SeedIds.Projects.Ship);
+        var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("story").WithAssignee(owner).InsertAsync(connection);
+        var raisedAt = ViewerZoneTestData.LateEveningUtc;
+        await new DecisionBuilder(item).Question("Which zone?").Recommended("Bangkok").Alternatives("UTC")
+            .RaisedBy(SeedIds.Users.Priya, null, raisedAt).BuildAsync(connection);
+        await new QuestionBuilder(item).Text("Which day?").AskedBy(SeedIds.Users.Mei, null, raisedAt).BuildAsync(connection);
+        var source = new AskInboxSource(_dataSource, _clock, new FixedViewerZone(ViewerZoneTestData.Bangkok));
+
+        var rows = await source.OpenAsync(owner, SeedIds.Projects.Ship);
+
+        var now = _clock.GetUtcNow();
+        var expected = DisplayDate.Relative(raisedAt, now, ViewerZoneTestData.Bangkok);
+        expected.ShouldNotBe(DisplayDate.Relative(raisedAt, now, TimeZoneInfo.Utc));
+        rows.Count.ShouldBe(2);
+        rows.ShouldAllBe(r => r.Ask.AtLabel == expected);
     }
 
     [Test]
@@ -56,7 +79,7 @@ public class AskInboxSourceTests
         decision.WorkItemId.ShouldBe(item);
         decision.Ask.Label.ShouldBe("D1");
         decision.Ask.At.ShouldBe(raisedAt);
-        decision.Ask.AtLabel.ShouldBe(DisplayDate.Relative(raisedAt, _clock));
+        decision.Ask.AtLabel.ShouldBe(DisplayDate.Relative(raisedAt, _clock.GetUtcNow(), TimeZoneInfo.Utc));
         decision.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         decision.Ask.AgentName.ShouldBe("Claude Code");
         decision.Ask.Decision!.Number.ShouldBe(1);

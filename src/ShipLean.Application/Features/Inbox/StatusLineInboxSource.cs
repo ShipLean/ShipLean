@@ -1,7 +1,7 @@
-using ShipLean.Contracts;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Inbox;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
