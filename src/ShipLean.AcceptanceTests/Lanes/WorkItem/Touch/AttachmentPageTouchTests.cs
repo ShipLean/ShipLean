@@ -84,7 +84,7 @@ public class AttachmentPageTouchTests : SeededAcceptanceTest
 
         await Expect(touch.Sheet("About this file")).ToBeVisibleAsync();
         await Expect(attachment.AboutFacts).ToHaveCountAsync(4);
-        await Expect(attachment.AboutFacts).ToHaveTextAsync([new Regex("^Size"), new Regex("^Uploaded by"), new Regex("^When"), new Regex("^On")]);
+        await Expect(attachment.AboutFacts).ToHaveTextAsync([new Regex(@"^Size\d"), new Regex("^Uploaded by"), new Regex("^When"), new Regex("^On")]);
         await Expect(attachment.AboutFacts.Nth(3)).ToContainTextAsync("SHIP-101");
     }
 
