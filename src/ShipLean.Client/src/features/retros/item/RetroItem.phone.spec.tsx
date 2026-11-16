@@ -124,6 +124,19 @@ test('RetroItemPhone_WhenChildRowTapped_ShouldBeOneLinkToTheChildRetro', async (
   expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(32);
 });
 
+test('PhoneChildRow_ShouldShowAChevron', async ({ mount, page }) => {
+  await serve(page);
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  const rows = page.getByTestId(ids.retroItemChildRow);
+  const count = await rows.count();
+  expect(count).toBeGreaterThan(0);
+  for (let index = 0; index < count; index += 1) {
+    const chevron = rows.nth(index).getByTestId(ids.retroRowChevron);
+    await expect(chevron).toHaveText('›');
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+  }
+});
+
 test('RetroItemPhone_WhenActionItemsSheetOpened_ShouldGiveEachActionKeyATouchTarget', async ({
   mount,
   page,
