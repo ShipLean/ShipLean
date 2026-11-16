@@ -42,8 +42,9 @@ public sealed class TaskLeadTimeMeasure : ITaskLeadTimeMeasure
             .Select(r => (DateTimeOffset?)r.At)
             .Min();
         var reworkFrom = Earliest(firstResolve?.At, firstChangesRequested) ?? end;
-        var segments = Partition(from, end, reworkFrom, blocked);
-        if (tailEnd is { } tailTo && tailTo > end)
+        // A commit dated before the start (a clock skew or a rebased commit) gives no segments: the aggregator clamps the lead at 0.
+        var segments = end > from ? Partition(from, end, reworkFrom, blocked) : [];
+        if (end > from && tailEnd is { } tailTo && tailTo > end)
         {
             segments.Add(new LeadTimeSegment(InspectionSegmentKind.UnresolvedTail, end, tailTo));
         }

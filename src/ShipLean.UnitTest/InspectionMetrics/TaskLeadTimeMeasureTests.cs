@@ -117,6 +117,19 @@ public class TaskLeadTimeMeasureTests
         measured.ShouldAllBe(m => Covers(m));
     }
 
+    // Mutation: partition a commit dated before the start (sorting end and start swaps them into a positive segment).
+    [Test]
+    public void Segments_WhenCommitDatedBeforeStart_ShouldBeEmptyWithNoTail()
+    {
+        var measured = Measure(Task()
+            .WithStart(Key, T0)
+            .WithCommit(Key, "aaaaaaa", T0.AddHours(-2))
+            .WithResolved(Key, T0.AddHours(4)));
+
+        measured.ShouldNotBeNull();
+        (measured.Segments.Count, measured.ActiveHours, measured.UnresolvedTailHours).ShouldBe((0, 0d, 0d));
+    }
+
     // Mutation: label the blocked span inside rework as rework.
     [Test]
     public void Segments_WhenBlockedAndReworked_ShouldRunInOrderAndEndWithTheTail()

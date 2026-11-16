@@ -7,7 +7,7 @@ import { inspectionMetricsTestIds as ids } from '../testIds';
 // The periods as the server sends them in T0's pinned view (inspection-metrics-view.json).
 const PERIODS = fixture.periods as unknown as InspectionPeriodDto[];
 const RUNNING = PERIODS.find((p) => p.inProgress)!;
-const LONGEST = PERIODS.flatMap((p) => p.dots).find((d) => d.longest)!;
+const LONGEST = PERIODS.flatMap((p) => p.dots).find((d) => d.longest && d.leadHours > 48)!;
 
 type Mount = Parameters<Parameters<typeof test>[2]>[0]['mount'];
 
@@ -51,9 +51,10 @@ test('LeadTimeChart_WhenDotOverTwoDays_ShouldLabelTheLongestOnTheTopEdge', async
   page,
 }) => {
   await mountChart(mount, PERIODS);
+  // The server flags one longest dot per period, and the chart labels each of them.
   const label = page.getByTestId(ids.chartDotLabel);
-  await expect(label).toHaveCount(1);
-  await expect(label).toHaveText(`${LONGEST.taskKey} ${LONGEST.leadLabel}`);
+  await expect(label).toHaveCount(PERIODS.filter((p) => p.dots.some((d) => d.longest)).length);
+  await expect(label.filter({ hasText: `${LONGEST.taskKey} ${LONGEST.leadLabel}` })).toHaveCount(1);
   await expect(
     page.getByTestId(ids.chartDot).and(page.locator(`[data-key="${LONGEST.taskKey}"]`)),
   ).toHaveAttribute('data-over', 'true');
