@@ -326,4 +326,5 @@ export const settingsTestIds = {
   timeZoneUseDevice: 'settings-time-zone-use-device',
   timeZoneError: 'settings-time-zone-error',
   timeZoneChoicesError: 'settings-time-zone-choices-error',
+  stateHandle: 'settings-state-handle',
 } as const;

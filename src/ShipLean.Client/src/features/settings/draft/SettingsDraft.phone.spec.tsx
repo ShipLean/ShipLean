@@ -249,3 +249,31 @@ test('SettingsPhone_WhenReadOnly_ShouldDisableEveryEditControl', async ({ mount,
   await expect(page.getByTestId(ids.memberAddEmail)).toHaveCount(0);
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
+
+// ND3a-7 (SHIP-1809 P6): a member row is two lines: name · role · ✕ on the first, the email under the name.
+test('SettingsPhone_WhenMembersShown_ShouldPutNameRoleAndRemoveOnTheFirstLine', async ({
+  mount,
+  page,
+}) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, route('members'));
+  const rows = page.getByTestId(ids.memberRow);
+  await expect(rows.first()).toBeVisible();
+  const row = rows.last();
+  const remove = row.getByTestId(ids.memberRemove);
+  await expect(remove).toHaveText('✕');
+  const [name, email, role, cross] = await Promise.all([
+    row.locator('td').first().boundingBox(),
+    row.locator('td').nth(1).boundingBox(),
+    row.getByTestId(ids.memberRole).boundingBox(),
+    remove.boundingBox(),
+  ]);
+  if (!name || !email || !role || !cross) throw new Error('row part not drawn');
+  const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+  expect(Math.abs(mid(role) - mid(name))).toBeLessThanOrEqual(4);
+  expect(Math.abs(mid(cross) - mid(name))).toBeLessThanOrEqual(4);
+  expect(cross.width).toBeGreaterThanOrEqual(32);
+  expect(cross.height).toBeGreaterThanOrEqual(32);
+  expect(role.x).toBeGreaterThan(name.x);
+  expect(email.y).toBeGreaterThanOrEqual(role.y + role.height - 1);
+});

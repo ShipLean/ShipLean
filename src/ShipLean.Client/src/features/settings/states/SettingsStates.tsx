@@ -61,6 +61,8 @@ export function SettingsStates({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [type, setType] = useState<WorkItemTypeId>('story');
   const [deleting, setDeleting] = useState<string>();
+  // At touch, while a row is dragged by its handle: the row and the row it is over.
+  const [dragging, setDragging] = useState<{ id: string; over: string | null }>();
   const [seenFocus, setSeenFocus] = useState(context?.focus);
   const columns = useStateColumns(projectId, type);
 
@@ -113,6 +115,21 @@ export function SettingsStates({ projectId }: { projectId: string }) {
         ? `${row.name} will be deleted on save`
         : `${row.name} will be deleted on save · ${moved} ${moved === 1 ? 'item moves' : 'items move'} to ${target.name}`,
     );
+  };
+  // A drop moves the row one step at a time, as Move up and Move down do, until it sits where the target was.
+  const dropOn = (id: string, targetId: string | null) => {
+    setDragging(undefined);
+    const from = rows.findIndex((r) => r.id === id);
+    const to = rows.findIndex((r) => r.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const by = to > from ? 1 : -1;
+    for (let step = 0; step < Math.abs(to - from); step++)
+      stage((c) => moveState(c, saved, type, id, by));
+  };
+  const dropLineOf = (position: number, id: string) => {
+    if (dragging === undefined || dragging.over !== id || dragging.id === id) return undefined;
+    const from = rows.findIndex((r) => r.id === dragging.id);
+    return position > from ? ('below' as const) : ('above' as const);
   };
   const startDelete = (id: string) => {
     const row = rows.find((r) => r.id === id);
@@ -182,6 +199,9 @@ export function SettingsStates({ projectId }: { projectId: string }) {
                 onCategory={(category) => stage((c) => editState(c, saved, row.id, { category }))}
                 onMove={(by) => stage((c) => moveState(c, saved, type, row.id, by))}
                 onDelete={() => startDelete(row.id)}
+                dropLine={dropLineOf(position, row.id)}
+                onTouchOver={(over) => setDragging({ id: row.id, over })}
+                onTouchDrop={(target) => dropOn(row.id, target)}
               />
               {deleting === row.id ? (
                 <tr className="touch:block">

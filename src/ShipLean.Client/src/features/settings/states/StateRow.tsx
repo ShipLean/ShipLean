@@ -1,5 +1,8 @@
 import type { StateCategory } from '@shiplean/core/api/refs';
 import { StateDot } from '../../../components/StateDot';
+import { MoreButton } from '../../../touch/MoreButton';
+import { useLongPressDrag } from '../../../touch/useLongPressDrag';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { settingsTestIds } from '../testIds';
 import { CATEGORIES, CATEGORY_LABELS, parseCategory } from './categories';
 import { itemsIn, type StateRowModel } from './stateModel';
@@ -20,8 +23,11 @@ export function StateRow({
   blocked,
   onName,
   onCategory,
+  dropLine,
   onMove,
   onDelete,
+  onTouchOver,
+  onTouchDrop,
 }: {
   row: StateRowModel;
   position: number;
@@ -36,17 +42,62 @@ export function StateRow({
   blocked: string | undefined;
   onName(name: string): void;
   onCategory(category: StateCategory): void;
+  /** At touch, while another row is dragged over this one: where the drop line goes. */
+  dropLine?: 'above' | 'below';
   onMove(by: -1 | 1): void;
   onDelete(): void;
+  /** At touch: the dragged row is over the row with this id (null: off every row). */
+  onTouchOver(targetId: string | null): void;
+  /** At touch: the ⠿ handle was held, dragged and let go over the row with this id (null: off every row). */
+  onTouchDrop(targetId: string | null): void;
 }) {
   const items = itemsIn(row);
+  const { touch } = useTouchShell();
+  const drag = useLongPressDrag({
+    handle: true,
+    onMove: (target) => onTouchOver(target?.dataset.dropTarget ?? null),
+    onDrop: (target) => onTouchDrop(target?.dataset.dropTarget ?? null),
+  });
+  const editable = touch && !readOnly;
+  // SHIP-1809 P5: at touch the row's actions are one ⋯ sheet; Delete… sits after a divider.
+  const actions = [
+    {
+      id: 'rename',
+      label: 'Rename',
+      onSelect: () => document.getElementById(`settings-field-state-${row.id}`)?.focus(),
+    },
+    { id: 'up', label: 'Move up', disabled: position === 0, onSelect: () => onMove(-1) },
+    {
+      id: 'down',
+      label: 'Move down',
+      disabled: position === count - 1,
+      onSelect: () => onMove(1),
+    },
+    {
+      id: 'delete',
+      label: 'Delete…',
+      tone: 'danger' as const,
+      group: '',
+      disabled: blocked !== undefined,
+      hint: blocked,
+      onSelect: onDelete,
+    },
+  ];
+  const line =
+    dropLine === 'above'
+      ? 'touch:shadow-[inset_0_2px_0_var(--color-signal)]'
+      : dropLine === 'below'
+        ? 'touch:shadow-[inset_0_-2px_0_var(--color-signal)]'
+        : '';
   return (
     <tr
       data-testid={settingsTestIds.stateRow}
       data-state-id={row.id}
-      className="border-b border-edge last:border-b-0 touch:flex touch:flex-wrap touch:items-center touch:gap-x-2 touch:gap-y-2 touch:px-3 touch:py-3"
+      data-drop-target={editable ? row.id : undefined}
+      data-lifted={drag.lifted || undefined}
+      className={`border-b border-edge last:border-b-0 touch:flex touch:flex-wrap touch:items-center touch:gap-x-2 touch:gap-y-2 touch:px-3 touch:py-3 ${line} ${drag.lifted ? 'touch:rounded-panel touch:outline-2 touch:-outline-offset-2 touch:outline-signal' : ''}`}
     >
-      <td className="w-16 px-3 py-2 whitespace-nowrap touch:order-5 touch:w-auto touch:p-0">
+      <td className="w-16 px-3 py-2 whitespace-nowrap touch:hidden">
         {readOnly ? (
           <span className="text-ink-muted">{position + 1}</span>
         ) : (
@@ -75,7 +126,18 @@ export function StateRow({
         )}
       </td>
       <td className="px-3 py-2 touch:order-1 touch:w-full touch:p-0">
-        <span className="flex items-center gap-2 touch:flex-wrap">
+        <span className="flex items-center gap-2">
+          {editable ? (
+            <button
+              type="button"
+              data-testid={settingsTestIds.stateHandle}
+              aria-label={`Move ${row.name}: hold and drag`}
+              className={`inline-grid size-[var(--touch-target)] flex-none place-items-center rounded-control text-ink-muted ${drag.lifted ? 'bg-signal-soft text-signal' : ''}`}
+              {...drag.props}
+            >
+              ⠿
+            </button>
+          ) : null}
           <StateDot category={row.category} />
           <input
             data-testid={settingsTestIds.stateName}
@@ -105,8 +167,11 @@ export function StateRow({
           ) : null}
           {row.fresh ? <span className="text-[length:var(--text-xs)] text-signal">new</span> : null}
           {row.savedName !== undefined && row.savedName !== row.name ? (
-            <span className="text-[length:var(--text-xs)] text-ink-muted">was {row.savedName}</span>
+            <span className="text-[length:var(--text-xs)] text-ink-muted touch:hidden">
+              was {row.savedName}
+            </span>
           ) : null}
+          {editable ? <MoreButton label={row.name} actions={actions} /> : null}
         </span>
         {error === undefined ? null : (
           <div
@@ -118,7 +183,7 @@ export function StateRow({
           </div>
         )}
       </td>
-      <td className="px-3 py-2 touch:order-2 touch:p-0">
+      <td className={`px-3 py-2 touch:order-2 touch:p-0 ${editable ? 'touch:ml-10' : ''}`}>
         <select
           data-testid={settingsTestIds.stateCategory}
           aria-label={`Category of ${row.name}`}
@@ -136,7 +201,7 @@ export function StateRow({
       </td>
       <td
         data-testid={settingsTestIds.stateItems}
-        className="px-3 py-2 text-right text-ink-muted touch:order-3 touch:p-0"
+        className="px-3 py-2 text-right text-ink-muted touch:order-3 touch:ml-auto touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Items_']"
         title={
           row.incoming > 0
             ? `${row.itemCount} now, ${row.incoming} more moving here on save`
@@ -150,7 +215,7 @@ export function StateRow({
       </td>
       <td
         data-testid={settingsTestIds.stateColumn}
-        className="px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Board:_']"
+        className={`px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Board_column_·_'] ${editable ? 'touch:pl-10' : ''}`}
       >
         {column ?? 'Not mapped'}
       </td>
@@ -160,7 +225,7 @@ export function StateRow({
             {blocked === undefined ? null : (
               <span
                 data-testid={settingsTestIds.stateDeleteBlock}
-                className="text-[length:var(--text-xs)] text-ink-muted touch:order-7 touch:w-full"
+                className="text-[length:var(--text-xs)] text-ink-muted touch:hidden"
               >
                 {blocked}
               </span>
@@ -171,7 +236,7 @@ export function StateRow({
               aria-label={`Delete ${row.name}`}
               disabled={blocked !== undefined}
               title={blocked}
-              className={`${small} touch:order-6`}
+              className={`${small} touch:hidden`}
               onClick={onDelete}
             >
               Delete

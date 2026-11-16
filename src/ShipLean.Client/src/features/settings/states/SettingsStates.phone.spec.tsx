@@ -3,6 +3,7 @@ import type { ProjectSettingsDto, StateDto } from '@shiplean/core/api/projects';
 import { PROJECT_ID } from '../draft/ct/projectDto';
 import { StatesHarness } from '../ct/StatesHarness';
 import { settingsTestIds as ids } from '../testIds';
+import { touchTestIds } from '../../../touch/testIds';
 
 // The States tab on a phone (SHIP-732, L732b, P5): the type select, two-line rows, the stacked delete form and the add
 // form, as element shots of the States panel. Regenerate with
@@ -101,6 +102,37 @@ const stub = async (page: Routable) => {
   );
 };
 
+interface Point {
+  x: number;
+  y: number;
+}
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+
+// Holds the ⠿ handle for the long press (the shared hook's 450ms) and drags to `to`; lets go unless `hold`.
+async function touchDrag(page: Page, from: Point, to: Point, hold = false) {
+  const cdp = await page.context().newCDPSession(page);
+  const send = (type: 'touchStart' | 'touchMove' | 'touchEnd', point?: Point) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
+  await page.clock.install({ time: 0 });
+  await page.clock.pauseAt(1000);
+  await send('touchStart', from);
+  await page.clock.runFor(450);
+  const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / 20));
+  for (let i = 1; i <= steps; i++) {
+    await send('touchMove', {
+      x: from.x + ((to.x - from.x) * i) / steps,
+      y: from.y + ((to.y - from.y) * i) / steps,
+    });
+  }
+  if (!hold) await send('touchEnd');
+}
+
+const centre = async (locator: { boundingBox(): Promise<Point & { width: number; height: number } | null> }) => {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('no box');
+  return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+};
+
 const phoneOnly = (page: { viewportSize(): { width: number } | null }) =>
   expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
 
@@ -128,9 +160,103 @@ test('SettingsStatesPhone_WhenColumnIsLong_ShouldShowItWholeOnItsOwnLine', async
     }));
     expect(fits.clipped).toBe(false);
     expect(fits.ellipsis).toBe(false);
-    expect(fits.label).toContain('Board:');
+    expect(fits.label).toContain('Board column ·');
     expect(fits.wide).toBeGreaterThan(300);
   }
+});
+
+// ND3a-3/ND3a-4 (SHIP-1809 P4, P5): ⠿ handle · name · ⋯ on line 1, no ↑/↓ or Delete buttons, "Items n" on line 2.
+test('SettingsStatesPhone_WhenOpened_ShouldPutHandleNameAndMoreOnTheFirstLine', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const rows = view.getByTestId(ids.statesPanel).getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    const row = rows.nth(i);
+    for (const id of [ids.stateMoveUp, ids.stateMoveDown, ids.stateDelete])
+      await expect(row.getByTestId(id)).toBeHidden();
+    const handle = await row.getByTestId(ids.stateHandle).boundingBox();
+    const more = await row.getByTestId(touchTestIds.moreButton).boundingBox();
+    const name = await row.getByTestId(ids.stateName).boundingBox();
+    const category = await row.getByTestId(ids.stateCategory).boundingBox();
+    if (!handle || !more || !name || !category) throw new Error('row part not drawn');
+    expect(handle.width).toBeGreaterThanOrEqual(32);
+    expect(more.width).toBeGreaterThanOrEqual(32);
+    const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+    expect(Math.abs(mid(handle) - mid(name))).toBeLessThanOrEqual(2);
+    expect(Math.abs(mid(more) - mid(name))).toBeLessThanOrEqual(2);
+    expect(handle.x).toBeLessThan(name.x);
+    expect(more.x).toBeGreaterThan(name.x + name.width - 1);
+    expect(category.y).toBeGreaterThan(name.y + name.height - 1);
+    expect(category.x).toBeGreaterThanOrEqual(name.x - 16);
+  }
+  const label = await rows
+    .nth(1)
+    .getByTestId(ids.stateItems)
+    .evaluate((e) => getComputedStyle(e, '::before').content);
+  expect(label).toContain('Items');
+});
+
+// ND3a-4 (P5): the ⋯ sheet holds Rename, Move up, Move down and Delete…, and its moves change the draft.
+test('SettingsStatesPhone_WhenMoreTapped_ShouldOfferTheRowActionsAndMoveUp', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  await panel.getByTestId(ids.stateRow).nth(1).getByTestId(touchTestIds.moreButton).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet).toContainText('Active');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
+    'Rename',
+    'Move up',
+    'Move down',
+    'Delete…',
+  ]);
+  await sheet.locator('[data-action-id="up"]').tap();
+  await expect(sheet).toHaveCount(0);
+  await expect(panel.getByTestId(ids.stateName).first()).toHaveValue('Active');
+  await expect(panel.getByTestId(ids.stateName).nth(1)).toHaveValue('New');
+
+  await panel.getByTestId(ids.stateRow).nth(0).getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(touchTestIds.sheet).locator('[data-action-id="delete"]').tap();
+  await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
+});
+
+// ND3a-3 (P4): hold the ⠿ handle and drag: the row moves where it is dropped.
+test('SettingsStatesPhone_WhenHandleDragged_ShouldMoveTheStateToTheDrop', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stub(page);
+  const view = await mount(<StatesHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/states' },
+  });
+  const panel = view.getByTestId(ids.statesPanel);
+  const rows = panel.getByTestId(ids.stateRow);
+  await expect(rows).toHaveCount(3);
+  const order = () =>
+    panel
+      .getByTestId(ids.stateName)
+      .evaluateAll((all) => all.map((e) => (e as HTMLInputElement).value));
+  expect(await order()).toEqual(['New', 'Active', 'Closed']);
+  await touchDrag(
+    page,
+    await centre(rows.first().getByTestId(ids.stateHandle)),
+    await centre(rows.last()),
+  );
+  await expect.poll(order).toEqual(['Active', 'Closed', 'New']);
 });
 
 for (const theme of THEMES) {
@@ -169,7 +295,8 @@ for (const theme of THEMES) {
   }) => {
     const { panel } = await open(mount, page);
 
-    await panel.getByTestId(ids.stateDelete).nth(1).click();
+    await panel.getByTestId(ids.stateRow).nth(1).getByTestId(touchTestIds.moreButton).tap();
+    await page.getByTestId(touchTestIds.sheet).locator('[data-action-id="delete"]').tap();
 
     await expect(panel.getByTestId(ids.stateDeleteForm)).toBeVisible();
     await expect(panel).toHaveScreenshot(`settings-states-delete-phone.${theme}.png`, {
@@ -188,6 +315,41 @@ for (const theme of THEMES) {
     await expect(panel.getByTestId(ids.stateAdd)).toBeEnabled();
     await expect(panel.getByTestId(ids.stateAdd)).toBeVisible();
     await expect(panel).toHaveScreenshot(`settings-states-add-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+  test(`SettingsStatesPhone_WhenMoreTapped_ShouldMatchItsScreenshot_settings-states-menu-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    phoneOnly(page);
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stub(page);
+    const view = await mount(<StatesHarness role="admin" />, {
+      hooksConfig: { route: '/p/SHIP/settings/states' },
+    });
+    const rows = view.getByTestId(ids.statesPanel).getByTestId(ids.stateRow);
+    await expect(rows).toHaveCount(3);
+    await rows.nth(1).getByTestId(touchTestIds.moreButton).tap();
+    await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
+    await expect(page).toHaveScreenshot(`settings-states-menu-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+  test(`SettingsStatesPhone_WhenDragging_ShouldMatchItsScreenshot_settings-states-drag-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    const { panel } = await open(mount, page);
+    const rows = panel.getByTestId(ids.stateRow);
+    await touchDrag(
+      page,
+      await centre(rows.first().getByTestId(ids.stateHandle)),
+      await centre(rows.nth(1)),
+      true,
+    );
+    await expect(rows.first()).toHaveAttribute('data-lifted', 'true');
+    await expect(panel).toHaveScreenshot(`settings-states-drag-phone.${theme}.png`, {
       animations: 'disabled',
     });
   });
