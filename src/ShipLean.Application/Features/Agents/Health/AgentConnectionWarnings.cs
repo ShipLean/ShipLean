@@ -13,8 +13,8 @@ public sealed class AgentConnectionWarnings(NpgsqlDataSource dataSource, TimePro
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var newest = await connection.QuerySingleOrDefaultAsync<Newest>(new CommandDefinition(
             """
-            SELECT at, COALESCE(http_status BETWEEN 200 AND 299, false) AS succeeded FROM agent_delivery_attempt
-            WHERE connection_id = @connectionId ORDER BY at DESC LIMIT 1
+            SELECT at, (error IS NULL) AS succeeded FROM agent_delivery_attempt
+            WHERE connection_id = @connectionId ORDER BY at DESC, (error IS NULL) DESC LIMIT 1
             """,
             new { connectionId }, cancellationToken: cancellationToken));
         return newest is { Succeeded: false } failed
@@ -22,6 +22,7 @@ public sealed class AgentConnectionWarnings(NpgsqlDataSource dataSource, TimePro
             : null;
     }
 
-    // No answer (a null http_status) is a failure.
+    // A send succeeded when its error is null (a 202 the deliverer rejected has one; so has no answer). On a tie of time the success wins,
+    // so the query is exactly "newest failure newer than newest success".
     private sealed record Newest(DateTimeOffset At, bool Succeeded);
 }

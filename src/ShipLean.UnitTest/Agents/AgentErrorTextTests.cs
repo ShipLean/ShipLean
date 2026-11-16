@@ -7,8 +7,9 @@ namespace ShipLean.UnitTest.Agents;
 public class AgentErrorTextTests
 {
     // "a.a.a…" with no "://": the URL pattern tries a scheme at every "a" and scans the whole run each time, so it passes its
-    // 1 second timeout (about 1 s for 300,000 pairs on this host; this is 500,000).
-    private static readonly string PatternTimeoutInput = "a" + string.Concat(Enumerable.Repeat(".a", 500_000));
+    // 1 second timeout. The cost is quadratic: about 1 s for 300,000 pairs on this host, roughly 45 s unbounded (estimated) for the 2,000,000 here, so even
+    // much faster CI hardware times out with a wide margin, and the timeout still caps the test at about 1 s.
+    private static readonly string PatternTimeoutInput = "a" + string.Concat(Enumerable.Repeat(".a", 2_000_000));
 
     [Test]
     public void Scrub_WhenNull_ShouldBeNull()
