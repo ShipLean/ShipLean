@@ -131,10 +131,13 @@ function rowsOf({ task, events }: InspectionTaskMeasurementDto): Row[] {
 export function PeriodRail({
   projectKey,
   selected,
+  noTasks,
   onOpenTask,
 }: {
   projectKey: string;
   selected: InspectionTaskMeasurementDto | null;
+  /** No task ended in the sprint, so there is nothing to select. */
+  noTasks: boolean;
   onOpenTask(): void;
 }) {
   if (selected === null)
@@ -143,7 +146,9 @@ export function PeriodRail({
         data-testid={ids.railEmpty}
         className="panel p-4 text-[length:var(--text-sm)] text-ink-muted"
       >
-        Select a task to see how its lead time was measured.
+        {noTasks
+          ? 'Nothing to measure yet'
+          : 'Select a task to see how its lead time was measured.'}
       </aside>
     );
   const { task, segments } = selected;

@@ -162,16 +162,64 @@ test('PeriodView_WhenTheTaskIsOpenedFromTheRail_ShouldPostTaskOpenedFromRail', a
     .toEqual([{ path: 'inspection-metrics-task-opened', body: { from: 'rail' } }]);
 });
 
-test('PeriodView_WhenNoTaskIsSelected_ShouldShowTheEmptyRail', async ({ mount, page }) => {
-  await open(
+test('PeriodView_WhenNoSelectAndServerSelectsTheSlowest_ShouldDrawItInTheRail', async ({
+  mount,
+  page,
+}) => {
+  // The conductor's ruling (D1): with a sprint and no select, the server selects the slowest task.
+  const slowest = DETAIL.tasks[0]!;
+  const view = stubView({
+    periodDetail: { ...DETAIL, selected: { ...DETAIL.selected!, task: slowest } },
+  });
+  const server = await open(
     mount,
     page,
     `/p/SHIP/inspection?view=period&p=${DETAIL.periodId}`,
+    view,
+  );
+  await expect(page.getByTestId(ids.rail)).toHaveAttribute('data-key', slowest.key);
+  await expect(
+    page.getByTestId(ids.taskRow).and(page.locator(`[data-key="${slowest.key}"]`)),
+  ).toHaveAttribute('aria-selected', 'true');
+  expect(server.reads).toHaveLength(1);
+});
+
+test('PeriodView_WhenTheSelectIsUnknown_ShouldShowTheEmptyRail', async ({ mount, page }) => {
+  await open(
+    mount,
+    page,
+    `/p/SHIP/inspection?view=period&p=${DETAIL.periodId}&select=SHIP-0`,
     stubView({ periodDetail: { ...DETAIL, selected: null } }),
   );
   await expect(page.getByTestId(ids.railEmpty)).toBeVisible();
   await expect(page.getByTestId(ids.rail)).toHaveCount(0);
 });
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const inProgress of [false, true]) {
+    test(`PeriodView_WhenNoTaskEnded_InProgress_${inProgress}_ShouldSaySoInBothTabsAndTheRail_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+      const text = inProgress
+        ? 'No tasks ended in this sprint yet'
+        : 'No tasks ended in this sprint';
+      const empty = stubView({
+        periodDetail: { ...DETAIL, inProgress, tasks: [], features: [], selected: null },
+      });
+      const route = `/p/SHIP/inspection?view=period&p=${DETAIL.periodId}`;
+      await open(mount, page, route, empty);
+      await expect(page.getByTestId(ids.taskRows)).toContainText(text);
+      if (!inProgress) await expect(page.getByTestId(ids.taskRows)).not.toContainText('yet');
+      await expect(page.getByTestId(ids.taskRow)).toHaveCount(0);
+      await expect(page.getByTestId(ids.railEmpty)).toHaveText('Nothing to measure yet');
+      await page.getByTestId(ids.periodTabFeatures).click();
+      await expect(page.getByTestId(ids.featureRows)).toContainText(text);
+      await expect(page.getByTestId(ids.featureRow)).toHaveCount(0);
+    });
+  }
+}
 
 test('PeriodView_WhenNextIsClicked_ShouldReadTheNextSprint', async ({ mount, page }) => {
   const server = await open(mount, page);

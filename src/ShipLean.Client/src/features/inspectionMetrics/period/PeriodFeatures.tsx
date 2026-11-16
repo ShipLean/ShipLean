@@ -5,6 +5,7 @@ import { routePath } from '../../../routes';
 import { SPLIT_COLOURS } from '../leadtime/SplitBar';
 import { inspectionMetricsTestIds as ids } from '../testIds';
 import { PartsBar } from './PartsBar';
+import { noTasksText } from './PeriodTasks';
 
 const cell = 'px-3 py-2';
 
@@ -36,10 +37,12 @@ export function PeriodFeatures({
   features,
   projectKey,
   unit,
+  inProgress,
 }: {
   features: readonly InspectionPeriodFeatureDto[];
   projectKey: string;
   unit: string;
+  inProgress: boolean;
 }) {
   const max = Math.max(0, ...features.map((f) => f.leadTime.meanHours ?? 0));
   return (
@@ -59,6 +62,13 @@ export function PeriodFeatures({
           </tr>
         </thead>
         <tbody>
+          {features.length === 0 && (
+            <tr>
+              <td colSpan={6} className={`${cell} text-ink-muted`}>
+                {noTasksText(inProgress)}
+              </td>
+            </tr>
+          )}
           {features.map((feature) => {
             const stats = feature.leadTime;
             return (

@@ -6,14 +6,20 @@ import { PartsBar } from './PartsBar';
 const cell = 'px-3 py-2';
 const num = `${cell} text-right tabular-nums`;
 
+export const noTasksText = (inProgress: boolean) =>
+  inProgress ? 'No tasks ended in this sprint yet' : 'No tasks ended in this sprint';
+
 /** Every task that ended in the sprint, in the server's order (slowest first); a row selects its task for the rail. */
 export function PeriodTasks({
   tasks,
   selected,
+  inProgress,
   onSelect,
 }: {
   tasks: readonly InspectionTaskDto[];
   selected: string | null;
+  /** The sprint is still running, so "yet" when nothing has ended. */
+  inProgress: boolean;
   onSelect(taskKey: string): void;
 }) {
   const max = Math.max(0, ...tasks.map((t) => t.leadHours));
@@ -35,6 +41,13 @@ export function PeriodTasks({
         </tr>
       </thead>
       <tbody>
+        {tasks.length === 0 && (
+          <tr>
+            <td colSpan={6} className={`${cell} text-ink-muted`}>
+              {noTasksText(inProgress)}
+            </td>
+          </tr>
+        )}
         {tasks.map((task) => (
           <tr
             key={task.key}

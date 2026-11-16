@@ -1,4 +1,4 @@
-import { useEffect, type ComponentType } from 'react';
+import { useEffect, useRef, type ComponentType } from 'react';
 import {
   postInspectionMetricsPeriodOpened,
   postInspectionMetricsTaskOpened,
@@ -30,8 +30,11 @@ export const PeriodView: ComponentType<InspectionViewProps> = ({
   const detail = view.periodDetail;
   const periodId = detail?.periodId ?? null;
   const inProgress = detail?.inProgress ?? false;
+  // Once per sprint id: a refetch that flips inProgress (the sprint ending while open) is not a new open.
+  const posted = useRef<string | null>(null);
   useEffect(() => {
-    if (periodId === null) return;
+    if (periodId === null || posted.current === periodId) return;
+    posted.current = periodId;
     // The usage call never blocks or fails the page.
     postInspectionMetricsPeriodOpened(project.id, inProgress ? 'running' : 'finished').catch(
       () => undefined,
@@ -100,16 +103,23 @@ export const PeriodView: ComponentType<InspectionViewProps> = ({
             <PeriodTasks
               tasks={detail.tasks}
               selected={detail.selected?.task.key ?? null}
+              inProgress={detail.inProgress}
               onSelect={(key) => onQueryChange({ select: key })}
             />
           ) : (
-            <PeriodFeatures features={detail.features} projectKey={project.key} unit={unit} />
+            <PeriodFeatures
+              features={detail.features}
+              projectKey={project.key}
+              unit={unit}
+              inProgress={detail.inProgress}
+            />
           )}
         </div>
         {tab === 'tasks' ? (
           <PeriodRail
             projectKey={project.key}
             selected={detail.selected}
+            noTasks={detail.tasks.length === 0}
             onOpenTask={() =>
               postInspectionMetricsTaskOpened(project.id, 'rail').catch(() => undefined)
             }
