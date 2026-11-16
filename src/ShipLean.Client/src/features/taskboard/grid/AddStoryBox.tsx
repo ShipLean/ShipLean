@@ -56,7 +56,7 @@ export function AddStoryBox({
         <select
           data-testid={ids.addStoryType}
           aria-label="Type"
-          className="field"
+          className="field touch:w-20"
           value={type}
           onChange={(event) => setType(event.target.value as WorkItemTypeId)}
           onKeyDown={onKeyDown}
@@ -72,7 +72,7 @@ export function AddStoryBox({
           autoFocus
           data-testid={ids.addStoryTitle}
           aria-label="Title"
-          className="field flex-1 touch:min-w-0"
+          className="field flex-1 touch:min-w-0 touch:placeholder:text-[length:var(--text-sm)]"
           placeholder={
             touch
               ? 'Title of the story or bug'
@@ -92,37 +92,25 @@ export function AddStoryBox({
         >
           Add
         </button>
-        {touch ? null : (
-          <button
-            type="button"
-            data-testid={ids.addStoryClose}
-            className="btn-ghost"
-            onClick={onClose}
-          >
-            Esc
-          </button>
-        )}
+        <button
+          type="button"
+          data-testid={ids.addStoryClose}
+          className="btn-ghost touch:h-[var(--touch-target)] touch:min-w-[var(--touch-target)]"
+          aria-label={touch ? 'Close' : undefined}
+          onClick={onClose}
+        >
+          {touch ? '✕' : 'Esc'}
+        </button>
       </div>
       {touch ? (
-        <div className="flex items-center gap-2">
-          <p
-            data-testid={ids.addStoryHelp}
-            className="m-0 min-w-0 flex-1 text-[length:var(--text-xs)] text-ink-muted"
-          >
-            {scope.kind === 'sprint'
-              ? `Adds it to ${destination}, at the bottom. Stays open for the next one.`
-              : `Adds it under ${destination}, in the Backlog. Stays open for the next one.`}
-          </p>
-          <button
-            type="button"
-            data-testid={ids.addStoryClose}
-            className="btn-ghost h-[var(--touch-target)] min-w-[var(--touch-target)] shrink-0"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
+        <p
+          data-testid={ids.addStoryHelp}
+          className="m-0 text-[length:var(--text-2xs)] text-ink-muted"
+        >
+          {scope.kind === 'sprint'
+            ? `Adds it to ${destination}, at the bottom. Stays open for the next one.`
+            : `Adds it under ${destination}, in the Backlog. Stays open for the next one.`}
+        </p>
       ) : null}
       {create.error ? (
         <span

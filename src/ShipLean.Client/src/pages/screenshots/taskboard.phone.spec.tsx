@@ -278,7 +278,8 @@ test('AddStoryBox_AtPhoneWidth_ShouldShowTheWholePlaceholderAndOneHelperLine', a
     // The placeholder's own width: a span in the input's font, since an input can't be asked how much it hides.
     const probe = document.createElement('span');
     const style = getComputedStyle(el);
-    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${style.font}`;
+    const ph = getComputedStyle(el, '::placeholder');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:${ph.fontSize};font-family:${ph.fontFamily};font-weight:${ph.fontWeight}`;
     probe.textContent = (el as HTMLInputElement).placeholder;
     document.body.append(probe);
     const text = probe.getBoundingClientRect().width;

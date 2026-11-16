@@ -202,4 +202,10 @@ test('AddStoryBox_OnTheFeatureBoard_ShouldNameTheFeatureInItsHelperLine', async 
   await expect(page.getByTestId(taskboardTestIds.addStoryHelp)).toContainText(
     'Adds it under SHIP-101, in the Backlog.',
   );
+  const lines = await page
+    .getByTestId(taskboardTestIds.addStoryHelp)
+    .evaluate(
+      (el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight),
+    );
+  expect(lines, 'the helper line is one line').toBeLessThan(1.5);
 });
