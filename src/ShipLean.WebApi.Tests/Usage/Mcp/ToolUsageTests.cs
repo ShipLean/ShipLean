@@ -126,6 +126,20 @@ public class ToolUsageTests : McpFixture
         tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
     }
 
+    [Test]
+    public async Task BackfillCommitTimes_WhenCalled_ShouldTrackCommitTimesBackfilledWithNoProject()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadWrite);
+
+        var reply = await CallToolAsync(token, "backfill_commit_times");
+
+        reply.IsToolError().ShouldBeFalse(reply.ResultText());
+        var tracked = await NextAsync("tool:backfill_commit_times");
+        tracked.Name.ShouldBe(UsageEventNames.InspectionMetricsCommitTimesBackfilled);
+        tracked.Outcome.ShouldBe(UsageOutcome.Ok);
+        tracked.ProjectId.ShouldBeNull();
+    }
+
     // The gate in front of the SDK refuses a missing scope with HTTP 403 before any filter runs, so nothing is tracked.
     // The filter's own forbidden answer is a backstop no real tool reaches (only test tools that disagree with the gate do).
     [Test]

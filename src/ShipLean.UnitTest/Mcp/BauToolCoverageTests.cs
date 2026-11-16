@@ -65,6 +65,8 @@ public class BauToolCoverageTests
         ["list_projects"] = Kind.NoItems,
         // Lists task keys and titles once the facts reader fills in; the lane that does that moves it to ListsItems if BAU items can appear.
         ["inspection_metrics"] = Kind.NoItems,
+        // Names no project and no item: it lists commit links and sets their times, instance admins only.
+        ["backfill_commit_times"] = Kind.NoItems,
         ["planning_guide"] = Kind.NoItems,
         ["list_retrospectives"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,
