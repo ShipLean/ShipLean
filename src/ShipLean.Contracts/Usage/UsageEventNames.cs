@@ -83,6 +83,8 @@ public static class UsageEventNames
     public const string SprintStatusViewed = "sprint.status_viewed";
     public const string SprintReviewed = "sprint.reviewed";
     public const string BoardSettingsChanged = "board.settings_changed";
+    public const string BoardFilterOpened = "board.filter_opened";
+    public const string BoardHealthFiltered = "board.health_filtered";
     public const string RetroPointAdded = "retro.point_added";
     public const string RetroListed = "retro.listed";
     public const string RetroSearched = "retro.searched";

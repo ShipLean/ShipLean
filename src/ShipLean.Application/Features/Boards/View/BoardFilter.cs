@@ -52,9 +52,11 @@ public sealed class BoardFilter
                 return new HealthMatch((FeatureHealth?)null);
             }
 
-            return Enum.TryParse<FeatureHealth>(text, ignoreCase: true, out var health) && Enum.IsDefined(health)
-                ? new HealthMatch(health)
-                : throw ApiException.Validation("The health filter must be onTrack, atRisk, blocked or none.", "health");
+            // Names only: Enum.TryParse would take "1" as atRisk.
+            var name = Enum.GetNames<FeatureHealth>().FirstOrDefault(n => n.Equals(text, StringComparison.OrdinalIgnoreCase));
+            return name is null
+                ? throw ApiException.Validation("The health filter must be onTrack, atRisk, blocked or none.", "health")
+                : new HealthMatch(Enum.Parse<FeatureHealth>(name));
         }
 
         public bool Matches(FeatureHealth? value) => value == Health;

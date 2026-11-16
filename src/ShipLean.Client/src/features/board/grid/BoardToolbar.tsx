@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { postBoardFilterOpened } from '@shiplean/core/api/usageApi';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import type { Level } from '../../../routes';
 import { useTouchShell } from '../../../touch/useTouchShell';
@@ -52,6 +53,10 @@ export function BoardToolbar({
   onFilter: (filter: BoardFilterQuery) => void;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const toggleFilter = () => {
+    if (!filterOpen) postBoardFilterOpened(projectId).catch(() => undefined);
+    setFilterOpen(!filterOpen);
+  };
   const lanes = useBoardLanes(projectId, boardId);
   const { touch } = useTouchShell();
   if (touch) {
@@ -80,7 +85,7 @@ export function BoardToolbar({
             <FilterToggle
               filter={filter}
               open={filterOpen}
-              onToggle={() => setFilterOpen(!filterOpen)}
+              onToggle={toggleFilter}
             />
             <BoardMoreSheet
               level={level}
@@ -139,7 +144,7 @@ export function BoardToolbar({
           <FilterToggle
             filter={filter}
             open={filterOpen}
-            onToggle={() => setFilterOpen(!filterOpen)}
+            onToggle={toggleFilter}
           />
           <SettingsOpener />
         </div>

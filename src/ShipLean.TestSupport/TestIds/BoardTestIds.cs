@@ -79,9 +79,6 @@ public static class BoardTestIds
     public const string FilterPerson = "board-filter-person";
     public const string FilterSprint = "board-filter-sprint";
     public const string FilterEpic = "board-filter-epic";
-    public const string LanesHint = "board-lanes-hint";
-    public const string FilterHealth = "board-filter-health";
-    public const string FilterCount = "board-filter-count";
     public const string FilterClear = "board-filter-clear";
     public const string FilterNote = "board-filter-note";
     public const string LevelSwitch = "board-level-switch";
@@ -114,4 +111,8 @@ public static class BoardTestIds
     // SHIP-1826
     public const string CardSheetHeader = "board-card-sheet-header";
     public const string CardMoveWip = "board-card-move-wip";
+
+    // SHIP-1827
+    public const string FilterHealth = "board-filter-health";
+    public const string FilterCount = "board-filter-count";
 }

@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { actionSheetRowClass } from '../../../touch/ActionSheet';
 import { boardTestIds as ids } from '../testIds';
 
@@ -17,13 +18,14 @@ export function CardsSwitch({
   onCompact: (compact: boolean) => void;
   onPicked?: () => void;
 }) {
+  const labelId = useId();
   if (onPicked) {
     return (
       <div className={`${actionSheetRowClass} justify-between gap-3 text-ink`}>
-        <span id="board-cards-label">Cards</span>
+        <span id={labelId}>Cards</span>
         <div
           role="group"
-          aria-labelledby="board-cards-label"
+          aria-labelledby={labelId}
           className="inline-flex overflow-hidden rounded-control border border-edge"
         >
           {OPTIONS.map((option) => {
@@ -35,7 +37,7 @@ export function CardsSwitch({
                 data-testid={ids.cardsOption}
                 data-option={option.id}
                 aria-pressed={chosen}
-                className={`min-h-[var(--touch-target)] px-4 font-medium ${chosen ? 'bg-signal-soft text-ink' : 'text-ink-muted'}`}
+                className={`min-h-[var(--touch-target)] border-r border-edge px-4 font-medium last:border-r-0 ${chosen ? 'bg-signal-soft text-ink' : 'text-ink-muted'}`}
                 onClick={() => {
                   onCompact(option.id === 'compact');
                   onPicked();

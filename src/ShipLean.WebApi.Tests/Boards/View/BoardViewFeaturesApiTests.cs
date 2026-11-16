@@ -105,10 +105,12 @@ public class BoardViewFeaturesApiTests : ApiFixture
         atRisk.Columns.Select(c => c.Count).ShouldBe(all.Columns.Select(c => c.Count));
     }
 
-    [Test]
-    public async Task FeaturesBoard_WhenHealthIsUnknown_ShouldBeValidationError()
+    [TestCase("great")]
+    [TestCase("1")]
+    [TestCase("0")]
+    public async Task FeaturesBoard_WhenHealthIsUnknown_ShouldBeValidationError(string health)
     {
-        using var response = await Api.GetAsync($"api/boards/{Features}?health=great");
+        using var response = await Api.GetAsync($"api/boards/{Features}?health={health}");
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }

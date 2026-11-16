@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/experimental-ct-react';
+import { expect, test, type Page } from '@playwright/experimental-ct-react';
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import { BoardHarness } from '../ct/BoardHarness';
 import { COLUMNS, TOM, column, featuresBoard, storiesBoard } from '../ct/fixtures';
@@ -148,7 +148,7 @@ test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page })
   await expect(page.getByTestId(ids.card)).toHaveCount(3);
   await page.getByTestId(ids.filterToggle).click();
   await expect(page.getByTestId(ids.filterHealth).locator('option')).toHaveText([
-    'Any',
+    'Any health',
     'On track',
     'At risk',
     'Blocked',
@@ -181,4 +181,54 @@ test('FeaturesBoard_HealthFilter_WhenTheBoardFailsToLoad_ShouldShowTheError', as
   await page.getByTestId(ids.filterHealth).selectOption('blocked');
 
   await expect(page.getByTestId(ids.loadFailed)).toBeVisible();
+});
+
+// The usage reports the filter sends, as the URL's last segment and the body.
+async function recordUsage(page: Page) {
+  const sent: { report: string; body: unknown }[] = [];
+  await page.route('**/api/projects/p1/usage/*', (route) => {
+    sent.push({
+      report: route.request().url().split('/').at(-1) ?? '',
+      body: route.request().postDataJSON(),
+    });
+    return route.fulfill({ status: 204 });
+  });
+  return sent;
+}
+
+test('BoardFilter_WhenOpened_ShouldReportTheOpeningOnceNotTheClosing', async ({ mount, page }) => {
+  await stubBoard(page, storiesBoard());
+  const sent = await recordUsage(page);
+  await mount(<BoardHarness />, stories);
+
+  await page.getByTestId(ids.filterToggle).click();
+  await expect(page.getByTestId(ids.filterBar)).toBeVisible();
+  await page.getByTestId(ids.filterToggle).click();
+  await expect(page.getByTestId(ids.filterBar)).toHaveCount(0);
+
+  expect(sent).toEqual([{ report: 'board-filter-opened', body: {} }]);
+});
+
+test('FeaturesBoard_HealthFilter_WhenChanged_ShouldReportTheChosenHealth', async ({
+  mount,
+  page,
+}) => {
+  await stubBoard(page, (search) => filteredByHealth(featuresWithHealth(), search), {
+    level: 'features',
+  });
+  const sent = await recordUsage(page);
+  await mount(<BoardHarness level="features" />, features);
+  await page.getByTestId(ids.filterToggle).click();
+
+  await page.getByTestId(ids.filterHealth).selectOption('atRisk');
+  await page.getByTestId(ids.filterHealth).selectOption('none');
+  await page.getByTestId(ids.filterHealth).selectOption('');
+
+  await expect
+    .poll(() => sent.filter((report) => report.report === 'board-health-filtered'))
+    .toEqual([
+      { report: 'board-health-filtered', body: { health: 'atRisk' } },
+      { report: 'board-health-filtered', body: { health: 'none' } },
+      { report: 'board-health-filtered', body: { health: 'any' } },
+    ]);
 });

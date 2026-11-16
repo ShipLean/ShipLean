@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { postBoardHealthFiltered } from '@shiplean/core/api/usageApi';
 import type { Level } from '../../../routes';
 import { useProjectMembers, useProjectSprints } from '../../workItem/workItemApi';
 import type { BoardFilterQuery } from '../boardApi';
@@ -102,7 +103,10 @@ export function BoardFilterFields({
               <Labelled label={label('Health')}>
                 <HealthFilter
                   value={filter.health}
-                  onChange={(health) => onChange({ ...filter, health })}
+                  onChange={(health) => {
+                    onChange({ ...filter, health });
+                    postBoardHealthFiltered(projectId, health ?? 'any').catch(() => undefined);
+                  }}
                 />
               </Labelled>
             </>

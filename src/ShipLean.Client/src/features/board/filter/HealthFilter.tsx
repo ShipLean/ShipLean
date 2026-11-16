@@ -31,7 +31,7 @@ export function HealthFilter({
         )
       }
     >
-      <option value="">Any</option>
+      <option value="">Any health</option>
       {OPTIONS.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}

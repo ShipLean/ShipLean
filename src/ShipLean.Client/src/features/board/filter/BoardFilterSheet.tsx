@@ -88,8 +88,6 @@ export function BoardFilterSheet({
         />
         <p
           data-testid={ids.filterCount}
-          data-shown={shown}
-          data-total={total}
           className="text-[length:var(--text-xs)] text-ink-muted"
         >
           Showing {shown} of {total} cards · WIP counts include hidden cards

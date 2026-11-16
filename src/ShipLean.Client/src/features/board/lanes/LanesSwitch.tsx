@@ -1,8 +1,10 @@
-import { actionSheetRowClass } from '../../../touch/ActionSheet';
+import {
+  actionSheetCheckedClass,
+  ActionSheetRowFace,
+  actionSheetRowClass,
+} from '../../../touch/ActionSheet';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
-
-const hintClass = 'text-[length:var(--text-xs)] text-ink-muted';
 
 const FEATURE_OPTIONS = [
   { id: 'none', label: 'None' },
@@ -57,13 +59,8 @@ export function LanesSwitch({
           onChange={(event) => onChoose(event.target.checked ? 'on' : 'off')}
         />
         {onPicked ? (
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span>Swimlanes</span>
-            {hint === null ? null : (
-              <span data-testid={ids.lanesHint} className={hintClass}>
-                {hint}
-              </span>
-            )}
+          <span className="flex min-w-0 flex-1">
+            <ActionSheetRowFace face={{ label: 'Swimlanes', hint: hint ?? undefined }} />
           </span>
         ) : (
           'Swimlanes'
@@ -84,21 +81,19 @@ export function LanesSwitch({
             data-testid={ids.lanesOption}
             data-option={option.id}
             aria-pressed={choice === option.id}
-            className={`${actionSheetRowClass} gap-2 ${choice === option.id ? 'bg-signal-soft font-medium' : ''} text-ink`}
+            className={`${actionSheetRowClass} gap-2 ${choice === option.id ? actionSheetCheckedClass : ''} text-ink`}
             onClick={() => {
               onChoose(option.id);
               onPicked();
             }}
           >
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span>{option.label}</span>
-              {option.id === 'on' && hint !== null ? (
-                <span data-testid={ids.lanesHint} className={hintClass}>
-                  {hint}
-                </span>
-              ) : null}
-            </span>
-            {choice === option.id ? <span aria-hidden="true">✓</span> : null}
+            <ActionSheetRowFace
+              face={{
+                label: option.label,
+                hint: option.id === 'on' ? (hint ?? undefined) : undefined,
+                checked: choice === option.id,
+              }}
+            />
           </button>
         ))}
       </div>

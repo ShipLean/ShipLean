@@ -236,7 +236,7 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
   await mount(<BoardHarness />, stories);
   const toggle = page.getByTestId(ids.filterToggle);
   const more = page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton);
-  await expect(toggle).toHaveAttribute('data-active', 'false');
+  await expect(toggle).toHaveText('Filter');
   const idleBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
   // Filter and the bordered ⋯ sit together at the right; the level switch is alone at the left.
   const [levels, filter, dots] = await Promise.all(
@@ -251,9 +251,10 @@ test('BoardToolbar_FilterActive_ShouldUseTheActiveStyle', async ({ mount, page }
   await page.getByTestId(ids.filterPerson).filter({ hasText: 'Tom Okafor' }).tap();
   await page.getByTestId(touchTestIds.sheetClose).tap();
 
-  await expect(toggle).toHaveAttribute('data-active', 'true');
-  const activeBorder = await toggle.evaluate((el) => getComputedStyle(el).borderTopColor);
-  expect(activeBorder).not.toBe(idleBorder);
+  await expect(toggle).toHaveText('Filter (1)');
+  await expect
+    .poll(() => toggle.evaluate((el) => getComputedStyle(el).borderTopColor))
+    .not.toBe(idleBorder);
 });
 
 test('FeaturesBoard_HealthFilter_ShouldHideOtherHealth', async ({ mount, page }) => {
@@ -302,7 +303,7 @@ test('BoardMoreSheet_WhenStories_ShouldHintTheLaneOrderAndOfferFullOrCompact', a
   await page.getByTestId(ids.toolbar).getByTestId(touchTestIds.moreButton).tap();
   const sheet = page.getByTestId(touchTestIds.sheet);
 
-  await expect(sheet.getByTestId(ids.lanesHint)).toHaveText('Expedite above Default lane');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveText('Expedite above Default lane');
   await expect(sheet.getByTestId(ids.cardsOption)).toHaveText(['Full', 'Compact']);
   // One row: the label and the segmented control share a line.
   const [label, full] = await Promise.all([
@@ -311,4 +312,20 @@ test('BoardMoreSheet_WhenStories_ShouldHintTheLaneOrderAndOfferFullOrCompact', a
   ]);
   expect(Math.abs(label!.y + label!.height / 2 - (full!.y + full!.height / 2))).toBeLessThan(3);
   expect(full!.height).toBeGreaterThanOrEqual(32);
+});
+
+test('BoardFilterSheet_WhenOpened_ShouldReportTheOpening', async ({ mount, page }) => {
+  await stubBoard(page, storiesBoard());
+  const opened: unknown[] = [];
+  await page.route('**/api/projects/p1/usage/board-filter-opened', (route) => {
+    opened.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<BoardHarness />, stories);
+
+  await page.getByTestId(ids.filterToggle).tap();
+  await expect(page.getByTestId(ids.filterSheet)).toBeVisible();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  expect(opened).toEqual([{}]);
 });
