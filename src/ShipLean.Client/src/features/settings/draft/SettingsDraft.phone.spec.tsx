@@ -262,7 +262,7 @@ test('SettingsPhone_WhenMembersShown_ShouldPutNameRoleAndRemoveOnTheFirstLine', 
   await expect(rows.first()).toBeVisible();
   const row = rows.last();
   const remove = row.getByTestId(ids.memberRemove);
-  await expect(remove).toHaveText('✕');
+  expect(await remove.innerText()).toBe('✕');
   const [name, whole, role, cross] = await Promise.all([
     row.getByTestId(componentTestIds.avatar).boundingBox(),
     row.boundingBox(),

@@ -156,7 +156,7 @@ test('SettingsStatesPhone_WhenColumnIsLong_ShouldShowItWholeOnItsOwnLine', async
   for (const cell of [long, unmapped]) {
     const fits = await cell.evaluate((e) => ({
       clipped: e.scrollWidth > e.clientWidth,
-      label: getComputedStyle(e, '::before').content,
+      label: e.firstElementChild ? getComputedStyle(e.firstElementChild, '::before').content : '',
       ellipsis: getComputedStyle(e).textOverflow === 'ellipsis',
       wide: e.getBoundingClientRect().width,
     }));

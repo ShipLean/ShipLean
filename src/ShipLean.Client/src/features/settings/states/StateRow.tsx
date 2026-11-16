@@ -125,7 +125,7 @@ export function StateRow({
           </span>
         )}
       </td>
-      <td className="px-3 py-2 touch:order-1 touch:w-full touch:p-0">
+      <td className="px-3 py-2 touch:order-1 touch:w-full touch:min-w-0 touch:p-0">
         <span className="flex items-center gap-2">
           {editable ? (
             <button
@@ -215,9 +215,10 @@ export function StateRow({
       </td>
       <td
         data-testid={settingsTestIds.stateColumn}
-        className={`px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] touch:before:content-['Board_column_·_'] ${editable ? 'touch:pl-10' : ''}`}
+        className={`px-3 py-2 text-ink-muted touch:order-8 touch:w-full touch:p-0 touch:text-[length:var(--text-sm)] ${editable ? 'touch:pl-10' : ''}`}
       >
-        {column ?? 'Not mapped'}
+        {/* The label is CSS so the cell's text stays the column name; \00b7 is the middle dot (·). */}
+        <span className="touch:before:content-['Board_column_\00b7__']">{column ?? 'Not mapped'}</span>
       </td>
       <td className="px-3 py-2 text-right touch:contents">
         {readOnly ? null : (
