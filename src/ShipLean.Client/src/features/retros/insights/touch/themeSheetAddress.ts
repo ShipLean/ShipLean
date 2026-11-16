@@ -1,5 +1,8 @@
 const THEME = 'theme:';
 
+/** The id the theme sheet address uses for the points with no theme (`sheet=theme:unthemed`); a theme's id is a GUID. */
+export const UNTHEMED_SHEET_ID = 'unthemed';
+
 /** The theme the address asks the sheet to show (`sheet=theme:<themeId>`), or null. */
 export function themeSheetId(params: URLSearchParams): string | null {
   const value = params.get('sheet');

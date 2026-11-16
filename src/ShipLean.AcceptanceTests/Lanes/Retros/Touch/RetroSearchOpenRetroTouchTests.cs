@@ -28,7 +28,7 @@ public class RetroSearchOpenRetroTouchTests : SeededAcceptanceTest
 
     private ILocator Next => Page.GetByTestId(RetrosTestIds.RetrosOpenRetroNext);
 
-    private ILocator Position => Page.GetByTestId(RetrosTestIds.RetrosOpenRetroPosition);
+    private ILocator Position => Page.GetByTestId(ComponentTestIds.DialogSubtitle);
 
     private RetroNotePart NoteOf(string text) =>
         new(Dialog.GetByTestId(RetroSharedTestIds.RetroNote).Filter(new() { HasText = text }));

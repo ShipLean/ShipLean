@@ -1,7 +1,7 @@
 import type { RetroInsightColumnDto, RetroInsightsMode } from '@shiplean/core/api/retros';
 import { HeatStrip } from './HeatStrip';
 
-/** The heat strip with its Total and (in sprint mode) "n no sprint" that a theme card and the unthemed card share. */
+/** The heat strip with its Total and (in sprint mode, when not 0) "n no sprint" that a theme card and the unthemed card share. */
 export function StripAndTotal({
   counts,
   columns,
@@ -36,7 +36,7 @@ export function StripAndTotal({
         >
           {total}
         </b>
-        {mode === 'sprint' ? (
+        {mode === 'sprint' && noSprint > 0 ? (
           <small
             data-testid={noSprintTestId}
             data-count={noSprintTestId ? noSprint : undefined}

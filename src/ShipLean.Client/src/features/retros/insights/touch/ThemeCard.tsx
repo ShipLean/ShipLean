@@ -12,8 +12,9 @@ import { ACTION_CHIPS_AT_TOUCH } from './actionChips';
 import { StripAndTotal } from './StripAndTotal';
 
 /**
- * One theme as a card (D1): its name and status, the heat strip with Total and "n no sprint", its action items and its last
- * change's verdict. A tap anywhere that isn't a link or a button opens the theme sheet.
+ * One theme as a card (D1): its name and status, the heat strip with Total and "n no sprint", its action items (or
+ * + Action item when it has none) and "Last change" with its verdict when one shipped. A tap anywhere that isn't a link or
+ * a button opens the theme sheet.
  */
 export function ThemeCard({
   row,
@@ -62,15 +63,27 @@ export function ThemeCard({
         totalTestId={ids.retroHeatTotal}
         noSprintTestId={ids.retroHeatNoSprint}
       />
-      <footer className="flex flex-wrap items-center gap-1.5">
-        <div className={`flex flex-wrap items-center gap-1.5 ${ACTION_CHIPS_AT_TOUCH}`}>
-          {row.actionItems.map((action) => (
-            <ActionChip key={action.workItemId} action={action} />
-          ))}
-          <ThemeActionButton themeId={theme.id} themeName={theme.name} />
-        </div>
-        <span className="flex-1" />
-        <VerdictChip verdict={row.lastVerdict} mode={mode} />
+      <footer className="grid gap-1.5">
+        {row.actionItems.length > 0 ? (
+          <div className={`flex flex-wrap items-center gap-1.5 ${ACTION_CHIPS_AT_TOUCH}`}>
+            {row.actionItems.map((action) => (
+              <ActionChip key={action.workItemId} action={action} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex">
+            <ThemeActionButton themeId={theme.id} themeName={theme.name} />
+          </div>
+        )}
+        {row.lastVerdict !== null ? (
+          <div
+            data-testid={ids.retroThemeCardLastChange}
+            className="flex items-center gap-2 text-[length:var(--text-sm)] text-ink-muted"
+          >
+            Last change
+            <VerdictChip verdict={row.lastVerdict} mode={mode} />
+          </div>
+        ) : null}
       </footer>
     </article>
   );

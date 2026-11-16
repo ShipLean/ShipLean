@@ -8,7 +8,7 @@ namespace ShipLean.WebApi.Features.Usage;
 
 // What the SPA reports about how a project's screens are used, where no write already tells the server.
 [Route("api/projects/{id:guid}/usage")]
-public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline, BoardFilterUsage boardFilter, InspectionMetricsUsage inspectionMetrics) : ApiControllerBase
+public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline, BoardFilterUsage boardFilter, InspectionMetricsUsage inspectionMetrics, RetroThemeSheetUsage themeSheet) : ApiControllerBase
 {
     [HttpPost("backlog-sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -86,6 +86,16 @@ public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage tim
     public async Task<NoContentResult> InspectionMetricsTaskOpened(Guid id, InspectionMetricsTaskOpenedDto request, CancellationToken cancellationToken)
     {
         await inspectionMetrics.TaskOpenedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("retro-theme-sheet-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> RetroThemeSheetOpened(Guid id, RetroThemeSheetOpenedDto request, CancellationToken cancellationToken)
+    {
+        await themeSheet.OpenedAsync(id, request, cancellationToken);
         return NoContent();
     }
 }

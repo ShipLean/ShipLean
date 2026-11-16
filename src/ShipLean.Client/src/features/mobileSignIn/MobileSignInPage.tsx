@@ -38,11 +38,11 @@ function Card({
     >
       <h1
         data-testid={ids.heading}
-        className="m-0 border-b border-edge p-4 text-[length:var(--text-md)] leading-[1.3] font-semibold [overflow-wrap:anywhere]"
+        className="m-0 border-b border-edge p-4 text-[length:var(--text-md)] leading-[1.3] font-semibold [overflow-wrap:anywhere] touch:text-[length:var(--text-lg)]"
       >
         {heading}
         {subtitle ? (
-          <small className="mt-0.5 block text-[length:var(--text-sm)] font-normal text-ink-muted">
+          <small className="mt-0.5 block text-[length:var(--text-sm)] font-normal text-ink-muted touch:text-[length:var(--text-base)]">
             {subtitle}
           </small>
         ) : null}
@@ -292,7 +292,10 @@ export function MobileSignInPage() {
         }
       >
         {facts}
-        <div data-testid={ids.does} className="grid gap-2 text-[length:var(--text-sm)]">
+        <div
+          data-testid={ids.does}
+          className="grid gap-2 text-[length:var(--text-sm)] touch:text-[length:var(--text-md)]"
+        >
           <p className="m-0 text-[length:var(--text-xs)] font-semibold tracking-wider text-ink-muted uppercase">
             What this does
           </p>

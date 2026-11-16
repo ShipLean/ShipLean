@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   postBoardFilterOpened,
   postBoardHealthFiltered,
+  postRetroThemeSheetOpened,
   postTimelineBarSelected,
   postTimelineOpened,
 } from './usageApi';
@@ -51,6 +52,18 @@ describe('board filter usage', () => {
       url: '/api/projects/p%2F1/usage/board-health-filtered',
       method: 'POST',
       body: { health: 'atRisk' },
+    });
+  });
+});
+
+describe('retro theme sheet usage', () => {
+  it('postRetroThemeSheetOpened POSTs which sheet opened', async () => {
+    const fetchStub = stubFetch(noContent());
+    await postRetroThemeSheetOpened('p/1', 'unthemed');
+    expect(sent(fetchStub)).toEqual({
+      url: '/api/projects/p%2F1/usage/retro-theme-sheet-opened',
+      method: 'POST',
+      body: { sheet: 'unthemed' },
     });
   });
 });

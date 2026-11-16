@@ -45,7 +45,7 @@ export function ProxySignInPage({
     <button
       type="button"
       data-testid={authTestIds.proxyRetry}
-      className="btn-signal touch:h-10 touch:w-full"
+      className="btn-signal touch:h-10 touch:w-full touch:text-[length:15px]"
       onClick={onTryAgain}
     >
       Try again
@@ -60,7 +60,7 @@ export function ProxySignInPage({
       <h1 className="m-0 border-b border-edge px-4 py-3 text-[length:var(--text-md)] font-semibold touch:text-[length:var(--text-lg)]">
         Sign in
         {instanceName ? (
-          <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted">
+          <small className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted touch:text-[length:var(--text-base)]">
             to {instanceName}
           </small>
         ) : null}

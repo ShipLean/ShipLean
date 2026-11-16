@@ -100,6 +100,7 @@ public static class UsageEventNames
     public const string RetroPointNotNeeded = "retro.point_not_needed";
     public const string RetroNotNeededUndone = "retro.not_needed_undone";
     public const string RetroMergeKeptApart = "retro.merge_kept_apart";
+    public const string RetroThemeSheetOpened = "retro.theme_sheet_opened";
     public const string RetroActionsDecided = "retro.actions_decided";
 
     // Decisions and questions on work items (SHIP-922). decision.answered is an MCP answer_decision; on the web a confirm or change

@@ -6,9 +6,11 @@ import type {
   RetroInsightColumnDto,
   RetroInsightsMode,
   RetroThemeInsightDto,
+  RetroUnthemedDto,
 } from '@shiplean/core/api/retros';
+import type { RetroSearchQuery } from '@shiplean/core/api/retrosApi';
 import { Chip } from '../../../../components/Chip';
-import { routePath } from '../../../../routes';
+import { routePath, type RouteQuery } from '../../../../routes';
 import { Sheet } from '../../../../touch/Sheet';
 import { ActionChip } from '../../../retroShared/ActionChip';
 import { useRetroActionDialog } from '../../../retroShared/actionDialog/useRetroActionDialog';
@@ -19,7 +21,7 @@ import { heatShade } from '../recurring/heatShade';
 import { STATUS } from '../recurring/StatusChip';
 import { VERDICT } from '../recurring/VerdictChip';
 import { useRenameTheme } from '../recurring/useRenameTheme';
-import { statusWording, verdictWording } from '../tips/tipWording';
+import { statusWording, unthemedWording, verdictWording } from '../tips/tipWording';
 import { ACTION_CHIPS_AT_TOUCH } from './actionChips';
 import { RenameThemeForm } from './RenameThemeForm';
 
@@ -34,7 +36,7 @@ const average = (n: number) => String(Number(n.toFixed(1)));
 /**
  * Everything about one theme (D4), open while the address says `sheet=theme:<id>`: what its status means, its count for
  * every shown column, its action items, its last change, its latest mentions, and Rename… and Merge into another theme….
- * Rename swaps the body for the name field with Discard and Save in the footer (D9).
+ * Rename puts the name field above the body, with Discard and Save in the footer (D9).
  */
 export function ThemeSheet({
   project,
@@ -69,13 +71,14 @@ export function ThemeSheet({
     clearError();
   };
 
-  if (draft !== null) {
-    return (
-      <Sheet
-        open
-        title={theme.name}
-        onClose={onClose}
-        footer={
+  const renaming = draft !== null;
+  return (
+    <Sheet
+      open
+      title={theme.name}
+      onClose={onClose}
+      footer={
+        renaming ? (
           <>
             <button
               type="button"
@@ -95,44 +98,103 @@ export function ThemeSheet({
               Save
             </button>
           </>
-        }
-      >
-        <RenameThemeForm
-          value={draft}
-          error={error}
-          onChange={setDraft}
-          onSave={save}
-          onDiscard={discard}
-        />
-      </Sheet>
-    );
-  }
-  return (
-    <Sheet open title={theme.name} onClose={onClose}>
+        ) : undefined
+      }
+    >
       <div data-testid={ids.retroThemeSheet} data-theme-id={theme.id} className="grid gap-1">
+        {renaming ? (
+          <RenameThemeForm
+            value={draft}
+            error={error}
+            onChange={setDraft}
+            onSave={save}
+            onDiscard={discard}
+          />
+        ) : null}
         <StatusPart row={row} mode={mode} />
-        <CountsPart row={row} columns={columns} mode={mode} />
+        <CountsPart
+          counts={row.counts}
+          noSprint={row.noSprint}
+          total={row.total}
+          columns={columns}
+          mode={mode}
+        />
         <ActionsPart project={project} row={row} onClose={onClose} />
         <LastChangePart row={row} impact={impact} mode={mode} onSeeImpact={onSeeImpact} />
-        <MentionsPart project={project} row={row} />
-        <div className="grid gap-2 pt-3">
-          <button
-            type="button"
-            data-testid={ids.retroThemeSheetRename}
-            className={WIDE_BUTTON}
-            onClick={() => setDraft(theme.name)}
-          >
-            Rename…
-          </button>
-          <button
-            type="button"
-            data-testid={ids.retroThemeSheetMerge}
-            className={WIDE_BUTTON}
-            onClick={() => onMerge(theme.id)}
-          >
-            Merge into another theme…
-          </button>
-        </div>
+        <MentionsPart
+          project={project}
+          search={{ theme: theme.id }}
+          searchLink={{ theme: theme.id }}
+          fallbackTotal={row.total}
+        />
+        {renaming ? null : (
+          <div className="grid gap-2 pt-3">
+            <button
+              type="button"
+              data-testid={ids.retroThemeSheetRename}
+              className={WIDE_BUTTON}
+              onClick={() => setDraft(theme.name)}
+            >
+              Rename…
+            </button>
+            <button
+              type="button"
+              data-testid={ids.retroThemeSheetMerge}
+              className={WIDE_BUTTON}
+              onClick={() => onMerge(theme.id)}
+            >
+              Merge into another theme…
+            </button>
+          </div>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
+/**
+ * The theme sheet's variant for the points with no theme (RETRO-12), open while the address says `sheet=theme:unthemed`:
+ * what Unthemed means, its count for every shown column, Give them themes, and its latest mentions. Unthemed is never
+ * judged, so it has no status, action items or last change.
+ */
+export function UnthemedSheet({
+  project,
+  unthemed,
+  columns,
+  mode,
+  onClose,
+}: {
+  project: ProjectDto;
+  unthemed: RetroUnthemedDto;
+  columns: readonly RetroInsightColumnDto[];
+  mode: RetroInsightsMode;
+  onClose: () => void;
+}) {
+  const inSearch = routePath('retros', { key: project.key }, { unthemed: 'true' });
+  return (
+    <Sheet open title="Unthemed" onClose={onClose}>
+      <div data-testid={ids.retroUnthemedSheet} className="grid gap-1">
+        <p className="m-0 text-[length:var(--text-sm)] text-ink-muted">{unthemedWording}</p>
+        <CountsPart
+          counts={unthemed.counts}
+          noSprint={unthemed.noSprint}
+          total={unthemed.total}
+          columns={columns}
+          mode={mode}
+        />
+        <Link
+          data-testid={ids.retroUnthemedSheetGiveThemes}
+          to={inSearch}
+          className={`${WIDE_BUTTON} mt-1.5`}
+        >
+          Give them themes ›
+        </Link>
+        <MentionsPart
+          project={project}
+          search={{ unthemed: true }}
+          searchLink={{ unthemed: 'true' }}
+          fallbackTotal={unthemed.total}
+        />
       </div>
     </Sheet>
   );
@@ -156,15 +218,19 @@ function StatusPart({ row, mode }: { row: RetroThemeInsightDto; mode: RetroInsig
 }
 
 function CountsPart({
-  row,
+  counts,
+  noSprint,
+  total,
   columns,
   mode,
 }: {
-  row: RetroThemeInsightDto;
+  counts: readonly number[];
+  noSprint: number;
+  total: number;
   columns: readonly RetroInsightColumnDto[];
   mode: RetroInsightsMode;
 }) {
-  const max = Math.max(0, ...row.counts);
+  const max = Math.max(0, ...counts);
   return (
     <section className="grid gap-1.5">
       <h3 className={GROUP}>Mentions per {mode === 'week' ? 'week' : 'sprint'}</h3>
@@ -173,7 +239,7 @@ function CountsPart({
         style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}
       >
         {columns.map((column, i) => {
-          const count = row.counts[i] ?? 0;
+          const count = counts[i] ?? 0;
           return (
             <div
               key={column.key}
@@ -197,12 +263,12 @@ function CountsPart({
       </div>
       <div className="flex flex-wrap justify-end gap-x-3.5 gap-y-1 text-[length:var(--text-sm)] text-ink-muted">
         {mode === 'sprint' ? (
-          <span data-testid={ids.retroThemeSheetNoSprint} data-count={row.noSprint}>
-            No sprint <b className="text-ink">{row.noSprint}</b>
+          <span data-testid={ids.retroThemeSheetNoSprint} data-count={noSprint}>
+            No sprint <b className="text-ink">{noSprint}</b>
           </span>
         ) : null}
-        <span data-testid={ids.retroThemeSheetTotal} data-count={row.total}>
-          Total <b className="text-ink">{row.total}</b>
+        <span data-testid={ids.retroThemeSheetTotal} data-count={total}>
+          Total <b className="text-ink">{total}</b>
         </span>
       </div>
     </section>
@@ -321,10 +387,20 @@ function LastChangePart({
   );
 }
 
-function MentionsPart({ project, row }: { project: ProjectDto; row: RetroThemeInsightDto }) {
-  const search = useRetroSearch(project.id, { theme: row.theme.id });
+function MentionsPart({
+  project,
+  search: query,
+  searchLink,
+  fallbackTotal,
+}: {
+  project: ProjectDto;
+  search: RetroSearchQuery;
+  searchLink: RouteQuery;
+  fallbackTotal: number;
+}) {
+  const search = useRetroSearch(project.id, query);
   const latest = search.data?.rows.slice(0, MENTIONS_SHOWN) ?? [];
-  const total = search.data?.total ?? row.total;
+  const total = search.data?.total ?? fallbackTotal;
   return (
     <section className="grid gap-0.5">
       <h3 className={GROUP}>Latest mentions</h3>
@@ -343,7 +419,7 @@ function MentionsPart({ project, row }: { project: ProjectDto; row: RetroThemeIn
       ))}
       <Link
         data-testid={ids.retroThemeSheetAllInSearch}
-        to={routePath('retros', { key: project.key }, { theme: row.theme.id })}
+        to={routePath('retros', { key: project.key }, searchLink)}
         className="inline-flex min-h-[var(--touch-target)] items-center text-[length:var(--text-sm)] text-signal no-underline"
       >
         All {total} in Search

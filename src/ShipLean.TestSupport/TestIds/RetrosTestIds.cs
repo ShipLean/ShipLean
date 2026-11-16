@@ -227,6 +227,25 @@ public static class RetrosTestIds
     public const string RetrosFilterNosprint = "retros-filter-nosprint";
     public const string RetrosFilterDecision = "retros-filter-decision";
     public const string RetrosFilterUnthemed = "retros-filter-unthemed";
+    public const string RetroRowChevron = "retro-row-chevron";
+    public const string RetroFeaturesSearchIcon = "retro-features-search-icon";
+    public const string RetrosOpenRetroTypeKey = "retros-open-retro-type-key";
+    public const string RetrosOpenRetroKey = "retros-open-retro-key";
+    public const string RetrosOpenRetroSteps = "retros-open-retro-steps";
+    public const string RetroUnthemedSheet = "retro-unthemed-sheet";
+    public const string RetroUnthemedSheetGiveThemes = "retro-unthemed-sheet-give-themes";
+    public const string RetroThemesHeadingDefs = "retro-themes-heading-defs";
+    public const string RetroThemesHeadingSummary = "retro-themes-heading-summary";
+    public const string RetroThemeRenameHelper = "retro-theme-rename-helper";
+    public const string RetroThemeCardLastChange = "retro-theme-card-last-change";
     public const string RetroRailRow = "retro-rail-row";
     public const string RetroRecurringOpenInsights = "retro-recurring-open-insights";
+    public const string RetroActionDoneHeading = "retro-action-done-heading";
+    public const string RetroActionUnassigned = "retro-action-unassigned";
+    public const string RetroActionImpactPending = "retro-action-impact-pending";
+    public const string RetroImpactHint = "retro-impact-hint";
+    public const string RetroImpactIntro = "retro-impact-intro";
+    public const string RetroActionsSection = "retro-actions-section";
+    public const string RetroUnthemedCardOpen = "retro-unthemed-card-open";
+    public const string RetroMergeSourceRow = "retro-merge-source-row";
 }
