@@ -63,6 +63,31 @@ public class GetAgentSessionTests : McpFixture
         reply.Texts().ShouldAllBe(text => !text.Contains(Detail) && !text.Contains("relay-host.internal"));
     }
 
+    // D9 and D4 over MCP: a member sees no delivery attempts whatever the end reason, but does see an agentError's detail (it is already in
+    // the member-visible activity log). Mutation: gate deliveries on the reason (or on a null end_detail) instead of the role.
+    [Test]
+    public async Task GetAgentSession_WhenCallerIsMemberOnAnAgentErrorSessionWithAttempts_ShouldShowTheDetailButNoDeliveries()
+    {
+        string key;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            var item = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+            key = await KeyAsync(connection, item);
+            var relay = await AgentSessionSeeds.InsertConnectionAsync(connection);
+            var failed = await new AgentSessionSeeds(item, relay).WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("dotnet build failed")
+                .InsertAsync(connection);
+            await InsertAttemptsAsync(connection, failed, relay);
+        }
+
+        var reply = await CallAsync(TestUser.Priya, $$"""{"item":"{{key}}"}""");
+
+        var session = reply.Structured().GetProperty("session");
+        session.GetProperty("end_reason").GetString().ShouldBe(AgentEndReasons.AgentError);
+        session.GetProperty("end_detail").GetString().ShouldBe("dotnet build failed");
+        reply.Structured().GetProperty("deliveries").GetArrayLength().ShouldBe(0);
+        reply.Texts().ShouldAllBe(text => !text.Contains("relay-host.internal"));
+    }
+
     [TestCase("submitted", "Joel")]
     [TestCase("working", "Joel")]
     [TestCase("inputRequired", "Joel")]
