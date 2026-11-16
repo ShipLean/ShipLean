@@ -15,6 +15,7 @@ import { backlogSlots } from './backlogSlots';
 import { boardSlots } from './boardSlots';
 import { capacitySlots } from './capacitySlots';
 import { importSlots } from './importSlots';
+import { inspectionMetricsSlots } from './inspectionMetricsSlots';
 import { instanceSettingsSlots } from './instanceSettingsSlots';
 import { backlogRouteIds, boardRouteIds, pageRouteIds } from './pageRouteIds';
 import { projectSettingsSlots } from './projectSettingsSlots';
@@ -29,6 +30,8 @@ import { sprintsSlots } from './sprintsSlots';
 import { taskboardSlots } from './taskboardSlots';
 import { attachmentSlots, workItemSlots } from './workItemSlots';
 import { projectDto, sprintDto } from './pagesFixtures';
+import inspectionView from '../../../ShipLean.TestSupport/DtoFixtures/views/inspection-metrics-view.json' with { type: 'json' };
+import type { InspectionMetricsViewDto } from '@shiplean/core/api/views';
 
 const project = projectDto('SHIP');
 const sprint = sprintDto('sprint-24');
@@ -307,6 +310,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     retroFeatures: 'retroFeatures',
     retroItem: 'retroItem',
     retroInsights: 'retroInsights',
+    inspectionMetrics: 'inspectionMetrics',
     importIntoProject: 'jiraImport',
     importWithoutProject: 'importStart',
     projectSettings: 'projectSettings',
@@ -314,4 +318,56 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     instanceSettings: 'instanceSettings',
     profile: 'profile',
   });
+});
+
+const metricsView = inspectionView as InspectionMetricsViewDto;
+
+test.each(['overview', 'leadtime', 'period', 'json'] as const)(
+  'inspectionMetricsSlots_WhenViewIs_%s_ShouldMountOnlyThatSlot',
+  (name) => {
+    const slots = inspectionMetricsSlots(
+      project,
+      metricsView,
+      new URLSearchParams(`view=${name}&range=quarter`),
+      vi.fn(),
+    );
+    expect(Object.keys(slots)).toEqual([name]);
+    expect(slots[name]).toMatchObject({
+      project,
+      view: metricsView,
+      query: {
+        view: name,
+        range: 'quarter',
+        cut: 'none',
+        period: null,
+        select: null,
+        tab: 'tasks',
+      },
+    });
+  },
+);
+
+test('inspectionMetricsSlots_WhenViewMissingOrUnknown_ShouldMountOverview', () => {
+  expect(
+    Object.keys(inspectionMetricsSlots(project, metricsView, new URLSearchParams(), vi.fn())),
+  ).toEqual(['overview']);
+  expect(
+    Object.keys(
+      inspectionMetricsSlots(project, metricsView, new URLSearchParams('view=quality'), vi.fn()),
+    ),
+  ).toEqual(['overview']);
+});
+
+test('inspectionMetricsSlots_WhenQueryChanged_ShouldWriteTheAddressKeepingTheItemAndReplacing', () => {
+  const setParams = vi.fn();
+  const slots = inspectionMetricsSlots(
+    project,
+    metricsView,
+    new URLSearchParams('view=leadtime&cut=who&item=SHIP-7&junk=1'),
+    setParams,
+  );
+  slots.leadtime?.onQueryChange({ view: 'period', period: 's-23', select: 'SHIP-194' });
+  const [next, options] = setParams.mock.calls[0] as [URLSearchParams, { replace: boolean }];
+  expect(next.toString()).toBe('view=period&cut=who&p=s-23&select=SHIP-194&item=SHIP-7');
+  expect(options).toEqual({ replace: true });
 });

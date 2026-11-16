@@ -9,6 +9,7 @@ import { mobileSignInTestIds } from './features/mobileSignIn/testIds';
 import { stubAnalyticsApi } from './features/settings/instance/analytics/ct/analyticsStub';
 import { settingsTestIds } from './features/settings/testIds';
 import { taskChangesTestIds } from './features/taskChanges/testIds';
+import { inspectionMetricsTestIds } from './features/inspectionMetrics/testIds';
 import { pagesTestIds } from './features/pages/testIds';
 import { stubProjectApi } from './pages/pagesFixtures';
 import type { RouteId } from './routes';
@@ -86,6 +87,7 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   retroFeatures: { path: '/p/SHIP/retros/features', testId: pagesTestIds.retroFeaturesPage },
   retroItem: { path: '/p/SHIP/retros/items/SHIP-141', testId: pagesTestIds.retroItemPage },
   retroInsights: { path: '/p/SHIP/retros/insights', testId: pagesTestIds.retroInsightsPage },
+  inspectionMetrics: { path: '/p/SHIP/inspection', testId: inspectionMetricsTestIds.page },
   jiraImport: { path: '/p/SHIP/import', testId: pagesTestIds.importPage },
   projectSettings: {
     path: '/p/SHIP/settings/states',
