@@ -11,8 +11,10 @@ using ShipLean.TestSupport.Backups;
 using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.WebApi.Tests.Inspection.Wiring;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
 using ShipLean.WebApi.Tests.Retros.Api;
+using ShipLean.WebApi.Tests.TaskChanges.Http;
 
 namespace ShipLean.WebApi.Tests.Access;
 
@@ -28,6 +30,7 @@ public class AllowedSweepTests : ApiFixture
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
         services.AddSingleton<IBlobStore, InMemoryBlobStore>();
+        InspectionSweepHost.UseFakeSource(services);
         services.RemoveAll<IBackupAdmin>();
         services.AddSingleton<IBackupAdmin>(new FakeBackupAdmin(
             get: () => FakeBackupAdmin.Pinned<BackupSettingsDto>("backup-settings.json", "configured"),
@@ -38,11 +41,19 @@ public class AllowedSweepTests : ApiFixture
     };
 
     // The YouTube routes answer 404 while no OAuth client is set, and the allowed leg refuses a 404 (Y3): the host has one, from the environment's names.
-    protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>
+    // The Inspection routes answer 404 while Inspection is off (the instance, then the project): InspectionSweepHost turns both on.
+    protected override IReadOnlyDictionary<string, string?> HostSettings => new Dictionary<string, string?>(InspectionSweepHost.Settings)
     {
         ["SHIPLEAN_YOUTUBE_CLIENT_ID"] = "sweep-client.apps.example",
         ["SHIPLEAN_YOUTUBE_CLIENT_SECRET"] = "sweep-client-secret",
     };
+
+    [OneTimeSetUp]
+    public async Task TurnOnShipInspection()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await InspectionSweepHost.TurnOnShipAsync(connection);
+    }
 
     [OneTimeSetUp]
     public Task PutSeedAttachmentBlobs() => SeedAttachmentBlobs.PutAllAsync(Host.Services.GetRequiredService<IBlobStore>());
@@ -82,6 +93,14 @@ public class AllowedSweepTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         await RetroSweepData.InsertAsync(connection);
+    }
+
+    // The code comment reply and resolve rows need a real comment on their Task.
+    [OneTimeSetUp]
+    public async Task InsertTaskChangesSweepRows()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await TaskChangesSweepData.InsertAsync(connection);
     }
 
     [TestCaseSource(typeof(SweepCalls), nameof(SweepCalls.AllRows))]

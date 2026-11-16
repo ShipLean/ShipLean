@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "showContent": false,
+  "tenantOverride": null,
+  "selectorOverride": null,
+  "storeMode": "clickhouse"
+}

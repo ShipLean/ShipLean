@@ -28,6 +28,8 @@ public static class FieldIds
     public const string StatusVerifiedAt = "statusVerifiedAt";
     public const string Health = "health";
     public const string Links = "links";
+    public const string Commits = "commits";
+    public const string Review = "review";
     public const string CreatedAt = "createdAt";
     public const string CreatedBy = "createdBy";
     public const string ChangedAt = "changedAt";
@@ -60,6 +62,8 @@ public static class FieldIds
         new(StatusVerifiedAt, "Status verified", FieldKind.Date, [WorkItemTypeId.Feature], true, [FieldUse.History], [], null),
         new(Health, "Health", FieldKind.Text, [WorkItemTypeId.Feature], true, [FieldUse.History], [], [new(Str("onTrack"), "On track"), new(Str("atRisk"), "At risk"), new(Str("blocked"), "Blocked")]),
         new(Links, "Links", FieldKind.Links, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], false, [FieldUse.History], [], null),
+        new(Commits, "Commits", FieldKind.Text, [WorkItemTypeId.Bug, WorkItemTypeId.Task], false, [FieldUse.History], [], null),
+        new(Review, "Review", FieldKind.Text, [WorkItemTypeId.Bug, WorkItemTypeId.Task], false, [FieldUse.History], [], null),
         new(CreatedAt, "Created", FieldKind.Date, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], false, [FieldUse.Criteria, FieldUse.CardField], [CriteriaOp.GreaterThan, CriteriaOp.LessThan], null),
         new(CreatedBy, "Created by", FieldKind.User, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], true, [FieldUse.Criteria, FieldUse.CardField], [CriteriaOp.Equal, CriteriaOp.NotEqual, CriteriaOp.In, CriteriaOp.IsEmpty, CriteriaOp.IsNotEmpty], null),
         new(ChangedAt, "Changed", FieldKind.Date, [WorkItemTypeId.Epic, WorkItemTypeId.Feature, WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Task, WorkItemTypeId.Action, WorkItemTypeId.Bau], false, [FieldUse.Criteria, FieldUse.CardField], [CriteriaOp.GreaterThan, CriteriaOp.LessThan], null),

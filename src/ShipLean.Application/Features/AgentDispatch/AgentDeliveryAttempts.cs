@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 
@@ -8,7 +9,7 @@ namespace ShipLean.Application.Features.AgentDispatch;
 
 // agent_delivery_attempt. ForSessionsAsync reads a session's attempts through their delivery, oldest first (by time, then the
 // delivery's seq, then the attempt number), with server labels.
-public sealed class AgentDeliveryAttempts(NpgsqlDataSource dataSource, TimeProvider time, ILogger<AgentDeliveryAttempts> logger) : IAgentDeliveryAttempts
+public sealed class AgentDeliveryAttempts(NpgsqlDataSource dataSource, TimeProvider time, IViewerZone viewerZone, ILogger<AgentDeliveryAttempts> logger) : IAgentDeliveryAttempts
 {
     // One row per send. A resend after a failed sent-mark reuses the attempt number, so its row is already there and the insert does nothing.
     // The delivery is already decided by the time this runs, so a database error is logged and never thrown to the sender (only a cancel is).
@@ -77,12 +78,12 @@ public sealed class AgentDeliveryAttempts(NpgsqlDataSource dataSource, TimeProvi
             row.Action,
             row.Attempt,
             row.At,
-            DisplayDate.Relative(row.At, time),
+            DisplayDate.Relative(row.At, time.GetUtcNow(), viewerZone.Zone),
             row.HttpStatus,
             row.Error,
             row.DurationMs,
             row.NextAttemptAt,
-            row.NextAttemptAt is { } next ? DisplayDate.Relative(next, time) : null);
+            row.NextAttemptAt is { } next ? DisplayDate.Relative(next, time.GetUtcNow(), viewerZone.Zone) : null);
 
     private sealed record Row(
         Guid SessionId, string Action, int Attempt, DateTimeOffset At, int? HttpStatus, string? Error, int DurationMs, DateTimeOffset? NextAttemptAt);

@@ -1,0 +1,290 @@
+{
+  "resourceSpans": [],
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "cursor"
+            }
+          },
+          {
+            "key": "shiplean.project",
+            "value": {
+              "stringValue": "SHIP"
+            }
+          },
+          {
+            "key": "shiplean.item",
+            "value": {
+              "stringValue": "SHIP-1"
+            }
+          },
+          {
+            "key": "shiplean.link_source",
+            "value": {
+              "stringValue": "file"
+            }
+          },
+          {
+            "key": "user.email",
+            "value": {
+              "stringValue": "dev@example.com"
+            }
+          }
+        ]
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "synthetic"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1794304800000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "beforeSubmitPrompt"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.beforeSubmitPrompt"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Add a unit test"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304804000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "beforeShellExecution"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.beforeShellExecution"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shell"
+                  }
+                },
+                {
+                  "key": "tool_input",
+                  "value": {
+                    "stringValue": "{\"command\":\"dotnet test\"}"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304809000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "afterShellExecution"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.afterShellExecution"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "shell"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "5000"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "passed"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304812000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "afterFileEdit"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.afterFileEdit"
+                  }
+                },
+                {
+                  "key": "file_path",
+                  "value": {
+                    "stringValue": "src/App/FooTests.cs"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304814000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "afterMCPExecution"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.afterMCPExecution"
+                  }
+                },
+                {
+                  "key": "tool_name",
+                  "value": {
+                    "stringValue": "mcp__shiplean__update_progress"
+                  }
+                },
+                {
+                  "key": "tool_input",
+                  "value": {
+                    "stringValue": "{\"item\":\"SHIP-4\",\"percent\":50}"
+                  }
+                },
+                {
+                  "key": "duration_ms",
+                  "value": {
+                    "intValue": "600"
+                  }
+                },
+                {
+                  "key": "output",
+                  "value": {
+                    "stringValue": "ok"
+                  }
+                }
+              ]
+            },
+            {
+              "timeUnixNano": "1794304820000000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "stop"
+              },
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "sess-cu-1"
+                  }
+                },
+                {
+                  "key": "prompt.id",
+                  "value": {
+                    "stringValue": "z-1"
+                  }
+                },
+                {
+                  "key": "event.name",
+                  "value": {
+                    "stringValue": "cursor.hook.stop"
+                  }
+                },
+                {
+                  "key": "status",
+                  "value": {
+                    "stringValue": "completed"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

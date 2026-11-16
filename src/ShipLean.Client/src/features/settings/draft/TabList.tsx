@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { routePath, type ProjectSettingsTab } from '../../../routes';
+import { inspectionTestIds } from '../../inspection/testIds';
 import { settingsTestIds } from '../testIds';
 
 const LABELS: Record<ProjectSettingsTab, string> = {
@@ -10,6 +11,7 @@ const LABELS: Record<ProjectSettingsTab, string> = {
   sprints: 'Sprints & forecast',
   integrations: 'Integrations',
   demos: 'Demos',
+  inspection: 'Inspection',
 };
 const TEST_IDS: Record<ProjectSettingsTab, string> = {
   general: settingsTestIds.tabGeneral,
@@ -18,6 +20,7 @@ const TEST_IDS: Record<ProjectSettingsTab, string> = {
   sprints: settingsTestIds.tabSprints,
   integrations: settingsTestIds.tabIntegrations,
   demos: settingsTestIds.tabDemos,
+  inspection: inspectionTestIds.settingsTabInspection,
 };
 const ORDER: ProjectSettingsTab[] = [
   'general',
@@ -26,6 +29,7 @@ const ORDER: ProjectSettingsTab[] = [
   'sprints',
   'integrations',
   'demos',
+  'inspection',
 ];
 
 export function TabList({

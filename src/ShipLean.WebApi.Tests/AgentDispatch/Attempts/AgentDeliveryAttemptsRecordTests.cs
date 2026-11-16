@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using ShipLean.Application.Features.AgentDispatch;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Logging;
@@ -90,7 +91,7 @@ public class AgentDeliveryAttemptsRecordTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var (_, deliveryId, connectionId) = await OpenSessionAsync(database);
-        var attempts = new AgentDeliveryAttempts(Host.Services.GetRequiredService<NpgsqlDataSource>(), _clock, new Logger<AgentDeliveryAttempts>(_logs));
+        var attempts = new AgentDeliveryAttempts(Host.Services.GetRequiredService<NpgsqlDataSource>(), _clock, Host.Services.GetRequiredService<IViewerZone>(), new Logger<AgentDeliveryAttempts>(_logs));
         var first = new AgentDeliveryAttemptCreate(deliveryId, connectionId, 1, Start, 502, "Bad gateway.", 40, Start.AddMinutes(1));
         var resent = first with { At = Start.AddMinutes(1), HttpStatus = 500, Error = "Resent error text.", NextAttemptAt = null };
 
@@ -111,7 +112,7 @@ public class AgentDeliveryAttemptsRecordTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var (_, deliveryId, _) = await OpenSessionAsync(database);
         await using var unreachable = NpgsqlDataSource.Create("Host=127.0.0.1;Port=1;Username=none;Password=none;Database=none;Timeout=1;Pooling=false");
-        var attempts = new AgentDeliveryAttempts(unreachable, _clock, new Logger<AgentDeliveryAttempts>(_logs));
+        var attempts = new AgentDeliveryAttempts(unreachable, _clock, Host.Services.GetRequiredService<IViewerZone>(), new Logger<AgentDeliveryAttempts>(_logs));
 
         await Should.NotThrowAsync(() => Deliverer(attempts).RunDueAsync(CancellationToken.None));
 

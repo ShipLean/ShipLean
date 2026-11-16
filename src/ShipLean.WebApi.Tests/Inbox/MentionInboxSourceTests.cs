@@ -7,6 +7,7 @@ using ShipLean.Contracts.Inbox;
 using ShipLean.Core;
 using ShipLean.LocalEnvironment.Database;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 
@@ -28,7 +29,7 @@ public class MentionInboxSourceTests
         _database = await FreshDatabase.CreateAsync();
         _dataSource = NpgsqlDataSource.Create(DatabaseServices.PinUtc(_database.ConnectionString));
         _clock = new FakeTimeProvider(AskDefaults.Now().AddHours(1));
-        _source = new MentionInboxSource(_dataSource, _clock);
+        _source = new MentionInboxSource(_dataSource, _clock, new FixedViewerZone());
     }
 
     [OneTimeTearDown]
@@ -59,7 +60,7 @@ public class MentionInboxSourceTests
         row.Ask.Kind.ShouldBe(InboxAskKind.Mention);
         row.Ask.Label.ShouldBe("@");
         row.Ask.At.ShouldBe(at);
-        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(at, _clock));
+        row.Ask.AtLabel.ShouldBe(DisplayDate.Relative(at, _clock.GetUtcNow(), TimeZoneInfo.Utc));
         row.Ask.From!.Id.ShouldBe(SeedIds.Users.Priya);
         row.Ask.AgentName.ShouldBeNull();
         row.Ask.Decision.ShouldBeNull();

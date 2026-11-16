@@ -2,6 +2,7 @@ using Dapper;
 using Npgsql;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.TaskChanges;
 
 namespace ShipLean.Application.Features.Mcp.Planning.Status;
 
@@ -35,18 +36,39 @@ public sealed class PlanStatusReads(NpgsqlDataSource dataSource) : IPlanStatusRe
         var links = await connection.QueryAsync<LinkRow>(new CommandDefinition(
             "SELECT source_id AS taskId, url, title FROM work_item_link WHERE source_id = ANY(@taskIds) AND link_type = 'url' AND archived_at IS NULL AND title IS NOT NULL ORDER BY created_at, id",
             new { taskIds = ids }, cancellationToken: cancellationToken));
+        var stored = await connection.QueryAsync<StoredCommitRow>(new CommandDefinition(
+            """
+            SELECT w.work_item_id AS taskId, w.sha, c.subject, r.provider, r.host, r.path
+            FROM work_item_commit w
+            JOIN code_repository r ON r.id = w.repository_id
+            JOIN code_commit c ON c.repository_id = w.repository_id AND c.sha = w.sha
+            WHERE w.work_item_id = ANY(@taskIds) AND w.archived_at IS NULL
+            ORDER BY w.position
+            """,
+            new { taskIds = ids }, cancellationToken: cancellationToken));
         var comments = await connection.QueryAsync<CommentRow>(new CommandDefinition(
             "SELECT work_item_id AS taskId, left(body, @prefixLength) AS body FROM comment WHERE work_item_id = ANY(@taskIds) AND archived_at IS NULL AND body LIKE @prefix",
             new { taskIds = ids, prefix = PlanMarkers.ReviewPrefix + "%", prefixLength = PlanMarkers.ReviewPrefix.Length }, cancellationToken: cancellationToken));
 
         var movesByTask = moves.ToDictionary(row => row.TaskId);
         var linksByTask = links.ToLookup(row => row.TaskId);
+        var storedByTask = stored.ToLookup(row => row.TaskId);
         var reviewsByTask = comments.Where(row => PlanMarkers.IsReview(row.Body)).ToLookup(row => row.TaskId);
         return ids.ToDictionary(id => id, id => new PlanTaskActivity(
             movesByTask.GetValueOrDefault(id)?.StartedAt,
             movesByTask.GetValueOrDefault(id)?.FinishedAt,
-            [.. linksByTask[id].Select(Commit).OfType<PlanCommitLink>()],
+            Commits(storedByTask[id], linksByTask[id]),
             reviewsByTask[id].Count()));
+    }
+
+    // The table's commits in order, then any commit cards left that are not the same commit (compared by the first 7 characters of the sha).
+    private static List<PlanCommitLink> Commits(IEnumerable<StoredCommitRow> stored, IEnumerable<LinkRow> cards)
+    {
+        var commits = stored.Select(row => new PlanCommitLink(
+            row.Sha[..7], row.Subject, new RepoRef(row.Provider == "gitlab" ? CodeProvider.Gitlab : CodeProvider.Github, row.Host, row.Path).CommitUrl(row.Sha))).ToList();
+        var seen = commits.Select(commit => commit.Sha).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        commits.AddRange(cards.Select(Commit).OfType<PlanCommitLink>().Where(commit => seen.Add(commit.Sha)));
+        return commits;
     }
 
     private static PlanCommitLink? Commit(LinkRow row)
@@ -55,6 +77,8 @@ public sealed class PlanStatusReads(NpgsqlDataSource dataSource) : IPlanStatusRe
     private sealed record MoveRow(Guid TaskId, DateTimeOffset? StartedAt, DateTimeOffset? FinishedAt);
 
     private sealed record LinkRow(Guid TaskId, string Url, string Title);
+
+    private sealed record StoredCommitRow(Guid TaskId, string Sha, string Subject, string Provider, string Host, string Path);
 
     private sealed record CommentRow(Guid TaskId, string Body);
 }

@@ -58,7 +58,9 @@ export function WorkItemForm({
   project,
   links,
   retro = null,
+  changes = null,
   tasks,
+  agentRuns = null,
   discussion,
   side,
 }: {
@@ -66,7 +68,9 @@ export function WorkItemForm({
   project: ProjectDto;
   links: ReactNode;
   retro?: ReactNode;
+  changes?: ReactNode;
   tasks: ReactNode;
+  agentRuns?: ReactNode;
   discussion: ReactNode;
   side: ReactNode;
 }) {
@@ -329,6 +333,8 @@ export function WorkItemForm({
                     />
                   ) : null}
                   {isStoryLevel(type) ? retro : null}
+                  {type === 'task' || type === 'bug' ? changes : null}
+                  {agentRuns}
                   {tasks}
                   {discussion}
                 </div>

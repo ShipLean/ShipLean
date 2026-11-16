@@ -1,0 +1,175 @@
+{
+  "compareKeys": [
+    "duration_ms",
+    "file_path",
+    "prompt.id",
+    "session.id",
+    "shiplean.item",
+    "shiplean.project",
+    "status",
+    "tool_input",
+    "tool_name"
+  ],
+  "run": {
+    "summary": {
+      "runId": "sess-cu-1",
+      "sessionId": "sess-cu-1",
+      "agent": "cursor",
+      "startedBy": "dev@example.com",
+      "models": [],
+      "startedAt": "2026-11-10T10:00:00Z",
+      "endedAt": "2026-11-10T10:00:20Z",
+      "spanCount": 0,
+      "logCount": 6,
+      "errorCount": 0,
+      "tokensIn": null,
+      "tokensOut": null,
+      "links": [
+        {
+          "itemKey": "SHIP-1",
+          "source": "shipleanFile"
+        },
+        {
+          "itemKey": "SHIP-4",
+          "source": "fromToolCall"
+        }
+      ]
+    },
+    "spans": [],
+    "logs": [
+      {
+        "time": "2026-11-10T10:00:00Z",
+        "severity": "INFO",
+        "body": "beforeSubmitPrompt",
+        "attributes": {
+          "event.name": "cursor.hook.beforeSubmitPrompt",
+          "prompt": "Add a unit test",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.beforeSubmitPrompt"
+      },
+      {
+        "time": "2026-11-10T10:00:04Z",
+        "severity": "INFO",
+        "body": "beforeShellExecution",
+        "attributes": {
+          "event.name": "cursor.hook.beforeShellExecution",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "tool_input": "{\"command\":\"dotnet test\"}",
+          "tool_name": "shell",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.beforeShellExecution"
+      },
+      {
+        "time": "2026-11-10T10:00:09Z",
+        "severity": "INFO",
+        "body": "afterShellExecution",
+        "attributes": {
+          "duration_ms": "5000",
+          "event.name": "cursor.hook.afterShellExecution",
+          "output": "passed",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "tool_name": "shell",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.afterShellExecution"
+      },
+      {
+        "time": "2026-11-10T10:00:12Z",
+        "severity": "INFO",
+        "body": "afterFileEdit",
+        "attributes": {
+          "event.name": "cursor.hook.afterFileEdit",
+          "file_path": "src/App/FooTests.cs",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.afterFileEdit"
+      },
+      {
+        "time": "2026-11-10T10:00:14Z",
+        "severity": "INFO",
+        "body": "afterMCPExecution",
+        "attributes": {
+          "duration_ms": "600",
+          "event.name": "cursor.hook.afterMCPExecution",
+          "output": "ok",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "tool_input": "{\"item\":\"SHIP-4\",\"percent\":50}",
+          "tool_name": "mcp__shiplean__update_progress",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.afterMCPExecution"
+      },
+      {
+        "time": "2026-11-10T10:00:20Z",
+        "severity": "INFO",
+        "body": "stop",
+        "attributes": {
+          "event.name": "cursor.hook.stop",
+          "prompt.id": "z-1",
+          "service.name": "cursor",
+          "session.id": "sess-cu-1",
+          "shiplean.item": "SHIP-1",
+          "shiplean.link_source": "file",
+          "shiplean.project": "SHIP",
+          "status": "completed",
+          "user.email": "dev@example.com"
+        },
+        "traceId": null,
+        "spanId": null,
+        "sessionId": "sess-cu-1",
+        "promptId": "z-1",
+        "eventName": "cursor.hook.stop"
+      }
+    ],
+    "truncated": false
+  }
+}

@@ -1,11 +1,11 @@
 using Dapper;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ShipLean.Application.Features.Demos.Reads;
 using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.YouTube;
 
@@ -19,6 +19,7 @@ public sealed class YouTubeConnect(
     IntegrationTokens tokens,
     YouTubeConnectState states,
     ICurrentUser currentUser,
+    IViewerZone viewerZone,
     TimeProvider time,
     ILogger<YouTubeConnect> logger) : IYouTubeConnect
 {
@@ -58,7 +59,7 @@ public sealed class YouTubeConnect(
         string? label = null;
         if (row.CheckedAt is { } at)
         {
-            label = $"Checked {SprintDemoLabels.When(at, time)}";
+            label = $"Checked {DisplayDate.DayAt(at, time.GetUtcNow(), viewerZone.Zone)}";
         }
 
         return new YouTubeProjectDto(YouTubeConnectionStatus.Connected, row.ChannelTitle, visibility, label, null);

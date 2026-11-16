@@ -142,6 +142,7 @@ export const WORK_ITEM: WorkItemVoiceContext = {
       decisions: 1,
       onChildren: false,
     },
+    inspectionEnabled: false,
   },
   asks: {
     workItemId: '60436831-7809-40f0-89c7-9c0f428ff178',

@@ -120,5 +120,6 @@
     "agent": null
   },
   "rollups": [],
-  "needsYou": null
+  "needsYou": null,
+  "inspectionEnabled": false
 }

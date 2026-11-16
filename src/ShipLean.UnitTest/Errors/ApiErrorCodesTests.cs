@@ -24,6 +24,9 @@ public class ApiErrorCodesTests
     [TestCase(ApiErrorCodes.NoRepoUrl, 400)]
     [TestCase(ApiErrorCodes.NotMember, 400)]
     [TestCase(ApiErrorCodes.IntakeOn, 409)]
+    [TestCase(ApiErrorCodes.NotTaskOrBug, 400)]
+    [TestCase(ApiErrorCodes.BadSha, 400)]
+    [TestCase(ApiErrorCodes.RepoUnreadable, 422)]
     public void StatusFor_WhenANarrowedCode_ShouldMatchItsParent(string code, int status)
     {
         ApiErrorCodes.StatusFor(code).ShouldBe(status);

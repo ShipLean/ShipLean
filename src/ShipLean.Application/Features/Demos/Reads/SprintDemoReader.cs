@@ -10,6 +10,7 @@ using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.Reads;
 
@@ -24,7 +25,8 @@ public sealed class SprintDemoReader(
     IProjectAccess access,
     IProjectAgentSettings agentSettings,
     IAgentConnectionWarnings warnings,
-    TimeProvider time) : ISprintDemoReader
+    TimeProvider time,
+    IViewerZone viewerZone) : ISprintDemoReader
 {
     private const string LiveSessionMessage = "An agent session is already making this demo.";
 
@@ -49,7 +51,8 @@ public sealed class SprintDemoReader(
         var role = await access.RequireAsync(row.ProjectId, ProjectRole.Member, cancellationToken);
         var end = session is null || live ? null : AgentSessionVisibility.Apply(session.EndReason, session.EndDetail, null, role);
         var facts = new SprintDemoFacts(
-            row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, end?.EndReason, end?.EndDetail);
+            row.Closed, row.RequestedAt, row.BlockedMessage, live, row.DeliveredAt, row.UploadExpiresAt, session?.State, session?.EndedAt, end?.EndReason, end?.EndDetail,
+            session?.Message);
         var (status, message) = SprintDemoStatusRule.Decide(facts, now);
 
         var chapters = await ChaptersAsync(row, files, cancellationToken);
@@ -71,10 +74,16 @@ public sealed class SprintDemoReader(
     private static async Task<SessionRow?> LatestSessionAsync(NpgsqlConnection connection, Guid itemId, CancellationToken cancellationToken)
         => await connection.QuerySingleOrDefaultAsync<SessionRow>(new CommandDefinition(
             $"""
-            SELECT state, state IN {AgentSessionLiveStates.Sql} AS live, coalesce(ended_at, last_activity_at) AS endedAt, end_reason AS endReason,
-                   end_detail AS endDetail
-            FROM agent_session WHERE work_item_id = @itemId
-            ORDER BY (state IN {AgentSessionLiveStates.Sql}) DESC, created_at DESC LIMIT 1
+            SELECT s.state, s.state IN {AgentSessionLiveStates.Sql} AS live, coalesce(s.ended_at, s.last_activity_at) AS endedAt, s.end_reason AS endReason,
+                   s.end_detail AS endDetail, last.body AS message
+            FROM agent_session s
+            LEFT JOIN LATERAL (
+                SELECT a.body FROM agent_activity a
+                WHERE a.session_id = s.id AND a.type IN ('response', 'error') AND a.replaced_at IS NULL
+                ORDER BY a.created_at DESC, a.id DESC LIMIT 1
+            ) last ON true
+            WHERE s.work_item_id = @itemId
+            ORDER BY (s.state IN {AgentSessionLiveStates.Sql}) DESC, s.created_at DESC, s.id DESC LIMIT 1
             """,
             new { itemId }, cancellationToken: cancellationToken));
 
@@ -100,7 +109,7 @@ public sealed class SprintDemoReader(
         }
 
         var state = session is null ? null : SessionStateOf(session);
-        var requested = row.RequestedAt is { } at ? $"Requested {SprintDemoLabels.When(at, time)}" : "Not requested yet";
+        var requested = row.RequestedAt is { } at ? $"Requested {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : "Not requested yet";
         return new SprintDemoRunDto(row.ItemKey, $"/p/{row.ProjectKey}/items/{row.ItemKey}", state, requested, ExpiryLabel(row.UploadExpiresAt, now));
     }
 
@@ -113,7 +122,7 @@ public sealed class SprintDemoReader(
             return null;
         }
 
-        return at <= now ? $"Link expired {SprintDemoLabels.When(at, time)}" : $"Link valid until {SprintDemoLabels.When(at, time)}";
+        return at <= now ? $"Link expired {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : $"Link valid until {DisplayDate.DayAt(at, now, viewerZone.Zone)}";
     }
 
     private SprintDemoVideoDto? VideoOf(SprintDemoRow row, IReadOnlyDictionary<Guid, FileRow> files)
@@ -131,7 +140,7 @@ public sealed class SprintDemoReader(
             file.SizeBytes,
             duration,
             SprintDemoLabels.Duration(duration),
-            row.DeliveredAt is { } delivered ? $"Delivered {SprintDemoLabels.When(delivered, time)}" : string.Empty);
+            row.DeliveredAt is { } delivered ? $"Delivered {DisplayDate.DayAt(delivered, time.GetUtcNow(), viewerZone.Zone)}" : string.Empty);
     }
 
     // A missing, archived or unreadable chapters file is no chapters, not an error.
@@ -245,7 +254,7 @@ public sealed class SprintDemoReader(
             : new SprintDemoActionsDto(true, null, retry, warning);
     }
 
-    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt, string? EndReason, string? EndDetail);
+    private sealed record SessionRow(string State, bool Live, DateTimeOffset EndedAt, string? EndReason, string? EndDetail, string? Message);
 
     private sealed record FileRow(Guid Id, string Name, long SizeBytes);
 

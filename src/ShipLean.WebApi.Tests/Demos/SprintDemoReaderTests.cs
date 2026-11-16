@@ -446,4 +446,114 @@ public class SprintDemoReaderTests : ApiFixture
         dto.Run.ShouldBeNull();
         dto.Video.ShouldBeNull();
     }
+
+    private static async Task<Guid> SessionAsync(NpgsqlConnection database, Arranged demo, string state, DateTimeOffset at, Guid? sessionId = null)
+    {
+        var id = sessionId ?? Guid.CreateVersion7();
+        await database.ExecuteAsync(
+            """
+            INSERT INTO agent_session (id, work_item_id, connection_id, state, repo_url, base_branch, last_activity_at, created_by, created_at, ended_at)
+            VALUES (@id, @itemId, @connectionId, @state, 'https://github.com/ShipLean/ShipLean.git', 'develop', @at, @by, @at, @at)
+            """,
+            new { id, itemId = demo.ItemId, connectionId = demo.Project.ConnectionId, state, at, by = SeedIds.Users.Joel });
+        return id;
+    }
+
+    private static Task ActivityAsync(NpgsqlConnection database, Guid sessionId, string type, string body, DateTimeOffset at, DateTimeOffset? replacedAt = null)
+        => database.ExecuteAsync(
+            "INSERT INTO agent_activity (id, session_id, type, body, created_at, replaced_at) VALUES (@id, @sessionId, @type, @body, @at, @replacedAt)",
+            new { id = Guid.CreateVersion7(), sessionId, type, body, at, replacedAt });
+
+    [Test]
+    public async Task Get_WhenLatestSessionCompletedWithResponse_ShouldBeFailedWithItsFirstParagraph()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var older = await SessionAsync(database, demo, "completed", now.AddMinutes(-20));
+        // Written after the newer session's response, so only the session filter keeps it out of the quote.
+        await ActivityAsync(database, older, "response", "The older session's answer.", now.AddMinutes(-4));
+        var newer = await SessionAsync(database, demo, "completed", now.AddMinutes(-10));
+        await ActivityAsync(database, newer, "response", "An early response.", now.AddMinutes(-9));
+        await ActivityAsync(database, newer, "response", "I couldn't make the **demo**.\nMy first Bash call was denied.\n\nMore detail.", now.AddMinutes(-8));
+        await ActivityAsync(database, newer, "thought", "A later thought.", now.AddMinutes(-7));
+        await ActivityAsync(database, newer, "response", "A replaced response.", now.AddMinutes(-6), now.AddMinutes(-5));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Status.ShouldBe(SprintDemoStatus.Failed);
+        dto.StatusMessage.ShouldBe("The agent session ended without uploading a video. It said: \"I couldn't make the demo. My first Bash call was denied.\"");
+    }
+
+    [Test]
+    public async Task Get_WhenLatestSessionFailedWithErrorActivity_ShouldQuoteTheError()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var session = await SessionAsync(database, demo, "failed", now.AddMinutes(-10));
+        await ActivityAsync(database, session, "response", "Rendering the intro.", now.AddMinutes(-9));
+        await ActivityAsync(database, session, "error", "Claude Code timed out after 120 min and was stopped (RELAY_DEMO_TIMEOUT).", now.AddMinutes(-8));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Status.ShouldBe(SprintDemoStatus.Failed);
+        dto.StatusMessage.ShouldBe(
+            "The agent session ended as failed before a video came back. It said: \"Claude Code timed out after 120 min and was stopped (RELAY_DEMO_TIMEOUT).\"");
+    }
+
+    [Test]
+    public async Task Get_WhenSessionHasNoResponseOrError_ShouldHaveNoQuote()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var session = await SessionAsync(database, demo, "completed", now.AddMinutes(-10));
+        await ActivityAsync(database, session, "thought", "Thinking about the demo.", now.AddMinutes(-9));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Status.ShouldBe(SprintDemoStatus.Failed);
+        dto.StatusMessage.ShouldBe("The agent session ended without uploading a video.");
+    }
+
+    [Test]
+    public async Task Get_WhenFailedAndNoSessionLive_ShouldAllowCreate()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var session = await SessionAsync(database, demo, "completed", now.AddMinutes(-10));
+        await ActivityAsync(database, session, "response", "No video this time.", now.AddMinutes(-9));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.Status.ShouldBe(SprintDemoStatus.Failed);
+        dto.Actions.CanCreate.ShouldBeTrue();
+        dto.Actions.CreateBlockedMessage.ShouldBeNull();
+    }
+
+    [Test]
+    public async Task Get_WhenTwoSessionsShareACreatedTime_ShouldUseTheNewerIdAndQuoteIt()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var demo = await ArrangeAsync(database);
+        var now = TimeProvider.System.GetUtcNow();
+        await RequestAsync(database, demo.SprintId, now.AddMinutes(-30));
+        var olderId = Guid.Parse("00000000-0000-7000-8000-000000000001");
+        var newerId = Guid.Parse("00000000-0000-7000-8000-000000000002");
+        // The older id is inserted first, so only the id tie-breaker makes the newer id win.
+        var older = await SessionAsync(database, demo, "failed", now.AddMinutes(-10), olderId);
+        var newer = await SessionAsync(database, demo, "completed", now.AddMinutes(-10), newerId);
+        await ActivityAsync(database, older, "error", "The older id's error.", now.AddMinutes(-9));
+        await ActivityAsync(database, newer, "response", "The newer id's answer.", now.AddMinutes(-9));
+
+        var dto = await GetAsync(demo.SprintId);
+
+        dto.StatusMessage.ShouldBe("The agent session ended without uploading a video. It said: \"The newer id's answer.\"");
+    }
 }

@@ -57,6 +57,13 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.LinkCardEdited), "LinkCards.Edit");
         Add(ActionUsage.Track(UsageEventNames.LinkCardArchived), "LinkCards.Archive");
         Add(ActionUsage.Track(UsageEventNames.LinkCardRefreshed), "LinkCardsRefresh.Refresh");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesViewed), "TaskChanges.Page");
+        Add(ActionUsage.Track(UsageEventNames.TaskCommitsAdded), "TaskChanges.AddCommit");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentAdded), "TaskChanges.AddComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentReplied), "TaskChanges.ReplyToComment");
+        Add(ActionUsage.Track(UsageEventNames.CodeCommentResolved), "TaskChanges.ResolveComment");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesApproved), "TaskChanges.Approve");
+        Add(ActionUsage.Track(UsageEventNames.TaskChangesRequested), "TaskChanges.RequestChanges");
         Add(ActionUsage.Track(UsageEventNames.SprintCreated), "ProjectSprints.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintUpdated), "Sprints.Update");
         Add(ActionUsage.Track(UsageEventNames.SprintDeleted), "Sprints.Delete");
@@ -80,6 +87,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.ImportJiraConnected), "Jira.Put");
         Add(ActionUsage.Track(UsageEventNames.ProfileUpdated), "Profile.Update");
         Add(ActionUsage.Track(UsageEventNames.ProfilePhotoChanged), "Profile.ReplacePhoto", "Profile.RemovePhoto");
+        Add(ActionUsage.SelfEmitted, "Profile.SetTimeZone");
+        Add(ActionUsage.Untracked("A read: the Profile page's screen view already counts it."), "Profile.TimeZones");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoCreated), "SprintDemo.Create");
         Add(ActionUsage.Track(UsageEventNames.SprintDemoYouTubeRetried), "SprintDemo.RetryYouTube");
         Add(ActionUsage.Track(UsageEventNames.ProjectDemoSettingsChanged), "ProjectDemoSettings.Put");
@@ -142,6 +151,13 @@ public static class ActionUsageMap
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected");
+
+        // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
+        Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");
+        Add(ActionUsage.Untracked("An admin's own configuration change; the project's settings are not an analytics subject."), "InspectionSettings.Put");
+        Add(ActionUsage.Untracked(Helper), "InspectionAgentSetup.Get");
+        Add(ActionUsage.Untracked("An operator's health check; no project."), "InspectionHealth.Get");
+        Add(ActionUsage.SelfEmitted, "InspectionUsage.Report");
 
         // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
         Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");
@@ -240,6 +256,7 @@ public static class ActionUsageMap
             "SprintRetro.Get",
             "SprintRollover.Get",
             "StoriesBacklog.Get",
+            "TaskChanges.Section",
             "Taskboard.Get",
             "UserPhoto.Get",
             "Users.ByEmail",

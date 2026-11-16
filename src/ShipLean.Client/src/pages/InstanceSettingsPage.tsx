@@ -5,6 +5,7 @@ import { InstanceAgentsSlot } from '../slots/InstanceAgentsSlot';
 import { InstanceAnalyticsSlot } from '../slots/InstanceAnalyticsSlot';
 import { InstanceBackupsSlot } from '../slots/InstanceBackupsSlot';
 import { InstanceGeneralSlot } from '../slots/InstanceGeneralSlot';
+import { InstanceInspectionSlot } from '../slots/InstanceInspectionSlot';
 import { InstanceIntegrationsSlot } from '../slots/InstanceIntegrationsSlot';
 import { InstanceProjectsSlot } from '../slots/InstanceProjectsSlot';
 import { InstanceUsersSlot } from '../slots/InstanceUsersSlot';
@@ -31,6 +32,7 @@ export function InstanceSettingsPage() {
       {slots.instanceProjects && <InstanceProjectsSlot {...slots.instanceProjects} />}
       {slots.instanceIntegrations && <InstanceIntegrationsSlot {...slots.instanceIntegrations} />}
       {slots.instanceAnalytics && <InstanceAnalyticsSlot {...slots.instanceAnalytics} />}
+      {slots.instanceInspection && <InstanceInspectionSlot {...slots.instanceInspection} />}
       {slots.instanceAgents && <InstanceAgentsSlot {...slots.instanceAgents} />}
       {slots.instanceBackups && <InstanceBackupsSlot {...slots.instanceBackups} />}
     </InstallScreen>

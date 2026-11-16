@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 
@@ -9,7 +10,7 @@ namespace ShipLean.Application.Features.Agents.Health;
 // last 24 hours (the time provider's clock), and the newest failure with its scrubbed error. A connection with no attempts is empty.
 // A send succeeded when its error is null, not when its status is 2xx: the deliverer treats only 200 OK as success and writes an error for
 // any other answer, a 202 included.
-public sealed class AgentConnectionHealth(NpgsqlDataSource dataSource, TimeProvider time) : IAgentConnectionHealth
+public sealed class AgentConnectionHealth(NpgsqlDataSource dataSource, TimeProvider time, IViewerZone viewerZone) : IAgentConnectionHealth
 {
     public async Task<AgentConnectionHealthDto> ForConnectionAsync(Guid connectionId, CancellationToken cancellationToken)
     {
@@ -33,10 +34,10 @@ public sealed class AgentConnectionHealth(NpgsqlDataSource dataSource, TimeProvi
             new { connectionId }, cancellationToken: cancellationToken));
         return new AgentConnectionHealthDto(
             delivered,
-            delivered is { } at ? DisplayDate.Relative(at, time) : null,
+            delivered is { } at ? DisplayDate.Relative(at, time.GetUtcNow(), viewerZone.Zone) : null,
             failedLast24h,
             failed?.At,
-            failed is null ? null : DisplayDate.Relative(failed.At, time),
+            failed is null ? null : DisplayDate.Relative(failed.At, time.GetUtcNow(), viewerZone.Zone),
             failed?.Error);
     }
 

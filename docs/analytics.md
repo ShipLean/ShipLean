@@ -54,7 +54,7 @@ Every event carries these (a key is left out when its value is null). The consta
 | `duration_ms`, `source` | `source` is `tool:<name>`, `api:<Controller>.<Action>`, `screen` or `system:<Class>` |
 | `shiplean_version`, `instance_host` | this build and this instance |
 
-Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`, `from` (`feature` or `link`) on `timeline.opened`, `item_type` (the item's type) on `get_work_item`'s event, `end_reason` (`completed`, `canceled`, `deliveryFailed`, `agentError`, `proposalWithoutIssue` or `unknown`) on `agent_session.finished`, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
+Extra properties are the keys in `UsageProps` (`screen`, `board`, `provider`, `count`, `column`, `direction`, `mode` (the backlog mode on a backlog screen's `screen.viewed`), `viewport`, `agent_name` on `agent.connected` and `agent.consent_denied`, `method` on `work_item.moved` and `auth.signed_in`, `trigger` (`scheduled` or `manual`) on `backup.run_finished`, `reason` (`app_sign_out`, `web_sign_out`, `expired`, `stamp_changed` or `user_disabled`) on `device_session.ended`, `answer_kind` (`recommended`, `alternative` or `own`) on `decision.changed`, `from` (`feature` or `link`) on `timeline.opened`, `zone_source` (`browser` or `profile`) on `profile.time_zone_set` (not `source`: that standard property is the action name and would win), `item_type` (the item's type) on `get_work_item`'s event, `end_reason` (`completed`, `canceled`, `deliveryFailed`, `agentError`, `proposalWithoutIssue` or `unknown`) on `agent_session.finished`, `input` (`payload` or `inline`) on the events of the six tools that take a `payload`: `capture_plan`, `capture_work`, `break_down`, `attach_markdown`, `refine_work_item` and `create_feature`, set when the call's arguments came by a payload from `create_payload_upload`; other tools' events don't carry it). A standard property wins over an extra one with the same key. A command adds an extra property to its web action's event with `IUsageScope.AddProperty(UsageProps.X, value)`; `UsageActionFilter` records the action's `board`, then what the command added, then `viewport`. Never parse the route or the action's arguments for one.
 
 **Viewport.** The SPA's platform host (`webPlatform.ts`) adds `X-ShipLean-Viewport` to every API request (`ViewportHeader`, `src/ShipLean.Contracts/ViewportHeader.cs`), with the window's width class at send time: `phone`, `tablet` or `desktop` (`UsageViewports`). The three web seams (`UsageActionFilter`, `ScreenViews`, `SelfEmittedUsage.TrackOk`) read it through `IUsageScope.Viewport` and stamp it as `viewport`. A missing header or any other value (including another case, such as `Phone`) leaves the key out; there is no default. MCP and system events never carry it, and neither do top-level browser navigations, which are not API calls (no header is sent): a Google or proxy sign-in made by navigation records `auth.signed_in` without a viewport, while a sign-in recorded on an API request (a password sign-in, or a proxy re-sign-in on an `/api` call after the cookie lapses) has one.
 
@@ -210,6 +210,13 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `link_card.edited` |  | `LinkCards.Edit` |
 | `link_card.archived` |  | `LinkCards.Archive` |
 | `link_card.refreshed` |  | `LinkCardsRefresh.Refresh` |
+| `task_changes.viewed` |  | `TaskChanges.Page` |
+| `task_commits.added` | `add_commits` | `TaskChanges.AddCommit` |
+| `code_comment.added` |  | `TaskChanges.AddComment` |
+| `code_comment.replied` |  | `TaskChanges.ReplyToComment` |
+| `code_comment.resolved` |  | `TaskChanges.ResolveComment` |
+| `task_changes.approved` |  | `TaskChanges.Approve` |
+| `task_changes.requested` |  | `TaskChanges.RequestChanges` |
 | `sprint.created` | `create_sprint` | `ProjectSprints.Create` |
 | `sprint.planned` | `plan_sprint` |  |
 | `sprint.updated` |  | `Sprints.Update` |
@@ -262,6 +269,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `webhook.received` |  | system: PullRequestWebhooks |
 | `profile.updated` |  | `Profile.Update` |
 | `profile.photo_changed` |  | `Profile.ReplacePhoto`, `Profile.RemovePhoto` |
+| `profile.time_zone_set` |  | `Profile.SetTimeZone` (self-emitted, only when the stored zone changed) |
 | `instance.settings_changed` |  | `Instance.PutSettings` |
 | `instance.integrations_changed` |  | `Integrations.Put` |
 | `instance.analytics_changed` |  | `Analytics.Put` |
@@ -276,6 +284,17 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `backup.connection_tested` |  | `Backups.Test` |
 | `backup.run_started` |  | `Backups.Run` |
 | `backup.run_finished` |  | system: the backup job (properties `provider`, `trigger`: `scheduled` or `manual`) |
+
+`TaskChanges.Section` (the Task page's Changes section) is untracked: the Task page view already counts it. `task_commits.added` also counts commits sent by `report_task` once that tool adds them through the same writer.
+
+### Task changes, weekly
+
+Why (SHIP-1460, D16): if people can read a task's diff, comment on its lines and send the open comments back, they review agent work in ShipLean and reopen fewer items by hand. Each week, compare:
+
+- `task_changes.viewed`, `code_comment.added`, `task_changes.requested` and `task_changes.approved`, against Task and Bug page views (`work_item.viewed`) of items that have commits.
+- The same counts against items reopened by hand (`work_item.updated` moving a Completed item back to an open state) in the 4 weeks before launch.
+
+Targets are still to be confirmed.
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 

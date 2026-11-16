@@ -1,0 +1,25 @@
+{
+  "enabled": true,
+  "mode": "clickhouse",
+  "reachable": true,
+  "latencyMs": 12,
+  "viewLagSeconds": 3,
+  "problem": null,
+  "fields": [
+    {
+      "name": "item",
+      "attribute": "shiplean.item",
+      "found": true
+    },
+    {
+      "name": "session",
+      "attribute": "session.id",
+      "found": true
+    },
+    {
+      "name": "branch",
+      "attribute": "vcs.ref.head.name",
+      "found": false
+    }
+  ]
+}

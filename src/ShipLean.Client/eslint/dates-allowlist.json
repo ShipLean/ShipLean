@@ -1,0 +1,7 @@
+[
+  {
+    "file": "src/features/sprints/backlog/sprintWorkingDays.ts",
+    "owner": "closeout",
+    "why": "Counts sprint working days from yyyy-MM-dd strings with Date in UTC; the server should send the count"
+  }
+]

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Dapper;
 using Npgsql;
 using ShipLean.Application.Identity;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Inbox;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
@@ -11,7 +12,7 @@ namespace ShipLean.Application.Features.Inbox;
 
 // The open decisions and questions on items the user owns (AskOwnerSql.OwnedByUser). Only open ones count; confirmed, changed,
 // answered and withdrawn asks are history. Ordering is the reader's.
-public sealed class AskInboxSource(NpgsqlDataSource dataSource, TimeProvider clock) : IInboxAskSource
+public sealed class AskInboxSource(NpgsqlDataSource dataSource, TimeProvider clock, IViewerZone viewerZone) : IInboxAskSource
 {
     public async Task<IReadOnlyList<InboxAskRow>> OpenAsync(Guid userId, Guid projectId, CancellationToken cancellationToken = default)
     {
@@ -40,11 +41,11 @@ public sealed class AskInboxSource(NpgsqlDataSource dataSource, TimeProvider clo
 
         var rows = new List<InboxAskRow>();
         rows.AddRange(decisions.Select(d => new InboxAskRow(d.WorkItemId, new InboxAskDto(
-            InboxAskKind.Decision, $"D{d.Number}", d.At, DisplayDate.Relative(d.At, clock), users[d.RaisedBy], d.AgentName,
+            InboxAskKind.Decision, $"D{d.Number}", d.At, DisplayDate.Relative(d.At, clock.GetUtcNow(), viewerZone.Zone), users[d.RaisedBy], d.AgentName,
             new InboxDecisionDto(d.Number, d.Question, d.Recommended, JsonSerializer.Deserialize<string[]>(d.Alternatives)!),
             null, null, null))));
         rows.AddRange(questions.Select(q => new InboxAskRow(q.WorkItemId, new InboxAskDto(
-            InboxAskKind.Question, $"Q{q.Number}", q.At, DisplayDate.Relative(q.At, clock), users[q.AskedBy], q.AgentName,
+            InboxAskKind.Question, $"Q{q.Number}", q.At, DisplayDate.Relative(q.At, clock.GetUtcNow(), viewerZone.Zone), users[q.AskedBy], q.AgentName,
             null, new InboxQuestionDto(q.Number, q.Text, JsonSerializer.Deserialize<string[]>(q.Options)!), null, null))));
         return rows;
     }

@@ -14,6 +14,7 @@ using ShipLean.Contracts.Blobs;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.WebApi.Tests.Sprints.Api;
@@ -76,7 +77,7 @@ public class DemoDeliveryTests : ApiFixture
         var effective = limits ?? services.GetRequiredService<AttachmentLimits>();
         var store = new AttachmentStore(
             services.GetRequiredService<NpgsqlDataSource>(), services.GetRequiredService<ICurrentUser>(), services.GetRequiredService<IBlobStore>(),
-            TimeProvider.System, services.GetRequiredService<IProjectEvents>(), effective);
+            TimeProvider.System, services.GetRequiredService<IProjectEvents>(), effective, new FixedViewerZone());
         var delivery = new DemoDelivery(store, services.GetRequiredService<ITransferTokens>(), services.GetRequiredService<IProjectEvents>(), effective);
         return await delivery.DeliverAsync(
             new DemoDeliveryParts(grant, token, chapters ?? Chapters(), script, new MemoryStream(Enumerable.Repeat(fill, videoBytes).ToArray())), CancellationToken.None);

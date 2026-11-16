@@ -1,0 +1,197 @@
+/* The run page (SHIP-1463 D14): header, overview strip and layout. Token colours only. */
+.rv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.rv[data-has-panel='true'] {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+.rv-main {
+  min-width: 0;
+}
+.rv-state {
+  padding: var(--space-5);
+  color: var(--color-muted);
+}
+.rv-state h2 {
+  color: var(--color-text);
+  font-size: var(--text-lg);
+}
+.rv-head {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+.rv-back,
+.rv-muted {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.rv-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.rv-title h1 {
+  font-size: var(--text-lg);
+  margin: 0;
+}
+.rv-spacer {
+  flex: 1;
+}
+.rv-pill {
+  font-size: var(--text-xs);
+  border-radius: var(--radius-full, 999px);
+  padding: 1px var(--space-2);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.rv-nav {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+.rv-btn {
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--color-text);
+}
+.rv-btn.off {
+  opacity: 0.4;
+}
+.rv-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.rv-stat {
+  display: inline-grid;
+  line-height: 1.15;
+}
+.rv-stat b {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.rv-stat b.bad {
+  color: var(--color-danger);
+}
+.rv-stat b.warn {
+  color: var(--color-warn);
+}
+.rv-stat span {
+  font-size: var(--text-2xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-semibold);
+}
+.rv-sep {
+  flex: 1;
+}
+.rv-seg {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  overflow: hidden;
+}
+.rv-seg button {
+  font-size: var(--text-xs);
+  padding: 3px var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 0;
+  cursor: pointer;
+}
+.rv-seg button[aria-pressed='true'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+}
+.rv-find {
+  width: 180px;
+  font-size: var(--text-xs);
+  padding: 3px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.ov-wrap {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr) 76px;
+  align-items: center;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+.ov-label {
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.ov-label button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: inherit;
+}
+.ov {
+  position: relative;
+  height: 34px;
+}
+.ov-idle {
+  position: absolute;
+  top: 16px;
+  height: 2px;
+  background: var(--color-border);
+}
+.ov-turn {
+  position: absolute;
+  top: 7px;
+  height: 20px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
+  font-size: var(--text-2xs);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.ov-turn:hover,
+.ov-turn.on {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-color: var(--color-accent);
+}
+.ov-wait {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-warn) 60%, transparent) 0 4px,
+    transparent 4px 7px
+  );
+}
+.ov-err {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 2px;
+  background: var(--color-danger);
+}
+.ov-win {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border: 2px solid var(--color-accent);
+  border-radius: 4px;
+  pointer-events: none;
+}

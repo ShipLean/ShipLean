@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { AttachmentPage } from './pages/AttachmentPage';
 import { MobileSignInPage } from './features/mobileSignIn/MobileSignInPage';
@@ -24,10 +25,16 @@ import { SprintRetroPage } from './pages/SprintRetroPage';
 import { SprintDemoPage } from './pages/SprintDemoPage';
 import { SprintsPage } from './pages/SprintsPage';
 import { TaskboardPage } from './pages/TaskboardPage';
+import { AgentRunPage } from './pages/AgentRunPage';
 import { WorkItemPage } from './pages/WorkItemPage';
 import { routePattern } from './routes';
 import { Shell } from './Shell';
 import { ImageViewerHost } from './touch/imageViewer';
+
+// The Changes page loads on its own: the diff renderer comes with it and only there.
+const TaskChangesPage = lazy(() =>
+  import('./pages/TaskChangesPage').then((m) => ({ default: m.TaskChangesPage })),
+);
 
 // The full route table, separate from main.tsx (which owns the router) so component tests can mount the exact routing
 // the real app uses. Paths and ids are in routes.ts; docs/navigation.md lists the pages and their slots.
@@ -51,6 +58,15 @@ export function AppRoutes() {
           <Route path={routePattern('epicsBacklog')} element={<BacklogPage level="epics" />} />
           <Route path={routePattern('workItem')} element={<WorkItemPage />} />
           <Route path={routePattern('workItemAttachment')} element={<AttachmentPage />} />
+          <Route path={routePattern('agentRun')} element={<AgentRunPage />} />
+          <Route
+            path={routePattern('taskChanges')}
+            element={
+              <Suspense fallback={null}>
+                <TaskChangesPage />
+              </Suspense>
+            }
+          />
           <Route path={routePattern('featureBoard')} element={<FeatureBoardPage />} />
           <Route path={routePattern('featureTimeline')} element={<FeatureTimelinePage />} />
           <Route path={routePattern('storiesBoard')} element={<BoardPage level="stories" />} />

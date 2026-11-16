@@ -10,6 +10,7 @@ using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Inbox;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
@@ -121,7 +122,7 @@ public class AgentFollowUpTests : ApiFixture
         var store = new CommentStore(
             scope.ServiceProvider.GetRequiredService<NpgsqlDataSource>(), new FixedCurrentUser(SeedIds.Users.Joel), AgentIdentity.None,
             scope.ServiceProvider.GetRequiredService<MarkdownRenderer>(), TimeProvider.System, new DiscardingProjectEvents(),
-            scope.ServiceProvider.GetRequiredService<IMentionRecorder>());
+            scope.ServiceProvider.GetRequiredService<IMentionRecorder>(), new FixedViewerZone());
 
         var written = await store.AddAsync(itemId, new CommentCreate("From an MCP client that did not give its name"));
 

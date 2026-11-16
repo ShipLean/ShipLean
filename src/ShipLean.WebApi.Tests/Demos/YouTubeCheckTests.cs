@@ -12,6 +12,7 @@ using ShipLean.Core;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 using ShipLean.WebApi.Tests.ProjectSettings.Api;
 
 namespace ShipLean.WebApi.Tests.Demos;
@@ -115,7 +116,23 @@ public class YouTubeCheckTests : ApiFixture
         stored.Visibility.ShouldBe("unlisted");
         stored.Refusal.ShouldBeNull();
         stored.CheckedAt.ShouldNotBeNull();
-        result.CheckedLabel.ShouldBe($"Checked today at {DisplayDate.Clock(stored.CheckedAt.Value, TimeProvider.System)}");
+        result.CheckedLabel.ShouldBe($"Checked today at {DisplayDate.Time(stored.CheckedAt.Value, TimeZoneInfo.Utc)}");
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone in YouTubeCheck.
+    [Test]
+    public async Task YouTubeCheck_WhenViewerIsInBangkok_ShouldStampTheCheckInBangkokTime()
+    {
+        var project = await ArrangeAsync();
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+
+        var result = await CheckAsync(project, "unlisted");
+
+        var stored = await StoredAsync(project);
+        var checkedAt = stored.CheckedAt.ShouldNotBeNull();
+        var expected = $"Checked {DisplayDate.DayAt(checkedAt, checkedAt, ViewerZoneTestData.Bangkok)}";
+        expected.ShouldNotBe($"Checked {DisplayDate.DayAt(checkedAt, checkedAt, TimeZoneInfo.Utc)}");
+        result.CheckedLabel.ShouldBe(expected);
     }
 
     [Test]

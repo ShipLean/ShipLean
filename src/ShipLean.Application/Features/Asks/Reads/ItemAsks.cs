@@ -13,7 +13,7 @@ namespace ShipLean.Application.Features.Asks.Reads;
 
 // Reads a work item's decisions, questions and history from the asks tables, and for a Feature the Stories and Bugs under it
 // with open asks. Trusts its caller to have checked access.
-public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider clock) : IItemAsks
+public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUser, MarkdownRenderer renderer, TimeProvider clock, IViewerZone viewerZone) : IItemAsks
 {
     public async Task<ItemAsksDto> GetAsync(Guid workItemId, CancellationToken cancellationToken = default)
     {
@@ -84,21 +84,21 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
 
         var questionDtos = questions.Select(q => new QuestionDto(
             q.Id, q.Number, $"Q{q.Number}", q.Text, JsonSerializer.Deserialize<string[]>(q.Options)!, Enum.Parse<QuestionState>(q.State, true), users[q.AskedBy], q.AgentName,
-            q.AskedAt, DisplayDate.Relative(q.AskedAt, clock),
+            q.AskedAt, DisplayDate.Relative(q.AskedAt, clock.GetUtcNow(), viewerZone.Zone),
             q.AnswerCommentId is { } commentId && q.AnswerAt is { } answerAt
                 ? Answer(commentId, q.AnswerBody!, User(q.AnswerAuthor), q.AnswerAgentName, answerAt)
                 : null,
-            q.WithdrawnAt, q.WithdrawnAt is { } w ? DisplayDate.Relative(w, clock) : null)).ToList();
+            q.WithdrawnAt, q.WithdrawnAt is { } w ? DisplayDate.Relative(w, clock.GetUtcNow(), viewerZone.Zone) : null)).ToList();
         var eventsByDecision = events.ToLookup(e => e.DecisionId!.Value);
         var decisionDtos = decisions.Select(d => new DecisionDto(
             d.Id, d.Number, $"D{d.Number}", d.Question, d.Recommended, JsonSerializer.Deserialize<string[]>(d.Alternatives)!, d.CurrentAnswer,
             Enum.Parse<AnswerKind>(d.AnswerKind, true), d.AlternativeIndex, Enum.Parse<DecisionState>(d.State, true), users[d.RaisedBy],
-            d.RaisedAgentName, d.RaisedAt, DisplayDate.Relative(d.RaisedAt, clock), User(d.AnsweredBy), d.AnsweredAgentName, d.AnsweredAt,
-            d.AnsweredAt is { } at ? DisplayDate.Relative(at, clock) : null, d.FromDescription,
+            d.RaisedAgentName, d.RaisedAt, DisplayDate.Relative(d.RaisedAt, clock.GetUtcNow(), viewerZone.Zone), User(d.AnsweredBy), d.AnsweredAgentName, d.AnsweredAt,
+            d.AnsweredAt is { } at ? DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone) : null, d.FromDescription,
             [.. eventsByDecision[d.Id].Select(e => new DecisionEventDto(
                 Enum.Parse<AskEventKind>(e.Kind, true), e.FromAnswer, e.ToAnswer,
                 e.ToKind is { } kind ? Enum.Parse<AnswerKind>(kind, true) : null, e.Note, User(e.ByUser), e.AgentName,
-                e.At, DisplayDate.Relative(e.At, clock), e.FromDescription))])).ToList();
+                e.At, DisplayDate.Relative(e.At, clock.GetUtcNow(), viewerZone.Zone), e.FromDescription))])).ToList();
 
         return new ItemAsksDto(
             workItemId, User(owner), item.AssignedTo is null, owner == currentUser.Id,
@@ -108,7 +108,7 @@ public sealed class ItemAsks(NpgsqlDataSource dataSource, ICurrentUser currentUs
     }
 
     private QuestionAnswerDto Answer(Guid commentId, string body, UserRef? by, string? agentName, DateTimeOffset at)
-        => new(commentId, body, renderer.Render(body).Html, by, agentName, at, DisplayDate.Relative(at, clock));
+        => new(commentId, body, renderer.Render(body).Html, by, agentName, at, DisplayDate.Relative(at, clock.GetUtcNow(), viewerZone.Zone));
 
     private sealed record ItemRow(string Type, Guid? AssignedTo, Guid? CreatedBy);
 

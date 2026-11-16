@@ -14,6 +14,7 @@ using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Mcp;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.TaskChanges;
 using ShipLean.Contracts.WorkItems;
 using ShipLean.Contracts.WorkItems.Reads.Tree;
 using ShipLean.Core;
@@ -36,7 +37,10 @@ internal sealed class GetWorkItemTool(
     IItemAsks asks,
     AgentSessionMcpReads agentSessions,
     IRunLogAttachments runLogs,
+    ITaskCommits taskCommits,
+    ICodeComments codeComments,
     TimeProvider clock,
+    IViewerZone viewerZone,
     McpItemTypeSlot itemType)
 {
     private const int CommentCount = 5;
@@ -67,6 +71,7 @@ internal sealed class GetWorkItemTool(
             cancellationToken);
         var itemAsks = await asks.GetAsync(item.Id, cancellationToken);
         var sessions = await agentSessions.NewestAsync(item.Id, AgentSessionCount, cancellationToken);
+        var (commits, openComments) = await ItemCodeReads.ReadAsync(taskCommits, codeComments, snapshot.Type, item.Id, cancellationToken);
         var issuer = (await addresses.ForCurrentRequestAsync(cancellationToken)).Issuer;
 
         var result = new WorkItemResult(
@@ -89,7 +94,7 @@ internal sealed class GetWorkItemTool(
             [.. names.Parents.Select(p => new WorkItemResult.Ref(p.Key, p.Type, p.Title))],
             [.. children.Select(c => new WorkItemResult.Child(c.Key, c.Type.Name, c.Title, c.State.Name, c.Assignee?.Name))],
             [.. snapshot.Links.Select(l => new WorkItemResult.Link(CamelCase(l.Value.Type), l.Value.Key, l.Value.Title, l.Value.Url))],
-            [.. page.Select(c => new WorkItemResult.Comment(c.Author?.Name, c.AgentName, c.CreatedAt.ToString("O"), c.Body))],
+            [.. page.Select(c => new WorkItemResult.Comment(c.Author?.Name, c.AgentName, c.CreatedAt.ToString("O"), DisplayDate.Relative(c.CreatedAt, clock.GetUtcNow(), viewerZone.Zone), c.Body))],
             commentsOlder,
             [.. listed.Select(a => new WorkItemResult.Attachment(
                 a.Name, a.SizeBytes, a.ContentType, a.Kind == AttachmentKind.Markdown, a.UploadedBy?.Name, a.CreatedAt.ToString("O"), a.AgentName, a.Via))],
@@ -109,9 +114,11 @@ internal sealed class GetWorkItemTool(
             itemAsks.OpenQuestions,
             itemAsks.OpenDecisions,
             [.. sessions.Select(s => AgentSessionLineOf(s, item.Role))],
+            commits,
+            openComments,
             isFeature ? snapshot.Goal : null,
             isFeature ? snapshot.StatusLine : null,
-            isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock) : null,
+            isFeature ? VerifiedLine.Of(snapshot, VerifierName(snapshot, names), clock, viewerZone) : null,
             isFeature ? snapshot.Slug : null,
             StartedLabel(snapshot));
         return OrientReply.Of(result, $"{result.Key} {result.Title}: {result.State}, revision {result.Revision}, {result.Children.Count} children, {result.Attachments.Count} attachments, {result.Comments.Count} recent comments{AsksSuffix(itemAsks)}.");
@@ -170,7 +177,7 @@ internal sealed class GetWorkItemTool(
 
     private string? StartedLabel(WorkItemSnapshot snapshot)
         => snapshot is { Type: WorkItemTypeId.Feature, StartedOn: { } started }
-            ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, clock.LocalTimeZone), clock.GetUtcNow(), clock.LocalTimeZone)
+            ? DisplayDate.ShortDay(DisplayDate.StartOfDay(started, viewerZone.Zone), clock.GetUtcNow(), viewerZone.Zone)
             : null;
 
     private static string CamelCase(LinkType type) => char.ToLowerInvariant(type.ToString()[0]) + type.ToString()[1..];

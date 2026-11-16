@@ -1,12 +1,13 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Agents.Health;
 
 // The Start agent and Create demo warning for a connection whose newest delivery attempt failed and is newer than its newest success.
-public sealed class AgentConnectionWarnings(NpgsqlDataSource dataSource, TimeProvider time) : IAgentConnectionWarnings
+public sealed class AgentConnectionWarnings(NpgsqlDataSource dataSource, TimeProvider time, IViewerZone viewerZone) : IAgentConnectionWarnings
 {
     public async Task<string?> ForConnectionAsync(Guid connectionId, CancellationToken cancellationToken)
     {
@@ -18,7 +19,7 @@ public sealed class AgentConnectionWarnings(NpgsqlDataSource dataSource, TimePro
             """,
             new { connectionId }, cancellationToken: cancellationToken));
         return newest is { Succeeded: false } failed
-            ? $"The last delivery to this connection failed {DisplayDate.Relative(failed.At, time)}."
+            ? $"The last delivery to this connection failed {DisplayDate.Relative(failed.At, time.GetUtcNow(), viewerZone.Zone)}."
             : null;
     }
 

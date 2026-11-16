@@ -83,7 +83,7 @@ public sealed record LinkCardRow(
         return (Url, LinkTitleSource.Url);
     }
 
-    public LinkCardDto ToDto(TimeProvider clock, bool refreshDue = false)
+    public LinkCardDto ToDto(DateTimeOffset now, TimeZoneInfo zone, bool refreshDue = false)
     {
         var address = Address;
         var kind = KindOrAddress;
@@ -91,7 +91,7 @@ public sealed record LinkCardRow(
         return new LinkCardDto(
             Id, Url, kind, kind == LinkKind.Page ? LinkGroup.Page : LinkGroup.Code, title, titleSource, Note,
             Number ?? address.Number, Location ?? address.Location, PreviewSite ?? address.Host, Author,
-            StateValue, StateSourceValue, StateAsOf, StateAsOf is { } asOf ? DisplayDate.Relative(asOf, clock) : null, StateReportedBy,
+            StateValue, StateSourceValue, StateAsOf, StateAsOf is { } asOf ? DisplayDate.Relative(asOf, now, zone) : null, StateReportedBy,
             PreviewDescription, PreviewImageKey is null ? null : $"/api/link-cards/{Id}/image", PreviewFaviconKey is null ? null : $"/api/link-cards/{Id}/favicon",
             PreviewStatusValue, refreshDue);
     }

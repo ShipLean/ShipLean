@@ -9,7 +9,9 @@ export function WorkItemScreen({
   itemKey,
   links,
   retro = null,
+  changes = null,
   tasks,
+  agentRuns = null,
   discussion,
   side,
 }: FormSlotProps) {
@@ -36,7 +38,9 @@ export function WorkItemScreen({
       project={project}
       links={links}
       retro={retro}
+      changes={changes}
       tasks={tasks}
+      agentRuns={agentRuns}
       discussion={discussion}
       side={side}
     />

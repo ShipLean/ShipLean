@@ -1,0 +1,38 @@
+{
+  "kind": "tool",
+  "name": "Edit",
+  "startLabel": "10:00:12",
+  "durationMs": 8000,
+  "offsetMs": 12000,
+  "waitMs": 3000,
+  "contentHidden": false,
+  "input": "{\"file_path\":\"src/App/Foo.cs\"}",
+  "output": "edited Foo.cs",
+  "outputTruncated": false,
+  "attributes": [
+    {
+      "key": "file_path",
+      "value": "src/App/Foo.cs"
+    },
+    {
+      "key": "prompt.id",
+      "value": "p-1"
+    }
+  ],
+  "logs": [
+    {
+      "timeLabel": "10:00:20",
+      "severity": "INFO",
+      "body": "tool_result",
+      "attributes": [
+        {
+          "key": "success",
+          "value": "true"
+        }
+      ]
+    }
+  ],
+  "filePath": "src/App/Foo.cs",
+  "commitSha": null,
+  "grafanaUrl": null
+}

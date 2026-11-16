@@ -3,6 +3,7 @@ using ShipLean.Application.Database;
 using ShipLean.Application.Features.WorkItemDetails.Attachments;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Attachments;
+using ShipLean.TestSupport.Identity;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Contracts.Attachments;
@@ -39,7 +40,7 @@ public class PostgresAttachmentStoreContractTests : AttachmentStoreContract
     protected override IAttachmentStore CreateStore(Guid actorId)
         => new AttachmentStore(
             _dataSource, new FixedCurrentUser(actorId), new LocalDiskBlobStore(_blobRoot), TimeProvider.System,
-            new DiscardingProjectEvents(), new AttachmentLimits(AttachmentLimits.DefaultMaxBytes));
+            new DiscardingProjectEvents(), new AttachmentLimits(AttachmentLimits.DefaultMaxBytes), new FixedViewerZone());
 
     protected override async Task<Guid> ArrangeWorkItemAsync()
     {

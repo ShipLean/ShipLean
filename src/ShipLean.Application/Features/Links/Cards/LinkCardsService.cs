@@ -10,7 +10,7 @@ namespace ShipLean.Application.Features.Links.Cards;
 // ILinkCards over LinkCardRows. An address is read through the first ILinkCardSource (lowest Order) that handles it; when
 // none does, the card is built from the address alone. A source's title is stored as the preview title, never as the typed
 // title. agentStamp is not kept: work_item_link has no column for it and no card field reads it.
-public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader, ICurrentUser currentUser, TimeProvider clock, IProjectEvents events) : ILinkCards
+public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader, ICurrentUser currentUser, TimeProvider clock, IProjectEvents events, IViewerZone viewerZone) : ILinkCards
 {
     private const int MaxUrlLength = 2048;
 
@@ -23,7 +23,7 @@ public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader,
         var cards = new List<LinkCardDto>();
         foreach (var row in await rows.ListAsync(workItemId, cancellationToken))
         {
-            cards.Add(row.ToDto(clock, await IsRefreshDueAsync(row, cancellationToken)));
+            cards.Add(row.ToDto(clock.GetUtcNow(), viewerZone.Zone, await IsRefreshDueAsync(row, cancellationToken)));
         }
 
         return new LinkCardsDto(links, [.. cards.Where(c => c.Group == LinkGroup.Code)], [.. cards.Where(c => c.Group == LinkGroup.Page)]);
@@ -131,7 +131,7 @@ public sealed class LinkCardsService(LinkCardRows rows, LinkSourceReader reader,
     private async Task<LinkCardDto> CardAsync(Guid id, CancellationToken cancellationToken)
     {
         var row = await rows.FindAsync(id, cancellationToken) ?? throw ApiException.NotFound("That link does not exist.");
-        return row.ToDto(clock, await IsRefreshDueAsync(row, cancellationToken));
+        return row.ToDto(clock.GetUtcNow(), viewerZone.Zone, await IsRefreshDueAsync(row, cancellationToken));
     }
 
     private static Uri ParseAddress(string url)

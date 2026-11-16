@@ -9,6 +9,10 @@ public class NoForeignProductNameTests
 {
     private static readonly string Needle = "Co" + "dex";
 
+    // OpenAI's coding agent is a supported agent and is named exactly these ways (agent ids, labels, its event prefix, its config
+    // folder and its service name); anything else that carries the name still fails. Matched case-sensitively, then removed.
+    private static readonly string[] AllowedStrings = ["Codex CLI", "codex-cli", "codex.", ".codex/", "codex_cli_rs"];
+
     // Build output, dependencies and the checkout's own metadata are not the repository's content.
     private static readonly string[] SkippedFolders =
         [".git", "node_modules", "bin", "obj", "wwwroot", "artifacts", "TestResults", "test-results", "playwright-report", ".pnpm-store", ".cache"];
@@ -17,6 +21,57 @@ public class NoForeignProductNameTests
     public void Repository_WhenScanned_ShouldNotMentionTheForeignProductName()
     {
         Mentions(RepoPaths.Root).ShouldBeEmpty("Describe what it is, not where it came from.");
+    }
+
+    [Test]
+    public void Mentions_WhenTheNameAppearsAlone_ShouldReportTheFile()
+    {
+        var root = Directory.CreateTempSubdirectory("no-foreign-name-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "alone.md"), $"the {Needle} app");
+            File.WriteAllText(Path.Combine(root, "near.md"), $"{Needle} CLI is allowed but not {Needle} Suite");
+
+            Mentions(root).ShouldBe(["alone.md", "near.md"]);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [TestCaseSource(nameof(AllowedStrings))]
+    public void Mentions_WhenTheTextIsAnAllowedAgentName_ShouldNotReportTheFile(string allowed)
+    {
+        var root = Directory.CreateTempSubdirectory("no-foreign-name-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "allowed.md"), $"uses {allowed} here");
+
+            Mentions(root).ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void Mentions_WhenAPathHoldsAnAllowedName_ShouldNotReportTheFile()
+    {
+        var root = Directory.CreateTempSubdirectory("no-foreign-name-").FullName;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "." + Needle.ToLowerInvariant()));
+            File.WriteAllText(Path.Combine(root, "." + Needle.ToLowerInvariant(), "config.toml"), "clean");
+            File.WriteAllText(Path.Combine(root, "codex-cli-synthetic.json"), "clean");
+
+            Mentions(root).ShouldBeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     [Test]
@@ -44,8 +99,7 @@ public class NoForeignProductNameTests
     // Repo-relative paths of the files whose path or text mentions the name.
     private static List<string> Mentions(string root)
         => Files(root)
-            .Where(file => Path.GetRelativePath(root, file).Contains(Needle, StringComparison.OrdinalIgnoreCase)
-                           || TextMentions(file))
+            .Where(file => Carries(Path.GetRelativePath(root, file).Replace('\\', '/')) || TextMentions(file))
             .Select(file => Path.GetRelativePath(root, file))
             .Order(StringComparer.Ordinal)
             .ToList();
@@ -70,6 +124,10 @@ public class NoForeignProductNameTests
     {
         var bytes = File.ReadAllBytes(file);
         return !bytes.AsSpan(0, Math.Min(bytes.Length, 8192)).Contains((byte)0)
-               && System.Text.Encoding.UTF8.GetString(bytes).Contains(Needle, StringComparison.OrdinalIgnoreCase);
+               && Carries(System.Text.Encoding.UTF8.GetString(bytes));
     }
+
+    private static bool Carries(string text)
+        => AllowedStrings.Aggregate(text, (rest, allowed) => rest.Replace(allowed, string.Empty, StringComparison.Ordinal))
+            .Contains(Needle, StringComparison.OrdinalIgnoreCase);
 }

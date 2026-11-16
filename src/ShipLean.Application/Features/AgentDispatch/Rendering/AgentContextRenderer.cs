@@ -44,6 +44,12 @@ public static class AgentContextRenderer
         else
         {
             body["promptContext"] = AgentPromptContext.Render(input);
+            // C1: a sprint-demo session is implement-shaped (the demo prompt is its guidance) and the relay runs it with the demo tool profile.
+            // The relay resolves its repository as for implement, so no shipleanRepository.
+            if (input.Mode == AgentSessionMode.Demo)
+            {
+                body["shipleanMode"] = AgentSessionModes.Demo;
+            }
         }
 
         return body;

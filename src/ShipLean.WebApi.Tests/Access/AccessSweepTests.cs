@@ -7,6 +7,7 @@ using ShipLean.TestSupport.AccessSweep;
 using ShipLean.LocalEnvironment.Blobs;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.WebApi.Tests.Inspection.Wiring;
 using ShipLean.WebApi.Tests.Retros.Api;
 
 namespace ShipLean.WebApi.Tests.Access;
@@ -19,6 +20,9 @@ public class AccessSweepTests : ApiFixture
     // The seeded attachments' bytes are in an in-memory blob store, as in the allowed leg: without them a download answers
     // 404 whether or not access is checked, and the refused leg would prove nothing for that route.
     protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddSingleton<IBlobStore, InMemoryBlobStore>();
+
+    // The Inspection settings PUT answers 403 to a member only while Inspection is on for the instance.
+    protected override IReadOnlyDictionary<string, string?> HostSettings => InspectionSweepHost.Settings;
 
     [OneTimeSetUp]
     public Task PutSeedAttachmentBlobs() => SeedAttachmentBlobs.PutAllAsync(Host.Services.GetRequiredService<IBlobStore>());

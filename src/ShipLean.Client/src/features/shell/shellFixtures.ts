@@ -17,6 +17,8 @@ export function meDto(overrides: Partial<MeDto> = {}): MeDto {
     canCreateProjects: true,
     theme: 'os',
     density: 'compact',
+    timeZone: null,
+    timeZoneLabel: 'Not set: times show in UTC',
     ...overrides,
   };
 }
