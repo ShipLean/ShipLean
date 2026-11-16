@@ -92,7 +92,7 @@ export const QualityView: ComponentType<InspectionViewProps> = ({
       </section>
       <QualityRows periods={view.periods} quarters={view.quarters} unit={unit} />
       <QualityBugs projectKey={project.key} bugs={view.bugs} periods={view.periods} />
-      <aside className="grid gap-4 text-[length:var(--text-sm)] text-ink-muted md:grid-cols-3">
+      <aside className="grid gap-4 text-[length:var(--text-sm)] grid-cols-3 text-ink-muted touch:grid-cols-1">
         <section className="grid gap-1.5">
           <span className={OVERLINE}>Found before release</span>
           <p className="m-0">
