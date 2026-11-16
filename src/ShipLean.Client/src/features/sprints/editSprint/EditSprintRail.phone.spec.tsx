@@ -65,6 +65,26 @@ test('EditSprint_AtTouch_ShouldUseTheSaveBar', async ({ mount, page }) => {
   await expect.poll(() => done).toBe(1);
 });
 
+// Mutation: the Save bar's Discard wired to anything but onDone (or a save on Discard) fails a check below.
+test('EditSprint_AtTouch_Discard_ShouldCloseWithoutSaving', async ({ mount, page }) => {
+  const patched: SprintUpdate[] = [];
+  let done = 0;
+  await page.route('**/api/projects/p1/sprints', (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/sprints/s24', (route) => {
+    patched.push(route.request().postDataJSON() as SprintUpdate);
+    return route.fulfill({ json: sprint });
+  });
+  await mount(
+    <EditSprintRail projectId="p1" sprint={sprint} onDone={() => done++} onDeleted={() => {}} />,
+  );
+
+  await page.getByTestId(ids.editSprintEnd).fill('2026-11-02');
+  await page.getByTestId(touchTestIds.saveBarDiscard).tap();
+
+  await expect.poll(() => done).toBe(1);
+  expect(patched, 'Discard saves nothing').toEqual([]);
+});
+
 // Mutation: dropping datesError from the refusal (code check) leaves the dates unmarked and the error under Goal.
 test('EditSprint_AtTouch_WhenTheDatesAreRefused_ShouldSaySoUnderTheDates', async ({
   mount,
