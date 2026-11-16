@@ -68,6 +68,7 @@ internal sealed class InMemoryDtoBuilder(
             repro.Markdown,
             repro.Html,
             item.Severity,
+            item.FoundBeforeRelease,
             State(project, item.StateId),
             UserOrNull(item.AssigneeId),
             UserOrNull(item.CreatedBy),

@@ -11,7 +11,8 @@ namespace ShipLean.Application.Features.InspectionMetrics.Aggregate;
 // The view (K2, K7), following the design's INS.build. A task falls in the sprint its lead time ended in, by the end's day in the
 // viewer's zone; a task ending on the two days after a sprint's last day (its weekend) still counts in it. Only started sprints
 // are periods. The headline is the last finished sprint with the running one so far (design D6); quarters are calendar quarters
-// by sprint end date and sum every started sprint of the quarter, shown or not (design D7).
+// by sprint end date and sum every started sprint of the quarter, shown or not (design D7). Those period rules live in
+// Periods/InspectionPeriods, which quality shares. Every Quality and Bugs is left null here: the quality aggregator sets them.
 public sealed class LeadTimeAggregator : ILeadTimeAggregator
 {
     public const string Caveat = "These numbers tell you where to look, not what caused a change.";
@@ -21,7 +22,6 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
     public const string NoFeatureLabel = "No Feature";
 
     private const int LongestCount = 6;
-    private const int WeekendDays = 2;
     private const double OverTwoDaysHours = 48;
 
     public InspectionMetricsViewDto Build(
@@ -49,7 +49,8 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             selection.Cut == InspectionCut.None ? null : run.Cuts(selection.Cut),
             [.. run.InRange.OrderByDescending(task => task.LeadHours).ThenBy(task => task.Key, StringComparer.Ordinal).Take(LongestCount).Select(run.TaskDto)],
             run.LeftOut(),
-            selection.Period is null ? null : run.PeriodDetail(selection.Period, selection.Select));
+            selection.Period is null ? null : run.PeriodDetail(selection.Period, selection.Select),
+            Quality: null);
     }
 
     private sealed class Run
@@ -73,7 +74,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             _now = now;
             _zone = zone;
             _today = DisplayDate.Today(now, zone);
-            _started = [.. sprints.Sprints.Where(sprint => sprint.StartDate <= _today).OrderBy(sprint => sprint.StartDate)];
+            _started = InspectionPeriods.Started(sprints.Sprints, _today);
             _taskFacts = facts.Tasks.ToDictionary(task => task.Key, StringComparer.Ordinal);
 
             var reviews = facts.Reviews.ToLookup(review => review.ItemKey, StringComparer.Ordinal);
@@ -90,7 +91,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                     return new AggregatedTask(
                         task,
                         fact,
-                        SprintOf(_started, DisplayDate.DayOf(task.End, zone)),
+                        InspectionPeriods.SprintOf(_started, task.End, zone),
                         Who(fact, starters.GetValueOrDefault(fact.Key)),
                         reviews[fact.Key].Count(),
                         commits[fact.Key].Count());
@@ -114,7 +115,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
         {
             var finished = _started.LastOrDefault(sprint => sprint.EndDate < _today);
             var soFar = _started.LastOrDefault(sprint => sprint.EndDate >= _today);
-            var thisQuarter = InspectionWindow.QuarterStart(_today);
+            var thisQuarter = InspectionPeriods.QuarterStart(_today);
             return new InspectionHeadlineDto(
                 finished is null ? null : HeadlinePeriod(finished),
                 soFar is null ? null : HeadlinePeriod(soFar),
@@ -134,14 +135,15 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                     sprint.StartDate,
                     sprint.EndDate,
                     SprintLabels.Dates(sprint.StartDate, sprint.EndDate, _today),
-                    QuarterLabel(InspectionWindow.QuarterStart(sprint.EndDate)),
+                    InspectionPeriods.QuarterLabel(InspectionPeriods.QuarterOf(sprint)),
                     IsRunning(sprint),
                     PeriodStats(sprint),
-                    [.. tasks.OrderBy(task => task.Lead.End).Select(task => Dot(task, ReferenceEquals(task, longest)))]);
+                    [.. tasks.OrderBy(task => task.Lead.End).Select(task => Dot(task, ReferenceEquals(task, longest)))],
+                    Quality: null);
             })];
 
         public IReadOnlyList<InspectionQuarterDto> Quarters()
-            => [.. _window.Shown.Select(sprint => InspectionWindow.QuarterStart(sprint.EndDate)).Distinct().Select(quarter => Quarter(quarter)!)];
+            => [.. _window.Shown.Select(InspectionPeriods.QuarterOf).Distinct().Select(quarter => Quarter(quarter)!)];
 
         public IReadOnlyList<InspectionCutRowDto> Cuts(InspectionCut cut)
         {
@@ -170,7 +172,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             return
             [
                 .. _tasks
-                    .Where(task => task.Start is null && SprintOf(_started, DisplayDate.DayOf(task.End, _zone)) is { } sprint && shown.Contains(sprint.Id))
+                    .Where(task => task.Start is null && InspectionPeriods.SprintOf(_started, task.End, _zone) is { } sprint && shown.Contains(sprint.Id))
                     .OrderBy(task => task.End)
                     .Select(task =>
                     {
@@ -184,7 +186,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
         public InspectionPeriodDetailDto PeriodDetail(InspectionSprint period, string? select)
         {
             var tasks = TasksIn(period);
-            var previous = _started.LastOrDefault(sprint => sprint.StartDate < period.StartDate && sprint.Id != period.Id);
+            var previous = InspectionPeriods.Previous(_started, period);
             var next = _started.FirstOrDefault(sprint => sprint.StartDate > period.StartDate && sprint.Id != period.Id);
             var slowest = Slowest(tasks);
             var selected = select is null ? slowest.FirstOrDefault() : tasks.FirstOrDefault(task => string.Equals(task.Key, select, StringComparison.Ordinal));
@@ -192,14 +194,16 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                 period.Id,
                 period.Name,
                 SprintLabels.Dates(period.StartDate, period.EndDate, _today),
-                QuarterLabel(InspectionWindow.QuarterStart(period.EndDate)),
+                InspectionPeriods.QuarterLabel(InspectionPeriods.QuarterOf(period)),
                 previous is null ? null : new InspectionPeriodRefDto(previous.Id, ShortName(previous)),
                 next is null ? null : new InspectionPeriodRefDto(next.Id, ShortName(next)),
                 IsRunning(period),
                 PeriodStats(period),
                 [.. slowest.Select(TaskDto)],
                 Features(period, tasks),
-                selected is null ? null : Measurement(selected));
+                selected is null ? null : Measurement(selected),
+                Quality: null,
+                Bugs: null);
         }
 
         public InspectionTaskDto TaskDto(AggregatedTask task)
@@ -290,7 +294,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                     LeadTimeStats.Round((item.At - task.Start).TotalHours),
                     item.Text))]);
 
-        private InspectionHeadlinePeriodDto HeadlinePeriod(InspectionSprint sprint) => new(sprint.Id, sprint.Name, PeriodStats(sprint));
+        private InspectionHeadlinePeriodDto HeadlinePeriod(InspectionSprint sprint) => new(sprint.Id, sprint.Name, PeriodStats(sprint), Quality: null);
 
         // A quarter's roll-up over every started sprint ending in it; null when none does. The change is against last quarter: its
         // whole for a finished quarter, and up to the same day into it for the quarter to date.
@@ -301,37 +305,30 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             {
                 return null;
             }
-            var toDate = InspectionWindow.QuarterStart(_today) == quarterStart;
+            var toDate = InspectionPeriods.QuarterStart(_today) == quarterStart;
             var lastQuarter = quarterStart.AddMonths(-3);
             var lastQuarterUntil = lastQuarter.AddDays(_today.DayNumber - quarterStart.DayNumber);
             var previous = SprintsEndingIn(lastQuarter).SelectMany(TasksIn).Where(task => !toDate || DisplayDate.DayOf(task.Lead.End, _zone) <= lastQuarterUntil).ToList();
             return new InspectionQuarterDto(
-                QuarterLabel(quarterStart),
+                InspectionPeriods.QuarterLabel(quarterStart),
                 toDate,
                 [.. sprints.Select(sprint => sprint.Id)],
-                LeadTimeStats.Of([.. sprints.SelectMany(TasksIn)], previous));
+                LeadTimeStats.Of([.. sprints.SelectMany(TasksIn)], previous),
+                Quality: null);
         }
 
-        private List<InspectionSprint> SprintsEndingIn(DateOnly quarterStart)
-            => [.. _started.Where(sprint => InspectionWindow.QuarterStart(sprint.EndDate) == quarterStart)];
+        private IReadOnlyList<InspectionSprint> SprintsEndingIn(DateOnly quarterStart) => InspectionPeriods.SprintsEndingIn(_started, quarterStart);
 
         // A sprint's numbers, with the change against the started sprint before it, both over the tasks that pass the filter.
         private LeadTimeStatsDto PeriodStats(InspectionSprint sprint, Func<AggregatedTask, bool>? filter = null)
         {
-            var previous = _started.LastOrDefault(other => other.StartDate < sprint.StartDate && other.Id != sprint.Id);
+            var previous = InspectionPeriods.Previous(_started, sprint);
             filter ??= _ => true;
             var before = previous is null ? null : TasksIn(previous).Where(filter).ToList();
             return LeadTimeStats.Of([.. TasksIn(sprint).Where(filter)], before);
         }
 
         private List<AggregatedTask> TasksIn(InspectionSprint sprint) => [.. _bySprint[sprint.Id]];
-
-        // The sprint a day's end falls in: the one holding the day, else the one whose weekend (up to two days after its last day) holds it.
-        private static InspectionSprint? SprintOf(IReadOnlyList<InspectionSprint> sprints, DateOnly day)
-            => sprints.FirstOrDefault(sprint => sprint.StartDate <= day && day <= sprint.EndDate)
-                ?? sprints.LastOrDefault(sprint => sprint.EndDate < day && day <= sprint.EndDate.AddDays(WeekendDays));
-
-        private static string QuarterLabel(DateOnly quarterStart) => $"Q{((quarterStart.Month - 1) / 3) + 1} {quarterStart.Year.ToString(CultureInfo.InvariantCulture)}";
 
         private bool IsRunning(InspectionSprint sprint) => sprint.StartDate <= _today && _today <= sprint.EndDate;
 

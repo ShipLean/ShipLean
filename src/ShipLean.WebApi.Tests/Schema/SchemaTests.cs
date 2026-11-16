@@ -162,4 +162,22 @@ public class SchemaTests
         column.DataType.ShouldBe("timestamp with time zone");
         column.IsNullable.ShouldBe("YES");
     }
+
+    // SHIP-1398 QK1. Mutations: default found_before_release to true; leave causedBy out of the CHECK; change a default weight.
+    [Test]
+    public async Task InspectionQuality_WhenApplied_ShouldAddBugFieldLinkTypeAndWeights()
+    {
+        await using var connection = await _database.OpenAsync();
+        var bug = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("bug").InsertAsync(connection);
+        var task = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("task").InsertAsync(connection);
+
+        (await connection.ExecuteScalarAsync<bool>("SELECT found_before_release FROM work_item WHERE id = @bug", new { bug })).ShouldBeFalse();
+        await connection.ExecuteAsync(
+            "INSERT INTO work_item_link (id, source_id, target_id, link_type) VALUES (gen_random_uuid(), @bug, @task, 'causedBy')", new { bug, task });
+        var ex = await Should.ThrowAsync<PostgresException>(async () => await connection.ExecuteAsync(
+            "INSERT INTO work_item_link (id, source_id, target_id, link_type) VALUES (gen_random_uuid(), @bug, @task, 'causes')", new { bug, task }));
+        ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
+        (await connection.ExecuteScalarAsync<string>(
+            "SELECT bug_severity_weights::text FROM project WHERE id = @id", new { id = SeedIds.Projects.Ship })).ShouldBe("""{"1": 8, "2": 4, "3": 2, "4": 1}""");
+    }
 }
