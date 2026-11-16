@@ -173,7 +173,7 @@ phonePageShots([
         async (page: Page) => {
           await page.getByTestId(taskboardTestIds.filterButton).tap();
           await page.getByTestId(taskboardTestIds.filterSheetRow).nth(1).tap();
-          await expect(page.getByTestId(taskboardTestIds.filterButton)).toHaveText('Filter (1)');
+          await expect(page.getByTestId(taskboardTestIds.filterButton)).toContainText('Filter1');
           await page.getByTestId(touchTestIds.sheetClose).tap();
           await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
           await expect(page.getByTestId(taskboardTestIds.laneHidden).first()).toBeVisible();

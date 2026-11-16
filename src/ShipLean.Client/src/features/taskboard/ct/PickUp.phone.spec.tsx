@@ -89,7 +89,7 @@ test('TaskActions_WhenTaskAlreadyAssigned_ShouldNotListPickUp', async ({ mount, 
   await expect(sheet(page).getByTestId(ids.actionPickUp)).toHaveCount(0);
 });
 
-test('MoveToStory_WhenOnTheSprintTaskboard_ShouldOfferNoParentFirst', async ({ mount, page }) => {
+test('MoveToStory_ShouldListNoParentLast', async ({ mount, page }) => {
   const server = await stubTaskboard(page, VIEW, { holdLaterReads: true });
   await mount(sprintSlot, sprintRoute);
 
@@ -98,8 +98,9 @@ test('MoveToStory_WhenOnTheSprintTaskboard_ShouldOfferNoParentFirst', async ({ m
   const options = sheet(page).locator(
     `[data-testid="${ids.storyNoParent}"], [data-testid="${ids.storyOption}"]`,
   );
-  await expect(options.first()).toHaveAttribute('data-testid', ids.storyNoParent);
-  await options.first().tap();
+  await expect(options.last()).toHaveAttribute('data-testid', ids.storyNoParent);
+  await expect(options.first()).toHaveAttribute('data-testid', ids.storyOption);
+  await options.last().tap();
 
   await expect.poll(() => server.moves.length).toBe(1);
   expect(server.moves[0]).toMatchObject({

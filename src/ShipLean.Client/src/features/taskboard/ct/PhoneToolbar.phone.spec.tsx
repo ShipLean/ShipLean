@@ -31,7 +31,7 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
 
   await rows.nth(1).tap();
   await expect(rows.nth(1).getByRole('checkbox')).toBeChecked();
-  await expect(filter).toHaveText('Filter (1)');
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('1');
   const assignees = () =>
     page
       .getByTestId(ids.card)
@@ -46,6 +46,26 @@ test('PhoneToolbar_WhenFilterOpened_ShouldListEachPersonWithTaskCount', async ({
   await expect(filter).toHaveText('Filter');
 });
 
+test('PhoneToolbar_WhenFiltered_ShouldShowChosenFacesAndCount', async ({ mount, page }) => {
+  await stubFeatureBoard(page, FEATURE_VIEW);
+  await mount(slot, route);
+  await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+  const filter = page.getByTestId(ids.filterButton);
+  await expect(filter.getByTestId(ids.filterFaces)).toHaveCount(0);
+  await expect(filter.getByTestId(ids.filterCount)).toHaveCount(0);
+
+  await filter.tap();
+  const rows = page.getByTestId(ids.filterSheetRow);
+  await rows.nth(0).tap();
+  await rows.nth(1).tap();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await expect(filter.getByTestId(ids.filterCount)).toHaveText('2');
+  await expect(
+    filter.getByTestId(ids.filterFaces).getByTestId(componentTestIds.avatar),
+  ).toHaveCount(2);
+});
+
 test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async ({
   mount,
   page,
@@ -57,12 +77,13 @@ test('PhoneToolbar_WhenMoreOpened_ShouldOfferCollapseExpandAndSettings', async (
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Card settings',
-    'Open the Feature',
+    `Open ${FEATURE_KEY}`,
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Feature board');
   const lanes = page.getByTestId(ids.lane);
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
@@ -82,11 +103,12 @@ test('PhoneToolbar_WhenMoreOpenedOnTheTaskboard_ShouldOfferCollapseExpandAndTask
   const lanes = page.getByTestId(ids.lane);
   await expect(lanes.first()).toBeVisible();
   await page.getByTestId(touchTestIds.moreButton).tap();
-  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toHaveText([
-    'Collapse all',
-    'Expand all',
+  await expect(page.getByTestId(touchTestIds.actionSheetRow)).toContainText([
+    'Collapse all stories',
+    'Expand all stories',
     'Taskboard settings',
   ]);
+  await expect(page.getByTestId(touchTestIds.sheet)).toContainText('Taskboard');
 
   await page.locator('[data-action-id="collapse-all"]').tap();
   await expect(lanes.first()).toHaveAttribute('data-collapsed', 'true');
@@ -160,5 +182,20 @@ for (const theme of THEMES) {
     await mount(slot, route);
     await page.getByTestId(ids.addStory).tap();
     await expect(page.getByTestId(ids.addStoryBox)).toHaveScreenshot(`add-story-box.${theme}.png`);
+  });
+}
+
+for (const theme of THEMES) {
+  test(`PhoneToolbar_WhenFiltered_ShouldMatchItsScreenshot_${theme}`, async ({ mount, page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubFeatureBoard(page, FEATURE_VIEW);
+    await mount(slot, route);
+    await expect(page.getByTestId(ids.lane).first()).toBeVisible();
+    await page.getByTestId(ids.filterButton).tap();
+    for (const row of await page.getByTestId(ids.filterSheetRow).all()) await row.tap();
+    await page.getByTestId(touchTestIds.sheetClose).tap();
+    await expect(page.getByTestId(ids.toolbar)).toHaveScreenshot(
+      `phone-toolbar-filtered.${theme}.png`,
+    );
   });
 }

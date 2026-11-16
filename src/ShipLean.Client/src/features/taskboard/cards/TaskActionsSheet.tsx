@@ -1,5 +1,12 @@
 import type { CardDto } from '@shiplean/core/api/views';
-import { actionSheetRowClass, ActionSheet } from '../../../touch/ActionSheet';
+import { StateDot } from '../../../components/StateDot';
+import {
+  ActionSheet,
+  ActionSheetGroupHeading,
+  ActionSheetRowFace,
+  actionSheetCheckedClass,
+  actionSheetRowClass,
+} from '../../../touch/ActionSheet';
 import { useTaskboardMoves } from '../moves/TaskboardMovesContext';
 import { taskboardTestIds as ids } from '../testIds';
 
@@ -29,14 +36,29 @@ export function TaskActionsSheet({
       open={open}
       title={`${card.key} ${card.title}`}
       onClose={onClose}
+      footer="Press and hold a card on the board to drag it to another state or lane."
       actions={[
-        { id: 'story', label: 'Move to another story ›', onSelect: () => onShow('story') },
+        {
+          id: 'story',
+          label: 'Move to another story',
+          hint: card.parent ? `${card.parent.key} ${card.parent.title}` : 'No parent',
+          trailing: 'chevron',
+          onSelect: () => onShow('story'),
+        },
         {
           id: 'assignee',
-          label: `Assignee: ${card.assignee?.name ?? 'Unassigned'} ›`,
+          label: 'Assignee',
+          detail: card.assignee?.name ?? 'Unassigned',
+          trailing: 'chevron',
           onSelect: () => onShow('assignee'),
         },
-        { id: 'open', label: `Open ${card.key}`, onSelect: onOpenItem },
+        {
+          id: 'open',
+          label: `Open ${card.key}`,
+          hint: 'Full screen',
+          detail: '↗',
+          onSelect: onOpenItem,
+        },
       ]}
     >
       {(close) => (
@@ -51,12 +73,13 @@ export function TaskActionsSheet({
                 close();
               }}
             >
-              Pick up
+              <ActionSheetRowFace
+                face={{ label: 'Pick up', hint: 'Assigns you and moves it to Active' }}
+              />
             </button>
           ) : null}
-          <p className="m-0 px-2 pt-2 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
-            Move to
-          </p>
+          {canPickUp ? <ActionSheetGroupHeading label="" divider /> : null}
+          <ActionSheetGroupHeading label="Move to" divider={false} />
           {view.columns.map(({ state }) => {
             const here = state.id === card.state.id;
             return (
@@ -66,17 +89,24 @@ export function TaskActionsSheet({
                 data-testid={ids.actionState}
                 data-state-id={state.id}
                 aria-current={here ? 'true' : undefined}
-                className={`${actionSheetRowClass} gap-2 text-ink ${here ? 'bg-signal-soft font-semibold' : ''}`}
+                className={`${actionSheetRowClass} gap-3 text-ink ${here ? actionSheetCheckedClass : ''}`}
                 onClick={() => {
                   drop(card, rowId, { stateId: state.id, rowId, beforeItemId: null }, 'sheet');
                   close();
                 }}
               >
-                {state.name}
-                {here ? <span className="text-ink-muted">here</span> : null}
+                <ActionSheetRowFace
+                  face={{
+                    label: state.name,
+                    icon: <StateDot category={state.category} />,
+                    detail: here ? 'here' : undefined,
+                    checked: here,
+                  }}
+                />
               </button>
             );
           })}
+          <ActionSheetGroupHeading label="" divider />
         </>
       )}
     </ActionSheet>

@@ -67,19 +67,22 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
   const more: SheetAction[] = [
     {
       id: 'collapse-all',
-      label: 'Collapse all',
+      label: 'Collapse all stories',
       disabled: !view,
       onSelect: () => view && setToggled(collapseAllMap(view, true)),
     },
     {
       id: 'expand-all',
-      label: 'Expand all',
+      label: 'Expand all stories',
       disabled: !view,
       onSelect: () => view && setToggled(collapseAllMap(view, false)),
     },
     {
       id: 'taskboard-settings',
       label: 'Taskboard settings',
+      hint: 'Card fields, styles and tag colours, for everyone',
+      trailing: 'chevron',
+      group: '',
       onSelect: openCardSettings,
     },
   ];
@@ -96,6 +99,7 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
         onFaceToggle={toggleFace}
         onFacesClear={() => setFaces(new Set())}
         more={more}
+        moreLabel="Taskboard"
         onAddStory={() => setAdding(true)}
       />
       {adding ? (

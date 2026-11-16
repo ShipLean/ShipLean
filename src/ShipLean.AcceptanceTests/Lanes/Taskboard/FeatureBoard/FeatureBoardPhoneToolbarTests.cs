@@ -39,7 +39,7 @@ public class FeatureBoardPhoneToolbarTests : SeededAcceptanceTest
         await toolbar.SheetRow(name).TapAsync();
         await toolbar.SheetClose.TapAsync();
 
-        await Expect(toolbar.FilterButton).ToHaveTextAsync("Filter (1)");
+        await Expect(toolbar.FilterButton.GetByTestId(TaskboardTestIds.FilterCount)).ToHaveTextAsync("1");
         var cards = Page.GetByTestId(TaskboardTestIds.Card);
         await Expect(cards.First).ToBeAttachedAsync();
         var assignees = await cards.GetByTestId(TaskboardTestIds.CardAssignee).GetByTestId(ComponentTestIds.Avatar).EvaluateAllAsync<string[]>("els => els.map(e => e.getAttribute('title'))");
