@@ -581,7 +581,7 @@ test('RenameTheme_ShouldShowTheHelperLine', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.retroThemeSheetMerge)).toHaveCount(0);
 });
 
-test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningOnce', async ({
+test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningWithItsSheet', async ({
   mount,
   page,
 }) => {
@@ -598,7 +598,7 @@ test('ThemeSheet_WhenAThemeThenTheUnthemedSheetOpen_ShouldReportEachOpeningOnce'
   await card.getByTestId(ids.retroHeatStrip).tap();
   await expect(page.getByTestId(ids.retroThemeSheet)).toBeVisible();
   await expect.poll(() => opened).toEqual([{ sheet: 'theme' }]);
-  // Staying open while the sheet re-renders (its loads arriving) reports nothing more.
+  // The sheet's own loads arriving add no second report.
   await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
   await page.getByTestId(touchTestIds.sheetClose).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
