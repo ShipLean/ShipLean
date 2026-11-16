@@ -74,7 +74,7 @@ phonePageShots([
     },
     ready: async (page) => {
       await expect(page.getByTestId(ids.capacityEmpty)).toHaveText(
-        'No capacity entered: planning uses velocity 25',
+        'No capacity entered: planning uses velocity 21',
       );
     },
   },
