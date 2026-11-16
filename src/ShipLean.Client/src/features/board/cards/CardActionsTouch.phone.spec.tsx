@@ -59,9 +59,9 @@ test('CardMore_ShouldShowTheCardHeaderAndWipOverColour', async ({ mount, page })
   await expect(
     row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail),
   ).toHaveText('3/2');
-  await expect(
-    row(page, 'column:col-prog:false').getByTestId(touchTestIds.actionSheetDetail).locator('span'),
-  ).toHaveClass(/text-alert/);
+  await expect(row(page, 'column:col-prog:false').getByTestId(ids.cardMoveWip)).toHaveClass(
+    /text-alert/,
+  );
   await expect(row(page, 'column:col-ready:true')).toContainText('Ready · Done');
   await expect(row(page, 'column:col-new:false')).toBeDisabled();
 });
@@ -110,7 +110,7 @@ test('CardMore_OnAFeatureWithNoPoints_ShouldSitAtTheRight', async ({ mount, page
   // The warn ? shows and the ⋯ is at the card's right edge (inside its padding), not beside the key.
   await expect(feature.getByTestId(ids.cardPoints)).toHaveText('?');
   expect(more.x + more.width).toBeGreaterThan(box.x + box.width - 12);
-  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so the ⋯ does not depend on the chip's margin.
+  // The ⋯'s wrapper is a real box (a `display: contents` wrapper has none), so a `display: contents` wrapper goes red here. The ⋯ itself reaches the right only because the "?" chip carries ml-auto; a spacer in Card.tsx is the real fix.
   const wrapper = await feature.getByTestId(ids.cardMore).boundingBox();
   expect(wrapper?.width ?? 0).toBeGreaterThan(0);
 });

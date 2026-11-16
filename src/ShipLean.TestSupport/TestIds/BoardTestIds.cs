@@ -110,4 +110,5 @@ public static class BoardTestIds
 
     // SHIP-1826
     public const string CardSheetHeader = "board-card-sheet-header";
+    public const string CardMoveWip = "board-card-move-wip";
 }

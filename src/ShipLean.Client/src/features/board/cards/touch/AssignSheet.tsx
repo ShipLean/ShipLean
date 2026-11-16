@@ -1,6 +1,10 @@
 import type { BoardViewDto } from '@shiplean/core/api/views';
 import { Avatar } from '../../../../components/Avatar';
-import { actionSheetCheckedClass, actionSheetRowClass } from '../../../../touch/ActionSheet';
+import {
+  ActionSheetRowFace,
+  actionSheetCheckedClass,
+  actionSheetRowClass,
+} from '../../../../touch/ActionSheet';
 import { Sheet } from '../../../../touch/Sheet';
 import { useMe } from '../../../shell/useShellQueries';
 import { useProjectMembers } from '../../../workItem/workItemApi';
@@ -41,15 +45,19 @@ export function AssignSheet({
               data-testid={ids.assignOption}
               data-person-id={person?.id ?? ''}
               aria-current={here ? 'true' : undefined}
-              className={`${actionSheetRowClass} gap-3 text-ink ${here ? `${actionSheetCheckedClass} font-semibold` : ''}`}
+              className={`${actionSheetRowClass} gap-3 text-ink ${here ? actionSheetCheckedClass : ''}`}
               onClick={() => {
                 if (card && !here) assign(card, person);
                 onClose();
               }}
             >
-              <Avatar {...(person ?? { initials: null })} size="lg" />
-              <span>{person?.name ?? (owner ? 'No owner' : 'Unassigned')}</span>
-              {person && person.id === me ? <span className="text-ink-muted">(you)</span> : null}
+              <ActionSheetRowFace
+                face={{
+                  label: `${person?.name ?? (owner ? 'No owner' : 'Unassigned')}${person && person.id === me ? ' (you)' : ''}`,
+                  icon: <Avatar {...(person ?? { initials: null })} />,
+                  checked: here,
+                }}
+              />
             </button>
           );
         })}

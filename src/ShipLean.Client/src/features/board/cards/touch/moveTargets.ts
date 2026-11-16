@@ -2,7 +2,7 @@ import type { BoardViewDto } from '@shiplean/core/api/views';
 import { tracksOf } from '../../grid/layout';
 import { locate, type DropTarget } from '../../moves/applyMove';
 
-/** One place the "Move to" sheet offers: a column, or one half of a split column. */
+/** One place the card actions sheet's "Move to" group offers: a column, or one half of a split column. */
 export interface MoveTarget {
   columnId: string;
   done: boolean;

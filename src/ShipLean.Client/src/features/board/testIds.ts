@@ -109,4 +109,5 @@ export const boardTestIds = {
 
   // SHIP-1826
   cardSheetHeader: 'board-card-sheet-header',
+  cardMoveWip: 'board-card-move-wip',
 } as const;

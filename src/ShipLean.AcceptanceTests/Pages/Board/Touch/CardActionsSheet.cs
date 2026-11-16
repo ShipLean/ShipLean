@@ -16,15 +16,15 @@ public sealed class CardActionsSheet(IPage page)
     // The Assign sheet on Stories, the Owner sheet on Features and Epics, titled with the card's key (SHIP-719 L719e).
     public ILocator AssignSheet(string title, string key) => shell.Sheet($"{title} {key}");
 
-    // A person's row of the Assign / Owner sheet by name ("Unassigned" or "No owner" for nobody).
+    // A person's row of the Assign / Owner sheet by name, no ^ anchor because the Avatar's initials precede the name; "(you)" and the ✓ of the current row may follow it ("Unassigned" or "No owner" for nobody).
     public static ILocator Person(ILocator sheet, string name) =>
-        sheet.GetByTestId(BoardTestIds.AssignOption).Filter(new LocatorFilterOptions { HasTextRegex = new Regex(Regex.Escape(name) + "(\\s*\\(you\\))?\\s*$") });
+        sheet.GetByTestId(BoardTestIds.AssignOption).Filter(new LocatorFilterOptions { HasTextRegex = new Regex(Regex.Escape(name) + "(\\s*\\(you\\))?\\s*✓?\\s*$") });
 
     // A row of a sheet by its label; a row's value (WIP, who, here) follows the label, so the label is only a prefix.
     public static ILocator Row(ILocator sheet, string startsWith) =>
         sheet.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new LocatorFilterOptions { HasTextRegex = new Regex("^\\s*" + Regex.Escape(startsWith)) });
 
-    // Taps ⋯ on the card, then its Assign (Owner) row; Row anchors the label, so Move to top and bottom never match.
+    // Taps ⋯ on the card, then its Assign (Owner) row; Row matches the label as a prefix only, so Move to top and bottom never match; Person has no ^ anchor because the Avatar's initials precede the name.
     public async Task OpenAssignAsync(ILocator card, string key, string label)
     {
         await More(card).TapAsync();

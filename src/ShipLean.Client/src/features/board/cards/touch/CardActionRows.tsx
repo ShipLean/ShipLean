@@ -3,6 +3,7 @@ import type { CardDto } from '@shiplean/core/api/views';
 import type { SheetAction } from '../../../../touch/ActionSheet';
 import { locate } from '../../moves/applyMove';
 import { useBoardMoves } from '../../moves/BoardMovesContext';
+import { boardTestIds as ids } from '../../testIds';
 import type { CardActions } from './CardActionsContext';
 import {
   dropAtBottom,
@@ -61,7 +62,10 @@ export function useCardActionRows(card: CardDto, actions: CardActions): SheetAct
       checked: target.current,
       disabled: target.current,
       detail: (
-        <span className={target.over ? 'font-semibold text-alert' : undefined}>
+        <span
+          data-testid={ids.cardMoveWip}
+          className={target.over ? 'font-semibold text-alert' : undefined}
+        >
           {target.current ? `here · ${target.wip}` : target.wip}
         </span>
       ),
