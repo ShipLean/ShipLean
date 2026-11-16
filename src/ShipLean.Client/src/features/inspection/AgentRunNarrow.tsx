@@ -9,6 +9,7 @@ export function AgentRunNarrow({ project, itemKey }: { project: string; itemKey:
       Agent runs open on a wider screen.{' '}
       <Link
         data-testid={ids.runPageNarrowBack}
+        className="inline-flex min-h-8 min-w-8 items-center"
         to={routePath('workItem', { key: project, itemKey })}
       >
         Back to {itemKey}
