@@ -55,7 +55,8 @@ phonePageShots([
           search.get('filter') ? { status: 200, body: backlogView(ROWS) } : undefined,
       });
     },
-    ready: (page) => expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length + WHOLE_EXTRA.length),
+    ready: (page) =>
+      expect(page.getByTestId(ids.row)).toHaveCount(ROWS.length + WHOLE_EXTRA.length),
     act: async (page) => {
       await page.getByTestId(ids.filterButton).tap();
       await expect(page.getByTestId(criteriaTestIds.clause)).toHaveCount(1);
