@@ -243,6 +243,32 @@ test('StoriesAndBugs_WhenTouch_ShouldShowStateDotAndAddButtons', async ({ mount,
   await expect(screen.getByTestId(ids.childAddForm)).toHaveAttribute('data-kind', 'bug');
 });
 
+test('StoriesAndBugs_WhenTouchAddSubmitted_ShouldCreateTheBugUnderTheFeature', async ({
+  mount,
+  page,
+}) => {
+  await stubAll(page, feature);
+  const posted: { type: string; title: string; parentId: string | null }[] = [];
+  await page.route('**/api/work-items', (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    posted.push(route.request().postDataJSON());
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+  });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+
+  await screen.getByTestId(ids.childAddBug).tap();
+  await screen.getByTestId(ids.childAddInput).fill('Saved card is lost on retry');
+  await screen.getByTestId(ids.childAddSubmit).tap();
+
+  await expect(screen.getByTestId(ids.childAddForm)).toHaveCount(0);
+  expect(posted).toHaveLength(1);
+  expect(posted[0]).toMatchObject({
+    type: 'bug',
+    title: 'Saved card is lost on retry',
+    parentId: feature.id,
+  });
+});
+
 test('FeatureLinks_CodeLinkCard_AtTouch_ShouldShowTheWholeTitle', async ({ mount, page }) => {
   await stubAll(page, feature);
   await stubFeature(page, {

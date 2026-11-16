@@ -78,7 +78,10 @@ export function HealthButton({
         actions={actions}
         onClose={() => setOpen(false)}
         footer={
-          <span data-testid={ids.healthSheetFootnote}>Saved with the Feature. Save writes it.</span>
+          <span data-testid={ids.healthSheetFootnote}>
+            Set by people and by agents (set_status), never worked out from the stories. Independent
+            of State.
+          </span>
         }
       />
     </>
