@@ -70,6 +70,32 @@ test('Capacity_WhenOnPhone_ShouldShowTilesAboveMemberRowsWithoutSidewaysScroll',
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
+test('Capacity_WhenEditingDaysOnPhone_ShouldShowTheWholeNoteField', async ({ mount, page }) => {
+  await open(page, mount);
+  // The edited row shows reset beside the days field, which widened that line and cut the note field off (R1a).
+  await page.getByTestId(ids.capacityDays).first().fill('6');
+  await expect(page.getByTestId(ids.capacityDaysReset)).toBeVisible();
+
+  const row = page.getByTestId(ids.capacityRow).first();
+  const note = row.getByTestId(ids.capacityNote);
+  const rowBox = (await row.boundingBox())!;
+  const noteBox = (await note.boundingBox())!;
+  expect(noteBox.x).toBeGreaterThanOrEqual(rowBox.x);
+  expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width);
+  // Its placeholder fits inside the field, not cut off at the right edge.
+  const room = await note.evaluate((el) => {
+    const input = el as HTMLInputElement;
+    const style = getComputedStyle(input);
+    const context = document.createElement('canvas').getContext('2d')!;
+    context.font = style.font;
+    const text = context.measureText(input.placeholder).width;
+    const inner =
+      input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return inner - text;
+  });
+  expect(room).toBeGreaterThanOrEqual(0);
+});
+
 test('Capacity_WhenMoreTapped_ShouldOfferClear', async ({ mount, page }) => {
   await open(page, mount);
 
