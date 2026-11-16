@@ -359,7 +359,7 @@ public class AgentDeliveryTests : ApiFixture
         var (reason, detail) = await EndAsync(database, sessionId);
         reason.ShouldBe(AgentEndReasons.DeliveryFailed);
         detail.ShouldBe(AgentErrorText.Scrub($"HttpRequestException: {Message}") + " (2 tries)");
-        detail.ShouldNotContain(Secret);
+        detail.ShouldNotBeNull().ShouldNotContain(Secret);
         detail.ShouldStartWith("HttpRequestException: Connection refused (relay.internal:5100)");
     }
 
