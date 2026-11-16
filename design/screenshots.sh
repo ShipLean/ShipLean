@@ -2,6 +2,7 @@
 # Regenerate the reference screenshots: screens/<name>.<theme>.png at 1440×900, 2× scale.
 # Usage: design/screenshots.sh [screen-name ...]   (default: every screens/*.html, plus the variants below)
 # Needs a headless Chrome/Chromium. Set CHROME to its path if it isn't on PATH.
+# --disable-dev-shm-usage below: in Docker (64 MB /dev/shm) Chrome --screenshot never exits without it (SHIP-1893). In the Playwright image: CHROME=/ms-playwright/chromium-1234/chrome-linux64/chrome (path moves with the image).
 set -euo pipefail
 cd "$(dirname "$0")/screens"
 
@@ -17,6 +18,7 @@ fi
 declare -A variants=(
   [taskboard-people]="taskboard.html?view=people"
   [taskboard-settings]="taskboard.html?dialog=settings"
+  [taskboard-settings-story]="taskboard.html?dialog=settings&ftype=story"
   [taskboard-styles]="taskboard.html?dialog=settings&pane=styles"
   [backlog-tree]="backlog.html?tree"
   [backlog-selected]="backlog.html?state=selected"
@@ -70,6 +72,7 @@ declare -A variants=(
   [retro-insights-impact]="retro-insights.html?view=impact"
   [sprint-demo-closable]="sprint-demo.html?state=closable"
   [sprint-demo-none]="sprint-demo.html?state=none"
+  [sprint-demo-requested]="sprint-demo.html?state=requested"
   [sprint-demo-blocked]="sprint-demo.html?state=blocked"
   [sprint-demo-working]="sprint-demo.html?state=working"
   [sprint-demo-failed]="sprint-demo.html?state=failed"
@@ -157,7 +160,7 @@ for name in "${names[@]}"; do
   [[ "$url" == *\?* ]] && sep="&" || sep="?"
   for theme in light dark; do
     out="$PWD/$name.$theme.png"
-    "$chrome" --headless=new --no-sandbox --hide-scrollbars --force-device-scale-factor=2 \
+    "$chrome" --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --force-device-scale-factor=2 \
       --window-size=1440,900 --virtual-time-budget=4000 \
       --screenshot="$out" "file://$PWD/$url${sep}shot&theme=$theme" >/dev/null 2>&1
     echo "wrote screens/$name.$theme.png"

@@ -11,10 +11,11 @@
   ?state= picks what the tab shows (default ready):
     closable          sprint still open: Create demo is disabled and says why
     none              closed, no demo yet: Create demo
+    requested         a demo was asked for and no agent session is live yet: Create demo, as built (SHIP-1908)
     blocked           Create demo disabled, says why (no agent connection or repository)
     working           an agent is running; link to the BAU item
     failed            the upload link expired or the session ended without a video
-    ready             player 16:9, chapters beside it, features covered, script
+    ready             player 16:9, chapters beside it, features covered, script; Remake demo in the band (SHIP-1908)
     youtube-unlisted  ready, and the YouTube embed plays (link to YouTube)
     youtube-private   ready, the file plays here, Watch on YouTube and a note that only the channel owner can
     youtube-failed    ready, the file plays here, a notice with the reason and Retry upload
@@ -40,6 +41,8 @@
 .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--color-info); animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+/* Screenshots (?shot) freeze the pulse on its first frame, so renders are byte-identical (SHIP-1898). */
+:root[data-shot] .pulse { animation-play-state: paused; }
 .stage { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-4); align-items: start; }
 .player { position: relative; aspect-ratio: 16 / 9; width: 100%; background: var(--color-surface-2); color: var(--color-text); border-radius: var(--radius-md); overflow: hidden; display: grid; place-items: center; border: 1px solid var(--color-border); }
 .player .poster { text-align: center; display: grid; gap: var(--space-2); justify-items: center; }
@@ -107,7 +110,7 @@
   document.getElementById('tabs').outerHTML = SL.sprintTabs('demo');
   const $ = id => document.getElementById(id);
 
-  const STATES = ['closable', 'none', 'blocked', 'working', 'failed', 'ready', 'youtube-unlisted', 'youtube-private', 'youtube-failed'];
+  const STATES = ['closable', 'none', 'requested', 'blocked', 'working', 'failed', 'ready', 'youtube-unlisted', 'youtube-private', 'youtube-failed'];
   const q = new URLSearchParams(location.search).get('state');
   let state = STATES.includes(q) ? q : 'ready';
 
@@ -136,13 +139,15 @@
       `A demo is a short video of what the sprint finished. It's made by an agent working a BAU item (Business As Usual: background work that is never on a sprint).`),
     none: () => band('', 'No demo yet', 'Make a demo of Sprint 23.', `<button class="btn primary" type="button" data-testid="demo-create">Create demo</button>`,
       `An agent starts a seeded copy of Storefront, records a walk-through of the 3 features this sprint moved, and uploads the video here. It runs as a BAU item (Business As Usual: background work that is never on a sprint), so it never counts in your velocity.`),
+    requested: () => band('', 'Requested', 'The demo is requested.', `<button class="btn primary" type="button" data-testid="demo-create">Create demo</button>`,
+      `Requested 30 Oct, 15:38 · Link valid until 31 Oct, 15:38 · ${itemLink}`),
     blocked: () => band('warn', 'Blocked', `The automatic demo didn't start: Storefront has no agent connection.`, `<button class="btn primary" type="button" disabled data-testid="demo-create-blocked">Create demo</button>`,
       `Connect an agent to this project in <a href="settings.html#demos">Settings</a>, then create the demo here.`),
     working: () => band('', 'Working', 'An agent is making the demo.', `<span class="pulse" aria-hidden="true"></span>`,
       `Requested 4 minutes ago by Priya Shah. The upload link works until 15:42. This tab updates when the video arrives. ${itemLink}`),
     failed: () => band('danger', 'Failed', 'The upload link expired before a video came back.', `<button class="btn primary" type="button" data-testid="demo-create">Create demo again</button>`,
       `Requested 1 day ago by Priya Shah. A new request replaces the old link. ${itemLink}`),
-    ready: () => band('ok', 'Ready', 'The demo for Sprint 23 is ready.', '',
+    ready: () => band('ok', 'Ready', 'The demo for Sprint 23 is ready.', `<button class="btn primary" type="button" data-testid="demo-create">Remake demo</button>`,
       `Delivered 17 Oct, 09:12 · ${itemLink}`),
   };
   function band(tone, chip, msg, action, sub) {

@@ -7,11 +7,12 @@
 <!--
   SHIP-715 reference: the Markdown attachment page and the image viewer on a phone (designed at 390 × 844; it applies at
   900px and below, inside the SHIP-713 touch shell). Open directly in a browser. Uses ../tokens.css only; no build step.
-  The touch shell's top bar is drawn here as it is in ../screens/shared.js (Menu, breadcrumb cut from the left, Live dot,
-  Search); the drawer and quick search live there, not here.
+  The touch shell's top bar is drawn here as it is in ../screens/shared.js for a detail page (‹ back to the item,
+  breadcrumb cut from the left, Live dot, Search, Menu: SHIP-805 D7, as the built TouchTopBar); the drawer and quick
+  search live there, not here.
   - The page header scrolls away with the page: only the top bar is sticky (SHIP-713 D7), and its breadcrumb ends in the
     file name, so the name stays in view.
-  - Header: back to the item, the file name (tap: the item's other Markdown files), a one-line facts row (tap: About this
+  - Header (‹ back to the item is in the top bar): the file name (tap: the item's other Markdown files), a one-line facts row (tap: About this
     file), then one toolbar row: Rendered / Source / Edit and ⋯ (Download, Replace…, Copy link, About this file).
   - The desktop side panel moves into bottom sheets: On this page (the Contents pill), About this file, Markdown on SHIP-101.
   - Wide tables and code scroll sideways inside themselves. An attached image opens the viewer.
@@ -41,6 +42,7 @@ svg text { fill: currentColor; }
 /* The SHIP-713 top bar, as ../screens/shiplean.css draws it under 900px. */
 .appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: var(--space-1); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) var(--space-1) 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .tbtn { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.back-ch { font-size: var(--text-lg); text-decoration: none; }
 .crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: var(--space-1); font-size: var(--text-base); color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
 .crumbs > * { flex: none; }
 .crumbs b { color: var(--color-text); font-size: var(--text-md); font-weight: var(--weight-semibold); }
@@ -50,7 +52,6 @@ svg text { fill: currentColor; }
 /* Page header: in the page, so it scrolls away. */
 .head { display: grid; gap: 4px; padding: var(--space-2) var(--m-pad) var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .back { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; min-width: 0; color: var(--color-muted); text-decoration: none; font-size: var(--m-small); }
-.back .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ti { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; background: var(--type-feature); }
 .name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: var(--touch-target); padding: 0; border: 0; background: none; text-align: left; width: 100%; }
 .ext { display: inline-grid; place-items: center; width: 26px; height: 20px; font: 700 9px/1 var(--font-mono); border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface-2); flex: none; }
@@ -194,14 +195,14 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 </svg>
 
 <header class="appbar" aria-label="Top bar (SHIP-713 touch shell)">
-  <button class="tbtn" type="button" aria-label="Open navigation"><svg class="ic" width="20" height="20"><use href="#i-menu"/></svg></button>
+  <a class="tbtn back-ch" href="#" data-toast="Back to SHIP-101" aria-label="Back to SHIP-101"><span aria-hidden="true">‹</span></a>
   <nav class="crumbs" aria-label="You are here"><span>SHIP</span><span>›</span><span>Backlogs</span><span>›</span><span>SHIP-101</span><span>›</span><b>design-v0.2.md</b></nav>
   <span class="live" title="Real-time updates connected" aria-label="Live"></span>
   <button class="tbtn" type="button" aria-label="Quick search"><svg class="ic"><use href="#i-search"/></svg></button>
+  <button class="tbtn" type="button" aria-label="Open navigation"><svg class="ic" width="20" height="20"><use href="#i-menu"/></svg></button>
 </header>
 
 <section class="head" aria-label="Attachment header">
-  <a class="back" href="#" data-toast="Back to SHIP-101"><span aria-hidden="true">←</span><span class="ti" aria-hidden="true">F</span><span class="t">SHIP-101 Checkout v2</span></a>
   <button class="name" type="button" data-open="files" aria-label="design-v0.2.md. Other Markdown files on SHIP-101">
     <span class="ext" aria-hidden="true">MD</span><h1>design-v0.2.md</h1><span class="chev" aria-hidden="true">▾</span>
   </button>

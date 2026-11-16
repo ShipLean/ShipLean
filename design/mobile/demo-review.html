@@ -84,7 +84,7 @@ table.data tr:last-child td { border-bottom: 0; }
       <li>The sprint's three numbers (committed, completed, Features moved) are gone on the phone; the desktop header shows them.</li>
       <li>The BAU item shows as a bare key: no type icon, no title, and a small tap target.</li>
       <li>The Requested line drops who asked for the demo.</li>
-      <li>Not drawn here, follow-up SHIP-1908: the "requested" status (docs and built page; no desktop state) and Remake demo on a Ready demo.</li>
+      <li>Drawn since (SHIP-1908): the "requested" status and Remake demo on a Ready demo, on the phone and the desktop reference.</li>
     </ol>
   </section>
 
@@ -143,7 +143,7 @@ table.data tr:last-child td { border-bottom: 0; }
       ['The docs\' sentence inline: … It said: "…" in the line under the message', 'One paragraph, as the server sends it; harder to tell ShipLean\'s message from the agent\'s.'],
     ] },
     { id: 'P6', t: 'Remake demo on a Ready demo', see: ['ready'], o: [
-      ['Not drawn: the desktop reference has none. Wave 1 keeps the built Remake demo in the band\'s action slot (full width, P2)', 'docs/sprint-demos.md and the built page offer Remake demo when Ready; the desktop reference predates it. The band rule places it without a new pattern.', 1],
+      ['Remake demo in the band\'s action slot (full width, P2), as built; drawn on every Ready state, phone and desktop (SHIP-1908)', 'docs/sprint-demos.md and the built page offer Remake demo when Ready; the desktop reference predates it. The band rule places it without a new pattern.', 1],
       ['Remake demo in the sprint header\'s ⋯', 'Keeps the Ready band quiet, but that sheet is shared by every sprint tab.'],
     ] },
     { id: 'P7', t: 'The sprint\'s numbers', see: ['ready', 'closable'], o: [
@@ -154,11 +154,12 @@ table.data tr:last-child td { border-bottom: 0; }
   const P = [
     { id: 'none', img: 'demo-none', title: 'Closed, no demo yet', dec: ['P2'], notes: ['Create demo across the width', 'Says the demo never counts in velocity'] },
     { id: 'closable', img: 'demo-closable', title: 'Sprint still open', dec: ['P2', 'P7'], notes: ['Create demo off; the message says why', 'The header reads Active · 1 day left'] },
+    { id: 'requested', img: 'demo-requested', title: 'Requested', dec: ['P2'], notes: ['Asked for, no agent session live yet: Create demo across the width, as built; no pulse', 'When it was asked for and how long the upload link is valid', 'The BAU item as its own row'] },
     { id: 'blocked', img: 'demo-blocked', title: 'Blocked', dec: ['P2'], notes: ['The reason, and where to fix it (Settings)'] },
     { id: 'working', img: 'demo-working', title: 'Working', dec: ['P2'], notes: ['The pulse on the chip row; no action', 'Who asked, when, and when the upload link runs out', 'The BAU item as its own row'] },
     { id: 'failed', img: 'demo-failed', title: 'Failed: the link expired', dec: ['P2'], notes: ['Create demo again'] },
     { id: 'said', img: 'demo-failed-said', title: 'Failed: the session ended (#147)', dec: ['P5'], notes: ['The server\'s message for a session that ended as failed', 'What the agent said, quoted'] },
-    { id: 'ready', img: 'demo-ready', title: 'Ready', dec: ['P3', 'P6', 'P1'], notes: ['Player across the width; the facts in two columns'] },
+    { id: 'ready', img: 'demo-ready', title: 'Ready', dec: ['P3', 'P6', 'P1'], notes: ['Remake demo across the width; the old video stays until the new one arrives', 'Player across the width; the facts in two columns'] },
     { id: 'chapters', img: 'demo-ready-chapters', title: 'Ready: Chapters and Features', dec: ['P3', 'P4'], notes: ['Scrolled down (the shot hides what is above)'] },
     { id: 'script', img: 'demo-ready-script', title: 'Ready: the Script', dec: ['P3'], notes: ['Open, chapter by chapter'] },
     { id: 'unlisted', img: 'demo-youtube-unlisted', title: 'YouTube unlisted', dec: ['P3'], notes: ['The embed plays; Watch on YouTube ↗'] },

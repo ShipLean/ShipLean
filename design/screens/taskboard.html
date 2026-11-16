@@ -14,7 +14,7 @@
   prompt on a row; collapse rows (Completed stories start collapsed); Group by Stories / People; the face filter;
   Settings (Fields, Styles, Tag colours), which updates the board live.
     ?view=people        opens grouped by People
-    ?dialog=settings    opens the Taskboard settings dialog (&pane=styles|tags for another section)
+    ?dialog=settings    opens the Taskboard settings dialog (&pane=styles|tags for another section, &ftype=story|bug for Fields on row headers)
   At 900px and below taskboard-touch.css/js show the phone layout (SHIP-725); its states are listed there.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
@@ -98,10 +98,18 @@
 .settings nav button:disabled { cursor: default; opacity: .55; }
 .settings .pane { display: grid; align-content: start; gap: var(--space-3); min-height: 360px; padding: var(--space-3) var(--space-4); overflow: auto; }
 .settings .pane p.hint { color: var(--color-muted); font-size: var(--text-sm); margin: 0; }
-.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-4); }
-.fgrid fieldset { display: grid; gap: 6px; margin: 0; padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
-.fgrid legend { display: flex; gap: 6px; align-items: center; padding: 0 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
-.fgrid .check { color: var(--color-text); }
+/* Fields pane: the built type-switch model (SHIP-1626 D7, SHIP-1868): Task / User Story / Bug, then Core fields and
+   Additional fields side by side (one column at 900px and below), then task progress on row headers. */
+.fmodel { display: grid; gap: var(--space-3); }
+.ftypes { display: flex; align-items: center; gap: var(--space-2); }
+.ftypes .seg button { gap: 6px; }
+.fcols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
+.fmodel fieldset { display: grid; gap: 6px; margin: 0; padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.fmodel legend { display: flex; gap: 6px; align-items: center; padding: 0 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.fmodel legend .count { padding: 1px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.fmodel .check { color: var(--color-text); }
+.fmodel .addl { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); }
+.fmodel select.field { width: 100%; margin-top: var(--space-1); }
 .rule { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 .rule .rh { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: var(--space-2); align-items: center; }
 .sw { display: inline-block; width: 28px; height: 20px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--sw); }
@@ -184,7 +192,7 @@
     group: params.get('view') === 'people' ? 'people' : 'stories', filter: new Set(), dismissed: new Set(), adding: null,
     collapsed: new Set(items.filter(i => i.sprint === 's24' && cat(i.state) === 'completed').map(i => i.key)),
     taskFields: { key: true, tags: true, points: false, assigned: true, parent: true, empty: false },
-    parentFields: { key: true, points: true, state: true, assigned: true, annotation: true },
+    parentFields: { key: true, points: true, state: true, assigned: true, annotation: true, empty: false },
     rules: [
       { name: 'Blocked', color: 'danger', bold: false, enabled: true, criteria: [['', 'Tags', 'contains', 'Blocked']], test: t => t.tags.includes('Blocked') },
       { name: 'Priority 1', color: 'warn', bold: true, enabled: true, criteria: [['', 'Priority', '=', '1']], test: t => t.priority === 1 },
@@ -361,35 +369,30 @@
   // ---------- Settings dialog (live: changes update the board) ----------
   const dlg = document.getElementById('settings'), pane = document.getElementById('pane');
   let paneId = 'fields';
-  const fieldLabels = {
-    task: [['key', 'Key (SHIP-123)'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points (informational)'], ['parent', 'Parent story (People grouping)'], ['empty', 'Show empty fields']],
-    parent: [['key', 'Key'], ['points', 'Story points'], ['state', 'State'], ['assigned', 'Assigned to'], ['annotation', 'Task progress ☑ done/total']],
-  };
-  const touchFields = {
-    task: [['key', 'Key'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points'], ['empty', 'Show empty fields']],
-    parent: [['key', 'Key'], ['points', 'Story points'], ['state', 'State'], ['assigned', 'Assigned to'], ['annotation', 'Task progress']],
-  };
-  let fieldsType = 'task';
+  // The built Core fields (CoreFields.tsx): row headers (User Story, Bug) draw no tags. State and the People grouping's
+  // parent line are not settings.
+  const coreFields = [['key', 'Key'], ['assigned', 'Assigned to'], ['tags', 'Tags'], ['points', 'Story points'], ['empty', 'Show empty fields']];
+  let fieldsType = ['story', 'bug'].includes(params.get('ftype')) ? params.get('ftype') : 'task'; // ?ftype=story|bug: the row-header settings
   const sel = (opts, v) => `<select class="field">${opts.map(o => `<option${o === v ? ' selected' : ''}>${o}</option>`).join('')}</select>`;
   function renderPane() {
     dlg.querySelectorAll('nav [data-pane]').forEach(b => b.setAttribute('aria-current', b.dataset.pane === paneId));
     if (paneId === 'fields') {
-      const box = (kind, attr, f) => fieldLabels[kind].map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('');
-      /* At 900px and below: the built model in one column (SHIP-1626 D7): a Task / User Story / Bug switch, then Core
-         fields and Additional fields (up to 10, added from a select). Desktop keeps the two stacked groups below. */
-      const core = fieldsType === 'task' ? touchFields.task : touchFields.parent, attr = fieldsType === 'task' ? 'data-tf' : 'data-pf', f = fieldsType === 'task' ? S.taskFields : S.parentFields;
+      /* The built model (SHIP-1626 D7, SHIP-1868) at every width: a Task / User Story / Bug switch, then Core fields and
+         Additional fields (up to 10, added from a select) side by side, one column at 900px and below; row headers get
+         Task progress under them. User Story and Bug share one setting here; the app keeps one per type. */
+      const task = fieldsType === 'task', attr = task ? 'data-tf' : 'data-pf', f = task ? S.taskFields : S.parentFields;
+      const core = coreFields.filter(([k]) => k !== 'tags' || task);
       const typeBtn = (t, l) => `<button type="button" data-ftype="${t}" aria-pressed="${fieldsType === t}">${tIcon(t)} ${l}</button>`;
       pane.innerHTML = `<p class="hint">Choose what shows on each card on this Taskboard. Fields are edited on the card or in the work item form.</p>
-        <div class="fmodel m-only">
-          <div class="ftypes"><span class="seg" role="group" aria-label="Card type">${typeBtn('task', 'Task')}${typeBtn('story', 'User Story')}${typeBtn('bug', 'Bug')}</span><span class="xs muted">Settings for ${fieldsType === 'task' ? 'task' : fieldsType === 'story' ? 'story' : 'bug'} cards</span></div>
-          <fieldset><legend>Core fields</legend>${core.map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('')}</fieldset>
-          <fieldset><legend>Additional fields <span class="count">1 / 10</span></legend>
-            <div class="addl"><span class="xs muted">1</span><span>Priority</span><button class="ib" type="button" aria-label="Remove Priority">✕</button></div>
-            ${sel(['+ Add field (up to 10)', 'Due date', 'Component', 'Environment'], '+ Add field (up to 10)')}</fieldset>
-        </div>
-        <div class="fgrid d-only">
-          <fieldset><legend>${tIcon('task')} Task cards</legend>${box('task', 'data-tf', S.taskFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
-          <fieldset><legend>${tIcon('story')}${tIcon('bug')} Story and bug cards (row headers)</legend>${box('parent', 'data-pf', S.parentFields)}<button class="btn" type="button" style="justify-self:start;margin-top:4px">+ Add field (up to 10)</button></fieldset>
+        <div class="fmodel">
+          <div class="ftypes"><span class="seg" role="group" aria-label="Work item type">${typeBtn('task', 'Task')}${typeBtn('story', 'User Story')}${typeBtn('bug', 'Bug')}</span><span class="xs muted">Settings for ${task ? 'task cards' : fieldsType === 'story' ? 'user story row headers' : 'bug row headers'}</span></div>
+          <div class="fcols">
+            <fieldset><legend>Core fields</legend>${core.map(([k, l]) => `<label class="check"><input type="checkbox" ${attr}="${k}"${f[k] ? ' checked' : ''}> ${l}</label>`).join('')}</fieldset>
+            <fieldset><legend>Additional fields <span class="count">1 / 10</span></legend>
+              <div class="addl"><span class="xs muted">1</span><span>Priority</span><button class="ib" type="button" aria-label="Remove Priority">✕</button></div>
+              ${sel(['+ Add field (up to 10)', 'Due date', 'Component', 'Environment'], '+ Add field (up to 10)')}</fieldset>
+          </div>
+          ${task ? '' : `<label class="check"><input type="checkbox" data-pf="annotation"${S.parentFields.annotation ? ' checked' : ''}> Task progress (☑ done/total) on row headers</label>`}
         </div>`;
     } else if (paneId === 'styles') {
       pane.innerHTML = `<p class="hint">Style rules make task cards that need attention stand out. When a card matches more than one rule, the first rule wins. Drag ⠿ to reorder.</p>

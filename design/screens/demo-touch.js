@@ -1,11 +1,12 @@
 /*
  * The sprint Demo tab in the touch shell (SHIP-1626 Q4, for SHIP-889); styles in demo-touch.css. Loaded at the end of
  * sprint-demo.html, after its own script, and re-applied after every render of the tab. At 900px and below:
- *   - the breadcrumb reads SHIP › Sprints › Sprint 23 › Demo (SHIP-1626 K2; shared.js has no entry for this page) (P1)
+ *   - the breadcrumb reads SHIP › Sprints › Sprint 23 › Demo (SHIP-1626 K2), from shared.js's crumbsFor as on every sprint tab (P1)
  *   - SHIP-724's sprint header: picker · state · ⋯ (All sprints moves into the ⋯), dates, the goal
  *   - the sprint tabs on their own row, the current one underlined; no toolbar row, the tab has no other controls
  *   - the three numbers as one row of tiles under the tabs, as on the Sprint backlog (P7)
- *   - the status band stacks: chip, message, the line under it, the BAU item as its own row, the action full width (P2)
+ *   - the status band stacks: chip, message, the line under it, the BAU item as its own row, the action full width (P2);
+ *     Requested offers Create demo, Ready's action is Remake demo, as built (SHIP-1908)
  *   - Ready: player, YouTube line or notice, facts in two columns, Chapters, Features covered, Script (P3, P4)
  * Above 900px nothing changes; ?notouch shows the desktop page at any width.
  * Review states (add ?shot for screenshots), on top of the page's own ?state=:
@@ -25,10 +26,6 @@
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const dots = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.5" cy="8" r="1.4" fill="currentColor"/></svg>';
   if (q.has('shot') && ['chapters', 'script'].includes(q.get('at'))) root.dataset.at = q.get('at');
-
-  /* Breadcrumb: <project> › Sprints › <sprint> › <tab> (K2) */
-  const crumbs = $('.appbar .crumbs');
-  if (crumbs) crumbs.innerHTML = `<span>${crumbs.firstElementChild.textContent}</span><span>›</span><span>Sprints</span><span>›</span><span>Sprint 23</span><span>›</span><b>Demo</b>`;
 
   /* The sprint header's ⋯ (SHIP-724 D10): the same sheet on every sprint tab */
   const hmore = el('button', 'dm-hmore', dots);

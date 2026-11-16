@@ -337,6 +337,46 @@ The Sprint backlog (`/p/:key/sprints/:id/backlog`) and the sprint header every s
 | Close sprint | ![Close sprint, light](images/sprint-backlog-close.light.png) | ![Close sprint, dark](images/sprint-backlog-close.dark.png) |
 | Someone else changed it | ![Conflict toast, light](images/sprint-backlog-conflict.light.png) | ![Conflict toast, dark](images/sprint-backlog-conflict.dark.png) |
 
+## All sprints on a phone (SHIP-723, SHIP-1807)
+
+The All sprints list (`/p/:key/sprints`) at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/sprints-touch.css` and `../screens/sprints-touch.js`, which `sprints.html` loads; `?at=list`, `?sheet=more:<sprint>`, `?new`, `?new=overlap` and `?empty` open its states (with `?shot` they hide what is above). The eight decisions are P1–P8 on SHIP-1807 and on the review page.
+
+| File | What it is |
+|---|---|
+| `sprints.html` | The desktop screen, with the phone layer included; `?at=list` and the states above open the phone states. |
+| `sprints-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions P1–P8 for Joel. |
+| `images/sprints*.png` | `sprints.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `sprints` (the list), `sprints-list`, `sprints-more` and `sprints-more-past` (a sprint's ⋯ sheet), `sprints-new` and `sprints-new-overlap` (New sprint), `sprints-empty`. |
+
+The phone rules: a head row with the project and count, Plan sprints and + New sprint, no separate heading; the velocity chart above the list, redrawn with every bar labelled; sections Current, Future (soonest first) and Past (newest first); a row shows name, dates, the goal up to two lines, and Capacity · Committed · Completed with labels, and opens the sprint's Backlog; ⋯ opens a K1 sheet (Open: Backlog, Taskboard, Capacity, and Retro and Demo on current and past sprints; then Edit sprint, and Close sprint on the current sprint only); New sprint is full screen with ✕ top left and the Save bar (Discard · Create sprint); a project with no sprints gets one panel and no chart.
+
+## Sprint capacity on a phone (SHIP-726, SHIP-1808)
+
+The sprint Capacity tab at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/capacity-touch.css` and `../screens/capacity-touch.js`, which `capacity.html` loads. The plain page is over capacity (the desktop's data); `?at=people`, `?sheet=days&p=<person>`, `?dirty`, `?sheet=more`, `?sheet=add` (with `?rm=<person>`) and `?empty` open its states.
+
+| File | What it is |
+|---|---|
+| `capacity.html` | The desktop screen, with the phone layer included. |
+| `capacity-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions. |
+| `images/capacity*.png` | `capacity.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `capacity`, `capacity-people`, `capacity-days`, `capacity-dirty`, `capacity-dirty-people`, `capacity-more`, `capacity-add`, `capacity-empty`. |
+
+## Project settings on a phone (SHIP-732, SHIP-1809)
+
+Project settings (`/p/:key/settings`) and the Stories board settings at 900px and below, inside the touch shell. Desktop is unchanged. A phone opens an index of the tabs (General, States, Members, Sprints & forecast, Integrations, Demos); a tab opens as a pane with ‹ back in the top bar. It is built in `../screens/settings-touch.css` and `../screens/settings-touch.js` (which `settings.html` loads) and `../screens/board-settings-touch.css` and `board-settings-touch.js` (which `board-settings.html` loads); `?tab=<tab>` opens a pane, and `?dirty`, `?changes`, `?drag=<state>`, `?menu=<state>`, `?yt=connected&at=yt` open its states.
+
+| File | What it is |
+|---|---|
+| `settings-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions for Joel. |
+| `images/settings*.png` | `settings.html` and `board-settings.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `settings` (the index), `settings-general`, `settings-general-dirty`, `settings-changes`, `settings-states`, `settings-states-drag`, `settings-states-menu`, `settings-members`, `settings-sprints`, `settings-integrations`, `settings-demos`, `settings-demos-yt`, and the Stories board `settings-board-styles`, `settings-board-styles-drag`, `settings-board-styles-dirty`. |
+
+## Sprint demo on a phone (SHIP-889, SHIP-1810)
+
+The sprint Demo tab (`/p/:key/sprints/:id/demo`) at 900px and below, inside the touch shell. Desktop is unchanged. It is built in `../screens/demo-touch.css` and `../screens/demo-touch.js`, which `sprint-demo.html` loads. `?state=<state>` opens a state (the plain page is Ready, the desktop's default); `?at=chapters`, `?at=script`, `?said` and `?sheet=sprint` open parts of it.
+
+| File | What it is |
+|---|---|
+| `demo-review.html` | The design review: every state as a live frame, what changes in the code, and the decisions for Joel. |
+| `images/demo*.png` | `sprint-demo.html` at 390 × 844, 2× scale, light and dark (made by `screenshots.sh`): `demo-closable`, `demo-none`, `demo-requested`, `demo-blocked`, `demo-working`, `demo-failed`, `demo-failed-said`, `demo-ready`, `demo-ready-chapters`, `demo-ready-script`, `demo-youtube-unlisted`, `demo-youtube-private`, `demo-youtube-failed`, `demo-sprint`. |
+
 ## Sprint retro on a phone (SHIP-727)
 
 The sprint Retro tab at 900px and below, inside the touch shell. Desktop is unchanged.
@@ -585,6 +625,7 @@ The sprint Taskboard (`/p/:key/sprints/:id/taskboard`) at 900px and below, insid
 | Grouped by People | ![People lanes, light](images/tboard-people.light.png) | ![People lanes, dark](images/tboard-people.dark.png) |
 | Settings: Styles | ![Settings styles, light](images/tboard-settings.light.png) | ![Settings styles, dark](images/tboard-settings.dark.png) |
 | Settings: Fields | ![Settings fields, light](images/tboard-settings-fields.light.png) | ![Settings fields, dark](images/tboard-settings-fields.dark.png) |
+| Settings: Fields on row headers (User Story) | ![Settings fields for row headers, light](images/tboard-settings-fields-story.light.png) | ![Settings fields for row headers, dark](images/tboard-settings-fields-story.dark.png) |
 | Settings: Tag colours | ![Settings tag colours, light](images/tboard-settings-tags.light.png) | ![Settings tag colours, dark](images/tboard-settings-tags.dark.png) |
 
 ## Decisions and questions on a phone (SHIP-922)
