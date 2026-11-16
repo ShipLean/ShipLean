@@ -8,5 +8,8 @@ namespace ShipLean.Application.Features.AgentDispatch.RunLogs;
 public sealed class AgentRunLogServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
-        => services.AddSingleton<IAgentRunLogs, AgentRunLogs>();
+    {
+        services.AddScoped<IAgentRunLogs, AgentRunLogs>();
+        services.AddSingleton<IRunLogAttachments, RunLogAttachments>();
+    }
 }

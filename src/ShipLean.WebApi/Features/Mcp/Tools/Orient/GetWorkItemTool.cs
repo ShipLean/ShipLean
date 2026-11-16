@@ -35,6 +35,7 @@ internal sealed class GetWorkItemTool(
     IAgentAddresses addresses,
     IItemAsks asks,
     AgentSessionMcpReads agentSessions,
+    IRunLogAttachments runLogs,
     TimeProvider clock,
     McpItemTypeSlot itemType)
 {
@@ -54,7 +55,9 @@ internal sealed class GetWorkItemTool(
         var snapshot = await store.GetAsync(item.Id, cancellationToken);
         var revisions = (await store.GetRevisionsAsync(item.Id, cancellationToken)).OrderByDescending(r => r.Rev).Take(HistoryCount).ToList();
         var (page, commentsOlder) = CommentPage(await comments.ListAsync(item.Id, cancellationToken), comments_before);
-        var listed = await attachments.ListAsync(item.Id, cancellationToken);
+        // D10: an agent session's run log is listed to project admins only.
+        var hiddenRunLogs = await runLogs.HiddenAsync(item.Id, item.Role, cancellationToken);
+        var listed = (await attachments.ListAsync(item.Id, cancellationToken)).Where(a => !hiddenRunLogs.Contains(a.Id)).ToList();
         var children = (await tree.DescendantsAsync(item.ProjectId, item.Id, null, cancellationToken)).Where(c => c.Depth == 1).ToList();
         var isFeature = snapshot.Type == WorkItemTypeId.Feature;
         itemType.Value = snapshot.Type.ToString().ToLowerInvariant();
