@@ -58,7 +58,7 @@ export function CapacityDaysSheet({
             </button>
             <input
               data-testid={ids.capacityDays}
-              className="field w-[4.5rem] text-center tabular-nums"
+              className="field h-10 w-[4.5rem] text-center tabular-nums"
               type="number"
               min={0}
               max={shape.workingDays}

@@ -174,6 +174,33 @@ test('Capacity_WhenRowTappedOnPhone_ShouldStepDaysByHalfADayInTheDaysSheet', asy
   await expect(page.getByTestId(ids.capacityPeopleHead)).toContainText('People 4');
 });
 
+test('Capacity_WhenOnPhone_ShouldShowTheWholeVelocityTileLabel', async ({ mount, page }) => {
+  await open(page, mount);
+  // ND2-10: the third tile's label wraps inside its tile instead of ending in "Velocity (last …".
+  const label = await page.getByTestId(ids.capacityKpiVelocity).evaluate((el) => {
+    const next = el.nextElementSibling as HTMLElement;
+    return { text: next.textContent, cut: next.scrollWidth > next.clientWidth };
+  });
+  expect(label).toEqual({ text: 'Velocity (last 3)', cut: false });
+});
+
+test('Capacity_WhenOnPhone_ShouldShowTeamVelocityOnOneRow', async ({ mount, page }) => {
+  await open(page, mount);
+  // ND2-6: label and hint on the left, a 96px field on the right of the same row (not a full-width field under the label).
+  const layout = await page.getByTestId(ids.capacityVelocity).evaluate((el) => {
+    const field = el.getBoundingClientRect();
+    const label = el.previousElementSibling!.getBoundingClientRect();
+    const hintId = el.getAttribute('aria-describedby')!.split(' ')[0]!;
+    const hint = document.getElementById(hintId)!.getBoundingClientRect();
+    return {
+      width: Math.round(field.width),
+      besideLabel: field.left >= label.right && field.top < label.bottom,
+      besideHint: field.left >= hint.right && field.bottom > hint.top,
+    };
+  });
+  expect(layout).toEqual({ width: 96, besideLabel: true, besideHint: true });
+});
+
 test('Capacity_WhenMoreTapped_ShouldOfferClear', async ({ mount, page }) => {
   await open(page, mount);
 
