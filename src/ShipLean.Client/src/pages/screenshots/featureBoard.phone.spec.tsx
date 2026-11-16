@@ -209,3 +209,27 @@ test('AddStoryBox_OnTheFeatureBoard_ShouldNameTheFeatureInItsHelperLine', async 
     );
   expect(lines, 'the helper line is one line').toBeLessThan(1.5);
 });
+
+test('AddStoryBox_OnTheFeatureBoardAtPhoneWidth_ShouldShowTheWholePlaceholder', async ({
+  mount,
+  page,
+}) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  const cut = await page.getByTestId(taskboardTestIds.addStoryTitle).evaluate((el) => {
+    // The placeholder's own width: a span in the input's font, since an input can't be asked how much it hides.
+    const probe = document.createElement('span');
+    const style = getComputedStyle(el);
+    const ph = getComputedStyle(el, '::placeholder');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:${ph.fontSize};font-family:${ph.fontFamily};font-weight:${ph.fontWeight}`;
+    probe.textContent = (el as HTMLInputElement).placeholder;
+    document.body.append(probe);
+    const text = probe.getBoundingClientRect().width;
+    probe.remove();
+    const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { text, room };
+  });
+  expect(cut.text, 'the placeholder fits inside the title field').toBeLessThanOrEqual(cut.room);
+});

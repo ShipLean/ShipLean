@@ -298,3 +298,30 @@ test('AddStoryBox_AtPhoneWidth_ShouldShowTheWholePlaceholderAndOneHelperLine', a
   );
   expect(sideways).toBe(false);
 });
+
+test('AddStoryBox_AtPhoneWidth_ShouldFitEveryTypeLabelInTheSelect', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: ROUTE } });
+  await ready(page);
+  await addBox(page);
+  const fit = await page.getByTestId(taskboardTestIds.addStoryType).evaluate((el) => {
+    const select = el as HTMLSelectElement;
+    const style = getComputedStyle(select);
+    const probe = document.createElement('span');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font:${style.font}`;
+    document.body.append(probe);
+    // Room for the text: the box less its padding and the native chevron (about 20px).
+    const room =
+      select.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 20;
+    const labels = [...select.options].map((option) => {
+      probe.textContent = option.text;
+      return { label: option.text, width: probe.getBoundingClientRect().width, room };
+    });
+    probe.remove();
+    return { labels, clipped: select.scrollWidth > select.clientWidth };
+  });
+  expect(fit.labels.map((l) => l.label)).toEqual(['Story', 'Bug', 'Action']);
+  for (const l of fit.labels)
+    expect(l.width, `${l.label} fits the select`).toBeLessThanOrEqual(l.room);
+  expect(fit.clipped).toBe(false);
+});
