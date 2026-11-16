@@ -28,6 +28,8 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
     private string _task = string.Empty;
     private string _story = string.Empty;
     private string _feature = string.Empty;
+    private string _title = string.Empty;
+    private string _state = string.Empty;
     private LeadTimeFacts _facts = LeadTimeFacts.Empty;
     private LeadTimeFacts _laterWindow = LeadTimeFacts.Empty;
 
@@ -42,7 +44,11 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
         (_story, _feature) = await connection.QuerySingleAsync<(string, string)>(
             "SELECT story.key, feature.key FROM work_item task JOIN work_item story ON story.id = task.parent_id JOIN work_item feature ON feature.id = story.parent_id WHERE task.id = @id",
             new { id });
-        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at WHERE work_item_id = @id AND rev > 1", new { id, at = T0.AddHours(1) });
+        _title = await connection.QuerySingleAsync<string>("SELECT title FROM work_item WHERE id = @id", new { id });
+        // Revision 1 is the creation, a real move to New (Proposed) that the reader returns. pick_up's revision is the task's first
+        // In-progress move and is made by an agent; the later back-to-work move is made by another, so the first one must win.
+        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at, changed_by = @by WHERE work_item_id = @id AND rev = 1", new { id, at = T0, by = SeedIds.Users.Joel });
+        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at, agent_name = 'Claude Code' WHERE work_item_id = @id AND rev > 1", new { id, at = T0.AddHours(1) });
 
         // Two commits, the later one the last. committed_at is set in SQL here only: the tool that sends it comes in a later wave.
         var reported = await ReportAsync($$"""
@@ -58,9 +64,10 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
         await TagChangeAsync(connection, id, T0.AddHours(2), "[]", """["blocked"]""");
         await TagChangeAsync(connection, id, T0.AddHours(3), """["blocked"]""", "[]");
         await MoveAsync(connection, id, T0.AddHours(4), SeedIds.States.Ship.TaskInReview);
-        await MoveAsync(connection, id, T0.AddHours(5), SeedIds.States.Ship.TaskActive);
+        await MoveAsync(connection, id, T0.AddHours(5), SeedIds.States.Ship.TaskActive, "Cursor");
         await MoveAsync(connection, id, T0.AddHours(7), SeedIds.States.Ship.TaskInReview);
 
+        _state = await StateOfAsync(_task);
         var writer = await TokenAsync(TestUser.Joel, ReadWrite);
         (await CallToolAsync(writer, "log_review", $$"""{"item":"{{_task}}","verdict":"changes_requested","note":"Missing a test."}""")).IsToolError().ShouldBeFalse();
         (await CallToolAsync(writer, "log_review", $$"""{"item":"{{_task}}","verdict":"approved"}""")).IsToolError().ShouldBeFalse();
@@ -79,22 +86,33 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
     {
         var task = _facts.Tasks.SingleOrDefault(t => t.Key == _task);
 
-        (task?.ParentKey, task?.ParentType, task?.FeatureKey, task?.AssigneeId).ShouldBe((_story, InspectionParentType.Story, _feature, SeedIds.Users.Joel));
+        (task?.ParentKey, task?.ParentType, task?.FeatureKey, task?.AssigneeId, task?.Title, task?.StateName)
+            .ShouldBe((_story, InspectionParentType.Story, _feature, SeedIds.Users.Joel, _title, _state));
         _facts.People.ContainsKey(SeedIds.Users.Joel).ShouldBeTrue();
+        task?.AssigneeName.ShouldNotBeNullOrWhiteSpace();
+        task?.AssigneeName.ShouldBe(_facts.People[SeedIds.Users.Joel]);
+    }
+
+    // Mutation: take the agent from the task's last In-progress move (Cursor) instead of its first (Claude Code).
+    [Test]
+    public void Read_WhenTaskStartedByAnAgent_ShouldReturnTheAgentOfTheFirstInProgressMoveTurnedGreenByB1()
+    {
+        _facts.Tasks.SingleOrDefault(t => t.Key == _task)?.AgentName.ShouldBe("Claude Code");
     }
 
     // Mutation: take the revision's creation time as the move's time.
     [Test]
     public void Read_WhenTaskPickedUpAndSentToReview_ShouldReturnEveryMoveWithItsTimeAndCategoryTurnedGreenByB1()
     {
-        var moves = _facts.Moves.Where(m => m.ItemKey == _task).OrderBy(m => m.At).Select(m => (m.At, m.Category, m.UserId)).ToList();
+        var moves = _facts.Moves.Where(m => m.ItemKey == _task).OrderBy(m => m.At).Select(m => (m.At, m.Category, m.UserId, m.AgentName)).ToList();
 
         moves.ShouldBe(
         [
-            (T0.AddHours(1), StateCategory.InProgress, (Guid?)SeedIds.Users.Joel),
-            (T0.AddHours(4), StateCategory.Resolved, SeedIds.Users.Joel),
-            (T0.AddHours(5), StateCategory.InProgress, SeedIds.Users.Joel),
-            (T0.AddHours(7), StateCategory.Resolved, SeedIds.Users.Joel),
+            (T0, StateCategory.Proposed, (Guid?)SeedIds.Users.Joel, (string?)null),
+            (T0.AddHours(1), StateCategory.InProgress, SeedIds.Users.Joel, "Claude Code"),
+            (T0.AddHours(4), StateCategory.Resolved, SeedIds.Users.Joel, null),
+            (T0.AddHours(5), StateCategory.InProgress, SeedIds.Users.Joel, "Cursor"),
+            (T0.AddHours(7), StateCategory.Resolved, SeedIds.Users.Joel, null),
         ]);
     }
 
@@ -131,7 +149,7 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
     {
         _laterWindow.Tasks.Select(t => t.Key).ShouldContain(_task);
         _laterWindow.Moves.Where(m => m.ItemKey == _task).Select(m => m.Category).ShouldBe(
-            [StateCategory.InProgress, StateCategory.Resolved, StateCategory.InProgress, StateCategory.Resolved], ignoreOrder: true);
+            [StateCategory.Proposed, StateCategory.InProgress, StateCategory.Resolved, StateCategory.InProgress, StateCategory.Resolved], ignoreOrder: true);
         _laterWindow.Commits.Count(c => c.ItemKey == _task).ShouldBe(2);
         _laterWindow.Reviews.Count(r => r.ItemKey == _task).ShouldBe(2);
         _laterWindow.BlockedTags.Count(t => t.ItemKey == _task).ShouldBe(2);
@@ -143,15 +161,23 @@ public class LeadTimeFactsReaderContractTests : ReportTestBase
         return await scope.ServiceProvider.GetRequiredService<ILeadTimeFactsReader>().ReadAsync(Ship, from, to, CancellationToken.None);
     }
 
-    private static Task SetCommitTimeAsync(Npgsql.NpgsqlConnection connection, Guid id, string sha, DateTimeOffset at)
-        => connection.ExecuteAsync(
+    private static async Task SetCommitTimeAsync(Npgsql.NpgsqlConnection connection, Guid id, string sha, DateTimeOffset at)
+    {
+        var updated = await connection.ExecuteAsync(
             "UPDATE work_item_link SET committed_at = @at WHERE source_id = @id AND link_type = 'url' AND title LIKE @title",
             new { id, at, title = $"commit {sha[..7]} %" });
+        updated.ShouldBe(1);
+    }
 
-    private static async Task MoveAsync(Npgsql.NpgsqlConnection connection, Guid id, DateTimeOffset at, Guid state)
+    private static async Task MoveAsync(Npgsql.NpgsqlConnection connection, Guid id, DateTimeOffset at, Guid state, string? agent = null)
     {
         var rev = await NextRevAsync(connection, id);
-        await new RevisionBuilder(id).WithRev(rev).WithChangedAt(at).WithChangedBy(SeedIds.Users.Joel)
+        var builder = new RevisionBuilder(id).WithRev(rev).WithChangedAt(at).WithChangedBy(SeedIds.Users.Joel);
+        if (agent is not null)
+        {
+            builder.WithAgent(agent);
+        }
+        await builder
             .WithChanges($$"""[{"field":"state","from":null,"to":"{{state}}"}]""").InsertAsync(connection);
         await connection.ExecuteAsync("UPDATE work_item SET state_id = @state, revision = @rev WHERE id = @id", new { id, state, rev });
     }
