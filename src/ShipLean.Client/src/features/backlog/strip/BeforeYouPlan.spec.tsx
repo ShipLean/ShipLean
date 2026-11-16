@@ -18,6 +18,15 @@ const check = (page: Page, id: string) =>
   page.getByTestId(ids.planCheck).and(page.locator(`[data-check="${id}"]`));
 const IDS = [ROWS[0].id, ROWS[1].id];
 
+test('NotEstimatedBanner_OnDesktop_ShouldKeepTheStrip', async ({ mount, page }) => {
+  await stubBacklog(page, view(IDS));
+  await mount(<ListMode project={PROJECT} />, route);
+
+  await expect(page.getByTestId(ids.planStrip)).toBeVisible();
+  await expect(page.getByTestId(ids.planCheck)).toHaveCount(5);
+  await expect(page.getByTestId(ids.notEstimatedBanner)).toHaveCount(0);
+});
+
 test('Strip_shows_five_counts', async ({ mount, page }) => {
   await stubBacklog(page, view(IDS));
   await mount(<ListMode project={PROJECT} />, route);

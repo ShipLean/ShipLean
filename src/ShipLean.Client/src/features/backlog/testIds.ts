@@ -205,4 +205,10 @@ export const backlogTestIds = {
   summary: 'backlog-summary',
   summaryNote: 'backlog-summary-note',
   filterCount: 'backlog-filter-count',
+  pointsScale: 'backlog-points-scale',
+  pointsSheetError: 'backlog-points-sheet-error',
+  queuePosition: 'backlog-queue-position',
+  queueEmpty: 'backlog-queue-empty',
+  notEstimatedBanner: 'backlog-not-estimated-banner',
+  notEstimatedEstimate: 'backlog-not-estimated-estimate',
 } as const;
