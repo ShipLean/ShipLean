@@ -72,4 +72,5 @@ export const pagesTestIds = {
   slotTasks: 'slot-tasks',
   slotTreeMode: 'slot-treeMode',
   slotSprintGoalEdit: 'slot-sprintGoalEdit',
+  profileIntro: 'profile-intro',
 } as const;

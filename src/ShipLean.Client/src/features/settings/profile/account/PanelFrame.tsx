@@ -33,7 +33,7 @@ export function PanelFrame({
             {meta}
           </span>
         )}
-        {action === undefined ? null : (
+        {action == null ? null : (
           <span className="touch:order-3 touch:ml-auto">{action}</span>
         )}
       </header>

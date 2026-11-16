@@ -48,7 +48,7 @@ test('Profile_ShouldShowTheIntroLine', async ({ mount, page }) => {
   await arrange(false)(page);
   await mount(<AppRoutes />, { hooksConfig: { route: '/profile' } });
   await ready(page);
-  const intro = page.getByTestId('profile-intro');
+  const intro = page.getByTestId(pagesTestIds.profileIntro);
   await expect(intro).toHaveText(
     'Only you see these settings. Your name and avatar show wherever your work does.',
   );
