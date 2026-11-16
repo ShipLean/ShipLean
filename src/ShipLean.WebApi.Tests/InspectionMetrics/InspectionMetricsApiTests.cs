@@ -46,9 +46,9 @@ public class InspectionMetricsApiTests : ApiFixture
     }
 
     // SHIP-1398 QK3: quality on the view, every period, quarter and headlined sprint, and quality and bugs on the opened period. The
-    // seeded project's numbers fill in with QT4, so a null quality passes; a set one must carry exactly the six keys, and its severity
-    // split the five. The range's bugs list sits on the view.
-    // Mutations: drop Quality from InspectionPeriodDto; drop Bugs from InspectionPeriodDetailDto; drop Per100Prs (red once quality is set).
+    // seeded project has live bugs, so the view, every period and the opened period carry a quality with exactly the six keys, and its
+    // severity split the five; the range's and the period's bug lists are arrays. Headlined quarters and sprints are checked when set.
+    // Mutations: drop Quality from InspectionPeriodDto; drop Bugs from InspectionPeriodDetailDto; drop Per100Prs; leave Quality null.
     [Test]
     public async Task Get_ShouldIncludeQualityInFinalShape()
     {
@@ -69,15 +69,12 @@ public class InspectionMetricsApiTests : ApiFixture
         foreach (var owner in owners)
         {
             var quality = owner.GetProperty("quality");
-            if (quality.ValueKind != JsonValueKind.Null)
-            {
-                quality.EnumerateObject().Select(p => p.Name).ShouldBe(QualityKeys, ignoreOrder: true);
-                quality.GetProperty("escapingBySeverity").EnumerateObject().Select(p => p.Name).ShouldBe(SeverityKeys, ignoreOrder: true);
-            }
+            quality.ValueKind.ShouldBe(JsonValueKind.Object);
+            quality.EnumerateObject().Select(p => p.Name).ShouldBe(QualityKeys, ignoreOrder: true);
+            quality.GetProperty("escapingBySeverity").EnumerateObject().Select(p => p.Name).ShouldBe(SeverityKeys, ignoreOrder: true);
         }
-        detail.TryGetProperty("bugs", out var bugs).ShouldBeTrue();
-        bugs.ValueKind.ShouldBeOneOf(JsonValueKind.Null, JsonValueKind.Array);
-        root.GetProperty("bugs").ValueKind.ShouldBeOneOf(JsonValueKind.Null, JsonValueKind.Array);
+        detail.GetProperty("bugs").ValueKind.ShouldBe(JsonValueKind.Array);
+        root.GetProperty("bugs").ValueKind.ShouldBe(JsonValueKind.Array);
     }
 
     [Test]
