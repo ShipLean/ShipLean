@@ -140,7 +140,12 @@ function LoadedBoard({
         onAddStory={() => setAdding(true)}
       />
       {adding ? (
-        <AddStoryBox projectId={project.id} scope={scope} onClose={() => setAdding(false)} />
+        <AddStoryBox
+          projectId={project.id}
+          scope={scope}
+          destination={view.header.key}
+          onClose={() => setAdding(false)}
+        />
       ) : null}
       {!loaded ? (
         <p data-testid={boardIds.loading} className="p-4 text-ink-muted">

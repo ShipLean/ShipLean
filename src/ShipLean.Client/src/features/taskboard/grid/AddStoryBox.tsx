@@ -7,16 +7,30 @@ import type { TaskboardScope } from '../taskboardScope';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { taskboardTestIds as ids } from '../testIds';
 
-const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({ id, label: typeName(id) }));
+/** The type select is 80px wide at touch, so each type has a one-word phone label; desktop keeps the full type name. */
+const PHONE_LABELS: Partial<Record<WorkItemTypeId, string>> = {
+  story: 'Story',
+  bug: 'Bug',
+  action: 'Action',
+};
+
+const types = WORK_ITEM_TYPE_IDS.filter(isStoryLevel).map((id) => ({
+  id,
+  label: typeName(id),
+  phoneLabel: PHONE_LABELS[id] ?? typeName(id),
+}));
 
 /** "+ Add story or bug": creates the item into this sprint and stays open for the next one. Esc closes it on desktop; at touch a ✕ button does. */
 export function AddStoryBox({
   projectId,
   scope,
+  destination,
   onClose,
 }: {
   projectId: string;
   scope: TaskboardScope;
+  /** What the helper line names at touch: the Feature key on the Feature board, the sprint name on the Taskboard. */
+  destination: string;
   onClose: () => void;
 }) {
   const [type, setType] = useState<WorkItemTypeId>('story');
@@ -49,18 +63,18 @@ export function AddStoryBox({
       data-testid={ids.addStoryBox}
       className="grid grid-cols-[minmax(0,1fr)] gap-1 px-4 py-2 touch:px-3"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 touch:gap-1">
         <select
           data-testid={ids.addStoryType}
           aria-label="Type"
-          className="field"
+          className="field touch:w-[5.5rem]"
           value={type}
           onChange={(event) => setType(event.target.value as WorkItemTypeId)}
           onKeyDown={onKeyDown}
         >
           {types.map((option) => (
             <option key={option.id} value={option.id}>
-              {option.label}
+              {touch ? option.phoneLabel : option.label}
             </option>
           ))}
         </select>
@@ -69,7 +83,7 @@ export function AddStoryBox({
           autoFocus
           data-testid={ids.addStoryTitle}
           aria-label="Title"
-          className="field flex-1 touch:min-w-0"
+          className="field flex-1 touch:min-w-0 touch:placeholder:text-[length:var(--text-sm)]"
           placeholder={
             touch
               ? 'Title of the story or bug'
@@ -102,11 +116,11 @@ export function AddStoryBox({
       {touch ? (
         <p
           data-testid={ids.addStoryHelp}
-          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+          className="m-0 text-[length:var(--text-2xs)] text-ink-muted"
         >
           {scope.kind === 'sprint'
-            ? 'Adds it to this sprint, at the bottom. Stays open for the next one.'
-            : 'Adds it under this Feature, in the Backlog. Stays open for the next one.'}
+            ? `Adds it to ${destination}, at the bottom. Stays open for the next one.`
+            : `Adds it under ${destination}, in the Backlog. Stays open for the next one.`}
         </p>
       ) : null}
       {create.error ? (

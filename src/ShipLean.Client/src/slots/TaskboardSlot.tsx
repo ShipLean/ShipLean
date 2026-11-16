@@ -103,7 +103,12 @@ export function TaskboardSlot({ project, sprint }: TaskboardSlotProps) {
         onAddStory={() => setAdding(true)}
       />
       {adding ? (
-        <AddStoryBox projectId={project.id} scope={scope} onClose={() => setAdding(false)} />
+        <AddStoryBox
+          projectId={project.id}
+          scope={scope}
+          destination={sprint.name}
+          onClose={() => setAdding(false)}
+        />
       ) : null}
       {board.isPending || !loaded ? (
         <p data-testid={ids.loading} className="p-4 text-ink-muted">
