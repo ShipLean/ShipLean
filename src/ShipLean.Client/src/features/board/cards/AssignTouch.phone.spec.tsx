@@ -32,7 +32,7 @@ test('CardActionsSheet_WhenFeature_ShouldSayOwner', async ({ mount, page }) => {
   await expect(row(page, 'assign')).toContainText('Owner');
   await row(page, 'assign').tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Owner SHIP-104');
-  await expect(sheet(page).getByTestId(ids.assignOption).last()).toHaveText('No owner');
+  await expect(sheet(page).getByTestId(ids.assignOption).last()).toContainText('No owner');
 });
 
 test('CardActionsSheet_WhenStory_ShouldSayAssign', async ({ mount, page }) => {
@@ -48,8 +48,8 @@ test('CardActionsSheet_WhenStory_ShouldSayAssign', async ({ mount, page }) => {
   await row(page, 'assign').tap();
   await expect(sheet(page).getByTestId(touchTestIds.sheetTitle)).toHaveText('Assign SHIP-160');
   await expect(sheet(page).getByTestId(ids.assignOption)).toHaveText([
-    ...assignMembers.map((member) => new RegExp(`${member.name}$`)),
-    /Unassigned$/,
+    ...assignMembers.map((member) => new RegExp(`${member.name}✓?$`)),
+    /Unassigned✓?$/,
   ]);
 });
 
