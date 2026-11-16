@@ -1,3 +1,4 @@
+using ShipLean.TestSupport.Identity;
 using Npgsql;
 using ShipLean.Application.Database;
 using ShipLean.Application.Fakes.Import;
@@ -44,12 +45,12 @@ public sealed class ImportMappingsTests
     {
         _connections = new InMemoryJiraConnections();
         _connections.Arrange(Connection, JiraWorld.Credentials);
-        _jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = SeedIds.Users.Joel }, new UserDirectory(_dataSource, TimeProvider.System));
+        _jobs = new InMemoryImportJobs(TimeProvider.System, new SettableCurrentUser { Id = SeedIds.Users.Joel }, new UserDirectory(_dataSource, TimeProvider.System), new FixedViewerZone());
         _jobs.RegisterConnection(Connection);
     }
 
     private ImportMappings Mappings(InMemoryJiraData data)
-        => new(_connections, new InMemoryJiraClient(JiraWorld.Credentials, data), _jobs, new StateCatalog(_dataSource), new UserDirectory(_dataSource, TimeProvider.System));
+        => new(_connections, new InMemoryJiraClient(JiraWorld.Credentials, data), _jobs, new StateCatalog(_dataSource), new UserDirectory(_dataSource, TimeProvider.System), new FixedViewerZone());
 
     [Test]
     public async Task Mapping_WhenEpic_ShouldBecomeFeature()

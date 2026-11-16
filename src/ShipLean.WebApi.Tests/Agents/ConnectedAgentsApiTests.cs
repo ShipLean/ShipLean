@@ -32,7 +32,7 @@ public class ConnectedAgentsApiTests : ApiFixture
         agent.Scopes.ShouldBe(["shiplean:read", "shiplean:write"]);
         agent.LastUsedAt.ShouldBeNull();
         agent.LastUsedLabel.ShouldBeNull();
-        agent.ConnectedLabel.ShouldBe(ShipLean.Core.DisplayDate.Relative(agent.ConnectedAt, TimeProvider.System));
+        agent.ConnectedLabel.ShouldBe(ShipLean.Core.DisplayDate.Relative(agent.ConnectedAt, TimeProvider.System.GetUtcNow(), TimeZoneInfo.Utc));
     }
 
     [Test]
