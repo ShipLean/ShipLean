@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import type { RetroInsightsDto } from '@shiplean/core/api/retros';
 import { touchTestIds } from '../../../touch/testIds';
 import {
@@ -56,6 +57,32 @@ const withUnthemed: RetroInsightsDto = {
 };
 const unthemedQuery = '?sheet=theme:unthemed';
 
+/**
+ * Holds what a theme sheet loads (its mentions from Search, its open points) until the returned function is called. A
+ * sheet that grows when they arrive is
+ * bottom-anchored with a fractional height, so it moves by a fraction of a pixel, and the lines it had already painted
+ * keep their old pixel rounding (some land a pixel lower). An answer that raced the sheet's first paint gave one shot or
+ * the other at random (SHIP-2110); answering after the paint gives the same one every run.
+ */
+async function holdWhatTheSheetLoads(page: Page): Promise<() => void> {
+  let answer!: () => void;
+  const held = new Promise<void>((resolve) => (answer = resolve));
+  await page.route(
+    (url) => /^\/api\/projects\/[^/]+\/retros(\/action-dialog)?$/.test(url.pathname),
+    async (route) => {
+      await held;
+      await route.fallback();
+    },
+  );
+  return answer;
+}
+
+/** Resolves once the browser has painted the current page: a frame callback runs before a paint, its next one after it. */
+const afterTheNextPaint = (page: Page) =>
+  page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+
 for (const colour of THEMES) {
   test(`ThemeCards_WhenOpened_ShouldMatchItsScreenshot_retro-insights-phone_${colour}`, async ({
     mount,
@@ -91,15 +118,18 @@ for (const colour of THEMES) {
     await page.setViewportSize({ width: 390, height: 840 });
     await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
     await stubRetros(page);
+    // What the sheet loads always arrives after it has painted, as on a real network (see holdWhatTheSheetLoads).
+    const answer = await holdWhatTheSheetLoads(page);
     await mount(<ThemesAddressHarness insights={base} />, open(sheetQuery(helped.theme.id)));
     const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.getByTestId(ids.retroThemeSheet)).toBeVisible();
+    await afterTheNextPaint(page);
+    answer();
     // Everything the sheet loads is in before the shot: the bottom-anchored sheet grows as it arrives.
     await expect(page.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
     await expect(page.getByTestId(ids.retroThemeSheetAddAction)).toContainText('open point');
-    // The long sheet has lines on fractional heights that settle a pixel apart from run to run (about 1000 pixels of text edges).
     await expect(sheet).toHaveScreenshot(`retro-insights-theme.${colour}.png`, {
       animations: 'disabled',
-      maxDiffPixels: 1500,
     });
   });
 
@@ -140,12 +170,16 @@ for (const colour of THEMES) {
     mount,
     page,
   }) => {
-    // 85dvh of 840 is a whole number of pixels, so the sheet's text lands on the same pixels every run.
     await page.setViewportSize({ width: 390, height: 840 });
     await page.emulateMedia({ colorScheme: colour, reducedMotion: 'reduce' });
     await stubRetros(page);
+    // What the sheet loads always arrives after it has painted, as on a real network (see holdWhatTheSheetLoads).
+    const answer = await holdWhatTheSheetLoads(page);
     await mount(<ThemesAddressHarness insights={withUnthemed} />, open(unthemedQuery));
     const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.getByTestId(ids.retroUnthemedSheet)).toBeVisible();
+    await afterTheNextPaint(page);
+    answer();
     // Everything the sheet loads is in before the shot: the bottom-anchored sheet grows as it arrives.
     await expect(sheet.getByTestId(ids.retroThemeSheetMention)).toHaveCount(3);
     await expect(sheet.getByTestId(ids.retroThemeSheetAllInSearch)).toHaveText(
