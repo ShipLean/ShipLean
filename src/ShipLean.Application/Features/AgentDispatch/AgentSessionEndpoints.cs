@@ -25,7 +25,7 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
     private async Task<AgentStartAvailabilityDto> AvailabilityCoreAsync(Guid workItemId, CancellationToken cancellationToken)
     {
         var plan = await starter.PlanAsync(workItemId, null, null, cancellationToken);
-        return plan.Block is { } block ? new AgentStartAvailabilityDto(false, block, AgentStartMessages.For(block)) : new AgentStartAvailabilityDto(true, null, string.Empty);
+        return plan.Block is { } block ? new AgentStartAvailabilityDto(false, block, AgentStartMessages.For(block), null) : new AgentStartAvailabilityDto(true, null, string.Empty, null);
     }
 
     // A live session is a Conflict (409); no connection or no repository is a Validation error naming what is missing.

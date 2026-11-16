@@ -157,6 +157,8 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `agent_session.stopped` |  | `AgentSession.Stop` |
 | `agent_session.opened` |  | system: AgentTrigger |
 | `agent_session.finished` |  | system: AgentSessionNotifier |
+| `agent_session.viewed` | `get_agent_session` |  |
+| `agent_session.run_log_uploaded` |  | the agent-log upload route (`POST api/uploads/agent-log`) |
 | `project.created` |  | self-emitted: ProjectCreation.Create |
 | `project.joined` |  | self-emitted: Instance.Join |
 | `project.left` |  | `ProjectSettings.Leave` |
@@ -265,6 +267,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `instance.analytics_changed` |  | `Analytics.Put` |
 | `instance.agent_connection_created` |  | `AgentConnections.Create` |
 | `instance.agent_connection_changed` |  | `AgentConnections.Update`, `AgentConnections.Archive`, `AgentConnections.RegenerateSecret`, `AgentConnections.RegenerateToken` |
+| `instance.agent_connection_tested` |  | Test connection (`POST api/instance/agent-connections/{id}/test`) |
 | `instance.user_added` |  | `UsersAdmin.Add` |
 | `instance.user_changed` |  | `UsersAdmin.ChangeEmail`, `UsersAdmin.IssueOneTimePassword`, `UsersAdmin.SetDisabled`, `UsersAdmin.SetInstanceAdmin`, `UsersAdmin.Unlock` |
 | `instance.search_reindexed` |  | `SearchAdmin.Reindex` |
