@@ -135,7 +135,8 @@ export function CapacityPanel({ project, sprint, sprints }: CapacityPanelProps) 
     setTouched(touchRow(touched, server, userId, row));
     setProblem(null);
   };
-  const removeRow = (userId: string) => editRow(userId, { ...rowOf(draft, userId), present: false });
+  const removeRow = (userId: string) =>
+    editRow(userId, { ...rowOf(draft, userId), present: false });
   const editAll = (next: CapacityDraft) => {
     setTouched(touchAll(touched, server, members.data, next));
     setProblem(null);
