@@ -10,7 +10,12 @@ const SEGMENTS = [
   { from: 0, to: 20, fill: SPLIT_COLOURS.active, label: 'Active' },
   { from: 20, to: 34, fill: SPLIT_COLOURS.blocked, label: 'Blocked' },
   { from: 34, to: 44, fill: SPLIT_COLOURS.active, label: 'Active' },
-  { from: 44, to: 70, fill: SPLIT_COLOURS.rework, label: 'Rework: after a review asked for changes' },
+  {
+    from: 44,
+    to: 70,
+    fill: SPLIT_COLOURS.rework,
+    label: 'Rework: after a review asked for changes',
+  },
   { from: 70, to: 78, fill: SPLIT_COLOURS.active, label: '' },
   { from: 78, to: 96, fill: HATCH, label: 'Not counted' },
 ] as const;

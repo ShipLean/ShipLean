@@ -81,9 +81,7 @@ export function LeadTimeToolbar({
         <span
           data-testid={ids.coverageChip}
           className={`rounded-full px-2.5 py-0.5 text-[length:var(--text-xs)] font-semibold ${
-            coverage.percent !== null && coverage.percent < 70
-              ? 'text-caution'
-              : 'text-ink'
+            coverage.percent !== null && coverage.percent < 70 ? 'text-caution' : 'text-ink'
           } bg-sunken`}
         >
           Commit times: {coverage.withCommitTime} of {coverage.tasks} tasks

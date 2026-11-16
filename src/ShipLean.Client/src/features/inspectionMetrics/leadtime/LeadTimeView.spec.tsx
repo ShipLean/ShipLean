@@ -46,9 +46,7 @@ for (const theme of ['light', 'dark'] as const) {
       expect(width / barWidth).toBeCloseTo(hours / total, 2);
     }
     // Blocked is drawn in the danger colour of the theme.
-    const blocked = bar
-      .getByTestId(ids.splitSegment)
-      .and(page.locator('[data-kind="blocked"]'));
+    const blocked = bar.getByTestId(ids.splitSegment).and(page.locator('[data-kind="blocked"]'));
     await expect(blocked).toHaveCSS(
       'background-color',
       theme === 'light' ? 'rgb(194, 53, 59)' : 'rgb(240, 138, 143)',
@@ -66,7 +64,9 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(quarters).toHaveCount(shown.length);
     const toDate = VIEW.quarters.filter((q) => q.toDate && shown.includes(q.quarter));
     expect(toDate).toHaveLength(1);
-    await expect(page.locator(`[data-testid="${ids.quarterRow}"][data-to-date="true"]`)).toHaveCount(1);
+    await expect(
+      page.locator(`[data-testid="${ids.quarterRow}"][data-to-date="true"]`),
+    ).toHaveCount(1);
     for (const quarter of VIEW.quarters.filter((q) => shown.includes(q.quarter))) {
       const r = quarters.and(page.locator(`[data-quarter="${quarter.quarter}"]`));
       if (quarter.toDate) {
@@ -81,7 +81,9 @@ for (const theme of ['light', 'dark'] as const) {
     const order = await page
       .locator(`[data-testid="${ids.periodRow}"], [data-testid="${ids.quarterRow}"]`)
       .evaluateAll((els) =>
-        els.map((el) => el.getAttribute('data-period-id') ?? `Q:${el.getAttribute('data-quarter')}`),
+        els.map(
+          (el) => el.getAttribute('data-period-id') ?? `Q:${el.getAttribute('data-quarter')}`,
+        ),
       );
     const expectedOrder = VIEW.periods.flatMap((p, i) =>
       VIEW.periods[i + 1]?.quarter === p.quarter ? [p.id] : [p.id, `Q:${p.quarter}`],
@@ -120,9 +122,10 @@ test('LeadTimeView_WhenRangeAndCutPicked_ShouldWriteThemToTheAddress', async ({ 
 
   await page.locator(`[data-testid="${ids.cutOption}"][data-value="who"]`).click();
   await expect.poll(() => server.reads.at(-1)).toContain('range=all&cut=who');
-  await expect(
-    page.locator(`[data-testid="${ids.cutOption}"][data-value="who"]`),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator(`[data-testid="${ids.cutOption}"][data-value="who"]`)).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 
   await page.locator(`[data-testid="${ids.cutOption}"][data-value="none"]`).click();
   await expect.poll(() => server.reads.at(-1)).toContain('range=all&cut=none');
