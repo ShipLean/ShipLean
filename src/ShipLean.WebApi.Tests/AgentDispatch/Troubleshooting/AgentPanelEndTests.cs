@@ -12,8 +12,8 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch.Troubleshooting;
 
-// The Agent panel's end fields (C3, C4): every member sees why a session ended; a deliveryFailed detail and its delivery attempts
-// are for project admins only. Sessions and attempts are seeded with the TestSupport builders, never through the writers. Each
+// The Agent panel's end fields (C3 as amended by D9, C4): every member sees why a session ended; a deliveryFailed detail, every
+// delivery attempt and the run log are for project admins only. Sessions and attempts are seeded with the TestSupport builders, never through the writers. Each
 // test owns a project with Joel as admin and Priya as member.
 [TestFixture]
 public class AgentPanelEndTests : ApiFixture
@@ -69,6 +69,25 @@ public class AgentPanelEndTests : ApiFixture
         member.EndText.ShouldNotContain(ReceiverDetail);
         member.EndText.ShouldNotContain("relay-host-7");
         member.EndDetail.ShouldBeNull();
+        member.Deliveries.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Sessions_WhenAgentErrorAfterAFailedThenSuccessfulAttempt_ShouldShowTheAttemptsToAdminsOnly()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (itemId, connectionId) = await ArrangeAsync(database);
+        var sessionId = await new AgentSessionSeeds(itemId, connectionId)
+            .WithState("failed").WithEndReason(AgentEndReasons.AgentError).WithEndDetail("dotnet build failed: CS0103").InsertAsync(database);
+        var deliveryId = await AgentDeliveryAttemptRows.InsertDeliveryAsync(database, sessionId, status: "sent");
+        await AgentDeliveryAttemptRows.InsertAsync(database, new AgentDeliveryAttemptCreate(deliveryId, connectionId, 1, Sent, null, "Connection refused (relay-host-7.internal:8443)", 15, Sent.AddMinutes(1)));
+        await AgentDeliveryAttemptRows.InsertAsync(database, new AgentDeliveryAttemptCreate(deliveryId, connectionId, 2, Sent.AddMinutes(1), 202, null, 80, null));
+
+        var admin = await SessionAsync(TestUser.Joel, itemId, sessionId);
+        var member = await SessionAsync(TestUser.Priya, itemId, sessionId);
+
+        admin.Deliveries.Select(d => (d.Attempt, d.HttpStatus, d.Error)).ShouldBe([(1, null, "Connection refused (relay-host-7.internal:8443)"), (2, 202, null)]);
+        member.EndDetail.ShouldBe("dotnet build failed: CS0103");
         member.Deliveries.ShouldBeEmpty();
     }
 
