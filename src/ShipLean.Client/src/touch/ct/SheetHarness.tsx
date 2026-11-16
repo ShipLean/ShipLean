@@ -3,19 +3,28 @@ import { Dialog } from '../../components/Dialog';
 import { ActionSheet } from '../ActionSheet';
 import { MoreButton } from '../MoreButton';
 import { Sheet } from '../Sheet';
+import { StateDot } from '../../components/StateDot';
 import { sheetHarnessIds } from './sheetHarnessIds';
 
 // CT harness for Sheet.phone.spec.tsx and ActionSheet.phone.spec.tsx. Each variant starts with its overlay open (except
-// `dialog` and `more`), shows whether it is open, and has a button to open it again.
+// `dialog` and the `more*` ones), shows whether it is open, and has a button to open it again. `rich` is the K1 anatomy:
+// icons, hints, details, a checked row, a chevron, groups, a toggle, a subtitle and a footnote.
 export type SheetHarnessVariant =
-  'basic' | 'search' | 'long' | 'dialog' | 'actions' | 'more' | 'moreSlot';
+  | 'basic'
+  | 'search'
+  | 'long'
+  | 'dialog'
+  | 'actions'
+  | 'rich'
+  | 'more'
+  | 'moreSlot'
+  | 'moreBordered';
 
 const rows = ['Assign to me', 'Move to sprint', 'Copy link', 'Change state', 'Add a label'];
 
 export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
-  const [open, setOpen] = useState(
-    variant !== 'dialog' && variant !== 'more' && variant !== 'moreSlot',
-  );
+  const [open, setOpen] = useState(variant !== 'dialog' && !variant.startsWith('more'));
+  const [showTasks, setShowTasks] = useState(false);
   const [lastAction, setLastAction] = useState('none');
   const [dialogOpen, setDialogOpen] = useState(true);
   const close = () => setOpen(false);
@@ -29,6 +38,56 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
       onSelect: () => setLastAction('delete'),
       tone: 'danger' as const,
     },
+  ];
+
+  const glyph = (text: string) => <span className="text-ink-muted">{text}</span>;
+  const richActions = [
+    { id: 'open', label: 'Open', icon: glyph('↗'), detail: 'full screen', onSelect: () => setLastAction('open') },
+    {
+      id: 'assign',
+      label: 'Assign',
+      detail: 'Sam Rivera',
+      trailing: 'chevron' as const,
+      onSelect: () => setLastAction('assign'),
+    },
+    { id: 'download', label: 'Download', icon: glyph('↓'), hint: '14 KB', onSelect: () => setLastAction('download') },
+    {
+      id: 'new',
+      label: 'New',
+      icon: <StateDot category="proposed" />,
+      detail: '5',
+      group: 'Move to',
+      onSelect: () => setLastAction('new'),
+    },
+    {
+      id: 'progress',
+      label: 'In progress',
+      icon: <StateDot category="inProgress" />,
+      detail: 'here · 4/5',
+      checked: true,
+      group: 'Move to',
+      onSelect: () => setLastAction('progress'),
+    },
+    {
+      id: 'done',
+      label: 'Done',
+      icon: <StateDot category="completed" />,
+      detail: '7',
+      group: 'Move to',
+      onSelect: () => setLastAction('done'),
+    },
+    {
+      id: 'tasks',
+      label: 'Show tasks',
+      hint: 'Under each story',
+      toggle: { on: showTasks },
+      group: 'View',
+      onSelect: () => {
+        setShowTasks((was) => !was);
+        setLastAction('tasks');
+      },
+    },
+    { id: 'about', label: 'About this file', icon: glyph('ⓘ'), group: '', onSelect: () => setLastAction('about') },
   ];
 
   const sheet = (
@@ -94,6 +153,25 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
           )}
         </MoreButton>
       ) : null}
+      {variant === 'moreBordered' ? (
+        <MoreButton
+          actions={actions}
+          label="Sprint 24"
+          subtitle="19 Oct – 30 Oct"
+          footer="Closing a sprint asks where unfinished work goes."
+          variant="bordered"
+        />
+      ) : null}
+      {variant === 'rich' ? (
+        <ActionSheet
+          open={open}
+          title="SHIP-129"
+          subtitle="Sign in with passkey"
+          actions={richActions}
+          footer="States for each type are set per project in Settings."
+          onClose={close}
+        />
+      ) : null}
       {variant === 'actions' ? (
         <ActionSheet open={open} title="Work item" actions={actions} onClose={close} />
       ) : null}
@@ -109,7 +187,7 @@ export function SheetHarness({ variant }: { variant: SheetHarnessVariant }) {
           {sheet}
         </Dialog>
       ) : null}
-      {variant !== 'dialog' && variant !== 'actions' && variant !== 'more' ? sheet : null}
+      {variant === 'basic' || variant === 'search' || variant === 'long' ? sheet : null}
     </div>
   );
 }
