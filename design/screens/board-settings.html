@@ -25,6 +25,8 @@
     with preview cards showing which rule won.
   - Tag colours: a swatch row per tag. Annotations: child roll-ups, with an example card. Card reordering: two options.
     ?pane=columns|swimlanes|fields|styles|tags|annotations|reordering   opens a section (default columns)
+  SHIP-1809: board-settings-touch.css/js are the phone and tablet layout (900px and below); their review states are
+  listed in board-settings-touch.js.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot). It also
   simulates a stale save (someone else saved these settings while you were editing).
 -->
@@ -193,6 +195,7 @@ table.list td input.field, table.list td select.field { height: 26px; width: 100
   .crit-foot { padding-left: 0; }
 }
 </style>
+<link rel="stylesheet" href="board-settings-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -737,5 +740,6 @@ table.list td input.field, table.list td select.field { height: 26px; width: 100
   ]);
 })();
 </script>
+<script src="board-settings-touch.js"></script>
 </body>
 </html>
