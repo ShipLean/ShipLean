@@ -239,4 +239,9 @@ test('TouchPager_OnTheStoriesBoardPage_ShouldPeekTheNextPage', async ({ mount, p
   const peek = Math.min(390, track.x + track.width) - second.x;
   expect(peek).toBeGreaterThanOrEqual(30);
   expect(peek).toBeLessThanOrEqual(36);
+  // The bleed reaches the screen edges and no further: the page never scrolls sideways.
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(sideways).toBe(false);
 });
