@@ -88,6 +88,24 @@ public class GetAgentSessionTests : McpFixture
         reply.Texts().ShouldAllBe(text => !text.Contains("relay-host.internal"));
     }
 
+    // An archived run log is gone: the session no longer names it. Mutation: drop archived_at IS NULL from AgentSessionDetailReader's join.
+    [Test]
+    public async Task GetAgentSession_WhenTheRunLogAttachmentIsArchived_ShouldHaveNoRunLog()
+    {
+        var (key, session) = await ArrangeDeliveryFailedAsync();
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync(
+                "UPDATE attachment SET archived_at = now() WHERE id = (SELECT run_log_attachment_id FROM agent_session WHERE id = @session)", new { session });
+        }
+
+        var reply = await CallAsync(TestUser.Joel, $$"""{"item":"{{key}}"}""");
+
+        var seen = reply.Structured().GetProperty("session");
+        seen.GetProperty("end_detail").GetString().ShouldBe(Detail, "the caller is an admin, so only the archive hides the run log");
+        seen.TryGetProperty("run_log", out _).ShouldBeFalse("run_log is null, so it is left out");
+    }
+
     [TestCase("submitted", "Joel")]
     [TestCase("working", "Joel")]
     [TestCase("inputRequired", "Joel")]
