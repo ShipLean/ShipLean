@@ -4,7 +4,7 @@
 .set-back, .set-savebar { display: none; }
 @media (max-width: 900px) {
 
-  /* Index or pane (P1, P2): the index shows the list, a pane shows only its content; ‹ back beside Menu on a pane. */
+  /* Index or pane (P1, P2): the index shows the list, a pane shows only its content; ‹ back far left and Menu far right on a pane (settings-touch.js). */
   :root:not(.set-index) .appbar .set-back { display: inline-grid; }
   :root.set-index .content { display: none; }
   :root:not(.set-index) .stabs, :root:not(.set-index) .head { display: none; }

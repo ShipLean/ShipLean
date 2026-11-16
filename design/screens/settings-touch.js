@@ -2,7 +2,8 @@
  * Project settings in the touch shell (SHIP-1809, K7: the phone design for SHIP-732); styles in settings-touch.css.
  * Loaded at the end of settings.html, after its own script, and works on the DOM that script draws. At 900px and below:
  *   - Settings opens on an index of the six panes, each with what it holds, its count and a dot for unsaved changes
- *     or errors (P1); tapping one opens it full width with ‹ back beside Menu and the pane in the crumb (P2)
+ *     or errors (P1); tapping one opens it full width with ‹ back at the far left of the top bar, Menu at the far
+ *     right (as the built TouchTopBar) and the pane in the crumb (P2)
  *   - the project's one draft stays: when it has changes, the Save bar shows on every pane and the index,
  *     "n unsaved changes ▾" (the list as a sheet), Discard and Save (P3)
  *   - States: the type as a sideways segmented row; each state a two-line row with a 32px ⠿ handle (press and drag
@@ -47,7 +48,10 @@
   const back = el('button', 'tbtn set-back', '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>');
   back.type = 'button'; back.setAttribute('aria-label', 'Back to Settings');
   const bar0 = $('.appbar');
-  bar0.querySelector('.crumbs').before(back);
+  bar0.prepend(back);
+  // As the built TouchTopBar: with ‹ back set, ‹ is at the far left and Menu moves to the far right (after Search).
+  const mnav = bar0.querySelector('.mnav');
+  const placeMenu = pane => { if (pane) bar0.append(mnav); else back.after(mnav); };
   back.addEventListener('click', () => { history.replaceState(null, '', location.pathname + location.search.replace(/([?&])tab=[^&]*&?/, '$1').replace(/[?&]$/, '')); setIndex(true); });
 
   const crumbs = bar0.querySelector('.crumbs');
@@ -55,6 +59,7 @@
   function syncCrumb() {
     const cur = $('#tabs [aria-current="page"]')?.dataset.tab;
     crumbs.innerHTML = crumb0;
+    placeMenu(!root.classList.contains('set-index') && !!cur);
     if (!root.classList.contains('set-index') && cur) {
       crumbs.lastElementChild.outerHTML = '<span>Settings</span>';
       crumbs.insertAdjacentHTML('beforeend', `<span>›</span><b>${LABEL[cur]}</b>`);
