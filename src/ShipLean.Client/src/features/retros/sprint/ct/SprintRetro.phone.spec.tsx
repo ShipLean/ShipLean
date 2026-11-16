@@ -64,6 +64,18 @@ test('SprintRetro_AtTouch_NumbersShouldComeBeforeTabs', async ({ mount, page }) 
   await expect(page.getByTestId(headerIds.header).getByTestId(ids.retroNumbers)).toBeVisible();
 });
 
+test('SprintRetro_WhenAnotherSprintIsPicked_ShouldKeepFocusOnTheSprintPicker', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  const picker = page.getByTestId(headerIds.picker);
+  await picker.tap();
+  await page.getByTestId(headerIds.pickerSheetRow).nth(2).tap();
+  await expect(picker).toContainText('Sprint 23');
+  await expect(picker).toBeFocused();
+});
+
 test('SprintRetro_WhenOnTablet_ShouldShowTilesInOneRowAndNotesInTwoColumns', async ({
   mount,
   page,

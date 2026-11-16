@@ -25,7 +25,10 @@ export function SprintRetroSlot({ project, sprint, header }: SprintRetroSlotProp
   const [params] = useSearchParams();
   const { decide } = parseSprintRetroAddress(params);
   const setDecide = useSetDecide();
-  const [sheet, setSheet] = useState<RailSheet | null>(null);
+  // The open rail sheet belongs to one sprint, so moving to another sprint closes it (as SprintHeader does with its edit state).
+  const [open, setOpen] = useState<{ sprintId: string; sheet: RailSheet } | null>(null);
+  const sheet = open?.sprintId === sprint.id ? open.sheet : null;
+  const setSheet = (next: RailSheet | null) => setOpen(next && { sprintId: sprint.id, sheet: next });
   const retro = useSprintRetro(project.id, sprint.id).data;
   const numbers =
     touch && retro ? (
@@ -40,7 +43,13 @@ export function SprintRetroSlot({ project, sprint, header }: SprintRetroSlotProp
     <>
       <SprintHeader {...header} beforeTabs={numbers} />
       <div data-testid={pagesTestIds.slotSprintRetro}>
-        <SprintRetroPanel project={project} sprint={sprint} sheet={sheet} onSheet={setSheet} />
+        <SprintRetroPanel
+          key={sprint.id}
+          project={project}
+          sprint={sprint}
+          sheet={sheet}
+          onSheet={setSheet}
+        />
       </div>
     </>
   );
