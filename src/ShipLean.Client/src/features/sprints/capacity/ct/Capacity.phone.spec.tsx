@@ -316,7 +316,7 @@ test('Capacity_WhenAddMemberPickedOnPhone_ShouldAddThemAndOpenTheirDaysSheet', a
   await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Add member');
   const people = sheet.getByTestId(touchTestIds.actionSheetRow);
   await expect(people).toHaveCount(1);
-  await expect(people).toHaveText('Mei LinStarts at the default, 10 days');
+  await expect(people).toHaveText('MLMei LinStarts at the default, 10 days');
 
   // Picking her adds her row and opens her days sheet (SHIP-1808 capacity-add).
   await people.tap();
@@ -346,7 +346,7 @@ test('Capacity_WhenSomeoneIsOutOfTheTableOnPhone_ShouldOfferAddMemberAtTheFootOf
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Add member');
   await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveText(
-    'Mei LinStarts at the default, 10 days',
+    'MLMei LinStarts at the default, 10 days',
   );
 });
 

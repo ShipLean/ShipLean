@@ -95,7 +95,7 @@ phonePageShots([
       await page.getByTestId(ids.capacityAddMember).tap();
       await expect(
         page.getByTestId(touchTestIds.sheet).getByTestId(touchTestIds.actionSheetRow),
-      ).toHaveText('Mei LinStarts at the default, 10 days');
+      ).toHaveText('MLMei LinStarts at the default, 10 days');
     },
   },
   {
