@@ -50,10 +50,11 @@ public partial class SprintDemoPromptCommandsTests
     [TestCaseSource(nameof(Sessions))]
     public void SessionPrompt_ShouldOnlyRunAllowedCommands(string prompt)
     {
-        var commands = ShellFences(prompt).SelectMany(Commands).Concat(InlineCommands(prompt)).ToList();
+        var commands = ShellFences(prompt).SelectMany(Commands).Concat(InlineCommands(prompt).SelectMany(Commands)).ToList();
 
         commands.ShouldNotBeEmpty();
         commands.Where(c => !DemoRunnerTools.Commands.Contains(FirstWord(c))).ShouldBeEmpty();
+        commands.Where(c => c.Contains('$') || c.Contains('`') || c.Contains('~')).ShouldBeEmpty();
         commands.ShouldContain(c => c.StartsWith("demo-python --version", StringComparison.Ordinal));
         commands.ShouldContain(c => c.StartsWith("ffprobe -version", StringComparison.Ordinal));
         commands.ShouldContain(c => c.StartsWith("curl --fail-with-body", StringComparison.Ordinal));
@@ -157,9 +158,11 @@ public partial class SprintDemoPromptCommandsTests
     private static string Prose(string text) => FenceBlock().Replace(text, string.Empty);
 
     // An inline code span is a command when it is a lowercase word followed by a flag, a file name or another bare word (`ls -l demo.mp4`,
-    // `demo-python narrate.py`, `pip install x`). Spans such as `file 'seg-s01.mp4'` (a line of list.txt) or `subprocess.run([...])` are not.
+    // `demo-python narrate.py`, `pip install x`), when it starts with a shell variable (`$FF -i a.wav`) or when it chains commands or redirects
+    // (`ffmpeg -i a.wav b.mp3 && rm a.wav`). Spans such as `file 'seg-s01.mp4'` (a line of list.txt) or `subprocess.run([...])` are not.
+    // Each command span goes through the same splitter as a fence, so every segment of it is checked.
     private static IEnumerable<string> InlineCommands(string text)
-        => InlineSpan().Matches(Prose(text)).Select(m => m.Groups[1].Value).Where(span => InlineCommand().IsMatch(span));
+        => InlineSpan().Matches(Prose(text)).Select(m => m.Groups[1].Value).Where(span => InlineCommand().IsMatch(span) || SpanStartsWithVariable().IsMatch(span) || SpanChains().IsMatch(span));
 
     // Splits a fence into commands: comment lines dropped, backslash continuations joined, then split outside quotes on &&, ||, ;, | and
     // newlines, with a leading do or then removed.
@@ -184,7 +187,7 @@ public partial class SprintDemoPromptCommandsTests
                 quote = c;
                 current.Append(c);
             }
-            else if (c is ';' or '|' or '\n' || (c == '&' && i + 1 < joined.Length && joined[i + 1] == '&'))
+            else if (c is ';' or '|' or '\n' or '>' or '<' || (c == '&' && i + 1 < joined.Length && joined[i + 1] == '&'))
             {
                 commands.Add(current.ToString());
                 current.Clear();
@@ -210,6 +213,12 @@ public partial class SprintDemoPromptCommandsTests
 
     [GeneratedRegex(@"^[a-z][a-z0-9-]* (-|[\w.-]+\.[a-z0-9]+(\s|$)|[a-z]+(\s|$))")]
     private static partial Regex InlineCommand();
+
+    [GeneratedRegex(@"^\$\{?[A-Za-z_]")]
+    private static partial Regex SpanStartsWithVariable();
+
+    [GeneratedRegex(@"&&|\|\||.;|\s\|\s|\s[<>]|[<>]\s")]
+    private static partial Regex SpanChains();
 
     [GeneratedRegex(@"^(do|then)\s+")]
     private static partial Regex KeywordPrefix();
