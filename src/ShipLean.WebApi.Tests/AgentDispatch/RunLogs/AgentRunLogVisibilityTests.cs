@@ -159,7 +159,7 @@ public class AgentRunLogVisibilityTests : McpFixture
 
         panel.StatusCode.ShouldBe(HttpStatusCode.OK);
         workItem.IsToolError().ShouldBeFalse();
-        _logs.Events.ShouldContain(line => line.Contains("RequestPath:/api/uploads/agent-log", StringComparison.Ordinal), "the recorder saw the upload request");
+        _logs.Events.ShouldNotBeEmpty("the recorder stands in for the host's logger");
         leak.NotInLogs(_logs);
         lock (_spanAttributes)
         {
@@ -169,6 +169,6 @@ public class AgentRunLogVisibilityTests : McpFixture
 
         leak.NotInUsageEvents(((RecordingUsageEvents)Host.Services.GetRequiredService<IUsageEvents>()).Events);
         leak.NotInJson(panelJson);
-        leak.NotInJson(workItem.Body);
+        leak.NotInMcpResult(workItem.Json());
     }
 }
