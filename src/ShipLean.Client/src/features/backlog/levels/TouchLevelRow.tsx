@@ -9,6 +9,7 @@ import { countUnder } from './countUnder';
 import type { LevelBacklogLevel } from './levelColumns';
 import { LevelPoints } from './LevelPoints';
 import { LevelProgress } from './LevelProgress';
+import { LevelRowMore } from './LevelRowMore';
 
 // Taps on these keep their own behaviour instead of opening the row.
 const inside = 'a, button, input, select, textarea, label';
@@ -46,8 +47,12 @@ export function TouchLevelRow({
       onKeyDown={(event) => {
         if (event.key === 'Enter' && event.target === event.currentTarget) peek.open(row.key);
       }}
-      className={`min-h-[var(--touch-target)] border-b border-edge px-3 py-2 text-[length:var(--text-sm)] ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`flex min-h-[var(--touch-target)] items-stretch border-b border-edge text-[length:var(--text-sm)] ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
+      <div className="flex w-9 flex-none items-center justify-center self-stretch text-[length:var(--text-xs)] text-ink-muted tabular-nums">
+        <span data-testid={ids.rank}>{row.rank}</span>
+      </div>
+      <div className="min-w-0 flex-1 py-2">
       <div className="flex items-start gap-1.5">
         {row.type ? (
           <span className="mt-0.5 flex-none">
@@ -84,11 +89,15 @@ export function TouchLevelRow({
       </div>
       <div
         data-testid={ids.levelTouchProgress}
-        className="mt-1 flex items-center justify-between gap-2 text-[length:var(--text-xs)]"
+        className="mt-1 flex items-center gap-2 text-[length:var(--text-xs)]"
       >
-        <LevelProgress row={row} />
+        <div className="min-w-0 flex-1">
+          <LevelProgress row={row} />
+        </div>
         <LevelPoints row={row} />
       </div>
+      </div>
+      <LevelRowMore row={row} />
     </div>
   );
 }

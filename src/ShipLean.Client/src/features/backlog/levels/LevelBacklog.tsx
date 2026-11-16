@@ -11,6 +11,7 @@ import type { LevelBacklogLevel, LevelColumnId } from './levelColumns';
 import { LevelTable } from './LevelTable';
 import { LevelTree } from './LevelTree';
 import { BacklogSearchBox } from '../search/BacklogSearchBox';
+import { BulkRunProvider } from '../bulk/BulkRunProvider';
 import { useBacklogSearch } from '../search/useBacklogSearch';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { useColumnSort } from '../sort/useColumnSort';
@@ -68,6 +69,7 @@ export function LevelBacklog({
   }
 
   return (
+    <BulkRunProvider projectId={project.id} queryKey={state.queryKey}>
     <div className="flex min-h-0 flex-1 flex-col">
       <BacklogToolbar
         projectKey={project.key}
@@ -141,5 +143,6 @@ export function LevelBacklog({
         <NewFeatureDialog project={project} onClose={() => setNewFeatureOpen(false)} />
       ) : null}
     </div>
+    </BulkRunProvider>
   );
 }

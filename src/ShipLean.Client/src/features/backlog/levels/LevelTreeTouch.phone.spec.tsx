@@ -47,13 +47,14 @@ test('LevelTree_WhenTouch_ShouldNotIndentAndShowPath', async ({ mount, page }) =
 
   const header = (key: string) =>
     page.locator(`[data-testid="${ids.treeGroup}"][data-key="${key}"]`);
-  await expect(header('SHIP-92').getByTestId(ids.treeGroupPath)).toHaveText(
-    'Insights for merchants',
-  );
+  await expect(header('SHIP-92').getByTestId(ids.title)).toHaveText('Insights for merchants');
   await expect(header('SHIP-103').getByTestId(ids.treeGroupPath)).toHaveText(
-    'Insights for merchants › Reporting',
+    'Insights for merchants ›',
   );
-  await expect(page.getByTestId(ids.treeGroupPath).last()).toHaveText('No parent');
+  await expect(header('SHIP-103').getByTestId(ids.title)).toHaveText('Reporting');
+  await expect(page.getByTestId(ids.treeGroup).last().getByTestId(ids.title)).toHaveText(
+    'No parent',
+  );
   // SHIP-108 (depth 2) and SHIP-101 (depth 1) start at the same left edge.
   const left = (key: string) =>
     page

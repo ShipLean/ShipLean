@@ -17,3 +17,12 @@ export function treePath(rows: readonly BacklogRowDto[], row: BacklogRowDto): st
   }
   return titles.join(' › ');
 }
+
+/**
+ * The ancestors above a group row, for the muted first line of its header: "Epic › Feature ›", or '' when it has none
+ * (an Epic, the No parent group). The group's own key and title go on the line under it.
+ */
+export function treeParents(rows: readonly BacklogRowDto[], row: BacklogRowDto): string {
+  const titles = treePath(rows, row).split(' › ');
+  return titles.length > 1 && row.kind !== 'noParentGroup' ? `${titles.slice(0, -1).join(' › ')} ›` : '';
+}

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from '@playwright/test';
 import { touchTestIds } from '../../../touch/testIds';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
 import { backlogView, ROWS } from '../ct/fixtures';
@@ -159,4 +160,49 @@ test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({
   for (let i = 0; i < (await options.count()); i++) {
     expect(await heightOf(options.nth(i))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   }
+});
+
+const rowOf = (page: Page, key: string) =>
+  page.locator(`[data-testid="${ids.row}"][data-key="${key}"]`);
+
+// Catches: removing `flex-1 min-w-0` from the progress wrapper (the bar collapses to 0px in the touch row).
+test('LevelRow_ProgressBar_ShouldBeWiderThanZero', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const bar = rowOf(page, 'SHIP-101').getByTestId(ids.levelProgress).locator('span').first();
+  const box = await bar.boundingBox();
+  expect(box!.width).toBeGreaterThan(40);
+});
+
+// Catches: dropping the rank cell or the LevelRowMore button from the touch row.
+test('LevelRow_ShouldShowRankAndMore', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const row = rowOf(page, 'SHIP-101');
+  await expect(row.getByTestId(ids.rank)).toHaveText(String(FEATURE_ROWS[0].rank));
+  const more = row.getByTestId(touchTestIds.moreButton);
+  await expect(more).toHaveAttribute('aria-label', 'More for SHIP-101');
+  await more.tap();
+  for (const id of ['open', 'top', 'bottom']) {
+    await expect(
+      page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`),
+    ).toBeVisible();
+  }
+});
+
+// Catches: sending slot 'last' (or no placement) for Move to top.
+test('LevelRowMore_MoveToTop_ShouldReorder', async ({ mount, page }) => {
+  const server = await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-103').getByTestId(touchTestIds.moreButton).tap();
+  await page
+    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="top"]`)
+    .tap();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  expect(server.bulks[0].items).toHaveLength(1);
+  expect(server.bulks[0].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
 });
