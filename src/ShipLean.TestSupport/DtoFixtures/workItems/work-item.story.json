@@ -213,5 +213,6 @@
   "health": null,
   "healthSet": null,
   "rollups": [],
-  "needsYou": null
+  "needsYou": null,
+  "inspectionEnabled": false
 }

@@ -1,0 +1,77 @@
+{
+  "storeReachable": true,
+  "problem": null,
+  "store": {
+    "mode": "clickhouse",
+    "retentionDays": 30
+  },
+  "contentShown": false,
+  "totals": {
+    "runs": 2,
+    "tookMs": 85000,
+    "tokensIn": 7000,
+    "tokensOut": 1470,
+    "errors": 4,
+    "waitMs": 3000
+  },
+  "rows": [
+    {
+      "runId": "sess-cc-1",
+      "agent": "claude-code",
+      "agentLabel": "Claude Code",
+      "startedBy": "dev@example.com",
+      "startedLabel": "2 days ago",
+      "whatItDid": "report_task: done \u00b7 1 commit",
+      "linkSource": "tagged",
+      "turns": 2,
+      "spanOrEventCount": 23,
+      "logOnly": false,
+      "model": "claude-sonnet-5-5",
+      "tookMs": 85000,
+      "tokensIn": 7000,
+      "tokensOut": 1470,
+      "errors": 4,
+      "timeline": [
+        {
+          "kind": "modelCall",
+          "startPct": 0.0,
+          "endPct": 12.5
+        },
+        {
+          "kind": "tool",
+          "startPct": 14.0,
+          "endPct": 30.0
+        },
+        {
+          "kind": "wait",
+          "startPct": 14.0,
+          "endPct": 18.5
+        },
+        {
+          "kind": "error",
+          "startPct": 30.0,
+          "endPct": 31.0
+        }
+      ]
+    },
+    {
+      "runId": "sess-cu-1",
+      "agent": "cursor",
+      "agentLabel": "Cursor",
+      "startedBy": null,
+      "startedLabel": "3 days ago",
+      "whatItDid": null,
+      "linkSource": "shipleanFile",
+      "turns": 1,
+      "spanOrEventCount": 6,
+      "logOnly": true,
+      "model": null,
+      "tookMs": 20000,
+      "tokensIn": null,
+      "tokensOut": null,
+      "errors": 0,
+      "timeline": []
+    }
+  ],
+  "setupUrl": "/p/SHIP/settings/inspection"
+}

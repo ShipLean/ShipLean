@@ -56,6 +56,7 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   featuresBacklog: { path: '/p/SHIP/backlogs/features', testId: pagesTestIds.backlogPage },
   epicsBacklog: { path: '/p/SHIP/backlogs/epics', testId: pagesTestIds.backlogPage },
   workItem: { path: '/p/SHIP/items/SHIP-141', testId: pagesTestIds.workItemPage },
+  agentRun: { path: '/p/SHIP/items/SHIP-101/runs/sess-1', testId: pagesTestIds.agentRunPage },
   workItemAttachment: {
     path: '/p/SHIP/items/SHIP-101/attachments/a1',
     testId: pagesTestIds.attachmentPage,

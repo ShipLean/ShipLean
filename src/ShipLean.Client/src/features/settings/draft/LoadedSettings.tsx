@@ -39,6 +39,7 @@ export function LoadedSettings({
   states,
   integrations,
   demos,
+  inspection = null,
 }: {
   project: ProjectDto;
   settings: ProjectSettingsDto;
@@ -46,6 +47,7 @@ export function LoadedSettings({
   states: ReactNode;
   integrations: ReactNode;
   demos: ReactNode;
+  inspection?: ReactNode;
 }) {
   const navigate = useNavigate();
   const readOnly = project.role !== 'admin';
@@ -141,9 +143,10 @@ export function LoadedSettings({
             {tab === 'states' && states}
             {tab === 'integrations' && integrations}
             {tab === 'demos' && demos}
+            {tab === 'inspection' && inspection}
           </SettingsDraftContext.Provider>
-          {/* Demos has its own Save; the tab dots still show the draft is dirty. */}
-          {readOnly || tab === 'demos' ? null : (
+          {/* Demos and Inspection have their own Save; the tab dots still show the draft is dirty. */}
+          {readOnly || tab === 'demos' || tab === 'inspection' ? null : (
             <SettingsSaveBar
               changes={changes}
               saving={saving}

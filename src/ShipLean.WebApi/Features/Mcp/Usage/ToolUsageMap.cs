@@ -52,6 +52,9 @@ public static class ToolUsageMap
         ["record_decisions"] = UsageEventNames.DecisionRecorded,
         ["ask"] = UsageEventNames.QuestionAsked,
         ["answer_decision"] = UsageEventNames.DecisionAnswered,
+        ["list_runs"] = UsageEventNames.InspectionRunsListed,
+        ["get_run"] = UsageEventNames.InspectionRunViewed,
+        ["agent_setup"] = UsageEventNames.InspectionAgentSetupViewed,
         ["answer_question"] = UsageEventNames.QuestionAnswered,
     };
 }

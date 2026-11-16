@@ -45,6 +45,10 @@ public static class DisplayDate
     public static string Clock(DateTimeOffset value, TimeProvider clock) =>
         TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm", CultureInfo.InvariantCulture);
 
+    // The time of day with seconds in the clock's local time zone ("14:02:09"), for log and row times.
+    public static string ClockSeconds(DateTimeOffset value, TimeProvider clock) =>
+        TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+
     // The weekday in the clock's local time zone ("Mon"), for lines such as "since Mon 09:12".
     public static string Weekday(DateTimeOffset value, TimeProvider clock) =>
         TimeZoneInfo.ConvertTime(value, clock.LocalTimeZone).ToString("ddd", CultureInfo.InvariantCulture);

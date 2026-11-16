@@ -15,6 +15,8 @@ export interface FormSlotProps {
   // Repro steps and before `tasks` and `discussion`.
   changes?: ReactNode;
   tasks: ReactNode;
+  // The Agent runs section: directly under Changes (D14), above Tasks and Discussion. Null shows none.
+  agentRuns?: ReactNode;
   discussion: ReactNode;
   side: ReactNode;
 }

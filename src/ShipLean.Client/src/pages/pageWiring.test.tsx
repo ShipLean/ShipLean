@@ -4,6 +4,8 @@ import { InstanceGeneralSlot } from '../slots/InstanceGeneralSlot';
 import { SettingsDemosSlot } from '../slots/SettingsDemosSlot';
 import { SettingsIntegrationsSlot } from '../slots/SettingsIntegrationsSlot';
 import { SettingsStatesSlot } from '../slots/SettingsStatesSlot';
+import { AgentRunsSlot } from '../slots/AgentRunsSlot';
+import { SettingsInspectionSlot } from '../slots/SettingsInspectionSlot';
 import { DiscussionSlot } from '../slots/DiscussionSlot';
 import { LinksSlot } from '../slots/LinksSlot';
 import { SideSlot } from '../slots/SideSlot';
@@ -157,7 +159,15 @@ test('backlogSlots_WhenFeaturesOrEpics_ShouldMountTheLevelBacklogOnly', () => {
 });
 
 test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheThreeContents', () => {
-  for (const tab of ['general', 'states', 'members', 'sprints', 'integrations', 'demos'] as const) {
+  for (const tab of [
+    'general',
+    'states',
+    'members',
+    'sprints',
+    'integrations',
+    'demos',
+    'inspection',
+  ] as const) {
     const { settingsDraft } = projectSettingsSlots(project, tab);
     expect(settingsDraft).toMatchObject({ project, tab });
     const states = element(settingsDraft.states);
@@ -169,6 +179,9 @@ test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheThreeContents', () =
     const demos = element(settingsDraft.demos);
     expect(demos.type).toBe(SettingsDemosSlot);
     expect(demos.props).toEqual({ project, tab });
+    const inspection = element(settingsDraft.inspection);
+    expect(inspection.type).toBe(SettingsInspectionSlot);
+    expect(inspection.props).toEqual({ project, tab });
   }
 });
 
@@ -221,6 +234,9 @@ test('instanceSettingsSlots_ShouldMountTheSlotOfTheTabOnly', () => {
     instanceAnalytics: undefined,
     instanceAgents: { tab: 'agents' },
   });
+  expect(instanceSettingsSlots('inspection')).toEqual({
+    instanceInspection: { tab: 'inspection' },
+  });
   expect(instanceSettingsSlots('backups')).toEqual({ instanceBackups: { tab: 'backups' } });
   expect(InstanceGeneralSlot).toBeDefined();
 });
@@ -234,6 +250,12 @@ test('workItemSlots_ShouldHandTheFormTheFourOtherSlots', () => {
     expect(node.type).toBe(slot);
     expect(node.props).toEqual({ project, itemKey: 'SHIP-141' });
   }
+});
+
+test('workItemSlots_ShouldFillTheAgentRunsNodeWithTheAgentRunsSlot', () => {
+  const agentRuns = workItemSlots(project, 'SHIP-141').form.agentRuns as ReactElement;
+  expect(agentRuns.type).toBe(AgentRunsSlot);
+  expect(agentRuns.props).toEqual({ project, itemKey: 'SHIP-141' });
 });
 
 test('workItemSlots_ShouldFillTheRetroNodeWithTheRetroSlot', () => {
@@ -271,6 +293,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
   expect(pageRouteIds).toEqual({
     workItem: 'workItem',
     workItemAttachment: 'workItemAttachment',
+    agentRun: 'agentRun',
     taskChanges: 'taskChanges',
     featureBoard: 'featureBoard',
     featureTimeline: 'featureTimeline',

@@ -122,6 +122,8 @@ export interface WorkItemDto {
   rollups: RollupCountDto[];
   /** Null when nothing waits on the caller. */
   needsYou: NeedsYouDto | null;
+  /** True when the item page shows its Agent runs section: Inspection is on for the instance and the project. */
+  inspectionEnabled: boolean;
 }
 
 /** When a Feature's status line was last written or confirmed. `stale` is the server's call: older than 14 days. `agent` and `via` are null for a change made in the app. */
