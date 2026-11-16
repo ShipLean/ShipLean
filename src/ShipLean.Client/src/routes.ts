@@ -14,7 +14,7 @@
 //     /p/:key/backlogs/stories    ?mode=list|planning|tree (list when absent)
 //     /p/:key/backlogs/features   ?mode=list|tree   (the Features level; list when absent)
 //     /p/:key/backlogs/epics      ?mode=            (the Epics level)
-//     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141
+//     /p/:key/items/:itemKey      one work item, itemKey like SHIP-141   ?addLink=causedBy (its link picker open, preset to Caused by)
 //     /p/:key/items/:itemKey/attachments/:attachmentId   one attachment of that item, opened on its own page
 //     /p/:key/items/:itemKey/runs/:runId   one agent run of that item, full width   ?turn=&errorsOnly=&row=&q=
 //     /p/:key/items/:itemKey/changes   ?commit=<commitId>&file=<path>&layout=split  (a Task or Bug's commits, diff and code comments)
@@ -29,7 +29,7 @@
 //     /p/:key/retros/features     Retrospectives by Feature
 //     /p/:key/retros/items/:itemKey   one item's retros   ?retro=&decide=open&point=
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
-//     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|json&range=&cut=&p=&select=&tab=tasks|features
+//     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|quality|json&range=&cut=&p=&select=&tab=tasks|features
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
@@ -127,6 +127,8 @@ export interface RouteQuery {
   device?: string;
   // A work item open in a modal over a project page (its key, like SHIP-12). Only project-level routes carry it.
   item?: string;
+  // The work item page opens its link picker preset to this link type (SHIP-1398 QK6: 'causedBy', from Inspection's bug list).
+  addLink?: string;
   // The backlogs open their new-item row (or dialog) with this type, then drop it from the address.
   new?: NewItemKind;
   // The Changes page: the commit shown (a work_item_commit id; all commits when absent), the file open, and the diff layout ('split'; unified when absent).
@@ -231,7 +233,7 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   workItem: {
     pattern: '/p/:key/items/:itemKey',
-    query: ['item'],
+    query: ['item', 'addLink'],
     installLevel: false,
     crumbs: (p) => ['Backlogs', p.itemKey],
   },
@@ -367,7 +369,11 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     installLevel: false,
     crumbs: (_p, q) => [
       'Inspection',
-      q.view === 'leadtime' || q.view === 'period' ? 'Lead time' : 'Overview',
+      q.view === 'leadtime' || q.view === 'period'
+        ? 'Lead time'
+        : q.view === 'quality'
+          ? 'Quality'
+          : 'Overview',
     ],
   },
   jiraImport: {
