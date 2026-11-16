@@ -72,7 +72,13 @@ test('InsightsFrame_WhenOpenedAt320_ShouldFitThreeEqualTabsAndKeepTheView', asyn
 }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await stubRetros(page);
-  await mount(<InsightsAddressHarness project={insightsProject} />, route());
+  // Inside the page's 16px gutter, which the tabs bleed out of to the window's edges.
+  await mount(
+    <div className="p-4">
+      <InsightsAddressHarness project={insightsProject} />
+    </div>,
+    route(),
+  );
   const tabs = page.getByTestId(ids.retroInsightsTab);
   await expect(tabs).toHaveText(['Themes', 'Action items', 'Impact']);
   const boxes = await tabs.evaluateAll((els) => els.map((e) => e.getBoundingClientRect()));

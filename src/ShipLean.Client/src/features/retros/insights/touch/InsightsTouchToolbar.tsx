@@ -9,7 +9,7 @@ import { rangeLabel } from '../RangeSelect';
 import { defsSheetValue, withMerge, withSheet } from './insightsAddress';
 
 /**
- * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, full-bleed out of the page's 16px gutter, then one row with Range ▾ and ⋯. Not sticky.
+ * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, full-bleed to the window edges whatever the page gutter (50% - 50vw), then one row with Range ▾ and ⋯. Not sticky.
  * `merge` is Merge themes, kept mounted because at touch it shows the full-screen merge the address names.
  */
 export function InsightsTouchToolbar({
@@ -76,7 +76,7 @@ export function InsightsTouchToolbar({
       <div
         role="group"
         aria-label="Insight"
-        className="-mx-4 grid grid-cols-3 border-b border-edge bg-panel"
+        className="mx-[calc(50%-50vw)] grid grid-cols-3 border-b border-edge bg-panel"
       >
         {views.map((v) => (
           <button
