@@ -32,11 +32,11 @@ internal static class LeadTimeFactsSql
                        CROSS JOIN LATERAL jsonb_array_elements(m.changes) AS c(value)
                        JOIN state ms ON ms.id::text = (c.value -> 'to') #>> '{}'
                        WHERE m.work_item_id = t.id AND c.value ->> 'field' = @stateField AND ms.category = @resolved) first_resolved
-                   WHERE first_resolved.at >= CAST(@fromDay AS timestamp) AT TIME ZONE 'UTC' AND first_resolved.at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC')
+                   WHERE first_resolved.at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND first_resolved.at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC')
                OR EXISTS (
                    SELECT 1 FROM work_item_link l
                    WHERE l.source_id = t.id AND l.link_type = 'url' AND l.archived_at IS NULL AND starts_with(l.title, @commitPrefix)
-                     AND l.committed_at >= CAST(@fromDay AS timestamp) AT TIME ZONE 'UTC' AND l.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
+                     AND l.committed_at >= (CAST(@fromDay AS timestamp) - interval '1 day') AT TIME ZONE 'UTC' AND l.committed_at < (CAST(@toDay AS timestamp) + interval '3 days') AT TIME ZONE 'UTC'))
         ORDER BY t.key
         """;
 

@@ -76,23 +76,34 @@ public class LeadTimeFactsReaderTests : ReportTestBase
         (await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 1))).Tasks.Select(t => t.Key).ShouldNotContain(task);
     }
 
-    private async Task<string> ArrangeTaskAsync(string? agent)
+    // The window's day is in the project's zone, so a task that ended at 23:00Z the day before fromDay is still returned.
+    [Test]
+    public async Task Read_WhenTaskEndedAt2300ZTheDayBeforeFromDay_ShouldReturnIt()
     {
+        var task = await ArrangeTaskAsync(null, T0.AddHours(10));
+
+        (await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 6), new DateOnly(2026, 10, 6))).Tasks.Select(t => t.Key).ShouldContain(task);
+        (await ReadAsync(SeedIds.Projects.Ship, new DateOnly(2026, 10, 7), new DateOnly(2026, 10, 7))).Tasks.Select(t => t.Key).ShouldNotContain(task);
+    }
+
+    private async Task<string> ArrangeTaskAsync(string? agent, DateTimeOffset? pickedUpAt = null)
+    {
+        var t0 = pickedUpAt ?? T0;
         var task = NextTask();
         (await PickUpAsync(task)).IsToolError().ShouldBeFalse();
         await using var connection = await OpenDatabaseAsync();
         var id = await connection.QuerySingleAsync<Guid>("SELECT id FROM work_item WHERE key = @key", new { key = task });
-        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at WHERE work_item_id = @id AND rev = 1", new { id, at = T0.AddHours(-1) });
+        await connection.ExecuteAsync("UPDATE revision SET changed_at = @at WHERE work_item_id = @id AND rev = 1", new { id, at = t0.AddHours(-1) });
         await connection.ExecuteAsync(
-            "UPDATE revision SET changed_at = @at, agent_name = @agent WHERE work_item_id = @id AND rev > 1", new { id, at = T0, agent });
+            "UPDATE revision SET changed_at = @at, agent_name = @agent WHERE work_item_id = @id AND rev > 1", new { id, at = t0, agent });
         var rev = await connection.QuerySingleAsync<int>("SELECT max(rev) + 1 FROM revision WHERE work_item_id = @id", new { id });
-        await new RevisionBuilder(id).WithRev(rev).WithChangedAt(T0.AddHours(4)).WithChangedBy(SeedIds.Users.Joel)
+        await new RevisionBuilder(id).WithRev(rev).WithChangedAt(t0.AddHours(4)).WithChangedBy(SeedIds.Users.Joel)
             .WithChanges($$"""[{"field":"state","from":null,"to":"{{SeedIds.States.Ship.TaskInReview}}"}]""").InsertAsync(connection);
         await connection.ExecuteAsync("UPDATE work_item SET state_id = @state, revision = @rev WHERE id = @id", new { id, state = SeedIds.States.Ship.TaskInReview, rev });
         var reported = await ReportAsync($$"""{"item":"{{task}}","status":"partial","commits":[{"sha":"{{Sha}}","subject":"Work","url":"https://git.example.test/acme/ship/commit/{{Sha}}"}]}""");
         reported.IsToolError().ShouldBeFalse(reported.ResultText());
         await connection.ExecuteAsync(
-            "UPDATE work_item_link SET committed_at = @at WHERE source_id = @id AND link_type = 'url'", new { id, at = T0.AddHours(3) });
+            "UPDATE work_item_link SET committed_at = @at WHERE source_id = @id AND link_type = 'url'", new { id, at = t0.AddHours(3) });
         return task;
     }
 

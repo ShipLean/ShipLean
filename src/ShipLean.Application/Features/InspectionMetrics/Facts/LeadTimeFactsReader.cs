@@ -11,7 +11,9 @@ using ShipLean.Contracts.Views.Timeline;
 namespace ShipLean.Application.Features.InspectionMetrics.Facts;
 
 // The lead-time facts over Postgres (K5): first the tasks whose lead time could end in the window, then every move, Blocked tag
-// change, review and commit of those tasks, whatever its date. Days are UTC days.
+// change, review and commit of those tasks, whatever its date. fromDay and toDay are days in the project's zone, and sprints are
+// dated in that zone. The selection runs in UTC from (fromDay - 1 day) 00:00Z up to (toDay + 3 days) 00:00Z, which covers any zone
+// offset: a few extra tasks at the edges are harmless, because the aggregator assigns each task to its sprint in the zone.
 public sealed class LeadTimeFactsReader(NpgsqlDataSource dataSource) : ILeadTimeFactsReader
 {
     public async Task<LeadTimeFacts> ReadAsync(Guid projectId, DateOnly fromDay, DateOnly toDay, CancellationToken ct)
