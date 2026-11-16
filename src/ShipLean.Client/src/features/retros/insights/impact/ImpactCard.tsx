@@ -71,6 +71,13 @@ export function ImpactCard({
           {shortColumnLabel(columns[selected]?.label ?? '')}: {impact.counts[selected] ?? 0}{' '}
           {impact.counts[selected] === 1 ? 'mention' : 'mentions'}
         </p>
+      ) : touch ? (
+        <p
+          data-testid={ids.retroImpactHint}
+          className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+        >
+          Tap a bar to read it
+        </p>
       ) : null}
       <ImpactNumbers
         beforeAvg={impact.beforeAvg}

@@ -7,21 +7,22 @@ import { TouchRow } from '../../touch/TouchRow';
 import { TouchRowGhost } from '../../touch/TouchRowGhost';
 import { backlogTestIds as ids } from '../../testIds';
 import { rollupText, visibleRows } from '../treeRows';
-import { treePath } from './treePath';
+import { treeParents } from './treePath';
 import { useTouchReparent } from './useTouchReparent';
 
 // A group's header at touch: a caret at least --touch-target square, the path from its Epic down ("Checkout › Address
 // autocomplete", never cut) and its roll-up. It is a drop target for a lifted handle, and lights while one is over it.
 export function TouchTreeGroup({
   row,
-  path,
+  parents,
   open,
   rollup,
   over = false,
   onToggle,
 }: {
   row: BacklogRowDto;
-  path: string;
+  // The ancestors above it, "Epic › Feature ›", or '' for an Epic and the No parent group.
+  parents: string;
   open: boolean;
   // The roll-up text on the right.
   rollup: string;
@@ -47,19 +48,36 @@ export function TouchTreeGroup({
       >
         {open ? '▼' : '▶'}
       </button>
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 py-1.5 pr-3">
-        {row.kind === 'group' && row.type ? <TypeIcon type={row.type.id} /> : null}
-        <span
-          data-testid={ids.treeGroupPath}
-          className={`min-w-0 break-words ${row.kind === 'group' ? 'font-semibold' : 'text-ink-muted'}`}
-        >
-          {path}
-        </span>
+      <div className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-3">
+        <div className="min-w-0 flex-1">
+          {parents !== '' ? (
+            <div
+              data-testid={ids.treeGroupPath}
+              className="break-words text-[length:var(--text-xs)] text-ink-muted"
+            >
+              {parents}
+            </div>
+          ) : null}
+          <div className="flex min-w-0 items-center gap-1.5">
+            {row.kind === 'group' && row.type ? <TypeIcon type={row.type.id} /> : null}
+            {row.kind === 'group' ? (
+              <span data-testid={ids.key} className="flex-none text-ink-muted">
+                {row.key}
+              </span>
+            ) : null}
+            <span
+              data-testid={ids.title}
+              className={`min-w-0 break-words ${row.kind === 'group' ? 'font-semibold' : 'text-ink-muted'}`}
+            >
+              {row.title}
+            </span>
+          </div>
+        </div>
         {row.state ? <StateDot category={row.state.category} name={row.state.name} /> : null}
         <span
           data-testid={ids.treeRollup}
           data-warn={row.sumWarn}
-          className={`ml-auto text-[length:var(--text-xs)] ${row.sumWarn ? 'text-caution' : 'text-ink-muted'}`}
+          className={`flex-none text-right text-[length:var(--text-xs)] ${row.sumWarn ? 'text-caution' : 'text-ink-muted'}`}
         >
           {rollup}
         </span>
@@ -158,7 +176,7 @@ export function TouchTree({
             <TouchTreeGroup
               key={row.id}
               row={row}
-              path={treePath(rows, row)}
+              parents={treeParents(rows, row)}
               open={!collapsed.has(row.id)}
               over={reparent.overId === row.id}
               rollup={rollupText(row, includeCompleted)}

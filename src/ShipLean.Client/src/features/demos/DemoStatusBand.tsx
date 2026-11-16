@@ -5,6 +5,7 @@ import { showToast } from '../../components/toastStore';
 import { TypeIcon } from '../../components/TypeIcon';
 import { useTouchShell } from '../../touch/useTouchShell';
 import { useCreateSprintDemo } from './demosApi';
+import { DemoCreateWarning } from './DemoCreateWarning';
 import type { DemoProps } from './DemoProps';
 import { demosTestIds as ids } from './testIds';
 
@@ -194,6 +195,7 @@ export function DemoStatusBand({ demo }: DemoProps) {
           </button>
         )
       )}
+      <DemoCreateWarning actions={actions} />
     </div>
   );
 }

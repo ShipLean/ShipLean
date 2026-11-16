@@ -73,7 +73,10 @@ phonePageShots([
     act: async (page) => {
       await more(page, 'edit-sprint');
       await expect(page.getByTestId(ids.editSprint)).toBeVisible();
-      await page.getByTestId(ids.editSprintName).blur();
+      // One change, so the Save bar shows what changed (SHIP-1834, design sprint-backlog-edit).
+      await page.getByTestId(ids.editSprintEnd).fill('2026-11-02');
+      await expect(page.getByTestId(touchTestIds.saveBarMessage)).toHaveText('End date changed');
+      await page.getByTestId(ids.editSprintEnd).blur();
     },
   },
   {

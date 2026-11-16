@@ -12,7 +12,15 @@ import { useShellProject } from '../useShellProject';
 import { LevelsSubmenu } from './LevelsSubmenu';
 import { NavItem } from './NavItem';
 import { ProjectButton } from './ProjectButton';
-import { backlogsRoutes, boardsRoutes, retrosRoutes, sprintsRoutes } from './sections';
+import {
+  backlogsRoutes,
+  boardsRoutes,
+  inspectionRoutes,
+  retrosRoutes,
+  sprintsRoutes,
+} from './sections';
+import { InspectionSubmenu } from './InspectionSubmenu';
+import { inspectionMetricsTestIds } from '../../inspectionMetrics/testIds';
 import { RetrosSubmenu } from './RetrosSubmenu';
 import { SprintsSubmenu } from './SprintsSubmenu';
 
@@ -74,7 +82,7 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
       ref={side}
       data-testid={ids.sideMenu}
       aria-label="Project navigation"
-      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2"
+      className="relative z-20 flex w-(--sidebar-width) flex-none flex-col gap-0.5 border-r border-edge bg-sunken p-2 touch:min-h-0 touch:overflow-y-auto"
     >
       <div
         data-testid={ids.sideMenuWordmark}
@@ -155,6 +163,15 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
               counted={is(retrosRoutes)}
             />
           ) : null}
+          <NavItem
+            icon="◔"
+            testId={inspectionMetricsTestIds.menuItem}
+            to={routePath('inspectionMetrics', { key })}
+            active={is(inspectionRoutes)}
+          >
+            Inspection
+          </NavItem>
+          {shows(inspectionRoutes) ? <InspectionSubmenu projectKey={key} route={route} /> : null}
           <NavItem
             icon="⇪"
             testId={ids.navJiraImport}

@@ -109,14 +109,55 @@ test('SprintHeader_WhenMoreTappedOnPhone_ShouldOfferEditGoalEditSprintAllSprints
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
+  // Each row's text is its label, then its hint or › (SPRINT-3).
   expect(await actionLabels(page)).toEqual([
     'Edit goal',
-    'Edit sprint',
-    'All sprints',
-    'Close sprint',
+    'Edit sprintName, dates and goal',
+    'All sprints›',
+    'Close sprintChoose where unfinished work goes',
   ]);
   await action(page, 'all-sprints').tap();
   await expect(page.getByTestId(harness.location)).toHaveText('/p/SHIP/sprints');
+});
+
+// SPRINT-3, TBOARD-16: the same sheet on every sprint tab, with its icons, hints, › and a divider before Close sprint.
+test('SprintHeaderMore_ShouldShowHintsAndChevrons', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props({ variant: 'slim', tab: 'taskboard' })} />);
+  const more = page.getByTestId(touchTestIds.moreButton);
+  // ND4-11: the bordered 32px ⋯ (K1), not a bare glyph.
+  // Preflight gives every element a solid 0px border, so the width is what tells bordered from bare.
+  await expect(more).toHaveCSS('border-top-width', '1px');
+  expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+
+  await more.tap();
+
+  const hints = page.getByTestId(touchTestIds.actionSheetHint);
+  await expect(hints).toHaveText(['Name, dates and goal', 'Choose where unfinished work goes']);
+  await expect(action(page, 'edit-sprint').getByTestId(touchTestIds.actionSheetHint)).toHaveCount(
+    1,
+  );
+  await expect(action(page, 'all-sprints')).toContainText('›');
+  await expect(action(page, 'edit-goal')).not.toContainText('›');
+  for (const id of ['edit-goal', 'edit-sprint', 'all-sprints', 'close-sprint']) {
+    await expect(action(page, id).getByTestId(ids.moreIcon)).toHaveCount(1);
+    expect((await action(page, id).boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  }
+  // The divider (8px of margin and a 1px rule) sits between All sprints and Close sprint, which otherwise touch.
+  const allSprints = (await action(page, 'all-sprints').boundingBox())!;
+  const close = (await action(page, 'close-sprint').boundingBox())!;
+  expect(close.y - (allSprints.y + allSprints.height)).toBeGreaterThanOrEqual(8);
+});
+
+// ND4-11: an ended sprint's time label is not bold; a running one's is.
+test('SprintHeader_WhenSprintEnded_ShouldShowTheTimeLabelUnbolded', async ({ mount, page }) => {
+  const ended: SprintDto = { ...current, status: 'past', timeLabel: 'Ended 9 days ago' };
+  await mount(<SprintHeaderHarness {...props({ sprint: ended })} />);
+  await expect(page.getByTestId(ids.timeLeft)).toHaveCSS('font-weight', '400');
+});
+
+test('SprintHeader_WhenSprintRunning_ShouldShowTheTimeLeftBold', async ({ mount, page }) => {
+  await mount(<SprintHeaderHarness {...props()} />);
+  await expect(page.getByTestId(ids.timeLeft)).toHaveCSS('font-weight', '600');
 });
 
 test('SprintHeader_WhenSprintEndedAndClosed_ShouldLeaveCloseSprintOut', async ({ mount, page }) => {
@@ -125,7 +166,11 @@ test('SprintHeader_WhenSprintEndedAndClosed_ShouldLeaveCloseSprintOut', async ({
 
   await page.getByTestId(touchTestIds.moreButton).tap();
 
-  expect(await actionLabels(page)).toEqual(['Edit goal', 'Edit sprint', 'All sprints']);
+  expect(await actionLabels(page)).toEqual([
+    'Edit goal',
+    'Edit sprintName, dates and goal',
+    'All sprints›',
+  ]);
 });
 
 test('SprintHeader_WhenPickerTappedOnPhone_ShouldListPastCurrentFutureWithTheSprintTicked', async ({

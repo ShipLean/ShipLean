@@ -1,5 +1,6 @@
 using Dapper;
 using Npgsql;
+using ShipLean.Application.Plans;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Persisted;
 using ShipLean.Contracts.Refs;
@@ -134,6 +135,15 @@ public sealed class LinkCardRows(NpgsqlDataSource dataSource)
         return await connection.ExecuteAsync(new CommandDefinition(
             "UPDATE work_item_link SET title = @title, note = @note WHERE id = @id AND link_type = 'url' AND archived_at IS NULL",
             new { id, title = NullIfBlank(title), note = NullIfBlank(note) }, cancellationToken: cancellationToken)) > 0;
+    }
+
+    // Sets committed_at on the live commit-titled url link with this address, only while it is null. True when a row was set.
+    public async Task<bool> SetCommitTimeAsync(Guid workItemId, string url, DateTimeOffset committedAt, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        return await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE work_item_link SET committed_at = @committedAt WHERE source_id = @workItemId AND link_type = 'url' AND url = @url AND archived_at IS NULL AND committed_at IS NULL AND starts_with(title, @prefix)",
+            new { workItemId, url, committedAt, prefix = PlanMarkers.CommitPrefix }, cancellationToken: cancellationToken)) > 0;
     }
 
     // Hides a URL link or a link to a work item. Returns the work item it was on and that item's project, or null when it was unknown or already archived.

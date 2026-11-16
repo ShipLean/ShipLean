@@ -3,6 +3,7 @@ import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { stubRetros } from '../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
+import { sprintHeaderTestIds as headerIds } from '../../sprintHeader/testIds';
 import { retrosTestIds as ids } from '../testIds';
 
 for (const width of [1280, 1440]) {
@@ -42,3 +43,20 @@ for (const width of [1280, 1440]) {
     await page.screenshot({ path: `/tmp/claude-1000/sprint-retro-item-${width}.png` });
   });
 }
+
+test('SprintRetro_WhenAnotherSprintIsPicked_ShouldKeepFocusOnTheSprintPicker', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: '/p/SHIP/sprints/sprint-24/retro' } });
+  const picker = page.getByTestId(headerIds.picker);
+  await expect(picker).toContainText('Sprint 24');
+  await picker.click();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(picker).toContainText('Sprint 25');
+  await expect(picker).toBeFocused();
+});

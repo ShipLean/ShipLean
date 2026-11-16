@@ -1,0 +1,5 @@
+{
+  "accepted": { "reached": true, "httpStatus": 202, "error": null, "durationMs": 140 },
+  "refused": { "reached": true, "httpStatus": 400, "error": null, "durationMs": 95 },
+  "unreachable": { "reached": false, "httpStatus": null, "error": "No answer within 5 seconds.", "durationMs": 5000 }
+}

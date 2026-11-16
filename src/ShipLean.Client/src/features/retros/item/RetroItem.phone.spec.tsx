@@ -124,6 +124,25 @@ test('RetroItemPhone_WhenChildRowTapped_ShouldBeOneLinkToTheChildRetro', async (
   expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(32);
 });
 
+test('PhoneChildRow_ShouldShowAChevron', async ({ mount, page }) => {
+  await serve(page);
+  await mount(<RetroItemPanel project={project} itemKey="SHIP-101" />, route());
+  const rows = page.getByTestId(ids.retroItemChildRow);
+  await expect(rows).toHaveCount(retroItem.children.length);
+  for (let index = 0; index < retroItem.children.length; index += 1) {
+    const chevron = rows.nth(index).getByTestId(ids.retroRowChevron);
+    await expect(chevron).toHaveText('›');
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    const row = (await rows.nth(index).boundingBox())!;
+    const arrow = (await chevron.boundingBox())!;
+    expect(arrow.width).toBeGreaterThan(0);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
+    expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
+    expect(arrow.y).toBeGreaterThanOrEqual(row.y);
+    expect(arrow.y + arrow.height).toBeLessThanOrEqual(row.y + row.height);
+  }
+});
+
 test('RetroItemPhone_WhenActionItemsSheetOpened_ShouldGiveEachActionKeyATouchTarget', async ({
   mount,
   page,

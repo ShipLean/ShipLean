@@ -113,10 +113,6 @@ test('MoveTo_WhenPickedFromSheet_ShouldSendSheetMethod', async ({ mount, page })
   await cardKeyed(page, 'SHIP-160').getByTestId(touchTestIds.moreButton).tap();
   await page
     .getByTestId(touchTestIds.sheet)
-    .locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="move-to"]`)
-    .tap();
-  await page
-    .getByTestId(touchTestIds.sheet)
     .locator(
       `[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="column:col-prog:false"]`,
     )

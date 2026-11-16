@@ -289,6 +289,9 @@ public static class SettingsTestIds
     public const string AgentsShownToken = "agents-shown-token";
     public const string AgentsShownCopy = "agents-shown-copy";
     public const string AgentsShownDone = "agents-shown-done";
+    public const string AgentsConnectionHealth = "agents-connection-health";
+    public const string AgentsConnectionTest = "agents-connection-test";
+    public const string AgentsConnectionTestResult = "agents-connection-test-result";
     public const string GeneralAgentConnection = "settings-general-agent-connection";
     public const string GeneralRepoUrl = "settings-general-repo-url";
     public const string GeneralRepoBaseBranch = "settings-general-repo-base-branch";

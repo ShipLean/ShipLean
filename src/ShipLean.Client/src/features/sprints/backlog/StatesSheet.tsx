@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { StateDot } from '../../../components/StateDot';
+import { StateMenu } from '../../../components/StateMenu';
 import { Sheet } from '../../../touch/Sheet';
-import { CATEGORY_LABELS } from '../../settings/states/categories';
 import { sprintsTestIds as ids } from '../testIds';
 import type { StateChanger } from './RowStateMenu';
 
 /**
- * A row's state at touch (SHIP-724 D3): a 28px pill inside a 32px hit area that opens the States sheet. The sheet lists
- * the item type's states with each one's category; picking another state applies it and closes the sheet.
+ * A row's state at touch (SHIP-724 D3): a 28px pill inside a 32px hit area that opens the States sheet, "State of {key}"
+ * with the item's title under it. The sheet is the shared `StateMenu` (K1b); picking another state applies it and closes
+ * the sheet.
  */
 export function StatesSheet({ item, changer }: { item: WorkItemDto; changer: StateChanger }) {
   const [open, setOpen] = useState(false);
@@ -36,38 +37,23 @@ export function StatesSheet({ item, changer }: { item: WorkItemDto; changer: Sta
           </span>
         </span>
       </button>
-      <Sheet open={open} title="States" onClose={() => setOpen(false)}>
-        <ul className="m-0 list-none p-0">
-          {options.map((state) => {
-            const current = state.id === item.state.id;
-            return (
-              <li key={state.id}>
-                <button
-                  type="button"
-                  data-testid={ids.statesSheetOption}
-                  data-category={state.category}
-                  aria-current={current}
-                  className="flex min-h-12 w-full cursor-pointer items-center gap-3 border-0 border-b border-edge bg-transparent px-3 text-left text-[length:var(--text-base)] text-ink"
-                  onClick={() => {
-                    setOpen(false);
-                    if (!current) changer.onChange(item, state.id);
-                  }}
-                >
-                  <StateDot category={state.category} name={state.name} />
-                  <span
-                    data-testid={ids.statesSheetCategory}
-                    className="ml-auto text-[length:var(--text-sm)] text-ink-muted"
-                  >
-                    {CATEGORY_LABELS[state.category]}
-                  </span>
-                  <span aria-hidden="true" className="w-4 text-signal">
-                    {current ? '✓' : ''}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      <Sheet
+        open={open}
+        title={`State of ${item.key}`}
+        subtitle={item.title}
+        onClose={() => setOpen(false)}
+      >
+        {/* K1b: the states under their category headings, the current one ticked and tinted. */}
+        <StateMenu
+          states={options}
+          currentId={item.state.id}
+          title={`State of ${item.key}`}
+          onClose={() => setOpen(false)}
+          onSelect={(stateId) => {
+            setOpen(false);
+            if (stateId !== item.state.id) changer.onChange(item, stateId);
+          }}
+        />
       </Sheet>
     </>
   );

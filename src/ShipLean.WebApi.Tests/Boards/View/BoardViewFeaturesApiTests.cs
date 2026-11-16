@@ -1,3 +1,4 @@
+using System.Net;
 using Dapper;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views;
@@ -84,6 +85,34 @@ public class BoardViewFeaturesApiTests : ApiFixture
         unowned.Count.ShouldBeLessThan(all.Cards().Count());
         (await Api.BoardAsync(Features, "?owner=none")).Cards().Select(c => c.Key).ShouldBe(unowned, ignoreOrder: true);
         (await Api.BoardAsync(Features, $"?owner=none&owner={Guid.NewGuid()}")).Cards().Select(c => c.Key).ShouldBe(unowned, ignoreOrder: true);
+    }
+
+    [Test]
+    public async Task FeaturesBoard_WhenFilteredByHealth_ShouldHideOtherHealthButKeepCounts()
+    {
+        var all = await Api.BoardAsync(Features);
+
+        var atRisk = await Api.BoardAsync(Features, "?health=atRisk");
+        var blocked = await Api.BoardAsync(Features, "?health=Blocked");
+        var notSet = await Api.BoardAsync(Features, "?health=none");
+
+        atRisk.Cards().Select(c => c.Key).ShouldBe(["SHIP-102"]);
+        blocked.Cards().Select(c => c.Key).ShouldBe(["SHIP-108"]);
+        var unset = all.Cards().Where(c => c.Health is null).Select(c => c.Key).ToList();
+        unset.ShouldContain("SHIP-101");
+        notSet.Cards().Select(c => c.Key).ShouldBe(unset, ignoreOrder: true);
+        // A hidden card still counts toward its column.
+        atRisk.Columns.Select(c => c.Count).ShouldBe(all.Columns.Select(c => c.Count));
+    }
+
+    [TestCase("great")]
+    [TestCase("1")]
+    [TestCase("0")]
+    public async Task FeaturesBoard_WhenHealthIsUnknown_ShouldBeValidationError(string health)
+    {
+        using var response = await Api.GetAsync($"api/boards/{Features}?health={health}");
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     [Test]

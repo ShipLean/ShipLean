@@ -1,5 +1,6 @@
 import { Avatar } from '../../../../components/Avatar';
 import { Chip } from '../../../../components/Chip';
+import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { retroCategoryColours, retroCategoryLabels } from '../../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../../testIds';
@@ -7,7 +8,7 @@ import { Highlight } from '../parts/Highlight';
 import { matchesRootCause } from '../parts/matches';
 
 /**
- * One point as a row of three lines (D1): category and key; the point on two lines with the match marked, then the root
+ * One point as a row of three lines (D1): category on the left, the type icon and key on the right; the point on two lines with the match marked, then the root
  * cause when the search matched it there or a note when only the raw failure log matched; then theme, sprint and
  * author. The whole row opens the retro.
  */
@@ -46,8 +47,10 @@ export function PhoneSearchRow({
           />
           {retroCategoryLabels[point.category]}
         </span>
-        <span aria-hidden="true">·</span>
-        <span className="font-mono text-ink">{workItem ? workItem.key : 'Sprint'}</span>
+        <span className="ml-auto inline-flex items-center gap-1.5">
+          {workItem ? <TypeIcon type={workItem.type.id} /> : null}
+          <span className="font-mono text-ink">{workItem ? workItem.key : 'Sprint'}</span>
+        </span>
       </span>
       <span className="line-clamp-2 text-[length:var(--text-base)] leading-[1.4]">
         <Highlight text={point.text} q={q} />

@@ -22,4 +22,5 @@ public static class SprintHeaderTestIds
     public const string PickerSheetTick = "sprint-header-picker-sheet-tick";
     public const string PickerSheetAllSprints = "sprint-header-picker-sheet-all-sprints";
     public const string GoalToggle = "sprint-header-goal-toggle";
+    public const string MoreIcon = "sprint-header-more-icon";
 }

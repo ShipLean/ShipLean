@@ -50,7 +50,7 @@ export function DeviceRow({
       <button
         type="button"
         data-testid={ids.signOut}
-        className="btn-ghost"
+        className="btn-ghost touch:h-[var(--touch-target)]"
         disabled={disabled}
         aria-label={`Sign out ${device.name}`}
         onClick={onSignOut}

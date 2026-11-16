@@ -22,7 +22,7 @@ export function LoginTopBar() {
       {name !== null ? (
         <span
           data-testid={authTestIds.instanceName}
-          className="min-w-0 truncate text-[length:var(--text-sm)] text-ink-muted"
+          className="min-w-0 truncate text-[length:var(--text-sm)] text-ink-muted touch:text-[length:var(--text-md)]"
         >
           <span aria-hidden="true" className="mr-2">
             ·

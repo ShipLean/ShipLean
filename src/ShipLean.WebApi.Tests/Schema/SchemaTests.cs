@@ -22,7 +22,7 @@ public class SchemaTests
     {
         string[] expected =
         [
-            "agent_activity", "agent_connection", "agent_delivery", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "code_comment", "code_commit", "code_repository", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
+            "agent_activity", "agent_connection", "agent_delivery", "agent_delivery_attempt", "agent_session", "app_user", "ask_event", "attachment", "backup_run", "backup_settings", "board", "code_comment", "code_commit", "code_repository", "comment", "comment_ask_tag", "comment_mention", "data_protection_key", "decision", "device_session", "device_sign_in_code", "feature_digest_seen", "github_issue", "github_issue_comment", "github_issue_effect", "github_outbox", "holiday_country", "import_error", "import_job", "import_log",
             "import_mapping", "inspection_project_settings", "inspection_run_links", "instance_settings", "issue_job", "jira_connection", "link_state", "mcp_capture_plan_apply", "oauth_authorization", "oauth_client", "oauth_code",
             "oauth_request", "oauth_token", "project", "project_demo_settings", "project_issue_intake", "project_member", "project_youtube_channel", "public_holiday", "question", "retro_action", "retro_action_point", "retro_failure_log", "retro_point", "retro_point_support", "retro_theme", "retro_theme_merge_proposal", "retrospective", "retrospective_source", "review_event", "revision", "search_doc", "sprint",
             "sprint_capacity", "state", "tool_payload", "transfer_token", "user_preference", "webhook_delivery", "work_item", "work_item_commit", "work_item_link",
@@ -148,5 +148,18 @@ public class SchemaTests
             ex.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
         }
         await connection.ExecuteAsync("UPDATE app_user SET time_zone = 'Asia/Bangkok' WHERE id = @id", new { id });
+    }
+
+    // SHIP-1398 K1. Mutations: make the column NOT NULL; type it as timestamp without zone.
+    [Test]
+    public async Task WorkItemLinkCommittedAt_WhenApplied_ShouldBeANullableTimestamptz()
+    {
+        await using var connection = await _database.OpenAsync();
+
+        var column = await connection.QuerySingleAsync<(string DataType, string IsNullable)>(
+            "SELECT data_type, is_nullable FROM information_schema.columns WHERE table_name = 'work_item_link' AND column_name = 'committed_at'");
+
+        column.DataType.ShouldBe("timestamp with time zone");
+        column.IsNullable.ShouldBe("YES");
     }
 }

@@ -1,4 +1,8 @@
-import { actionSheetRowClass } from '../../../touch/ActionSheet';
+import {
+  actionSheetCheckedClass,
+  ActionSheetRowFace,
+  actionSheetRowClass,
+} from '../../../touch/ActionSheet';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 
@@ -26,6 +30,7 @@ export function LanesSwitch({
   value,
   onChoose,
   onPicked,
+  laneNames = [],
 }: {
   level: Level;
   /** The lanes the board shows now. */
@@ -33,14 +38,17 @@ export function LanesSwitch({
   value: string | null;
   onChoose: (value: string) => void;
   onPicked?: () => void;
+  /** The lanes' names, top first; in the touch sheet they say which lane sits above which. */
+  laneNames?: string[];
 }) {
+  const hint = laneNames.length > 1 ? laneNames.join(' above ') : null;
   if (level === 'stories') {
     if (laneCount <= 1 && value !== 'off') return null;
     return (
       <label
         className={
           onPicked
-            ? `${actionSheetRowClass} gap-3 text-ink`
+            ? `${actionSheetRowClass} flex-row-reverse gap-3 text-ink`
             : 'inline-flex items-center gap-1.5 text-ink-muted'
         }
       >
@@ -50,7 +58,13 @@ export function LanesSwitch({
           checked={value !== 'off'}
           onChange={(event) => onChoose(event.target.checked ? 'on' : 'off')}
         />
-        Swimlanes
+        {onPicked ? (
+          <span className="flex min-w-0 flex-1">
+            <ActionSheetRowFace face={{ label: 'Swimlanes', hint: hint ?? undefined }} />
+          </span>
+        ) : (
+          'Swimlanes'
+        )}
       </label>
     );
   }
@@ -67,14 +81,19 @@ export function LanesSwitch({
             data-testid={ids.lanesOption}
             data-option={option.id}
             aria-pressed={choice === option.id}
-            className={`${actionSheetRowClass} gap-2 ${choice === option.id ? 'bg-signal-soft font-medium' : ''} text-ink`}
+            className={`${actionSheetRowClass} gap-2 ${choice === option.id ? actionSheetCheckedClass : ''} text-ink`}
             onClick={() => {
               onChoose(option.id);
               onPicked();
             }}
           >
-            <span className="flex-1">{option.label}</span>
-            {choice === option.id ? <span aria-hidden="true">✓</span> : null}
+            <ActionSheetRowFace
+              face={{
+                label: option.label,
+                hint: option.id === 'on' ? (hint ?? undefined) : undefined,
+                checked: choice === option.id,
+              }}
+            />
           </button>
         ))}
       </div>

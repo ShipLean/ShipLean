@@ -75,4 +75,5 @@ public static class PagesTestIds
     public const string SlotTasks = "slot-tasks";
     public const string SlotTreeMode = "slot-treeMode";
     public const string SlotSprintGoalEdit = "slot-sprintGoalEdit";
+    public const string ProfileIntro = "profile-intro";
 }

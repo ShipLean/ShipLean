@@ -96,10 +96,12 @@ public class RowActionsTouchTests : SeededAcceptanceTest
         await backlog.OpenAsync("SHIP");
         await Expect(backlog.Rows.First).ToBeVisibleAsync();
 
-        await actions.UnestimatedCheck.TapAsync();
+        await Expect(actions.NotEstimatedBanner).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, actions.NotEstimatedBanner)).ShouldBeEmpty();
+        await actions.Estimate.TapAsync();
 
-        await Expect(actions.QueueBanner).ToBeVisibleAsync();
-        (await TouchRules.ViolationsAsync(Page, actions.QueueBanner)).ShouldBeEmpty();
+        await Expect(actions.PointsSheet).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, actions.Sheet)).ShouldBeEmpty();
         var first = (await actions.QueueStepKey.InnerTextAsync()).Trim();
         await actions.QueueSkip.TapAsync();
         await Expect(actions.QueueStepKey).Not.ToHaveTextAsync(first);

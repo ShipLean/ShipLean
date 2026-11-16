@@ -431,6 +431,22 @@ public class SprintDemoDataTests : ApiFixture
         (await world.ReadAsync()).Features.Single().AttachmentNames.ShouldBe(["checkout-flow.png"]);
     }
 
+    // D10: an agent session's run log is admin-only, and the demo data goes to an agent for whoever made the demo. Mutation: drop the run-log
+    // filter from SprintDemoDataSql.Attachments.
+    [Test]
+    public async Task Attachments_ShouldLeaveOutAnAgentSessionsRunLog()
+    {
+        await using var world = await WorldAsync();
+        var feature = await world.FeatureAsync("F");
+        await world.ItemAsync("story", parent: feature, sprint: world.Sprint);
+        await world.AttachmentAsync(feature, "checkout-flow.png");
+        var runLog = await world.AttachmentAsync(feature, "agent-run-x.log");
+        await new AgentSessionSeeds(feature, await AgentSessionSeeds.InsertConnectionAsync(world.Connection))
+            .WithState("failed").WithRunLogAttachment(runLog).InsertAsync(world.Connection);
+
+        (await world.ReadAsync()).Features.Single().AttachmentNames.ShouldBe(["checkout-flow.png"]);
+    }
+
     [Test]
     public async Task Oversized_ShouldTruncateAndSetTheFlag()
     {
@@ -710,9 +726,13 @@ public class SprintDemoDataTests : ApiFixture
                 "INSERT INTO work_item_link (id, source_id, link_type, url, title, archived_at) VALUES (@id, @itemId, 'url', @url, @title, CASE WHEN @archived THEN now() END)",
                 new { id = Guid.NewGuid(), itemId, url, title, archived });
 
-        public async Task AttachmentAsync(Guid itemId, string name, bool archived = false)
-            => await Connection.ExecuteAsync(
+        public async Task<Guid> AttachmentAsync(Guid itemId, string name, bool archived = false)
+        {
+            var id = Guid.NewGuid();
+            await Connection.ExecuteAsync(
                 "INSERT INTO attachment (id, work_item_id, name, content_type, size_bytes, storage_ref, archived_at) VALUES (@id, @itemId, @name, 'image/png', 1, @ref, CASE WHEN @archived THEN now() END)",
-                new { id = Guid.NewGuid(), itemId, name, @ref = $"test/{Guid.NewGuid()}", archived });
+                new { id, itemId, name, @ref = $"test/{Guid.NewGuid()}", archived });
+            return id;
+        }
     }
 }

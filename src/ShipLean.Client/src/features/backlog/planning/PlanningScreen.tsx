@@ -4,7 +4,7 @@ import { useTouchShell } from '../../../touch/useTouchShell';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import type { BacklogViewDto } from '@shiplean/core/api/views';
 import { AddBelowProvider } from '../add/AddBelowProvider';
-import { AddManyButton } from '../add/AddManyButton';
+import { AddManyAction, AddManyButton } from '../add/AddManyButton';
 import { PasteHost } from '../add/PasteHost';
 import { BulkBar } from '../bulk/BulkBar';
 import { BulkOutcomeHost } from '../bulk/BulkOutcomeHost';
@@ -24,6 +24,7 @@ import { useCheckQueue } from '../strip/useCheckQueue';
 import { SelectBar } from '../touch/SelectBar';
 import { useSelectMoreActions } from '../touch/selectMoreActions';
 import { BacklogToolbar } from '../toolbar/BacklogToolbar';
+import { createSprintIcon, forecastIcon, velocityIcon } from '../toolbar/moreIcons';
 import { ForecastToggle } from './ForecastToggle';
 import { forecastMarks } from './forecastMarks';
 import type { PlanningDrop } from './planningTarget';
@@ -65,19 +66,33 @@ export function PlanningScreen({
   const { touch } = useTouchShell();
   const [overriding, setOverriding] = useState(false);
   const createSprint = useCreateNextSprint(project.id);
+  const planned = view.velocity === null ? null : (view.velocity.override ?? view.velocity.average);
   const moreActions: SheetAction[] = [
-    ...(forecast && view.velocity !== null
+    // A switch: tapping it keeps the sheet open (K1 toggle).
+    {
+      id: 'forecast',
+      label: 'Forecast',
+      icon: forecastIcon,
+      hint: 'Marks where each backlog item is likely to land',
+      group: '',
+      toggle: { on: forecast },
+      onSelect: () => onForecastChange(!forecast),
+    },
+    ...(forecast && planned !== null
       ? [
           {
             id: 'override-velocity',
             label: 'Override velocity',
+            icon: velocityIcon,
+            detail: planned,
             onSelect: () => setOverriding(true),
-          },
+          } satisfies SheetAction,
         ]
       : []),
     {
       id: 'create-sprint',
       label: 'Create sprint',
+      icon: createSprintIcon,
       disabled: createSprint.disabled,
       onSelect: createSprint.create,
     },
@@ -86,8 +101,11 @@ export function PlanningScreen({
   const selectActions = useSelectMoreActions(queue, view.review);
   const search = useBacklogSearch();
   const queuedSections = useMemo(
-    () => view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
-    [view.sections, queue],
+    () =>
+      touch
+        ? view.sections
+        : view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
+    [touch, view.sections, queue],
   );
   const queued = useMemo(() => queuedSections.flatMap((section) => section.rows), [queuedSections]);
   const sections = useMemo(
@@ -105,8 +123,10 @@ export function PlanningScreen({
         .flatMap((section) => section.rows.map((row) => row.id)),
     [sections, searchCollapse],
   );
-  // Drag and the pull line stop for a search or a check queue; adding stops for a search only.
-  const filtering = search.active || queue.active;
+  // Drag and the pull line stop for a search or a check queue; adding stops for a search only. At touch the queue lives
+  // in the Estimate sheet and the rows behind it stay whole (SHIP-1626 BACKLOG-3), so it narrows nothing.
+  const queueNarrows = queue.active && !touch;
+  const filtering = search.active || queueNarrows;
   return (
     <QueueFixedProvider review={view.review} queue={queue} queued={queued}>
       <SelectionProvider walkOrder={walkOrder}>
@@ -118,22 +138,30 @@ export function PlanningScreen({
         <AddBelowProvider projectId={project.id} projectKey={project.key}>
           <PasteHost projectId={project.id} projectKey={project.key}>
             <div className="flex min-h-0 flex-1 flex-col">
-              <BacklogToolbar
-                projectKey={project.key}
-                level="stories"
-                mode="planning"
-                onNewItem={() => setAdding(true)}
-                options={() => (
-                  <>
-                    <AddManyButton />
-                    <ForecastToggle checked={forecast} onChange={onForecastChange} />
-                  </>
+              <AddManyAction>
+                {(addMany) => (
+                  <BacklogToolbar
+                    projectKey={project.key}
+                    level="stories"
+                    mode="planning"
+                    onNewItem={() => setAdding(true)}
+                    options={
+                      touch
+                        ? undefined
+                        : () => (
+                            <>
+                              <AddManyButton />
+                              <ForecastToggle checked={forecast} onChange={onForecastChange} />
+                            </>
+                          )
+                    }
+                    search={() => <BacklogSearchBox search={search} />}
+                    keys={() => <KeysButton />}
+                    moreActions={[...(addMany ? [addMany] : []), ...selectActions, ...moreActions]}
+                  />
                 )}
-                search={() => <BacklogSearchBox search={search} />}
-                keys={() => <KeysButton />}
-                moreActions={[...selectActions, ...moreActions]}
-              />
-              <MovingOffBanner search={search} queue={queue} />
+              </AddManyAction>
+              <MovingOffBanner search={search} queueNarrows={queueNarrows} />
               {reorder.conflict ? (
                 <ReorderConflict
                   conflict={reorder.conflict}

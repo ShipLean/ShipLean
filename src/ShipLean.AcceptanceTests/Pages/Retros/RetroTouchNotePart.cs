@@ -15,14 +15,8 @@ public sealed class RetroTouchNotePart(IPage page, ILocator root)
 
     public ILocator SheetTitle => page.GetByTestId(TouchTestIds.SheetTitle);
 
-    // A row of the action sheet the note's ⋯ opens (Move to theme, Archive).
+    // A row of the action sheet the note's ⋯ opens (Move to theme…, Archive point; in the theme sheet, a row per theme, Unthemed and New theme…).
     public ILocator SheetRow(string label) => page.GetByTestId(TouchTestIds.ActionSheetRow).Filter(new() { HasText = label });
-
-    // The theme picker inside the Move to theme sheet.
-    public ILocator ThemePicker => Sheet.GetByTestId(RetroSharedTestIds.RetroThemePicker);
-
-    // "New theme…" in the theme sheet: drawn, disabled.
-    public ILocator NewTheme => Sheet.GetByTestId(RetroSharedTestIds.RetroThemeSheetNew);
 
     // The full-screen dialog's ✕ at the top left (K5).
     public ILocator DialogClose => page.GetByTestId(TouchTestIds.DialogClose);

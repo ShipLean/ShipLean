@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views;
+using ShipLean.Contracts.Views.InspectionMetrics;
 using ShipLean.Contracts.Views.Timeline;
 using ShipLean.UnitTest.Dtos.Boards;
 
@@ -102,6 +103,47 @@ public class ViewDtoTests
         board.Header.TasksTotal.ShouldBe(board.Columns.Sum(c => c.Count));
         board.Header.AnyInBacklog.ShouldBe(board.Rows.Any(r => r.Sprint is null));
         board.Rows.ShouldContain(r => r.OfferResolve);
+    }
+
+    [Test]
+    public void InspectionMetricsView_ShouldSurviveRoundTrip()
+    {
+        BoardDtoFixture.SurvivesRoundTrip<InspectionMetricsViewDto>(BoardDtoFixture.Read("views", "inspection-metrics-view.json")).ShouldBeTrue();
+    }
+
+    [Test]
+    public void InspectionMetricsView_ShouldShowEveryCase()
+    {
+        var view = BoardDtoFixture.Read("views", "inspection-metrics-view.json").Deserialize<InspectionMetricsViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        view.Periods.Count(p => !p.InProgress).ShouldBe(3);
+        view.Periods.Count(p => p.InProgress).ShouldBe(1);
+        view.Longest.Count.ShouldBe(5);
+        view.Longest.Count(t => t.EndedBy == LeadTimeEndedBy.Resolved).ShouldBe(1);
+        view.Coverage.Percent.ShouldNotBeNull().ShouldBeLessThan(100);
+        view.Quarters.Count.ShouldBe(2);
+        view.Cut.ShouldBe(InspectionCut.Feature);
+        view.Cuts.ShouldNotBeNull().ShouldAllBe(row => row.Cells.Count == view.Periods.Count);
+        view.LeftOut.ShouldHaveSingleItem();
+        var detail = view.PeriodDetail.ShouldNotBeNull();
+        detail.Tasks.ShouldNotBeEmpty();
+        detail.Features.ShouldNotBeEmpty();
+        var selected = detail.Selected.ShouldNotBeNull();
+        selected.Segments.Select(s => s.Kind).ShouldBe([InspectionSegmentKind.Active, InspectionSegmentKind.Rework, InspectionSegmentKind.UnresolvedTail]);
+        selected.Events.Select(e => e.Kind).Distinct().Count().ShouldBe(Enum.GetValues<InspectionEventKind>().Length);
+        detail.Previous.ShouldNotBeNull();
+        detail.Next.ShouldNotBeNull();
+        view.Headline.QuarterToDate.ShouldNotBeNull().ToDate.ShouldBeTrue();
+        view.Headline.LastQuarter.ShouldNotBeNull().ToDate.ShouldBeFalse();
+        IEnumerable<LeadTimeStatsDto> stats =
+        [
+            .. view.Periods.Select(p => p.LeadTime), .. view.Quarters.Select(q => q.LeadTime), .. view.Cuts.SelectMany(c => c.Cells.Append(c.All)),
+            .. detail.Features.Select(f => f.LeadTime), detail.LeadTime,
+        ];
+        foreach (var s in stats.Where(s => s.MeanHours is not null))
+        {
+            (s.MeanActiveHours + s.MeanBlockedHours + s.MeanReworkHours).ShouldNotBeNull().ShouldBe(s.MeanHours!.Value, 0.001);
+        }
     }
 
     [Test]

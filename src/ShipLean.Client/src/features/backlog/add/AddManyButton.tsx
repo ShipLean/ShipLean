@@ -1,4 +1,6 @@
-import { useContext } from 'react';
+import { useContext, type ReactNode } from 'react';
+import type { SheetAction } from '../../../touch/ActionSheet';
+import { pasteIcon } from '../toolbar/moreIcons';
 import { backlogTestIds as ids } from '../testIds';
 import { PasteContext } from './usePasteIntake';
 
@@ -15,5 +17,25 @@ export function AddManyButton() {
     >
       Add many
     </button>
+  );
+}
+
+// Add many as a K1 action row for ⋯ More at touch; null where no paste host is mounted. Renders `children` with it.
+export function AddManyAction({
+  children,
+}: {
+  children: (action: SheetAction | null) => ReactNode;
+}) {
+  const open = useContext(PasteContext);
+  return children(
+    open === null
+      ? null
+      : {
+          id: 'add-many',
+          label: 'Add many…',
+          icon: pasteIcon,
+          hint: 'Paste a list of titles, one per line',
+          onSelect: () => open('', 'story'),
+        },
   );
 }

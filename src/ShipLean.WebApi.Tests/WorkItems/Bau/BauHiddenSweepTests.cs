@@ -191,6 +191,9 @@ public class BauHiddenSweepTests : McpFixture
             ("sprint_status", """{"project":"SHIP"}""", SeededSprintStory),
             ("sprint_review", """{"project":"SHIP"}""", SeededSprintStory),
             ("feature_progress", $$"""{"item":"{{_controlFeatureKey}}"}""", _controlStoryKey),
+            // Its lists (dots, longest, period tasks, left out) come from tasks only (type 'task'), so a bau item cannot reach them;
+            // the control is the project itself, which every answer names.
+            ("inspection_metrics", """{"project":"SHIP","range":"all"}""", "SHIP"),
         };
 
         foreach (var (tool, arguments, control) in calls)

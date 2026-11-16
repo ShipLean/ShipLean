@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { RetroActionRowDto } from '@shiplean/core/api/retros';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { useTouchShell } from '../../../touch/useTouchShell';
@@ -37,9 +38,14 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
         stories and bugs. It sits in the Stories backlog, carries points and is pulled into a sprint
         like any story; it also links to the theme it addresses.
       </p>
-      <section className="rounded-frame border border-edge bg-panel">
-        <header className="flex items-baseline gap-3 px-4 py-3">
-          <h2 className="m-0 text-[length:var(--text-md)] font-semibold">Action items</h2>
+      <section
+        data-testid={ids.retroActionsSection}
+        className="rounded-frame border border-edge bg-panel touch:rounded-none touch:border-0 touch:bg-transparent"
+      >
+        <header className="flex items-baseline gap-3 px-4 py-3 touch:px-0">
+          <h2 className="m-0 text-[length:var(--text-md)] font-semibold touch:sr-only">
+            Action items
+          </h2>
           <span className="text-[length:var(--text-sm)] text-ink-muted">
             {actionItems.length - done} open · {done} done
           </span>
@@ -47,18 +53,29 @@ export function ActionItemsTable({ project, insights }: RetroInsightsSlotProps) 
           <AddActionItemButton />
         </header>
         {actionItems.length === 0 ? (
-          <p className="m-0 px-4 pb-4 text-[length:var(--text-sm)] text-ink-muted">Nothing here.</p>
+          <p className="m-0 px-4 pb-4 text-[length:var(--text-sm)] text-ink-muted touch:px-0">
+            Nothing here.
+          </p>
         ) : touch ? (
-          <div data-testid={ids.retroActionCards} className="grid gap-2 px-3 pb-3">
-            {openFirst(actionItems).map((row) => (
-              <ActionItemCard
-                key={row.action.workItemId}
-                projectId={project.id}
-                row={row}
-                next={next}
-                mode={insights.mode}
-                recurring={row.theme ? recurring.has(row.theme.id) : false}
-              />
+          <div data-testid={ids.retroActionCards} className="grid gap-2 pb-3">
+            {openFirst(actionItems).map((row, index, rows) => (
+              <Fragment key={row.action.workItemId}>
+                {!isOpen(row) && (index === 0 || isOpen(rows[index - 1])) ? (
+                  <h3
+                    data-testid={ids.retroActionDoneHeading}
+                    className="m-0 pt-2 text-[length:var(--text-sm)] font-semibold text-ink-muted"
+                  >
+                    Done
+                  </h3>
+                ) : null}
+                <ActionItemCard
+                  projectId={project.id}
+                  row={row}
+                  next={next}
+                  mode={insights.mode}
+                  recurring={row.theme ? recurring.has(row.theme.id) : false}
+                />
+              </Fragment>
             ))}
           </div>
         ) : (

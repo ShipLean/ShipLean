@@ -17,6 +17,28 @@ export function postBacklogSort(
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/backlog-sort`, body);
 }
 
+/** POST api/projects/{id}/usage/board-filter-opened: the Filter control of this board level opened (the sheet on a phone, the bar elsewhere). The server answers 204. */
+export function postBoardFilterOpened(
+  projectId: string,
+  level: 'features' | 'stories' | 'epics',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/board-filter-opened`,
+    { level },
+  );
+}
+
+/** POST api/projects/{id}/usage/board-health-filtered: the Features board's Health filter changed to this ('none' = Not set, 'any' = cleared). The server answers 204. */
+export function postBoardHealthFiltered(
+  projectId: string,
+  health: 'onTrack' | 'atRisk' | 'blocked' | 'none' | 'any',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/board-health-filtered`,
+    { health },
+  );
+}
+
 /** POST api/projects/{id}/usage/timeline-opened: a Feature timeline opened, from the Feature page ('feature') or a link. The server answers 204. */
 export function postTimelineOpened(projectId: string, from: 'feature' | 'link'): Promise<void> {
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/timeline-opened`, {
@@ -29,5 +51,49 @@ export function postTimelineBarSelected(projectId: string): Promise<void> {
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/timeline-bar-selected`,
     {},
+  );
+}
+
+/** POST api/projects/{id}/usage/inspection-metrics-viewed: an Inspection view shown. The server answers 204. */
+export function postInspectionMetricsViewed(
+  projectId: string,
+  view: 'overview' | 'leadtime' | 'period' | 'json',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-viewed`,
+    { view },
+  );
+}
+
+/** POST api/projects/{id}/usage/inspection-metrics-period-opened: a sprint opened on Inspection, by kind (not its id). The server answers 204. */
+export function postInspectionMetricsPeriodOpened(
+  projectId: string,
+  period: 'finished' | 'running',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-period-opened`,
+    { period },
+  );
+}
+
+/** POST api/projects/{id}/usage/inspection-metrics-task-opened: a task opened on Inspection, from the rail, Longest tasks or a chart dot. The server answers 204. */
+export function postInspectionMetricsTaskOpened(
+  projectId: string,
+  from: 'rail' | 'longest' | 'chart',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-task-opened`,
+    { from },
+  );
+}
+
+/** POST api/projects/{id}/usage/retro-theme-sheet-opened: a sheet opened on the retro insights Themes tab: one theme's ('theme') or the Unthemed one ('unthemed'). The server answers 204. */
+export function postRetroThemeSheetOpened(
+  projectId: string,
+  sheet: 'theme' | 'unthemed',
+): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/retro-theme-sheet-opened`,
+    { sheet },
   );
 }

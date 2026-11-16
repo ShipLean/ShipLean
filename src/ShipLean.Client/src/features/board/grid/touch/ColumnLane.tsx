@@ -1,3 +1,4 @@
+import { TypeIcon } from '../../../../components/TypeIcon';
 import { swatchVar } from '../../cards/cardStyle';
 import { boardTestIds as ids } from '../../testIds';
 import type { BoardContext } from '../boardContext';
@@ -5,7 +6,8 @@ import { Cell } from '../Cell';
 import type { PageLane } from './pagesOf';
 
 // One lane inside a column page: a short header (▼, name, its count in this column), then its cell, or for a split
-// column its Doing cell and its Done cell under a small heading each. The collapsed set lives in BoardPages.
+// column its Doing cell and its Done cell under a small heading each, with what each half means. A lane by Epic shows
+// the Epic's type icon and key in place of the colour bar. The collapsed set lives in BoardPages.
 export function ColumnLane({
   entry,
   split,
@@ -40,14 +42,23 @@ export function ColumnLane({
           >
             {collapsed ? '▶' : '▼'}
           </button>
-          <span
-            aria-hidden
-            className="h-4 w-[3px] shrink-0 rounded-sm"
-            style={{ background: lane.colour ? swatchVar(lane.colour) : 'var(--color-border)' }}
-          />
+          {lane.epic ? (
+            <TypeIcon type={lane.epic.type.id} />
+          ) : (
+            <span
+              aria-hidden
+              className="h-4 w-[3px] shrink-0 rounded-sm"
+              style={{ background: lane.colour ? swatchVar(lane.colour) : 'var(--color-border)' }}
+            />
+          )}
           <b data-testid={ids.columnLaneName} className="min-w-0 truncate font-semibold">
             {lane.name}
           </b>
+          {lane.epic ? (
+            <span className="shrink-0 text-[length:var(--text-2xs)] text-ink-muted">
+              {lane.epic.key}
+            </span>
+          ) : null}
           <span
             data-testid={ids.columnLaneCount}
             className="ml-auto shrink-0 text-ink-muted tabular-nums"
@@ -65,6 +76,9 @@ export function ColumnLane({
             >
               {track.doneHalf ? 'Done' : 'Doing'}
               <b className="text-ink tabular-nums">{count}</b>
+              <span className="font-normal tracking-normal normal-case">
+                {track.doneHalf ? 'ready to pull' : 'being worked on'}
+              </span>
             </div>
           ) : null}
           <Cell

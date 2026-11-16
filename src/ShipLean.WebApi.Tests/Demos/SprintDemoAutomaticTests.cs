@@ -16,6 +16,7 @@ using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Sprints;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Logging;
 using ShipLean.WebApi.Tests.AgentDispatch;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 

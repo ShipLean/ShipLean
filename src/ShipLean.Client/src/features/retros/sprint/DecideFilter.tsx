@@ -18,7 +18,7 @@ export function DecideFilter({
       role="group"
       aria-label="Decision"
       data-testid={ids.retroToDecideFilter}
-      className="inline-flex overflow-hidden rounded-control border border-edge text-[length:var(--text-sm)]"
+      className="inline-flex overflow-hidden rounded-control border border-edge text-[length:var(--text-sm)] touch:flex touch:w-full"
     >
       {OPTIONS.map((option) => (
         <button
@@ -26,7 +26,7 @@ export function DecideFilter({
           type="button"
           data-value={option.id}
           aria-pressed={decide === (option.id === 'open')}
-          className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold touch:min-h-[var(--touch-target)]"
+          className="cursor-pointer border-r border-edge bg-panel px-3 py-1 text-ink last:border-r-0 aria-pressed:bg-canvas aria-pressed:font-semibold touch:min-h-[var(--touch-target)] touch:flex-1"
           onClick={() => onChange(option.id)}
         >
           {option.label}

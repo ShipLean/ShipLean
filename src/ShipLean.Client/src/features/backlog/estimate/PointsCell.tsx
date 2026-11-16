@@ -60,7 +60,7 @@ export function PointsCell({ row }: { row: BacklogRowDto }) {
         <div className="absolute right-0 top-full z-20 mt-1 w-96 text-left font-normal">
           <ConflictBanner
             changedBy={`${estimate.conflict.changedBy} (${row.key})`}
-            onUseMine={estimate.useMine}
+            onUseMine={() => void estimate.useMine()}
             onKeepTheirs={estimate.keepTheirs}
           />
         </div>

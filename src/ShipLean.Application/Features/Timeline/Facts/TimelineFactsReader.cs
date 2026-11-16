@@ -47,6 +47,8 @@ public sealed class TimelineFactsReader(NpgsqlDataSource dataSource) : ITimeline
         var reviews = (await Query<ReviewRow>(TimelineFactsSql.Reviews, new { taskIds }))
             .Select(row => new TimelineReviewFact(
                 row.ItemKey, row.At, Enum.Parse<ReviewVerdict>(row.Verdict, ignoreCase: true), row.Note, row.ByUserId, row.AgentName)).ToList();
+        var commits = (await Query<CommitRow>(TimelineFactsSql.Commits, new { taskIds, commitPrefix = PlanMarkers.CommitPrefix }))
+            .Select(row => new TimelineCommitFact(row.ItemKey, row.CommittedAt)).ToList();
 
         var taskKeys = tasks.Select(task => task.Key).ToHashSet();
         var sprints = await ReadSprintsAsync(Query<SprintRow>, projectId, moves.Where(move => taskKeys.Contains(move.ItemKey)), asOf);
@@ -83,7 +85,7 @@ public sealed class TimelineFactsReader(NpgsqlDataSource dataSource) : ITimeline
         ];
         var people = (await Query<PersonRow>(TimelineFactsSql.People, new { userIds = userIds.Distinct().ToArray() })).ToDictionary(row => row.Id, row => row.Name);
 
-        return new TimelineFacts(head.ProjectKey, feature, appliedAt, storyFacts, taskFacts, moves, blocked, links, waves, reviews, sprints, people, plannedBy);
+        return new TimelineFacts(head.ProjectKey, feature, appliedAt, storyFacts, taskFacts, moves, blocked, links, waves, reviews, sprints, people, commits, plannedBy);
     }
 
     // From must finish before To: A successor B is A to B; A predecessor B and A blockedBy B are B to A.
@@ -126,6 +128,8 @@ public sealed class TimelineFactsReader(NpgsqlDataSource dataSource) : ITimeline
     private sealed record LinkRow(string SourceKey, string TargetKey, string Kind);
 
     private sealed record ReviewRow(string ItemKey, DateTimeOffset At, string Verdict, string? Note, Guid ByUserId, string? AgentName);
+
+    private sealed record CommitRow(string ItemKey, DateTimeOffset CommittedAt);
 
     private sealed record SprintRow(string Name, string StartDate, string EndDate);
 

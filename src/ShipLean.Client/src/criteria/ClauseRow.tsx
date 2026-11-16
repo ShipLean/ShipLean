@@ -23,6 +23,7 @@ export function ClauseRow({
   errors,
   onChange,
   onRemove,
+  layout,
 }: {
   index: number;
   clause: CriteriaClause;
@@ -32,7 +33,9 @@ export function ClauseRow({
   errors: readonly CriteriaValidationError[];
   onChange: (clause: CriteriaClause) => void;
   onRemove: () => void;
+  layout?: 'sheet';
 }) {
+  const sheet = layout === 'sheet';
   const field = criteriaField(clause.field);
   const errorId = useId();
   const errorIds = errors.map((_, i) => `${errorId}-${i}`);
@@ -61,8 +64,18 @@ export function ClauseRow({
   };
 
   return (
-    <div data-testid={criteriaTestIds.clause} data-invalid={errors.length > 0}>
-      <div className="grid grid-cols-[3rem_10rem_8rem_minmax(0,1fr)_1.5rem] items-center gap-1.5 touch:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_var(--touch-target)]">
+    <div
+      data-testid={criteriaTestIds.clause}
+      data-invalid={errors.length > 0}
+      className={sheet ? 'rounded-control border border-edge p-2' : undefined}
+    >
+      <div
+        className={
+          sheet
+            ? 'grid grid-cols-[minmax(0,1fr)_7rem_var(--touch-target)] items-center gap-1.5'
+            : 'grid grid-cols-[3rem_10rem_8rem_minmax(0,1fr)_1.5rem] items-center gap-1.5 touch:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_var(--touch-target)]'
+        }
+      >
         <span className="text-[length:var(--text-xs)] font-medium text-ink-muted touch:col-span-3">
           {lead}
         </span>
@@ -85,7 +98,7 @@ export function ClauseRow({
         </select>
         <select
           data-testid={criteriaTestIds.op}
-          className="field touch:col-span-2 touch:min-h-[var(--touch-target)]"
+          className={`field touch:min-h-[var(--touch-target)] ${sheet ? '' : 'touch:col-span-2'}`}
           aria-label="Operator"
           {...marksFor('operatorNotAllowed')}
           value={clause.op}
@@ -100,7 +113,7 @@ export function ClauseRow({
             </option>
           ))}
         </select>
-        <div className="min-w-0 touch:col-span-1">
+        <div className={`min-w-0 ${sheet ? 'col-span-3 row-start-3' : 'touch:col-span-1'}`}>
           {field ? (
             <ClauseValue
               clause={clause}
@@ -118,7 +131,7 @@ export function ClauseRow({
           type="button"
           data-testid={criteriaTestIds.remove}
           aria-label={`Remove clause ${index + 1}: ${clauseText(clause, lists)}`}
-          className="h-6 w-6 rounded-sm text-ink-muted hover:bg-sunken hover:text-ink touch:h-[var(--touch-target)] touch:w-[var(--touch-target)]"
+          className={`${sheet ? 'col-start-3 row-start-2 ' : ''}h-6 w-6 rounded-sm text-ink-muted hover:bg-sunken hover:text-ink touch:h-[var(--touch-target)] touch:w-[var(--touch-target)]`}
           onClick={onRemove}
         >
           ✕
