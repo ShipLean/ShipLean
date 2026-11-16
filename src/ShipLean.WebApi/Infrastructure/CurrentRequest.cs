@@ -8,13 +8,13 @@ using ShipLean.Contracts;
 namespace ShipLean.WebApi.Infrastructure;
 
 // The one class that touches IHttpContextAccessor (AG0009); see ICurrentRequest. CurrentRequestServices adds the accessor.
-// AG0009 refuses the accessor as any parameter, this constructor's included, so it is resolved from the container instead.
+// AG0009 is suppressed here and only here: this class is the single place that may take the accessor (AGENTS.md).
+#pragma warning disable AG0009
 [RegisterSingleton(For = typeof(ICurrentRequest))]
-public sealed class CurrentRequest(IServiceProvider services, IOptions<ForwardedHeadersOptions> forwarding) : ICurrentRequest
+public sealed class CurrentRequest(IHttpContextAccessor accessor, IOptions<ForwardedHeadersOptions> forwarding) : ICurrentRequest
+#pragma warning restore AG0009
 {
     private const string NoRequest = "No request to sign in on.";
-
-    private IHttpContextAccessor? _accessor;
 
     public bool Exists => Accessor.HttpContext is not null;
 
@@ -44,7 +44,7 @@ public sealed class CurrentRequest(IServiceProvider services, IOptions<Forwarded
         return new Restore(() => Accessor.HttpContext = previous);
     }
 
-    private IHttpContextAccessor Accessor => _accessor ??= services.GetRequiredService<IHttpContextAccessor>();
+    private IHttpContextAccessor Accessor => accessor;
 
     private HttpContext Context => Accessor.HttpContext ?? throw new InvalidOperationException(NoRequest);
 
