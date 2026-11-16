@@ -38,7 +38,10 @@ export function CapacityToolbar({
     // At 900px and below: Copy and ⋯ More in one row; Save is the SaveBar's.
     return (
       <div className="grid gap-1">
-        <div data-testid={ids.capacityPhoneToolbar} className="flex items-center justify-between gap-2">
+        <div
+          data-testid={ids.capacityPhoneToolbar}
+          className="flex items-center justify-between gap-2"
+        >
           <button
             type="button"
             data-testid={ids.capacityCopy}
