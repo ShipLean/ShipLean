@@ -39,17 +39,9 @@ internal static partial class SprintDemoAgentMessage
             return Collapse(BlankLine().Split(markdown.Trim())[0]);
         }
 
-        foreach (var block in document)
-        {
-            var source = markdown.Substring(block.Span.Start, block.Span.Length);
-            var text = Collapse(Markdig.Markdown.ToPlainText(source, MarkdownPipelines.Shared));
-            if (text.Length > 0)
-            {
-                return text;
-            }
-        }
-
-        return "";
+        return document
+            .Select(block => Collapse(Markdig.Markdown.ToPlainText(markdown.Substring(block.Span.Start, block.Span.Length), MarkdownPipelines.Shared)))
+            .FirstOrDefault(text => text.Length > 0) ?? "";
     }
 
     private static string Collapse(string text) => Whitespace().Replace(text, " ").Trim();
