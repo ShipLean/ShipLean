@@ -509,9 +509,17 @@ public class BackupAdminTests
         {
             await connection.ExecuteAsync("UPDATE backup_run SET started_at = @at", new { at = ViewerZoneTestData.LateEveningUtc });
         }
-        await ViewerZoneArrange.SetAsync(_api, TestUser.Joel, ViewerZoneTestData.BangkokId);
+        // A viewer of its own, an instance admin: the seeded users' zones are never touched.
+        TestUser viewer;
+        await using (var connection = await _database.OpenAsync())
+        {
+            viewer = TestUser.Of(await new ShipLean.TestSupport.Builders.AppUserBuilder().Admin().InsertAsync(connection));
+        }
+        await ViewerZoneArrange.SetAsync(_api, viewer, ViewerZoneTestData.BangkokId);
 
-        var label = (await GetAsync())["runs"]![0]!["startedLabel"]!.GetValue<string>();
+        using var read = await _api.ActingAs(viewer).GetAsync("api/instance/backups");
+        read.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var label = JsonNode.Parse(await read.Content.ReadAsStringAsync())!["runs"]![0]!["startedLabel"]!.GetValue<string>();
 
         // 20:00 UTC is 03:00 the next day in Bangkok; two years old, so the label is the short day with its year.
         var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);

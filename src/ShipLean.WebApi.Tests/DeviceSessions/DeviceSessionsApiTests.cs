@@ -215,17 +215,25 @@ public class DeviceSessionsApiTests : ApiFixture
     [Test]
     public async Task DeviceSessions_WhenViewerIsInBangkok_ShouldDateASessionByTheBangkokDay()
     {
-        using var phone = await DeviceBearerClient.CreateAsync(Host, SeedIds.Users.Joel, "Zone phone");
+        // A viewer of its own: the seeded users' zones are never touched.
+        var builder = new ShipLean.TestSupport.Builders.AppUserBuilder();
+        Guid viewer;
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            viewer = await builder.InsertAsync(connection);
+        }
+        using var browser = await AuthClient.SignedInAsync(Host, builder.Email, ShipLean.TestSupport.Builders.AppUserBuilder.ArrangedPassword);
+        using var phone = await DeviceBearerClient.CreateAsync(Host, viewer, "Zone phone");
         await using (var connection = await OpenDatabaseAsync())
         {
             await connection.ExecuteAsync("UPDATE device_session SET created_at = @at WHERE id = @id", new { at = ViewerZoneTestData.LateEveningUtc, id = phone.Id });
         }
-        using (var put = await _browser.PutAsJsonAsync("/api/me/time-zone", new { timeZone = ViewerZoneTestData.BangkokId, source = "profile" }))
+        using (var put = await browser.PutAsJsonAsync("/api/me/time-zone", new { timeZone = ViewerZoneTestData.BangkokId, source = "profile" }))
         {
             put.StatusCode.ShouldBe(HttpStatusCode.OK);
         }
 
-        var list = (await _browser.GetFromJsonAsync<List<DeviceSessionDto>>(Base, AuthClient.Json))!;
+        var list = (await browser.GetFromJsonAsync<List<DeviceSessionDto>>(Base, AuthClient.Json))!;
 
         // 20:00 UTC is 03:00 the next day in Bangkok; two years old, so the label is the short day with its year.
         var bangkokDay = ViewerZoneTestData.LateEveningUtc.ToOffset(TimeSpan.FromHours(7)).ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
