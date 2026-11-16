@@ -51,6 +51,8 @@ test('ListDrag_WhileOverATarget_ShouldShowTheInsertionLine', async ({ mount, pag
   // No release: the line is above the row under the finger, and only one shows.
   const line = page.getByTestId(ids.touchDropLine);
   await expect(line).toHaveCount(1);
+  // A line that paints nothing (an unknown colour class) would still count as one.
+  await expect(line).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   const lineBox = (await line.boundingBox())!;
   expect(Math.abs(lineBox.y - target.y)).toBeLessThan(4);
 });

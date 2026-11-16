@@ -109,7 +109,7 @@ export function TouchRowList({
             <div
               data-testid={ids.touchDropLine}
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 bg-accent before:absolute before:-top-[3px] before:left-1.5 before:size-2 before:rounded-full before:bg-accent"
+              className="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 bg-signal before:absolute before:-top-[3px] before:left-1.5 before:size-2 before:rounded-full before:bg-signal"
             />
           ) : null}
           <TouchRow
