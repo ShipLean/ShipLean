@@ -13,11 +13,12 @@ using ShipLean.TestSupport.Asks;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Inbox;
 
-// GET inbox/answered through the real host and Postgres. The clock is pinned at 12:00 UTC today in a UTC+7 zone, so the
-// server's day began at 17:00 UTC yesterday. Every test arranges its own signed-in user, items and events: the seed already
+// GET inbox/answered through the real host and Postgres. The clock is pinned at 12:00 UTC today. Viewers have no zone (UTC
+// labels) unless a test sets Asia/Bangkok, whose day began at 17:00 UTC yesterday. Every test arranges its own signed-in user, items and events: the seed already
 // holds answers for Tom.
 [TestFixture]
 public class AnsweredReaderTests : ApiFixture
@@ -32,18 +33,9 @@ public class AnsweredReaderTests : ApiFixture
 
     private static readonly DateTimeOffset Now = TestDates.Today.AddHours(12);
 
-    private static readonly TimeZoneInfo Zone = TimeZoneInfo.CreateCustomTimeZone("UTC+7", TimeSpan.FromHours(7), "UTC+7", "UTC+7");
-
-    private static readonly FakeTimeProvider Clock = CreateClock();
+    private static readonly FakeTimeProvider Clock = new(Now);
 
     protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddSingleton<TimeProvider>(Clock);
-
-    private static FakeTimeProvider CreateClock()
-    {
-        var clock = new FakeTimeProvider(Now);
-        clock.SetLocalTimeZone(Zone);
-        return clock;
-    }
 
     [Test]
     public async Task GetAnswered_WhenEightDecisionsConfirmedTogether_ShouldMakeOneRowApprovedD1ToD8()
@@ -65,7 +57,7 @@ public class AnsweredReaderTests : ApiFixture
         row.Labels.ShouldBe("D1–D8");
         row.Summary.ShouldBe("Approved D1–D8");
         row.AnsweredAt.ShouldBe(at);
-        row.AnsweredAtLabel.ShouldBe(DisplayDate.Relative(at, Clock));
+        row.AnsweredAtLabel.ShouldBe(DisplayDate.Relative(at, Now, TimeZoneInfo.Utc));
         row.Next.ShouldBeNull();
     }
 
@@ -173,7 +165,7 @@ public class AnsweredReaderTests : ApiFixture
         next.AgentName.ShouldBe(OtherAgent);
         next.By!.Id.ShouldBe(SeedIds.Users.Priya);
         next.At.ShouldBe(pickedUpAt);
-        next.AtLabel.ShouldBe(DisplayDate.Relative(pickedUpAt, Clock));
+        next.AtLabel.ShouldBe(DisplayDate.Relative(pickedUpAt, Now, TimeZoneInfo.Utc));
     }
 
     [Test]
@@ -345,14 +337,15 @@ public class AnsweredReaderTests : ApiFixture
     {
         await using var connection = await OpenDatabaseAsync();
         var me = await MemberAsync(connection);
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Of(me), ViewerZoneTestData.BangkokId);
         var pickedUp = await ItemAsync(connection, "Picked up");
         var waiting = await ItemAsync(connection, "Waiting");
         var replied = await ItemAsync(connection, "Replied");
         var yesterdayPickedUp = await ItemAsync(connection, "Yesterday picked up");
-        var today = DisplayDate.StartOfDay(DisplayDate.Today(Now, Zone), Zone);
+        var today = DisplayDate.StartOfDay(DisplayDate.Today(Now, ViewerZoneTestData.Bangkok), ViewerZoneTestData.Bangkok);
         today.ShouldBe(TestDates.Today.AddHours(-7));
 
-        // Just after the server's midnight counts as today (a UTC midnight would call it yesterday), and one minute before is not.
+        // Just after the viewer's midnight counts as today (a UTC midnight would call it yesterday), and one minute before is not.
         var justToday = today.AddMinutes(1);
         var justYesterday = today.AddMinutes(-1);
         await DecisionEventsAsync(connection, pickedUp, me, "confirmed", justToday, 1);

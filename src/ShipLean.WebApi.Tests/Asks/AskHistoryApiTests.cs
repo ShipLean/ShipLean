@@ -8,6 +8,8 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.Core;
+using ShipLean.TestSupport.Identity;
 
 namespace ShipLean.WebApi.Tests.Asks;
 
@@ -197,5 +199,27 @@ public class AskHistoryApiTests : ApiFixture
         line.From.ShouldBeNull();
         line.To.ShouldBeNull();
         line.Note.ShouldBeNull();
+    }
+
+    // Mutation: pass TimeZoneInfo.Utc instead of viewerZone.Zone to the Relative call in AskHistory.
+    [Test]
+    public async Task History_WhenViewerIsInBangkok_ShouldDateAnEntryByTheBangkokDay()
+    {
+        var item = await ArrangeItemAsync();
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await RaisedAsync(connection, item, ViewerZoneTestData.LateEveningUtc);
+        }
+
+        await ViewerZoneArrange.SetAsync(Api, TestUser.Mei, ViewerZoneTestData.BangkokId);
+        using var response = await Api.ActingAs(TestUser.Mei).GetAsync($"api/work-items/{item}/history");
+        var text = await response.Content.ReadAsStringAsync();
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
+        var line = JsonSerializer.Deserialize<HistoryDto>(text, WireOptions)!.Asks.Single();
+
+        var now = TimeProvider.System.GetUtcNow();
+        var expected = DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, ViewerZoneTestData.Bangkok);
+        expected.ShouldNotBe(DisplayDate.Relative(ViewerZoneTestData.LateEveningUtc, now, TimeZoneInfo.Utc));
+        line.AtLabel.ShouldBe(expected);
     }
 }
