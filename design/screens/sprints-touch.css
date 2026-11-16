@@ -50,6 +50,7 @@
 
   /* Empty (P7): what the page is for, and the one thing to do. */
   :root.spt-is-empty .card.vel { display: none; }
+  :root.spt-is-empty .head .btn { display: none; } /* the panel holds the one action */
   .spt-empty:not([hidden]) { display: grid; justify-items: start; gap: var(--space-2); padding: var(--space-4) var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
   .spt-empty b { font-size: var(--text-md); }
   .spt-empty p { margin: 0; font-size: var(--text-base); color: var(--color-muted); }

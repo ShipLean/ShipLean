@@ -48,7 +48,7 @@
   const newBtn = el('button', 'btn primary spt-new', '+ New sprint');
   newBtn.type = 'button';
   head.append(newBtn);
-  if (empty) head.querySelector('.sm').textContent = 'Storefront · no sprints yet';
+  if (empty) head.querySelector('.sm').textContent = 'Storefront · no sprints';
 
   /* Cards: name them so the CSS can tell them apart, then add the phone pieces */
   const cards = [...document.querySelectorAll('.main > .card')];
@@ -76,7 +76,7 @@
       s += bar(cx - bw - 1, c, 'var(--chart-committed)') + bar(cx + 1, d, 'var(--chart-completed)');
       s += `<text x="${cx}" y="${H - 5}" text-anchor="middle">${n.replace('Sprint ', 'S')}</text>`;
     });
-    return s + `</svg><div class="sm muted" style="padding:2px 0 4px">Velocity <b style="color:var(--color-text)">${VELOCITY}</b> (dashed): the average completed over the last three. S19 = Sprint 19.</div>`;
+    return s + `</svg><div class="sm muted" style="padding:2px 0 4px">Velocity <b style="color:var(--color-text)">${VELOCITY}</b> (dashed): the average completed over the last three sprints.</div>`;
   }
 
   // Rows: name and dates; the goal; Capacity · Committed · Completed; a capacity note as its own line (P8).
@@ -132,7 +132,7 @@
         <hr>
         ${opt(ICON.edit, 'Edit sprint', { hint: 'Name, dates and goal' })}
         ${s.status === 'current' ? opt(ICON.close, 'Close sprint', { hint: 'Choose where unfinished work goes', chev: true, href: 'sprint-end.html' }) : ''}
-        ${s.status === 'past' ? '<p class="foot">Closed. Its committed and completed points are read from the history at its end date and don\'t change.</p>' : ''}
+        ${s.status === 'past' ? '<p class="foot">Ended. Its committed and completed points come from the history at its end date.</p>' : ''}
       </div>`;
     sheet.hidden = false;
   }

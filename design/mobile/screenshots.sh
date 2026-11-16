@@ -253,6 +253,14 @@ declare -A shots=(
   [decisions-empty]="decisions.html?state=empty&at=Decisions"
   [decisions-feature]="decisions.html?state=feature&at=Decisions"
   [decisions-rail]="decisions.html?state=waiting&at=History"
+  # All sprints on a phone (SHIP-1807, SHIP-1626 K7): screens/sprints.html with sprints-touch.css/js
+  [sprints]="sprints.html"
+  [sprints-list]="sprints.html?at=list"
+  [sprints-more]="sprints.html?sheet=more:s24"
+  [sprints-more-past]="sprints.html?sheet=more:s21"
+  [sprints-new]="sprints.html?new"
+  [sprints-new-overlap]="sprints.html?new=overlap"
+  [sprints-empty]="sprints.html?empty"
 )
 
 names=("$@")
