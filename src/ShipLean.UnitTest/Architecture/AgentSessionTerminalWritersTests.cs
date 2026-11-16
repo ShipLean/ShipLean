@@ -88,12 +88,12 @@ public class AgentSessionTerminalWritersTests
 
         writers.Select(w => w.File).Distinct().Order(StringComparer.Ordinal).ShouldBe(KnownWriters, ignoreOrder: true);
         // The number of UPDATEs, not only of files: a reader that stopped seeing one of a file's two writers would otherwise pass.
-        writers.GroupBy(w => w.File).ToDictionary(g => g.Key, g => g.Count()).ShouldBe(new Dictionary<string, int>
-        {
-            ["src/ShipLean.Application/Features/AgentDispatch/AgentDeliverer.cs"] = 2,
-            ["src/ShipLean.Application/Features/AgentDispatch/AgentReports.cs"] = 2,
-            ["src/ShipLean.Application/Features/AgentDispatch/AgentStaleSweeper.cs"] = 1,
-        });
+        writers.GroupBy(w => w.File).OrderBy(g => g.Key, StringComparer.Ordinal).Select(g => $"{g.Key} {g.Count()}").ShouldBe(
+        [
+            "src/ShipLean.Application/Features/AgentDispatch/AgentDeliverer.cs 2",
+            "src/ShipLean.Application/Features/AgentDispatch/AgentReports.cs 2",
+            "src/ShipLean.Application/Features/AgentDispatch/AgentStaleSweeper.cs 1",
+        ]);
         writers.Count.ShouldBe(5);
     }
 
