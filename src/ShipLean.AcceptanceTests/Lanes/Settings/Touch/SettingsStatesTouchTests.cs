@@ -5,7 +5,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.Settings.Touch;
 
-// The States tab on a phone (P5; SHIP-1809 P4/P5): a type select, state rows with a ⠿ handle and a ⋯ sheet of actions,
+// The States tab on a phone (P5; SHIP-1809 P4/P5): a row of type chips, state rows with a ⠿ handle and a ⋯ sheet of actions,
 // and a stacked delete form.
 // Joel is the admin; nothing here saves. The touch rules are checked on the States panel only.
 [TestFixture]
@@ -23,17 +23,19 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
     {
         var states = new SettingsStatesPage(Page);
         await states.OpenAsync();
-        var select = Page.GetByTestId(SettingsTestIds.StateTypeSelect);
-        await Expect(select).ToBeVisibleAsync();
-        await Expect(Page.GetByTestId(SettingsTestIds.StateTypeStory)).ToBeHiddenAsync();
-        (await select.EvaluateAsync<string>("e => getComputedStyle(e).fontSize")).ShouldBe("16px");
+        await Expect(Page.GetByTestId(SettingsTestIds.StateTypeSelect)).ToHaveCountAsync(0);
+        var story = Page.GetByTestId(SettingsTestIds.StateTypeStory);
+        await Expect(story).ToHaveAttributeAsync("aria-pressed", "true");
         await Expect(states.Rows).ToHaveCountAsync(5);
 
-        await select.SelectOptionAsync(new SelectOptionValue { Index = 4 });
-        await Expect(select).ToHaveValueAsync("task");
+        var task = Page.GetByTestId(SettingsTestIds.StateTypeTask);
+        await task.TapAsync();
+        await Expect(task).ToHaveAttributeAsync("aria-pressed", "true");
         await Expect(states.Rows.First).ToBeVisibleAsync();
-        await select.SelectOptionAsync(new SelectOptionValue { Index = 2 });
+        await story.TapAsync();
         await Expect(states.Rows).ToHaveCountAsync(5);
+        foreach (var chip in new[] { story, task, Page.GetByTestId(SettingsTestIds.StateAddOpen) })
+            (await chip.BoundingBoxAsync())!.Height.ShouldBeGreaterThanOrEqualTo(32);
 
         for (var i = 0; i < 5; i++)
         {
