@@ -108,17 +108,17 @@ test('BacklogSummary_WhenNothingHidden_ShouldLeaveTheFilterFooterCountOut', asyn
   await expect(page.getByTestId(ids.filterCount)).toHaveText('Applies as you change it');
 });
 
-test('BacklogToolbar_WhenStoriesList_ShouldPutTheStripAboveTheSummaryLine', async ({
+test('BacklogToolbar_WhenStoriesList_ShouldPutTheBannerAboveTheSummaryLine', async ({
   mount,
   page,
 }) => {
   await stubBacklog(page, { ...backlogView(ROWS), review: review({ unestimated: [ROWS[0].id] }) });
   await mount(<ListMode project={PROJECT} />, stories);
-  const strip = await page.getByTestId(ids.notEstimatedBanner).boundingBox();
+  const banner = await page.getByTestId(ids.notEstimatedBanner).boundingBox();
   const summary = await page.getByTestId(ids.summary).boundingBox();
   const toolbarRow = await page.getByTestId(ids.toolbarRow).boundingBox();
-  expect(strip!.y).toBeGreaterThanOrEqual(toolbarRow!.y + toolbarRow!.height);
-  expect(summary!.y).toBeGreaterThanOrEqual(strip!.y + strip!.height - 0.5);
+  expect(banner!.y).toBeGreaterThanOrEqual(toolbarRow!.y + toolbarRow!.height);
+  expect(summary!.y).toBeGreaterThanOrEqual(banner!.y + banner!.height - 0.5);
 });
 
 test('BacklogMoreSheet_OnStoriesList_ShouldGiveEachRowItsIconAndHint', async ({ mount, page }) => {

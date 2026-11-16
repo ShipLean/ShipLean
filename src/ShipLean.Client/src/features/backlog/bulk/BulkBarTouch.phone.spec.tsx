@@ -204,7 +204,7 @@ test('PlanningRows_WhenSelecting_ShouldShowBoxesInPlaceOfHandles', async ({ moun
   await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
 });
 
-test('BeforeYouPlan_WhenTouch_ShouldMakeEachCheckATouchTarget', async ({ mount, page }) => {
+test('BeforeYouPlan_WhenTouch_ShouldMakeTheBannersEstimateATouchTarget', async ({ mount, page }) => {
   const rows = [1, 2].map((n) => itemRow({ key: `SHIP-${n}`, rank: n, points: null }));
   await stubBacklog(page, { ...backlogView(rows), review: review({ unestimated: [rows[0].id] }) });
   await mount(
@@ -215,8 +215,9 @@ test('BeforeYouPlan_WhenTouch_ShouldMakeEachCheckATouchTarget', async ({ mount, 
   );
   await expect(page.getByTestId(ids.row)).toHaveCount(2);
 
-  for (const chip of await page.getByTestId(ids.planCheck).all()) {
-    const box = await chip.boundingBox();
-    expect(box?.height).toBeGreaterThanOrEqual(32);
-  }
+  // At touch the only check is the not-estimated banner (SHIP-1626 D5); its Estimate is the target.
+  const estimate = page.getByTestId(ids.notEstimatedEstimate);
+  await expect(estimate).toHaveCount(1);
+  const box = await estimate.boundingBox();
+  expect(box!.height).toBeGreaterThanOrEqual(32);
 });

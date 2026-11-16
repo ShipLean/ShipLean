@@ -86,8 +86,11 @@ export function PlanningScreen({
   const selectActions = useSelectMoreActions(queue, view.review);
   const search = useBacklogSearch();
   const queuedSections = useMemo(
-    () => view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
-    [view.sections, queue],
+    () =>
+      touch
+        ? view.sections
+        : view.sections.map((section) => ({ ...section, rows: queue.apply(section.rows) })),
+    [touch, view.sections, queue],
   );
   const queued = useMemo(() => queuedSections.flatMap((section) => section.rows), [queuedSections]);
   const sections = useMemo(
@@ -105,8 +108,10 @@ export function PlanningScreen({
         .flatMap((section) => section.rows.map((row) => row.id)),
     [sections, searchCollapse],
   );
-  // Drag and the pull line stop for a search or a check queue; adding stops for a search only.
-  const filtering = search.active || queue.active;
+  // Drag and the pull line stop for a search or a check queue; adding stops for a search only. At touch the queue lives
+  // in the Estimate sheet and the rows behind it stay whole (SHIP-1626 BACKLOG-3), so it narrows nothing.
+  const queueNarrows = queue.active && !touch;
+  const filtering = search.active || queueNarrows;
   return (
     <QueueFixedProvider review={view.review} queue={queue} queued={queued}>
       <SelectionProvider walkOrder={walkOrder}>
@@ -133,7 +138,7 @@ export function PlanningScreen({
                 keys={() => <KeysButton />}
                 moreActions={[...selectActions, ...moreActions]}
               />
-              <MovingOffBanner search={search} queue={queue} />
+              <MovingOffBanner search={search} queueNarrows={queueNarrows} />
               {reorder.conflict ? (
                 <ReorderConflict
                   conflict={reorder.conflict}

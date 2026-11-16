@@ -68,7 +68,8 @@ export interface Estimate {
    * when the server answers the save: true when it saved (or nothing changed), false on a conflict or an error.
    */
   commit: (value: number | null, walk: boolean) => Promise<boolean>;
-  useMine: () => void;
+  /** Sends the conflicting value at the revision the conflict named. Resolves as `commit` does. */
+  useMine: () => Promise<boolean>;
   keepTheirs: () => void;
 }
 
@@ -155,8 +156,10 @@ export function useEstimate(row: BacklogRowDto): Estimate {
           tone: 'danger',
         });
       }
+    } finally {
+      // Whatever happened above, the caller hears back, so a sheet waiting on the save never stays waiting.
+      answered(saved);
     }
-    answered(saved);
     const next = queued.current;
     queued.current = null;
     if (next !== null && stale !== null) {
@@ -207,9 +210,11 @@ export function useEstimate(row: BacklogRowDto): Estimate {
     },
     cancel: () => setEditing(null),
     commit,
-    useMine: () => {
-      if (conflict !== null) void send(conflict.value, conflict.currentRevision);
-    },
+    useMine: () =>
+      new Promise<boolean>((resolve) => {
+        if (conflict === null) resolve(false);
+        else void send(conflict.value, conflict.currentRevision, resolve);
+      }),
     keepTheirs: () => {
       setConflict(null);
       void refetch(latest()?.projectId);

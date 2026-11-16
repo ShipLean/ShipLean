@@ -44,8 +44,12 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   const { reorder } = touchReorder;
   const queue = useCheckQueue();
   const search = useBacklogSearch();
+  // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
+  const { touch } = useTouchShell();
+  // At touch the queue lives in the Estimate sheet, so the list behind it keeps every row (SHIP-1626 BACKLOG-3).
+  const queueNarrows = queue.active && !touch;
   const items = useMemo(() => state.rows.filter((row) => row.kind === 'item'), [state.rows]);
-  const queued = useMemo(() => queue.apply(items), [queue, items]);
+  const queued = useMemo(() => (touch ? items : queue.apply(items)), [touch, queue, items]);
   const searched = useMemo(() => search.apply(queued), [search, queued]);
   const shown = useMemo(
     () => BACKLOG_COLUMNS.filter((c) => !state.view.hidden.includes(c.id)).map((c) => c.id),
@@ -57,10 +61,8 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
   // Drag stops for a filter, a search, a check queue or a column sort; adding stops for a filter or a search only
   // (a sort stops adding below a row, which ListTable handles).
   const addingOff = state.filtering || search.active;
-  const narrowed = addingOff || queue.active;
+  const narrowed = addingOff || queueNarrows;
   const filtering = narrowed || sort.sorted;
-  // At 900px and below the rows are touch rows, not the table (SHIP-716 D1); no handles while filtering or selecting.
-  const { touch } = useTouchShell();
   const { selecting } = useTouchSelectMode();
   const selectActions = useSelectMoreActions(queue, state.backlog.data?.review ?? null);
   useReconnectSummary(state.queryKey);
@@ -83,7 +85,7 @@ export function ListScreen({ project, state }: { project: ProjectDto; state: Bac
                   rowCount={rows.length}
                   shownRows={rows}
                   quietBanner={
-                    touch && search.active && !state.filtering && !queue.active && !sort.sorted
+                    touch && search.active && !state.filtering && !queueNarrows && !sort.sorted
                   }
                   filtering={filtering}
                   options={touch ? undefined : () => <AddManyButton />}

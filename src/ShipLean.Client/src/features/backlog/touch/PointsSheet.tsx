@@ -86,11 +86,13 @@ export function PointsBody({
   const [text, setText] = useState(estimate.shown === null ? '' : String(estimate.shown));
   const [invalid, setInvalid] = useState(false);
   const [state, setState] = useState<'idle' | 'saving' | 'failed'>('idle');
-  const save = async (value: number | null) => {
+  // A pick, Save or Use mine: wait for the server, then move on, or stay on the item and say so.
+  const settle = async (sent: Promise<boolean>) => {
     setState('saving');
-    if (await estimate.commit(value, false)) onSaved();
+    if (await sent) onSaved();
     else setState('failed');
   };
+  const save = (value: number | null) => settle(estimate.commit(value, false));
   const saveText = () => {
     const parsed = parsePoints(text);
     if (!parsed.ok) {
@@ -107,8 +109,11 @@ export function PointsBody({
       {estimate.conflict !== null ? (
         <ConflictBanner
           changedBy={`${estimate.conflict.changedBy} (${row.key})`}
-          onUseMine={estimate.useMine}
-          onKeepTheirs={estimate.keepTheirs}
+          onUseMine={() => void settle(estimate.useMine())}
+          onKeepTheirs={() => {
+            setState('idle');
+            estimate.keepTheirs();
+          }}
         />
       ) : (
         <>
@@ -192,6 +197,7 @@ export function PointsBody({
           <button
             type="button"
             data-testid={ids.queueSkip}
+            disabled={state === 'saving'}
             className={buttonClass}
             onClick={queue.onSkip}
           >
