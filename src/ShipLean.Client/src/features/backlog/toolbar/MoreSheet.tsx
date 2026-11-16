@@ -6,22 +6,6 @@ import { backlogTestIds as ids } from '../testIds';
 
 const TITLES: Record<Level, string> = { stories: 'Stories', features: 'Features', epics: 'Epics' };
 
-function SearchIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-4-4" />
-    </svg>
-  );
-}
-
 export interface MoreSheetProps {
   // The sheet's title: the level's name, or Planning.
   level: Level;
@@ -81,7 +65,6 @@ export function MoreSheet({
               action={{
                 id: 'search',
                 label: 'Search this list',
-                icon: <SearchIcon />,
                 onSelect: onSearch,
               }}
               onClose={close}
