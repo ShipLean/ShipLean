@@ -183,3 +183,21 @@ test('PlanningMore_AddMany_ShouldBeASheetAction', async ({ mount, page }) => {
   await expect(page.locator(actionRow('add-many'))).toContainText('Add many');
   await expect(page.getByTestId(ids.addMany)).toHaveCount(0);
 });
+
+test('PlanningTouchRow_InItsOwnSprintSection_ShouldHideTheSprintChipAndStackPointsOverTheAvatar', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningView(), { saved });
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  const rows = section(page, 'Sprint 25').getByTestId(ids.row);
+  await expect(rows.first()).toBeVisible();
+  await expect(section(page, 'Sprint 25').getByTestId(ids.sprintChip)).toHaveCount(0);
+  const row = rows.first();
+  const points = await row.getByTestId(ids.points).boundingBox();
+  const avatar = await row.getByTestId(ids.assignee).boundingBox();
+  expect(points).not.toBeNull();
+  expect(avatar).not.toBeNull();
+  expect(points!.y + points!.height).toBeLessThanOrEqual(avatar!.y + 1);
+});

@@ -171,12 +171,14 @@ export function RowActions({ row, children }: { row: BacklogRowDto; children?: R
   const pointsOpen = sub === 'points' || estimate.conflict !== null;
   return (
     <>
-      <Points
-        row={row}
-        shown={estimate.shown}
-        onOpen={estimate.editable && !selecting ? () => setSub('points') : null}
-      />
-      {children}
+      <div className="flex flex-col items-center">
+        <Points
+          row={row}
+          shown={estimate.shown}
+          onOpen={estimate.editable && !selecting ? () => setSub('points') : null}
+        />
+        {children}
+      </div>
       {runner !== null && !selecting && projectId !== null ? (
         <MoreActions row={row} open={() => peek.open(row.key)} setSub={setSub} />
       ) : null}
