@@ -1,6 +1,8 @@
 using Dapper;
 using ShipLean.Contracts.Import;
 using ShipLean.Contracts.Import.Jira;
+using ShipLean.Contracts.Persisted;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Identity;
@@ -24,7 +26,7 @@ public class ImportJobViewerZoneTests : ImportJobsFixture
         await using var connection = await OpenDatabaseAsync();
         await connection.ExecuteAsync("UPDATE import_log SET logged_at = @at WHERE import_job_id = @id", new { at = LoggedAt, id = job.Id });
 
-        return (await LogAsync(job.Id)).First().TimeLabel;
+        return (await LogAsync(job.Id))[0].TimeLabel;
     }
 
     [Test, Order(1)]

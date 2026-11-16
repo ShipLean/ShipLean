@@ -7,6 +7,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Identity;
+using ShipLean.TestSupport.Jira;
 
 namespace ShipLean.WebApi.Tests.Import.Jira;
 
