@@ -1,11 +1,34 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, createElement } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { browserZone } from './browserZone';
-import { useBrowserZoneOnLoad } from './useBrowserZoneOnLoad';
 
-vi.mock('./browserZone', () => ({ browserZone: vi.fn(() => 'Asia/Bangkok') }));
+// The hook keeps its once-per-page-load flag at module level, so each test loads the whole module graph (React and the query
+// library with it) again, like a fresh page load. The browser zone is a stub the test picks.
+async function freshPage(zone: () => string | null) {
+  vi.resetModules();
+  vi.doMock('./browserZone', () => ({ browserZone: zone }));
+  const [{ QueryClient, QueryClientProvider }, { act, createElement }, { createRoot }, hook] =
+    await Promise.all([
+      import('@tanstack/react-query'),
+      import('react'),
+      import('react-dom/client'),
+      import('./useBrowserZoneOnLoad'),
+    ]);
+  const roots: { unmount(): void }[] = [];
+  function Probe() {
+    hook.useBrowserZoneOnLoad();
+    return null;
+  }
+  // One shell mount under its own query client, with another screen's query already cached; the returned function unmounts it.
+  function mount() {
+    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(OTHER_KEY, 'labels in UTC');
+    const root = createRoot(document.createElement('div'));
+    roots.push(root);
+    act(() => root.render(createElement(QueryClientProvider, { client }, createElement(Probe))));
+    return { client, unmount: () => act(() => root.unmount()) };
+  }
+  return { mount, act, cleanup: () => roots.forEach((root) => act(() => root.unmount())) };
+}
 
 const OTHER_KEY = ['other-screen'] as const;
 
@@ -30,26 +53,18 @@ function stubServer(zone: string | null) {
   return sent;
 }
 
-const roots: Root[] = [];
+let cleanup: (() => void) | undefined;
 afterEach(() => {
-  roots.splice(0).forEach((root) => act(() => root.unmount()));
+  cleanup?.();
+  cleanup = undefined;
   vi.unstubAllGlobals();
-  vi.mocked(browserZone).mockReturnValue('Asia/Bangkok');
+  vi.doUnmock('./browserZone');
 });
 
-// The hook in a bare component under its own query client, with another screen's query already cached.
-function mount() {
-  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  client.setQueryData(OTHER_KEY, 'labels in UTC');
-  function Probe() {
-    useBrowserZoneOnLoad();
-    return null;
-  }
-  const root = createRoot(document.createElement('div'));
-  roots.push(root);
-  act(() => root.render(createElement(QueryClientProvider, { client }, createElement(Probe))));
-  return client;
+async function page(zone: () => string | null = () => 'Asia/Bangkok') {
+  const loaded = await freshPage(zone);
+  cleanup = loaded.cleanup;
+  return loaded;
 }
 
 const puts = (sent: { method: string }[]) => sent.filter((s) => s.method === 'PUT');
@@ -59,6 +74,7 @@ const meReads = (sent: { method: string; path: string }[]) =>
 describe('useBrowserZoneOnLoad', () => {
   test('useBrowserZoneOnLoad_WhenUserHasNoZone_ShouldSendTheBrowsersZoneOnce', async () => {
     const sent = stubServer(null);
+    const { mount } = await page();
     mount();
 
     // The save re-reads ['me'], which still answers no zone here: the hook must not send again.
@@ -72,28 +88,55 @@ describe('useBrowserZoneOnLoad', () => {
     ]);
   });
 
-  test('useBrowserZoneOnLoad_WhenUserHasAZone_ShouldSendNothing', async () => {
+  // Mutation: drop the module-level once flag (use a per-mount ref instead).
+  test('useBrowserZoneOnLoad_WhenShellMountsAgain_ShouldNotSendAgain', async () => {
+    const sent = stubServer(null);
+    const { mount } = await page();
+    const first = mount();
+    await vi.waitFor(() => expect(puts(sent)).toHaveLength(1));
+    first.unmount();
+
+    mount();
+
+    await vi.waitFor(() => expect(meReads(sent)).toBeGreaterThanOrEqual(3));
+    await Promise.resolve();
+    expect(puts(sent)).toHaveLength(1);
+  });
+
+  test('useBrowserZoneOnLoad_WhenUserHasAZone_ShouldSendNothingAndAskNoZone', async () => {
     const sent = stubServer('Europe/London');
+    const zone = vi.fn(() => 'Asia/Bangkok');
+    const { mount, act } = await page(zone);
     mount();
 
     await vi.waitFor(() => expect(meReads(sent)).toBe(1));
     await act(() => Promise.resolve());
     expect(puts(sent)).toEqual([]);
+    expect(zone).not.toHaveBeenCalled();
   });
 
-  test('useBrowserZoneOnLoad_WhenBrowserGivesNoZone_ShouldSendNothing', async () => {
-    vi.mocked(browserZone).mockReturnValue(null);
+  test('useBrowserZoneOnLoad_WhenBrowserGivesNoZone_ShouldSendNothingAndNotRetry', async () => {
     const sent = stubServer(null);
-    mount();
-
+    const zone = vi.fn<() => string | null>(() => null);
+    const { mount, act } = await page(zone);
+    const first = mount();
     await vi.waitFor(() => expect(meReads(sent)).toBe(1));
     await act(() => Promise.resolve());
+    first.unmount();
+    zone.mockReturnValue('Asia/Bangkok');
+
+    mount();
+
+    await vi.waitFor(() => expect(meReads(sent)).toBe(2));
+    await act(() => Promise.resolve());
+    expect(zone).toHaveBeenCalledTimes(1);
     expect(puts(sent)).toEqual([]);
   });
 
   test('useBrowserZoneOnLoad_WhenSaved_ShouldInvalidateEveryQuery', async () => {
     const sent = stubServer(null);
-    const client = mount();
+    const { mount } = await page();
+    const { client } = mount();
 
     await vi.waitFor(() => expect(puts(sent)).toHaveLength(1));
     await vi.waitFor(() => expect(client.getQueryState(OTHER_KEY)?.isInvalidated).toBe(true));
