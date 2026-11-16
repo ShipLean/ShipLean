@@ -48,6 +48,38 @@ public class ViewerTimeZoneTests
         string.Join(Environment.NewLine, problems).ShouldBeEmpty("A baseline entry above what remains hides a new violation.");
     }
 
+    [Test]
+    public void Baseline_WhenComparedWithTheCapture_ShouldOnlyHaveLostLines()
+    {
+        var captured = TimeZoneBaselineCapture.Entries.ToDictionary(e => (e.Path, e.Token), e => e.Count);
+        var lines = BaselineLines().ToList();
+        var problems = lines
+            .Where(l => l.Count > captured.GetValueOrDefault(l.Key))
+            .Select(l => $"{l.Key.Path}\t{l.Key.Token}\t{l.Count}: {BaselineFolder}/{l.Lane}.txt may not add a line or raise a count "
+                         + $"(captured {captured.GetValueOrDefault(l.Key)}); fix the violation instead")
+            .Concat(lines
+                .GroupBy(l => l.Lane)
+                .Where(g => g.Count() > TimeZoneBaselineCapture.LaneLineCeilings.GetValueOrDefault(g.Key))
+                .Select(g => $"{BaselineFolder}/{g.Key}.txt has {g.Count()} lines, above its ceiling of "
+                             + $"{TimeZoneBaselineCapture.LaneLineCeilings.GetValueOrDefault(g.Key)}"))
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        string.Join(Environment.NewLine, problems).ShouldBeEmpty("Lanes only remove baseline lines.");
+    }
+
+    [Test]
+    public void ClientAllowLists_WhenComparedWithTheCapture_ShouldOnlyHaveLostFiles()
+    {
+        var problems = TimeZoneBaselineCapture.ClientAllowLists
+            .SelectMany(app => ClientAllowList(app.Key)
+                .Where(file => !app.Value.Contains(file, StringComparer.Ordinal))
+                .Select(file => $"src/{app.Key}/eslint/dates-allowlist.json: '{file}' was not on the captured list; fix its dates instead"))
+            .ToList();
+
+        string.Join(Environment.NewLine, problems).ShouldBeEmpty("Allow-lists only lose files.");
+    }
+
     [TestCase("DisplayDate.Relative(a, now, zone);", "")]
     [TestCase("DisplayDate.Relative(a, clock);", ViewerTimeZoneScanner.OldRelative)]
     [TestCase("DisplayDate.Relative(F(a, b), clock);", ViewerTimeZoneScanner.OldRelative)]
@@ -98,6 +130,13 @@ public class ViewerTimeZoneTests
             .GroupBy(l => l.Key)
             .Where(g => g.Count() > 1)
             .Select(g => $"{g.Key.Path}\t{g.Key.Token}: listed more than once ({string.Join(", ", g.Select(l => l.Lane + ".txt"))}); keep one line");
+
+    private static IEnumerable<string> ClientAllowList(string app)
+    {
+        var file = Path.Combine(RepoPaths.Root, "src", app, "eslint", "dates-allowlist.json");
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllText(file));
+        return json.RootElement.EnumerateArray().Select(entry => entry.GetProperty("file").GetString() ?? "").ToList();
+    }
 
     private static IEnumerable<((string Path, string Token) Key, int Count, string Lane)> BaselineLines()
     {
