@@ -5,6 +5,7 @@ import { rollupBoard, storiesBoard } from '../../features/board/ct/fixtures';
 import { stubBoard } from '../../features/board/ct/stubApi';
 import { boardTestIds as ids } from '../../features/board/testIds';
 import { touchTestIds } from '../../touch/testIds';
+import { CHECKOUT_FEATURES, epicsBoard } from './fixtures/boards';
 import type { Page } from './shoot';
 
 // The card's actions sheet, the Assign sheet and the children list on a phone (SHIP-719, L719e), as element shots of this task's regions only.
@@ -13,6 +14,7 @@ import type { Page } from './shoot';
 const THEMES = ['light', 'dark'] as const;
 const stories = { hooksConfig: { route: '/p/SHIP/boards/stories' } };
 const features = { hooksConfig: { route: '/p/SHIP/boards/features' } };
+const epics = { hooksConfig: { route: '/p/SHIP/boards/epics' } };
 
 const phoneOnly = (page: Page & { viewportSize(): { width: number } | null }) =>
   expect(page.viewportSize()?.width, 'phone shots run only in the CT phone project').toBe(390);
@@ -77,6 +79,56 @@ for (const theme of THEMES) {
     await expect(list.getByTestId(ids.childRow)).toHaveCount(assignChildren.length);
 
     await expect(list).toHaveScreenshot(`features-board-children.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`BoardAssignPhone_WhenFeatureActionsOpened_ShouldMatchItsScreenshot_features-board-card-actions_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    phoneOnly(page);
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubBoard(page, rollupBoard(), {
+      level: 'features',
+      members: assignMembers,
+      children: () => assignChildren,
+    });
+    await mount(<BoardHarness level="features" />, features);
+    await page
+      .getByTestId(ids.card)
+      .filter({ hasText: 'SHIP-101' })
+      .getByTestId(touchTestIds.moreButton)
+      .tap();
+    const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.locator('[data-action-id="below"]')).toBeVisible();
+
+    await expect(sheet).toHaveScreenshot(`features-board-card-actions.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`BoardAssignPhone_WhenEpicActionsOpened_ShouldMatchItsScreenshot_epics-board-card-actions_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    phoneOnly(page);
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubBoard(page, epicsBoard(), {
+      level: 'epics',
+      members: assignMembers,
+      children: () => CHECKOUT_FEATURES,
+    });
+    await mount(<BoardHarness level="epics" />, epics);
+    await page
+      .getByTestId(ids.card)
+      .filter({ hasText: 'SHIP-89' })
+      .getByTestId(touchTestIds.moreButton)
+      .tap();
+    const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.locator('[data-action-id="below"]')).toBeVisible();
+
+    await expect(sheet).toHaveScreenshot(`epics-board-card-actions.${theme}.png`, {
       animations: 'disabled',
     });
   });

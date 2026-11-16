@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
+import { touchTestIds } from '../../../touch/testIds';
 import { retroSearch, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
 
@@ -26,6 +27,70 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetroPosition)).toContainText('Result 1 of');
     await expect(page.locator('[data-highlighted="true"]')).toHaveCount(1);
     await expect(page).toHaveScreenshot(`retro-search-retro-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`OpenRetroPhone_WhenThePointsThemeIsTapped_ShouldMatchItsScreenshot_retro-search-theme-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubShell(page);
+    await stubRetros(page);
+    await mount(<AppRoutes />, { hooksConfig: { route } });
+    await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
+    await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteTheme).tap();
+    await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
+    await expect(page.getByTestId(shared.retroThemePicker)).toBeVisible();
+    await expect(page).toHaveScreenshot(`retro-search-theme-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`OpenRetroPhone_WhenTheNoteMoreIsTapped_ShouldMatchItsScreenshot_retro-search-note-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubShell(page);
+    await stubRetros(page);
+    await page.route(searchRoute, (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...retroSearch,
+          selected: {
+            ...retroSearch.selected,
+            points: retroSearch.selected!.points.map((p) =>
+              p.id === point.id ? { ...p, canArchive: true } : p,
+            ),
+          },
+        }),
+      }),
+    );
+    await mount(<AppRoutes />, { hooksConfig: { route } });
+    await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
+    await page.locator('[data-highlighted="true"]').getByTestId(touchTestIds.moreButton).tap();
+    await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+    await expect(page).toHaveScreenshot(`retro-search-note-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`OpenRetroPhone_WhenAddActionItemIsTapped_ShouldMatchItsScreenshot_retro-search-action-phone_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubShell(page);
+    await stubRetros(page);
+    await mount(<AppRoutes />, { hooksConfig: { route } });
+    await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
+    await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteAddAction).tap();
+    await expect(page.getByTestId(shared.retroActionCreate)).toBeVisible();
+    await expect(page).toHaveScreenshot(`retro-search-action-phone.${theme}.png`, {
       animations: 'disabled',
     });
   });

@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { PROJECT, planningView } from '../../features/backlog/ct/fixtures';
+import { PROJECT, planningSprints, planningView } from '../../features/backlog/ct/fixtures';
 import { stubBacklog } from '../../features/backlog/ct/stubApi';
 import { PlanningMode } from '../../features/backlog/planning/PlanningMode';
 import { backlogTestIds as ids } from '../../features/backlog/testIds';
 import { touchTestIds } from '../../touch/testIds';
+import { stubShell } from './shellStub';
+import { phonePageShots } from './shootPhone';
 
 // Planning on a phone (SHIP-716, L716d) as element shots of this task's regions only, so the sibling tasks' merges don't
 // move them: a sprint's ⋯ sheet, ⋯ More, and a row lifted over a sprint header. Regenerate with
@@ -92,3 +94,31 @@ for (const theme of THEMES) {
     await send('touchEnd');
   });
 }
+
+// Planning at rest, as a whole page: Sprint 24 over its capacity, forecast marks and the pull line.
+phonePageShots([
+  {
+    name: 'backlogs-planning',
+    route: '/p/SHIP/backlogs/stories?mode=planning',
+    shell: true,
+    arrange: async (page) => {
+      await stubShell(page);
+      await stubBacklog(page, planningView(), { saved, sprints: planningSprints() });
+      // stubBacklog answers every preference key, so the shell's recentProjects PUT would replace the saved backlog view
+      // and close the running sprint; other keys get "nothing saved" and only view:backlog reaches stubBacklog.
+      await page.route('**/api/me/preferences/**', (route) =>
+        decodeURIComponent(route.request().url()).endsWith('/view:backlog')
+          ? route.fallback()
+          : route.fulfill({ status: 204 }),
+      );
+    },
+    // The sections render before the saved view arrives, collapsed by default; wait for Sprint 24's row so the shot
+    // always shows the saved (all open) layout.
+    ready: async (page) => {
+      await expect(page.getByTestId(ids.planningSection)).toHaveCount(4);
+      await expect(
+        page.getByTestId(ids.row).and(page.locator('[data-key="SHIP-160"]')),
+      ).toBeVisible();
+    },
+  },
+]);

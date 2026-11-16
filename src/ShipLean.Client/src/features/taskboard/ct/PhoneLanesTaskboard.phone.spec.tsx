@@ -104,3 +104,27 @@ for (const theme of THEMES) {
     await expect(lane).toHaveScreenshot(`taskboard-unparented-phone-${theme}.png`);
   });
 }
+
+for (const theme of THEMES) {
+  test(`PhoneLanes_WhenOfferShownOnTheClosedPage_ShouldMatchTheScreenshot_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubTaskboard(page, ALL_DONE, { holdLaterReads: true });
+    await mount(slot, route);
+
+    const closed = page.locator(`[data-testid="${touchTestIds.pagerChip}"]`).filter({
+      hasText: /^\s*Closed(?![A-Za-z])/,
+    });
+    await closed.tap();
+    await expect(closed).toHaveAttribute('aria-current', 'true');
+    const closedPage = page.locator(
+      `[data-testid="${touchTestIds.pagerPage}"][data-page-id="t-closed"]`,
+    );
+    const offer = closedPage.getByTestId(ids.rowOffer);
+    // The smooth scroll has settled once the offer is wholly on screen.
+    await expect(offer).toBeInViewport({ ratio: 1 });
+    await expect(page).toHaveScreenshot(`taskboard-alldone-phone.${theme}.png`);
+  });
+}

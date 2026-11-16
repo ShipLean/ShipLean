@@ -93,6 +93,95 @@ for (const theme of THEMES) {
     await expect(page).toHaveScreenshot(`sign-in-change.${theme}.png`, { animations: 'disabled' });
   });
 
+  test(`SignInPhone_WhenGoogleIsOnAndNoNote_ShouldMatchItsScreenshot_sign-in-fresh_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await shoot(page, theme);
+    await stubGoogleInstance(page);
+    await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+    await expect(page.getByTestId(ids.orWithEmail)).toBeVisible();
+    await expect(page.getByTestId(ids.note)).toHaveCount(0);
+    await expect(page).toHaveScreenshot(`sign-in-fresh.${theme}.png`, { animations: 'disabled' });
+  });
+
+  test(`SignInPhone_WhenChoosingAPasswordWithNothingTyped_ShouldMatchItsScreenshot_sign-in-change-empty_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await shoot(page, theme);
+    await stubInstance(page);
+    await stubJson(page, '/api/auth/login', meDto({ status: 'oneTimePassword' }));
+    await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+    await signInWithPassword(page);
+    await expect(page.getByTestId(ids.changeSubmit)).toBeVisible();
+    await expect(page.getByTestId(ids.newPassword)).toHaveValue('');
+    await expect(page).toHaveScreenshot(`sign-in-change-empty.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  for (const state of ['ended', 'google-failed', 'google-refused'] as const) {
+    test(`SignInPhone_WhenTheStateIs_${state}_ShouldMatchItsScreenshot_sign-in-${state}_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      await shoot(page, theme);
+      await stubGoogleInstance(page);
+      await mount(<AppRoutes />, { hooksConfig: { route: `/login?state=${state}` } });
+      await expect(page.getByTestId(ids.note)).toBeVisible();
+      await expect(page).toHaveScreenshot(`sign-in-${state}.${theme}.png`, {
+        animations: 'disabled',
+      });
+    });
+  }
+
+  test(`SignInPhone_WhenAnInstanceIsCalledShipLean_ShouldMatchItsScreenshot_sign-in-instance-shiplean_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await shoot(page, theme);
+    await stubJson(page, '/api/auth/instance', { name: 'ShipLean', googleSignIn: true });
+    await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+    await expect(page.getByTestId(ids.signInForm)).toBeVisible();
+    await expect(page.getByTestId(ids.instanceName)).toHaveCount(0);
+    await expect(page).toHaveScreenshot(`sign-in-instance-shiplean.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  test(`SignInPhone_WhenAMemberCannotCreateProjects_ShouldMatchItsScreenshot_sign-in-no-projects-member_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await shoot(page, theme);
+    await stubInstance(page);
+    await stubJson(page, '/api/me', meDto({ hasProjects: false, canCreateProjects: false }));
+    await mount(<AppRoutes />, { hooksConfig: { route: '/login?state=no-projects' } });
+    await expect(page.getByTestId(ids.signOut)).toBeVisible();
+    await expect(page.getByTestId(ids.newProject)).toHaveCount(0);
+    await expect(page).toHaveScreenshot(`sign-in-no-projects-member.${theme}.png`, {
+      animations: 'disabled',
+    });
+  });
+
+  for (const state of ['disabled', 'ended'] as const) {
+    test(`SignInPhone_WhenBehindAProxyAndTheStateIs_${state}_ShouldMatchItsScreenshot_sign-in-proxy-${state}_${theme}`, async ({
+      mount,
+      page,
+    }) => {
+      await shoot(page, theme);
+      await page.evaluate(() => window.history.replaceState(null, '', '/login'));
+      await stubProxyInstance(page);
+      await stubJson(page, '/api/me', { error: 'Sign in.', code: 'unauthorized' }, 401);
+      await mount(<AppRoutes />, { hooksConfig: { route: `/login?state=${state}` } });
+      await expect(page.getByTestId(ids.proxyMessage)).toBeVisible();
+      await expect(page).toHaveScreenshot(`sign-in-proxy-${state}.${theme}.png`, {
+        animations: 'disabled',
+      });
+    });
+  }
+
   test(`SignInPhone_WhenInNoProjects_ShouldMatchItsScreenshot_sign-in-no-projects_${theme}`, async ({
     mount,
     page,
@@ -221,4 +310,19 @@ test('SignInPhone_WhenChoosingAPassword_ShouldStackTheChecksAndSaveUnderThem', a
   expect(save.height).toBe(40);
   expect(signOut.height).toBeGreaterThanOrEqual(32);
   expect(signOut.y).toBeGreaterThan(save.y);
+});
+
+test('SignInPhone_WhenTheKeyboardCoversTheBottom336px_ShouldKeepSignInVisible', async ({
+  mount,
+  page,
+}) => {
+  phoneOnly(page);
+  await stubGoogleInstance(page);
+  await page.setViewportSize({ width: 390, height: 844 - 336 });
+  await mount(<AppRoutes />, { hooksConfig: { route: '/login' } });
+  await expect(page.getByTestId(ids.signInSubmit)).toBeVisible();
+  for (const id of [ids.email, ids.password, ids.signInSubmit]) {
+    const box = (await page.getByTestId(id).boundingBox())!;
+    expect(box.y + box.height, id).toBeLessThanOrEqual(844 - 336);
+  }
 });
