@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { ProjectDto, ProjectSettingsDto } from '@shiplean/core/api/projects';
 import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { routePath, type ProjectSettingsTab } from '../../../routes';
+import { useTopBar } from '../../../touch/TopBar';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { settingsTestIds } from '../testIds';
 import { GeneralTab } from './GeneralTab';
 import { MembersTab } from './MembersTab';
@@ -10,6 +12,7 @@ import { ReadOnlyBanner } from './ReadOnlyBanner';
 import { SettingsHeader } from './SettingsHeader';
 import { SprintsTab } from './SprintsTab';
 import { TabList } from './TabList';
+import { SettingsIndex } from './touch/SettingsIndex';
 import { SettingsSaveBar } from './touch/SettingsSaveBar';
 import { useSettingsDraft } from './useSettingsDraft';
 import type { DraftField, DraftTab } from './model';
@@ -31,7 +34,8 @@ export interface FocusRequest {
 export const SettingsDraftContext = createContext<SettingsDraftContextValue | undefined>(undefined);
 
 // The frame once the settings are loaded: one draft behind every tab, one Save. States and Integrations are other
-// slices' content, shown untouched on their tabs.
+// slices' content, shown untouched on their tabs. At touch there is no header or tab row: with no tab the index lists
+// the panes, and each pane is a sub-page with ‹ back to it (SHIP-1809 P1, P2). No tab is the index only at touch.
 export function LoadedSettings({
   project,
   settings,
@@ -43,13 +47,19 @@ export function LoadedSettings({
 }: {
   project: ProjectDto;
   settings: ProjectSettingsDto;
-  tab: ProjectSettingsTab;
+  tab: ProjectSettingsTab | undefined;
   states: ReactNode;
   integrations: ReactNode;
   demos: ReactNode;
   inspection?: ReactNode;
 }) {
   const navigate = useNavigate();
+  const { touch } = useTouchShell();
+  useTopBar(
+    touch && tab !== undefined
+      ? { back: { to: routePath('projectSettingsIndex', { key: project.key }), label: 'Settings' } }
+      : {},
+  );
   const readOnly = project.role !== 'admin';
   const { draft, setDraft, changes, errors, stale, saving, saveError, save, discard } =
     useSettingsDraft(project.id, settings);
@@ -99,18 +109,22 @@ export function LoadedSettings({
 
   return (
     <div className="flex h-full min-h-0 flex-col touch:h-auto">
-      <SettingsHeader
-        projectName={project.name}
-        changes={changes}
-        onJump={(change) => jumpTo(change.tab)}
-        readOnly={readOnly}
-        saving={saving}
-        errorCount={errors.length}
-        onSave={() => void submit()}
-        onDiscard={discard}
-      />
+      {touch ? null : (
+        <SettingsHeader
+          projectName={project.name}
+          changes={changes}
+          onJump={(change) => jumpTo(change.tab)}
+          readOnly={readOnly}
+          saving={saving}
+          errorCount={errors.length}
+          onSave={() => void submit()}
+          onDiscard={discard}
+        />
+      )}
       <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)] touch:grid-cols-[minmax(0,1fr)]">
-        <TabList projectKey={project.key} active={tab} dirty={dirty} errored={errored} />
+        {touch || tab === undefined ? null : (
+          <TabList projectKey={project.key} active={tab} dirty={dirty} errored={errored} />
+        )}
         <main className="min-h-0 overflow-auto p-4 touch:overflow-visible touch:p-0">
           {readOnly ? <ReadOnlyBanner projectName={project.name} admins={admins} /> : null}
           {saveError === undefined ? null : (
@@ -130,6 +144,15 @@ export function LoadedSettings({
               A teammate saved these settings; your edits were kept on top of theirs.
             </div>
           ) : null}
+          {tab === undefined && (
+            <SettingsIndex
+              projectKey={project.key}
+              projectName={project.name}
+              memberCount={draft.members.length}
+              dirty={dirty}
+              errored={errored}
+            />
+          )}
           {tab === 'general' && (
             <GeneralTab
               project={project}

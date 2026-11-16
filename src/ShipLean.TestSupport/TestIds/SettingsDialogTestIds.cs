@@ -20,4 +20,5 @@ public static class SettingsDialogTestIds
     public const string CloseGuardSave = "settings-close-guard-save";
     public const string CloseGuardDiscard = "settings-close-guard-discard";
     public const string TouchStatus = "settings-touch-status";
+    public const string ProjectChip = "settings-project-chip";
 }

@@ -14,6 +14,12 @@ import { PROJECT_ID } from './ct/projectDto';
 const THEMES = ['light', 'dark'] as const;
 const route = (tab: string) => ({ hooksConfig: { route: `/p/SHIP/settings/${tab}` } });
 
+// ‹ back to the index (the top bar's link, hidden in the harness), then a pane's row.
+const openPane = async (page: Page, pane: RegExp) => {
+  await page.getByTestId('harness-back').dispatchEvent('click');
+  await page.getByTestId(ids.settingsIndexRow).filter({ hasText: pane }).tap();
+};
+
 const person = (id: string, name: string, initials: string, avatarColour: string) => ({
   id,
   name,
@@ -131,7 +137,7 @@ for (const theme of THEMES) {
     await stub(page);
     await mount(<SettingsDraftHarness role="admin" />, route('general'));
     await page.getByTestId(ids.generalName).fill('Shop');
-    await page.getByTestId(ids.tabSprints).tap();
+    await openPane(page, /^Sprints & forecast/);
     await page.getByTestId(ids.velocityWindow).fill('4');
     await page.getByTestId(ids.unsaved).tap();
     const sheet = page.getByTestId(touchTestIds.sheet);
@@ -164,15 +170,31 @@ test('SettingsPhone_WhenEdited_ShouldShowSixteenPixelFullWidthFieldsAndTheSaveBa
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
-test('SettingsPhone_WhenOpened_ShouldScrollTheTabsInTheirOwnBox', async ({ mount, page }) => {
+// SHIP-1809 P1, P2: no tab row or header card at touch; the tab-less address lists the panes, a pane is a sub-page.
+test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader', async ({
+  mount,
+  page,
+}) => {
   await stub(page);
-  await mount(<SettingsDraftHarness role="admin" />, route('demos'));
-  const row = page.getByTestId(ids.tabRow);
-  const sizes = await row.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
-  expect(sizes.scroll).toBeGreaterThan(sizes.client);
-  // The active tab (the last one) is scrolled into view.
-  const active = await page.getByTestId(ids.tabDemos).boundingBox();
-  expect((active?.x ?? 0) + (active?.width ?? 0)).toBeLessThanOrEqual(390);
+  await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings' },
+  });
+  const rows = page.getByTestId(ids.settingsIndexRow);
+  await expect(rows).toHaveText([
+    /^General/,
+    /^States/,
+    /^Members/,
+    /^Sprints & forecast/,
+    /^Integrations/,
+    /^Demos/,
+    /^Inspection/,
+  ]);
+  await expect(page.getByTestId(ids.tabRow)).toHaveCount(0);
+  await expect(page.getByTestId('harness-back')).toHaveCount(0);
+  await rows.filter({ hasText: /^Members/ }).tap();
+  await expect(page.getByTestId(ids.membersPanel)).toBeVisible();
+  await expect(page.getByTestId(ids.tabRow)).toHaveCount(0);
+  await expect(page.getByTestId('harness-back')).toHaveAttribute('href', '/p/SHIP/settings');
   const page_ = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth,
@@ -185,15 +207,15 @@ test('SettingsPhone_WhenChangesTapped_ShouldJumpToTheTab', async ({ mount, page 
   await stub(page);
   await mount(<SettingsDraftHarness role="admin" />, route('general'));
   await page.getByTestId(ids.generalName).fill('Shop');
-  await page.getByTestId(ids.tabMembers).tap();
+  await openPane(page, /^Members/);
   await page.getByTestId(ids.memberRemove).last().tap();
-  await page.getByTestId(ids.tabSprints).tap();
+  await openPane(page, /^Sprints & forecast/);
   await page.getByTestId(ids.unsaved).tap();
   const items = page.getByTestId(touchTestIds.sheet).getByTestId(ids.changeItem);
   await expect(items).toHaveCount(2);
   await items.filter({ hasText: /Remove priya/ }).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
-  await expect(page.getByTestId(ids.tabMembers)).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId(ids.membersPanel)).toBeVisible();
 });
 
 test('SettingsPhone_WhenMemberRemoved_ShouldKeepRemoveVisibleAndUndoable', async ({
@@ -223,7 +245,7 @@ test('SettingsPhone_WhenReadOnly_ShouldShowNoSaveBar', async ({ mount, page }) =
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
-test('SettingsPhone_WhenDraftIsDirtyOnDemos_ShouldShowNoSaveBarButKeepTheTabDot', async ({
+test('SettingsPhone_WhenDraftIsDirtyOnDemos_ShouldShowNoSaveBarButKeepTheIndexDot', async ({
   mount,
   page,
 }) => {
@@ -232,11 +254,15 @@ test('SettingsPhone_WhenDraftIsDirtyOnDemos_ShouldShowNoSaveBarButKeepTheTabDot'
   await page.getByTestId(ids.generalName).fill('Shop');
   await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
 
-  await page.getByTestId(ids.tabDemos).tap();
-
-  await expect(page.getByTestId(ids.tabDemos)).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
+  await page.getByTestId('harness-back').dispatchEvent('click');
+  await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
   await expect(page.getByTestId(ids.tabDirty)).toHaveCount(1);
+  await page
+    .getByTestId(ids.settingsIndexRow)
+    .filter({ hasText: /^Demos/ })
+    .tap();
+
+  await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
 
 test('SettingsPhone_WhenReadOnly_ShouldDisableEveryEditControl', async ({ mount, page }) => {
@@ -244,7 +270,7 @@ test('SettingsPhone_WhenReadOnly_ShouldDisableEveryEditControl', async ({ mount,
   await mount(<SettingsDraftHarness role="member" />, route('general'));
   await expect(page.getByTestId(ids.generalName)).toBeDisabled();
   await expect(page.getByTestId(ids.workingDay1)).toBeDisabled();
-  await page.getByTestId(ids.tabMembers).tap();
+  await openPane(page, /^Members/);
   await expect(page.getByTestId(ids.memberRole).first()).toBeDisabled();
   await expect(page.getByTestId(ids.memberRemove)).toHaveCount(0);
   await expect(page.getByTestId(ids.memberAddEmail)).toHaveCount(0);

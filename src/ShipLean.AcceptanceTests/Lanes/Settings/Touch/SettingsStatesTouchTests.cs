@@ -72,7 +72,8 @@ public class SettingsStatesTouchTests : SeededAcceptanceTest
 
         await Expect(states.NameOf(0)).ToHaveValueAsync("Active");
         await Expect(states.NameOf(1)).ToHaveValueAsync("New");
-        await Expect(Page.GetByTestId(SettingsTestIds.TabDirty)).ToHaveCountAsync(1);
+        // At touch the pane has no tab row (SHIP-1977), so the draft's change shows in the save bar.
+        await Expect(Page.GetByTestId(SettingsTestIds.Unsaved)).ToHaveTextAsync("1 unsaved change");
     }
 
     [Test]
