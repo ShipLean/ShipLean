@@ -257,7 +257,10 @@ test('SettingsPhone_WhenDraftIsDirtyOnDemos_ShouldShowNoSaveBarButKeepTheIndexDo
   await page.getByTestId('harness-back').dispatchEvent('click');
   await expect(page.getByTestId(touchTestIds.saveBar)).toBeVisible();
   await expect(page.getByTestId(ids.tabDirty)).toHaveCount(1);
-  await page.getByTestId(ids.settingsIndexRow).filter({ hasText: /^Demos/ }).tap();
+  await page
+    .getByTestId(ids.settingsIndexRow)
+    .filter({ hasText: /^Demos/ })
+    .tap();
 
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
 });
