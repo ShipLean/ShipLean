@@ -202,12 +202,16 @@ test('Columns_WhenOnPhone_ShouldScrollTheTableSidewaysToReachTheStateMapping', a
   await expect(state).not.toBeInViewport();
   const name = await page.getByTestId(paneIds.columnName).first().boundingBox();
   if (!name) throw new Error('no name box');
+  const banner = page.getByTestId(paneIds.columnsAllMapped);
+  await expect(banner).toBeVisible();
+  const bannerX = (await banner.boundingBox())?.x;
 
   await page.mouse.move(name.x + name.width / 2, name.y + name.height / 2);
   await page.mouse.wheel(2000, 0);
 
   await expect(state).toBeInViewport();
-  // The table scrolled inside its panel: the page itself never scrolls sideways.
+  // The table scrolled inside its panel: the pane around it (the dialog body) and the page stay put.
+  expect((await banner.boundingBox())?.x, 'the pane did not scroll sideways').toBe(bannerX);
   const scroll = await page.evaluate(() => ({
     scrollX: window.scrollX,
     scrollWidth: document.scrollingElement?.scrollWidth ?? 0,
