@@ -16,6 +16,25 @@ const action = {
   acceptanceCriteria: [],
 };
 
+for (const theme of ['light', 'dark'] as const) {
+  test(`ActionItem_WhenOpened_ShouldMatchItsScreenshot_why-chips_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await stubApi(page, action);
+    await stubRetros(page);
+    const screen = await mount(<WorkItemRetroHarness itemKey="SHIP-141" />, route);
+    const chips = page.getByTestId(workItemIds.sectionChips);
+    await expect(
+      chips.getByTestId(workItemIds.sectionChip).filter({ hasText: /^Why/ }),
+    ).toBeVisible();
+    await expect(screen.getByTestId(ids.retroActionWhy)).toBeVisible();
+
+    await expect(chips).toHaveScreenshot(`why-chips.${theme}.png`, { animations: 'disabled' });
+  });
+}
+
 test('ActionItem_ShouldOfferTheWhySectionChip', async ({ mount, page }) => {
   await stubApi(page, action);
   await stubRetros(page);

@@ -163,3 +163,41 @@ test('ItemParentSheet_ShouldGroupByEpicAndMarkTheCurrentParent', async ({ mount,
     'A user story or bug sits under a Feature.',
   );
 });
+
+test('TaskParentSheet_ShouldNotGroupUnderANoEpicHeading', async ({ mount, page }) => {
+  // A task's parents are stories, bugs and action items; their parent is a Feature, never an Epic, so there is no Epic
+  // to group by. Mutation: groupsEpics returns true for every type list: the sheet shows a NO EPIC heading again.
+  const parent = (id: string, key: string, title: string) => ({
+    ...story,
+    id,
+    key,
+    title,
+    parent: { id: checkout.id, key: checkout.key, type: checkout.type, title: checkout.title },
+  });
+  const task = {
+    ...story,
+    id: 't1',
+    key: 'SHIP-150',
+    type: { id: 'task' as const, name: 'Task' },
+    title: 'A task',
+    parent: null,
+    children: [],
+  };
+  await stubApi(page, task, undefined, {
+    byType: {
+      story: [parent('s1', 'SHIP-151', 'First story'), parent('s2', 'SHIP-152', 'Second story')],
+    },
+  });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-150" />, {
+    hooksConfig: { route: '/p/SHIP/items/SHIP-150' },
+  });
+
+  await screen.getByTestId(ids.parentButton).tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.parentOption)).toHaveCount(3);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetGroup)).toHaveCount(0);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
+    'A task sits under a user story, bug or action item.',
+  );
+});
