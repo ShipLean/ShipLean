@@ -10,7 +10,9 @@ namespace ShipLean.TestSupport.AgentReceiver;
 // acceptance journey can drive a real Test connection ping. Dispose it at teardown.
 public sealed class TestAgentReceiver : IAsyncDisposable
 {
-    private readonly HttpListener _listener = new();
+    private const int BindAttempts = 5;
+
+    private readonly HttpListener _listener;
     private readonly Task _loop;
     private readonly List<ReceivedWebhook> _received = [];
     private int _status;
@@ -18,17 +20,52 @@ public sealed class TestAgentReceiver : IAsyncDisposable
     public TestAgentReceiver(HttpStatusCode status = HttpStatusCode.OK)
     {
         _status = (int)status;
-        var probe = new TcpListener(IPAddress.Loopback, 0);
-        probe.Start();
-        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
-        probe.Stop();
-        Url = $"http://127.0.0.1:{port}/hook";
-        _listener.Prefixes.Add(Url + "/");
-        _listener.Start();
+        (_listener, Url) = Bind();
         _loop = Task.Run(Serve);
     }
 
     public string Url { get; }
+
+    // A free port is found by probing and releasing it, so another process can take it before the listener binds: on a start failure
+    // the next port is tried, a few times.
+    private static (HttpListener Listener, string Url) Bind()
+    {
+        for (var attempt = 1; attempt < BindAttempts; attempt++)
+        {
+            try
+            {
+                return TryBind();
+            }
+            catch (HttpListenerException)
+            {
+                // the port was taken in between: go round with a new one
+            }
+        }
+
+        return TryBind();
+    }
+
+    private static (HttpListener Listener, string Url) TryBind()
+    {
+        var probe = new TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        var url = $"http://127.0.0.1:{port}/hook";
+        var listener = new HttpListener();
+        listener.Prefixes.Add(url + "/");
+        try
+        {
+            listener.Start();
+        }
+        catch (HttpListenerException)
+        {
+            listener.Close();
+            throw;
+        }
+
+        return (listener, url);
+    }
 
     // What the next answers carry; change it between calls.
     public HttpStatusCode Status

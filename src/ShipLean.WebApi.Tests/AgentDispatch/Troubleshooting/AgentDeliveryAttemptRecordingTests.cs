@@ -43,14 +43,14 @@ public class AgentDeliveryAttemptRecordingTests : ApiFixture
         await database.ExecuteAsync("UPDATE agent_delivery SET status = 'failed', last_error = 'Set aside by a test.' WHERE status = 'pending'");
     }
 
-    private AgentDeliverer Deliverer()
+    private AgentDeliverer Deliverer(TimeProvider? clock = null)
         => new(
             Host.Services.GetRequiredService<NpgsqlDataSource>(),
             Host.Services.GetRequiredService<IAgentConnections>(),
             new StubHttpClientFactory(_receiver.Client()),
             Host.Services.GetRequiredService<AgentSessionNotifier>(),
             _attempts,
-            _clock,
+            clock ?? _clock,
             new Logger<AgentDeliverer>(_logs));
 
     private async Task<Guid> OpenSessionAsync(NpgsqlConnection database)
@@ -86,6 +86,22 @@ public class AgentDeliveryAttemptRecordingTests : ApiFixture
     }
 
     [Test]
+    public async Task RunDue_WhenASendFails_ShouldGiveTheAttemptRowAndTheDeliveryRowTheSameNextAttemptTime()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var sessionId = await OpenSessionAsync(database);
+        _receiver.Then(HttpStatusCode.BadGateway);
+
+        // A clock that moves on every reading, so a second GetUtcNow() for the same failure would give a later instant.
+        await Deliverer(new TickingClock(_clock)).RunDueAsync(CancellationToken.None);
+
+        var recorded = _attempts.Recorded.ShouldHaveSingleItem();
+        var delivery = await database.QuerySingleAsync<DateTimeOffset>("SELECT next_attempt_at FROM agent_delivery WHERE session_id = @sessionId", new { sessionId });
+        recorded.NextAttemptAt.ShouldNotBeNull();
+        recorded.NextAttemptAt.Value.ShouldBe(delivery);
+    }
+
+    [Test]
     public async Task RunDue_WhenTheReceiverErrorHoldsAToken_ShouldScrubItForTheAttemptTheRowAndTheLog()
     {
         const string secret = "abc7f00dsecret";
@@ -105,6 +121,20 @@ public class AgentDeliveryAttemptRecordingTests : ApiFixture
         var warnings = _logs.Events.Where(e => e.StartsWith("Warning", StringComparison.Ordinal)).ToList();
         warnings.ShouldNotBeEmpty();
         warnings.ShouldAllBe(e => !e.Contains(secret));
+    }
+
+    private sealed class TickingClock(FakeTimeProvider inner) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow()
+        {
+            var now = inner.GetUtcNow();
+            inner.Advance(TimeSpan.FromMilliseconds(5));
+            return now;
+        }
+
+        public override long GetTimestamp() => inner.GetTimestamp();
+
+        public override long TimestampFrequency => inner.TimestampFrequency;
     }
 
     private sealed class RecordingAttempts : IAgentDeliveryAttempts
