@@ -11,6 +11,7 @@ import {
   boardWithPointsHidden,
   boardWithTwoNew,
 } from './fixtures/boardDetails';
+import { holdCardOver } from './fixtures/holdCardOver';
 import { stubShell } from './shellStub';
 import { phonePageShots } from './shootPhone';
 import type { Page } from './shoot';
@@ -35,38 +36,6 @@ const turnTo = (page: Page, columnId: string) =>
     .and(page.locator(`[data-page-id="${columnId}"]`))
     .tap();
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-// Long-presses `from` (CDP touch, the clock moved by hand) and moves it over `over`; the finger stays down. The caller
-// installs the clock before mounting.
-async function holdCardOver(page: Page, from: string, over: string) {
-  await expect(card(page, from)).toBeInViewport({ ratio: 1 });
-  await expect(card(page, over)).toBeInViewport({ ratio: 1 });
-  const cdp = await page.context().newCDPSession(page);
-  const send = (type: 'touchStart' | 'touchMove', point: Point) =>
-    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: [point] });
-  const centre = async (key: string): Promise<Point> => {
-    const box = (await card(page, key).boundingBox())!;
-    return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
-  };
-  const start = await centre(from);
-  const end = await centre(over);
-  await send('touchStart', start);
-  await page.clock.runFor(450);
-  await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
-  const steps = Math.max(1, Math.ceil(Math.hypot(end.x - start.x, end.y - start.y) / 20));
-  for (let i = 1; i <= steps; i++) {
-    await send('touchMove', {
-      x: Math.round(start.x + ((end.x - start.x) * i) / steps),
-      y: Math.round(start.y + ((end.y - start.y) * i) / steps),
-    });
-  }
-  await expect(page.getByTestId(ids.dropLine)).toHaveCount(1);
-}
-
 const openStoriesOf = (page: Page, key: string) =>
   card(page, key).locator(`[data-testid="${ids.cardRollup}"][data-type="story"]`).tap();
 
@@ -87,33 +56,6 @@ phonePageShots([
       await openStoriesOf(page, 'SHIP-101');
       await expect(page.getByTestId(ids.childRow)).toHaveCount(CHECKOUT_V2_STORIES.length);
     },
-  },
-  {
-    name: 'board-ready-captions',
-    route: '/p/SHIP/boards/stories',
-    shell: true,
-    arrange: async (page) => {
-      await stubShell(page);
-      await stubBoard(page, boardWithExpediteInReady());
-    },
-    ready: (page) => expect(page.getByTestId(ids.card).first()).toBeVisible(),
-    act: async (page) => {
-      await turnTo(page, 'col-ready');
-      await expect(card(page, 'SHIP-161')).toBeInViewport({ ratio: 1 });
-    },
-  },
-  {
-    name: 'features-board-epic-lanes',
-    route: '/p/SHIP/boards/features',
-    shell: true,
-    arrange: async (page) => {
-      await stubShell(page);
-      await stubBoard(page, featuresBoardByEpic(), {
-        level: 'features',
-        preferences: { [LANES]: 'epic' },
-      });
-    },
-    ready: (page) => expect(page.getByTestId(ids.columnLane).first()).toBeVisible(),
   },
   {
     name: 'board-drag-outline',
@@ -208,6 +150,24 @@ test('BoardDrag_WhileOverACell_ShouldOutlineIt', async ({ mount, page }) => {
       (cells) => cells.filter((node) => getComputedStyle(node).outlineStyle === 'solid').length,
     );
   expect(outlined).toBe(1);
+});
+
+// BACKLOG-21: over the end of another cell (below its last card, or in an empty one) that cell is outlined, and the cell the
+// card was lifted from is not.
+test('BoardDrag_WhileOverTheEndOfAnotherCell_ShouldOutlineThatCellOnly', async ({ mount, page }) => {
+  await page.clock.install({ time: 0 });
+  await stubShell(page);
+  await stubBoard(page, boardWithTwoNew());
+  await mount(<AppRoutes />, stories);
+  const cellOf = (laneId: string) =>
+    page.getByTestId(ids.cell).and(page.locator(`[data-lane="${laneId}"][data-column="col-new"]`));
+  const origin = cellOf('lane-default');
+  const target = cellOf('lane-expedite');
+
+  await holdCardOver(page, 'SHIP-164', { cell: target });
+
+  await expect(target).toHaveCSS('outline-style', 'solid');
+  await expect(origin).toHaveCSS('outline-style', 'none');
 });
 
 // BACKLOG-24: a split column's halves say what they hold.

@@ -65,7 +65,7 @@ export function LoadedBoard({
     level,
     close: childList.close,
   };
-  return (
+  const boardView = (
     <div data-testid={ids.view} data-level={level} className="flex min-h-0 flex-1 flex-col">
       <BoardToolbar
         view={board}
@@ -80,9 +80,7 @@ export function LoadedBoard({
       />
       {/* At touch the document scrolls, and the column pager bleeds to the screen edges (K5), so nothing here clips. */}
       <div className="min-h-0 flex-1 overflow-auto bg-canvas touch:overflow-visible">
-        <ChildListContext.Provider value={childListHost}>
-          <BoardGrid view={board} context={context} headerFlashes={settingsChanges} />
-        </ChildListContext.Provider>
+        <BoardGrid view={board} context={context} headerFlashes={settingsChanges} />
       </div>
       {childList.open && !touch ? (
         <ChildList
@@ -97,4 +95,5 @@ export function LoadedBoard({
       ) : null}
     </div>
   );
+  return <ChildListContext.Provider value={childListHost}>{boardView}</ChildListContext.Provider>;
 }
