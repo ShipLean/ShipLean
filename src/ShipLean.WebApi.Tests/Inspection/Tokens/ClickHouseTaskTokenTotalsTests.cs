@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Inspection;
 using ShipLean.Application.Features.Inspection.ClickHouse;
 using ShipLean.Contracts.Inspection;
+using ShipLean.LocalEnvironment.Inspection;
 using ShipLean.TestSupport.Inspection;
 using ShipLean.WebApi.Tests.Inspection.Contract;
 
