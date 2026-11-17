@@ -180,7 +180,9 @@ test('FeatureHealth_AtTouch_ShouldOpenTheHealthSheetFromThePill', async ({ mount
   const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
   await expect(rows).toHaveCount(4);
   await expect(rows.nth(1)).toHaveAttribute('aria-current', 'true');
-  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveCount(3);
+  // The checked option (At risk) shows the check instead of its hint, so two of the three options carry one.
+  await expect(sheet.getByTestId(touchTestIds.actionSheetHint)).toHaveCount(2);
+  await expect(rows.nth(1).getByTestId(touchTestIds.actionSheetHint)).toHaveCount(0);
   await expect(sheet.getByTestId(ids.healthSheetFootnote)).toBeVisible();
   await expect(rows.nth(3)).toHaveText('Clear health');
 
