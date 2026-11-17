@@ -42,5 +42,7 @@ test('FeatureChildren_Rows_ShouldShowSprintAndStateDot', async ({ mount, page })
   expect(sprintBox.x).toBeGreaterThan(key.x + key.width - 1);
   expect(state.x).toBeGreaterThan(sprintBox.x + sprintBox.width - 1);
   // A story in no sprint shows Backlog, as the phone design does.
-  await expect(screen.getByTestId(ids.childRow).nth(1).getByTestId(ids.childSprint)).toHaveText('Backlog');
+  await expect(screen.getByTestId(ids.childRow).nth(1).getByTestId(ids.childSprint)).toHaveText(
+    'Backlog',
+  );
 });
