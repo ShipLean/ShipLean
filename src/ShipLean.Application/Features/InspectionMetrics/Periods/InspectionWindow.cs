@@ -12,7 +12,7 @@ public sealed record InspectionWindow(DateOnly From, DateOnly To, IReadOnlyList<
 {
     public static InspectionWindow For(InspectionRange range, IReadOnlyList<InspectionSprint> sprints, DateOnly today, InspectionSprint? period = null)
     {
-        var started = sprints.Where(sprint => sprint.StartDate <= today).OrderBy(sprint => sprint.StartDate).ToList();
+        var started = InspectionPeriods.Started(sprints, today);
         var thisQuarter = QuarterStart(today);
         var lastQuarter = thisQuarter.AddMonths(-3);
         IReadOnlyList<InspectionSprint> shown = range switch
@@ -38,5 +38,5 @@ public sealed record InspectionWindow(DateOnly From, DateOnly To, IReadOnlyList<
     }
 
     // The first day of the calendar quarter holding the day.
-    public static DateOnly QuarterStart(DateOnly day) => new(day.Year, ((day.Month - 1) / 3 * 3) + 1, 1);
+    public static DateOnly QuarterStart(DateOnly day) => InspectionPeriods.QuarterStart(day);
 }

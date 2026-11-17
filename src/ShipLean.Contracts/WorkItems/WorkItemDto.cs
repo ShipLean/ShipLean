@@ -9,7 +9,8 @@ namespace ShipLean.Contracts.WorkItems;
 // Goal, StatusLine, StatusVerified, Slug and StartedOn are a Feature's: Goal and StatusLine are "" and the rest null on other types.
 // Health and HealthSet are a Feature's too (null elsewhere). Rollups and NeedsYou are set on Epics, Features and Stories (a Story's
 // tasks); [] and null on the rest. NeedsYou is null when nothing waits on the caller. InspectionEnabled is whether the item
-// page shows its Agent runs section (Inspection is on for the instance and the project).
+// page shows its Agent runs section (Inspection is on for the instance and the project). FoundBeforeRelease is a Bug's (SHIP-1398
+// item D17): a bug found before release is not an escaping bug. False on every other type.
 public sealed record WorkItemDto(
     Guid Id,
     Guid ProjectId,
@@ -23,6 +24,7 @@ public sealed record WorkItemDto(
     string ReproSteps,
     string ReproStepsHtml,
     int? Severity,
+    bool FoundBeforeRelease,
     StateRef State,
     UserRef? Assignee,
     UserRef? CreatedBy,
@@ -35,6 +37,7 @@ public sealed record WorkItemDto(
     BoardPositionDto Position,
     string BacklogOrder,
     IReadOnlyList<LinkDto> Links,
+    IReadOnlyList<CausedRefDto> Caused,
     IReadOnlyList<ChildSummaryDto> Children,
     OriginalSystemDto? OriginalSystem,
     int Revision,

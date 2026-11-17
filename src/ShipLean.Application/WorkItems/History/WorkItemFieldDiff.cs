@@ -21,6 +21,7 @@ public static class WorkItemFieldDiff
         Add(changes, "sprint", before.Sprint, after.Sprint, labels.Sprint);
         Add(changes, "parent", before.Parent, after.Parent, labels.Item);
         Add(changes, "severity", before.Severity, after.Severity);
+        Add(changes, "foundBeforeRelease", before.FoundBeforeRelease, after.FoundBeforeRelease);
         Add(changes, "description", before.Description, after.Description);
         Add(changes, "acceptanceCriteria", before.AcceptanceCriteria, after.AcceptanceCriteria);
         Add(changes, "reproSteps", before.ReproSteps, after.ReproSteps);
@@ -63,6 +64,7 @@ public static class WorkItemFieldDiff
         Guid id when label is not null => label(id),
         string text when instant is not null => instant(DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)),
         string text when named is not null => named(text),
+        bool flag => flag ? "Yes" : "No",
         _ => null,
     };
 }

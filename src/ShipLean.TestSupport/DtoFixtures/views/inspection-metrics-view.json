@@ -33,6 +33,21 @@
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": 1492
+      },
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 16,
+        "per100Prs": 12.5,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 1,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": 0
       }
     },
     "soFar": {
@@ -52,6 +67,21 @@
         "meanUnresolvedTailLabel": "54 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": -90
+      },
+      "quality": {
+        "escaping": 0,
+        "weighted": 0,
+        "foundBeforeRelease": 0,
+        "mergedPrs": null,
+        "per100Prs": null,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 0,
+          "sev3": 0,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": -100
       }
     },
     "quarterToDate": {
@@ -76,6 +106,21 @@
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 4,
+        "weighted": 12,
+        "foundBeforeRelease": 2,
+        "mergedPrs": 37,
+        "per100Prs": 10.8,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 2,
+          "sev3": 2,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": null
       }
     },
     "lastQuarter": {
@@ -99,6 +144,21 @@
         "meanUnresolvedTailHours": 0,
         "meanUnresolvedTailLabel": "0 min",
         "endedAtResolved": 1,
+        "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 0,
+          "sev4": 0,
+          "unset": 0
+        },
         "changePctVsPrevious": null
       }
     }
@@ -138,7 +198,22 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 0,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": null
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000022",
@@ -174,7 +249,22 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 21,
+        "per100Prs": 9.5,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 1,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": 100
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000023",
@@ -219,7 +309,22 @@
           "overTwoDays": true,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 2,
+        "weighted": 6,
+        "foundBeforeRelease": 1,
+        "mergedPrs": 16,
+        "per100Prs": 12.5,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 1,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": 0
+      }
     },
     {
       "id": "00000004-0000-4000-8001-000000000024",
@@ -255,7 +360,22 @@
           "overTwoDays": false,
           "longest": true
         }
-      ]
+      ],
+      "quality": {
+        "escaping": 0,
+        "weighted": 0,
+        "foundBeforeRelease": 0,
+        "mergedPrs": null,
+        "per100Prs": null,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 0,
+          "sev3": 0,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": -100
+      }
     }
   ],
   "quarters": [
@@ -281,6 +401,21 @@
         "meanUnresolvedTailLabel": "0 min",
         "endedAtResolved": 1,
         "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 1,
+        "weighted": 4,
+        "foundBeforeRelease": 0,
+        "mergedPrs": 18,
+        "per100Prs": 5.6,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 1,
+          "sev3": 0,
+          "sev4": 0,
+          "unset": 0
+        },
+        "changePctVsPrevious": null
       }
     },
     {
@@ -304,6 +439,21 @@
         "meanUnresolvedTailHours": 0.6,
         "meanUnresolvedTailLabel": "36 min",
         "endedAtResolved": 0,
+        "changePctVsPrevious": null
+      },
+      "quality": {
+        "escaping": 4,
+        "weighted": 12,
+        "foundBeforeRelease": 2,
+        "mergedPrs": 37,
+        "per100Prs": 10.8,
+        "escapingBySeverity": {
+          "sev1": 0,
+          "sev2": 2,
+          "sev3": 2,
+          "sev4": 0,
+          "unset": 0
+        },
         "changePctVsPrevious": null
       }
     }
@@ -831,6 +981,418 @@
           "text": "Resolved"
         }
       ]
+    },
+    "quality": {
+      "escaping": 2,
+      "weighted": 6,
+      "foundBeforeRelease": 1,
+      "mergedPrs": 16,
+      "per100Prs": 12.5,
+      "escapingBySeverity": {
+        "sev1": 0,
+        "sev2": 1,
+        "sev3": 1,
+        "sev4": 0,
+        "unset": 0
+      },
+      "changePctVsPrevious": 0
+    },
+    "bugs": [
+      {
+        "key": "SHIP-233",
+        "title": "Report totals off by one day (time zones)",
+        "severity": 2,
+        "filedAt": "2026-10-06T15:00:00+00:00",
+        "filedLabel": "Tue 6 Oct 15:00",
+        "foundBeforeRelease": false,
+        "causedByKey": "SHIP-229",
+        "causedByTitle": "Report date filter",
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      {
+        "key": "SHIP-236",
+        "title": "Sort order lost after refresh",
+        "severity": 3,
+        "filedAt": "2026-10-08T10:00:00+00:00",
+        "filedLabel": "Thu 8 Oct 10:00",
+        "foundBeforeRelease": false,
+        "causedByKey": null,
+        "causedByTitle": null,
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      {
+        "key": "SHIP-240",
+        "title": "CSV export breaks on commas",
+        "severity": null,
+        "filedAt": "2026-10-12T13:00:00+00:00",
+        "filedLabel": "Mon 12 Oct 13:00",
+        "foundBeforeRelease": true,
+        "causedByKey": null,
+        "causedByTitle": null,
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      }
+    ]
+  },
+  "quality": {
+    "escaping": 5,
+    "weighted": 16,
+    "foundBeforeRelease": 2,
+    "mergedPrs": 55,
+    "per100Prs": 9.1,
+    "escapingBySeverity": {
+      "sev1": 0,
+      "sev2": 3,
+      "sev3": 2,
+      "sev4": 0,
+      "unset": 0
+    },
+    "changePctVsPrevious": null
+  },
+  "bugs": [
+    {
+      "key": "SHIP-214",
+      "title": "Board filter forgets the assignee",
+      "severity": 2,
+      "filedAt": "2026-09-10T09:30:00+00:00",
+      "filedLabel": "Thu 10 Sep 09:30",
+      "foundBeforeRelease": false,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000021"
+    },
+    {
+      "key": "SHIP-221",
+      "title": "Sprint name cut off on phones",
+      "severity": 2,
+      "filedAt": "2026-09-22T14:00:00+00:00",
+      "filedLabel": "Tue 22 Sep 14:00",
+      "foundBeforeRelease": false,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000022"
+    },
+    {
+      "key": "SHIP-225",
+      "title": "Retro notes lose line breaks",
+      "severity": 3,
+      "filedAt": "2026-09-24T11:15:00+00:00",
+      "filedLabel": "Thu 24 Sep 11:15",
+      "foundBeforeRelease": false,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000022"
+    },
+    {
+      "key": "SHIP-227",
+      "title": "Typo in the release notes",
+      "severity": null,
+      "filedAt": "2026-09-29T16:40:00+00:00",
+      "filedLabel": "Tue 29 Sep 16:40",
+      "foundBeforeRelease": true,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000022"
+    },
+    {
+      "key": "SHIP-233",
+      "title": "Report totals off by one day (time zones)",
+      "severity": 2,
+      "filedAt": "2026-10-06T15:00:00+00:00",
+      "filedLabel": "Tue 6 Oct 15:00",
+      "foundBeforeRelease": false,
+      "causedByKey": "SHIP-229",
+      "causedByTitle": "Report date filter",
+      "periodId": "00000004-0000-4000-8001-000000000023"
+    },
+    {
+      "key": "SHIP-236",
+      "title": "Sort order lost after refresh",
+      "severity": 3,
+      "filedAt": "2026-10-08T10:00:00+00:00",
+      "filedLabel": "Thu 8 Oct 10:00",
+      "foundBeforeRelease": false,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000023"
+    },
+    {
+      "key": "SHIP-240",
+      "title": "CSV export breaks on commas",
+      "severity": null,
+      "filedAt": "2026-10-12T13:00:00+00:00",
+      "filedLabel": "Mon 12 Oct 13:00",
+      "foundBeforeRelease": true,
+      "causedByKey": null,
+      "causedByTitle": null,
+      "periodId": "00000004-0000-4000-8001-000000000023"
     }
+  ],
+  "cost": {
+    "available": true,
+    "note": null,
+    "periods": [
+      {
+        "periodId": "00000004-0000-4000-8001-000000000021",
+        "stats": {
+          "tasks": 12,
+          "tasksWithRuns": 0,
+          "tokensPerTask": null,
+          "tokensPerTaskLabel": "—",
+          "tokensTotal": null,
+          "tokensTotalLabel": "—",
+          "mergedPrs": 9,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": null,
+          "kept": false,
+          "tasksWithRunsPct": null
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000022",
+        "stats": {
+          "tasks": 14,
+          "tasksWithRuns": 11,
+          "tokensPerTask": 182000,
+          "tokensPerTaskLabel": "182k",
+          "tokensTotal": 2002000,
+          "tokensTotalLabel": "2.0M",
+          "mergedPrs": 12,
+          "tokensPerMergedPr": 166833,
+          "tokensPerMergedPrLabel": "167k",
+          "changePctVsPrevious": null,
+          "kept": true,
+          "tasksWithRunsPct": 79
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000023",
+        "stats": {
+          "tasks": 16,
+          "tasksWithRuns": 13,
+          "tokensPerTask": 154000,
+          "tokensPerTaskLabel": "154k",
+          "tokensTotal": 2002000,
+          "tokensTotalLabel": "2.0M",
+          "mergedPrs": 14,
+          "tokensPerMergedPr": 143000,
+          "tokensPerMergedPrLabel": "143k",
+          "changePctVsPrevious": -15,
+          "kept": true,
+          "tasksWithRunsPct": 81
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000024",
+        "stats": {
+          "tasks": 6,
+          "tasksWithRuns": 5,
+          "tokensPerTask": 120000,
+          "tokensPerTaskLabel": "120k",
+          "tokensTotal": 600000,
+          "tokensTotalLabel": "600k",
+          "mergedPrs": null,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": -22,
+          "kept": true,
+          "tasksWithRunsPct": 83
+        }
+      }
+    ],
+    "quarters": [
+      {
+        "quarter": "Q3 2026",
+        "stats": {
+          "tasks": 30,
+          "tasksWithRuns": 0,
+          "tokensPerTask": null,
+          "tokensPerTaskLabel": "—",
+          "tokensTotal": null,
+          "tokensTotalLabel": "—",
+          "mergedPrs": 20,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": null,
+          "kept": false,
+          "tasksWithRunsPct": null
+        }
+      },
+      {
+        "quarter": "Q4 2026",
+        "stats": {
+          "tasks": 36,
+          "tasksWithRuns": 29,
+          "tokensPerTask": 159000,
+          "tokensPerTaskLabel": "159k",
+          "tokensTotal": 4611000,
+          "tokensTotalLabel": "4.6M",
+          "mergedPrs": 26,
+          "tokensPerMergedPr": 177346,
+          "tokensPerMergedPrLabel": "177k",
+          "changePctVsPrevious": null,
+          "kept": true,
+          "tasksWithRunsPct": 81
+        }
+      }
+    ],
+    "range": {
+      "tasks": 48,
+      "tasksWithRuns": 29,
+      "tokensPerTask": 159000,
+      "tokensPerTaskLabel": "159k",
+      "tokensTotal": 4611000,
+      "tokensTotalLabel": "4.6M",
+      "mergedPrs": 35,
+      "tokensPerMergedPr": 131742,
+      "tokensPerMergedPrLabel": "132k",
+      "changePctVsPrevious": null,
+      "kept": true,
+      "tasksWithRunsPct": 60
+    },
+    "headline": {
+      "finished": {
+        "tasks": 16,
+        "tasksWithRuns": 13,
+        "tokensPerTask": 154000,
+        "tokensPerTaskLabel": "154k",
+        "tokensTotal": 2002000,
+        "tokensTotalLabel": "2.0M",
+        "mergedPrs": 14,
+        "tokensPerMergedPr": 143000,
+        "tokensPerMergedPrLabel": "143k",
+        "changePctVsPrevious": -15,
+        "kept": true,
+        "tasksWithRunsPct": 81
+      },
+      "soFar": {
+        "tasks": 6,
+        "tasksWithRuns": 5,
+        "tokensPerTask": 120000,
+        "tokensPerTaskLabel": "120k",
+        "tokensTotal": 600000,
+        "tokensTotalLabel": "600k",
+        "mergedPrs": null,
+        "tokensPerMergedPr": null,
+        "tokensPerMergedPrLabel": "—",
+        "changePctVsPrevious": -22,
+        "kept": true,
+        "tasksWithRunsPct": 83
+      },
+      "quarterToDate": {
+        "tasks": 36,
+        "tasksWithRuns": 29,
+        "tokensPerTask": 159000,
+        "tokensPerTaskLabel": "159k",
+        "tokensTotal": 4611000,
+        "tokensTotalLabel": "4.6M",
+        "mergedPrs": 26,
+        "tokensPerMergedPr": 177346,
+        "tokensPerMergedPrLabel": "177k",
+        "changePctVsPrevious": null,
+        "kept": true,
+        "tasksWithRunsPct": 81
+      },
+      "lastQuarter": {
+        "tasks": 30,
+        "tasksWithRuns": 0,
+        "tokensPerTask": null,
+        "tokensPerTaskLabel": "—",
+        "tokensTotal": null,
+        "tokensTotalLabel": "—",
+        "mergedPrs": 20,
+        "tokensPerMergedPr": null,
+        "tokensPerMergedPrLabel": "—",
+        "changePctVsPrevious": null,
+        "kept": false,
+        "tasksWithRunsPct": null
+      }
+    },
+    "mostTokens": [
+      {
+        "key": "SHIP-192",
+        "title": "Stacking rules (percent + fixed)",
+        "featureKey": "SHIP-99",
+        "who": "Claude Code",
+        "agent": true,
+        "models": [
+          "claude-opus-5-5",
+          "claude-sonnet-5-5"
+        ],
+        "runs": 4,
+        "tokens": 612000,
+        "tokensLabel": "612k",
+        "leadLabel": "3d 4h",
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      {
+        "key": "SHIP-430",
+        "title": "Debounce apply and make it idempotent",
+        "featureKey": "SHIP-101",
+        "who": "Cursor",
+        "agent": true,
+        "models": [
+          "gpt-5"
+        ],
+        "runs": 2,
+        "tokens": 388000,
+        "tokensLabel": "388k",
+        "leadLabel": "2d 1h",
+        "periodId": "00000004-0000-4000-8001-000000000024"
+      },
+      {
+        "key": "SHIP-194",
+        "title": "API: validate and apply",
+        "featureKey": "SHIP-99",
+        "who": "Priya Shah",
+        "agent": false,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "runs": 1,
+        "tokens": 96000,
+        "tokensLabel": "96k",
+        "leadLabel": "4d 2h",
+        "periodId": "00000004-0000-4000-8001-000000000022"
+      },
+      {
+        "key": "SHIP-511",
+        "title": "Fix typo in the release notes",
+        "featureKey": null,
+        "who": "Claude Code",
+        "agent": true,
+        "models": [
+          "claude-haiku-4-5"
+        ],
+        "runs": 1,
+        "tokens": 41000,
+        "tokensLabel": "41k",
+        "leadLabel": "2h",
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      }
+    ],
+    "byFeature": [
+      {
+        "key": "SHIP-99",
+        "title": "Coupons v2",
+        "tasks": 17,
+        "tokens": 2810000,
+        "tokensLabel": "2.8M"
+      },
+      {
+        "key": "SHIP-101",
+        "title": "Checkout v2",
+        "tasks": 10,
+        "tokens": 1720000,
+        "tokensLabel": "1.7M"
+      },
+      {
+        "key": null,
+        "title": "No Feature",
+        "tasks": 2,
+        "tokens": 81000,
+        "tokensLabel": "81k"
+      }
+    ]
   }
 }

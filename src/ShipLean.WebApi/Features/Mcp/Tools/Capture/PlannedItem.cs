@@ -17,4 +17,5 @@ public sealed record PlannedItem(
     Guid? ParentId,
     string? ParentKey,
     Guid? SprintId,
-    string? SprintName);
+    string? SprintName,
+    bool FoundBeforeRelease = false);

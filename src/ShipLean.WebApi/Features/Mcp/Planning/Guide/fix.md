@@ -6,6 +6,8 @@ Fix rounds stay in ShipLean: read blocking findings from the `Review · ` commen
 
 A review of your commits found blocking issues. Fix each one with new commits (never amend, never force-push). Pull with rebase from the shared branch, push to it (under the costly CI variant, commit to your own branch and do not push), and hand in a new report with `report_task` listing only the new commits.
 
+If a fix round turns up a separate bug in code that has not been released yet and you file it as a Bug, set `found_before_release` to true (`capture_work`, or `refine_work_item` on a bug you already filed).
+
 If you disagree with a finding, say why in the report instead of changing the code.
 
 Blocking findings: the "Review · " comment on your task holds them. Read it with `get_work_item` on the task's key (it returns the latest comments), or from the text you were resumed with.

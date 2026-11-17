@@ -57,7 +57,7 @@ export function postTimelineBarSelected(projectId: string): Promise<void> {
 /** POST api/projects/{id}/usage/inspection-metrics-viewed: an Inspection view shown. The server answers 204. */
 export function postInspectionMetricsViewed(
   projectId: string,
-  view: 'overview' | 'leadtime' | 'period' | 'json',
+  view: 'overview' | 'leadtime' | 'period' | 'quality' | 'cost' | 'json',
 ): Promise<void> {
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-viewed`,
@@ -76,10 +76,10 @@ export function postInspectionMetricsPeriodOpened(
   );
 }
 
-/** POST api/projects/{id}/usage/inspection-metrics-task-opened: a task opened on Inspection, from the rail, Longest tasks or a chart dot. The server answers 204. */
+/** POST api/projects/{id}/usage/inspection-metrics-task-opened: a task opened on Inspection, from the rail, Longest tasks, a chart dot or Cost's most tokens. The server answers 204. */
 export function postInspectionMetricsTaskOpened(
   projectId: string,
-  from: 'rail' | 'longest' | 'chart',
+  from: 'rail' | 'longest' | 'chart' | 'mostTokens',
 ): Promise<void> {
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/inspection-metrics-task-opened`,

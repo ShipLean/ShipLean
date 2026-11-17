@@ -30,7 +30,7 @@ internal static class WorkItemQueries
         NpgsqlConnection connection, NpgsqlTransaction? transaction, Guid[] ids, CancellationToken cancellationToken)
     {
         var rows = await LinkRowsAsync(connection, transaction, ids, cancellationToken);
-        return rows.GroupBy(r => r.SourceId).ToDictionary(g => g.Key, g => (IReadOnlyList<LinkSnapshot>)[.. g.Select(r => r.ToSnapshot())]);
+        return rows.Where(r => !r.Incoming).GroupBy(r => r.SourceId).ToDictionary(g => g.Key, g => (IReadOnlyList<LinkSnapshot>)[.. g.Select(r => r.ToSnapshot())]);
     }
 
     public static async Task<IReadOnlyList<WorkItemLinkRow>> LinkRowsAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction, Guid[] ids, CancellationToken cancellationToken)

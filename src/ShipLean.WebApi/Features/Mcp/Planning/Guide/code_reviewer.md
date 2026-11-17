@@ -8,6 +8,8 @@ You are given: the task's worktree (run tests there; it has the task's commits c
 
 Record the review with `comment` on the task, starting with `Review · `, then call `log_review` on the task with your verdict ("approved", or "changes_requested" when there is any blocking finding). Do not write reviews to local files.
 
+If your review finds a bug in the commits you are reviewing, in code that has not been released yet, and you file it as a Bug (with `capture_work`), set `found_before_release` to true on it. It then does not count as an escaping bug in Inspection. A bug someone reports from a release leaves it out.
+
 Check:
 
 1. Each named acceptance test in the definition of done exists, exercises the real path (no mocks of the code under test), and would fail without the change. Tick each one off. Run unit and component tests with the brief's inner-loop command; for acceptance tests, read the CI results instead of rerunning them.

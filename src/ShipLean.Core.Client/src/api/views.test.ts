@@ -167,4 +167,41 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(view.periods.filter((p) => p.inProgress)).toHaveLength(1);
   expect(view.longest.filter((t) => t.endedBy === 'resolved')).toHaveLength(1);
   expect(view.cuts?.every((row) => row.cells.length === view.periods.length)).toBe(true);
+
+  // Quality (QK3): every period has it, one period had no merged PR, and the opened period lists a caused-by and a found bug.
+  expect(view.quality).not.toBeNull();
+  expect(view.periods.every((p) => p.quality !== null)).toBe(true);
+  expect(
+    view.periods.some((p) => p.quality?.mergedPrs === null && p.quality.per100Prs === null),
+  ).toBe(true);
+  expect(view.quarters.every((q) => q.quality !== null)).toBe(true);
+  expect(view.headline.finished?.quality).not.toBeNull();
+  // The change chip (SHIP-2059): sprints compare with the one before; quarters and the range carry none.
+  expect(view.periods.some((p) => (p.quality?.changePctVsPrevious ?? 0) !== 0)).toBe(true);
+  expect(view.quarters.every((q) => q.quality?.changePctVsPrevious === null)).toBe(true);
+  expect(view.quality?.changePctVsPrevious).toBeNull();
+  const bugs = view.periodDetail?.bugs ?? [];
+  expect(bugs.some((b) => b.causedByKey !== null)).toBe(true);
+  expect(bugs.some((b) => b.foundBeforeRelease)).toBe(true);
+  expect(bugs.some((b) => b.severity === null)).toBe(true);
+  const range = view.bugs ?? [];
+  expect(range.length).toBeGreaterThan(bugs.length);
+  expect(range.every((b) => view.periods.some((p) => p.id === b.periodId))).toBe(true);
+  const split = view.quality?.escapingBySeverity;
+  expect(split && split.sev1 + split.sev2 + split.sev3 + split.sev4 + split.unset).toBe(
+    view.quality?.escaping,
+  );
+  expect(view.periodDetail?.quality?.foundBeforeRelease).toBe(
+    bugs.filter((b) => b.foundBeforeRelease).length,
+  );
+
+  // Cost (CK2): every period by id, one before the store kept runs, one with no merged PR, a person's task and a task with no Feature.
+  const cost = view.cost;
+  expect(cost?.periods.map((p) => p.periodId)).toEqual(view.periods.map((p) => p.id));
+  expect(cost?.periods.some((p) => !p.stats.kept && p.stats.tokensPerTask === null)).toBe(true);
+  expect(cost?.periods.some((p) => p.stats.kept && p.stats.tokensPerMergedPr === null)).toBe(true);
+  expect(cost?.periods.every((p) => p.stats.kept || p.stats.tasksWithRunsPct === null)).toBe(true);
+  expect(cost?.periods.some((p) => p.stats.tasksWithRunsPct !== null)).toBe(true);
+  expect(cost?.mostTokens.some((t) => !t.agent)).toBe(true);
+  expect(cost?.byFeature.some((f) => f.key === null)).toBe(true);
 });

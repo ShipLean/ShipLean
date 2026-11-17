@@ -86,7 +86,7 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
     >
       <div
         data-testid={ids.sideMenuWordmark}
-        className="flex min-h-[26px] items-center justify-between"
+        className="flex min-h-[26px] shrink-0 items-center justify-between"
       >
         <span className="flex items-center gap-[7px] px-2 text-[length:var(--text-sm)] font-bold tracking-tight text-ink-muted">
           <i className="inline-block size-3.5 rounded-[4px] bg-signal" />

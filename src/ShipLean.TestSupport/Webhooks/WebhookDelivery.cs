@@ -115,8 +115,10 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
     public static WebhookDelivery GithubPing(string secret) => Signed(secret, """{"zen":"Keep it logically awesome.","hook_id":1}""", "ping");
 
     // action: open, update, reopen, merge, close. state: opened, closed, merged. description null keeps the recorded one.
+    // mergedAt and mergeCommitSha are written as given (null = the payload's null).
     public static WebhookDelivery Gitlab(
-        string token, string action, int iid, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "opened", string? description = null)
+        string token, string action, int iid, string title, DateTimeOffset updatedAt, string branch = "fix/rate-grid", string state = "opened", string? description = null,
+        DateTimeOffset? mergedAt = null, string? mergeCommitSha = null)
     {
         var payload = Load("gitlab-merge-request.json");
         var request = payload["object_attributes"]!;
@@ -131,6 +133,8 @@ public sealed record WebhookDelivery(string Path, string Body, IReadOnlyDictiona
             request["description"] = description;
         }
         request["updated_at"] = updatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
+        request["merged_at"] = mergedAt?.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
+        request["merge_commit_sha"] = mergeCommitSha;
         return new WebhookDelivery(GitlabPath, payload.ToJsonString(), new Dictionary<string, string>
         {
             ["X-Gitlab-Event"] = "Merge Request Hook",

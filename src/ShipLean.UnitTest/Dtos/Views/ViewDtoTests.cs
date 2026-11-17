@@ -135,6 +135,20 @@ public class ViewDtoTests
         detail.Next.ShouldNotBeNull();
         view.Headline.QuarterToDate.ShouldNotBeNull().ToDate.ShouldBeTrue();
         view.Headline.LastQuarter.ShouldNotBeNull().ToDate.ShouldBeFalse();
+        var quality = view.Quality.ShouldNotBeNull();
+        view.Periods.ShouldAllBe(p => p.Quality != null);
+        view.Periods.ShouldContain(p => p.Quality!.MergedPrs == null && p.Quality.Per100Prs == null);
+        view.Quarters.ShouldAllBe(q => q.Quality != null);
+        var bugs = detail.Bugs.ShouldNotBeNull();
+        bugs.ShouldContain(b => b.CausedByKey != null && b.CausedByTitle != null);
+        bugs.ShouldContain(b => b.FoundBeforeRelease);
+        bugs.ShouldContain(b => b.Severity == null);
+        detail.Quality.ShouldNotBeNull().FoundBeforeRelease.ShouldBe(bugs.Count(b => b.FoundBeforeRelease));
+        var range = view.Bugs.ShouldNotBeNull();
+        range.Count.ShouldBeGreaterThan(bugs.Count);
+        range.ShouldAllBe(b => view.Periods.Any(p => p.Id == b.PeriodId));
+        var split = quality.EscapingBySeverity;
+        (split.Sev1 + split.Sev2 + split.Sev3 + split.Sev4 + split.Unset).ShouldBe(quality.Escaping);
         IEnumerable<LeadTimeStatsDto> stats =
         [
             .. view.Periods.Select(p => p.LeadTime), .. view.Quarters.Select(q => q.LeadTime), .. view.Cuts.SelectMany(c => c.Cells.Append(c.All)),
@@ -144,6 +158,28 @@ public class ViewDtoTests
         {
             (s.MeanActiveHours + s.MeanBlockedHours + s.MeanReworkHours).ShouldNotBeNull().ShouldBe(s.MeanHours!.Value, 0.001);
         }
+    }
+
+    // SHIP-1398 CK2: one period from before the store kept runs, one with no merged PR, a task by a person, a task with no Feature.
+    [Test]
+    public void InspectionMetricsView_ShouldShowEveryCostCase()
+    {
+        var view = BoardDtoFixture.Read("views", "inspection-metrics-view.json").Deserialize<InspectionMetricsViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        var cost = view.Cost.ShouldNotBeNull();
+        cost.Available.ShouldBeTrue();
+        cost.Periods.Select(p => p.PeriodId).ShouldBe(view.Periods.Select(p => p.Id));
+        cost.Quarters.Select(q => q.Quarter).ShouldBe(view.Quarters.Select(q => q.Quarter));
+        cost.Periods.ShouldContain(p => !p.Stats.Kept && p.Stats.TokensPerTask == null && p.Stats.TokensPerTaskLabel == "—");
+        cost.Periods.ShouldContain(p => p.Stats.Kept && p.Stats.MergedPrs == null && p.Stats.TokensPerMergedPr == null);
+        cost.Periods.ShouldContain(p => p.Stats.ChangePctVsPrevious != null);
+        cost.Range.ShouldNotBeNull().TasksWithRuns.ShouldBeLessThan(cost.Range.Tasks);
+        cost.Headline.Finished.ShouldNotBeNull();
+        cost.Headline.LastQuarter.ShouldNotBeNull().Kept.ShouldBeFalse();
+        cost.MostTokens.Select(t => t.Tokens).ShouldBeInOrder(SortDirection.Descending);
+        cost.MostTokens.ShouldContain(t => !t.Agent);
+        cost.MostTokens.ShouldContain(t => t.FeatureKey == null);
+        cost.ByFeature.ShouldContain(f => f.Key == null);
     }
 
     [Test]

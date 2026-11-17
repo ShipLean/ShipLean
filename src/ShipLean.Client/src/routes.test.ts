@@ -350,6 +350,13 @@ test('routes_WhenNewIsNotAKind_ShouldDropIt', () => {
   expect(matchRoute('/p/SHIP/boards/stories', '?new=story')?.query).toEqual({});
 });
 
+test('routes_WhenWorkItemHasAddLink_ShouldKeepOnlyAKnownType', () => {
+  expect(matchRoute('/p/SHIP/items/SHIP-141', '?addLink=causedBy')?.query).toEqual({
+    addLink: 'causedBy',
+  });
+  expect(matchRoute('/p/SHIP/items/SHIP-141', '?addLink=related')?.query).toEqual({});
+});
+
 test('routes_SprintRetro_ShouldKeepDecidePointViewAndWrittenBy', () => {
   const query = { decide: 'open', point: 'p1', view: 'item', writtenBy: 'agents' };
   const path = routePath('sprintRetro', sprint, query);

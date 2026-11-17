@@ -543,10 +543,53 @@ export interface LeadTimeStatsDto {
   changePctVsPrevious: number | null;
 }
 
+/** Escaping bugs split by severity (sev1 critical to sev4 low, unset without one); they sum to escaping. */
+export interface InspectionSeverityCountsDto {
+  sev1: number;
+  sev2: number;
+  sev3: number;
+  sev4: number;
+  unset: number;
+}
+
+/**
+ * Escaping bugs over a period, quarter or the range (SHIP-1398 QK3): every Bug not found before release, in the sprint it was
+ * filed (or its cause's sprint once it has a Caused by link). mergedPrs and per100Prs are null when no linked PR merged.
+ * changePctVsPrevious is the whole-percent change in escaping against the sprint before, for a single sprint only; null for a
+ * quarter, the range, the first sprint and when the sprint before had none.
+ */
+export interface InspectionQualityStatsDto {
+  escaping: number;
+  weighted: number;
+  foundBeforeRelease: number;
+  mergedPrs: number | null;
+  per100Prs: number | null;
+  escapingBySeverity: InspectionSeverityCountsDto;
+  changePctVsPrevious: number | null;
+}
+
+/**
+ * A bug counted in a shown sprint; severity 1 (critical) to 4 (low) or null; causedBy* name the Task that introduced it;
+ * periodId is the sprint it counts in (filed, or its cause's sprint).
+ */
+export interface InspectionBugDto {
+  key: string;
+  title: string;
+  severity: number | null;
+  filedAt: string;
+  filedLabel: string;
+  foundBeforeRelease: boolean;
+  causedByKey: string | null;
+  causedByTitle: string | null;
+  periodId: string;
+}
+
 export interface InspectionHeadlinePeriodDto {
   periodId: string;
   name: string;
   leadTime: LeadTimeStatsDto;
+  /** Null exactly when the project has no live bug at all; so is every other quality and bugs in the view. */
+  quality: InspectionQualityStatsDto | null;
 }
 
 /** The last finished sprint, the running one so far, this quarter to date and last quarter; each null when there is none. */
@@ -578,6 +621,7 @@ export interface InspectionPeriodDto {
   inProgress: boolean;
   leadTime: LeadTimeStatsDto;
   dots: InspectionDotDto[];
+  quality: InspectionQualityStatsDto | null;
 }
 
 export interface InspectionQuarterDto {
@@ -585,6 +629,7 @@ export interface InspectionQuarterDto {
   toDate: boolean;
   periodIds: string[];
   leadTime: LeadTimeStatsDto;
+  quality: InspectionQualityStatsDto | null;
 }
 
 /** One row of the cut table; cells has one entry per period, in periods order. */
@@ -687,6 +732,87 @@ export interface InspectionPeriodDetailDto {
   features: InspectionPeriodFeatureDto[];
   /** Null unless select names one of this sprint's tasks; an unknown key selects nothing. */
   selected: InspectionTaskMeasurementDto | null;
+  quality: InspectionQualityStatsDto | null;
+  /** Every bug counted in this sprint, found before release ones included, oldest filed first. */
+  bugs: InspectionBugDto[] | null;
+}
+
+/**
+ * Tokens over a period, a quarter or the range (SHIP-1398 CK2). tasksWithRuns counts the tasks with at least one counted run;
+ * tokensPerTask is the mean over those only. tokensPerMergedPr is null when no PR merged. changePctVsPrevious is the
+ * whole-percent change in tokensPerTask against the sprint before, for a single sprint only. kept is false when the span
+ * started before the store kept runs: its numbers are then null and its labels read "—".
+ */
+export interface InspectionCostStatsDto {
+  tasks: number;
+  tasksWithRuns: number;
+  tokensPerTask: number | null;
+  tokensPerTaskLabel: string;
+  tokensTotal: number | null;
+  tokensTotalLabel: string;
+  mergedPrs: number | null;
+  tokensPerMergedPr: number | null;
+  tokensPerMergedPrLabel: string;
+  changePctVsPrevious: number | null;
+  kept: boolean;
+  tasksWithRunsPct: number | null;
+}
+
+export interface InspectionPeriodCostDto {
+  periodId: string;
+  stats: InspectionCostStatsDto;
+}
+
+export interface InspectionQuarterCostDto {
+  quarter: string;
+  stats: InspectionCostStatsDto;
+}
+
+/** As the lead-time headline: the last finished sprint, the running one so far, this quarter to date and last quarter. */
+export interface InspectionCostHeadlineDto {
+  finished: InspectionCostStatsDto | null;
+  soFar: InspectionCostStatsDto | null;
+  quarterToDate: InspectionCostStatsDto | null;
+  lastQuarter: InspectionCostStatsDto | null;
+}
+
+/** One of the range's tasks with the most tokens; agent says whether who is an agent; periodId is where its lead time ended. */
+export interface InspectionCostTaskDto {
+  key: string;
+  title: string;
+  featureKey: string | null;
+  who: string;
+  agent: boolean;
+  models: string[];
+  runs: number;
+  tokens: number;
+  tokensLabel: string;
+  leadLabel: string;
+  periodId: string | null;
+}
+
+/** The range's tokens of one Feature; key null for tasks with no Feature. */
+export interface InspectionCostFeatureDto {
+  key: string | null;
+  title: string;
+  tasks: number;
+  tokens: number;
+  tokensLabel: string;
+}
+
+/**
+ * Tokens per task from the agent runs (SHIP-1398 CK2): tokens only, never money. available is false, with a note, when the
+ * store cannot total tokens per task; its lists are then empty and range null. mostTokens is the range's top 8, most first.
+ */
+export interface InspectionCostDto {
+  available: boolean;
+  note: string | null;
+  periods: InspectionPeriodCostDto[];
+  quarters: InspectionQuarterCostDto[];
+  range: InspectionCostStatsDto | null;
+  headline: InspectionCostHeadlineDto;
+  mostTokens: InspectionCostTaskDto[];
+  byFeature: InspectionCostFeatureDto[];
 }
 
 /** GET of a project's Inspection lead time; the MCP tool inspection_metrics sends the same fields in snake_case. */
@@ -708,4 +834,10 @@ export interface InspectionMetricsViewDto {
   leftOut: InspectionLeftOutDto[];
   /** Null unless the query names a period. */
   periodDetail: InspectionPeriodDetailDto | null;
+  /** Escaping bugs over the shown sprints; null exactly when the project has no live bug at all. */
+  quality: InspectionQualityStatsDto | null;
+  /** Every bug counted in the shown sprints, found before release ones included, oldest filed first; null as quality. */
+  bugs: InspectionBugDto[] | null;
+  /** Tokens per task from the agent runs; null when agent runs are off for the instance or the project. */
+  cost: InspectionCostDto | null;
 }

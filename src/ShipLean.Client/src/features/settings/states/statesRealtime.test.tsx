@@ -41,6 +41,7 @@ const settings: ProjectSettingsDto = {
     repoBaseBranch: null,
     holidayCountry: null,
     agentConnections: [],
+    bugSeverityWeights: { 1: 8, 2: 4, 3: 2, 4: 1 },
   },
   members: [],
   sprints: { velocityWindow: 3, velocityOverride: null },

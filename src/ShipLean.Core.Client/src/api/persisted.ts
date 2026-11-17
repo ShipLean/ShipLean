@@ -55,6 +55,7 @@ export const LINK_TYPES = [
   'related',
   'duplicate',
   'url',
+  'causedBy',
 ] as const;
 export type LinkType = (typeof LINK_TYPES)[number];
 
@@ -424,6 +425,16 @@ export const FIELD_IDS = [
       { value: 3, label: '3 - Medium' },
       { value: 4, label: '4 - Low' },
     ],
+  },
+  {
+    id: 'foundBeforeRelease',
+    label: 'Found before release',
+    kind: 'text',
+    appliesTo: ['bug'],
+    nullable: false,
+    usedIn: ['history'],
+    ops: [],
+    values: null,
   },
   {
     id: 'description',

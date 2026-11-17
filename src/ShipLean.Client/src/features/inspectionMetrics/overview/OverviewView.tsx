@@ -2,11 +2,13 @@ import type { ComponentType } from 'react';
 import { postInspectionMetricsTaskOpened } from '@shiplean/core/api/usageApi';
 import { LeadTimeChart } from '../chart/LeadTimeChart';
 import type { InspectionViewProps } from '../InspectionViewProps';
+import { OverviewQualityCard } from '../quality/OverviewQualityCard';
 import { inspectionMetricsTestIds as ids } from '../testIds';
 import { CoverageBanner } from './CoverageBanner';
 import { LeadTimeCard } from './LeadTimeCard';
 import { LongestTasks } from './LongestTasks';
 import { OverviewEmpty } from './OverviewEmpty';
+import { TokensCard } from './TokensCard';
 import { PANEL_HEAD, PANEL_NOTE } from './overviewStyles';
 
 /**
@@ -75,13 +77,15 @@ export const OverviewView: ComponentType<InspectionViewProps> = ({
     <section data-testid={ids.overview} className="grid gap-3">
       {jsonLink}
       <CoverageBanner coverage={view.coverage} unit={unit} />
-      <div className="flex">
+      <div className="flex flex-wrap gap-3">
         <LeadTimeCard
           headline={view.headline}
           finished={finished}
           periods={view.periods}
           onOpen={() => onQueryChange({ view: 'leadtime' })}
         />
+        <OverviewQualityCard view={view} onOpen={() => onQueryChange({ view: 'quality' })} />
+        <TokensCard view={view} onOpen={() => onQueryChange({ view: 'cost' })} />
       </div>
       {chart}
       <LongestTasks

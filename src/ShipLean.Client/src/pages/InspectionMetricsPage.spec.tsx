@@ -13,6 +13,7 @@ const roots = {
   overview: ids.overview,
   leadtime: ids.leadTime,
   period: ids.period,
+  cost: ids.cost,
   json: ids.json,
 } as const;
 

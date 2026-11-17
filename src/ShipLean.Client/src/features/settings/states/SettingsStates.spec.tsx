@@ -108,6 +108,7 @@ const saved = (): ProjectSettingsDto => ({
     repoBaseBranch: null,
     holidayCountry: null,
     agentConnections: [],
+    bugSeverityWeights: { 1: 8, 2: 4, 3: 2, 4: 1 },
   },
   members: [{ user: joel, email: 'joel@shiplean.local', role: 'admin', status: 'active' }],
   sprints: { velocityWindow: 3, velocityOverride: null },

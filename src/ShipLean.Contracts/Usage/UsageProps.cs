@@ -57,7 +57,7 @@ public static class UsageProps
     // Which sheet was opened on the Themes tab, on retro.theme_sheet_opened: "theme" (one theme's sheet) or "unthemed" (the sheet of the points with no theme).
     public const string Sheet = "sheet";
 
-    // Which Inspection view was shown, on inspection_metrics.viewed: overview, leadtime, period or json.
+    // Which Inspection view was shown, on inspection_metrics.viewed: overview, leadtime, period, quality, cost or json.
     public const string View = "view";
 
     // Which kind of sprint was opened on Inspection, on inspection_metrics.period_opened: finished or running.

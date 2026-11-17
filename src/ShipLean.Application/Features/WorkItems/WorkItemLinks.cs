@@ -1,6 +1,8 @@
 using Dapper;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 
 namespace ShipLean.Application.Features.WorkItems;
@@ -90,19 +92,29 @@ internal static class WorkItemLinks
         }
 
         var target = await scope.Connection.QuerySingleOrDefaultAsync<TargetRow>(new CommandDefinition(
-            "SELECT key, project_id AS projectId FROM work_item WHERE id = @id", new { id = targetId }, scope.Transaction, cancellationToken: cancellationToken));
+            "SELECT key, project_id AS projectId, type FROM work_item WHERE id = @id", new { id = targetId }, scope.Transaction, cancellationToken: cancellationToken));
         if (target is null || target.ProjectId != projectId)
         {
             throw ApiException.NotFound("Linked work item not found.");
         }
 
-        return targetId == itemId
-            ? throw ApiException.Validation("A work item can't link to itself.")
-            : new LinkValue(value.Type, targetId, target.Key, null, null);
+        if (targetId == itemId)
+        {
+            throw ApiException.Validation("A work item can't link to itself.");
+        }
+
+        if (value.Type == LinkType.CausedBy)
+        {
+            var source = await scope.Connection.QuerySingleAsync<string>(new CommandDefinition(
+                "SELECT type FROM work_item WHERE id = @itemId", new { itemId }, scope.Transaction, cancellationToken: cancellationToken));
+            CausedByRule.Require(value.Type, Enum.Parse<WorkItemTypeId>(source, ignoreCase: true), Enum.Parse<WorkItemTypeId>(target.Type, ignoreCase: true));
+        }
+
+        return new LinkValue(value.Type, targetId, target.Key, null, null);
     }
 
     private static Task ExecuteAsync(WriteScope scope, string sql, object parameters, CancellationToken cancellationToken)
         => scope.Connection.ExecuteAsync(new CommandDefinition(sql, parameters, scope.Transaction, cancellationToken: cancellationToken));
 
-    private sealed record TargetRow(string Key, Guid ProjectId);
+    private sealed record TargetRow(string Key, Guid ProjectId, string Type);
 }
