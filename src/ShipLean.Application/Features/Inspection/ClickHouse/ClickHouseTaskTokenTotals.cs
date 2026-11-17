@@ -57,6 +57,7 @@ public sealed class ClickHouseTaskTokenTotals : ITaskTokenTotals
                     FROM {{names.Runs}}
                     WHERE project = {project:String}
                     GROUP BY session_id
+                    HAVING sum(span_tokens_in_n) + sum(log_tokens_in_n) + sum(span_tokens_out_n) + sum(log_tokens_out_n) > 0
                 ) AS r ON l.session_id = r.session_id
                 """,
                 new Dictionary<string, object>
