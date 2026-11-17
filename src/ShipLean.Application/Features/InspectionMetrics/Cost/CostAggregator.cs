@@ -113,12 +113,11 @@ public sealed class CostAggregator : ICostAggregator
             return Stats([sprint], previous is null ? null : [previous]);
         }
 
-        // A quarter against the whole previous quarter (the lead-time quarter rule also stops the previous one at the same day into it).
+        // A quarter has no change against the previous one: the change is for single sprints only.
         private InspectionCostStatsDto QuarterStats(IReadOnlyList<Guid> sprintIds)
         {
             var sprints = _started.Where(sprint => sprintIds.Contains(sprint.Id)).ToList();
-            var previous = sprints.Count == 0 ? [] : InspectionPeriods.SprintsEndingIn(_started, InspectionPeriods.QuarterOf(sprints[0]).AddMonths(-3));
-            return Stats(sprints, previous.Count == 0 ? null : previous);
+            return Stats(sprints, null);
         }
 
         // The span's numbers over the tasks that ended in its sprints; against is the span the change is measured from.
@@ -127,7 +126,7 @@ public sealed class CostAggregator : ICostAggregator
             var tasks = sprints.SelectMany(TasksIn).ToList();
             if (!sprints.All(Kept))
             {
-                return new InspectionCostStatsDto(tasks.Count, 0, null, TokenLabel.None, null, TokenLabel.None, null, null, TokenLabel.None, null, false);
+                return new InspectionCostStatsDto(tasks.Count, 0, null, TokenLabel.None, null, TokenLabel.None, null, null, TokenLabel.None, null, false, null);
             }
             var withRuns = tasks.Where(placed => placed.Tokens is not null).ToList();
             long? perTask = withRuns.Count == 0 ? null : (long)Math.Round(withRuns.Average(placed => placed.Tokens!.Total), MidpointRounding.AwayFromZero);
@@ -145,7 +144,8 @@ public sealed class CostAggregator : ICostAggregator
                 perPr,
                 TokenLabel.Of(perPr),
                 Change(perTask, against),
-                true);
+                true,
+                tasks.Count == 0 ? null : (int)Math.Round(100.0 * withRuns.Count / tasks.Count, MidpointRounding.AwayFromZero));
         }
 
         private int? Change(long? current, IReadOnlyList<InspectionSprint>? against)

@@ -128,7 +128,7 @@ public class CostAggregatorTests
         var quarter = cost.Quarters.ShouldHaveSingleItem();
         quarter.Quarter.ShouldBe("Q4 2026");
         (quarter.Stats.TasksWithRuns, quarter.Stats.TokensPerTask, quarter.Stats.TokensTotal).ShouldBe((2, (long?)2000, (long?)4000));
-        quarter.Stats.ChangePctVsPrevious.ShouldBe(100);
+        quarter.Stats.ChangePctVsPrevious.ShouldBeNull();
         cost.Headline.QuarterToDate!.TokensTotal.ShouldBe(4000);
         cost.Headline.LastQuarter!.TokensTotal.ShouldBe(1000);
     }
@@ -157,7 +157,7 @@ public class CostAggregatorTests
         var top = cost.MostTokens;
         top.Count.ShouldBe(8);
         top.Select(t => t.Key).ShouldBe(["SHIP-9", "SHIP-8", "SHIP-7", "SHIP-6", "SHIP-10", "SHIP-5", "SHIP-4", "SHIP-3"]);
-        (top[0].TokensLabel, top[0].Agent, top[0].Who, top[0].Runs, top[0].LeadLabel).ShouldBe(("9.0k", true, "Claude Code", 2, "24.0 h"));
+        (top[0].TokensLabel, top[0].Agent, top[0].Who, top[0].Runs, top[0].LeadLabel).ShouldBe(("9.0k", true, "Claude Code", 2, "1 day"));
     }
 
     // Mutation: drop the Feature-less tasks, or sort ascending.
@@ -176,6 +176,41 @@ public class CostAggregatorTests
 
         cost.ByFeature.Select(f => (f.Key, f.Title, f.Tasks, f.Tokens)).ShouldBe(
             [((string?)null, "No Feature", 2, 1500L), ("SHIP-99", "Coupons v2", 1, 1000L), ("SHIP-77", "Search", 1, 500L)]);
+    }
+
+    // Mutation: sum only one of the shown sprints, or divide by the tasks with runs.
+    [Test]
+    public void Build_ShouldTotalTheRangeOverTheShownSprints()
+    {
+        var cost = Build(Facts(("SHIP-1", 10, 6), ("SHIP-2", 10, 7), ("SHIP-4", 10, 20), ("SHIP-6", 9, 8)), Tokens(("SHIP-1", 1000), ("SHIP-4", 3000), ("SHIP-6", 9000)));
+
+        var range = cost.Range!;
+        (range.Tasks, range.TasksWithRuns, range.TokensPerTask, range.TokensTotal, range.ChangePctVsPrevious).ShouldBe((3, 2, (long?)2000, (long?)4000, (int?)null));
+        range.TasksWithRunsPct.ShouldBe(67);
+    }
+
+    // Mutation: round down, or give a percent when the span is not kept.
+    [Test]
+    public void Build_ShouldGiveThePercentOfTasksWithRuns()
+    {
+        var cost = Build(Facts(("SHIP-1", 10, 6), ("SHIP-2", 10, 7), ("SHIP-3", 10, 8), ("SHIP-4", 10, 20)), Tokens(At(10, 10, 0), ("SHIP-1", 1000), ("SHIP-4", 500)));
+
+        PeriodStats(cost, S3).TasksWithRunsPct.ShouldBeNull();
+        var s4 = PeriodStats(cost, S4);
+        (s4.Tasks, s4.TasksWithRuns, s4.TasksWithRunsPct).ShouldBe((1, 1, (int?)100));
+    }
+
+    // Mutation: point the headline at another period, or at the quarter's shown sprints only.
+    [Test]
+    public void Build_ShouldMirrorTheLeadTimeHeadline()
+    {
+        var cost = Build(Facts(("SHIP-1", 10, 6), ("SHIP-4", 10, 20), ("SHIP-5", 9, 22)), Tokens(("SHIP-1", 1000), ("SHIP-4", 1500), ("SHIP-5", 3000)));
+
+        cost.Headline.Finished!.TokensTotal.ShouldBe(1000);
+        cost.Headline.SoFar!.TokensTotal.ShouldBe(1500);
+        cost.Headline.QuarterToDate!.TokensTotal.ShouldBe(5500);
+        cost.Headline.QuarterToDate.ChangePctVsPrevious.ShouldBeNull();
+        cost.Headline.LastQuarter.ShouldBeNull();
     }
 
     [TestCase(950L, "950")]
