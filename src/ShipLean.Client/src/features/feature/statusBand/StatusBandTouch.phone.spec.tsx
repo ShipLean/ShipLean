@@ -221,6 +221,10 @@ test('FeatureHealth_WhenSaveFails_ShouldKeepThePreviousHealthAndSaySo', async ({
   await screen.getByTestId(touchTestIds.saveBarSave).tap();
   await expect(screen.getByTestId(ids.statusError)).toHaveText('Health could not be saved.');
 
+  // The failed save leaves the edit in place: the pill still shows the chosen health and the Save bar still names it.
+  await expect(screen.getByTestId(ids.statusHealthButton)).toContainText('Blocked');
+  await expect(screen.getByTestId(workItemTestIds.saveState)).toHaveText('Unsaved: Health');
+
   // Nothing was written: discarding the edit shows the health the Feature still has.
   await screen.getByTestId(touchTestIds.saveBarDiscard).tap();
   await expect(screen.getByTestId(ids.statusHealthButton)).toContainText('At risk');
