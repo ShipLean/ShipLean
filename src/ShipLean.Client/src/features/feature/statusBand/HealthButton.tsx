@@ -42,7 +42,7 @@ export function HealthButton({
     ...options.map((option) => ({
       id: option.value,
       label: option.label,
-      hint: option.hint,
+      hint: option.value === health ? undefined : option.hint,
       icon: <HealthDot health={option.value} />,
       checked: option.value === health,
       onSelect: () => onChange(option.value),
