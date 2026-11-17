@@ -210,7 +210,7 @@ public class CostAggregatorTests
         cost.Headline.SoFar!.TokensTotal.ShouldBe(1500);
         cost.Headline.QuarterToDate!.TokensTotal.ShouldBe(5500);
         cost.Headline.QuarterToDate.ChangePctVsPrevious.ShouldBeNull();
-        cost.Headline.LastQuarter.ShouldBeNull();
+        cost.Headline.LastQuarter!.TokensTotal.ShouldBeNull();
     }
 
     [TestCase(950L, "950")]
