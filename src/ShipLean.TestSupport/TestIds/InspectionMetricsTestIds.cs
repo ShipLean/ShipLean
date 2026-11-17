@@ -142,4 +142,8 @@ public static class InspectionMetricsTestIds
     public const string OverviewTokensCardChange = "inspection-metrics-overview-tokens-card-change";
     public const string OverviewTokensCardSoFar = "inspection-metrics-overview-tokens-card-so-far";
     public const string OverviewTokensEmpty = "inspection-metrics-overview-tokens-empty";
+    // CT4 append: each of the Cost view's three cards
+    public const string CostCardPerTask = "inspection-metrics-cost-card-per-task";
+    public const string CostCardPerMergedPr = "inspection-metrics-cost-card-per-merged-pr";
+    public const string CostCardWithRuns = "inspection-metrics-cost-card-with-runs";
 }
