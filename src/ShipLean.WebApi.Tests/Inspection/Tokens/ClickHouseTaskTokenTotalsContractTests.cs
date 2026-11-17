@@ -3,7 +3,9 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Inspection;
+using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.Inspection.ClickHouse;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 using ShipLean.LocalEnvironment.Inspection;
 using ShipLean.TestSupport.Inspection;
@@ -13,8 +15,8 @@ namespace ShipLean.WebApi.Tests.Inspection.Tokens;
 
 // What the ClickHouse ITaskTokenTotals (SHIP-1398 CK1) must return over the shared stack. Each test loads the claude-code fixture
 // under a fresh project key: its run is Tagged to one item and linked FromToolCall to another. The source comes from SHIP-1463's
-// service module with the stack's ClickHouse options, so the store switch is pinned too and the constructor is not. Red until CT1
-// replaces the stub. Every negative test first checks that the right query does find the tagged item (the positive control).
+// service module with the stack's ClickHouse options, so the store switch is pinned too and the constructor is not.
+// Every negative test first checks that the right query does find the tagged item (the positive control).
 [TestFixture(TestName = "ClickHouse tokens per task, SHIP-1398 CT1")]
 [Category("SHIP-1398")]
 public sealed class ClickHouseTaskTokenTotalsContractTests
@@ -22,6 +24,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     private const string FixtureName = "claude-code-synthetic";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(StoreTimeouts.WaitSeconds);
     private readonly List<ServiceProvider> providers = [];
+    private readonly FakeTimeProvider clock = new();
     private InspectionStack stack = null!;
 
     [OneTimeSetUp]
@@ -37,7 +40,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     }
 
     [Test]
-    public async Task ReadAsync_WhenTheRunIsTagged_ShouldGiveTheTaggedItemItsTokensTurnedGreenByCT1()
+    public async Task ReadAsync_WhenTheRunIsTagged_ShouldGiveTheTaggedItemItsTokens()
     {
         var run = await LoadAsync();
         var summary = run.Expected.Summary;
@@ -53,7 +56,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     }
 
     [Test]
-    public async Task ReadAsync_WhenTheRunHasATaggedLink_ShouldGiveToolCallItemsNothingTurnedGreenByCT1()
+    public async Task ReadAsync_WhenTheRunHasATaggedLink_ShouldGiveToolCallItemsNothing()
     {
         var run = await LoadAsync();
 
@@ -67,7 +70,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     }
 
     [Test]
-    public async Task ReadAsync_WhenAnotherProjectKeyIsUsed_ShouldFindNothingTurnedGreenByCT1()
+    public async Task ReadAsync_WhenAnotherProjectKeyIsUsed_ShouldFindNothing()
     {
         var run = await LoadAsync();
         var source = Build(stack.Options("clickhouse"));
@@ -83,7 +86,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     }
 
     [Test]
-    public async Task ReadAsync_WhenTheLinkIsOutsideTheWindow_ShouldFindNothingTurnedGreenByCT1()
+    public async Task ReadAsync_WhenTheLinkIsOutsideTheWindow_ShouldFindNothing()
     {
         var run = await LoadAsync();
         var source = Build(stack.Options("clickhouse"));
@@ -98,7 +101,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     }
 
     [Test]
-    public async Task ReadAsync_WhenTheStoreIsUnreachable_ShouldReportUnavailableWithoutThrowingTurnedGreenByCT1()
+    public async Task ReadAsync_WhenTheStoreIsUnreachable_ShouldReportUnavailableWithoutThrowing()
     {
         var run = await LoadAsync();
         await AssertFoundAsync(Build(stack.Options("clickhouse")), run);
@@ -116,6 +119,17 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         totals.Available.ShouldBeFalse();
         totals.Problem.ShouldNotBeNullOrWhiteSpace();
         totals.ByItem.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task ReadAsync_WhenTheStoreAnswers_ShouldSayHowFarBackItKeepsRuns()
+    {
+        var run = await LoadAsync();
+        var options = stack.Options("clickhouse");
+
+        var totals = await Build(options).ReadAsync(Query(run), CancellationToken.None);
+
+        totals.KeptSince.ShouldBe(clock.GetUtcNow().AddDays(-(options.RetentionDays + ClickHouseViewSql.ExpiredKeepDays)));
     }
 
     // A fresh run under its own project key, so no test sees another's.
@@ -138,6 +152,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         var services = new ServiceCollection();
         new InspectionServices().AddServices(services, new ConfigurationBuilder().Build());
         services.AddSingleton(options);
+        services.AddSingleton<TimeProvider>(clock);
         var provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
         providers.Add(provider);
         var source = provider.GetRequiredService<ITaskTokenTotals>();
