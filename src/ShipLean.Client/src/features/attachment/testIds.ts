@@ -54,4 +54,14 @@ export const attachmentTestIds = {
   save: 'attachment-save',
   cancel: 'attachment-cancel',
   saveError: 'attachment-save-error',
+
+  // SHIP-1626 SH3
+  contentsPosition: 'attachment-contents-position',
+  tooLargeHeading: 'attachment-too-large-heading',
+  aboutFacts: 'attachment-about-facts',
+  aboutFact: 'attachment-about-fact',
+  imagesMissingHint: 'attachment-images-missing-hint',
+  viewerName: 'attachment-viewer-name',
+  viewerHint: 'attachment-viewer-hint',
+  viewerZoom: 'attachment-viewer-zoom',
 } as const;

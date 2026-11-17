@@ -1,11 +1,14 @@
 import type { ChildSummaryDto } from '@shiplean/core/api/workItems';
+import { StateDot } from '../../../components/StateDot';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import { Avatar } from '../../../components/Avatar';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { featureTestIds as ids } from '../testIds';
 
-// One story or bug: type icon, key, title (opens it), state and assignee. Each is its own work item.
+// One story or bug: type icon, key, title (opens it), sprint or Backlog (touch only), state and assignee. Each is its own work item.
 export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projectKey: string }) {
+  const { touch } = useTouchShell();
   return (
     <li
       data-testid={ids.childRow}
@@ -19,6 +22,14 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
       >
         {child.key}
       </span>
+      {touch ? (
+        <span
+          data-testid={ids.childSprint}
+          className="min-w-0 max-w-[40%] truncate text-ink-muted touch:order-2"
+        >
+          {child.sprint?.name ?? 'Backlog'}
+        </span>
+      ) : null}
       <ItemLink
         testId={ids.childTitle}
         projectKey={projectKey}
@@ -31,7 +42,11 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
         data-testid={ids.childState}
         className="w-24 shrink-0 text-ink-muted touch:order-3 touch:w-auto"
       >
-        {child.state.name}
+        {touch ? (
+          <StateDot category={child.state.category} name={child.state.name} />
+        ) : (
+          child.state.name
+        )}
       </span>
       <Avatar {...(child.assignee ?? {})} />
     </li>

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { stubProjectApi } from '../../pages/pagesFixtures';
+import { componentTestIds } from '../../components/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { members, sprints, states, story } from '../workItem/ct/fixtures';
 import { ItemPeekHarness } from './ct/ItemPeekHarness';
@@ -75,4 +76,16 @@ test('ItemPeek_WhenCloseTappedOnTouch_ShouldDropItemFromUrl', async ({ mount, pa
 
   await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
   await expect(page.getByTestId(ids.address)).toHaveText('/p/SHIP/sprints');
+});
+
+test('ItemModalBar_ShouldShowTheItemType', async ({ mount, page }) => {
+  await stub(page);
+  await mount(<ItemPeekHarness itemKey="SHIP-141" />, at('/p/SHIP/sprints?item=SHIP-141'));
+  const dialog = page.getByTestId(ids.dialog);
+  await expect(dialog).toBeVisible();
+
+  // The bar reads "✕ · [S] SHIP-141 User Story · ↗ Open full page": the type's icon, then the key and the type's name.
+  const bar = dialog.getByTestId(touchTestIds.dialogClose).locator('..');
+  await expect(bar.getByTestId(componentTestIds.typeIcon)).toHaveAttribute('data-type', 'story');
+  await expect(bar.getByRole('heading')).toHaveText('SHIP-141 User Story');
 });

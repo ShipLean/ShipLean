@@ -64,3 +64,17 @@ test('ImageViewer_WhenZoomed_ShouldNotSwipe', async ({ mount, page }) => {
   await drag(right, left);
   await expect(counter).toHaveText('2 of 3 · SHIP-101');
 });
+
+test('ImageViewer_ShouldShowFileNameHintAndZoomReadout', async ({ mount, page }) => {
+  await mount(<ImageViewerHarness />);
+  const stage = page.getByTestId(ids.viewerStage);
+  await expect(page.getByTestId(ids.viewerName)).toHaveText('checkout-flow.svg');
+  await expect(page.getByTestId(ids.viewerHint)).toHaveText(
+    'Pinch to zoom · swipe for the next image',
+  );
+  await expect(page.getByTestId(ids.viewerZoom)).toHaveCount(0);
+
+  await stage.dblclick({ position: { x: 195, y: 200 } });
+
+  await expect(page.getByTestId(ids.viewerZoom)).toHaveText(/^\d+% · double-tap to fit$/);
+});

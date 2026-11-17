@@ -35,6 +35,18 @@ public class BoardChildrenApiTests : ApiFixture
     }
 
     [Test]
+    public async Task Children_WhenChildInASprint_ShouldCarryItsSprintAndNullWhenInNone()
+    {
+        var children = await ChildrenAsync(SeedIds.WorkItems.Ship101);
+
+        var planned = children.Single(c => c.Key == "SHIP-141").Sprint;
+        planned.ShouldNotBeNull();
+        planned.Id.ShouldBe(SeedIds.Sprints.Sprint24);
+        planned.Name.ShouldBe("Sprint 24");
+        children.Where(c => c.Sprint is null).ShouldNotBeEmpty();
+    }
+
+    [Test]
     public async Task Children_WhenEpic_ShouldListDescendantsAtEveryDepth()
     {
         var children = await ChildrenAsync(SeedIds.WorkItems.Ship92);

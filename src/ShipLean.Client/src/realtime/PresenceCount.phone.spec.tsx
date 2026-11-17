@@ -40,6 +40,24 @@ test('PresenceCount_WhenFourOthersHere_ShouldShowPlusFourAndListThemInSheet', as
   await expect(sheet).toHaveCount(0);
 });
 
+test('Presence_ShouldShowTheCountInAPill', async ({ mount, page }) => {
+  await mount(
+    <PresenceStack userIds={['user-1', 'user-2', 'user-3']} members={members} meId="user-1" />,
+  );
+  const count = page.getByTestId(ids.presenceCount);
+  const pill = page.getByTestId(ids.presenceCountPill);
+  await expect(count).toHaveText('+2');
+
+  // A soft filled background and full rounding: not transparent, and the radius is at least half the height.
+  await expect(pill).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  const radius = await pill.evaluate((node) => parseFloat(getComputedStyle(node).borderRadius));
+  const box = (await pill.boundingBox())!;
+  expect(radius).toBeGreaterThanOrEqual(box.height / 2);
+  // The pill is about 24px tall inside the 32px hit area.
+  expect(box.height).toBeLessThanOrEqual(26);
+  expect((await count.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+});
+
 test('LiveDot_WhenReconnecting_ShouldSayReconnecting', async ({ mount, page }) => {
   const dot = page.getByTestId(ids.liveDot);
   const component = await mount(<LiveDot state="live" />);

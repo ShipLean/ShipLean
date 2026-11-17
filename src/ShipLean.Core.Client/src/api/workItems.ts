@@ -72,6 +72,8 @@ export interface ChildSummaryDto {
   state: StateRef;
   assignee: UserRef | null;
   points: number | null;
+  // Always sent by the server (null when in no sprint); optional here so the many fixtures that predate it still type-check.
+  sprint?: SprintRef | null;
 }
 
 export interface WorkItemDto {

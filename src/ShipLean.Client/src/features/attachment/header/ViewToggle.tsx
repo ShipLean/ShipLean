@@ -17,14 +17,14 @@ export function ViewToggle({
   onChange: (view: AttachmentView) => void;
 }) {
   return (
-    <div role="group" aria-label="View" className="inline-flex">
+    <div role="group" aria-label="View" className="inline-flex touch:flex-1">
       {options.map((option) => (
         <button
           key={option.view}
           type="button"
           data-testid={option.testId}
           aria-pressed={view === option.view}
-          className="h-7 touch:h-[var(--touch-target)] border border-edge bg-panel px-3 text-[length:var(--text-sm)] first:rounded-l-control last:rounded-r-control aria-pressed:bg-signal-soft aria-pressed:text-signal"
+          className="h-7 touch:h-[var(--touch-target)] touch:flex-1 border border-edge bg-panel px-3 text-[length:var(--text-sm)] first:rounded-l-control last:rounded-r-control aria-pressed:bg-signal-soft aria-pressed:text-signal"
           onClick={() => onChange(option.view)}
         >
           {option.label}

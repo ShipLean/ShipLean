@@ -31,7 +31,7 @@ public sealed class BoardViews(IProjectAccess access, IBoardSettingsStore settin
     {
         var (projectId, _) = await access.RequireAsync(ProjectItem.WorkItem, itemId, ProjectRole.Member, cancellationToken);
         var items = await tree.DescendantsAsync(projectId, itemId, type, cancellationToken);
-        return [.. items.Select(i => new ChildSummaryDto(i.Id, i.Key, i.Type, i.Title, i.State, i.Assignee, i.Points))];
+        return [.. items.Select(i => new ChildSummaryDto(i.Id, i.Key, i.Type, i.Title, i.State, i.Assignee, i.Points, i.Sprint))];
     }
 
     private async Task<BoardSettingsDto> LevelBoardAsync(Guid boardId, CancellationToken cancellationToken)
