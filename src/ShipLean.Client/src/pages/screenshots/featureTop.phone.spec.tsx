@@ -47,8 +47,10 @@ const epic = {
   type: { id: 'epic' as const, name: 'Epic' },
   title: 'Checkout conversion',
 };
+const sprint24 = { id: 'sp24', name: 'Sprint 24', status: 'current' as const };
 const child = (key: string, title: string, bug = false) => ({
   ...feature.children[0],
+  sprint: key === 'SHIP-143' ? null : sprint24,
   id: `c-${key}`,
   key,
   title,
