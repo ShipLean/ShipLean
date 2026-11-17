@@ -8,7 +8,7 @@ namespace ShipLean.WebApi.Tests.Inspection.Tokens;
 
 // SHIP-1463's store switch for ITaskTokenTotals (SHIP-1398 CK1, item D20): a Tempo + Loki install gets the source that says Cost
 // needs the ClickHouse store. No store is contacted.
-[TestFixture(TestName = "Tokens per task store switch, SHIP-1398 CTE")]
+[TestFixture]
 [Category("SHIP-1398")]
 public sealed class TaskTokenTotalsStoreSwitchTests
 {
