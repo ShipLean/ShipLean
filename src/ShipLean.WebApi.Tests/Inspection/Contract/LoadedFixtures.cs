@@ -20,6 +20,8 @@ public sealed record LoadedRun(InspectionFixture Fixture, LoadedFixture Load, Ra
         var load = await OtlpFixtureLoader.SendAsync(stack.CollectorUrl, fixture.OtlpPath, key, now, batches);
         var expected = RawRunJson.ParseRun(load.Rewrite(System.Text.Json.JsonSerializer.Serialize(fixture.Expected, RawRunJson.Options)));
         await stack.WaitUntilVisibleAsync(load, fixture.Expected.Summary.SpanCount, fixture.Expected.Summary.LogCount, timeout);
+        // On a fresh stack the first load migrates the ShipLean schema, once, before any test's own migrator can race it.
+        await ClickHouseSchemaReady.EnsureAsync(stack, timeout);
         return new LoadedRun(fixture, load, expected);
     }
 }
