@@ -120,4 +120,15 @@ export const featureTestIds = {
   epicOpen: 'feature-epic-open',
   featureTimelineSection: 'feature-timeline-section',
   featureTimelineOpen: 'feature-timeline-open',
+
+  // SH2 touch Health pill and sheet, child add buttons
+  statusHealthButton: 'feature-status-health-button',
+  healthSheetFootnote: 'feature-health-sheet-footnote',
+  childAddStory: 'feature-child-add-story',
+  childAddBug: 'feature-child-add-bug',
+  childAddForm: 'feature-child-add-form',
+  childAddInput: 'feature-child-add-input',
+  childAddSubmit: 'feature-child-add-submit',
+  childAddCancel: 'feature-child-add-cancel',
+  childAddError: 'feature-child-add-error',
 } as const;

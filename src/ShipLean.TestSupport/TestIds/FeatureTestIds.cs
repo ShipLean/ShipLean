@@ -122,4 +122,15 @@ public static class FeatureTestIds
     public const string EpicOpen = "feature-epic-open";
     public const string FeatureTimelineSection = "feature-timeline-section";
     public const string FeatureTimelineOpen = "feature-timeline-open";
+
+    // SH2 touch Health pill and sheet, child add buttons
+    public const string StatusHealthButton = "feature-status-health-button";
+    public const string HealthSheetFootnote = "feature-health-sheet-footnote";
+    public const string ChildAddStory = "feature-child-add-story";
+    public const string ChildAddBug = "feature-child-add-bug";
+    public const string ChildAddForm = "feature-child-add-form";
+    public const string ChildAddInput = "feature-child-add-input";
+    public const string ChildAddSubmit = "feature-child-add-submit";
+    public const string ChildAddCancel = "feature-child-add-cancel";
+    public const string ChildAddError = "feature-child-add-error";
 }
