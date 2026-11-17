@@ -1144,7 +1144,8 @@
           "tokensPerMergedPr": null,
           "tokensPerMergedPrLabel": "—",
           "changePctVsPrevious": null,
-          "kept": false
+          "kept": false,
+          "tasksWithRunsPct": null
         }
       },
       {
@@ -1160,7 +1161,8 @@
           "tokensPerMergedPr": 166833,
           "tokensPerMergedPrLabel": "167k",
           "changePctVsPrevious": null,
-          "kept": true
+          "kept": true,
+          "tasksWithRunsPct": 79
         }
       },
       {
@@ -1176,7 +1178,8 @@
           "tokensPerMergedPr": 143000,
           "tokensPerMergedPrLabel": "143k",
           "changePctVsPrevious": -15,
-          "kept": true
+          "kept": true,
+          "tasksWithRunsPct": 81
         }
       },
       {
@@ -1192,7 +1195,8 @@
           "tokensPerMergedPr": null,
           "tokensPerMergedPrLabel": "—",
           "changePctVsPrevious": -22,
-          "kept": true
+          "kept": true,
+          "tasksWithRunsPct": 83
         }
       }
     ],
@@ -1210,7 +1214,8 @@
           "tokensPerMergedPr": null,
           "tokensPerMergedPrLabel": "—",
           "changePctVsPrevious": null,
-          "kept": false
+          "kept": false,
+          "tasksWithRunsPct": null
         }
       },
       {
@@ -1226,7 +1231,8 @@
           "tokensPerMergedPr": 177346,
           "tokensPerMergedPrLabel": "177k",
           "changePctVsPrevious": null,
-          "kept": true
+          "kept": true,
+          "tasksWithRunsPct": 81
         }
       }
     ],
@@ -1241,7 +1247,8 @@
       "tokensPerMergedPr": 131742,
       "tokensPerMergedPrLabel": "132k",
       "changePctVsPrevious": null,
-      "kept": true
+      "kept": true,
+      "tasksWithRunsPct": 60
     },
     "headline": {
       "finished": {
@@ -1255,7 +1262,8 @@
         "tokensPerMergedPr": 143000,
         "tokensPerMergedPrLabel": "143k",
         "changePctVsPrevious": -15,
-        "kept": true
+        "kept": true,
+        "tasksWithRunsPct": 81
       },
       "soFar": {
         "tasks": 6,
@@ -1268,7 +1276,8 @@
         "tokensPerMergedPr": null,
         "tokensPerMergedPrLabel": "—",
         "changePctVsPrevious": -22,
-        "kept": true
+        "kept": true,
+        "tasksWithRunsPct": 83
       },
       "quarterToDate": {
         "tasks": 36,
@@ -1281,7 +1290,8 @@
         "tokensPerMergedPr": 177346,
         "tokensPerMergedPrLabel": "177k",
         "changePctVsPrevious": null,
-        "kept": true
+        "kept": true,
+        "tasksWithRunsPct": 81
       },
       "lastQuarter": {
         "tasks": 30,
@@ -1294,7 +1304,8 @@
         "tokensPerMergedPr": null,
         "tokensPerMergedPrLabel": "—",
         "changePctVsPrevious": null,
-        "kept": false
+        "kept": false,
+        "tasksWithRunsPct": null
       }
     },
     "mostTokens": [

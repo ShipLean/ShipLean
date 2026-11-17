@@ -755,6 +755,7 @@ export interface InspectionCostStatsDto {
   tokensPerMergedPrLabel: string;
   changePctVsPrevious: number | null;
   kept: boolean;
+  tasksWithRunsPct: number | null;
 }
 
 export interface InspectionPeriodCostDto {

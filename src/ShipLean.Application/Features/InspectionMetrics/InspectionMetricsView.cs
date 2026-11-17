@@ -55,7 +55,8 @@ public sealed class InspectionMetricsView(
         var placed = measured
             .Where(task => task.Start is not null && InspectionPeriods.SprintOf(started, task.End, zone) is { } sprint && touched.Contains(sprint.Id))
             .ToList();
-        var from = placed.Count == 0 ? now : placed.Min(task => task.Start!.Value);
+        // A day before the earliest start: a run's first link rows can land just before its task's In-progress move.
+        var from = placed.Count == 0 ? now : placed.Min(task => task.Start!.Value).AddDays(-1);
         var tokens = await tokenTotals.ReadAsync(new TaskTokenQuery(view.Project.Key, [.. placed.Select(task => task.TaskKey)], from, now), ct);
         var mergedPrsBySprint = bugs.MergedPrs
             .Select(pr => InspectionPeriods.SprintOf(started, pr.MergedAt, zone)?.Id)

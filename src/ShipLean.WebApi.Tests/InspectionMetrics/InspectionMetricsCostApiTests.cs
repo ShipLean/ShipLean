@@ -100,7 +100,7 @@ public class InspectionMetricsCostApiTests : ApiFixture
             cost.GetProperty(list).ValueKind.ShouldBe(JsonValueKind.Array, list);
         }
         var query = tokens.Queries.ShouldHaveSingleItem();
-        query.ShouldBe(query with { ProjectKey = "EMPT", From = Started, To = Now });
+        query.ShouldBe(query with { ProjectKey = "EMPT", From = Started.AddDays(-1), To = Now });
         query.ItemKeys.ShouldBe([taskKey]);
     }
 

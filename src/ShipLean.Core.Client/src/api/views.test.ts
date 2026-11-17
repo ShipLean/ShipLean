@@ -200,6 +200,8 @@ test('views_ShouldTypeTheInspectionMetricsFixture', () => {
   expect(cost?.periods.map((p) => p.periodId)).toEqual(view.periods.map((p) => p.id));
   expect(cost?.periods.some((p) => !p.stats.kept && p.stats.tokensPerTask === null)).toBe(true);
   expect(cost?.periods.some((p) => p.stats.kept && p.stats.tokensPerMergedPr === null)).toBe(true);
+  expect(cost?.periods.every((p) => p.stats.kept || p.stats.tasksWithRunsPct === null)).toBe(true);
+  expect(cost?.periods.some((p) => p.stats.tasksWithRunsPct !== null)).toBe(true);
   expect(cost?.mostTokens.some((t) => !t.agent)).toBe(true);
   expect(cost?.byFeature.some((f) => f.key === null)).toBe(true);
 });

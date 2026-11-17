@@ -4,7 +4,8 @@ namespace ShipLean.Contracts.Views.InspectionMetrics;
 // at least one counted run. TokensPerTask is the mean over the tasks with runs only (a task with no runs is left out, never a zero).
 // TokensPerMergedPr is TokensTotal over the merged PRs (the quality wave's count), null when none merged. ChangePctVsPrevious is the
 // whole-percent change in TokensPerTask against the previous started sprint, for a single sprint only. Kept is false when the span
-// started before the store's KeptSince: its numbers are then null and its labels read "—". Every label is made on the server.
+// started before the store's KeptSince: its numbers are then null and its labels read "—". TasksWithRunsPct is TasksWithRuns over
+// Tasks as a whole percent (rounded), null when Tasks is 0 or Kept is false. Every label is made on the server.
 public sealed record InspectionCostStatsDto(
     int Tasks,
     int TasksWithRuns,
@@ -16,4 +17,5 @@ public sealed record InspectionCostStatsDto(
     long? TokensPerMergedPr,
     string TokensPerMergedPrLabel,
     int? ChangePctVsPrevious,
-    bool Kept);
+    bool Kept,
+    int? TasksWithRunsPct = null);
