@@ -7,7 +7,8 @@ namespace ShipLean.Contracts.Views.InspectionMetrics;
 // closed with no start recorded (design D9). PeriodDetail is null unless the query names a period. Quality (QK3) is the escaping
 // bugs over the shown sprints. Bugs lists every bug counted in the shown sprints, found before release ones included, oldest filed
 // first. Quality and Bugs, and every other Quality and Bugs in the view, are null exactly when the project has no live bug at all
-// (BugFacts.AnyBugs false), whatever the window.
+// (BugFacts.AnyBugs false), whatever the window. Cost (CK2) is the tokens per task from the agent runs, null when Inspection (agent
+// runs) is off for the instance or the project.
 public sealed record InspectionMetricsViewDto(
     InspectionProjectDto Project,
     InspectionCadence Cadence,
@@ -25,4 +26,5 @@ public sealed record InspectionMetricsViewDto(
     IReadOnlyList<InspectionLeftOutDto> LeftOut,
     InspectionPeriodDetailDto? PeriodDetail,
     InspectionQualityStatsDto? Quality,
-    IReadOnlyList<InspectionBugDto>? Bugs);
+    IReadOnlyList<InspectionBugDto>? Bugs,
+    InspectionCostDto? Cost);

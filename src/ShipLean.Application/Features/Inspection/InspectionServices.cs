@@ -10,7 +10,7 @@ using ShipLean.Contracts.Inspection;
 namespace ShipLean.Application.Features.Inspection;
 
 // Options are read when first resolved (so test hosts that override configuration get their own) and a hosted service resolves them at
-// startup, so a bad SHIPLEAN_INSPECTION_* value stops the app. ITraceSource is picked by SHIPLEAN_INSPECTION_STORE at resolve time.
+// startup, so a bad SHIPLEAN_INSPECTION_* value stops the app. ITraceSource and ITaskTokenTotals are picked by SHIPLEAN_INSPECTION_STORE at resolve time.
 // IRunAssembler registers itself (its own attribute).
 public sealed class InspectionServices : IServiceModule
 {
@@ -28,6 +28,9 @@ public sealed class InspectionServices : IServiceModule
         services.AddSingleton<TempoLokiFieldCheck>();
         services.AddSingleton<TempoLokiTraceSource>();
         services.AddSingleton<DisabledTraceSource>();
+        services.AddSingleton<ClickHouseTaskTokenTotals>();
+        services.AddSingleton<TempoLokiTaskTokenTotals>();
+        services.AddSingleton<DisabledTaskTokenTotals>();
         InspectionHttp.Add(services);
         services.AddSingleton<ClickHouseSchemaMigrator>();
         services.AddSingleton<ITraceSource>(sp => sp.GetRequiredService<InspectionOptions>() switch
@@ -35,6 +38,12 @@ public sealed class InspectionServices : IServiceModule
             { Enabled: true, Store: InspectionOptionsReader.ClickHouse } => sp.GetRequiredService<ClickHouseTraceSource>(),
             { Enabled: true, Store: InspectionOptionsReader.TempoLoki } => sp.GetRequiredService<TempoLokiTraceSource>(),
             _ => sp.GetRequiredService<DisabledTraceSource>(),
+        });
+        services.AddSingleton<ITaskTokenTotals>(sp => sp.GetRequiredService<InspectionOptions>() switch
+        {
+            { Enabled: true, Store: InspectionOptionsReader.ClickHouse } => sp.GetRequiredService<ClickHouseTaskTokenTotals>(),
+            { Enabled: true, Store: InspectionOptionsReader.TempoLoki } => sp.GetRequiredService<TempoLokiTaskTokenTotals>(),
+            _ => sp.GetRequiredService<DisabledTaskTokenTotals>(),
         });
         services.AddSingleton<IHostedService>(sp => new InspectionStartup(sp.GetRequiredService<InspectionOptions>(), sp));
     }

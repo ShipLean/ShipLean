@@ -119,4 +119,27 @@ public static class InspectionMetricsTestIds
     public const string OverviewQualityEmpty = "inspection-metrics-overview-quality-empty";
     // QT5 append: one severity's part of a sprint's bar
     public const string QualityChartSegment = "inspection-metrics-quality-chart-segment";
+
+    // Cost (CT0, SHIP-1398 CK4): the Cost view, the Overview tokens card and the menu item
+    public const string MenuCost = "inspection-metrics-menu-cost";
+    public const string Cost = "inspection-metrics-cost";
+    public const string CostOff = "inspection-metrics-cost-off";
+    public const string CostUnavailable = "inspection-metrics-cost-unavailable";
+    public const string CostCard = "inspection-metrics-cost-card";
+    public const string CostCardValue = "inspection-metrics-cost-card-value";
+    public const string CostChart = "inspection-metrics-cost-chart";
+    public const string CostChartBar = "inspection-metrics-cost-chart-bar";
+    public const string CostPeriodRows = "inspection-metrics-cost-period-rows";
+    public const string CostPeriodRow = "inspection-metrics-cost-period-row";
+    public const string CostQuarterRow = "inspection-metrics-cost-quarter-row";
+    public const string CostNotKept = "inspection-metrics-cost-not-kept";
+    public const string CostMostTokensRows = "inspection-metrics-cost-most-tokens-rows";
+    public const string CostMostTokensRow = "inspection-metrics-cost-most-tokens-row";
+    public const string CostFeatureRows = "inspection-metrics-cost-feature-rows";
+    public const string CostFeatureRow = "inspection-metrics-cost-feature-row";
+    public const string OverviewTokensCard = "inspection-metrics-overview-tokens-card";
+    public const string OverviewTokensCardValue = "inspection-metrics-overview-tokens-card-value";
+    public const string OverviewTokensCardChange = "inspection-metrics-overview-tokens-card-change";
+    public const string OverviewTokensCardSoFar = "inspection-metrics-overview-tokens-card-so-far";
+    public const string OverviewTokensEmpty = "inspection-metrics-overview-tokens-empty";
 }
