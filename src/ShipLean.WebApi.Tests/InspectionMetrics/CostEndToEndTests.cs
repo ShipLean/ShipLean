@@ -81,7 +81,7 @@ public class CostEndToEndTests : ApiFixture
     {
         using var created = await Api.PostJsonAsync("api/projects", new ProjectCreate($"Cost {key}", key, SeedIds.Projects.Empt, [], [1, 2, 3, 4, 5], null));
         created.StatusCode.ShouldBe(HttpStatusCode.OK, await created.Content.ReadAsStringAsync());
-        projectId = (await created.ReadAsync<ProjectDto>()).Id;
+        projectId = JsonSerializer.Deserialize<ProjectDto>(await created.Content.ReadAsStringAsync(), Wire)!.Id;
         using var put = await Api.PutJsonAsync($"api/inspection/projects/{key}/settings", new InspectionProjectSettingsDto(true, false, null, null, "clickhouse"));
         put.StatusCode.ShouldBe(HttpStatusCode.OK, await put.Content.ReadAsStringAsync());
 
