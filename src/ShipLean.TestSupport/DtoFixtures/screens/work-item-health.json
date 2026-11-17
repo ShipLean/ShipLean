@@ -78,7 +78,8 @@
         "avatarColour": "#2f7fd8",
         "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
       },
-      "points": 5
+      "points": 5,
+      "sprint": null
     }
   ],
   "originalSystem": null,

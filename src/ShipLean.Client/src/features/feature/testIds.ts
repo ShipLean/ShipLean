@@ -131,4 +131,7 @@ export const featureTestIds = {
   childAddSubmit: 'feature-child-add-submit',
   childAddCancel: 'feature-child-add-cancel',
   childAddError: 'feature-child-add-error',
+
+  // SHIP-2082 sprint on the touch child row
+  childSprint: 'feature-child-sprint',
 } as const;

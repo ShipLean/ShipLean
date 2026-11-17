@@ -151,7 +151,8 @@
         "avatarColour": "#7b4fc9",
         "photoUrl": null
       },
-      "points": null
+      "points": null,
+      "sprint": null
     },
     {
       "id": "00000005-0000-4000-8001-000000000143",
@@ -173,7 +174,8 @@
         "avatarColour": "#16a089",
         "photoUrl": null
       },
-      "points": null
+      "points": null,
+      "sprint": null
     },
     {
       "id": "00000005-0000-4000-8001-000000000145",
@@ -195,7 +197,8 @@
         "avatarColour": "#2f7fd8",
         "photoUrl": "/api/users/00000001-0000-4000-8000-000000000002/photo?v=1"
       },
-      "points": null
+      "points": null,
+      "sprint": null
     }
   ],
   "originalSystem": null,
