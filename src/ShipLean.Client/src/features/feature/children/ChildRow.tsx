@@ -6,7 +6,7 @@ import { TypeIcon } from '../../../components/TypeIcon';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { featureTestIds as ids } from '../testIds';
 
-// One story or bug: type icon, key, title (opens it), sprint (touch only), state and assignee. Each is its own work item.
+// One story or bug: type icon, key, title (opens it), sprint or Backlog (touch only), state and assignee. Each is its own work item.
 export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projectKey: string }) {
   const { touch } = useTouchShell();
   return (
@@ -22,12 +22,12 @@ export function ChildRow({ child, projectKey }: { child: ChildSummaryDto; projec
       >
         {child.key}
       </span>
-      {touch && child.sprint ? (
+      {touch ? (
         <span
           data-testid={ids.childSprint}
           className="min-w-0 max-w-[40%] truncate text-ink-muted touch:order-2"
         >
-          {child.sprint.name}
+          {child.sprint?.name ?? 'Backlog'}
         </span>
       ) : null}
       <ItemLink
