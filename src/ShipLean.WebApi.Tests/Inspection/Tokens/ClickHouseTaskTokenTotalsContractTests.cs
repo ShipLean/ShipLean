@@ -24,7 +24,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     private const string FixtureName = "claude-code-synthetic";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(StoreTimeouts.WaitSeconds);
     private readonly List<ServiceProvider> providers = [];
-    private readonly FakeTimeProvider clock = new(new DateTimeOffset(2026, 11, 17, 12, 0, 0, TimeSpan.Zero));
+    private readonly FakeTimeProvider clock = new();
     private InspectionStack stack = null!;
 
     [OneTimeSetUp]
