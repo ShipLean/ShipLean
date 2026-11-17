@@ -65,7 +65,7 @@ public class CostAggregatorContractTests
 
     // Mutation: count a task with no runs as zero tokens in the mean.
     [Test]
-    public void Build_WhenATaskHasNoRuns_ShouldLeaveItOutOfTheMeanTurnedGreenByCT3()
+    public void Build_WhenATaskHasNoRuns_ShouldLeaveItOutOfTheMean()
     {
         var cost = Build(Tasks(("SHIP-1", 10, 6), ("SHIP-2", 10, 7)), Tokens(null, ("SHIP-1", 800, 200)));
 
@@ -77,7 +77,7 @@ public class CostAggregatorContractTests
 
     // Mutation: divide by the range's merged PRs instead of the sprint's; give 0 instead of null without PRs.
     [Test]
-    public void Build_WhenNoPrMerged_ShouldGiveNullPerMergedPrTurnedGreenByCT3()
+    public void Build_WhenNoPrMerged_ShouldGiveNullPerMergedPr()
     {
         var cost = Build(
             Tasks(("SHIP-1", 10, 6), ("SHIP-4", 10, 20)),
@@ -93,7 +93,7 @@ public class CostAggregatorContractTests
 
     // Mutation: compare KeptSince with the sprint's end instead of its start.
     [Test]
-    public void Build_WhenAPeriodStartedBeforeKeptSince_ShouldMarkItNotKeptTurnedGreenByCT3()
+    public void Build_WhenAPeriodStartedBeforeKeptSince_ShouldMarkItNotKept()
     {
         var cost = Build(Tasks(("SHIP-1", 10, 6), ("SHIP-4", 10, 20)), Tokens(At(10, 10, 0), ("SHIP-1", 800, 200), ("SHIP-4", 500, 500)));
 
@@ -108,7 +108,7 @@ public class CostAggregatorContractTests
 
     // Mutation: drop the store's problem from the note.
     [Test]
-    public void Build_WhenTokensUnavailable_ShouldCarryTheProblemTurnedGreenByCT3()
+    public void Build_WhenTokensUnavailable_ShouldCarryTheProblem()
     {
         var cost = Build(Tasks(("SHIP-1", 10, 6)), TaskTokenTotals.Unavailable("Tokens per task needs the ClickHouse store."));
 
