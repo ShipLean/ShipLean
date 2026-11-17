@@ -31,6 +31,7 @@ export const pageRouteIds = {
   retroFeatures: 'retroFeatures',
   retroItem: 'retroItem',
   retroInsights: 'retroInsights',
+  inspectionMetrics: 'inspectionMetrics',
   importIntoProject: 'jiraImport',
   importWithoutProject: 'importStart',
   projectSettings: 'projectSettings',

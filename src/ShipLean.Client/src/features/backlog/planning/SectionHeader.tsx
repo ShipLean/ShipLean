@@ -4,6 +4,7 @@ import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import { Chip } from '../../../components/Chip';
 import { routePath } from '../../../routes';
 import { useSectionPreview } from '../drag/GroupDragContext';
+import { itemCount } from './itemCount';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionCapacity } from './SectionCapacity';
 import { SectionToggle } from './SectionToggle';
@@ -69,7 +70,7 @@ export function SectionHeader({
             data-testid={ids.planningSectionCount}
             className="text-[length:var(--text-sm)] text-ink-muted"
           >
-            {section.rows.length} items
+            {itemCount(section.rows.length)}
           </span>
           {action}
           <span className="flex-1" />
@@ -79,15 +80,21 @@ export function SectionHeader({
             velocity={velocity}
             preview={preview}
           />
+          {current ? null : (
+            <Link
+              data-testid={ids.planningSectionCapacityLink}
+              className="btn-ghost"
+              to={routePath('capacity', { key: projectKey, sprintId: sprint.id })}
+            >
+              Capacity
+            </Link>
+          )}
           <Link
             data-testid={ids.planningSectionLink}
             className="btn-ghost"
-            to={routePath(current ? 'sprintBacklog' : 'capacity', {
-              key: projectKey,
-              sprintId: sprint.id,
-            })}
+            to={routePath('sprintBacklog', { key: projectKey, sprintId: sprint.id })}
           >
-            {current ? 'Open sprint' : 'Capacity'}
+            Open sprint
           </Link>
         </div>
       </td>

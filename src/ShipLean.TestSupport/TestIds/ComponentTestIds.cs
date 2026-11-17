@@ -33,4 +33,6 @@ public static class ComponentTestIds
     public const string PreviewCardTitle = "preview-card-title";
     public const string PreviewCardState = "preview-card-state";
     public const string PreviewCardBody = "preview-card-body";
+    public const string DialogSubtitle = "dialog-subtitle";
+    public const string DialogTitle = "dialog-title";
 }

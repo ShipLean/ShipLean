@@ -14,6 +14,12 @@ public static class UsageProps
     public const string Column = "column";
     public const string Direction = "direction";
 
+    // The Health a board was filtered to, on board.health_filtered: onTrack, atRisk, blocked, none (Not set) or any (the filter cleared).
+    public const string Health = "health";
+
+    // The board a Filter control was opened on, on board.filter_opened: features, stories or epics.
+    public const string Level = "level";
+
     // The backlog mode (list, planning or tree) on screen.viewed for a backlog screen, so a mode's views compare with the page's.
     public const string Mode = "mode";
 
@@ -47,6 +53,18 @@ public static class UsageProps
 
     // The work item's type, on get_work_item's event, so calls on Features can be counted against feature_timeline calls.
     public const string ItemType = "item_type";
+
+    // Which sheet was opened on the Themes tab, on retro.theme_sheet_opened: "theme" (one theme's sheet) or "unthemed" (the sheet of the points with no theme).
+    public const string Sheet = "sheet";
+
+    // Which Inspection view was shown, on inspection_metrics.viewed: overview, leadtime, period or json.
+    public const string View = "view";
+
+    // Which kind of sprint was opened on Inspection, on inspection_metrics.period_opened: finished or running.
+    public const string Period = "period";
+
+    // Why an agent session ended, on agent_session.finished: one of AgentEndReasons.
+    public const string EndReason = "end_reason";
 
     public static readonly IReadOnlySet<string> All = typeof(UsageProps)
         .GetFields(BindingFlags.Public | BindingFlags.Static)

@@ -3,9 +3,7 @@ import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
 import { boardTestIds as ids } from '../testIds';
 import { useCloseOnHorizontalScroll } from '../useCloseOnHorizontalScroll';
-import { AddChild } from './AddChild';
-import { ChildRow } from './ChildRow';
-import { useChildren } from './childrenApi';
+import { ChildListBody } from './ChildListBody';
 
 /** Where the list sits (the roll-up's box) and what it lists. */
 export interface OpenChildList {
@@ -29,7 +27,8 @@ const HEADINGS: Record<WorkItemTypeId, string> = {
 const WIDTH = 320;
 const HEIGHT = 340;
 
-// The children of a card, listed under its roll-up with their states and the ways to add one.
+// The children of a card, listed under its roll-up with their states and the ways to add one: a panel fixed where the
+// roll-up was, on desktop. At touch widths the card draws the list inside itself instead (ChildListInline).
 export function ChildList({
   open,
   projectId,
@@ -46,7 +45,6 @@ export function ChildList({
   /** `focusBack`: it was dismissed from the keyboard; focus returns to the roll-up. */
   onClose: (focusBack?: boolean) => void;
 }) {
-  const children = useChildren(projectId, open.itemId, open.type);
   const panel = useRef<HTMLDivElement>(null);
   // Focus moves into the list when it opens.
   useEffect(() => panel.current?.focus(), []);
@@ -103,26 +101,14 @@ export function ChildList({
           ×
         </button>
       </div>
-      {children.isPending ? (
-        <p data-testid={ids.childLoading} className="text-ink-muted">
-          Loading…
-        </p>
-      ) : children.isError ? (
-        <p data-testid={ids.childFailed} role="alert" className="text-alert">
-          The children could not be loaded.
-        </p>
-      ) : children.data.length === 0 ? (
-        <p data-testid={ids.childEmpty} className="text-ink-muted">
-          Nothing below yet.
-        </p>
-      ) : (
-        <ul className="grid gap-px">
-          {children.data.map((child) => (
-            <ChildRow key={child.id} child={child} projectKey={projectKey} />
-          ))}
-        </ul>
-      )}
-      <AddChild projectId={projectId} boardId={boardId} parentId={open.itemId} level={level} />
+      <ChildListBody
+        projectId={projectId}
+        projectKey={projectKey}
+        boardId={boardId}
+        level={level}
+        itemId={open.itemId}
+        type={open.type}
+      />
     </div>
   );
 }

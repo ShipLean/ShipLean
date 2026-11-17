@@ -41,6 +41,16 @@ export const workItemRetrosKey = (projectId: string, workItemId: string) =>
 // retro view. A hook gives the key of its own query and the sprint or work item it concerns (neither: any event), so an
 // event refetches only the queries it touches and never the ones that merely share the retro prefix. Own writes
 // invalidate directly (a tab ignores its own events).
+//
+// One query can have several observers that each register here (SprintRetroSlot and SprintRetroPanel both read the
+// sprint's retro), so one event invalidates the same key more than once. A plain invalidate cancels the refetch the
+// previous one started and reads again: two reads per event. So the read in flight is cancelled first, and then the
+// invalidate joins a refetch in flight instead of restarting it: every cancel for an event runs before any of its
+// invalidates, so a refetch in flight by then started after the event, and the event's handlers share one read. That
+// order holds because the bus calls its handlers synchronously, one after another, and each invalidate waits a promise
+// turn (it runs in the `.then` of its cancel): every handler's cancel has run before the first invalidate starts.
+// Cancelling first also covers an event during the first read (no data yet), which an invalidate alone would join, so
+// the event would be lost (the SHIP-2019 race in demosApi.ts).
 function useRetroChanged(
   queryKey: readonly unknown[],
   concern: { sprintId?: string; workItemId?: string } = {},
@@ -59,7 +69,10 @@ function useRetroChanged(
           (sprintId !== undefined && event.sprintIds.includes(sprintId)) ||
           (workItemId !== undefined && event.workItemIds.includes(workItemId));
         if (touched) {
-          void queryClient.invalidateQueries({ queryKey: JSON.parse(keyText) as unknown[] });
+          const key = JSON.parse(keyText) as unknown[];
+          void queryClient
+            .cancelQueries({ queryKey: key })
+            .then(() => queryClient.invalidateQueries({ queryKey: key }, { cancelRefetch: false }));
         }
       }),
     [queryClient, keyText, sprintId, workItemId],

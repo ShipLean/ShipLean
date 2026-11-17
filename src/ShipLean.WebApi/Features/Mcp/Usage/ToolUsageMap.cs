@@ -13,6 +13,7 @@ public static class ToolUsageMap
         ["capture_work"] = UsageEventNames.WorkCaptured,
         ["break_down"] = UsageEventNames.WorkItemBrokenDown,
         ["get_work_item"] = UsageEventNames.WorkItemViewed,
+        ["get_agent_session"] = UsageEventNames.AgentSessionViewed,
         ["refine_work_item"] = UsageEventNames.WorkItemUpdated,
         ["set_status"] = UsageEventNames.WorkItemStatusSet,
         ["update_progress"] = UsageEventNames.WorkItemProgressUpdated,
@@ -28,6 +29,9 @@ public static class ToolUsageMap
         ["planning_guide"] = UsageEventNames.PlanningGuideViewed,
         ["feature_progress"] = UsageEventNames.FeatureProgressViewed,
         ["feature_timeline"] = UsageEventNames.FeatureTimelineViewed,
+        ["inspection_metrics"] = UsageEventNames.InspectionMetricsToolRead,
+        // TODO: temporary; remove once existing installs are backfilled
+        ["backfill_commit_times"] = UsageEventNames.InspectionMetricsCommitTimesBackfilled,
         ["log_review"] = UsageEventNames.ReviewLogged,
         ["review_backlog"] = UsageEventNames.BacklogReviewed,
         ["whats_changed_since"] = UsageEventNames.ChangesViewed,

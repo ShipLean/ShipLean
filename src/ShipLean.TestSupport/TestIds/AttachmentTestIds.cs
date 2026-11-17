@@ -57,4 +57,14 @@ public static class AttachmentTestIds
     public const string Save = "attachment-save";
     public const string Cancel = "attachment-cancel";
     public const string SaveError = "attachment-save-error";
+
+    // SHIP-1626 SH3
+    public const string ContentsPosition = "attachment-contents-position";
+    public const string TooLargeHeading = "attachment-too-large-heading";
+    public const string AboutFacts = "attachment-about-facts";
+    public const string AboutFact = "attachment-about-fact";
+    public const string ImagesMissingHint = "attachment-images-missing-hint";
+    public const string ViewerName = "attachment-viewer-name";
+    public const string ViewerHint = "attachment-viewer-hint";
+    public const string ViewerZoom = "attachment-viewer-zoom";
 }

@@ -25,8 +25,8 @@ public class SprintBacklogPhoneRowsTests : SeededAcceptanceTest
         await backlog.Row("SHIP-182").GetByTestId(SprintsTestIds.StateButton).TapAsync();
 
         await Expect(backlog.Sheet).ToBeVisibleAsync();
-        await Expect(backlog.Sheet.GetByTestId(SprintsTestIds.StatesSheetCategory).Last).ToHaveTextAsync("Completed");
-        await backlog.Sheet.GetByTestId(SprintsTestIds.StatesSheetOption).Filter(new() { HasText = "Closed" }).TapAsync();
+        await Expect(backlog.Sheet.GetByTestId(TouchTestIds.ActionSheetGroup).Last).ToHaveTextAsync("Completed");
+        await backlog.Sheet.GetByTestId(ComponentTestIds.StateMenuOption).Filter(new() { HasText = "Closed" }).TapAsync();
 
         await Expect(backlog.Sheet).ToHaveCountAsync(0);
         await Expect(backlog.RowState("SHIP-182")).ToHaveTextAsync("Closed");

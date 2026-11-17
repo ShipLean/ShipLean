@@ -1,10 +1,15 @@
-import type { CheckQueue } from '../strip/useCheckQueue';
 import { backlogTestIds as ids } from '../testIds';
 import type { BacklogSearch } from './useBacklogSearch';
 
 // Planning's banner that dragging and the pull line are off while a search or a check queue narrows the rows.
-export function MovingOffBanner({ search, queue }: { search: BacklogSearch; queue: CheckQueue }) {
-  if (!search.active && !queue.active) return null;
+export function MovingOffBanner({
+  search,
+  queueNarrows,
+}: {
+  search: BacklogSearch;
+  queueNarrows: boolean;
+}) {
+  if (!search.active && !queueNarrows) return null;
   return (
     <div
       data-testid={ids.dragOffBanner}

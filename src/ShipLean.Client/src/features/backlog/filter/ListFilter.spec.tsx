@@ -69,7 +69,7 @@ test('Filter_WhenOn_ShouldDisableDragWithBannerAndKeepFullBacklogRank', async ({
   await expect(page.getByTestId(ids.dragOffBanner)).toHaveCount(0);
 
   await page.getByTestId(ids.filterButton).click();
-  await expect(page.getByTestId(ids.dragOffBanner)).toContainText('Reordering is off');
+  await expect(page.getByTestId(ids.dragOffBanner)).toContainText('Moving is off');
   await expect(page.getByTestId(ids.grip).first()).toBeDisabled();
   await expect(page.getByTestId(ids.row).nth(1).getByTestId(ids.rank)).toHaveText('7');
 });

@@ -63,7 +63,7 @@ export function SignInForm({
     <button
       type="submit"
       data-testid={authTestIds.signInSubmit}
-      className="btn-signal touch:h-10 touch:w-full"
+      className="btn-signal touch:h-10 touch:w-full touch:text-[length:15px]"
       disabled={attempt.isPending}
     >
       Sign in
@@ -93,7 +93,7 @@ export function SignInForm({
         {instanceName || forApp ? (
           <small
             data-testid={authTestIds.subtitle}
-            className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted"
+            className="mt-0.5 block text-[length:var(--text-xs)] font-normal text-ink-muted touch:text-[length:var(--text-base)]"
           >
             {instanceName ? `to ${instanceName}` : ''}
             {instanceName && forApp ? ', ' : ''}
@@ -141,7 +141,7 @@ export function SignInForm({
         {touch ? submitButton : google}
       </div>
       <footer className="flex items-center gap-2 rounded-b-frame border-t border-edge bg-canvas px-4 py-3">
-        <span className="flex-1 text-[length:var(--text-xs)] text-ink-muted">
+        <span className="flex-1 text-[length:var(--text-xs)] text-ink-muted touch:text-center touch:text-[length:var(--text-sm)]">
           No account, or forgot your password? Ask your ShipLean admin.
         </span>
         {touch ? null : submitButton}

@@ -6,6 +6,8 @@ import type { useReorder } from '../drag/useReorder';
 import { EmptyBacklog } from '../list/EmptyBacklog';
 import { backlogTestIds as ids } from '../testIds';
 import { BacklogToolbar, type BacklogToolbarProps } from '../toolbar/BacklogToolbar';
+import { shownOf, summarise } from '../toolbar/listSummary';
+import type { BacklogRowDto } from '@shiplean/core/api/views';
 import { FilterButton } from './FilterButton';
 import { FilterPanel } from './FilterPanel';
 import type { BacklogFilterState } from './useBacklogFilter';
@@ -22,6 +24,9 @@ export function BacklogFrame({
   reorder,
   movingOffText,
   rowCount,
+  shownRows,
+  quietBanner = false,
+  banner,
   filtering: narrowed,
   options,
   search,
@@ -36,6 +41,12 @@ export function BacklogFrame({
   reorder: ReturnType<typeof useReorder>;
   movingOffText: string;
   rowCount: number;
+  // The rows the summary line counts (after any search, check queue or sort); the read's own rows when left out.
+  shownRows?: readonly BacklogRowDto[];
+  // At 900px and below a search alone leaves the moving-is-off banner out: the handles are already gone.
+  quietBanner?: boolean;
+  // At 900px and below: a strip the toolbar shows above the summary line (Stories List's Before-you-plan strip).
+  banner?: ReactNode;
   // Whether the rows are narrowed by anything (a filter, a search, a check queue); the filter alone when left out.
   filtering?: boolean;
   // Extra toolbar controls, the toolbar's own slots. Tree mode gives none.
@@ -49,6 +60,8 @@ export function BacklogFrame({
 }) {
   const { backlog, view, refused, criteria, lists } = state;
   const filtering = narrowed ?? state.filtering;
+  const counted = shownRows ?? state.rows;
+  const narrowedList = filtering || state.filtering;
   const toolbar = (
     <BacklogToolbar
       projectKey={project.key}
@@ -59,6 +72,15 @@ export function BacklogFrame({
       keys={keys}
       moreActions={moreActions}
       sort={sort}
+      banner={banner}
+      summary={summarise(counted, {
+        one: 'item',
+        many: 'items',
+        withPoints: true,
+        includeCompleted: state.includeCompleted,
+        narrowed: narrowedList,
+        whole: state.unfilteredCount,
+      })}
       triage={state.triage}
       onNewItem={() => state.setAdding(true)}
       includeCompleted={state.includeCompleted}
@@ -109,9 +131,10 @@ export function BacklogFrame({
           error={refused}
           lists={lists}
           onClose={state.toggleFilter}
+          count={shownOf(counted, state.unfilteredCount)}
         />
       ) : null}
-      {filtering ? (
+      {filtering && !quietBanner ? (
         <div
           data-testid={ids.dragOffBanner}
           role="status"

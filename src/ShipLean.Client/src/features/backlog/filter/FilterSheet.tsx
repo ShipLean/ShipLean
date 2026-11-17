@@ -12,6 +12,7 @@ export function FilterSheet({
   error,
   lists,
   onClose,
+  count,
 }: {
   criteria: CriteriaJson;
   onChange: (criteria: CriteriaJson) => void;
@@ -19,11 +20,19 @@ export function FilterSheet({
   error: string | null;
   lists: PickLists;
   onClose: () => void;
+  // The items shown and the items the list holds with no filter; no footer count while the whole is unread.
+  count?: { shown: number; whole: number };
 }) {
   return (
     <Sheet open title="Filter" onClose={onClose}>
       <div data-testid={ids.filterSheet} className="grid gap-3 pb-1">
-        <CriteriaBuilder value={criteria} onChange={onChange} showChips={false} {...lists} />
+        <CriteriaBuilder
+          value={criteria}
+          onChange={onChange}
+          showChips={false}
+          layout="sheet"
+          {...lists}
+        />
         {error ? (
           <p
             role="alert"
@@ -33,16 +42,23 @@ export function FilterSheet({
             {error}
           </p>
         ) : null}
-        {criteria.clauses.length > 0 ? (
-          <button
-            type="button"
-            data-testid={ids.filterClear}
-            className="btn-ghost justify-self-start touch:min-h-[var(--touch-target)]"
-            onClick={() => onChange({ ...criteria, clauses: [] })}
-          >
-            Clear
-          </button>
-        ) : null}
+        <div className="flex items-center gap-3 border-t border-edge pt-2 text-[length:var(--text-sm)] text-ink-muted">
+          <span data-testid={ids.filterCount} className="min-w-0 flex-1">
+            {count
+              ? `Showing ${count.shown} of ${count.whole} · applies as you change it`
+              : 'Applies as you change it'}
+          </span>
+          {criteria.clauses.length > 0 ? (
+            <button
+              type="button"
+              data-testid={ids.filterClear}
+              className="flex-none rounded-control px-2 text-[length:var(--text-base)] font-medium text-signal touch:min-h-[var(--touch-target)]"
+              onClick={() => onChange({ ...criteria, clauses: [] })}
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
       </div>
     </Sheet>
   );

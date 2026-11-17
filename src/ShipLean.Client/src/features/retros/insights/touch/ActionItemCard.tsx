@@ -16,7 +16,8 @@ const fixLabel = (row: RetroActionRowDto) =>
 
 /**
  * One action item on a phone: key, state and points; title (the whole card opens the item through the title's link);
- * theme; fix, covers and raised; then the sprint or the pull button, the owner and the impact.
+ * theme; fix, covers and raised; then the pull button on its own row when there is no sprint; then the sprint, the owner
+ * and, right-aligned, the impact.
  */
 export function ActionItemCard({
   projectId,
@@ -66,29 +67,52 @@ export function ActionItemCard({
           {theme.name}
           {recurring ? (
             <span data-recurring="">
-              <Chip tone="warn">↻</Chip>
+              <Chip tone="warn">↻ Recurring</Chip>
             </span>
           ) : null}
         </div>
       ) : null}
       <div className="text-[length:var(--text-xs)] text-ink-muted">{details.join(' · ')}</div>
-      <div className="flex min-h-[var(--touch-target)] flex-wrap items-center gap-x-3 gap-y-1">
+      {!action.sprint && open && next ? (
+        <div className="flex min-h-[var(--touch-target)] items-center">
+          <PullButton projectId={projectId} itemKey={action.key} sprint={next} touch />
+        </div>
+      ) : null}
+      <div className="flex min-h-[var(--touch-target)] items-center gap-x-3">
         {action.sprint ? (
           <span data-testid={ids.retroActionCardSprint} data-cell="sprint">
             {action.sprint.name}
           </span>
-        ) : open && next ? (
-          <PullButton projectId={projectId} itemKey={action.key} sprint={next} touch />
         ) : null}
         {owner ? (
           <span data-cell="owner" className="inline-flex items-center gap-1.5">
             <Avatar {...owner} />
             {owner.name}
           </span>
+        ) : open ? (
+          <span
+            data-testid={ids.retroActionUnassigned}
+            data-cell="owner"
+            className="inline-flex items-center gap-1.5 text-ink-muted"
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block size-[var(--text-lg)] rounded-full border border-dashed border-edge"
+            />
+            Unassigned
+          </span>
         ) : null}
-        <span className="flex-1" />
-        <span data-cell="impact" className="relative">
-          {row.impact ? <VerdictChip verdict={row.impact} mode={mode} /> : null}
+        <span data-cell="impact" className="relative ml-auto">
+          {row.impact ? (
+            <VerdictChip verdict={row.impact} mode={mode} />
+          ) : open ? (
+            <span
+              data-testid={ids.retroActionImpactPending}
+              className="text-[length:var(--text-xs)] text-ink-muted italic"
+            >
+              impact when done
+            </span>
+          ) : null}
         </span>
       </div>
     </article>

@@ -1,5 +1,6 @@
 import type { BacklogSectionDto } from '@shiplean/core/api/views';
 import type { VelocityDto } from '@shiplean/core/api/sprints';
+import { itemCount } from './itemCount';
 import { backlogTestIds as ids } from '../testIds';
 import { SectionToggle } from './SectionToggle';
 import type { SectionCollapse } from './useSectionCollapse';
@@ -48,7 +49,7 @@ export function BacklogSectionHeader({
             data-testid={ids.planningSectionCount}
             className="text-[length:var(--text-sm)] text-ink-muted"
           >
-            {section.rows.length} items · {section.points} pts
+            {itemCount(section.rows.length)} · {section.points} pts
           </span>
           <span className="flex-1" />
           {forecast && velocity ? (

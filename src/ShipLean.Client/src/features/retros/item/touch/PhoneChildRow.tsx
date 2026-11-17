@@ -5,6 +5,7 @@ import { TypeIcon } from '../../../../components/TypeIcon';
 import { routePath } from '../../../../routes';
 import { CategoryCount } from '../../features/CategoryCount';
 import { DecidedProgress } from '../../features/DecidedProgress';
+import { RowChevron } from '../../features/touch/RowChevron';
 import { retrosTestIds as ids } from '../../testIds';
 
 /** One story or bug as a row link of three lines (R7): type, key, state; the title (two lines at most); the counts, what is left to decide and the Decided bar. */
@@ -21,7 +22,7 @@ export function PhoneChildRow({
       data-testid={ids.retroItemChildRow}
       data-item-key={item.key}
       to={routePath('retroItem', { key: projectKey, itemKey: item.key })}
-      className="relative grid min-h-[var(--touch-target)] min-w-0 gap-1 border-t border-edge py-2.5 pr-7 pl-3 text-ink first:border-t-0 active:bg-sunken after:absolute after:top-1/2 after:right-2.5 after:-translate-y-1/2 after:text-lg after:text-ink-muted after:content-['›']"
+      className="relative grid min-h-[var(--touch-target)] min-w-0 gap-1 border-t border-edge py-2.5 pr-7 pl-3 text-ink first:border-t-0 active:bg-sunken"
     >
       <span className="flex min-w-0 items-center gap-1.5">
         <TypeIcon type={item.type.id} />
@@ -49,6 +50,7 @@ export function PhoneChildRow({
           <DecidedProgress totals={totals} />
         </span>
       </span>
+      <RowChevron />
     </Link>
   );
 }

@@ -24,7 +24,10 @@ public class AgentStartWinnerTests : ApiFixture
 
         outcome.SessionId.ShouldNotBeNull();
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem());
-        body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>().ShouldBe("The <winner> prompt.");
+        // C10: the session's run-log line follows the prompt.
+        var guidance = body["guidance"]!.AsArray().Single()!["body"]!.GetValue<string>();
+        guidance.Split("\n\n")[0].ShouldBe("The <winner> prompt.");
+        RunLogs.AgentRunLogArrange.UrlIn(guidance).ShouldStartWith("https://shiplean.larkspur.dev/api/uploads/agent-log?token=");
     }
 
     [Test]

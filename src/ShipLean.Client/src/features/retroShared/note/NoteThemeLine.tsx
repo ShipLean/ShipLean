@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { useRetroThemes } from '../../retros/useRetroQueries';
-import { Sheet } from '../../../touch/Sheet';
 import { useRetroActionDialog } from '../actionDialog/useRetroActionDialog';
-import { retroCategoryLabels } from '../retroCategories';
 import { ThemePicker } from '../ThemePicker';
 import { retroSharedTestIds as ids } from '../testIds';
 import type { RetroNoteWrites } from './useRetroNoteWrites';
@@ -67,51 +65,5 @@ export function NoteThemeLine({
         </span>
       ) : null}
     </span>
-  );
-}
-
-/** Move to theme as a bottom sheet (the touch layout): the point it moves, then the theme picker. Picking moves and closes. */
-export function NoteThemeSheet({
-  open,
-  point,
-  writes,
-  onClose,
-}: {
-  open: boolean;
-  point: RetroPointDto;
-  writes: RetroNoteWrites;
-  onClose: () => void;
-}) {
-  const { projectId } = useRetroActionDialog();
-  const themes = useRetroThemes(projectId).data;
-  return (
-    <Sheet open={open && themes !== undefined} title="Move to theme" onClose={onClose}>
-      <div className="grid gap-1 border-b border-edge pb-2 text-[length:var(--text-base)] text-ink [overflow-wrap:anywhere]">
-        {point.text}
-        <small className="text-[length:var(--text-xs)] text-ink-muted">
-          {retroCategoryLabels[point.category]}
-        </small>
-      </div>
-      {themes ? (
-        <ThemePicker
-          themes={themes.themes}
-          mode={themes.mode}
-          value={point.theme?.id ?? null}
-          onPick={(pick) => {
-            onClose();
-            writes.moveTheme.mutate({ pointId: point.id, pick });
-          }}
-        />
-      ) : null}
-      {/* TODO: wire New theme… to a name field; until then it shows as drawn, disabled. */}
-      <button
-        type="button"
-        data-testid={ids.retroThemeSheetNew}
-        disabled
-        className="flex min-h-[var(--touch-target)] w-full items-center gap-2 rounded-control px-2 text-left text-[length:var(--text-base)] text-signal disabled:cursor-default disabled:opacity-60"
-      >
-        <span aria-hidden="true">+</span>New theme…
-      </button>
-    </Sheet>
   );
 }

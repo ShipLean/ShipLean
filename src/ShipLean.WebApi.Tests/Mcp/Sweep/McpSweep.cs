@@ -21,6 +21,8 @@ public static class McpSweep
     {
         // The payload is bound to the caller, their agent authorization and the tool; the tool that uses it checks project access.
         "create_payload_upload",
+        // Names no project: it works on commit links across the install, and only an instance admin may call it (anyone else gets not_found).
+        "backfill_commit_times",
     };
 
     // Every IMcpSweepRows in this test assembly, one file per tool area.

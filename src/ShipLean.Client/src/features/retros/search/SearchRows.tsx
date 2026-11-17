@@ -52,7 +52,7 @@ export function SearchRows({ query, search, pointId, select, change }: RetrosSea
                 point={row}
                 q={query.q}
                 logOnly={logMatches.has(row.id)}
-                selected={row === selectedRow}
+                selected={Boolean(query.selected) && row === selectedRow}
                 onSelect={() => select(row.retroId, row.id)}
               />
             ))}

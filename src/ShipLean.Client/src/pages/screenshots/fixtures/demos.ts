@@ -64,7 +64,12 @@ export const demoStates = {
     ...forSprint(asDemo(none), OPEN_SPRINT, 'Sprint 24'),
     status: 'closable',
     statusMessage: 'Close the sprint to make its demo.',
-    actions: { canCreate: false, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: false,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   none: noneDemo,
   /** The automatic demo could not start: no BAU item was made, so no run. */
@@ -75,6 +80,7 @@ export const demoStates = {
     actions: {
       canCreate: false,
       createBlockedMessage: 'Connect an agent to this project, then create the demo here.',
+      createWarning: null,
       canRetryYouTube: false,
     },
   },
@@ -83,7 +89,12 @@ export const demoStates = {
     ...workingDemo,
     status: 'requested',
     run: { ...workingRun, sessionState: null },
-    actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   working: workingDemo,
   /** The upload link expired with nothing delivered: the session has ended. */
@@ -92,7 +103,12 @@ export const demoStates = {
     status: 'failed',
     statusMessage: 'The upload link expired before a video came back.',
     run: { ...workingRun, sessionState: 'ended' },
-    actions: { canCreate: true, createBlockedMessage: null, canRetryYouTube: false },
+    actions: {
+      canCreate: true,
+      createBlockedMessage: null,
+      createWarning: null,
+      canRetryYouTube: false,
+    },
   },
   ready: readyDemo,
   youtubeUnlisted: ended(asDemo(unlisted)),

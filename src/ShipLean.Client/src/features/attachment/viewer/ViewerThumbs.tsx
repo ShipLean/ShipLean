@@ -14,8 +14,7 @@ export function ViewerThumbs({
   return (
     <div
       data-testid={ids.viewerThumbs}
-      className="flex flex-none gap-2 overflow-x-auto px-3 py-2"
-      style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      className="flex flex-none justify-center gap-2 overflow-x-auto px-3 py-2"
     >
       {images.map((image, index) => (
         <button

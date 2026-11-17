@@ -136,7 +136,7 @@ public class AgentStartApiTests : ApiFixture
 
         async Task<AgentStartAvailabilityDto> AvailabilityAsync(Guid id) => await ReadAsync<AgentStartAvailabilityDto>(await Api.GetAsync($"api/work-items/{id}/agent-session/availability"));
 
-        (await AvailabilityAsync(readyItem.Id)).ShouldBe(new AgentStartAvailabilityDto(true, null, string.Empty));
+        (await AvailabilityAsync(readyItem.Id)).ShouldBe(new AgentStartAvailabilityDto(true, null, string.Empty, null));
         (await AvailabilityAsync(noConnectionItem.Id)).Reason.ShouldBe(AgentStartBlock.NoConnection);
         (await AvailabilityAsync(noRepositoryItem.Id)).Reason.ShouldBe(AgentStartBlock.NoRepository);
         using var started = await Api.PostJsonAsync($"api/work-items/{readyItem.Id}/agent-session");

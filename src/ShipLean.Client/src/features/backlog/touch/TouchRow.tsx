@@ -23,6 +23,7 @@ const inside = 'a, button, input, select, textarea, label';
  * - `handle?`: what the left-edge slot (full row height) shows. Left out, the slot shows the rank. TouchRowList passes
  *   the select box while selecting, or its `renderHandle` (the drag handle) when handles are on.
  * - `forecast?`: the sprint name Forecast puts the item in, shown as "→ <forecast>" on the meta line. Planning passes it.
+ * - `hideSprint?`: leave out the sprint chip, as Planning does inside the section of that very sprint.
  * - `trailing?`: shown last on the right, after points and the assignee (the row's ⋯).
  * - `flash`: a teammate just changed the item; the row flashes.
  *
@@ -36,6 +37,7 @@ export function TouchRow({
   projectKey,
   handle,
   forecast,
+  hideSprint = false,
   trailing,
   flash,
 }: {
@@ -43,6 +45,7 @@ export function TouchRow({
   projectKey: string;
   handle?: ReactNode;
   forecast?: string;
+  hideSprint?: boolean;
   trailing?: ReactNode;
   flash: boolean;
 }) {
@@ -104,7 +107,7 @@ export function TouchRow({
               <StateDot category={row.state.category} name={row.state.name} />
             </span>
           ) : null}
-          {row.sprint ? <SprintCell sprint={row.sprint} /> : null}
+          {row.sprint && !hideSprint ? <SprintCell sprint={row.sprint} /> : null}
           {forecast === undefined ? null : (
             <span data-testid={ids.touchRowForecast}>→ {forecast}</span>
           )}

@@ -25,7 +25,7 @@ export function ProjectButton({
       aria-haspopup="dialog"
       aria-expanded={open}
       title="Switch project"
-      className="mb-2 flex h-10 w-full items-center gap-2 rounded-panel border border-edge bg-panel px-2 text-left text-ink hover:border-signal aria-expanded:border-signal"
+      className="mb-2 flex h-10 w-full flex-none items-center gap-2 rounded-panel border border-edge bg-panel px-2 text-left text-ink hover:border-signal aria-expanded:border-signal"
       onClick={onClick}
     >
       {projectKey ? <ProjectKeyBadge current>{projectKey}</ProjectKeyBadge> : null}

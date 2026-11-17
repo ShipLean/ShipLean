@@ -78,6 +78,31 @@ test('TimelineRail_WhenTaskSelected_ShouldShowHistoryAndReviews', async ({ mount
   await expect(page.getByTestId(ids.railReviewRow).last()).toContainText('Approved');
 });
 
+test('TimelineRail_WhenTaskHasLastCommit_ShouldShowItsLabel', async ({ mount, page }) => {
+  await mount(
+    <TimelineRail
+      view={FINISHED_TIMELINE}
+      options={DEFAULT_TIMELINE_OPTIONS}
+      selected="SHIP-192"
+      onSelect={noop}
+    />,
+  );
+  await expect(page.getByTestId(ids.railSelected)).toContainText('Last commit Wed 7 Oct, 11:05');
+});
+
+test('TimelineRail_WhenTaskHasNoCommitTime_ShouldNotShowLastCommit', async ({ mount, page }) => {
+  await mount(
+    <TimelineRail
+      view={FINISHED_TIMELINE}
+      options={DEFAULT_TIMELINE_OPTIONS}
+      selected="SHIP-193"
+      onSelect={noop}
+    />,
+  );
+  await expect(page.getByTestId(ids.railSelected)).toContainText('History');
+  await expect(page.getByTestId(ids.railSelected)).not.toContainText('Last commit');
+});
+
 test('TimelineRail_WhenBlockedPeriod_ShouldShowBlockedWithoutReason', async ({ mount, page }) => {
   await mount(
     <TimelineRail

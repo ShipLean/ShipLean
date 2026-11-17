@@ -12,6 +12,15 @@ import { setParentPlan } from '../bulk/setPlans';
 import { BulkRunContext, useBulkRunner } from '../bulk/useBulkRun';
 import { activeBacklogView, cachedRow } from '../estimate/cachedRow';
 import { useEstimate } from '../estimate/useEstimate';
+import {
+  estimateIcon,
+  moveBottomIcon,
+  moveTopIcon,
+  openIcon,
+  parentIcon,
+  selectIcon,
+  sprintIcon,
+} from '../toolbar/moreIcons';
 import { SelectionContext, useSelection } from '../selection/useSelection';
 import { backlogTestIds as ids } from '../testIds';
 import { PointsSheet } from './PointsSheet';
@@ -78,24 +87,61 @@ function MoreActions({
   const edge = (slot: 'first' | 'last') =>
     void runner.run(planning() ? moveToBacklogEdgePlan([row], slot) : moveToEdgePlan([row], slot));
   const actions: SheetAction[] = [
-    { id: 'open', label: 'Open', onSelect: open },
+    { id: 'open', label: 'Open', icon: openIcon, onSelect: open },
     ...(selectable
-      ? [{ id: 'points', label: 'Points', onSelect: () => setSub('points') } satisfies SheetAction]
+      ? [
+          {
+            id: 'points',
+            label: 'Points',
+            icon: estimateIcon,
+            detail:
+              row.points === null ? (
+                <span className="font-semibold text-caution">?</span>
+              ) : (
+                row.points
+              ),
+            onSelect: () => setSub('points'),
+          } satisfies SheetAction,
+        ]
       : []),
-    { id: 'sprint', label: 'Sprint ›', onSelect: () => setSub('sprint') },
+    {
+      id: 'sprint',
+      label: 'Sprint',
+      icon: sprintIcon,
+      detail: row.sprint?.name ?? 'Backlog',
+      trailing: 'chevron',
+      onSelect: () => setSub('sprint'),
+    },
     {
       id: 'parent',
-      label: 'Parent ›',
+      label: 'Parent',
+      icon: parentIcon,
+      detail: row.parent?.title ?? 'None',
+      trailing: 'chevron',
       onSelect: () => setSub('parent'),
       disabled: row.type === null || parentTypesOf(row.type.id).length === 0,
     },
-    { id: 'top', label: 'Move to top', onSelect: () => edge('first') },
-    { id: 'bottom', label: 'Move to bottom', onSelect: () => edge('last') },
+    {
+      id: 'top',
+      label: 'Move to top',
+      icon: moveTopIcon,
+      group: '',
+      onSelect: () => edge('first'),
+    },
+    {
+      id: 'bottom',
+      label: 'Move to bottom',
+      icon: moveBottomIcon,
+      group: '',
+      onSelect: () => edge('last'),
+    },
     ...(selectable
       ? [
           {
             id: 'select',
             label: 'Select',
+            icon: selectIcon,
+            hint: 'Select this and others',
             onSelect: () => {
               selectMode.start();
               selection.toggle(row.id);
@@ -104,7 +150,7 @@ function MoreActions({
         ]
       : []),
   ];
-  return <MoreButton actions={actions} label={`More for ${row.key}`} />;
+  return <MoreButton actions={actions} label={`More for ${row.key}`} subtitle={row.title} />;
 }
 
 /**
@@ -125,12 +171,14 @@ export function RowActions({ row, children }: { row: BacklogRowDto; children?: R
   const pointsOpen = sub === 'points' || estimate.conflict !== null;
   return (
     <>
-      <Points
-        row={row}
-        shown={estimate.shown}
-        onOpen={estimate.editable && !selecting ? () => setSub('points') : null}
-      />
-      {children}
+      <div className="flex flex-col items-center">
+        <Points
+          row={row}
+          shown={estimate.shown}
+          onOpen={estimate.editable && !selecting ? () => setSub('points') : null}
+        />
+        {children}
+      </div>
       {runner !== null && !selecting && projectId !== null ? (
         <MoreActions row={row} open={() => peek.open(row.key)} setSub={setSub} />
       ) : null}

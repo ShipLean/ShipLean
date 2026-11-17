@@ -21,6 +21,7 @@ export function Dialog({
   closeTestId,
   headerExtra,
   titleIcon,
+  subtitle,
   onBackdropClick,
   primaryAction,
 }: {
@@ -39,6 +40,12 @@ export function Dialog({
   headerExtra?: ReactNode;
   /** Shown in the header before the title. */
   titleIcon?: ReactNode;
+  /**
+   * A second header line under the icon and title (for example "Result 2 of 9 · Sprint 4"). Opt-in: with it the icon and
+   * the title share line 1 and the title truncates; the dialog's name is then the whole of line 1 and the subtitle is
+   * its description. Without it the header renders as it always has.
+   */
+  subtitle?: string;
   /** A click on the backdrop (outside the panel). Without it the backdrop does nothing. */
   onBackdropClick?: () => void;
   /** The header's main action at the top right, shown only on the full-screen touch layout. */
@@ -47,6 +54,8 @@ export function Dialog({
   const { touch } = useTouchShell();
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const headlineId = `${titleId}-headline`;
+  const subtitleId = `${titleId}-subtitle`;
   useModalFocus(panel);
 
   // A click on the backdrop would move focus to the body, outside the trap; keep it where it is.
@@ -77,7 +86,8 @@ export function Dialog({
     'data-testid': testId ?? componentTestIds.dialog,
     role: 'dialog',
     'aria-modal': true,
-    'aria-labelledby': titleId,
+    'aria-labelledby': subtitle ? headlineId : titleId,
+    'aria-describedby': subtitle ? subtitleId : undefined,
     tabIndex: -1,
     onKeyDown,
   } as const;
@@ -85,6 +95,34 @@ export function Dialog({
     <h2 id={titleId} className="m-0 flex-1 text-[length:var(--text-md)] font-semibold text-ink">
       {title}
     </h2>
+  );
+
+  // With a subtitle: [icon + truncating title] on line 1, the subtitle on line 2 starting under the icon.
+  const headline = subtitle ? (
+    <div className="flex min-w-0 flex-1 flex-col">
+      <div id={headlineId} className="flex min-w-0 items-center gap-1.5">
+        {titleIcon}
+        <h2
+          id={titleId}
+          data-testid={componentTestIds.dialogTitle}
+          className="m-0 min-w-0 flex-1 truncate text-[length:var(--text-md)] font-semibold text-ink"
+        >
+          {title}
+        </h2>
+      </div>
+      <p
+        id={subtitleId}
+        data-testid={componentTestIds.dialogSubtitle}
+        className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+      >
+        {subtitle}
+      </p>
+    </div>
+  ) : (
+    <>
+      {titleIcon}
+      {heading}
+    </>
   );
 
   if (touch) {
@@ -105,8 +143,7 @@ export function Dialog({
             >
               ✕
             </button>
-            {titleIcon}
-            {heading}
+            {headline}
             {headerExtra}
             {primaryAction ? (
               <div data-testid={touchTestIds.dialogPrimary} className="flex shrink-0 items-center">
@@ -136,8 +173,7 @@ export function Dialog({
         className={`flex max-h-[calc(100dvh-32px)] flex-col ${tall ? 'h-[calc(100dvh-32px)]' : ''}  overflow-hidden rounded-frame border border-edge bg-panel shadow-panel`}
       >
         <header className="flex items-start gap-2 border-b border-edge px-4 py-3">
-          {titleIcon}
-          {heading}
+          {headline}
           {headerExtra}
           <button
             type="button"

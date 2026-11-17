@@ -44,6 +44,7 @@ public static class TouchRoutes
         ["retroFeatures"] = new(_ => Links.RetroFeatures(Project), [RetrosTestIds.RetroFeaturesPanel]),
         ["retroItem"] = new(_ => Links.RetroItem(Project, "SHIP-101"), [RetrosTestIds.RetroItemChildRow]),
         ["retroInsights"] = new(_ => Links.RetroInsights(Project), [RetrosTestIds.RetroThemeCards]),
+        ["inspectionMetrics"] = new(_ => $"/p/{Project}/inspection", [InspectionMetricsTestIds.Page]),
         ["jiraImport"] = new(_ => Links.JiraImport(Project), [PagesTestIds.ImportPage]),
         ["projectSettings"] = new(_ => Links.ProjectSettings(Project, "general"), [SettingsTestIds.GeneralName]),
         ["authorize"] = new(_ => "/authorize", [AgentsTestIds.AuthorizePage]),

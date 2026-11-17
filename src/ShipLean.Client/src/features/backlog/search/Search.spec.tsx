@@ -50,7 +50,7 @@ test('Search_makes_the_mode_report_filtering', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.dragOffBanner)).toHaveCount(0);
   await expect(page.getByTestId(ids.grip).first()).toBeEnabled();
   await page.getByTestId(ids.searchBox).fill('SHIP');
-  await expect(page.getByTestId(ids.dragOffBanner)).toContainText('Reordering is off');
+  await expect(page.getByTestId(ids.dragOffBanner)).toContainText('Moving is off');
   await expect(page.getByTestId(ids.grip).first()).toBeDisabled();
   await page.getByTestId(ids.searchBox).fill('');
   await expect(page.getByTestId(ids.dragOffBanner)).toHaveCount(0);

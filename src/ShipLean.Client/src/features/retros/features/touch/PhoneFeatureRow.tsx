@@ -7,6 +7,7 @@ import { routePath } from '../../../../routes';
 import { retrosTestIds as ids } from '../../testIds';
 import { CategoryCount } from '../CategoryCount';
 import { DecidedProgress } from '../DecidedProgress';
+import { RowChevron } from './RowChevron';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -24,7 +25,7 @@ export function PhoneFeatureRow({
       data-testid={ids.retroFeaturesRow}
       data-key={item.key}
       to={routePath('retroItem', { key: projectKey, itemKey: item.key })}
-      className="relative grid min-w-0 gap-1 border-t border-edge py-2.5 pr-7 pl-3 text-ink first:border-t-0 active:bg-sunken after:absolute after:top-1/2 after:right-2.5 after:-translate-y-1/2 after:text-lg after:text-ink-muted after:content-['›']"
+      className="relative grid min-w-0 gap-1 border-t border-edge py-2.5 pr-7 pl-3 text-ink first:border-t-0 active:bg-sunken"
     >
       <span className="flex min-w-0 items-center gap-1.5">
         <TypeIcon type={item.type.id} />
@@ -71,6 +72,7 @@ export function PhoneFeatureRow({
       >
         {plural(row.retros, 'retro')} · {plural(totals.actions, 'action item')}
       </span>
+      <RowChevron />
     </Link>
   );
 }

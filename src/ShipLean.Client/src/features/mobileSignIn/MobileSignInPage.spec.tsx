@@ -253,3 +253,13 @@ test('a device name with markup renders as text', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.device)).toContainText(markup);
   await expect(page.getByTestId(ids.heading)).toContainText(markup);
 });
+
+test('ConfirmPage_AtTouch_TypeShouldMatchTheDesign', async ({ mount, page }) => {
+  await look(page, 'light', phone);
+  await open(mount, page);
+  const px = (id: string) => page.getByTestId(id).evaluate((el) => getComputedStyle(el).fontSize);
+  await expect(page.getByTestId(ids.signIn)).toBeVisible();
+  expect(await px(ids.heading)).toBe('18px');
+  expect(await px(ids.signIn)).toBe('15px');
+  expect(await px(ids.does)).toBe('14px');
+});

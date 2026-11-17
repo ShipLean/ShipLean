@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import {
   backlogView,
@@ -160,7 +161,7 @@ test('MoreSheet_WhenEstimateUnpointedTapped_ShouldOpenUnestimatedQueue', async (
 
   await pickMore(page, 'estimate-unpointed');
 
-  await expect(page.getByTestId(ids.queueBanner)).toBeVisible();
+  await expect(page.getByTestId(ids.pointsSheet)).toBeVisible();
   await expect(page.getByTestId(ids.queueStepKey)).toHaveText('SHIP-2');
 });
 
@@ -204,7 +205,10 @@ test('PlanningRows_WhenSelecting_ShouldShowBoxesInPlaceOfHandles', async ({ moun
   await expect(page.getByTestId(ids.touchHandle)).toHaveCount(0);
 });
 
-test('BeforeYouPlan_WhenTouch_ShouldMakeEachCheckATouchTarget', async ({ mount, page }) => {
+test('BeforeYouPlan_WhenTouch_ShouldMakeTheBannersEstimateATouchTarget', async ({
+  mount,
+  page,
+}) => {
   const rows = [1, 2].map((n) => itemRow({ key: `SHIP-${n}`, rank: n, points: null }));
   await stubBacklog(page, { ...backlogView(rows), review: review({ unestimated: [rows[0].id] }) });
   await mount(
@@ -215,8 +219,70 @@ test('BeforeYouPlan_WhenTouch_ShouldMakeEachCheckATouchTarget', async ({ mount, 
   );
   await expect(page.getByTestId(ids.row)).toHaveCount(2);
 
-  for (const chip of await page.getByTestId(ids.planCheck).all()) {
-    const box = await chip.boundingBox();
-    expect(box?.height).toBeGreaterThanOrEqual(32);
+  // At touch the only check is the not-estimated banner (SHIP-1626 D5); its Estimate is the target.
+  const estimate = page.getByTestId(ids.notEstimatedEstimate);
+  await expect(estimate).toHaveCount(1);
+  const box = await estimate.boundingBox();
+  expect(box!.height).toBeGreaterThanOrEqual(32);
+});
+
+test('BulkSprintSheet_ShouldOfferBacklogAndShowCapacity', async ({ mount, page }) => {
+  const server = await stubBacklog(page, planningManyView(), { sprints: planningSprints() });
+  await mount(
+    <SelectModeHarness>
+      <PlanningMode project={PROJECT} />
+    </SelectModeHarness>,
+    planning,
+  );
+  await expect(page.getByTestId(ids.row).first()).toBeVisible();
+  await pickMore(page, 'select');
+  // SHIP-160 is in Sprint 24; SHIP-185 is in the Backlog and has no estimate.
+  for (const key of ['SHIP-160', 'SHIP-185']) {
+    await rowOf(page, key).getByTestId(ids.touchRowSelect).tap();
+    await expect(rowOf(page, key)).toHaveAttribute('data-selected', 'true');
   }
+
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move 2 items to');
+  await expect(sheet).toContainText('SHIP-160, SHIP-185 · 13 pts');
+  const sprint24 = page.locator(`[data-testid="${ids.bulkMoveSprint}"][data-sprint="sp24"]`);
+  await expect(sprint24.getByTestId(componentTestIds.capacityBar)).toBeVisible();
+  await expect(sprint24).toContainText('Current');
+  await expect(sprint24.getByTestId(touchTestIds.actionSheetHint)).toHaveText(/^Current · \S+/);
+  await expect(page.getByTestId(touchTestIds.actionSheetFooter)).toContainText('has no estimate');
+  await expect(page.getByTestId(ids.bulkUnestimatedNote)).toHaveText(
+    'SHIP-185 has no estimate, so it adds 0.',
+  );
+
+  await page.getByTestId(ids.bulkMoveBacklog).tap();
+  await expect.poll(() => server.bulks.length).toBe(1);
+  // SHIP-185 is already in the Backlog, so only SHIP-160 moves.
+  expect(server.bulks[0].items.map((item) => item.id)).toEqual(['id-SHIP-160']);
+  expect(server.bulks[0].items[0].changes?.sprint).toEqual({ value: null });
+});
+
+test('BulkSprintSheet_WhenEverySelectedRowIsInTheBacklog_ShouldDisableTheBacklogTarget', async ({
+  mount,
+  page,
+}) => {
+  await stubBacklog(page, planningManyView(), { sprints: planningSprints() });
+  await mount(
+    <SelectModeHarness>
+      <PlanningMode project={PROJECT} />
+    </SelectModeHarness>,
+    planning,
+  );
+  await expect(page.getByTestId(ids.row).first()).toBeVisible();
+  await pickMore(page, 'select');
+  // SHIP-185 is in the Backlog; SHIP-160 is in Sprint 24.
+  await rowOf(page, 'SHIP-185').getByTestId(ids.touchRowSelect).tap();
+  await expect(rowOf(page, 'SHIP-185')).toHaveAttribute('data-selected', 'true');
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  await expect(page.getByTestId(ids.bulkMoveBacklog)).toBeDisabled();
+  await page.getByTestId(touchTestIds.sheetClose).tap();
+
+  await rowOf(page, 'SHIP-160').getByTestId(ids.touchRowSelect).tap();
+  await page.getByTestId(ids.bulkTouchSprint).tap();
+  await expect(page.getByTestId(ids.bulkMoveBacklog)).toBeEnabled();
 });

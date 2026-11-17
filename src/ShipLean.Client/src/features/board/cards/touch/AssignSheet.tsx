@@ -1,12 +1,18 @@
 import type { BoardViewDto } from '@shiplean/core/api/views';
-import { actionSheetRowClass } from '../../../../touch/ActionSheet';
+import { Avatar } from '../../../../components/Avatar';
+import {
+  ActionSheetRowFace,
+  actionSheetCheckedClass,
+  actionSheetRowClass,
+} from '../../../../touch/ActionSheet';
 import { Sheet } from '../../../../touch/Sheet';
+import { useMe } from '../../../shell/useShellQueries';
 import { useProjectMembers } from '../../../workItem/workItemApi';
 import { locate } from '../../moves/applyMove';
 import { boardTestIds as ids } from '../../testIds';
 import { useAssignCard } from './useAssignCard';
 
-/** Picks who a card is assigned to (its Owner on Features and Epics): the project's members, or nobody. */
+/** Picks who a card is assigned to (its Owner on Features and Epics): the project's members with their avatars, then nobody last. */
 export function AssignSheet({
   view,
   cardId,
@@ -21,9 +27,14 @@ export function AssignSheet({
   const assign = useAssignCard(view.projectId, view.boardId);
   const owner = view.level !== 'stories';
   const people = (members.data ?? []).map((member) => member.user);
-  const options = [null, ...people];
+  const me = useMe().data?.id;
+  const options = [...people, null];
   return (
-    <Sheet open={card !== undefined} title={owner ? 'Owner' : 'Assign'} onClose={onClose}>
+    <Sheet
+      open={card !== undefined}
+      title={`${owner ? 'Owner' : 'Assign'} ${card?.key ?? ''}`.trim()}
+      onClose={onClose}
+    >
       <div data-testid={ids.assignSheet} className="grid">
         {options.map((person) => {
           const here = (person?.id ?? null) === (card?.assignee?.id ?? null);
@@ -34,13 +45,19 @@ export function AssignSheet({
               data-testid={ids.assignOption}
               data-person-id={person?.id ?? ''}
               aria-current={here ? 'true' : undefined}
-              className={`${actionSheetRowClass} text-ink ${here ? 'bg-signal-soft font-semibold' : ''}`}
+              className={`${actionSheetRowClass} gap-3 text-ink ${here ? actionSheetCheckedClass : ''}`}
               onClick={() => {
                 if (card && !here) assign(card, person);
                 onClose();
               }}
             >
-              {person?.name ?? (owner ? 'No owner' : 'Unassigned')}
+              <ActionSheetRowFace
+                face={{
+                  label: `${person?.name ?? (owner ? 'No owner' : 'Unassigned')}${person && person.id === me ? ' (you)' : ''}`,
+                  icon: <Avatar {...(person ?? { initials: null })} />,
+                  checked: here,
+                }}
+              />
             </button>
           );
         })}

@@ -50,4 +50,7 @@ public static class RetroSharedTestIds
     public const string RetroActionCreate = "retro-action-create";
     public const string RetroActionStartsNote = "retro-action-starts-note";
     public const string RetroThemeSheetNew = "retro-theme-sheet-new";
+    public const string RetroThemeSheetName = "retro-theme-sheet-name";
+    public const string RetroThemeSheetAdd = "retro-theme-sheet-add";
+    public const string RetroNotePreview = "retro-note-preview";
 }

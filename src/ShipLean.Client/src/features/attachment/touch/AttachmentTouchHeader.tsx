@@ -7,9 +7,10 @@ import { AboutThisFile } from '../side/AboutThisFile';
 import { SiblingsPanel } from '../side/SiblingsPanel';
 import { Sheet } from '../../../touch/Sheet';
 import { AttachmentMoreSheet } from './AttachmentMoreSheet';
+import { FileBadge } from './FileBadge';
 
 // The phone header (D1, D7, D8), in the page so it scrolls away: the file name (the item's Markdown files), a one-line
-// facts row (About this file), then Rendered / Source / Edit and ⋯. ← back is in the top bar.
+// facts row with its (i) (About this file), then Rendered / Source / Edit at full width and the bordered ⋯. ← back is in the top bar.
 export function AttachmentTouchHeader({
   projectKey,
   itemKey,
@@ -45,6 +46,7 @@ export function AttachmentTouchHeader({
           className="flex min-h-[var(--touch-target)] min-w-0 items-center gap-2 rounded-control text-left font-[family-name:var(--font-mono)] text-[length:var(--text-lg)] font-semibold"
           onClick={() => setSheet('files')}
         >
+          <FileBadge />
           <span data-testid={ids.name} className="min-w-0 truncate">
             {attachment.name}
           </span>
@@ -63,11 +65,15 @@ export function AttachmentTouchHeader({
         <span data-testid={ids.meta} className="min-w-0 truncate">
           {attachmentMeta(attachment)}
         </span>
-        <span aria-hidden="true">›</span>
+        <span
+          aria-hidden="true"
+          className="inline-grid size-5 flex-none place-items-center rounded-full border border-current text-[length:var(--text-xs)] leading-none"
+        >
+          i
+        </span>
       </button>
       <div className="flex items-center gap-2 pt-1">
         <ViewToggle view={view} onChange={onViewChange} />
-        <span className="flex-1" />
         <AttachmentMoreSheet
           attachment={attachment}
           replacing={replacing}

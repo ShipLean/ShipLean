@@ -19,6 +19,8 @@ public static class UsageEventNames
     public const string AgentSessionStopped = "agent_session.stopped";
     public const string AgentSessionOpened = "agent_session.opened";
     public const string AgentSessionFinished = "agent_session.finished";
+    public const string AgentSessionViewed = "agent_session.viewed";
+    public const string AgentSessionRunLogUploaded = "agent_session.run_log_uploaded";
     public const string ProjectCreated = "project.created";
     public const string ProjectJoined = "project.joined";
     public const string ProjectLeft = "project.left";
@@ -83,6 +85,8 @@ public static class UsageEventNames
     public const string SprintStatusViewed = "sprint.status_viewed";
     public const string SprintReviewed = "sprint.reviewed";
     public const string BoardSettingsChanged = "board.settings_changed";
+    public const string BoardFilterOpened = "board.filter_opened";
+    public const string BoardHealthFiltered = "board.health_filtered";
     public const string RetroPointAdded = "retro.point_added";
     public const string RetroListed = "retro.listed";
     public const string RetroSearched = "retro.searched";
@@ -96,6 +100,7 @@ public static class UsageEventNames
     public const string RetroPointNotNeeded = "retro.point_not_needed";
     public const string RetroNotNeededUndone = "retro.not_needed_undone";
     public const string RetroMergeKeptApart = "retro.merge_kept_apart";
+    public const string RetroThemeSheetOpened = "retro.theme_sheet_opened";
     public const string RetroActionsDecided = "retro.actions_decided";
 
     // Decisions and questions on work items (SHIP-922). decision.answered is an MCP answer_decision; on the web a confirm or change
@@ -125,6 +130,14 @@ public static class UsageEventNames
     public const string FeatureTimelineViewed = "feature.timeline_viewed";
     public const string ReviewLogged = "review.logged";
 
+    // Inspection's lead time (SHIP-1398 K11). viewed, period_opened and task_opened are self-emitted by the page's reports;
+    // tool_read is the MCP tool inspection_metrics and commit_times_backfilled the temporary MCP tool backfill_commit_times.
+    public const string InspectionMetricsViewed = "inspection_metrics.viewed";
+    public const string InspectionMetricsPeriodOpened = "inspection_metrics.period_opened";
+    public const string InspectionMetricsTaskOpened = "inspection_metrics.task_opened";
+    public const string InspectionMetricsToolRead = "inspection_metrics.tool_read";
+    public const string InspectionMetricsCommitTimesBackfilled = "inspection_metrics.commit_times_backfilled";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";
@@ -139,6 +152,7 @@ public static class UsageEventNames
     public const string InstanceAnalyticsChanged = "instance.analytics_changed";
     public const string InstanceAgentConnectionCreated = "instance.agent_connection_created";
     public const string InstanceAgentConnectionChanged = "instance.agent_connection_changed";
+    public const string InstanceAgentConnectionTested = "instance.agent_connection_tested";
     public const string InstanceUserAdded = "instance.user_added";
     public const string InstanceUserChanged = "instance.user_changed";
     public const string InstanceSearchReindexed = "instance.search_reindexed";
