@@ -6,7 +6,7 @@ namespace ShipLean.Application.Features.Inspection.ClickHouse;
 
 // Tokens per task from the ShipLean-owned `inspection.runs` and `inspection.run_items` (SHIP-1398 CK1), in one query per call. A run
 // counts toward the items at its strongest link seen in the window, its tokens split evenly over them (item D21). The project filter
-// is in both subqueries, the window is cut to the second as the link stamp is, and every value is a parameter.
+// is in both subqueries, a run that reported no tokens at all is not counted, the window is cut to the second as the link stamp is, and every value is a parameter.
 public sealed class ClickHouseTaskTokenTotals : ITaskTokenTotals
 {
     private readonly ClickHouseDb db;
@@ -57,6 +57,7 @@ public sealed class ClickHouseTaskTokenTotals : ITaskTokenTotals
                     FROM {{names.Runs}}
                     WHERE project = {project:String}
                     GROUP BY session_id
+                    HAVING sum(span_tokens_in_n) + sum(log_tokens_in_n) + sum(span_tokens_out_n) + sum(log_tokens_out_n) > 0
                 ) AS r ON l.session_id = r.session_id
                 """,
                 new Dictionary<string, object>

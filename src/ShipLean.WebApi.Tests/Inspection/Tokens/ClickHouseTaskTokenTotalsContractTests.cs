@@ -3,7 +3,9 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Inspection;
+using Microsoft.Extensions.Time.Testing;
 using ShipLean.Application.Features.Inspection.ClickHouse;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 using ShipLean.LocalEnvironment.Inspection;
 using ShipLean.TestSupport.Inspection;
@@ -22,6 +24,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
     private const string FixtureName = "claude-code-synthetic";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(StoreTimeouts.WaitSeconds);
     private readonly List<ServiceProvider> providers = [];
+    private readonly FakeTimeProvider clock = new(new DateTimeOffset(2026, 11, 17, 12, 0, 0, TimeSpan.Zero));
     private InspectionStack stack = null!;
 
     [OneTimeSetUp]
@@ -118,6 +121,17 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         totals.ByItem.ShouldBeEmpty();
     }
 
+    [Test]
+    public async Task ReadAsync_WhenTheStoreAnswers_ShouldSayHowFarBackItKeepsRuns()
+    {
+        var run = await LoadAsync();
+        var options = stack.Options("clickhouse");
+
+        var totals = await Build(options).ReadAsync(Query(run), CancellationToken.None);
+
+        totals.KeptSince.ShouldBe(clock.GetUtcNow().AddDays(-(options.RetentionDays + ClickHouseViewSql.ExpiredKeepDays)));
+    }
+
     // A fresh run under its own project key, so no test sees another's.
     private Task<LoadedRun> LoadAsync() => LoadedRun.LoadAsync(stack, InspectionFixtures.Get(FixtureName), 1, Timeout);
 
@@ -138,6 +152,7 @@ public sealed class ClickHouseTaskTokenTotalsContractTests
         var services = new ServiceCollection();
         new InspectionServices().AddServices(services, new ConfigurationBuilder().Build());
         services.AddSingleton(options);
+        services.AddSingleton<TimeProvider>(clock);
         var provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
         providers.Add(provider);
         var source = provider.GetRequiredService<ITaskTokenTotals>();

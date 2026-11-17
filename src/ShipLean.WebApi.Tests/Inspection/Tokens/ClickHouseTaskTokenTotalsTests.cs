@@ -1,8 +1,10 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Inspection;
 using ShipLean.Application.Features.Inspection.ClickHouse;
+using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Contracts.Inspection;
 using ShipLean.LocalEnvironment.Inspection;
 using ShipLean.TestSupport.Inspection;
@@ -57,25 +59,43 @@ public sealed class ClickHouseTaskTokenTotalsTests
     [Test]
     public async Task ReadAsync_WhenRunHasTwoTaggedItems_ShouldSplitTokens()
     {
-        var run = await LoadAsync(Variant(TagSecondItem));
-        var summary = run.Expected.Summary;
+        // 901 in and 101 out, both odd, reported by the logs; a second Tagged link row is added for the same run.
+        var run = await LoadAsync(Variant(root => MoveTokensToLogs(root, 901, 101)));
+        var source = Source(out var provider);
+        var second = run.ProjectKey + "-99";
+        var seen = run.Load.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        await ClickHouseDb.From(stack.Options("clickhouse")).ExecuteAsync(
+            $"INSERT INTO {provider.GetRequiredService<ClickHouseSchemaMigrator>().Names.RunItems} (project, item_key, session_id, link_version, seen_at) VALUES ('{run.ProjectKey}', '{second}', '{run.Load.SessionIds.Values.Single()}', {ClickHouseViewSql.TaggedVersion}, '{seen}')",
+            null,
+            CancellationToken.None);
 
-        var totals = await Source().ReadAsync(new TaskTokenQuery(run.ProjectKey, ["SHIP-1", "SHIP-2"], run.Load.StartedAt.AddMinutes(-1), run.Load.StartedAt.AddHours(1)), CancellationToken.None);
+        var totals = await source.ReadAsync(new TaskTokenQuery(run.ProjectKey, ["SHIP-1", "SHIP-2", second], run.Load.StartedAt.AddMinutes(-1), run.Load.StartedAt.AddHours(1)), CancellationToken.None);
+
+        // SHIP-1 sorts before the second key, so it takes the odd token; SHIP-2 is only a tool-call link and gets nothing.
+        totals.Available.ShouldBeTrue(totals.Problem);
+        totals.ByItem.Keys.ShouldBe(["SHIP-1", second], ignoreOrder: true);
+        totals.ByItem["SHIP-1"].ShouldSatisfyAllConditions(t => t.Runs.ShouldBe(1), t => t.TokensIn.ShouldBe(451), t => t.TokensOut.ShouldBe(51));
+        totals.ByItem[second].ShouldSatisfyAllConditions(t => t.Runs.ShouldBe(1), t => t.TokensIn.ShouldBe(450), t => t.TokensOut.ShouldBe(50));
+    }
+
+    [Test]
+    public async Task ReadAsync_WhenRunReportedNoTokens_ShouldNotCountIt()
+    {
+        var run = await LoadAsync(InspectionFixtures.Get("cursor-synthetic"));
+        run.Expected.Summary.TokensIn.ShouldBeNull();
+        var linked = run.Expected.Summary.Links.Single(link => link.Source == LinkSource.ShipleanFile).ItemKey;
+
+        var totals = await Source().ReadAsync(new TaskTokenQuery(run.ProjectKey, [.. run.Expected.Summary.Links.Select(link => link.ItemKey)], run.Load.StartedAt.AddMinutes(-1), run.Load.StartedAt.AddHours(1)), CancellationToken.None);
 
         totals.Available.ShouldBeTrue(totals.Problem);
-        totals.ByItem.Keys.ShouldBe(["SHIP-1", "SHIP-2"], ignoreOrder: true);
-        foreach (var tokens in totals.ByItem.Values)
-        {
-            tokens.Runs.ShouldBe(1);
-            tokens.TokensIn.ShouldBe(summary.TokensIn.ShouldNotBeNull() / 2);
-            tokens.TokensOut.ShouldBe(summary.TokensOut.ShouldNotBeNull() / 2);
-        }
+        totals.ByItem.ShouldNotContainKey(linked);
+        totals.ByItem.ShouldBeEmpty();
     }
 
     [Test]
     public async Task ReadAsync_WhenSpansHaveNoTokens_ShouldUseLogTokens()
     {
-        var run = await LoadAsync(Variant(MoveTokensToLogs));
+        var run = await LoadAsync(Variant(root => MoveTokensToLogs(root, 900, 100)));
 
         var totals = await Source().ReadAsync(new TaskTokenQuery(run.ProjectKey, ["SHIP-1"], run.Load.StartedAt.AddMinutes(-1), run.Load.StartedAt.AddHours(1)), CancellationToken.None);
 
@@ -98,15 +118,8 @@ public sealed class ClickHouseTaskTokenTotalsTests
         return fixture with { OtlpPath = path };
     }
 
-    // The second span resource names SHIP-2 as its tagged item, so the run is Tagged to SHIP-1 and SHIP-2 alike.
-    private static void TagSecondItem(JsonObject root)
-    {
-        var resource = root["resourceSpans"]![1]!["resource"]!["attributes"]!.AsArray();
-        resource.Single(a => a!["key"]!.GetValue<string>() == "shiplean.item")!["value"]!["stringValue"] = "SHIP-2";
-    }
-
-    // Spans stop reporting tokens (their attribute is renamed) and the first log record reports 900 in and 100 out.
-    private static void MoveTokensToLogs(JsonObject root)
+    // Spans stop reporting tokens (their attribute is renamed) and the first log record reports the given tokens.
+    private static void MoveTokensToLogs(JsonObject root, int tokensIn, int tokensOut)
     {
         Walk(root["resourceSpans"]!, node =>
         {
@@ -116,8 +129,8 @@ public sealed class ClickHouseTaskTokenTotalsTests
             }
         });
         var attributes = root["resourceLogs"]![0]!["scopeLogs"]![0]!["logRecords"]![0]!["attributes"]!.AsArray();
-        attributes.Add(new JsonObject { ["key"] = "input_tokens", ["value"] = new JsonObject { ["intValue"] = "900" } });
-        attributes.Add(new JsonObject { ["key"] = "output_tokens", ["value"] = new JsonObject { ["intValue"] = "100" } });
+        attributes.Add(new JsonObject { ["key"] = "input_tokens", ["value"] = new JsonObject { ["intValue"] = tokensIn.ToString(CultureInfo.InvariantCulture) } });
+        attributes.Add(new JsonObject { ["key"] = "output_tokens", ["value"] = new JsonObject { ["intValue"] = tokensOut.ToString(CultureInfo.InvariantCulture) } });
     }
 
     private static void Walk(JsonNode? node, Action<JsonObject> visit)
@@ -140,12 +153,14 @@ public sealed class ClickHouseTaskTokenTotalsTests
         }
     }
 
-    private ITaskTokenTotals Source()
+    private ITaskTokenTotals Source() => Source(out _);
+
+    private ITaskTokenTotals Source(out ServiceProvider provider)
     {
         var services = new ServiceCollection();
         new InspectionServices().AddServices(services, new ConfigurationBuilder().Build());
         services.AddSingleton(stack.Options("clickhouse"));
-        var provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
+        provider = (ServiceProvider)new DefaultServiceProviderFactory().CreateServiceProvider(services);
         providers.Add(provider);
         return provider.GetRequiredService<ITaskTokenTotals>();
     }
