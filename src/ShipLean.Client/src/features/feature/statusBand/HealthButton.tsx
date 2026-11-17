@@ -12,7 +12,7 @@ const toneOf: Record<FeatureHealth, string> = {
 const options: readonly { value: FeatureHealth; label: string; hint: string }[] = [
   { value: 'onTrack', label: 'On track', hint: 'going to plan' },
   { value: 'atRisk', label: 'At risk', hint: 'may miss the goal or date' },
-  { value: 'blocked', label: 'Blocked', hint: 'can\'t move until something changes' },
+  { value: 'blocked', label: 'Blocked', hint: "can't move until something changes" },
 ];
 
 export const healthLabel = (health: FeatureHealth | null): string =>
