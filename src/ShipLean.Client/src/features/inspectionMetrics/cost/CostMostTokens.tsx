@@ -55,6 +55,7 @@ export function CostMostTokens({
               >
                 <td className={cell}>
                   <Link
+                    data-testid={ids.costMostTokensLink}
                     to={routePath('workItem', { key: projectKey, itemKey: task.key })}
                     onClick={() => onOpen(task)}
                     className="inline-flex items-center gap-1.5 text-ink no-underline hover:underline"

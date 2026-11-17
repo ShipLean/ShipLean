@@ -131,8 +131,9 @@ export const inspectionMetricsTestIds = {
   overviewTokensCardChange: 'inspection-metrics-overview-tokens-card-change',
   overviewTokensCardSoFar: 'inspection-metrics-overview-tokens-card-so-far',
   overviewTokensEmpty: 'inspection-metrics-overview-tokens-empty',
-  // CT4 append: each of the Cost view's three cards
+  // CT4 append: each of the Cost view's three cards, and a Most tokens row's link
   costCardPerTask: 'inspection-metrics-cost-card-per-task',
   costCardPerMergedPr: 'inspection-metrics-cost-card-per-merged-pr',
   costCardWithRuns: 'inspection-metrics-cost-card-with-runs',
+  costMostTokensLink: 'inspection-metrics-cost-most-tokens-link',
 } as const;

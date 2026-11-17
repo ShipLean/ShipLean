@@ -142,8 +142,9 @@ public static class InspectionMetricsTestIds
     public const string OverviewTokensCardChange = "inspection-metrics-overview-tokens-card-change";
     public const string OverviewTokensCardSoFar = "inspection-metrics-overview-tokens-card-so-far";
     public const string OverviewTokensEmpty = "inspection-metrics-overview-tokens-empty";
-    // CT4 append: each of the Cost view's three cards
+    // CT4 append: each of the Cost view's three cards, and a Most tokens row's link
     public const string CostCardPerTask = "inspection-metrics-cost-card-per-task";
     public const string CostCardPerMergedPr = "inspection-metrics-cost-card-per-merged-pr";
     public const string CostCardWithRuns = "inspection-metrics-cost-card-with-runs";
+    public const string CostMostTokensLink = "inspection-metrics-cost-most-tokens-link";
 }
