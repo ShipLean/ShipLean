@@ -133,4 +133,7 @@ public static class FeatureTestIds
     public const string ChildAddSubmit = "feature-child-add-submit";
     public const string ChildAddCancel = "feature-child-add-cancel";
     public const string ChildAddError = "feature-child-add-error";
+
+    // SHIP-2082 sprint on the touch child row
+    public const string ChildSprint = "feature-child-sprint";
 }

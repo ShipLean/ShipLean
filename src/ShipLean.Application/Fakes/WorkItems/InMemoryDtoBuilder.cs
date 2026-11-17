@@ -156,6 +156,6 @@ internal sealed class InMemoryDtoBuilder(
             .Where(child => child.ParentId == item.Id)
             .OrderBy(child => child.BacklogOrder, StringComparer.Ordinal)
             .Select(child => new ChildSummaryDto(
-                child.Id, child.Key, TypeRef(child.Type), child.Title, State(project, child.StateId), UserOrNull(child.AssigneeId), child.Points))
+                child.Id, child.Key, TypeRef(child.Type), child.Title, State(project, child.StateId), UserOrNull(child.AssigneeId), child.Points, child.SprintId is { } sprint ? sprints[sprint] : null))
             .ToList();
 }
