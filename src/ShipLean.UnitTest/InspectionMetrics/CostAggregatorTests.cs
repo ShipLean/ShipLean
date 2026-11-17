@@ -193,7 +193,7 @@ public class CostAggregatorTests
     [Test]
     public void Build_ShouldGiveThePercentOfTasksWithRuns()
     {
-        var cost = Build(Facts(("SHIP-1", 10, 6), ("SHIP-2", 10, 7), ("SHIP-3", 10, 8), ("SHIP-4", 10, 20)), Tokens(At(10, 10, 0), ("SHIP-1", 1000), ("SHIP-4", 500)));
+        var cost = Build(Facts(("SHIP-1", 10, 6), ("SHIP-2", 10, 7), ("SHIP-3", 10, 8), ("SHIP-4", 10, 20)), Tokens(At(10, 10, 0), ("SHIP-1", 1000, 0), ("SHIP-4", 500, 0)));
 
         PeriodStats(cost, S3).TasksWithRunsPct.ShouldBeNull();
         var s4 = PeriodStats(cost, S4);
