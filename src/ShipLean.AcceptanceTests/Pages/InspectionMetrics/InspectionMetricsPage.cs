@@ -4,7 +4,7 @@ namespace ShipLean.AcceptanceTests.Pages.InspectionMetrics;
 
 // Inspection (/p/<project>/inspection?view=…, SHIP-1398 K10): the side menu's Inspection section, the page's header and
 // view tabs, its loading and error states, and the root of each view. Each view's own parts are found inside its root.
-// Frozen after wave 0.1: a view's tests add their own page object over its root instead of editing this one.
+// Frozen after wave 0.1 except for the Cost view's parts, which the cost journey (SHIP-1398 CTE) added.
 public sealed class InspectionMetricsPage(IPage page)
 {
     public static string Path(string projectKey, string? view = null)
@@ -44,4 +44,20 @@ public sealed class InspectionMetricsPage(IPage page)
     public ILocator Period => Page.GetByTestId(InspectionMetricsTestIds.Period);
 
     public ILocator Json => Page.GetByTestId(InspectionMetricsTestIds.Json);
+
+    // Cost: the menu item, the Overview's tokens card, and the Cost view's per-task card and Most tokens rows.
+    public ILocator MenuCost => page.GetByTestId(InspectionMetricsTestIds.MenuCost);
+
+    public ILocator OverviewTokensCard => Overview.GetByTestId(InspectionMetricsTestIds.OverviewTokensCard);
+
+    public ILocator OverviewTokensCardValue => OverviewTokensCard.GetByTestId(InspectionMetricsTestIds.OverviewTokensCardValue);
+
+    public ILocator Cost => Page.GetByTestId(InspectionMetricsTestIds.Cost);
+
+    public ILocator CostPerTaskValue => Cost.GetByTestId(InspectionMetricsTestIds.CostCardPerTask).GetByTestId(InspectionMetricsTestIds.CostCardValue);
+
+    // A Most tokens row by its task key, and the link that opens the task.
+    public ILocator CostMostTokensRow(string taskKey) => Cost.GetByTestId(InspectionMetricsTestIds.CostMostTokensRow).Filter(new() { HasTextString = taskKey });
+
+    public ILocator CostMostTokensLink(string taskKey) => CostMostTokensRow(taskKey).GetByTestId(InspectionMetricsTestIds.CostMostTokensLink);
 }
