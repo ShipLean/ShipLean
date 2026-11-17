@@ -81,7 +81,6 @@ public sealed class CostAggregator : ICostAggregator
 
         public InspectionCostDto Build()
         {
-            var shownIds = _window.Shown.Select(sprint => sprint.Id).ToHashSet();
             var keptShown = _window.Shown.Where(Kept).ToList();
             var inRange = keptShown.SelectMany(TasksIn).Where(placed => placed.Tokens is not null).ToList();
             return new InspectionCostDto(
@@ -164,7 +163,7 @@ public sealed class CostAggregator : ICostAggregator
             return mean == 0 ? null : (int)Math.Round((current.Value - mean) / mean * 100, MidpointRounding.AwayFromZero);
         }
 
-        private InspectionCostTaskDto TaskDto(Placed placed)
+        private static InspectionCostTaskDto TaskDto(Placed placed)
         {
             var tokens = placed.Tokens!;
             return new InspectionCostTaskDto(

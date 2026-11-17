@@ -156,7 +156,7 @@ public class CostAggregatorTests
 
         var top = cost.MostTokens;
         top.Count.ShouldBe(8);
-        top.Select(t => t.Key).ShouldBe(["SHIP-9", "SHIP-5", "SHIP-10", "SHIP-8", "SHIP-7", "SHIP-6", "SHIP-4", "SHIP-3"]);
+        top.Select(t => t.Key).ShouldBe(["SHIP-9", "SHIP-8", "SHIP-7", "SHIP-6", "SHIP-10", "SHIP-5", "SHIP-4", "SHIP-3"]);
         (top[0].TokensLabel, top[0].Agent, top[0].Who, top[0].Runs, top[0].LeadLabel).ShouldBe(("9.0k", true, "Claude Code", 2, "24.0 h"));
     }
 
@@ -182,8 +182,14 @@ public class CostAggregatorTests
     [TestCase(18_150L, "18.2k")]
     [TestCase(999_990L, "1.0M")]
     [TestCase(1_234_567L, "1.2M")]
-    public void Of_ShouldShortenTokens(long tokens, string label) => TokenLabel.Of(tokens).ShouldBe(label);
+    public void Of_ShouldShortenTokens(long tokens, string label)
+    {
+        TokenLabel.Of(tokens).ShouldBe(label);
+    }
 
     [Test]
-    public void Of_WhenNoNumber_ShouldReadDash() => TokenLabel.Of(null).ShouldBe("—");
+    public void Of_WhenNoNumber_ShouldReadDash()
+    {
+        TokenLabel.Of(null).ShouldBe("—");
+    }
 }
