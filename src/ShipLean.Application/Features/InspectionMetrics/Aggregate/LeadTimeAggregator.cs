@@ -17,7 +17,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
 {
     public const string Caveat = "These numbers tell you where to look, not what caused a change.";
     public const string PeopleKey = "people";
-    public const string PeopleLabel = "People";
+    public const string PeopleLabel = TaskPlacement.PeopleLabel;
     public const string NoFeatureKey = "none";
     public const string NoFeatureLabel = "No Feature";
 
@@ -51,7 +51,8 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
             run.LeftOut(),
             selection.Period is null ? null : run.PeriodDetail(selection.Period, selection.Select),
             Quality: null,
-            Bugs: null);
+            Bugs: null,
+            Cost: null);
     }
 
     private sealed class Run
@@ -80,10 +81,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
 
             var reviews = facts.Reviews.ToLookup(review => review.ItemKey, StringComparer.Ordinal);
             var commits = facts.Commits.ToLookup(commit => commit.ItemKey, StringComparer.Ordinal);
-            var starters = facts.Moves
-                .Where(move => move.Category == StateCategory.InProgress)
-                .GroupBy(move => move.ItemKey, StringComparer.Ordinal)
-                .ToDictionary(group => group.Key, group => group.OrderBy(move => move.At).ThenBy(move => move.Rev).First().UserId, StringComparer.Ordinal);
+            var starters = TaskPlacement.Starters(facts);
             _measured =
             [
                 .. tasks.Where(task => task.Start is not null).Select(task =>
@@ -93,7 +91,7 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
                         task,
                         fact,
                         InspectionPeriods.SprintOf(_started, task.End, zone),
-                        Who(fact, starters.GetValueOrDefault(fact.Key)),
+                        TaskPlacement.Who(fact, starters.GetValueOrDefault(fact.Key), facts.People),
                         reviews[fact.Key].Count(),
                         commits[fact.Key].Count());
                 }),
@@ -345,19 +343,5 @@ public sealed class LeadTimeAggregator : ILeadTimeAggregator
         // "Sprint 23" reads "S23"; any other name stays as it is.
         private static string ShortName(InspectionSprint sprint)
             => sprint.Name.StartsWith("Sprint ", StringComparison.Ordinal) ? $"S{sprint.Name["Sprint ".Length..]}" : sprint.Name;
-
-        // Who did the task: the agent connection that started it, else the person who started it, else its assignee.
-        private string Who(LeadTimeTaskFact fact, Guid? starter)
-        {
-            if (fact.AgentName is not null)
-            {
-                return fact.AgentName;
-            }
-            if (starter is { } id && _facts.People.TryGetValue(id, out var name))
-            {
-                return name;
-            }
-            return fact.AssigneeName ?? PeopleLabel;
-        }
     }
 }

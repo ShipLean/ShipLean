@@ -1126,5 +1126,273 @@
       "causedByTitle": null,
       "periodId": "00000004-0000-4000-8001-000000000023"
     }
-  ]
+  ],
+  "cost": {
+    "available": true,
+    "note": null,
+    "periods": [
+      {
+        "periodId": "00000004-0000-4000-8001-000000000021",
+        "stats": {
+          "tasks": 12,
+          "tasksWithRuns": 0,
+          "tokensPerTask": null,
+          "tokensPerTaskLabel": "—",
+          "tokensTotal": null,
+          "tokensTotalLabel": "—",
+          "mergedPrs": 9,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": null,
+          "kept": false,
+          "tasksWithRunsPct": null
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000022",
+        "stats": {
+          "tasks": 14,
+          "tasksWithRuns": 11,
+          "tokensPerTask": 182000,
+          "tokensPerTaskLabel": "182k",
+          "tokensTotal": 2002000,
+          "tokensTotalLabel": "2.0M",
+          "mergedPrs": 12,
+          "tokensPerMergedPr": 166833,
+          "tokensPerMergedPrLabel": "167k",
+          "changePctVsPrevious": null,
+          "kept": true,
+          "tasksWithRunsPct": 79
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000023",
+        "stats": {
+          "tasks": 16,
+          "tasksWithRuns": 13,
+          "tokensPerTask": 154000,
+          "tokensPerTaskLabel": "154k",
+          "tokensTotal": 2002000,
+          "tokensTotalLabel": "2.0M",
+          "mergedPrs": 14,
+          "tokensPerMergedPr": 143000,
+          "tokensPerMergedPrLabel": "143k",
+          "changePctVsPrevious": -15,
+          "kept": true,
+          "tasksWithRunsPct": 81
+        }
+      },
+      {
+        "periodId": "00000004-0000-4000-8001-000000000024",
+        "stats": {
+          "tasks": 6,
+          "tasksWithRuns": 5,
+          "tokensPerTask": 120000,
+          "tokensPerTaskLabel": "120k",
+          "tokensTotal": 600000,
+          "tokensTotalLabel": "600k",
+          "mergedPrs": null,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": -22,
+          "kept": true,
+          "tasksWithRunsPct": 83
+        }
+      }
+    ],
+    "quarters": [
+      {
+        "quarter": "Q3 2026",
+        "stats": {
+          "tasks": 30,
+          "tasksWithRuns": 0,
+          "tokensPerTask": null,
+          "tokensPerTaskLabel": "—",
+          "tokensTotal": null,
+          "tokensTotalLabel": "—",
+          "mergedPrs": 20,
+          "tokensPerMergedPr": null,
+          "tokensPerMergedPrLabel": "—",
+          "changePctVsPrevious": null,
+          "kept": false,
+          "tasksWithRunsPct": null
+        }
+      },
+      {
+        "quarter": "Q4 2026",
+        "stats": {
+          "tasks": 36,
+          "tasksWithRuns": 29,
+          "tokensPerTask": 159000,
+          "tokensPerTaskLabel": "159k",
+          "tokensTotal": 4611000,
+          "tokensTotalLabel": "4.6M",
+          "mergedPrs": 26,
+          "tokensPerMergedPr": 177346,
+          "tokensPerMergedPrLabel": "177k",
+          "changePctVsPrevious": null,
+          "kept": true,
+          "tasksWithRunsPct": 81
+        }
+      }
+    ],
+    "range": {
+      "tasks": 48,
+      "tasksWithRuns": 29,
+      "tokensPerTask": 159000,
+      "tokensPerTaskLabel": "159k",
+      "tokensTotal": 4611000,
+      "tokensTotalLabel": "4.6M",
+      "mergedPrs": 35,
+      "tokensPerMergedPr": 131742,
+      "tokensPerMergedPrLabel": "132k",
+      "changePctVsPrevious": null,
+      "kept": true,
+      "tasksWithRunsPct": 60
+    },
+    "headline": {
+      "finished": {
+        "tasks": 16,
+        "tasksWithRuns": 13,
+        "tokensPerTask": 154000,
+        "tokensPerTaskLabel": "154k",
+        "tokensTotal": 2002000,
+        "tokensTotalLabel": "2.0M",
+        "mergedPrs": 14,
+        "tokensPerMergedPr": 143000,
+        "tokensPerMergedPrLabel": "143k",
+        "changePctVsPrevious": -15,
+        "kept": true,
+        "tasksWithRunsPct": 81
+      },
+      "soFar": {
+        "tasks": 6,
+        "tasksWithRuns": 5,
+        "tokensPerTask": 120000,
+        "tokensPerTaskLabel": "120k",
+        "tokensTotal": 600000,
+        "tokensTotalLabel": "600k",
+        "mergedPrs": null,
+        "tokensPerMergedPr": null,
+        "tokensPerMergedPrLabel": "—",
+        "changePctVsPrevious": -22,
+        "kept": true,
+        "tasksWithRunsPct": 83
+      },
+      "quarterToDate": {
+        "tasks": 36,
+        "tasksWithRuns": 29,
+        "tokensPerTask": 159000,
+        "tokensPerTaskLabel": "159k",
+        "tokensTotal": 4611000,
+        "tokensTotalLabel": "4.6M",
+        "mergedPrs": 26,
+        "tokensPerMergedPr": 177346,
+        "tokensPerMergedPrLabel": "177k",
+        "changePctVsPrevious": null,
+        "kept": true,
+        "tasksWithRunsPct": 81
+      },
+      "lastQuarter": {
+        "tasks": 30,
+        "tasksWithRuns": 0,
+        "tokensPerTask": null,
+        "tokensPerTaskLabel": "—",
+        "tokensTotal": null,
+        "tokensTotalLabel": "—",
+        "mergedPrs": 20,
+        "tokensPerMergedPr": null,
+        "tokensPerMergedPrLabel": "—",
+        "changePctVsPrevious": null,
+        "kept": false,
+        "tasksWithRunsPct": null
+      }
+    },
+    "mostTokens": [
+      {
+        "key": "SHIP-192",
+        "title": "Stacking rules (percent + fixed)",
+        "featureKey": "SHIP-99",
+        "who": "Claude Code",
+        "agent": true,
+        "models": [
+          "claude-opus-5-5",
+          "claude-sonnet-5-5"
+        ],
+        "runs": 4,
+        "tokens": 612000,
+        "tokensLabel": "612k",
+        "leadLabel": "3d 4h",
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      },
+      {
+        "key": "SHIP-430",
+        "title": "Debounce apply and make it idempotent",
+        "featureKey": "SHIP-101",
+        "who": "Cursor",
+        "agent": true,
+        "models": [
+          "gpt-5"
+        ],
+        "runs": 2,
+        "tokens": 388000,
+        "tokensLabel": "388k",
+        "leadLabel": "2d 1h",
+        "periodId": "00000004-0000-4000-8001-000000000024"
+      },
+      {
+        "key": "SHIP-194",
+        "title": "API: validate and apply",
+        "featureKey": "SHIP-99",
+        "who": "Priya Shah",
+        "agent": false,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "runs": 1,
+        "tokens": 96000,
+        "tokensLabel": "96k",
+        "leadLabel": "4d 2h",
+        "periodId": "00000004-0000-4000-8001-000000000022"
+      },
+      {
+        "key": "SHIP-511",
+        "title": "Fix typo in the release notes",
+        "featureKey": null,
+        "who": "Claude Code",
+        "agent": true,
+        "models": [
+          "claude-haiku-4-5"
+        ],
+        "runs": 1,
+        "tokens": 41000,
+        "tokensLabel": "41k",
+        "leadLabel": "2h",
+        "periodId": "00000004-0000-4000-8001-000000000023"
+      }
+    ],
+    "byFeature": [
+      {
+        "key": "SHIP-99",
+        "title": "Coupons v2",
+        "tasks": 17,
+        "tokens": 2810000,
+        "tokensLabel": "2.8M"
+      },
+      {
+        "key": "SHIP-101",
+        "title": "Checkout v2",
+        "tasks": 10,
+        "tokens": 1720000,
+        "tokensLabel": "1.7M"
+      },
+      {
+        "key": null,
+        "title": "No Feature",
+        "tasks": 2,
+        "tokens": 81000,
+        "tokensLabel": "81k"
+      }
+    ]
+  }
 }

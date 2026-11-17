@@ -8,7 +8,14 @@ import {
 
 // Inspection's address (SHIP-1398 K10): /p/:key/inspection?view=&range=&cut=&p=&select=&tab=. A missing or unknown value
 // reads as its default, and the default is left out of the address again.
-export const INSPECTION_VIEWS = ['overview', 'leadtime', 'period', 'quality', 'json'] as const;
+export const INSPECTION_VIEWS = [
+  'overview',
+  'leadtime',
+  'period',
+  'quality',
+  'cost',
+  'json',
+] as const;
 export type InspectionView = (typeof INSPECTION_VIEWS)[number];
 
 export const INSPECTION_PERIOD_TABS = ['tasks', 'features'] as const;

@@ -8,6 +8,7 @@ const TABS = [
   { view: 'overview', label: 'Overview', lit: ['overview', 'json'] },
   { view: 'leadtime', label: 'Lead time', lit: ['leadtime', 'period'] },
   { view: 'quality', label: 'Quality', lit: ['quality'] },
+  { view: 'cost', label: 'Cost', lit: ['cost'] },
 ] as const;
 
 /** Inspection's header: the title, the server's caveat (once the view model has loaded) and the view tabs. */

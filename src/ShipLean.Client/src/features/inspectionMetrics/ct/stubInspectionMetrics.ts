@@ -41,6 +41,32 @@ const noTasks: LeadTimeStatsDto = {
   changePctVsPrevious: null,
 };
 
+/** Cost on (CK4): the pinned fixture's tokens per task, with a period before the store kept runs and one with no merged PR. */
+export function stubCostOn(): InspectionMetricsViewDto {
+  return stubView();
+}
+
+/** Agent runs off for the instance or the project: the view model has no cost and the Cost view says so. */
+export function stubCostOff(): InspectionMetricsViewDto {
+  return stubView({ cost: null });
+}
+
+/** Agent runs on but the store cannot total tokens per task (Tempo + Loki): cost unavailable, with the server's note. */
+export function stubCostUnavailable(): InspectionMetricsViewDto {
+  return stubView({
+    cost: {
+      available: false,
+      note: 'Tokens per task needs the ClickHouse store.',
+      periods: [],
+      quarters: [],
+      range: null,
+      headline: { finished: null, soFar: null, quarterToDate: null, lastQuarter: null },
+      mostTokens: [],
+      byFeature: [],
+    },
+  });
+}
+
 /** One task in five ended at a commit time: the coverage banner shows. */
 export function stubLowCoverage(): InspectionMetricsViewDto {
   return stubView({ coverage: { tasks: 5, withCommitTime: 1, percent: 20 } });

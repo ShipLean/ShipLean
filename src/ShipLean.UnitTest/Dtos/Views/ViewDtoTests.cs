@@ -160,6 +160,28 @@ public class ViewDtoTests
         }
     }
 
+    // SHIP-1398 CK2: one period from before the store kept runs, one with no merged PR, a task by a person, a task with no Feature.
+    [Test]
+    public void InspectionMetricsView_ShouldShowEveryCostCase()
+    {
+        var view = BoardDtoFixture.Read("views", "inspection-metrics-view.json").Deserialize<InspectionMetricsViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        var cost = view.Cost.ShouldNotBeNull();
+        cost.Available.ShouldBeTrue();
+        cost.Periods.Select(p => p.PeriodId).ShouldBe(view.Periods.Select(p => p.Id));
+        cost.Quarters.Select(q => q.Quarter).ShouldBe(view.Quarters.Select(q => q.Quarter));
+        cost.Periods.ShouldContain(p => !p.Stats.Kept && p.Stats.TokensPerTask == null && p.Stats.TokensPerTaskLabel == "—");
+        cost.Periods.ShouldContain(p => p.Stats.Kept && p.Stats.MergedPrs == null && p.Stats.TokensPerMergedPr == null);
+        cost.Periods.ShouldContain(p => p.Stats.ChangePctVsPrevious != null);
+        cost.Range.ShouldNotBeNull().TasksWithRuns.ShouldBeLessThan(cost.Range.Tasks);
+        cost.Headline.Finished.ShouldNotBeNull();
+        cost.Headline.LastQuarter.ShouldNotBeNull().Kept.ShouldBeFalse();
+        cost.MostTokens.Select(t => t.Tokens).ShouldBeInOrder(SortDirection.Descending);
+        cost.MostTokens.ShouldContain(t => !t.Agent);
+        cost.MostTokens.ShouldContain(t => t.FeatureKey == null);
+        cost.ByFeature.ShouldContain(f => f.Key == null);
+    }
+
     [Test]
     public void FeatureTimelineView_ShouldSurviveRoundTrip()
     {
