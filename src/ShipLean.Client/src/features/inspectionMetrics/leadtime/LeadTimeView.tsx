@@ -7,6 +7,7 @@ import { LeadTimeCutTable } from './LeadTimeCutTable';
 import { LeadTimeRows } from './LeadTimeRows';
 import { LeadTimeRule } from './LeadTimeRule';
 import { LeadTimeToolbar } from './LeadTimeToolbar';
+import { LeftOutTasks } from './LeftOutTasks';
 
 // ?view=leadtime (design/screens/inspection.html?view=leadtime): how a task's lead time is measured, the chart, then a row
 // per sprint with quarter roll-ups, or the split by Feature or by who. Range and split replace the address; a sprint or a
@@ -72,19 +73,7 @@ export const LeadTimeView: ComponentType<InspectionViewProps> = ({
       ) : (
         <LeadTimeCutTable cut={view.cut} rows={view.cuts} periods={view.periods} unit={unit} />
       )}
-      {view.leftOut.length > 0 && (
-        <p data-testid={ids.leftOut} className="m-0 text-[length:var(--text-sm)] text-ink-muted">
-          Left out:{' '}
-          {view.leftOut.map((task, i) => (
-            <span key={task.key} data-testid={ids.leftOutRow} data-key={task.key}>
-              {i > 0 && '; '}
-              <span className="font-mono text-ink">{task.key}</span> {task.title} (
-              {task.reason.toLowerCase()})
-            </span>
-          ))}
-          . A task with no start has no lead time; the timeline shows it as a diamond.
-        </p>
-      )}
+      {view.leftOut.length > 0 && <LeftOutTasks tasks={view.leftOut} />}
     </section>
   );
 };
