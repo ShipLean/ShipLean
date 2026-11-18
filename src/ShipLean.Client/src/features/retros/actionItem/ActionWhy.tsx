@@ -63,7 +63,7 @@ export function ActionWhy({
             <button
               type="button"
               data-testid={ids.retroActionWhyAdd}
-              className="h-6 cursor-pointer rounded-control border border-edge bg-panel px-2 text-[length:var(--text-xs)] text-ink"
+              className="h-6 cursor-pointer rounded-control border border-edge bg-panel px-2 text-[length:var(--text-xs)] text-ink touch:h-[var(--touch-target)]"
               onClick={() =>
                 dialog.open({ existingWorkItemId: workItemId, scope: { kind: 'project' } })
               }

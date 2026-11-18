@@ -10,7 +10,7 @@
   rules on SHIP-805 (it doesn't restate them). Open directly in a browser. Uses ../tokens.css only; no build step.
   The data is the page-shot fixture's (src/pages/screenshots/fixtures/sprints.ts), so it lines up with today's shots.
   The real app has no Filter and no Add on this page, so neither does this design.
-  SHIP-805 rules 11 and 13 (48px bar, 32px targets) aren't in tokens.css on this branch yet, so this page sets them.
+  --touch-target (32px) and --mobile-bar-height (48px) come from tokens.css (SHIP-805 rules 11 and 13).
   ?sheet=picker|more|state:KEY|ready|active   ?edit=goal|sprint   ?close   ?burn=<day 0-4>   ?tasks=off
   ?toast=conflict|state   ?at=list (hide what's above the list, for screenshots)   ?theme=light|dark   ?shot
   Decisions D1–D11 settled by Joel on 7 Nov 2026 (every recommendation kept): design/README.md › Sprint backlog on a phone.
@@ -23,7 +23,7 @@
   })();
 </script>
 <style>
-:root { --touch-target: 32px; --mobile-bar-height: 48px; --m-pad: 12px; }
+:root { --m-pad: 12px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
@@ -106,7 +106,7 @@ a.kpi .l::after { content: " ›"; }
 
 /* Glance rows (D1): what the desktop rail shows, one tap away in a sheet. */
 .glance { display: grid; background: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-.glance button { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 14px; align-items: center; gap: 10px; min-height: 48px; padding: 6px var(--m-pad); border: 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent); background: none; text-align: left; }
+.glance button { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 14px; align-items: center; gap: 10px; min-height: var(--touch-target); padding: 6px var(--m-pad); border: 0; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent); background: none; text-align: left; }
 .glance button:last-child { border-bottom: 0; }
 .glance .g { color: var(--color-muted); display: grid; place-items: center; }
 .glance .t { display: grid; min-width: 0; }
@@ -163,11 +163,11 @@ a.kpi .l::after { content: " ›"; }
 .sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
 .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 6px 2px var(--m-pad); }
 .sheet-head b { font-size: 16px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-head .x { height: 36px; padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
+.sheet-head .x { height: var(--touch-target); padding: 0 8px; border: 0; background: none; color: var(--color-accent); font-size: 16px; flex: none; }
 .sheet .sub { font-size: 13px; color: var(--color-muted); padding: 0 var(--m-pad) 6px; margin-top: -2px; }
 .sheet .sb { overflow: auto; padding: 0 var(--m-pad) 14px; display: grid; gap: 12px; align-content: start; }
 .acts-l { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
-.acts-l button, .acts-l a { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; color: var(--color-text); text-decoration: none; }
+.acts-l button, .acts-l a { display: flex; align-items: center; gap: 12px; width: 100%; min-height: var(--touch-target); padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 15px; color: var(--color-text); text-decoration: none; }
 .acts-l .g { width: 20px; display: grid; place-items: center; color: var(--color-muted); flex: none; }
 .acts-l .r { margin-left: auto; color: var(--color-muted); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
 .acts-l small { display: block; font-size: 12px; color: var(--color-muted); }
@@ -186,7 +186,7 @@ a.kpi .l::after { content: " ›"; }
 .plist .its a { color: var(--color-text); text-decoration: none; }
 .plist .its .key { font: 12px var(--font-mono); }
 .rlist { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
-.rlist a { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: start; min-height: 48px; padding: 8px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); color: inherit; text-decoration: none; }
+.rlist a { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: start; min-height: var(--touch-target); padding: 8px var(--m-pad); border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); color: inherit; text-decoration: none; }
 .rlist li:first-child a { border-top: 0; }
 .rlist b { display: block; font-size: 15px; font-weight: var(--weight-medium); }
 .rlist small { display: block; font-size: 12.5px; color: var(--color-muted); }

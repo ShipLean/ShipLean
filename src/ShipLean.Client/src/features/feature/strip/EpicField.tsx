@@ -23,7 +23,7 @@ export function EpicField({
 }) {
   return (
     <FieldCell label="Epic" field="parent" changed={changed} className="max-w-[420px] shrink">
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2 touch:flex-col touch:items-stretch touch:gap-0">
         <div className="min-w-0 [&>span]:max-w-full [&_button]:max-w-full">
           <FieldMenu
             buttonTestId={ids.stripEpic}
@@ -58,7 +58,7 @@ export function EpicField({
             testId={ids.epicOpen}
             itemKey={value.key}
             title="Open epic"
-            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:min-w-[var(--touch-target)] touch:items-center touch:justify-center"
+            className="shrink-0 text-[length:var(--text-xs)] text-signal hover:underline touch:inline-flex touch:min-h-[var(--touch-target)] touch:items-center"
           >
             <span className="sr-only">Open epic </span>
             {value.key}

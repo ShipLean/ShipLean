@@ -2,13 +2,14 @@
  * The work item and Feature forms in the touch shell (SHIP-714). Loaded after the screen's own styles and shiplean.css.
  * At 900px and below (one breakpoint, as the shell): section chips stick under the shell's top bar, the title wraps,
  * fields become a two-column grid of tiles, field menus open as bottom sheets over the shell's scrim, unsaved changes
- * show a Save bar at the bottom, tables become stacked rows, and controls are 36px (sheet rows --touch-target).
+ * show a Save bar at the bottom, tables become stacked rows, and controls, rows and sheet options are at least
+ * --touch-target (32px, SHIP-805 rule 13).
  * item-touch.js builds the chips, the sheet header, the Save bar and, for the item modal (?peek), its own top bar.
  */
 .pbar, .jump, .savebar, .title-ta, .rev-more { display: none; }
 
 @media (max-width: 900px) {
-  :root { --control-height: 36px; }
+  :root { --control-height: var(--touch-target); }
   body { padding-bottom: env(safe-area-inset-bottom); }
   body.has-savebar { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 
@@ -101,12 +102,12 @@
   figure.img svg { height: auto; }
   .img-ph { width: 100%; }
 
-  /* Criteria and lists: 44px rows */
-  .checklist li { min-height: 44px; padding: 4px 4px 4px var(--space-2); }
+  /* Criteria and lists: rows at least --touch-target */
+  .checklist li { min-height: var(--touch-target); padding: 4px 4px 4px var(--space-2); }
   .crit { align-items: flex-start; padding: 6px 0; line-height: 1.4; }
   .crit input { width: 18px; height: 18px; margin-top: 1px; flex: none; }
   .checklist li.add .field { height: 36px; }
-  .lst > li { min-height: 44px; padding: 4px 4px 4px var(--space-2); }
+  .lst > li { min-height: var(--touch-target); padding: 4px 4px 4px var(--space-2); }
   .lst > li.lgrp { min-height: 26px; }
   .lst .t { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 

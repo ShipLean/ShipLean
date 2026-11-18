@@ -22,7 +22,7 @@ test('Planning_WhenLoaded_ShouldStackEverySectionExpandedAboveTheBacklog', async
   ]);
   expect(server.reads[0]).toContain('mode=planning');
   await expect(page.getByTestId(ids.row)).toHaveCount(5);
-  await expect(page.getByTestId(ids.planningSectionCount).first()).toHaveText('1 items');
+  await expect(page.getByTestId(ids.planningSectionCount).first()).toHaveText('1 item');
   await expect(page.getByTestId(ids.planningSectionCount).last()).toHaveText('3 items · 16 pts');
   await expect(page.getByTestId(ids.planningEmptySection)).toContainText('Sprint 26');
   await expect(
@@ -230,8 +230,22 @@ test('Planning_ShouldLinkEachSectionToItsSprint', async ({ mount, page }) => {
   const links = page.getByTestId(ids.planningSectionLink);
   await expect(links.nth(0)).toHaveText('Open sprint');
   await expect(links.nth(0)).toHaveAttribute('href', '/p/SHIP/sprints/sp24/backlog');
-  await expect(links.nth(1)).toHaveText('Capacity');
-  await expect(links.nth(1)).toHaveAttribute('href', '/p/SHIP/sprints/sp25/capacity');
+  await expect(links.nth(1)).toHaveText('Open sprint');
+  await expect(links.nth(1)).toHaveAttribute('href', '/p/SHIP/sprints/sp25/backlog');
+  const capacity = page.getByTestId(ids.planningSectionCapacityLink);
+  // Sprint 24 is current and has no Capacity link; the two future sprints do.
+  await expect(capacity).toHaveCount(2);
+  await expect(capacity.first()).toHaveAttribute('href', '/p/SHIP/sprints/sp25/capacity');
+});
+
+test('PlanningSprintMore_OnAFutureSprint_ShouldOfferOpenSprint', async ({ mount, page }) => {
+  await stubBacklog(page, planningView());
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  // Sprint 25 is a future sprint: its header links to the sprint page as well as to its capacity.
+  const future = page.getByTestId(ids.planningSection).nth(1);
+  await expect(future.getByTestId(ids.planningSectionLink)).toHaveText('Open sprint');
+  await expect(future.getByTestId(ids.planningSectionCapacityLink)).toHaveText('Capacity');
 });
 
 test('Planning_ToolbarShouldHaveNeitherCompletedNorColumns', async ({ mount, page }) => {
@@ -288,4 +302,13 @@ test('Planning_WhenACheckQueueIsOpen_ShouldStillAllowAdding', async ({ mount, pa
   await page.getByTestId(ids.addTitle).press('Enter');
   await expect.poll(() => server.adds.length).toBe(1);
   expect(server.adds[0].items[0]).toMatchObject({ title: 'Fixing as I go' });
+});
+
+test('Planning_ItemCount_ShouldPluralise', async ({ mount, page }) => {
+  await stubBacklog(page, planningView());
+  await mount(<PlanningMode project={PROJECT} />, route);
+
+  const counts = page.getByTestId(ids.planningSectionCount);
+  await expect(counts.nth(0)).toHaveText('1 item');
+  await expect(counts.last()).toHaveText('3 items · 16 pts');
 });

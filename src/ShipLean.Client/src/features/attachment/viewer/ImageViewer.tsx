@@ -83,13 +83,21 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
         >
           ✕
         </button>
-        <span
-          data-testid={ids.viewerCounter}
-          className="min-w-0 flex-1 truncate text-center text-[length:var(--text-base)]"
-        >
-          {`${index + 1} of ${images.length}`}
-          {context ? ` · ${context}` : ''}
-        </span>
+        <div className="grid min-w-0 flex-1 text-center">
+          <span
+            data-testid={ids.viewerName}
+            className="truncate font-[family-name:var(--font-mono)] text-[length:var(--text-base)]"
+          >
+            {image?.name || image?.alt}
+          </span>
+          <span
+            data-testid={ids.viewerCounter}
+            className="truncate text-[length:var(--text-sm)] text-white/70"
+          >
+            {`${index + 1} of ${images.length}`}
+            {context ? ` · ${context}` : ''}
+          </span>
+        </div>
         {image ? (
           <ViewerMoreSheet image={image} />
         ) : (
@@ -97,6 +105,14 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
         )}
       </div>
       <div className="relative min-h-0 flex-1">
+        {zoom.zoomed ? (
+          <span
+            data-testid={ids.viewerZoom}
+            className="absolute top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--text-sm)] whitespace-nowrap"
+          >
+            {Math.round(zoom.scale * 100)}% · double-tap to fit
+          </span>
+        ) : null}
         <div
           data-testid={ids.viewerStage}
           data-zoomed={zoom.zoomed ? 'true' : 'false'}
@@ -157,6 +173,13 @@ export function ImageViewer({ viewer }: { viewer: ImageViewerState }) {
         ) : null}
       </div>
       {many ? <ViewerThumbs images={images} current={index} onSelect={go} /> : null}
+      <p
+        data-testid={ids.viewerHint}
+        className="m-0 flex-none px-3 text-center text-[length:var(--text-sm)] text-white/70"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        {many ? 'Pinch to zoom · swipe for the next image' : 'Pinch to zoom'}
+      </p>
     </div>,
     document.body,
   );

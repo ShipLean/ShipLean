@@ -52,6 +52,21 @@ public sealed class SprintDemoTab(IPage page)
 
     public ILocator YouTubeRetry => page.GetByTestId(DemosTestIds.DemoYoutubeRetry);
 
+    // SHIP-1936: the sprint's numbers (committed, completed, Features moved) above the video.
+    public ILocator Numbers => page.GetByTestId(DemosTestIds.DemoNumbers);
+
+    public ILocator NumberCommitted => page.GetByTestId(DemosTestIds.DemoNumberCommitted);
+
+    public ILocator NumberCompleted => page.GetByTestId(DemosTestIds.DemoNumberCompleted);
+
+    public ILocator NumberFeaturesMoved => page.GetByTestId(DemosTestIds.DemoNumberFeaturesMoved);
+
+    // SHIP-1936: the agent's last words, split from ShipLean's sentence on a Failed band.
+    public ILocator AgentSaid => page.GetByTestId(DemosTestIds.DemoAgentSaid);
+
+    // SHIP-1810: the video's facts (Length, File, Delivered) under the player.
+    public ILocator Facts => page.GetByTestId(DemosTestIds.DemoFacts);
+
     public async Task GotoAsync(string projectKey, Guid sprintId)
     {
         await page.GotoAsync(Links.SprintDemo(projectKey, sprintId));

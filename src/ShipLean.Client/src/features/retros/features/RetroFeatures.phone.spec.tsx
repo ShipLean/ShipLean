@@ -210,3 +210,36 @@ test('RetroFeaturesTablet_WhenTableScrolled_ShouldKeepTheFeatureColumnInPlace', 
     (await page.getByTestId(ids.retroFeaturesRow).first().boundingBox())!.height,
   ).toBeGreaterThanOrEqual(48);
 });
+
+test('PhoneFeatureRow_ShouldShowAChevron', async ({ mount, page }) => {
+  await serve(page, sampleFeatures);
+  await mount(<RetroFeaturesPanel project={project} />, route());
+  const rows = page.getByTestId(ids.retroFeaturesRow);
+  await expect(rows).toHaveCount(4);
+  for (let index = 0; index < 4; index += 1) {
+    const chevron = rows.nth(index).getByTestId(ids.retroRowChevron);
+    await expect(chevron).toHaveText('›');
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    const row = (await rows.nth(index).boundingBox())!;
+    const arrow = (await chevron.boundingBox())!;
+    expect(arrow.width).toBeGreaterThan(0);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
+    expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
+  }
+});
+
+test('RetroFeaturesToolbar_Search_ShouldHaveAnIconAndNoNativeClear', async ({ mount, page }) => {
+  await serve(page, sampleFeatures);
+  await mount(<RetroFeaturesPanel project={project} />, route());
+  const open = page.getByTestId(ids.retroFeaturesSearchOpen);
+  await expect(open.getByTestId(ids.retroFeaturesSearchIcon)).toBeVisible();
+  await open.tap();
+  const field = page.getByTestId(ids.retroFeaturesSearch);
+  await field.fill('saved');
+  // type=search draws WebKit's native clear button; a text field with the search keyboard does not
+  await expect(field).toHaveAttribute('type', 'text');
+  await expect(field).toHaveAttribute('enterkeyhint', 'search');
+  await expect(field).toBeFocused();
+  expect(await field.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe('none');
+  expect(await field.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');
+});

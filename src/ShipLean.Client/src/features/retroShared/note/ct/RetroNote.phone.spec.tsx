@@ -8,17 +8,18 @@ import { RetroBoardHarness } from '../../board/ct/RetroBoardHarness';
 import { retroSharedTestIds as ids } from '../../testIds';
 import { RetroNoteHarness } from './RetroNoteHarness';
 
-// Your own undecided Went badly point with a root cause: ⋯, # theme, both buttons and the cause all show.
+// Your own undecided Went badly point in a listed theme, with a root cause: ⋯, # theme, both buttons and the cause all show.
 const own: RetroPointDto = {
   ...noteStates.undecided,
   category: 'wentBadly',
   canArchive: true,
+  theme: retroThemes.themes[1].theme,
   rootCause: 'The review checklist lives in a wiki nobody opens.',
 };
 
 const fontSize = (locator: Locator) => locator.evaluate((el) => getComputedStyle(el).fontSize);
 
-test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async ({
+test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchivePoint', async ({
   mount,
   page,
 }) => {
@@ -36,7 +37,7 @@ test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async (
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(sheet).toBeVisible();
   const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
-  await expect(rows).toHaveText(['Move to theme', 'Archive']);
+  await expect(rows).toHaveText([/^Move to theme…/, 'Archive point']);
   // No desktop popover at touch.
   await expect(page.getByTestId(ids.retroNoteArchive)).toHaveCount(0);
 
@@ -44,14 +45,12 @@ test('RetroNote_WhenMoreTappedOnPhone_ShouldOfferMoveToThemeAndArchive', async (
   await rows.filter({ hasText: 'Move to theme' }).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(1);
   await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
-  await expect(page.getByTestId(ids.retroThemePicker)).toBeVisible();
-  await expect(page.getByTestId(ids.retroThemeSheetNew)).toBeDisabled();
   await page.getByTestId(touchTestIds.sheetClose).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 
   // Archive posts the archive and closes the sheet.
   await more.tap();
-  await page.getByTestId(touchTestIds.actionSheetRow).filter({ hasText: 'Archive' }).tap();
+  await page.getByTestId(touchTestIds.actionSheetRow).filter({ hasText: 'Archive point' }).tap();
   await expect
     .poll(() => stub.writes().map((w) => `${w.method} ${w.path}`))
     .toEqual([`POST /api/retros/points/${own.id}/archive`]);
@@ -66,10 +65,10 @@ test('RetroNote_WhenSomeoneElsesPointOnPhone_ShouldShowNoMore', async ({ mount, 
   await expect(page.getByTestId(ids.retroNoteMore)).toHaveCount(0);
 });
 
-test('RetroNote_WhenThemeTappedOnPhone_ShouldOpenThemeSheetWithoutFocusingSearch', async ({
-  mount,
-  page,
-}) => {
+const themeOf = (point: RetroPointDto) =>
+  retroThemes.themes.find((t) => t.theme.id === point.theme?.id);
+
+test('MoveToTheme_AtTouch_ShouldMarkTheCurrentThemeAndOfferUnthemed', async ({ mount, page }) => {
   const stub = await stubRetros(page);
   await mount(<RetroNoteHarness point={own} />);
   const theme = page.getByTestId(ids.retroNoteTheme);
@@ -79,15 +78,33 @@ test('RetroNote_WhenThemeTappedOnPhone_ShouldOpenThemeSheetWithoutFocusingSearch
 
   const sheet = page.getByTestId(touchTestIds.sheet);
   await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
-  const picker = sheet.getByTestId(ids.retroThemePicker);
-  await expect(picker).toBeVisible();
-  const search = picker.getByRole('combobox');
-  await expect(search).not.toBeFocused();
+  // A list, not the desktop combobox; the sheet itself holds focus, so no keyboard opens.
+  await expect(sheet.getByRole('combobox')).toHaveCount(0);
   await expect(sheet).toBeFocused();
-  expect(await fontSize(search)).toBe('16px');
+  await expect(sheet.getByTestId(ids.retroNotePreview)).toContainText(own.text);
+
+  const rows = sheet.getByTestId(touchTestIds.actionSheetRow);
+  await expect(rows).toHaveCount(retroThemes.themes.length + 2);
+  const names = retroThemes.themes.map((t) => t.theme.name);
+  await expect(rows.nth(0)).toContainText(names[0]);
+  await expect(rows.nth(retroThemes.themes.length)).toHaveText('Unthemed');
+  await expect(rows.last()).toContainText('New theme…');
+  // Every row is a 32px+ target; each theme row says how many points it holds.
+  for (const box of await rows.evaluateAll((els) =>
+    els.map((e) => e.getBoundingClientRect().height),
+  )) {
+    expect(box).toBeGreaterThanOrEqual(32);
+  }
+  const current = themeOf(own)!;
+  const marked = sheet.locator('[aria-current="true"]');
+  await expect(marked).toHaveCount(1);
+  await expect(marked).toContainText(current.theme.name);
+  await expect(marked).toContainText(
+    `${current.pointCount} ${current.pointCount === 1 ? 'point' : 'points'}`,
+  );
 
   const target = retroThemes.themes.find((t) => t.theme.id !== own.theme?.id)!;
-  await picker.getByRole('option', { name: target.theme.name }).tap();
+  await rows.filter({ hasText: target.theme.name }).tap();
   await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
   await expect.poll(() => stub.writes().length).toBe(1);
   expect(stub.writes()[0]).toMatchObject({
@@ -95,6 +112,62 @@ test('RetroNote_WhenThemeTappedOnPhone_ShouldOpenThemeSheetWithoutFocusingSearch
     path: `/api/retros/points/${own.id}/theme`,
     body: { themeId: target.theme.id, themeName: null },
   });
+
+  // Unthemed moves the point to no theme.
+  await theme.tap();
+  await page.getByTestId(touchTestIds.actionSheetRow).filter({ hasText: 'Unthemed' }).tap();
+  await expect.poll(() => stub.writes().length).toBe(2);
+  expect(stub.writes()[1].body).toEqual({ themeId: null, themeName: null });
+});
+
+test('MoveToTheme_AtTouch_ShouldNameANewThemeInTheSheet', async ({ mount, page }) => {
+  const stub = await stubRetros(page);
+  await mount(<RetroNoteHarness point={own} />);
+  await expect(page.getByTestId(ids.retroNoteTheme)).toBeEnabled();
+  await page.getByTestId(ids.retroNoteTheme).tap();
+  await page.getByTestId(touchTestIds.actionSheetRow).filter({ hasText: 'New theme…' }).tap();
+  await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('New theme');
+  const add = page.getByTestId(ids.retroThemeSheetAdd);
+  await expect(add).toBeDisabled();
+  expect((await add.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  const field = page.getByTestId(ids.retroThemeSheetName);
+  expect(await fontSize(field)).toBe('16px');
+  await field.fill('Brand new theme');
+  await add.tap();
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await expect.poll(() => stub.writes().length).toBe(1);
+  expect(stub.writes()[0].body).toEqual({ themeId: null, themeName: 'Brand new theme' });
+});
+
+test('PointMore_ShouldShowThePointPreview', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetroNoteHarness point={own} />);
+  await page.getByTestId(touchTestIds.moreButton).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Point');
+  const preview = sheet.getByTestId(ids.retroNotePreview);
+  await expect(preview).toContainText(own.text);
+  await expect(preview).toContainText('Went badly · your point');
+  const move = sheet.getByTestId(touchTestIds.actionSheetRow).first();
+  await expect(move.getByTestId(touchTestIds.actionSheetDetail)).toHaveText(
+    `# ${own.theme?.name ?? 'Unthemed'}`,
+  );
+  // The footnote is a wrapping line in the body, in full: nothing is clipped or truncated.
+  const footer = sheet.getByTestId(touchTestIds.actionSheetFooter);
+  await expect(footer).toContainText('Only your own points can be archived.');
+  await expect(footer).toContainText('never edited or archived.');
+  for (const el of [footer, preview]) {
+    expect(
+      await el.evaluate(
+        (e) => e.scrollHeight <= e.clientHeight + 1 && e.scrollWidth <= e.clientWidth + 1,
+      ),
+    ).toBe(true);
+    const box = (await el.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  }
+  // The subtitle slot stays empty: multi-sentence text sits in the body.
+  await expect(sheet).not.toHaveAttribute('aria-describedby', /.+/);
 });
 
 test('RetroNote_WhenNotNeededTappedOnPhone_ShouldUse16pxReasonAnd32pxButtons', async ({
@@ -152,8 +225,13 @@ for (const theme of ['light', 'dark'] as const) {
       animations: 'disabled',
     });
 
-    await page.getByTestId(ids.retroNoteTheme).tap();
-    await expect(page.getByTestId(ids.retroThemePicker)).toBeVisible();
+    await page.getByTestId(touchTestIds.moreButton).tap();
+    await expect(page.getByTestId(ids.retroNotePreview)).toBeVisible();
+    await expect(page).toHaveScreenshot(`retro-point-sheet-phone.${theme}.png`, {
+      animations: 'disabled',
+    });
+    await page.getByTestId(touchTestIds.actionSheetRow).first().tap();
+    await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
     await expect(page).toHaveScreenshot(`retro-theme-sheet-phone.${theme}.png`, {
       animations: 'disabled',
     });

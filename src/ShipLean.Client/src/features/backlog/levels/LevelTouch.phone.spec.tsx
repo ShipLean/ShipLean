@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import { touchTestIds } from '../../../touch/testIds';
 import { EPIC_ROWS, FEATURE_ROWS, levelView } from '../ct/levelFixtures';
 import { backlogView, ROWS } from '../ct/fixtures';
@@ -66,7 +67,6 @@ test('TouchLevelRow_ShouldHaveNoHandle', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.row)).toHaveCount(3);
   await expect(page.getByTestId(ids.touchRowHandle)).toHaveCount(0);
   await expect(page.getByTestId(ids.grip)).toHaveCount(0);
-  await expect(page.getByTestId(ids.rank)).toHaveCount(0);
 });
 
 for (const [name, level, rows, route] of [
@@ -81,7 +81,7 @@ for (const [name, level, rows, route] of [
     await mount(<LevelHarness project={PROJECT} level={level} />, route);
     await expect(page.getByTestId(ids.row)).toHaveCount(rows.length);
 
-    await page.getByTestId(touchTestIds.moreButton).tap();
+    await page.getByTestId(ids.toolbarRow).getByTestId(touchTestIds.moreButton).tap();
     await expect(
       page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="search"]`),
     ).toBeVisible();
@@ -142,6 +142,35 @@ test('NewItemRow_WhenNewChosenInStoriesListOnPhone_ShouldShowTheAddRow', async (
   expect(sideways).toBe(false);
 });
 
+test('LevelNewItemRow_OnPhone_ShouldShowTheHelpLineAndClose', async ({ mount, page }) => {
+  await stubLevel(page, levelView('epics', EPIC_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="epics" />, epics);
+  await page.getByTestId(ids.newItem).tap();
+
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+});
+
+test('InlineAdd_AtTouch_ShouldUseASegmentedSwitchAndClose', async ({ mount, page }) => {
+  await stubBacklog(page, backlogView(ROWS));
+  await mount(<ListMode project={PROJECT} />, {
+    hooksConfig: { route: '/p/SHIP/backlogs/stories' },
+  });
+  await page.getByTestId(ids.newItem).tap();
+
+  const switchButtons = page.getByTestId(ids.addRow).getByTestId(ids.addType);
+  await expect(switchButtons).toHaveText(['Story', 'Bug']);
+  await expect(switchButtons.first()).toHaveAttribute('aria-pressed', 'true');
+  await switchButtons.nth(1).tap();
+  await expect(switchButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(ids.addHelp)).toContainText('stays open for the next one');
+  await expect(page.getByTestId(ids.addClose)).toHaveText('Close');
+  await page.getByTestId(ids.addClose).tap();
+  await expect(page.getByTestId(ids.addRow)).toHaveCount(0);
+});
+
 test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({ mount, page }) => {
   await stubLevel(page, levelView('features', FEATURE_ROWS), { states: FEATURE_STATES });
   await mount(<LevelHarness project={PROJECT} level="features" />, features);
@@ -159,4 +188,59 @@ test('NewFeatureDialog_WhenOpenedOnPhone_ShouldHaveTouchSizedControls', async ({
   for (let i = 0; i < (await options.count()); i++) {
     expect(await heightOf(options.nth(i))).toBeGreaterThanOrEqual(TOUCH_TARGET);
   }
+});
+
+const rowOf = (page: Page, key: string) =>
+  page.locator(`[data-testid="${ids.row}"][data-key="${key}"]`);
+
+// Catches: removing `flex-1 min-w-0` from the progress wrapper (the bar collapses to 0px in the touch row).
+test('LevelRow_ProgressBar_ShouldBeWiderThanZero', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const bar = rowOf(page, 'SHIP-101').getByTestId(ids.levelProgressBar);
+  const box = await bar.boundingBox();
+  expect(box!.width).toBeGreaterThan(40);
+});
+
+// Catches: dropping the rank cell or the LevelRowMore button from the touch row.
+test('LevelRow_ShouldShowRankAndMore', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  const row = rowOf(page, 'SHIP-101');
+  await expect(row.getByTestId(ids.rank)).toHaveText(String(FEATURE_ROWS[0].rank));
+  const more = row.getByTestId(touchTestIds.moreButton);
+  await expect(more).toHaveAttribute('aria-label', 'More for SHIP-101');
+  await more.tap();
+  for (const id of ['open', 'top', 'bottom']) {
+    await expect(
+      page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="${id}"]`),
+    ).toBeVisible();
+  }
+});
+
+// Catches: removing the `contains` guard from TouchLevelRow's tap (the sheet scrim's tap bubbles to the row and opens the item).
+test('LevelRowMore_WhenScrimTapped_ShouldNotOpenTheRow', async ({ mount, page }) => {
+  await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-101').getByTestId(touchTestIds.moreButton).tap();
+  await page.getByTestId(touchTestIds.sheetScrim).tap({ position: { x: 20, y: 20 } });
+
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+  await expect(page.getByTestId('harness-location')).toHaveText('/p/SHIP/backlogs/features');
+});
+
+// Catches: sending slot 'last' (or no placement) for Move to top.
+test('LevelRowMore_MoveToTop_ShouldReorder', async ({ mount, page }) => {
+  const server = await stubLevel(page, levelView('features', FEATURE_ROWS));
+  await mount(<LevelHarness project={PROJECT} level="features" />, features);
+
+  await rowOf(page, 'SHIP-103').getByTestId(touchTestIds.moreButton).tap();
+  await page.locator(`[data-testid="${touchTestIds.actionSheetRow}"][data-action-id="top"]`).tap();
+
+  await expect.poll(() => server.bulks.length).toBe(1);
+  expect(server.bulks[0].items).toHaveLength(1);
+  expect(server.bulks[0].items[0].placement).toEqual({ slot: 'first', beforeItemId: null });
 });

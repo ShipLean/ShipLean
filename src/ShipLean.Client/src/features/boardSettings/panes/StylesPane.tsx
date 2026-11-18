@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import type { BoardSettingsJson, StyleRuleJson } from '@shiplean/core/api/persisted';
 import type { PaneProps } from '../../../components/SettingsDialog/types';
+import { useTouchShell } from '../../../touch/useTouchShell';
 import type { BoardSettingsContext } from '../panes';
 import { boardSettingsTestIds as ids } from '../testIds';
 import { useLanePickLists } from './swimlanes/useLanePickLists';
 import { blankRule, moveRule, replaceRule } from './styles/ruleEdits';
 import { RuleRow } from './styles/RuleRow';
+import { useDropLine } from './useDropLine';
 import { StylePreview } from './styles/StylePreview';
 
 /** Ordered style rules: a card takes the style of the first enabled rule it matches. */
@@ -16,22 +18,25 @@ export function StylesPane({
   context,
 }: PaneProps<BoardSettingsJson, BoardSettingsContext>) {
   const lists = useLanePickLists(context.projectId, context.states);
+  // At touch the hint names the grip as the design draws it (SHIP-1809); desktop keeps its words.
+  const { touch } = useTouchShell();
   const [dragFrom, setDragFrom] = useState<number>();
+  const dropLineOf = useDropLine(draft.styleRules.map((r) => r.id));
   const setRules = (styleRules: StyleRuleJson[]) => onChange({ ...draft, styleRules });
   return (
     <div data-testid={ids.stylesPane} className="grid content-start gap-3">
       <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
         Style rules make cards that need attention stand out. When a card matches more than one
-        rule, the first rule wins. Drag the grip to reorder.
+        rule, the first rule wins. {touch ? 'Drag ⠿ to reorder.' : 'Drag the grip to reorder.'}
       </p>
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,16rem)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
         <div className="grid gap-2">
           <div>
             <button
               type="button"
               data-testid={ids.stylesAdd}
               disabled={readOnly}
-              className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50"
+              className="h-7 rounded-control border border-edge bg-panel px-3 text-[length:var(--text-sm)] text-ink disabled:opacity-50 touch:h-[var(--touch-target)]"
               onClick={() => setRules([...draft.styleRules, blankRule(lists)])}
             >
               + Add styling rule
@@ -48,10 +53,15 @@ export function StylesPane({
               rule={rule}
               lists={lists}
               readOnly={readOnly}
+              {...dropLineOf(rule.id)}
               onChange={(next) => setRules(replaceRule(draft.styleRules, next))}
               onDelete={() => setRules(draft.styleRules.filter((r) => r.id !== rule.id))}
               onMove={(step) => setRules(moveRule(draft.styleRules, index, index + step))}
               onDragStart={() => setDragFrom(index)}
+              onTouchDrop={(targetId) => {
+                const to = draft.styleRules.findIndex((r) => r.id === targetId);
+                if (to >= 0) setRules(moveRule(draft.styleRules, index, to));
+              }}
               onDrop={() => {
                 if (dragFrom !== undefined) setRules(moveRule(draft.styleRules, dragFrom, index));
                 setDragFrom(undefined);

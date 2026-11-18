@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { LINK_TYPES, type LinkType } from '@shiplean/core/api/persisted';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useDraftLinks } from '../form/DraftContext';
@@ -8,6 +8,7 @@ import { ItemLink } from '../../itemPeek/ItemLink';
 import { useWorkItem } from '../workItemApi';
 import { LinkForm } from './LinkForm';
 import { LinkRow } from './LinkRow';
+import { linkTypeLabels } from './linkTypes';
 
 // The links of the work item as the form's draft holds them: added, edited and removed here, written by the form's Save.
 // A Bug can add a Caused by link to the Task that introduced it (+ Caused by, or ?addLink=causedBy opens the picker preset);
@@ -137,14 +138,23 @@ export function LinksEditor({
               </span>
             </li>
           ))}
-          {grouped.map((link) => (
-            <LinkRow
-              key={link.uid}
-              link={link}
-              projectKey={project.key}
-              onEdit={() => setOpen(link.uid)}
-              onRemove={() => setLinks(links.filter((existing) => existing.uid !== link.uid))}
-            />
+          {grouped.map((link, index) => (
+            <Fragment key={link.uid}>
+              {link.type !== grouped[index - 1]?.type ? (
+                <li
+                  aria-hidden="true"
+                  className="hidden px-1 pt-1 text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase touch:block"
+                >
+                  {linkTypeLabels[link.type]}
+                </li>
+              ) : null}
+              <LinkRow
+                link={link}
+                projectKey={project.key}
+                onEdit={() => setOpen(link.uid)}
+                onRemove={() => setLinks(links.filter((existing) => existing.uid !== link.uid))}
+              />
+            </Fragment>
           ))}
         </ul>
       )}

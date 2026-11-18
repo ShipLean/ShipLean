@@ -23,7 +23,7 @@ export function TypeTabs({
   onSelect(type: WorkItemTypeId): void;
 }) {
   return (
-    <div className="flex items-center gap-2 touch:flex-wrap">
+    <div className="flex items-center gap-2 touch:grid touch:justify-items-start">
       <div
         role="group"
         aria-label="Work item type"

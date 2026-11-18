@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Lanes.WorkItem.Side;
 using ShipLean.AcceptanceTests.Pages.Feature;
@@ -46,6 +47,26 @@ public class ImageViewerTouchTests : SeededAcceptanceTest
         await Expect(counter).ToHaveTextAsync($"{first + 1} of {images.Count} · SHIP-101");
         await touch.ImageViewerClose.TapAsync();
         await Expect(touch.ImageViewer).ToHaveCountAsync(0);
+    }
+
+    [Test]
+    public async Task ImageViewer_ShouldShowFileNameHintAndZoomReadout()
+    {
+        var rail = new AttachmentsRailPanel(Page);
+        var touch = new TouchShell(Page);
+        await WorkItemAttachments.UploadAsTomAsync(BaseUrl, SeedIds.WorkItems.Ship101, "chrome-one.png", Png);
+        await WorkItemAttachments.UploadAsTomAsync(BaseUrl, SeedIds.WorkItems.Ship101, "chrome-two.png", Png);
+        await new WorkItemScreen(Page).OpenAsync("SHIP", "SHIP-101");
+        await rail.Items.Filter(new LocatorFilterOptions { HasText = "chrome-one.png" }).First.TapAsync();
+
+        await Expect(touch.ImageViewer).ToBeVisibleAsync();
+        await Expect(Page.GetByTestId(AttachmentTestIds.ViewerName)).ToHaveTextAsync("chrome-one.png");
+        await Expect(Page.GetByTestId(AttachmentTestIds.ViewerHint)).ToHaveTextAsync("Pinch to zoom · swipe for the next image");
+        await Expect(Page.GetByTestId(AttachmentTestIds.ViewerZoom)).ToHaveCountAsync(0);
+
+        await Page.GetByTestId(AttachmentTestIds.ViewerStage).DblClickAsync();
+
+        await Expect(Page.GetByTestId(AttachmentTestIds.ViewerZoom)).ToHaveTextAsync(new Regex(@"^\d+% · double-tap to fit$"));
     }
 
     [Test]

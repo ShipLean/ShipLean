@@ -23,7 +23,7 @@ export function stateChips(
         .filter((card) => passesFaces(card, faces)).length;
       const pulse = pulses.get(state.id);
       return pulse === undefined
-        ? { id: state.id, label: state.name, count }
-        : { id: state.id, label: state.name, count, pulse };
+        ? { id: state.id, label: state.name, count, category: state.category }
+        : { id: state.id, label: state.name, count, category: state.category, pulse };
     });
 }

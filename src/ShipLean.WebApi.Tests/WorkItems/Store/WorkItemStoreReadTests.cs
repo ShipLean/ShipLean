@@ -37,6 +37,27 @@ public class WorkItemStoreReadTests : PostgresWorkItemStoreTestBase
     }
 
     [Test]
+    public async Task Read_WhenChildIsInASprint_ShouldCarryTheSprintOnTheChildSummary()
+    {
+        var store = PassThroughStore();
+        var project = await Arrangement.ArrangeProjectAsync();
+        var feature = await CreateAsync(store, project, WorkItemTypeId.Feature, "Feature");
+        var sprintId = Guid.NewGuid();
+        await ExecuteAsync(
+            "INSERT INTO sprint (id, project_id, name, start_date, end_date) VALUES (@sprintId, @projectId, 'Sprint 7', '2026-10-01', '2026-10-14')",
+            new { sprintId, projectId = project.ProjectId });
+        var planned = await CreateAsync(store, project, WorkItemTypeId.Story, "Planned", feature.Id, new WorkItemChanges { Sprint = new(sprintId) });
+        var unplanned = await CreateAsync(store, project, WorkItemTypeId.Story, "Unplanned", feature.Id);
+
+        var dto = await Arrangement.CreateReads().GetAsync(feature.Id);
+
+        var sprint = dto.Children.Single(c => c.Id == planned.Id).Sprint.ShouldNotBeNull();
+        sprint.Id.ShouldBe(sprintId);
+        sprint.Name.ShouldBe("Sprint 7");
+        dto.Children.Single(c => c.Id == unplanned.Id).Sprint.ShouldBeNull();
+    }
+
+    [Test]
     public async Task Read_ShouldBuildTheFullDto()
     {
         var store = PassThroughStore();

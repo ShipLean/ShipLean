@@ -127,7 +127,8 @@ phonePageShots([
     },
     ready: async (page) => {
       await expect(page.getByTestId(ids.loadFailed)).toContainText('too large');
-      await expect(page.getByTestId(ids.loadFailedDownload)).toBeVisible();
+      await expect(page.getByTestId(ids.name)).toHaveText('design-v0.2.md');
+      await expect(page.getByTestId(ids.loadFailedDownload)).toContainText('Download (');
     },
   },
   {

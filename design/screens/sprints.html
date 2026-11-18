@@ -13,6 +13,8 @@
   Team capacity is the sum of members' entries; a sprint with none plans against velocity.
   Working: chart hover; New sprint form with defaults (next number, starts the next working day after the
   last sprint, same length), overlap check, Create adds the row.
+  SHIP-1807: sprints-touch.css/js are the phone and tablet layout (900px and below); their review states are listed in
+  sprints-touch.js.
   The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
 -->
 <link rel="stylesheet" href="../tokens.css">
@@ -38,6 +40,7 @@ tr.current td { background: color-mix(in srgb, var(--color-accent-soft) 45%, tra
 .form .check input { margin-top: 2px; }
 .err { color: var(--color-danger); font-size: var(--text-sm); }
 </style>
+<link rel="stylesheet" href="sprints-touch.css">
 </head>
 <body>
 <div id="appbar"></div>
@@ -138,5 +141,6 @@ tr.current td { background: color-mix(in srgb, var(--color-accent-soft) 45%, tra
   SL.preview();
 })();
 </script>
+<script src="sprints-touch.js"></script>
 </body>
 </html>

@@ -12,6 +12,7 @@ import {
   typeNames,
 } from './columnEdits';
 import { ColumnRow } from './ColumnRow';
+import { useDropLine } from '../useDropLine';
 
 /** The column table with its Add column footer; the first and last columns are fixed. */
 export function ColumnsTable({
@@ -29,6 +30,7 @@ export function ColumnsTable({
 }) {
   const [dodOpenId, setDodOpenId] = useState<string>();
   const [dragFrom, setDragFrom] = useState<number>();
+  const dropLineOf = useDropLine(columns.map((c) => c.id));
   const last = columns.length - 1;
   const mappedCount = (type: BoardTypeStatesDto['type']) => {
     const live = liveStates(states, type);
@@ -37,11 +39,11 @@ export function ColumnsTable({
   };
 
   return (
-    <div className="overflow-hidden rounded-panel border border-edge bg-panel">
+    <div className="overflow-hidden rounded-panel border border-edge bg-panel touch:overflow-x-auto">
       <table className="w-full border-collapse text-[length:var(--text-sm)]">
         <thead>
           <tr className="border-b border-edge bg-panel text-left text-[length:var(--text-xs)] text-ink-muted">
-            <th className="w-6" />
+            <th className="w-6 touch:w-8" />
             <th className="py-1.5 font-medium">Column</th>
             <th className="w-[72px] font-medium">WIP limit</th>
             <th className="w-[118px] font-medium">Split</th>
@@ -77,12 +79,17 @@ export function ColumnsTable({
               first={index === 0}
               last={index === last}
               readOnly={readOnly}
+              {...dropLineOf(column.id)}
               dodOpen={dodOpenId === column.id}
               onChange={(next) => onChange(replaceColumn(columns, column.id, next))}
               onToggleDod={() => setDodOpenId(dodOpenId === column.id ? undefined : column.id)}
               onDelete={() => onDelete(column, index)}
               onMove={(step) => onChange(moveColumn(columns, index, index + step))}
               onDragStart={() => setDragFrom(index)}
+              onTouchDrop={(targetId) => {
+                const to = columns.findIndex((c) => c.id === targetId);
+                if (to >= 0) onChange(moveColumn(columns, index, to));
+              }}
               onDrop={() => {
                 if (dragFrom !== undefined) onChange(moveColumn(columns, dragFrom, index));
                 setDragFrom(undefined);

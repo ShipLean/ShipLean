@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StateRef } from '@shiplean/core/api/refs';
 import type { CardDto, TaskboardRowDto } from '@shiplean/core/api/views';
-import { phoneLanes } from './phoneLanes';
+import { phoneLanes as phoneEntries } from './phoneLanes';
 import { phonePeopleLanes } from './phonePeopleLanes';
 
 const NEW: StateRef = { id: 'new', name: 'New', category: 'proposed' };
@@ -48,6 +48,16 @@ const UNPARENTED = (tasks: CardDto[]): TaskboardRowDto => ({
   })),
 });
 
+/** The entries split by kind: the test-side view of a page's open lanes and closed lines. */
+const phoneLanes = (...args: Parameters<typeof phoneEntries>) => {
+  const { entries } = phoneEntries(...args);
+  return {
+    entries,
+    lanes: entries.flatMap((e) => (e.kind === 'lane' ? [e.lane] : [])),
+    closed: entries.flatMap((e) => (e.kind === 'closed' ? [e.story] : [])),
+  };
+};
+
 describe('phoneLanes', () => {
   it('phoneLanes_WhenUnparentedRowIsNotLast_ShouldPutItLast', () => {
     const rows = [ROWS[1], UNPARENTED([card('U1', NEW)]), ROWS[3]];
@@ -81,10 +91,19 @@ describe('phoneLanes', () => {
     expect(lanes[1].hidden).toBe(0);
   });
 
-  it('PhoneLanes_WhenStoriesClosed_ShouldListThemLastInBacklogOrderWithDoneOfTotal', () => {
+  it('PhoneLanes_WhenStoriesClosed_ShouldListThemInBacklogOrderWithDoneOfTotal', () => {
     const { closed } = phoneLanes(ROWS, 'new', new Set());
     expect(keys(closed)).toEqual(['A', 'C']);
     expect(closed.map((c) => `${c.done}/${c.total}`)).toEqual(['3/3', '1/1']);
+  });
+
+  it('PhoneLanes_WithAClosedStoryBetweenOpenOnes_ShouldKeepBacklogOrderAndUnparentedLast', () => {
+    const loose: TaskboardRowDto = { parent: null, offerResolve: false, cells: [] };
+    // Unparented arrives first in the input; A and C are closed, between and before the open B and D.
+    const { entries } = phoneLanes([loose, ...ROWS], 'new', new Set());
+    expect(
+      entries.map((e) => `${e.kind}:${e.kind === 'lane' ? e.lane.rowId : e.story.rowId}`),
+    ).toEqual(['closed:A', 'lane:B', 'closed:C', 'lane:D', 'lane:unparented']);
   });
 
   it('PhoneLanes_WhenFilterHidesTasks_ShouldCountTheHiddenOnes', () => {

@@ -29,10 +29,10 @@ public class ItemFieldsTouchTests : SeededAcceptanceTest
 
         var sheet = touch.Sheet("State");
         await Expect(sheet).ToBeVisibleAsync();
-        // The desktop's groups: every story state, each with its category.
+        // Every story state, each under its category's heading (K1b).
         await Expect(fields.StateOptions).ToHaveCountAsync(5);
-        await Expect(fields.StateOption("Active")).ToContainTextAsync("In progress");
-        await Expect(fields.StateOption("Closed")).ToContainTextAsync("Completed");
+        (await fields.StateHeadingAboveAsync("Active")).ShouldBe("In progress");
+        (await fields.StateHeadingAboveAsync("Closed")).ShouldBe("Completed");
         (await TouchRules.ViolationsAsync(Page, sheet)).ShouldBeEmpty();
         await fields.StateOption("Active").TapAsync();
 

@@ -1,4 +1,20 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
+import {
+  actionSheetCheckedClass,
+  ActionSheetFootnote,
+  ActionSheetGroupHeading,
+  actionSheetRowClass,
+  ActionSheetRowFace,
+} from '../touch/ActionSheet';
+import { useTouchShell } from '../touch/useTouchShell';
 import { StateDot, type StateCategory } from './StateDot';
 import { componentTestIds } from './testIds';
 
@@ -6,6 +22,18 @@ export interface StateOption {
   id: string;
   name: string;
   category: StateCategory;
+}
+
+const categoryOrder: StateCategory[] = [
+  'proposed',
+  'inProgress',
+  'resolved',
+  'completed',
+  'removed',
+];
+
+function byCategory(states: StateOption[]): StateOption[] {
+  return categoryOrder.flatMap((category) => states.filter((state) => state.category === category));
 }
 
 const categoryLabels: Record<StateCategory, string> = {
@@ -16,28 +44,49 @@ const categoryLabels: Record<StateCategory, string> = {
   removed: 'Removed',
 };
 
-/** A list of a type's states. It takes focus when it mounts. Arrow keys move the highlight, Enter picks it, a click picks any; Esc and Tab out call `onClose`. */
+/** The footnote under the states at touch, unless the caller passes its own `footer` (SHIP-714 D4). */
+const stateMenuFootnote =
+  'States for each type are set per project in Settings. The colour follows the category.';
+
+/**
+ * A list of a type's states. It takes focus when it mounts. Arrow keys move the highlight, Enter picks it, a click picks
+ * any; Esc and Tab out call `onClose`. At 900px and below (inside the caller's sheet) it is drawn with the action sheet's
+ * anatomy (K1b): states under their category headings, ✓ and a tint on the current one, `subtitle` above and `footer`
+ * (the settings footnote by default) after. `title` names the list (default "State"). Above 900px the menu is the
+ * compact dropdown list; `subtitle` and `footer` are touch only.
+ */
 export function StateMenu({
   states,
   currentId,
   onSelect,
   onClose,
+  title = 'State',
+  subtitle,
+  footer,
 }: {
   states: StateOption[];
   currentId?: string;
   onSelect: (stateId: string) => void;
   onClose: () => void;
+  title?: string;
+  subtitle?: string;
+  footer?: ReactNode;
 }) {
+  const { touch } = useTouchShell();
+  // At touch the states sit under their category headings, so the list (and the arrow keys) go category by category.
+  const shown = touch ? byCategory(states) : states;
   const list = useRef<HTMLUListElement>(null);
+  const sheetList = useRef<HTMLDivElement>(null);
   const prefix = useId();
-  useEffect(() => list.current?.focus(), []);
+  const subtitleId = useId();
+  useEffect(() => (list.current ?? sheetList.current)?.focus(), []);
   const [active, setActive] = useState(() =>
     Math.max(
       0,
-      states.findIndex((s) => s.id === currentId),
+      shown.findIndex((s) => s.id === currentId),
     ),
   );
-  const last = states.length - 1;
+  const last = shown.length - 1;
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -58,7 +107,7 @@ export function StateMenu({
       event.preventDefault();
       setActive(last);
     } else if (event.key === 'Enter' || event.key === ' ') {
-      const state = states[active];
+      const state = shown[active];
       if (state) {
         event.preventDefault();
         onSelect(state.id);
@@ -66,15 +115,68 @@ export function StateMenu({
     }
   };
 
+  const listProps = {
+    'data-testid': componentTestIds.stateMenu,
+    role: 'listbox',
+    'aria-label': title,
+    tabIndex: 0,
+    'aria-activedescendant': shown[active] ? `${prefix}-${shown[active].id}` : undefined,
+    onKeyDown,
+  } as const;
+
+  if (touch) {
+    return (
+      // The keyboard's place: a ring on the list while it has keyboard focus, and an inset outline on the highlighted row
+      // (the tint means the current state, so the highlight must look different).
+      <div
+        ref={sheetList}
+        {...listProps}
+        aria-describedby={subtitle ? subtitleId : undefined}
+        className="group/list grid gap-1 rounded-control focus-visible:outline-2 focus-visible:outline-signal"
+      >
+        {subtitle ? (
+          <p id={subtitleId} className="m-0 px-2 text-[length:var(--text-sm)] text-ink-muted">
+            {subtitle}
+          </p>
+        ) : null}
+        {shown.map((state, index) => {
+          const current = state.id === currentId;
+          return (
+            <Fragment key={state.id}>
+              {index === 0 || shown[index - 1]?.category !== state.category ? (
+                <ActionSheetGroupHeading label={categoryLabels[state.category]} divider={false} />
+              ) : null}
+              <div
+                id={`${prefix}-${state.id}`}
+                data-testid={componentTestIds.stateMenuOption}
+                data-category={state.category}
+                data-active={index === active}
+                role="option"
+                aria-selected={current}
+                aria-current={current ? 'true' : undefined}
+                className={`${actionSheetRowClass} cursor-pointer gap-3 text-ink group-focus-visible/list:data-[active=true]:outline-2 group-focus-visible/list:data-[active=true]:-outline-offset-2 group-focus-visible/list:data-[active=true]:outline-signal ${current ? actionSheetCheckedClass : ''}`}
+                onClick={() => onSelect(state.id)}
+              >
+                <ActionSheetRowFace
+                  face={{
+                    label: state.name,
+                    icon: <StateDot category={state.category} />,
+                    checked: current,
+                  }}
+                />
+              </div>
+            </Fragment>
+          );
+        })}
+        <ActionSheetFootnote>{footer ?? stateMenuFootnote}</ActionSheetFootnote>
+      </div>
+    );
+  }
+
   return (
     <ul
       ref={list}
-      data-testid={componentTestIds.stateMenu}
-      role="listbox"
-      aria-label="State"
-      tabIndex={0}
-      aria-activedescendant={states[active] ? `${prefix}-${states[active].id}` : undefined}
-      onKeyDown={onKeyDown}
+      {...listProps}
       className="grid min-w-44 gap-px rounded-panel border border-edge bg-panel p-1 shadow-panel focus-visible:outline-2 focus-visible:outline-signal"
     >
       {states.map((state, index) => (

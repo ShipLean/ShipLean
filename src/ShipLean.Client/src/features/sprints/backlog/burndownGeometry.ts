@@ -20,6 +20,15 @@ export interface BurndownDot {
   ideal: number;
 }
 
+/** One working day on the x-axis, with or without a point yet. */
+export interface BurndownAxisDay {
+  x: number;
+  /** The server's yyyy-MM-dd. */
+  date: string;
+  /** The day of the month. */
+  day: string;
+}
+
 export interface BurndownSize {
   width: number;
   height: number;
@@ -30,6 +39,8 @@ export interface BurndownShape {
   max: number;
   baselineY: number;
   dots: BurndownDot[];
+  /** Every working day of the sprint, so the axis runs to its last day (SHIP-724 design). */
+  axis: BurndownAxisDay[];
   /** SVG `points` of the ideal (every working day of the sprint) and the actual line (up to today). */
   idealPoints: string;
   actualPoints: string;
@@ -72,6 +83,12 @@ export function burndownShape(
     max,
     baselineY: height - BOTTOM,
     dots,
+    // The day of the month is the yyyy-MM-dd string's last part without its leading zero, as the server prints `day`.
+    axis: days.map((date, index) => ({
+      x: round(x(index)),
+      date,
+      day: String(Number(date.slice(8, 10))),
+    })),
     idealPoints: days.map((_, index) => `${round(x(index))},${round(y(idealOn(index)))}`).join(' '),
     actualPoints: dots.map((dot) => `${dot.x},${dot.y}`).join(' '),
   };

@@ -276,16 +276,15 @@ public class UsageDispatcherTests : ApiFixture
             await AdvanceUntilAsync(dispatcher.StopAsync(CancellationToken.None));
 
             // StopAsync completing at all proves the dispatcher gave up on the stuck sink (AdvanceUntilAsync fails the test at its real-time
-            // limit otherwise). With the sink already inside it must not give up early. The upper bound is only a loose sanity check: AdvanceUntilAsync moves the fake
-            // clock a second per yield whether or not the dispatcher is waiting yet, so under load the elapsed fake time says how fast the
-            // host schedules, not how the dispatcher behaves.
-            var elapsed = _clock.GetUtcNow() - started;
+            // limit otherwise). With the sink already inside it must not give up early. There is no upper bound on the fake time: AdvanceUntilAsync
+            // moves the fake clock a second per yield whether or not the dispatcher is waiting yet, so the elapsed fake time says how fast the
+            // host schedules, not how the dispatcher behaves (a loaded CI runner spun it past 29 minutes in 39 ms).
             if (sinkAlreadyInside)
             {
                 // With the sink not yet entered, stopping can finish at once, so the floor only holds when it was already stuck inside.
+                var elapsed = _clock.GetUtcNow() - started;
                 elapsed.ShouldBeGreaterThanOrEqualTo(UsageDispatcher.StopCap);
             }
-            elapsed.ShouldBeLessThan(UsageDispatcher.StopCap * 10);
         }
         finally
         {

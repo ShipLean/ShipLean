@@ -86,6 +86,7 @@ export function AppRoutes() {
           <Route path={routePattern('inspectionMetrics')} element={<InspectionMetricsPage />} />
           <Route path={routePattern('jiraImport')} element={<ImportPage />} />
           <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
+          <Route path={routePattern('projectSettingsIndex')} element={<ProjectSettingsPage />} />
           <Route path="/p/:key/*" element={<NotFoundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

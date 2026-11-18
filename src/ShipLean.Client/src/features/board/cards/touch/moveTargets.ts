@@ -2,14 +2,16 @@ import type { BoardViewDto } from '@shiplean/core/api/views';
 import { tracksOf } from '../../grid/layout';
 import { locate, type DropTarget } from '../../moves/applyMove';
 
-/** One place the "Move to" sheet offers: a column, or one half of a split column. */
+/** One place the card actions sheet's "Move to" group offers: a column, or one half of a split column. */
 export interface MoveTarget {
   columnId: string;
   done: boolean;
   /** "In progress", or "Review · Doing" / "Review · Done" for a split column. */
   label: string;
-  /** "2 of 3" when the column has a WIP limit, else the count alone. */
+  /** "2/3" when the column has a WIP limit, else the count alone. */
   wip: string;
+  /** The column is over its WIP limit. */
+  over: boolean;
   /** The card is already here. */
   current: boolean;
 }
@@ -23,10 +25,8 @@ export function moveTargets(view: BoardViewDto, itemId: string): MoveTarget[] {
       columnId: column.id,
       done: doneHalf,
       label: column.split ? `${column.name} · ${doneHalf ? 'Done' : 'Doing'}` : column.name,
-      wip:
-        column.wipLimit === null
-          ? `${count}`
-          : `${column.count} of ${column.wipLimit}${column.overLimit ? ' (over)' : ''}`,
+      wip: column.wipLimit === null ? `${count}` : `${column.count}/${column.wipLimit}`,
+      over: column.overLimit,
       current: at?.columnId === column.id && at.done === doneHalf,
     };
   });

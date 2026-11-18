@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
 import { noteStates, retroItem, stubRetros } from '../../retros/ct/retroFixtures';
 import { retroSharedTestIds as ids } from '../testIds';
+import { touchTestIds } from '../../../touch/testIds';
 import { componentTestIds } from '../../../components/testIds';
 import { RetroNoteLiveHarness } from './ct/RetroNoteLiveHarness';
 import { RetroNoteHarness } from './ct/RetroNoteHarness';
@@ -200,6 +201,18 @@ test('RetroNote_WhenThemeLineUsed_ShouldPickAThemeAndCloseOnEscape', async ({ mo
   expect(stub.writes()[1].method).toBe('PUT');
   expect(stub.writes()[1].path).toBe(`/api/retros/points/${improve.id}/theme`);
   expect(stub.writes()[1].body).toEqual({ themeId: null, themeName: 'Brand new theme' });
+});
+
+test('MoveToTheme_OnDesktop_ShouldKeepTheCombobox', async ({ mount, page }) => {
+  await stubRetros(page);
+  await mount(<RetroNoteHarness point={improve} />);
+  await expect(page.getByTestId(ids.retroNoteTheme)).toBeEnabled();
+  await page.getByTestId(ids.retroNoteTheme).click();
+  const picker = page.getByTestId(ids.retroThemePicker);
+  await expect(picker.getByRole('combobox')).toBeVisible();
+  // A popover, not the touch sheet: no Unthemed row, no sheet.
+  await expect(picker.getByRole('option', { name: 'Unthemed' })).toHaveCount(0);
+  await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
 });
 
 test('RetroNote_WhenClickedOutsideThePicker_ShouldCloseIt', async ({ mount, page }) => {

@@ -120,3 +120,84 @@ test('ParentField_WhenTouch_ShouldNotFocusSearchUntilTapped', async ({ mount, pa
   await search.tap();
   await expect(search).toBeFocused();
 });
+
+const epic = {
+  id: 'e1',
+  key: 'SHIP-90',
+  type: { id: 'epic' as const, name: 'Epic' },
+  title: 'Checkout conversion',
+};
+const feature = (id: string, key: string, title: string, parent: typeof epic | null) => ({
+  ...story,
+  id,
+  key,
+  type: { id: 'feature' as const, name: 'Feature' },
+  title,
+  parent,
+});
+const checkout = feature('f101', 'SHIP-101', 'Checkout v2', epic);
+const reporting = feature('f103', 'SHIP-103', 'Reporting', null);
+
+test('ItemParentSheet_ShouldGroupByEpicAndMarkTheCurrentParent', async ({ mount, page }) => {
+  const parented = {
+    ...story,
+    parent: { id: checkout.id, key: checkout.key, type: checkout.type, title: checkout.title },
+  };
+  await stubApi(page, parented, undefined, { byType: { feature: [checkout, reporting] } });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route);
+
+  await screen.getByTestId(ids.parentButton).tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetGroup)).toHaveText([
+    'Checkout conversion',
+    'No epic',
+  ]);
+  const options = sheet.getByTestId(ids.parentOption);
+  // No parent, then the two Features; only the current parent is checked.
+  await expect(options).toHaveCount(3);
+  await expect(options.nth(1)).toHaveAttribute('aria-checked', 'true');
+  await expect(options.nth(1)).toContainText('✓');
+  await expect(options.nth(2)).toHaveAttribute('aria-checked', 'false');
+  await expect(sheet.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
+    'A user story, bug or action item sits under a Feature.',
+  );
+});
+
+test('TaskParentSheet_ShouldNotGroupUnderANoEpicHeading', async ({ mount, page }) => {
+  // A task's parents are stories, bugs and action items; their parent is a Feature, never an Epic, so there is no Epic
+  // to group by. Mutation: groupsEpics returns true for every type list: the sheet shows a NO EPIC heading again.
+  const parent = (id: string, key: string, title: string) => ({
+    ...story,
+    id,
+    key,
+    title,
+    parent: { id: checkout.id, key: checkout.key, type: checkout.type, title: checkout.title },
+  });
+  const task = {
+    ...story,
+    id: 't1',
+    key: 'SHIP-150',
+    type: { id: 'task' as const, name: 'Task' },
+    title: 'A task',
+    parent: null,
+    children: [],
+  };
+  await stubApi(page, task, undefined, {
+    byType: {
+      story: [parent('s1', 'SHIP-151', 'First story'), parent('s2', 'SHIP-152', 'Second story')],
+    },
+  });
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-150" />, {
+    hooksConfig: { route: '/p/SHIP/items/SHIP-150' },
+  });
+
+  await screen.getByTestId(ids.parentButton).tap();
+
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(ids.parentOption)).toHaveCount(3);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetGroup)).toHaveCount(0);
+  await expect(sheet.getByTestId(touchTestIds.actionSheetFooter)).toHaveText(
+    'A task sits under a user story, bug or action item.',
+  );
+});

@@ -1,6 +1,7 @@
 // The Feature board on a phone (SHIP-722): one state a page, lanes on every page, and a task's ⋯ sheet. Regenerate with
 // scripts/update-page-shots.sh src/pages/screenshots/featureBoard.phone.spec.tsx.
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { featureBoardTestIds } from '../../features/featureBoard/testIds';
 import { taskboardTestIds } from '../../features/taskboard/testIds';
 import { touchTestIds } from '../../touch/testIds';
@@ -95,22 +96,27 @@ phonePageShots([
     },
   },
   {
-    // Closed stories come after every open lane today (TBOARD-1): this shoots that order, not the designed one.
+    // Backlog order: the closed line SHIP-138 sits second, between open lanes (TBOARD-1), and the last line is a closed one too.
     name: 'feature-board-end',
     route: FEATURE_BOARD_ROUTE,
     shell: true,
     arrange: (p) => arrangeFeatureBoard(p, FEATURE_BOARD_VIEW),
     ready: featureBoardReady,
     act: async (page) => {
-      const last = page
+      const entries = page
         .getByTestId(touchTestIds.pagerPage)
         .first()
-        .getByTestId(taskboardTestIds.closedLine)
-        .last();
-      await last.evaluate((el) =>
-        el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
-      );
-      await expect(last).toBeInViewport({ ratio: 0.9 });
+        .locator(
+          `[data-testid="${taskboardTestIds.lane}"],[data-testid="${taskboardTestIds.closedLine}"]`,
+        );
+      await expect(entries.nth(1)).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+      await expect(entries.last()).toHaveAttribute('data-testid', taskboardTestIds.closedLine);
+      await entries
+        .last()
+        .evaluate((el) =>
+          el.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'instant' }),
+        );
+      await expect(entries.last()).toBeInViewport({ ratio: 0.9 });
     },
   },
   {
@@ -122,10 +128,30 @@ phonePageShots([
     act: async (page) => {
       await page.getByTestId(taskboardTestIds.filterButton).tap();
       await page.getByTestId(taskboardTestIds.filterSheetRow).nth(1).tap();
-      await expect(page.getByTestId(taskboardTestIds.filterButton)).toHaveText('Filter (1)');
+      await expect(page.getByTestId(taskboardTestIds.filterButton)).toContainText('Filter1');
       await page.getByTestId(touchTestIds.sheetClose).tap();
       await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
       await expect(page.getByTestId(taskboardTestIds.laneHidden).first()).toBeVisible();
+    },
+  },
+  {
+    // SHIP-1831: every person chosen at the page's real 358px content width; the Stories | People switch must not clip.
+    name: 'feature-board-filtered-all',
+    route: FEATURE_BOARD_ROUTE,
+    shell: true,
+    arrange: (p) => arrangeFeatureBoard(p, FEATURE_BOARD_VIEW),
+    ready: featureBoardReady,
+    act: async (page) => {
+      await page.getByTestId(taskboardTestIds.filterButton).tap();
+      const rows = page.getByTestId(taskboardTestIds.filterSheetRow);
+      const total = await rows.count();
+      for (let i = 0; i < total; i++) await rows.nth(i).tap();
+      await expect(page.getByTestId(taskboardTestIds.filterCount)).toHaveText(String(total));
+      await page.getByTestId(touchTestIds.sheetClose).tap();
+      await expect(page.getByTestId(touchTestIds.sheet)).toHaveCount(0);
+      const groupBy = page.getByTestId(taskboardTestIds.groupBy);
+      const fits = await groupBy.evaluate((el) => el.scrollWidth <= el.clientWidth);
+      expect(fits).toBe(true);
     },
   },
   {
@@ -148,3 +174,82 @@ phonePageShots([
     },
   },
 ]);
+
+// SHIP-1626 TBOARD-2 (K5): at 390px the second page peeks 30-36px at the right edge.
+test('TouchPager_OnTheFeatureBoardPage_ShouldPeekTheNextPage', async ({ mount, page }) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  const first = (await page.getByTestId(touchTestIds.pagerPage).nth(0).boundingBox())!;
+  const second = (await page.getByTestId(touchTestIds.pagerPage).nth(1).boundingBox())!;
+  const track = (await page.getByTestId(touchTestIds.pager).boundingBox())!;
+  // The design's page: 340px from x=12, whatever the page's own gutter.
+  expect(first.x).toBe(12);
+  expect(first.width).toBe(340);
+  // K5: the next page peeks 30-36px at 390px, on screen and inside the track (the pager bleeds to the screen edges).
+  const peek = Math.min(390, track.x + track.width) - second.x;
+  expect(peek).toBeGreaterThanOrEqual(30);
+  expect(peek).toBeLessThanOrEqual(36);
+  // And nothing clips it: 15px in from the screen edge is the second page itself.
+  const secondId = await page
+    .getByTestId(touchTestIds.pagerPage)
+    .nth(1)
+    .getAttribute('data-page-id');
+  const hit = await page.evaluate(
+    ({ x, y, pageTestId }) =>
+      document
+        .elementFromPoint(x, y)
+        ?.closest(`[data-testid="${pageTestId}"]`)
+        ?.getAttribute('data-page-id'),
+    { x: 375, y: second.y + 10, pageTestId: touchTestIds.pagerPage },
+  );
+  expect(hit).toBe(secondId);
+  // The bleed reaches the screen edges and no further: the page never scrolls sideways.
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(sideways).toBe(false);
+});
+
+test('AddStoryBox_OnTheFeatureBoard_ShouldNameTheFeatureInItsHelperLine', async ({
+  mount,
+  page,
+}) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  await expect(page.getByTestId(taskboardTestIds.addStoryHelp)).toContainText(
+    'Adds it under SHIP-101, in the Backlog.',
+  );
+  const lines = await page
+    .getByTestId(taskboardTestIds.addStoryHelp)
+    .evaluate(
+      (el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight),
+    );
+  expect(lines, 'the helper line is one line').toBeLessThan(1.5);
+});
+
+test('AddStoryBox_OnTheFeatureBoardAtPhoneWidth_ShouldShowTheWholePlaceholder', async ({
+  mount,
+  page,
+}) => {
+  await arrangeFeatureBoard(page, FEATURE_BOARD_VIEW);
+  await mount(<AppRoutes />, { hooksConfig: { route: FEATURE_BOARD_ROUTE } });
+  await featureBoardReady(page);
+  await page.getByTestId(taskboardTestIds.addStory).tap();
+  const cut = await page.getByTestId(taskboardTestIds.addStoryTitle).evaluate((el) => {
+    // The placeholder's own width: a span in the input's font, since an input can't be asked how much it hides.
+    const probe = document.createElement('span');
+    const style = getComputedStyle(el);
+    const ph = getComputedStyle(el, '::placeholder');
+    probe.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:${ph.fontSize};font-family:${ph.fontFamily};font-weight:${ph.fontWeight}`;
+    probe.textContent = (el as HTMLInputElement).placeholder;
+    document.body.append(probe);
+    const text = probe.getBoundingClientRect().width;
+    probe.remove();
+    const room = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { text, room };
+  });
+  expect(cut.text, 'the placeholder fits inside the title field').toBeLessThanOrEqual(cut.room);
+});

@@ -28,9 +28,7 @@ test('DiscussionSection_WhenItemHasComments_ShouldListThemOldestFirstWithServerH
   await expect(screen.getByTestId(ids.commentsCount)).toHaveText('3');
   await expect(rows.nth(0).getByTestId(ids.commentAuthor)).toHaveText('Priya Nair');
   await expect(rows.nth(0).getByTestId(ids.commentWhen)).toHaveText('2 days ago');
-  await expect(rows.nth(0).getByTestId(ids.commentBody)).toContainText(
-    'Which **vault** do we use?',
-  );
+  await expect(rows.nth(0).getByTestId(ids.commentBody)).toContainText('Which vault do we use?');
   await expect(rows.nth(1).getByTestId(ids.commentBody)).toHaveText('The new one.');
   await expect(rows.nth(2).getByTestId(ids.commentAgent)).toHaveText('via Claude Code (claude.ai)');
   await expect(rows.nth(0).getByTestId(ids.commentAgent)).toHaveCount(0);
@@ -288,7 +286,7 @@ test('CommentItem_WhenSuperseded_ShouldStrikeThrough', async ({ mount, page }) =
 
   await expect(row.getByTestId(ids.commentSuperseded)).toHaveText('Superseded');
   await expect(row.getByTestId(ids.commentBody)).toHaveCSS('text-decoration-line', 'line-through');
-  await expect(row.getByTestId(ids.commentBody)).toContainText('Which **vault** do we use?');
+  await expect(row.getByTestId(ids.commentBody)).toContainText('Which vault do we use?');
   expect(comments.superseded).toEqual(['c1']);
 });
 

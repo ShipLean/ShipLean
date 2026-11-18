@@ -83,6 +83,9 @@ export function NewSprintRail({
     setEdited({ ...form, [field]: value });
   };
 
+  const datesError =
+    rangeError || (create.error instanceof ApiRequestError && create.error.code === 'validation');
+
   const error = rangeError
     ? 'End must be on or after the start.'
     : create.error instanceof ApiRequestError
@@ -111,10 +114,11 @@ export function NewSprintRail({
         pending={create.isPending || nameStale}
         error={error}
         hideSubmit={touch && onClose !== undefined}
+        datesError={datesError}
       />
     );
   const note = (
-    <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
+    <p className="m-0 text-[length:var(--text-xs)] text-ink-muted touch:text-[length:var(--text-sm)]">
       Defaults: the next name in the project's sprint naming, starting on the first working day
       after the last sprint, the same length as it. Overlapping dates are rejected.
     </p>
@@ -138,7 +142,7 @@ export function NewSprintRail({
           </button>
         }
       >
-        <div data-testid={ids.newSprint} className="grid gap-2">
+        <div data-testid={ids.newSprint} className="grid gap-3">
           {formBody}
           {note}
         </div>

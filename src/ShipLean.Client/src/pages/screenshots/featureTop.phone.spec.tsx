@@ -7,6 +7,7 @@ import { priya } from '../../features/workItem/ct/fixtures';
 import { stubApi } from '../../features/workItem/ct/stubApi';
 import { stubComments } from '../../features/workItem/ct/stubDetails';
 import { stubSide } from '../../features/workItem/ct/stubSide';
+import { touchTestIds } from '../../touch/testIds';
 import { workItemTestIds } from '../../features/workItem/testIds';
 import { WorkItemFormHarness } from '../../features/workItem/ct/WorkItemFormHarness';
 import { log } from './fixtures/feature';
@@ -46,8 +47,10 @@ const epic = {
   type: { id: 'epic' as const, name: 'Epic' },
   title: 'Checkout conversion',
 };
+const sprint24 = { id: 'sp24', name: 'Sprint 24', status: 'current' as const };
 const child = (key: string, title: string, bug = false) => ({
   ...feature.children[0],
+  sprint: key === 'SHIP-143' ? null : sprint24,
   id: `c-${key}`,
   key,
   title,
@@ -149,13 +152,30 @@ for (const theme of THEMES) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
     await arrange(page, atRisk);
     const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
-    await expect(screen.getByTestId(ids.statusHealth)).toHaveText('At risk');
+    await expect(screen.getByTestId(ids.statusHealthButton)).toContainText('At risk');
     await expect(screen.getByTestId(ids.statusHealthSetBy)).toBeVisible();
 
     await expect(screen.getByTestId(ids.statusBand)).toHaveScreenshot(
       `feature-band-at-risk.${theme}.png`,
       { animations: 'disabled' },
     );
+  });
+
+  test(`FeatureTopPhone_WhenHealthPillTapped_ShouldMatchItsScreenshot_feature-health-sheet_${theme}`, async ({
+    mount,
+    page,
+  }) => {
+    phoneOnly(page);
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    await arrange(page, atRisk);
+    const screen = await mount(<WorkItemFormHarness itemKey="SHIP-100" />, route);
+    await screen.getByTestId(ids.statusHealthButton).tap();
+    const sheet = page.getByTestId(touchTestIds.sheet);
+    await expect(sheet.getByTestId(touchTestIds.actionSheetRow)).toHaveCount(4);
+
+    await expect(sheet).toHaveScreenshot(`feature-health-sheet.${theme}.png`, {
+      animations: 'disabled',
+    });
   });
 
   test(`FeatureTopPhone_WhenDescriptionHasTableCodeAndImage_ShouldMatchItsScreenshot_feature-description_${theme}`, async ({

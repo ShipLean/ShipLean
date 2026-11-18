@@ -52,6 +52,7 @@ public static class TouchRoutes
         ["mobileSignIn"] = new(
             _ => "/mobile/sign-in?challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&state=touch-sweep&device=Sweep%20phone",
             [MobileSignInTestIds.SignIn]),
+        ["projectSettingsIndex"] = new(_ => $"/p/{Project}/settings", [SettingsTestIds.SettingsIndexRow]),
     };
 
     // Opens a route and checks it against the touch rules: a route in TouchPendingRoutes must still break them (so a

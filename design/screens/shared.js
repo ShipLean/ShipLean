@@ -165,10 +165,17 @@
     'sprint-backlog': ['Sprints', 'Sprint 24', 'Backlog'], capacity: ['Sprints', 'Sprint 24', 'Capacity'], sprints: ['Sprints', 'All sprints'], 'sprint-end': ['Sprints', 'Sprint 24'],
     taskboard: ['Sprints', 'Sprint 24', 'Taskboard'], board: ['Boards', 'Stories'], 'features-board': ['Boards', new URLSearchParams(location.search).get('level') === 'epics' ? 'Epics' : 'Features'], 'board-settings': ['Boards', 'Stories', 'Settings'],
     'work-item': ['Backlogs', 'SHIP-141'], feature: ['Backlogs', 'Features', 'SHIP-101'], 'feature-timeline': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-99', 'Timeline'], 'feature-board': ['Backlogs', new URLSearchParams(location.search).get('key') || 'SHIP-101', 'Feature board'], attachment: ['Backlogs', 'SHIP-101', 'design-v0.2.md'], settings: ['Settings'], import: ['Jira import'],
-    'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
+    'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], 'sprint-demo': ['Sprints', 'Sprint 23', 'Demo'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
     inspection: ['Inspection', { leadtime: 'Lead time', period: 'Lead time', quality: 'Quality', cost: 'Cost', json: 'Overview' }[new URLSearchParams(location.search).get('view')] || 'Overview'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
     decisions: new URLSearchParams(location.search).get('state') === 'feature' ? ['Backlogs', 'Features', 'SHIP-101'] : ['Backlogs', 'SHIP-141'],
+  };
+  // Detail pages: under 900px ‹ back takes the left of the top bar and Menu moves to the far right, after Search
+  // (SHIP-805 D7, as the built TouchTopBar). Above 900px nothing changes. [where it goes, its name].
+  const backFor = {
+    'work-item': ['backlog.html', 'Stories backlog'], feature: ['features.html', 'Features backlog'],
+    decisions: new URLSearchParams(location.search).get('state') === 'feature' ? ['features.html', 'Features backlog'] : ['backlog.html', 'Stories backlog'],
+    attachment: ['feature.html', 'SHIP-101'], 'retro-item': ['retros-features.html', 'Features'],
   };
   // Pages that belong to the install or to you, not to a project: the breadcrumb starts at ShipLean and there's no Live dot.
   const instanceLevel = new Set(['new-project', 'instance', 'profile']);
@@ -228,13 +235,14 @@
   // The project picker sits outside the side menu so that under 900px it can be a bottom sheet over everything,
   // the drawer included. On a desktop it still opens under the project button.
   const pickerHtml = () => `<div class="proj-picker" role="dialog" aria-label="Switch project" hidden>
-      <header class="sheet-head m-only"><b>Switch project</b><button class="btn ghost sheet-x" type="button">Cancel</button></header>
+      <header class="sheet-head m-only"><b>Switch project</b><button class="btn ghost sheet-x" type="button">Close</button></header>
       <div class="search"><input class="field" type="search" placeholder="Search projects by name or key" aria-label="Search projects"></div>
       <ul role="listbox" aria-label="Projects"></ul>
       <footer><a class="btn ghost" href="new-project.html">+ New project</a><a class="btn ghost" href="import.html">Import from Jira</a></footer>
     </div>`;
 
   const icon = {
+    back: '<span aria-hidden="true">‹</span>', // the text character, as TouchTopBar (SHIP-1863 D2)
     menu: '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"/></svg>',
     search: '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5" stroke-linecap="round"/></svg>',
     close: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
@@ -397,11 +405,13 @@
       fit(); addEventListener('resize', fit);
     });
     const root0 = instanceLevel.has(page) ? 'ShipLean' : PROJECT;
+    const back = backFor[page];
+    const menu = `<button class="tbtn mnav m-only" type="button" aria-label="Open navigation" aria-controls="side" aria-expanded="false">${icon.menu}</button>`;
     return `<header class="appbar">
-      <button class="tbtn mnav m-only" type="button" aria-label="Open navigation" aria-controls="side" aria-expanded="false">${icon.menu}</button>
+      ${back ? `<a class="tbtn mback m-only" href="${back[0]}" aria-label="Back to ${back[1]}">${icon.back}</a>` : menu}
       <nav class="crumbs" aria-label="You are here"><span>${root0}</span>${crumbs.map((c, i) => `<span>›</span>${i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>`}`).join('')}</nav>
       <span class="spacer"></span>${presenceStack(presence[page] || [])}${instanceLevel.has(page) ? '' : '<span class="live" title="Real-time updates connected">Live</span>'}
-      <button class="tbtn msearch m-only" type="button" aria-label="Quick search">${icon.search}</button>
+      <button class="tbtn msearch m-only" type="button" aria-label="Quick search">${icon.search}</button>${back ? menu : ''}
     </header>`;
   }
   const setLive = on => { const l = document.querySelector('.appbar .live'); if (!l) return; l.classList.toggle('off', !on); l.textContent = on ? 'Live' : 'Reconnecting'; l.title = on ? 'Real-time updates connected' : 'Live updates paused, retrying'; };

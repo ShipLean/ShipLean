@@ -101,3 +101,22 @@ test('WorkItemRetroPhone_WhenRendered_ShouldNotScrollSideways', async ({ mount, 
   const link = section.getByRole('link', { name: 'All retros for this item' });
   expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(32);
 });
+
+test('PhoneRetroRow_ShouldShowAChevron', async ({ mount, page }) => {
+  await serve(page);
+  await mount(<WorkItemRetroSection {...props} />, route);
+  const phoneRows = page.getByTestId(ids.workItemRetroRow);
+  await expect(phoneRows).toHaveCount(3);
+  for (let index = 0; index < 3; index += 1) {
+    const chevron = phoneRows.nth(index).getByTestId(ids.retroRowChevron);
+    await expect(chevron).toHaveText('›');
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    const row = (await phoneRows.nth(index).boundingBox())!;
+    const arrow = (await chevron.boundingBox())!;
+    expect(arrow.width).toBeGreaterThan(0);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(row.x + row.width);
+    expect(arrow.x).toBeGreaterThan(row.x + row.width - 32);
+    expect(arrow.y).toBeGreaterThanOrEqual(row.y);
+    expect(arrow.y + arrow.height).toBeLessThanOrEqual(row.y + row.height);
+  }
+});

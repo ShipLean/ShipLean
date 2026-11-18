@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
+import { componentTestIds } from '../../../components/testIds';
 import { touchTestIds } from '../../../touch/testIds';
 import { retroSearch, stubRetros } from '../ct/retroFixtures';
 import { retrosTestIds as ids } from '../testIds';
@@ -14,6 +16,11 @@ const point = retroSearch.rows[0];
 const route = `/p/SHIP/retros?q=masked&selected=${retroSearch.selected!.id}&point=${point.id}`;
 const searchRoute = (url: URL) => /^\/api\/projects\/[^/]+\/retros$/.test(url.pathname);
 
+// A tap leaves Chromium's pointer on the tapped note, and .paper-sheet:hover rings it until the browser next works out
+// what is under the pointer, which races the shot once a sheet's scrim covers the note. Moving the pointer to the
+// corner settles it: the note is not hovered in any shot.
+const settleHover = (page: Page) => page.mouse.move(0, 0);
+
 for (const theme of THEMES) {
   test(`OpenRetroPhone_WhenOpenedAtAPoint_ShouldMatchItsScreenshot_retro-search-retro-phone_${theme}`, async ({
     mount,
@@ -24,7 +31,7 @@ for (const theme of THEMES) {
     await stubRetros(page);
     await mount(<AppRoutes />, { hooksConfig: { route } });
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
-    await expect(page.getByTestId(ids.retrosOpenRetroPosition)).toContainText('Result 1 of');
+    await expect(page.getByTestId(componentTestIds.dialogSubtitle)).toContainText('Result 1 of');
     await expect(page.locator('[data-highlighted="true"]')).toHaveCount(1);
     await expect(page).toHaveScreenshot(`retro-search-retro-phone.${theme}.png`, {
       animations: 'disabled',
@@ -42,7 +49,8 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteTheme).tap();
     await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
-    await expect(page.getByTestId(shared.retroThemePicker)).toBeVisible();
+    await expect(page.getByTestId(shared.retroNotePreview)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-theme-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -74,6 +82,7 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(touchTestIds.moreButton).tap();
     await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-note-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -90,6 +99,7 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteAddAction).tap();
     await expect(page.getByTestId(shared.retroActionCreate)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-action-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -121,3 +131,41 @@ for (const theme of THEMES) {
     });
   });
 }
+
+test('OpenRetroHeader_ShouldShowTheResultPosition', async ({ mount, page }) => {
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, { hooksConfig: { route } });
+  const dialog = page.getByTestId(ids.retrosOpenRetro);
+  await expect(dialog).toBeVisible();
+  const item = retroSearch.selected!.workItem!;
+  const typeKey = dialog.getByTestId(ids.retrosOpenRetroTypeKey);
+  const key = dialog.getByTestId(ids.retrosOpenRetroKey);
+  const title = dialog.getByTestId(componentTestIds.dialogTitle);
+  const subtitle = dialog.getByTestId(componentTestIds.dialogSubtitle);
+  await expect(typeKey.getByTestId(componentTestIds.typeIcon)).toHaveAttribute(
+    'data-type',
+    item.type.id,
+  );
+  await expect(key).toHaveText(item.key);
+  await expect(title).toHaveText(item.title);
+  await expect(title).not.toContainText(item.type.name);
+  // The position sits in the header, under the icon, and the whole of line 1 is the dialog's name.
+  await expect(subtitle).toContainText(/^Result 1 of \d+/);
+  await expect(subtitle).toContainText(retroSearch.selected!.sprint!.name);
+  await expect(dialog).toHaveAccessibleName(new RegExp(`${item.key}.*${item.title}`));
+  await expect(dialog).toHaveAccessibleDescription(/^Result 1 of/);
+  const iconBox = (await typeKey.boundingBox())!;
+  const titleBox = (await title.boundingBox())!;
+  const subtitleBox = (await subtitle.boundingBox())!;
+  expect(subtitleBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 1);
+  expect(Math.abs(subtitleBox.x - iconBox.x)).toBeLessThan(1);
+  // A long title truncates instead of pushing the step buttons off the screen.
+  const steps = dialog.getByTestId(ids.retrosOpenRetroSteps);
+  await expect(steps).toBeInViewport({ ratio: 1 });
+  await expect(title).toHaveCSS('text-overflow', 'ellipsis');
+  // The ‹ › pair is bordered.
+  await expect(steps).toHaveCSS('border-top-width', '1px');
+  await expect(steps.getByTestId(ids.retrosOpenRetroPrevious)).toBeVisible();
+  await expect(steps.getByTestId(ids.retrosOpenRetroNext)).toBeVisible();
+});

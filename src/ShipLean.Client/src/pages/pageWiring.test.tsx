@@ -110,8 +110,11 @@ test('sprintPages_ShouldPassTheSprintAndTheRightHeader', () => {
     capacity: { project, sprint, sprints },
   });
   expect(sprintRetroSlots(project, sprint, sprints)).toEqual({
-    header: { variant: 'full', project, sprint, sprints, tab: 'retro' },
-    sprintRetro: { project, sprint, sprints },
+    sprintRetro: {
+      project,
+      sprint,
+      header: { variant: 'full', project, sprint, sprints, tab: 'retro' },
+    },
   });
   expect(sprintDemoSlots(project, sprint, sprints)).toEqual({
     header: { variant: 'full', project, sprint, sprints, tab: 'demo' },
@@ -317,6 +320,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     newProject: 'newProject',
     instanceSettings: 'instanceSettings',
     profile: 'profile',
+    projectSettingsIndex: 'projectSettingsIndex',
   });
 });
 

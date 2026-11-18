@@ -6,6 +6,7 @@ import { routePath } from '../../../../routes';
 import { MoreButton } from '../../../../touch/MoreButton';
 import type { SheetAction } from '../../../../touch/ActionSheet';
 import { useOpenSection } from '../../add/useAddChain';
+import { itemCount } from '../itemCount';
 import { backlogTestIds as ids } from '../../testIds';
 import { capacityLoad } from '../capacityLoad';
 import { sectionDropId } from '../planningTarget';
@@ -60,16 +61,21 @@ export function TouchSprintBlock({
         openSection(section.id);
       },
     },
+    ...(current
+      ? []
+      : [
+          {
+            id: 'capacity',
+            label: 'Capacity',
+            onSelect: () =>
+              void navigate(routePath('capacity', { key: projectKey, sprintId: sprint.id })),
+          } satisfies SheetAction,
+        ]),
     {
-      id: current ? 'open-sprint' : 'capacity',
-      label: current ? 'Open sprint' : 'Capacity',
+      id: 'open-sprint',
+      label: 'Open sprint',
       onSelect: () =>
-        void navigate(
-          routePath(current ? 'sprintBacklog' : 'capacity', {
-            key: projectKey,
-            sprintId: sprint.id,
-          }),
-        ),
+        void navigate(routePath('sprintBacklog', { key: projectKey, sprintId: sprint.id })),
     },
   ];
   return (
@@ -104,7 +110,7 @@ export function TouchSprintBlock({
             data-testid={ids.planningSectionCount}
             className="text-[length:var(--text-sm)] text-ink-muted"
           >
-            {section.rows.length} items
+            {itemCount(section.rows.length)}
           </span>
         </div>
         <MoreButton label={`${section.title} actions`} actions={actions} />

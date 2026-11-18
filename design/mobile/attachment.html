@@ -7,11 +7,12 @@
 <!--
   SHIP-715 reference: the Markdown attachment page and the image viewer on a phone (designed at 390 × 844; it applies at
   900px and below, inside the SHIP-713 touch shell). Open directly in a browser. Uses ../tokens.css only; no build step.
-  The touch shell's top bar is drawn here as it is in ../screens/shared.js (Menu, breadcrumb cut from the left, Live dot,
-  Search); the drawer and quick search live there, not here.
+  The touch shell's top bar is drawn here as it is in ../screens/shared.js for a detail page (‹ back to the item,
+  breadcrumb cut from the left, Live dot, Search, Menu: SHIP-805 D7, as the built TouchTopBar); the drawer and quick
+  search live there, not here.
   - The page header scrolls away with the page: only the top bar is sticky (SHIP-713 D7), and its breadcrumb ends in the
     file name, so the name stays in view.
-  - Header: back to the item, the file name (tap: the item's other Markdown files), a one-line facts row (tap: About this
+  - Header (‹ back to the item is in the top bar): the file name (tap: the item's other Markdown files), a one-line facts row (tap: About this
     file), then one toolbar row: Rendered / Source / Edit and ⋯ (Download, Replace…, Copy link, About this file).
   - The desktop side panel moves into bottom sheets: On this page (the Contents pill), About this file, Markdown on SHIP-101.
   - Wide tables and code scroll sideways inside themselves. An attached image opens the viewer.
@@ -27,7 +28,7 @@
   })();
 </script>
 <style>
-/* A reading page: body text 15px on a phone. Controls use the shell's --touch-target (44px); inputs --text-input-touch. */
+/* A reading page: body text 15px on a phone. Controls and rows use the shell's --touch-target (32px, SHIP-805 rule 13); inputs --text-input-touch. */
 :root { --m-body: 15px; --m-small: 13px; --m-pad: 16px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -41,6 +42,7 @@ svg text { fill: currentColor; }
 /* The SHIP-713 top bar, as ../screens/shiplean.css draws it under 900px. */
 .appbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: var(--space-1); height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) var(--space-1) 0; background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .tbtn { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); flex: none; padding: 0; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); }
+.back-ch { font-size: var(--text-lg); text-decoration: none; }
 .crumbs { flex: 1; min-width: 0; display: flex; justify-content: flex-end; gap: 6px; overflow: hidden; white-space: nowrap; padding-left: var(--space-1); font-size: var(--text-base); color: var(--color-muted); -webkit-mask-image: linear-gradient(to right, transparent, #000 20px); mask-image: linear-gradient(to right, transparent, #000 20px); }
 .crumbs > * { flex: none; }
 .crumbs b { color: var(--color-text); font-size: var(--text-md); font-weight: var(--weight-semibold); }
@@ -50,7 +52,6 @@ svg text { fill: currentColor; }
 /* Page header: in the page, so it scrolls away. */
 .head { display: grid; gap: 4px; padding: var(--space-2) var(--m-pad) var(--space-3); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
 .back { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; min-width: 0; color: var(--color-muted); text-decoration: none; font-size: var(--m-small); }
-.back .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ti { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: var(--radius-xs); color: #fff; font: 700 9px/1 var(--font-sans); flex: none; background: var(--type-feature); }
 .name { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: var(--touch-target); padding: 0; border: 0; background: none; text-align: left; width: 100%; }
 .ext { display: inline-grid; place-items: center; width: 26px; height: 20px; font: 700 9px/1 var(--font-mono); border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-surface-2); flex: none; }
@@ -101,7 +102,7 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 .pill .lines { color: var(--color-accent); }
 .pill .n { color: var(--color-muted); font-size: 12px; flex: none; }
 
-/* Bottom sheets: the shell's sheet (grab bar, 48px rows, safe area). */
+/* Bottom sheets: the shell's sheet (grab bar, title with Close on the right, --touch-target rows, safe area). */
 .scrim { position: fixed; inset: 0; z-index: 65; background: rgb(10 16 28 / .45); }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 85dvh; display: flex; flex-direction: column; background: var(--color-surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-dialog); padding-bottom: env(safe-area-inset-bottom); }
 .sheet .grab { flex: none; width: 36px; height: 4px; border-radius: 2px; background: var(--color-border); margin: 6px auto 2px; }
@@ -112,11 +113,11 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 .overline { font-size: 11px; font-weight: var(--weight-semibold); letter-spacing: .06em; text-transform: uppercase; color: var(--color-muted); display: flex; gap: 6px; align-items: baseline; margin-bottom: 6px; }
 .overline .c { letter-spacing: 0; text-transform: none; font-weight: var(--weight-regular); }
 .toc { list-style: none; margin: 0 calc(-1 * var(--m-pad)); padding: 0; }
-.toc a { display: flex; align-items: center; min-height: 48px; padding: 0 var(--m-pad); color: var(--color-text); text-decoration: none; border-left: 3px solid transparent; font-size: 15px; }
+.toc a { display: flex; align-items: center; min-height: var(--touch-target); padding: 0 var(--m-pad); color: var(--color-text); text-decoration: none; border-left: 3px solid transparent; font-size: 15px; }
 .toc a.l2 { padding-left: calc(var(--m-pad) + 16px); }
 .toc a[aria-current="true"] { border-left-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
 .lst { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.lst > li { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
+.lst > li { display: flex; align-items: center; gap: 10px; min-height: var(--touch-target); padding: 0 12px; border-top: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: 15px; }
 .lst > li:first-child { border-top: 0; }
 .lst > li[aria-current="page"] { background: var(--color-accent-soft); }
 .lst .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -130,7 +131,7 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 .callout b { display: block; }
 .hint { margin: 6px 0 0; font-size: 13px; color: var(--color-muted); }
 .acts { list-style: none; margin: 0; padding: 0 0 var(--space-2); }
-.acts button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 52px; padding: 0 var(--m-pad); border: 0; background: none; text-align: left; font-size: 16px; }
+.acts button { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); padding: 6px var(--m-pad); border: 0; background: none; text-align: left; font-size: 16px; }
 .acts .g { width: 22px; display: grid; place-items: center; color: var(--color-muted); }
 .acts small { display: block; font-size: 12px; color: var(--color-muted); }
 .acts hr { border: 0; border-top: 1px solid var(--color-border); margin: 4px 0; }
@@ -150,7 +151,7 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 
 /* The viewer: full screen and always dark, whatever the theme, so photos and screenshots read true. */
 .viewer { position: fixed; inset: 0; z-index: 80; background: #0b0f17; color: #e8eef7; display: flex; flex-direction: column; }
-.viewer .vt { flex: none; display: flex; align-items: center; gap: 4px; padding: calc(4px + env(safe-area-inset-top)) 4px 4px; }
+.viewer .vt { flex: none; display: flex; align-items: center; gap: 4px; height: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 4px 0; }
 .viewer .vt button { width: var(--touch-target); height: var(--touch-target); border: 0; background: none; color: inherit; border-radius: 50%; display: grid; place-items: center; font-size: 20px; }
 .viewer .ttl { flex: 1; min-width: 0; text-align: center; }
 .viewer .ttl b { display: block; font: 600 14px/1.3 var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -164,12 +165,12 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 .viewer .zchip { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 3px 10px; border-radius: 999px; background: rgb(255 255 255 / .14); font-size: 12px; white-space: nowrap; }
 .viewer .vb { flex: none; display: grid; gap: 10px; padding: 8px 12px calc(14px + env(safe-area-inset-bottom)); }
 .viewer .thumbs { display: flex; gap: 8px; justify-content: center; }
-.viewer .thumbs button { width: 56px; height: 44px; border-radius: 6px; border: 2px solid transparent; background: #1c2433; padding: 3px; }
+.viewer .thumbs button { width: 56px; height: 40px; border-radius: 6px; border: 2px solid transparent; background: #1c2433; padding: 3px; }
 .viewer .thumbs button[aria-current="true"] { border-color: #5cc8f0; }
 .viewer .thumbs i { display: block; width: 100%; height: 100%; border-radius: 3px; }
 .viewer .help { text-align: center; font-size: 12px; color: #9aa7bd; }
-.viewer .menu { position: absolute; right: 8px; top: calc(52px + env(safe-area-inset-top)); z-index: 2; min-width: 220px; background: #1c2433; border: 1px solid #2c3850; border-radius: var(--radius-md); box-shadow: 0 16px 40px rgb(0 0 0 / .5); padding: 4px 0; }
-.viewer .menu button { display: flex; gap: 12px; align-items: center; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: none; color: inherit; font-size: 15px; text-align: left; }
+.viewer .menu { position: absolute; right: 8px; top: calc(var(--mobile-bar-height) + env(safe-area-inset-top)); z-index: 2; min-width: 220px; background: #1c2433; border: 1px solid #2c3850; border-radius: var(--radius-md); box-shadow: 0 16px 40px rgb(0 0 0 / .5); padding: 4px 0; }
+.viewer .menu button { display: flex; gap: 12px; align-items: center; width: 100%; min-height: var(--touch-target); padding: 0 14px; border: 0; background: none; color: inherit; font-size: 15px; text-align: left; }
 
 /* Too large to show. */
 .empty { padding: 32px var(--m-pad); display: grid; gap: 12px; justify-items: start; }
@@ -194,14 +195,14 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 </svg>
 
 <header class="appbar" aria-label="Top bar (SHIP-713 touch shell)">
-  <button class="tbtn" type="button" aria-label="Open navigation"><svg class="ic" width="20" height="20"><use href="#i-menu"/></svg></button>
+  <a class="tbtn back-ch" href="#" data-toast="Back to SHIP-101" aria-label="Back to SHIP-101"><span aria-hidden="true">‹</span></a>
   <nav class="crumbs" aria-label="You are here"><span>SHIP</span><span>›</span><span>Backlogs</span><span>›</span><span>SHIP-101</span><span>›</span><b>design-v0.2.md</b></nav>
   <span class="live" title="Real-time updates connected" aria-label="Live"></span>
   <button class="tbtn" type="button" aria-label="Quick search"><svg class="ic"><use href="#i-search"/></svg></button>
+  <button class="tbtn" type="button" aria-label="Open navigation"><svg class="ic" width="20" height="20"><use href="#i-menu"/></svg></button>
 </header>
 
 <section class="head" aria-label="Attachment header">
-  <a class="back" href="#" data-toast="Back to SHIP-101"><span aria-hidden="true">←</span><span class="ti" aria-hidden="true">F</span><span class="t">SHIP-101 Checkout v2</span></a>
   <button class="name" type="button" data-open="files" aria-label="design-v0.2.md. Other Markdown files on SHIP-101">
     <span class="ext" aria-hidden="true">MD</span><h1>design-v0.2.md</h1><span class="chev" aria-hidden="true">▾</span>
   </button>
@@ -302,7 +303,7 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 
 <div class="savebar" id="savebar" hidden>
   <span class="st"><b>Unsaved changes</b><br>Saving replaces the file</span>
-  <button class="btn" type="button" data-view="rendered">Cancel</button>
+  <button class="btn" type="button" data-view="rendered">Discard</button>
   <button class="btn pri" type="button" data-toast="Saved. design-v0.2.md replaced">Save</button>
 </div>
 
@@ -362,13 +363,13 @@ figure.img figcaption { font-size: 12px; color: var(--color-muted); }
 
 <section class="sheet" id="sheet-menu" aria-label="More" hidden>
   <div class="grab"></div>
+  <div class="sheet-head"><b>More</b><button class="x" type="button" data-close>Close</button></div>
   <ul class="acts">
     <li><button type="button" data-toast="Downloading design-v0.2.md"><span class="g"><svg class="ic"><use href="#i-down"/></svg></span><span>Download<small>14 KB</small></span></button></li>
     <li><button type="button" data-toast="Opens the file picker"><span class="g"><svg class="ic"><use href="#i-up"/></svg></span><span>Replace…<small>Pick a file; the old copy is soft-deleted</small></span></button></li>
     <li><button type="button" data-toast="Link copied"><span class="g"><svg class="ic"><use href="#i-link"/></svg></span><span>Copy link</span></button></li>
     <li><hr></li>
     <li><button type="button" data-open="about"><span class="g"><span class="circ">i</span></span><span>About this file</span></button></li>
-    <li><button type="button" data-close><span class="g"><svg class="ic"><use href="#i-close"/></svg></span><span>Cancel</span></button></li>
   </ul>
 </section>
 

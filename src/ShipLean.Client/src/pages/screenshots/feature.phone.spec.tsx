@@ -34,7 +34,7 @@ const arrange = async (page: Page) => {
 
 const ready = async (page: Page) => {
   await expect(page.getByTestId(featureTestIds.statusBand)).toBeVisible();
-  await expect(page.getByTestId(featureTestIds.statusHealth)).toHaveText('At risk');
+  await expect(page.getByTestId(featureTestIds.statusHealthButton)).toContainText('At risk');
   await expect(page.getByTestId(featureTestIds.linkCard).first()).toBeVisible();
   await expect(page.getByTestId(featureTestIds.logCount)).toHaveText('3');
   // The attached image has loaded, so the baseline never catches it half drawn.

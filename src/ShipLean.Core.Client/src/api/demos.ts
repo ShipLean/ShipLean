@@ -2,7 +2,7 @@
 // Round-tripped by demos.test.ts over TestSupport/DtoFixtures/demos. Labels are made by the server; the client formats nothing.
 import { api, sendForm } from './client';
 import type { AgentStartBlock } from './agentSessions';
-import type { StateRef } from './refs';
+import type { StateRef, WorkItemTypeId } from './refs';
 
 export const SPRINT_DEMO_STATUSES = [
   'none',
@@ -36,6 +36,23 @@ export interface SprintDemoRunDto {
   sessionState: string | null;
   requestedLabel: string;
   uploadExpiresLabel: string | null;
+  itemTitle: string;
+  itemType: WorkItemTypeId;
+  /** The requested label with who asked ("Requested today at 10:15 by Joel Dickson"); null when nobody is recorded. */
+  requestedByLabel: string | null;
+}
+
+/** The sprint's three numbers: committed and completed points, and the Features its stories and bugs belong to. */
+export interface SprintDemoNumbersDto {
+  committed: number;
+  completed: number;
+  featuresMoved: number;
+}
+
+/** A Failed demo whose agent session ended with words: ShipLean's sentence without the quote, and the agent's words. */
+export interface SprintDemoAgentSaidDto {
+  message: string;
+  text: string;
 }
 
 export interface SprintDemoVideoDto {
@@ -92,6 +109,9 @@ export interface SprintDemoDto {
   scriptHtml: string | null;
   youTube: SprintDemoYouTubeDto;
   actions: SprintDemoActionsDto;
+  numbers: SprintDemoNumbersDto;
+  /** Set only when the status message quotes what the agent said; `statusMessage` still carries the whole sentence. */
+  agentSaid: SprintDemoAgentSaidDto | null;
 }
 
 export interface DemoAgentCheckDto {

@@ -39,10 +39,15 @@ export function ImagesPanel({ images, itemKey }: { images: MarkdownImageDto[]; i
           ))}
         </ul>
       )}
-      <p className="m-0 text-[length:var(--text-xs)] text-ink-muted">
-        Attach the missing image to {itemKey} and change the link to its file name. External images
-        never render.
-      </p>
+      {shown < images.length ? (
+        <p
+          data-testid={ids.imagesMissingHint}
+          className="m-0 text-[length:var(--text-xs)] text-ink-muted"
+        >
+          Attach the missing image to {itemKey} and change the link to its file name. External
+          images never render.
+        </p>
+      ) : null}
     </section>
   );
 }

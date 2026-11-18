@@ -14,7 +14,7 @@ export function FeatureFieldsStrip({ item, draft, changed, setField }: FeatureRe
     <div
       data-testid={ids.strip}
       aria-label="Fields"
-      className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b border-edge bg-panel px-4 py-3 touch:grid touch:grid-cols-2 touch:gap-px touch:bg-edge touch:p-0 touch:*:min-h-[60px] touch:*:max-w-none touch:*:min-w-0 touch:*:bg-panel touch:*:px-3 touch:*:py-2"
+      className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b border-edge bg-panel px-4 py-3 touch:grid touch:grid-cols-2 touch:items-stretch touch:gap-px touch:bg-edge touch:p-0 touch:*:min-h-[60px] touch:*:max-w-none touch:*:min-w-0 touch:*:bg-panel touch:*:px-3 touch:*:py-2"
     >
       <StateField
         projectId={item.projectId}

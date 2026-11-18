@@ -9,7 +9,8 @@ import { SettingsDraftFrame } from '../features/settings/draft/SettingsDraftFram
 // its tab. Demos and Inspection have their own Save and join no draft.
 export interface SettingsDraftSlotProps {
   project: ProjectDto;
-  tab: ProjectSettingsTab;
+  /** Undefined on the tab-less address: the pane index at touch. */
+  tab: ProjectSettingsTab | undefined;
   states: ReactNode;
   integrations: ReactNode;
   demos: ReactNode;

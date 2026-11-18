@@ -3,6 +3,7 @@ using ShipLean.AcceptanceTests.Pages.Feature;
 using ShipLean.AcceptanceTests.Pages.Touch;
 using ShipLean.AcceptanceTests.Pages.WorkItem;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Lanes.WorkItem.Touch;
 
@@ -33,7 +34,9 @@ public class FeatureTopTouchTests : SeededAcceptanceTest
         await Expect(band.EditHint).Not.ToContainTextAsync("in the header");
         await band.EditLine.FillAsync("Blocked on the card processor's sandbox.");
         await band.Done.TapAsync();
-        await band.HealthSelect.SelectOptionAsync("blocked");
+        await band.HealthButton.TapAsync();
+        await touch.Sheet("Health").GetByTestId(TouchTestIds.ActionSheetRow).Filter(new() { HasTextString = "Blocked" }).TapAsync();
+        await Expect(band.HealthButton).ToContainTextAsync("Blocked");
 
         await Expect(band.StatusLine).ToHaveTextAsync("Blocked on the card processor's sandbox.");
         await Expect(touch.SaveBarMessage).ToContainTextAsync("Status");

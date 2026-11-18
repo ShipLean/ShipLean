@@ -36,4 +36,5 @@ public static class ShellTestIds
     public const string PickerImport = "shell-picker-import";
     public const string Crumbs = "shell-crumbs";
     public const string Crumb = "shell-crumb";
+    public const string SideMenuWordmark = "shell-side-menu-wordmark";
 }

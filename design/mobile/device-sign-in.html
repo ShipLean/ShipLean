@@ -28,10 +28,11 @@
     if (p.get('theme')) document.documentElement.dataset.theme = p.get('theme');
     for (const a of p.getAll('alt')) document.documentElement.classList.add('alt-' + a);
     if (p.get('tab')) document.documentElement.classList.add('tab-' + p.get('tab'));
+    if (p.has('shot')) document.documentElement.classList.add('shot');
   })();
 </script>
 <style>
-:root { --touch-target: 32px; --mobile-bar-height: 48px; --auth-control: 40px; }
+:root { --auth-control: 40px; }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
@@ -64,7 +65,7 @@ b { font-weight: var(--weight-semibold); }
 .shellbar { display: none; }
 :root.alt-shell .topbar { display: none; }
 :root.alt-shell .shellbar { flex: none; display: flex; align-items: center; gap: var(--space-2); height: var(--mobile-bar-height); padding: 0 var(--space-2); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-.shellbar .ib { width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: transparent; color: var(--color-text); font-size: 20px; }
+.shellbar .ib { width: var(--touch-target); height: var(--touch-target); display: grid; place-items: center; border: 0; background: transparent; color: var(--color-text); font-size: 20px; }
 .shellbar .t { flex: 1; font-size: 16px; font-weight: var(--weight-semibold); }
 
 .stage { flex: 1; display: flex; flex-direction: column; align-items: center; padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right)) calc(var(--space-5) + env(safe-area-inset-bottom)) max(var(--space-4), env(safe-area-inset-left)); }
@@ -111,6 +112,8 @@ b { font-weight: var(--weight-semibold); }
 .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+/* Screenshots (?shot) freeze the spinner on its first frame, so two renders are byte-identical (SHIP-1898). */
+.shot .spin { animation-play-state: paused; }
 .empty { display: grid; justify-items: center; gap: var(--space-3); text-align: center; padding: var(--space-5) var(--space-4); }
 .empty h2 { margin: 0; font-size: 16px; }
 .empty p { margin: 0; font-size: var(--text-md); color: var(--color-muted); }

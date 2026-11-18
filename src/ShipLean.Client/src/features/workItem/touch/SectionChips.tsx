@@ -3,6 +3,7 @@ import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { storiesAndBugsOf } from '../../feature/children/storiesAndBugs';
 import { featureTestIds } from '../../feature/testIds';
 import { retrosTestIds } from '../../retros/testIds';
+import { useRetroAction } from '../../retros/useRetroQueries';
 import type { Draft } from '../form/draft';
 import { workItemTestIds as ids } from '../testIds';
 import {
@@ -37,7 +38,10 @@ function useCounts(item: WorkItemDto) {
     queryKey: workItemHistoryKey(item.projectId, item.key),
     queryFn: () => fetchHistory(item.id),
   }).data;
+  // An action item's Why this exists reads the same query the section does, so the Why chip costs no request.
+  const why = useRetroAction(item.projectId, item.id, item.type.id === 'action').data;
   return {
+    why: countOf(why?.points),
     comments: countOf(comments),
     attachments: countOf(attachments),
     history: countOf(history?.revisions),
@@ -70,6 +74,7 @@ function chipsOf(item: WorkItemDto, draft: Draft, counts: ReturnType<typeof useC
   const tasks = item.children.filter((child) => child.type.id === 'task');
   return [
     { id: 'description', label: 'Description', testId: ids.description },
+    { id: 'why', label: 'Why', testId: retrosTestIds.retroActionWhy, count: counts.why },
     {
       id: 'criteria',
       label: 'Criteria',

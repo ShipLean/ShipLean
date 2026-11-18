@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { quickSearchDialogHarnessIds as harness } from './ct/harnessIds';
 import { QuickSearchDialogHarness } from './ct/QuickSearchDialogHarness';
+import { componentTestIds } from '../../components/testIds';
 import { quickSearchTestIds as ids } from './testIds';
 import type { QuickSearchResults } from './types';
 
@@ -104,4 +105,69 @@ test('QuickSearch_WhenRowsListedOnPhone_ShouldPutTheKeyUnderTheTitle', async ({ 
     expect((await option.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   }
   await expect(page.getByTestId(ids.group)).toHaveText(['Work items', 'Sprints', 'Actions']);
+});
+
+test('QuickSearch_WhenTyped_ShouldOfferAClearButton', async ({ mount, page }) => {
+  await mount(<QuickSearchDialogHarness results={results} initialQuery="proxy" />);
+  const input = page.getByTestId(ids.input);
+  const clear = page.getByTestId(ids.clear);
+  await expect(clear).toBeVisible();
+  const field = (await input.boundingBox())!;
+  const x = (await clear.boundingBox())!;
+  expect(x.x).toBeGreaterThanOrEqual(field.x + field.width - 1);
+  expect(Math.min(x.width, x.height)).toBeGreaterThanOrEqual(32);
+
+  await clear.tap();
+
+  await expect(input).toHaveValue('');
+  await expect(input).toBeFocused();
+  await expect(clear).toHaveCount(0);
+});
+
+test('QuickSearch_WhenRowsListedOnPhone_ShouldRightAlignStateAndHintsAndPickNoRow', async ({
+  mount,
+  page,
+}) => {
+  await mount(<QuickSearchDialogHarness results={results} initialQuery="proxy" />);
+  const dialog = (await page.getByTestId(ids.dialog).boundingBox())!;
+  const right = dialog.x + dialog.width;
+  const item = page.getByTestId(ids.option).and(page.locator('[data-key="SHIP-41"]'));
+  const state = (await item.getByTestId(componentTestIds.stateDot).boundingBox())!;
+  const title = (await item.getByTestId(ids.optionLabel).boundingBox())!;
+  // The state sits at the row's right edge on the title's line.
+  expect(right - (state.x + state.width)).toBeLessThan(16);
+  expect(Math.abs(state.y + state.height / 2 - (title.y + title.height / 2))).toBeLessThan(6);
+  const hint = page.getByTestId(ids.option).and(page.locator('[data-id="create-bug"]'));
+  const detail = (await hint.getByText('in SHIP').boundingBox())!;
+  expect(right - (detail.x + detail.width)).toBeLessThan(16);
+  // Nothing is pre-highlighted on a phone.
+  await expect(page.getByTestId(ids.option).locator('visible=true').first()).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+});
+
+test('QuickSearch_WhenNothingIsHighlightedOnPhone_ShouldMarkNoRowActiveUntilAnArrowKey', async ({
+  mount,
+  page,
+}) => {
+  await mount(<QuickSearchDialogHarness results={results} initialQuery="proxy" />);
+  const input = page.getByTestId(ids.input);
+  const options = page.getByTestId(ids.option);
+  await expect(options.first()).toBeVisible();
+  // Before any arrow key no row is active for assistive tech either.
+  await expect(input).not.toHaveAttribute('aria-activedescendant', /.+/);
+  await expect(options.first()).toHaveAttribute('aria-selected', 'false');
+  await expect(options.first()).toHaveAttribute('data-highlighted', 'false');
+
+  await input.focus();
+  await page.keyboard.press('ArrowDown');
+
+  // The first ArrowDown lands on row 0, not row 1.
+  await expect(options.first()).toHaveAttribute('aria-selected', 'true');
+  await expect(options.nth(1)).toHaveAttribute('aria-selected', 'false');
+  await expect(input).toHaveAttribute(
+    'aria-activedescendant',
+    (await options.first().getAttribute('id'))!,
+  );
 });

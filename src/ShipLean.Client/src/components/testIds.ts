@@ -30,4 +30,6 @@ export const componentTestIds = {
   previewCardTitle: 'preview-card-title',
   previewCardState: 'preview-card-state',
   previewCardBody: 'preview-card-body',
+  dialogSubtitle: 'dialog-subtitle',
+  dialogTitle: 'dialog-title',
 } as const;

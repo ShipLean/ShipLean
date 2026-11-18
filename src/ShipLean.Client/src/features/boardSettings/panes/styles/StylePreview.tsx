@@ -34,7 +34,7 @@ export function StylePreview({
   if (viewer === undefined) return null;
   const unpreviewable = captions ? unpreviewableRules(draft) : [];
   return (
-    <aside className="grid content-start gap-2">
+    <aside className="grid content-start gap-2 touch:hidden">
       <span className="text-[length:var(--text-xs)] font-semibold tracking-wide text-ink-muted uppercase">
         Preview{captions ? ' · first match wins' : ''}
       </span>

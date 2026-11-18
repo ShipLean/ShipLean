@@ -11,8 +11,6 @@
 .ss-bar, .ss-chips, .ss-list, .ss-sheet, .ss-full { display: none; }
 
 @media (max-width: 900px) {
-  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
-  :root { --touch-target: 32px; --mobile-bar-height: 48px; }
   body { padding-bottom: env(safe-area-inset-bottom); }
 
   /* Toolbar: the search field alone on the first row, then Filter (n) and the count (rule 8). Nothing sticks (rule 12). */
@@ -60,7 +58,7 @@
   .ss-empty .btn { height: var(--touch-target); }
 
   /* D1 (b): one line, like the desktop row. */
-  :root[data-alt~="line"] .ss-row { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-top: 6px; padding-bottom: 6px; min-height: 40px; }
+  :root[data-alt~="line"] .ss-row { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding-top: 6px; padding-bottom: 6px; min-height: var(--touch-target); }
   :root[data-alt~="line"] .ss-row .t { -webkit-line-clamp: 1; font-size: var(--text-sm); }
   :root[data-alt~="line"] .ss-row .catdot { font-size: 0; gap: 0; }
   /* D1 (c): grouped by retro. */
@@ -134,7 +132,7 @@
   .ss-sheet .hint { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
   .ss-sheet .ident { display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--color-bg); font-size: var(--text-sm); }
   .ss-sheet .ident small { font-size: var(--text-xs); color: var(--color-muted); }
-  .ss-sheet .srow { display: flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 var(--space-2); margin: 0 calc(-1 * var(--space-2)); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; text-decoration: none; }
+  .ss-sheet .srow { display: flex; align-items: center; gap: var(--space-2); min-height: var(--touch-target); padding: 0 var(--space-2); margin: 0 calc(-1 * var(--space-2)); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; cursor: pointer; text-decoration: none; }
   .ss-sheet .srow:active, .ss-sheet .srow[aria-checked="true"] { background: var(--color-accent-soft); }
   .ss-sheet .srow .ck { width: 16px; flex: none; color: var(--color-accent); font-weight: var(--weight-bold); }
   .ss-sheet .srow .sub { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
@@ -151,7 +149,7 @@
   .ss-choices button { height: var(--touch-target); padding: 0 12px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface); color: var(--color-text); font: inherit; font-size: var(--text-sm); cursor: pointer; }
   .ss-choices button[aria-checked="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
   .ss-choices .catdot { font-size: var(--text-sm); }
-  .ss-switch { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; min-height: 44px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-base); cursor: pointer; }
+  .ss-switch { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; min-height: var(--touch-target); border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); font-size: var(--text-base); cursor: pointer; }
   .ss-switch small { grid-column: 1; font-size: var(--text-xs); color: var(--color-muted); }
   .ss-switch input { grid-column: 2; grid-row: 1 / span 2; width: 40px; height: 24px; margin: 0; appearance: none; border-radius: 999px; background: var(--color-border); position: relative; cursor: pointer; transition: background .15s; }
   .ss-switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .3); transition: transform .15s; }
@@ -172,10 +170,10 @@
   .rc-dialog .rt-foot-note { margin: 0; font-size: var(--text-sm); color: var(--color-muted); }
   .rc-dialog .field, .rc-dialog select.field { height: 40px; font-size: 16px; }
   .rc-fix { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-  .rc-fix label { min-height: 52px; font-size: var(--text-base); }
+  .rc-fix label { min-height: var(--touch-target); font-size: var(--text-base); }
   .rc-fix label span { font-size: var(--text-xs); }
   .rc-picks { max-height: none; }
-  .rc-pick { min-height: 40px; padding: 8px 6px; font-size: var(--text-base); }
+  .rc-pick { min-height: var(--touch-target); padding: 8px 6px; font-size: var(--text-base); }
   .rc-pick input { width: 18px; height: 18px; }
   .rc-pick small { font-size: var(--text-sm); }
   .rc-field > label, .rc-field > .lbl { font-size: var(--text-sm); }

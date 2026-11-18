@@ -1,9 +1,10 @@
-import { expect } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
+import { AppRoutes } from '../../AppRoutes';
 import { featureTestIds } from '../../features/feature/testIds';
 import { attachmentTestIds as ids } from '../../features/attachment/testIds';
 import { touchTestIds } from '../../touch/testIds';
 import { attachments, checkoutV2, designView, stubFeaturePage } from './fixtures/feature';
-import { phonePageShots } from './shootPhone';
+import { liveDotMask, phonePageShots } from './shootPhone';
 import type { Page } from './shoot';
 
 // The full-screen image viewer and the Source view of a Markdown attachment on a phone (SHIP-715, L715c). The viewer is
@@ -95,3 +96,15 @@ phonePageShots([
     },
   },
 ]);
+
+// The viewer's header covers the top bar, so the Live dot's mask would paint over the header and hide it from the shot.
+test('PagePhone_WhenFullScreenDialogCoversTheTopBar_ShouldNotMaskIt', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<AppRoutes />, { hooksConfig: { route: itemRoute } });
+  await railReady(page);
+  expect(await liveDotMask(page)).toHaveLength(1);
+
+  await opened(page);
+
+  expect(await liveDotMask(page)).toHaveLength(0);
+});

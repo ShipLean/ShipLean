@@ -81,7 +81,8 @@ async function holdRowOver(page: Page, from: string, over: string) {
     x: Math.round(handle.x + handle.width / 2),
     y: Math.round(handle.y + handle.height / 2),
   };
-  const end = { x: start.x + 150, y: Math.round(target.y + target.height / 2) };
+  // The finger rests near the target's lower edge, so the chip under it leaves the insertion line at the top edge in view.
+  const end = { x: start.x + 150, y: Math.round(target.y + target.height - 6) };
 
   await send('touchStart', start);
   await page.clock.runFor(500);
@@ -93,6 +94,7 @@ async function holdRowOver(page: Page, from: string, over: string) {
     });
   }
   await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+  await expect(page.getByTestId(backlogTestIds.touchDropLine)).toHaveCount(1);
 }
 
 phonePageShots([

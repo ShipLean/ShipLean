@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { postBoardHealthFiltered } from '@shiplean/core/api/usageApi';
 import type { Level } from '../../../routes';
 import type { BoardFilterQuery } from '../boardApi';
 import { boardTestIds as ids } from '../testIds';
@@ -38,6 +39,7 @@ export function BoardFilterBar({
         disabled={filterCount(filter) === 0}
         onClick={() => {
           setClears((count) => count + 1);
+          if (filter.health) postBoardHealthFiltered(projectId, 'any').catch(() => undefined);
           onChange({});
         }}
       >

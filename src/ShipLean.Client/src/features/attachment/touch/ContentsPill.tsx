@@ -15,7 +15,11 @@ export function ContentsPill({ outline }: { outline: MarkdownOutlineEntryDto[] }
     outline.length >= 2,
   );
   if (outline.length < 2) return null;
-  const label = outline.find((entry) => entry.anchor === current)?.text ?? outline[0]?.text;
+  const at = Math.max(
+    outline.findIndex((entry) => entry.anchor === current),
+    0,
+  );
+  const label = outline[at]?.text;
 
   const jump = (anchor: string) => {
     setOpen(false);
@@ -36,6 +40,12 @@ export function ContentsPill({ outline }: { outline: MarkdownOutlineEntryDto[] }
       >
         <span aria-hidden="true">≡</span>
         <span className="min-w-0 truncate">{label}</span>
+        <span
+          data-testid={ids.contentsPosition}
+          className="flex-none text-[length:var(--text-sm)] text-ink-muted"
+        >
+          {at + 1} / {outline.length}
+        </span>
       </button>
       <Sheet open={open} title="On this page" onClose={() => setOpen(false)}>
         {outline.map((entry) => (

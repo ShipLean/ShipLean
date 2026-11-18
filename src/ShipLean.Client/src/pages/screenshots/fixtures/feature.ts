@@ -9,7 +9,7 @@ import {
 } from '../../../features/feature/ct/stubFeature';
 import { stubApi } from '../../../features/workItem/ct/stubApi';
 import { attachment, change, revision, stubSide } from '../../../features/workItem/ct/stubSide';
-import { stubComments } from '../../../features/workItem/ct/stubDetails';
+import { markdownHtml, stubComments } from '../../../features/workItem/ct/stubDetails';
 import { PEOPLE, SHELL_MEMBERS, SHELL_PROJECT, SHELL_SPRINTS, stubShell } from '../shellStub';
 import type { Page } from '../shoot';
 
@@ -80,7 +80,7 @@ const logEntry = (
   workItemId: checkoutV2.id,
   author,
   body,
-  bodyHtml: `<p>${body}</p>`,
+  bodyHtml: markdownHtml(body),
   createdAt: '2026-10-22T10:14:00+00:00',
   createdLabel: label,
   editedAt: null,

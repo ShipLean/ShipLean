@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import type { TaskboardViewDto } from '@shiplean/core/api/views';
 import { touchTestIds } from '../../../touch/testIds';
 import { TaskboardSlot } from '../../../slots/TaskboardSlot';
+import { componentTestIds } from '../../../components/testIds';
 import { taskboardTestIds as ids } from '../testIds';
 import { PROJECT, SPRINT, SPRINTS, VIEW } from './fixtures';
 import { stubTaskboard } from './stubApi';
@@ -88,6 +89,26 @@ test('PhoneLanes_WhenOfferDismissed_ShouldHideItOnEveryPage', async ({ mount, pa
   await offers.first().getByTestId(ids.rowOfferDismiss).tap();
 
   await expect(offers).toHaveCount(0);
+});
+
+test('PhoneLanes_WhenStatePickedInTheLaneSheet_ShouldPatchTheStoryState', async ({
+  mount,
+  page,
+}) => {
+  const server = await stubTaskboard(page, VIEW, { holdLaterReads: true });
+  await mount(slot, route);
+
+  const lane = page.locator(`[data-testid="${ids.lane}"][data-row="id-SHIP-141"]`).first();
+  // No native <select>: the state is a button that opens the K1b StateMenu in a sheet.
+  await expect(lane.locator('select')).toHaveCount(0);
+  await lane.getByTestId(ids.rowState).tap();
+  const sheet = page.getByTestId(touchTestIds.sheet);
+  await expect(sheet.getByTestId(componentTestIds.stateMenu)).toBeVisible();
+  await sheet.getByTestId(componentTestIds.stateMenuOption).filter({ hasText: 'Closed' }).tap();
+
+  await expect.poll(() => server.patches.length).toBe(1);
+  expect(server.patches[0]).toMatchObject({ changes: { state: { value: 'ps-closed' } } });
+  await expect(sheet).toHaveCount(0);
 });
 
 for (const theme of THEMES) {

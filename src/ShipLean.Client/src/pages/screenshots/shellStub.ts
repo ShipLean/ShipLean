@@ -2,6 +2,7 @@ import type { MeDto, TimeZoneChoicesDto } from '@shiplean/core/api/me';
 import type { MemberDto, ProjectDto, ProjectSummaryDto } from '@shiplean/core/api/projects';
 import type { SprintDto } from '@shiplean/core/api/sprints';
 import { meDto } from '../../features/auth/authFixtures';
+import { stubImages } from './fixtures/images';
 import type { Page } from './shoot';
 
 // The design's sample data (design/screens/shared.js): people, and Storefront (key SHIP, id p1 as the feature fixtures
@@ -140,4 +141,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
     if (path === '/api/auth/instance') return json({ name: overrides.instanceName ?? 'Larkspur' });
     return json({ error: `Unstubbed ${path}`, code: 'internal_error' }, 500);
   });
+  // Profile photos and link-card images as PNGs, so avatars never draw the broken-image glyph. After the catch-all, so
+  // these win over it; a spec's own image stubs, registered later, win over these.
+  await stubImages(page);
 }

@@ -33,4 +33,5 @@ export const shellTestIds = {
   pickerImport: 'shell-picker-import',
   crumbs: 'shell-crumbs',
   crumb: 'shell-crumb',
+  sideMenuWordmark: 'shell-side-menu-wordmark',
 } as const;

@@ -185,6 +185,22 @@ test('LongPressDrag_WhenLifted_ShouldShowTheGhostUnderTheFinger', async ({ mount
   await touch.end();
 });
 
+test('LongPressDrag_WhenLiftedOutsideAPager_ShouldShowNoEdgeHints', async ({ mount, page }) => {
+  await arrange(page);
+  await mount(<DragHarness />);
+  const touch = await touchInput(page);
+  const from = await centreOf(page, 'a2');
+
+  await touch.start(from);
+  await page.clock.runFor(450);
+  await touch.move(from, { x: 200, y: 520 });
+
+  await expect(page.getByTestId(touchTestIds.dragGhost)).toBeVisible();
+  // Only a pager turns pages at the edges: a list (the backlogs, style rules) must not promise it.
+  await expect(page.getByTestId(touchTestIds.dragEdgeHint)).toHaveCount(0);
+  await touch.end();
+});
+
 test('LongPressDrag_WhenLiftedNearTheTop_ShouldShowTheGhostAboveTheTopBar', async ({
   mount,
   page,

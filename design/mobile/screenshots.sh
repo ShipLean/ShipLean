@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerates images/<name>.<theme>.png: the touch shell (SHIP-713), the work item page (SHIP-714, item-* and
 # feature-*), the boards (SHIP-719: board-*, features-board-*, epics-board-*) and the sprint Retro tab
-# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives › Features (SHIP-728: retros-features-*), Your profile (SHIP-733: profile-*), Retrospectives search (SHIP-730: retro-search-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*)
+# (SHIP-727: sprint-retro-*), Retrospective insights (SHIP-731: insights-*), Retrospectives › Features (SHIP-728: retros-features-*), Your profile (SHIP-733: profile-*), Retrospectives search (SHIP-730: retro-search-*), the Feature board (SHIP-722: fboard-*) and the sprint Taskboard (SHIP-725: tboard-*) and All sprints (SHIP-1807: sprints-*), Sprint capacity (SHIP-1808: capacity-*), Project settings (SHIP-1809: settings-*, with the Stories board settings) and the Sprint demo tab (SHIP-1810: demo-*)
 # on the reference screens at 390 × 844,
 # 2× scale, and the page stories' phone screens kept in this folder
 # (an address starting ./, such as SHIP-715's attachment.html).
@@ -10,6 +10,7 @@
 # (today-attachment-*.png, today-fboard*.png and today-tboard*.png come from the SPA's component harness at 390 × 844 with the page-shot
 # fixtures.)
 # Item shots use ?at=<section>, which with ?shot hides what is above the section: --screenshot ignores scrolling.
+# --disable-dev-shm-usage below: in Docker (64 MB /dev/shm) Chrome --screenshot never exits without it (SHIP-1893). In the Playwright image: CHROME=/ms-playwright/chromium-1234/chrome-linux64/chrome (path moves with the image).
 set -euo pipefail
 cd "$(dirname "$0")"
 screens="$(cd ../screens && pwd)"
@@ -253,6 +254,58 @@ declare -A shots=(
   [decisions-empty]="decisions.html?state=empty&at=Decisions"
   [decisions-feature]="decisions.html?state=feature&at=Decisions"
   [decisions-rail]="decisions.html?state=waiting&at=History"
+  # The sprint Demo tab on a phone (SHIP-1626 Q4, for SHIP-889). The plain page is Ready (the desktop's default).
+  [demo-closable]="sprint-demo.html?state=closable"
+  [demo-none]="sprint-demo.html?state=none"
+  [demo-blocked]="sprint-demo.html?state=blocked"
+  [demo-working]="sprint-demo.html?state=working"
+  [demo-failed]="sprint-demo.html?state=failed"
+  [demo-failed-said]="sprint-demo.html?state=failed&said"
+  [demo-ready]="sprint-demo.html?state=ready"
+  [demo-ready-chapters]="sprint-demo.html?state=ready&at=chapters"
+  [demo-ready-script]="sprint-demo.html?state=ready&at=script"
+  [demo-youtube-unlisted]="sprint-demo.html?state=youtube-unlisted"
+  [demo-youtube-private]="sprint-demo.html?state=youtube-private"
+  [demo-youtube-failed]="sprint-demo.html?state=youtube-failed"
+  [demo-sprint]="sprint-demo.html?state=closable&sheet=sprint"
+  # All sprints on a phone (SHIP-1807, SHIP-1626 K7): screens/sprints.html with sprints-touch.css/js
+  [sprints]="sprints.html"
+  [sprints-list]="sprints.html?at=list"
+  [sprints-more]="sprints.html?sheet=more:s24"
+  [sprints-more-past]="sprints.html?sheet=more:s21"
+  [sprints-new]="sprints.html?new"
+  [sprints-new-overlap]="sprints.html?new=overlap"
+  [sprints-empty]="sprints.html?empty"
+  # Sprint capacity on a phone (SHIP-1626 Q4, for SHIP-726). The plain page is over capacity (the desktop's data).
+  [capacity]="capacity.html"
+  [capacity-people]="capacity.html?at=people"
+  [capacity-days]="capacity.html?sheet=days&p=ana"
+  [capacity-dirty]="capacity.html?dirty"
+  [capacity-dirty-people]="capacity.html?dirty&at=people"
+  [capacity-more]="capacity.html?sheet=more"
+  [capacity-add]="capacity.html?rm=mei&sheet=add"
+  [capacity-empty]="capacity.html?empty"
+  # Project settings on a phone (SHIP-1809, SHIP-1626 K7): screens/settings.html with settings-touch.css/js, and the
+  # Stories board settings (screens/board-settings.html with board-settings-touch.css/js)
+  [settings]="settings.html"
+  [settings-general]="settings.html?tab=general"
+  [settings-general-dirty]="settings.html?tab=general&dirty"
+  [settings-changes]="settings.html?tab=states&dirty&changes"
+  [settings-states]="settings.html?tab=states"
+  [settings-states-drag]="settings.html?tab=states&drag=bug-triaged"
+  [settings-states-menu]="settings.html?tab=states&menu=bug-triaged"
+  [settings-members]="settings.html?tab=members"
+  [settings-sprints]="settings.html?tab=sprints"
+  [settings-integrations]="settings.html?tab=integrations"
+  [settings-demos]="settings.html?tab=demos"
+  [settings-demos-yt]="settings.html?tab=demos&yt=connected&at=yt"
+  [settings-board-styles]="board-settings.html?pane=styles"
+  [settings-board-styles-drag]="board-settings.html?pane=styles&drag=0"
+  [settings-board-styles-dirty]="board-settings.html?pane=styles&dirty"
+  # Sprint demo: the requested status (SHIP-1908); Remake demo shows on every Ready state (demo-ready*, demo-youtube-*)
+  [demo-requested]="sprint-demo.html?state=requested"
+  # Taskboard settings › Fields on row headers (SHIP-1868): User Story picked, Tags gone, Task progress under the groups
+  [tboard-settings-fields-story]="taskboard.html?dialog=settings&ftype=story"
 )
 
 names=("$@")
@@ -265,7 +318,7 @@ for name in "${names[@]}"; do
   if [[ "$url" == ./* ]]; then base="$PWD"; url="${url#./}"; fi
   sep='?'; [[ "$url" == *\?* ]] && sep='&'
   for theme in light dark; do
-    "$chrome" --headless=new --no-sandbox --hide-scrollbars --force-device-scale-factor=2 \
+    "$chrome" --headless=new --no-sandbox --disable-dev-shm-usage --hide-scrollbars --force-device-scale-factor=2 \
       --window-size=390,844 --virtual-time-budget=4000 \
       --screenshot="$PWD/images/$name.$theme.png" "file://$base/$url${sep}shot&theme=$theme" >/dev/null 2>&1
     echo "wrote mobile/images/$name.$theme.png"

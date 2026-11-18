@@ -9,8 +9,7 @@
 .tbt-bar, .tbt-strip, .tbt-pager, .tbt-sheet, .tbt-addstory, .tbt-edge, .tbt-hmore, .tbt-goal { display: none; }
 
 @media (max-width: 900px) {
-  /* SHIP-805 rules 11 and 13 (48px bar, 32px targets) until the token change lands in tokens.css. */
-  :root { --touch-target: 32px; --mobile-bar-height: 48px; --tbt-col: min(calc(100vw - 48px), 340px); }
+  :root { --tbt-col: min(calc(100vw - 48px), 340px); }
   body { padding-bottom: env(safe-area-inset-bottom); }
 
   /* Sprint header: SHIP-724's shared phone header (its D5, D6, D10; this story's D10, D11, D17). Row 1 the picker,
@@ -63,6 +62,8 @@
   .tbt-strip button[aria-current="true"] { border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
   .tbt-strip button.bump { animation: tbt-bump 1.6s ease-out; }
   @keyframes tbt-bump { 0%, 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 55%, transparent); } 100% { box-shadow: none; } }
+  /* Screenshots (?shot) hold the pulse on its first frame (the ring at full strength), so renders are byte-identical (SHIP-1898). */
+  :root[data-shot] .tbt-strip button.bump { animation-play-state: paused; }
 
   /* Pager: each task state is a page, the next one peeks. */
   .tbt-pager { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-3) var(--space-3) calc(var(--space-6, 32px) + env(safe-area-inset-bottom)); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding: 0 var(--space-3); scrollbar-width: none; }
@@ -148,12 +149,12 @@
   /* Bottom sheets (SHIP-805 rules 3, 4, 8, 9 and C4's recommended anatomy): grab bar, title, Close. */
   .tbt-sheet:not([hidden]) { position: fixed; inset: auto 0 0 0; z-index: 70; display: flex; flex-direction: column; max-height: 85dvh; padding-bottom: env(safe-area-inset-bottom); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-top: 1px solid var(--color-border); background: var(--color-surface); box-shadow: 0 -12px 32px rgb(0 0 0 / .22); }
   .tbt-sheet::before { content: ""; align-self: center; flex: none; width: 36px; height: 4px; margin-top: 6px; border-radius: 2px; background: var(--color-border); }
-  .tbt-sheet .sheet-head { flex: none; gap: var(--space-2); min-height: 44px; }
+  .tbt-sheet .sheet-head { flex: none; gap: var(--space-2); min-height: var(--touch-target); }
   .tbt-sheet .sheet-head b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tbt-sheet .sheet-head .who { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .tbt-sheet .body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-2) var(--space-3); }
   .tbt-sheet .lbl { padding: 10px var(--space-2) 4px; font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .04em; }
-  .tbt-sheet .opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 4px var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; text-decoration: none; cursor: pointer; }
+  .tbt-sheet .opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--touch-target); padding: 4px var(--space-2); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); text-align: left; text-decoration: none; cursor: pointer; }
   .tbt-sheet .opt:active { background: var(--color-surface-2); }
   .tbt-sheet .opt[aria-checked="true"] { background: var(--color-accent-soft); font-weight: var(--weight-semibold); }
   .tbt-sheet .opt.primary { color: var(--color-accent); font-weight: var(--weight-semibold); }
@@ -191,8 +192,19 @@
   #settings .settings nav button[aria-current="true"] { border-color: var(--color-accent); font-weight: var(--weight-semibold); }
   #settings .settings nav button:disabled { display: none; }
   #settings .settings .pane { min-height: 0; padding: var(--space-3); }
-  #settings .fgrid { grid-template-columns: minmax(0, 1fr); }
-  #settings .fgrid .check { min-height: var(--touch-target); }
+  /* Fields (SHIP-1626 D7): the built model, one column. */
+  #settings .fcols { grid-template-columns: minmax(0, 1fr); }
+  #settings .fmodel { display: grid; gap: var(--space-3); }
+  #settings .ftypes { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  #settings .ftypes .seg { height: var(--touch-target); }
+  #settings .ftypes .seg button { gap: 6px; font-size: var(--text-base); }
+  #settings .fmodel fieldset { display: grid; gap: 2px; margin: 0; padding: var(--space-2) var(--space-3) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+  #settings .fmodel legend { display: flex; align-items: center; gap: 6px; padding: 0 4px; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+  #settings .fmodel legend .count { padding: 1px 8px; border-radius: 999px; background: var(--color-surface-2); color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+  #settings .fmodel .check { min-height: var(--touch-target); color: var(--color-text); }
+  #settings .fmodel .addl { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); min-height: var(--touch-target); }
+  #settings .fmodel .addl .ib { width: var(--touch-target); height: var(--touch-target); }
+  #settings .fmodel select.field { width: 100%; height: 40px; margin-top: var(--space-1); font-size: var(--text-input-touch); }
   #settings .rule .rh { grid-template-columns: auto minmax(0, 1fr) auto; }
   #settings .rule .rh > label { grid-row: 2; }
   #settings .rule .rh > label:last-child { grid-column: 2 / -1; justify-self: end; }

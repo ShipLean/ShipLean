@@ -17,14 +17,18 @@ export function PhoneFeaturesToolbar({
   if (searching) {
     return (
       <div className="flex items-center gap-2">
+        {/* Not .field: that class fixes the height at --control-height, and this input is a touch control at --touch-target. The rest copies its look and focus ring. (The 16px text against iOS focus zoom comes from the global input rule, not from .field.) */}
         <input
-          type="search"
+          type="text"
+          inputMode="search"
+          enterKeyHint="search"
+          autoComplete="off"
           autoFocus
           data-testid={ids.retroFeaturesSearch}
           aria-label="Search Features"
           placeholder="Search Features"
           value={address.q}
-          className="h-[var(--touch-target)] min-w-0 flex-1 rounded-control border border-edge bg-panel px-2.5"
+          className="h-[var(--touch-target)] min-w-0 flex-1 rounded-control border border-edge bg-panel px-2.5 text-ink placeholder:text-ink-muted focus:ring-1 focus:ring-signal focus:outline-none"
           onChange={(event) => onSearch(event.target.value)}
         />
         <button
@@ -68,9 +72,21 @@ export function PhoneFeaturesToolbar({
         type="button"
         data-testid={ids.retroFeaturesSearchOpen}
         aria-pressed={address.q !== ''}
-        className="h-[var(--touch-target)] flex-none cursor-pointer rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] aria-pressed:border-signal aria-pressed:bg-signal-soft aria-pressed:text-signal"
+        className="inline-flex h-[var(--touch-target)] flex-none cursor-pointer items-center gap-1.5 rounded-control border border-edge bg-panel px-2.5 text-[length:var(--text-sm)] aria-pressed:border-signal aria-pressed:bg-signal-soft aria-pressed:text-signal"
         onClick={() => setSearching(true)}
       >
+        <svg
+          viewBox="0 0 16 16"
+          data-testid={ids.retroFeaturesSearchIcon}
+          className="size-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          aria-hidden="true"
+        >
+          <circle cx="7" cy="7" r="4.5" />
+          <path d="M10.5 10.5 14 14" strokeLinecap="round" />
+        </svg>
         Search
       </button>
     </div>

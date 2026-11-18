@@ -10,9 +10,15 @@ const field =
 export function AddStateForm({
   taken,
   onAdd,
+  autoFocus,
+  onCancel,
 }: {
   taken(name: string): boolean;
   onAdd(name: string, category: StateCategory): void;
+  /** At touch the form opens from the Add state button, so the name takes focus. */
+  autoFocus?: boolean;
+  /** At touch: closes the form back to the button. */
+  onCancel?(): void;
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<StateCategory>('inProgress');
@@ -28,6 +34,7 @@ export function AddStateForm({
         maxLength={30}
         placeholder="Name the state"
         autoComplete="off"
+        autoFocus={autoFocus}
         onChange={(e) => setName(e.target.value)}
       />
       <select
@@ -55,6 +62,16 @@ export function AddStateForm({
       >
         + Add state
       </button>
+      {onCancel === undefined ? null : (
+        <button
+          type="button"
+          data-testid={settingsTestIds.stateAddCancel}
+          className="btn-ghost touch:h-[var(--touch-target)]"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+      )}
       {repeated ? (
         <span className="text-[length:var(--text-sm)] text-alert">
           Another state is already called {trimmed}.

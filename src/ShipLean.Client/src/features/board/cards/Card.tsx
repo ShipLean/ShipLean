@@ -5,6 +5,8 @@ import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import type { Level } from '../../../routes';
 import { useTouchShell } from '../../../touch/useTouchShell';
 import { useOptionalCardActions } from './touch/CardActionsContext';
+import { ChildListInline } from '../children/ChildListInline';
+import { useOptionalChildList } from '../children/ChildListContext';
 import { CardMore } from './touch/CardMore';
 import { ItemLink } from '../../itemPeek/ItemLink';
 import { boardTestIds as ids } from '../testIds';
@@ -65,6 +67,9 @@ export function Card({
   const { touch } = useTouchShell();
   // Inside a board only: a card drawn as a preview has no actions and no tap to open.
   const actions = useOptionalCardActions();
+  // At touch widths this card's open child list is drawn inside it, under the roll-ups.
+  const childList = useOptionalChildList();
+  const openList = touch && childList?.open?.itemId === card.id ? childList.open : null;
   const rule = settings.styleRules.find((candidate) => candidate.id === card.styleRuleId) ?? null;
   const showKey = fields?.showKey ?? true;
   const showAssignee = fields?.showAssignee ?? true;
@@ -94,6 +99,8 @@ export function Card({
         // A sheet opened from the card is a portal: its clicks bubble here through React but are not on the card.
         if (!event.currentTarget.contains(event.target as Node)) return;
         if ((event.target as HTMLElement).closest('a, button, input, select, textarea')) return;
+        // A tap on the open child list (between its links) belongs to the list, not the card.
+        if ((event.target as HTMLElement).closest(`[data-testid="${ids.childList}"]`)) return;
         actions.openItem(card.key);
       }}
     >
@@ -108,6 +115,9 @@ export function Card({
         {card.type.id === 'feature' ? (
           <HealthPill health={card.health} testId={ids.cardHealth} />
         ) : null}
+        {/* At touch the spacer takes the free width, so what follows it (points, ⋯) sits at the right edge with or
+            without points; CardPoints' own ml-auto no longer has to carry the ⋯ there. */}
+        <span aria-hidden className="hidden min-w-0 flex-1 touch:block" />
         {showPoints ? <CardPoints card={card} level={level} /> : null}
         {compact && showAssignee ? <CardAssignee card={card} /> : null}
         {touch && actions ? <CardMore card={card} actions={actions} /> : null}
@@ -138,6 +148,7 @@ export function Card({
               inDone={inDone}
               level={level}
               onRollupClick={onRollupClick}
+              openType={touch && childList ? (openList?.type ?? null) : undefined}
             />
             {showAssignee ? (
               <span className="ml-auto">
@@ -160,8 +171,10 @@ export function Card({
           inDone={inDone}
           level={level}
           onRollupClick={onRollupClick}
+          openType={touch && childList ? (openList?.type ?? null) : undefined}
         />
       ) : null}
+      {openList && childList ? <ChildListInline open={openList} host={childList} /> : null}
       {card.offerDone && !inDone ? <CardOffer card={card} onMoveToDone={onMoveToDone} /> : null}
     </article>
   );

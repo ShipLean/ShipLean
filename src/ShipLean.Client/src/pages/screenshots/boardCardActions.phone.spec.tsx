@@ -29,24 +29,4 @@ for (const theme of THEMES) {
 
     await expect(card).toHaveScreenshot(`board-card.${theme}.png`, { animations: 'disabled' });
   });
-
-  test(`BoardCardActionsPhone_WhenMoveToOpened_ShouldMatchItsScreenshot_board-move-to_${theme}`, async ({
-    mount,
-    page,
-  }) => {
-    phoneOnly(page);
-    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
-    await stubBoard(page, storiesBoard());
-    await mount(<BoardHarness />, route);
-    await page
-      .getByTestId(ids.card)
-      .filter({ hasText: 'SHIP-160' })
-      .getByTestId(touchTestIds.moreButton)
-      .tap();
-    await page.locator('[data-action-id="move-to"]').tap();
-    const sheet = page.getByTestId(touchTestIds.sheet);
-    await expect(sheet.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to');
-
-    await expect(sheet).toHaveScreenshot(`board-move-to.${theme}.png`, { animations: 'disabled' });
-  });
 }

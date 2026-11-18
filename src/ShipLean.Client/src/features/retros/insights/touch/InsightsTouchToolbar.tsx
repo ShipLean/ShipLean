@@ -9,7 +9,7 @@ import { rangeLabel } from '../RangeSelect';
 import { defsSheetValue, withMerge, withSheet } from './insightsAddress';
 
 /**
- * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, then one row with Range ▾ and ⋯. Not sticky.
+ * Insights at 900px and below (SHIP-731 D2, D3): three equal tabs, full-bleed by bleeding the page's 16px gutter (-mx-4 -mt-4 on this root, so its own box is as wide as its contents and the tabs sit flush under the top bar), then one row with Range ▾ and ⋯. Not sticky.
  * `merge` is Merge themes, kept mounted because at touch it shows the full-screen merge the address names.
  */
 export function InsightsTouchToolbar({
@@ -36,31 +36,47 @@ export function InsightsTouchToolbar({
   const navigate = useNavigate();
   const write = (next: URLSearchParams) => setParams(next, { replace: true });
   const actions: SheetAction[] = [
-    { id: 'merge', label: 'Merge themes…', onSelect: () => write(withMerge(params)) },
+    {
+      id: 'merge',
+      label: 'Merge themes…',
+      detail: 'fold one theme into another',
+      onSelect: () => write(withMerge(params)),
+    },
     {
       id: 'unthemed',
-      label: `Give unthemed points themes (${unthemedTotal})`,
+      label: 'Give unthemed points themes',
+      detail: unthemedTotal,
+      trailing: 'chevron',
       disabled: unthemedTotal === 0,
       onSelect: () => void navigate(routePath('retros', { key: projectKey }, { unthemed: 'true' })),
     },
     {
       id: 'defs',
       label: 'What the statuses and verdicts mean',
+      trailing: 'chevron',
       onSelect: () => write(withSheet(params, defsSheetValue())),
     },
     {
       id: 'search',
       label: 'Search retrospectives',
+      group: 'Go to',
+      trailing: 'chevron',
       onSelect: () => void navigate(routePath('retros', { key: projectKey })),
     },
     {
       id: 'features',
       label: 'Retrospectives by Feature',
+      group: 'Go to',
+      trailing: 'chevron',
       onSelect: () => void navigate(routePath('retroFeatures', { key: projectKey })),
     },
   ];
   return (
-    <div data-testid={ids.retroInsightsToolbar} data-loaded={loaded} className="grid gap-2">
+    <div
+      data-testid={ids.retroInsightsToolbar}
+      data-loaded={loaded}
+      className="-mx-4 -mt-4 grid gap-2"
+    >
       <div
         role="group"
         aria-label="Insight"
@@ -80,7 +96,7 @@ export function InsightsTouchToolbar({
           </button>
         ))}
       </div>
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2 px-4">
         <button
           type="button"
           data-testid={ids.retroInsightsRange}
@@ -96,7 +112,7 @@ export function InsightsTouchToolbar({
         </button>
         <span className="flex-1" />
         {merge}
-        <MoreButton label="Insights" actions={actions} />
+        <MoreButton label="Insights" variant="bordered" actions={actions} />
       </div>
     </div>
   );

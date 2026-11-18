@@ -6,10 +6,12 @@ using ShipLean.Application.Markdown;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Attachments;
+using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Projects;
 using ShipLean.Contracts.Refs;
+using ShipLean.Contracts.Sprints;
 using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Demos.Reads;
@@ -26,7 +28,9 @@ public sealed class SprintDemoReader(
     IProjectAgentSettings agentSettings,
     IAgentConnectionWarnings warnings,
     TimeProvider time,
-    IViewerZone viewerZone) : ISprintDemoReader
+    IViewerZone viewerZone,
+    ISprintMetrics metrics,
+    ISprintFeatureReads sprintFeatures) : ISprintDemoReader
 {
     private const string LiveSessionMessage = "An agent session is already making this demo.";
 
@@ -68,7 +72,16 @@ public sealed class SprintDemoReader(
             await FeaturesAsync(row, chapters, cancellationToken),
             await ScriptAsync(row, files, cancellationToken),
             YouTubeOf(row),
-            await ActionsAsync(row, live, cancellationToken));
+            await ActionsAsync(row, live, cancellationToken),
+            await NumbersAsync(row.Id, cancellationToken),
+            SprintDemoStatusRule.Said(facts, now));
+    }
+
+    private async Task<SprintDemoNumbersDto> NumbersAsync(Guid sprintId, CancellationToken cancellationToken)
+    {
+        var figures = await metrics.GetSprintAsync(sprintId, cancellationToken);
+        var features = await sprintFeatures.FeaturesAsync(sprintId, cancellationToken);
+        return new SprintDemoNumbersDto(figures.Committed, figures.Completed, features.Count);
     }
 
     private static async Task<SessionRow?> LatestSessionAsync(NpgsqlConnection connection, Guid itemId, CancellationToken cancellationToken)
@@ -103,14 +116,24 @@ public sealed class SprintDemoReader(
 
     private SprintDemoRunDto? RunOf(SprintDemoRow row, SessionRow? session, DateTimeOffset now)
     {
-        if (row.ItemKey is null)
+        // The three come from one join, so they are set together.
+        if (row is not { ItemKey: { } key, ItemTitle: { } title, ItemType: { } type })
         {
             return null;
         }
 
         var state = session is null ? null : SessionStateOf(session);
         var requested = row.RequestedAt is { } at ? $"Requested {DisplayDate.DayAt(at, now, viewerZone.Zone)}" : "Not requested yet";
-        return new SprintDemoRunDto(row.ItemKey, $"/p/{row.ProjectKey}/items/{row.ItemKey}", state, requested, ExpiryLabel(row.UploadExpiresAt, now));
+        var requestedBy = row.RequestedAt is not null && row.RequestedByName is { } name ? $"{requested} by {name}" : null;
+        return new SprintDemoRunDto(
+            key,
+            $"/p/{row.ProjectKey}/items/{key}",
+            state,
+            requested,
+            ExpiryLabel(row.UploadExpiresAt, now),
+            title,
+            Enum.Parse<WorkItemTypeId>(type, ignoreCase: true),
+            requestedBy);
     }
 
     private static string SessionStateOf(SessionRow session) => session.Live ? session.State : "ended";

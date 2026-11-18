@@ -23,6 +23,7 @@ import searchFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retro
 import themesFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/retro-themes.json' with { type: 'json' };
 import sprintFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/sprint-retro.json' with { type: 'json' };
 import workItemFixture from '../../../../../ShipLean.TestSupport/DtoFixtures/retros/work-item-retros.json' with { type: 'json' };
+import { stubImages } from '../../../pages/screenshots/fixtures/images';
 
 type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
 
@@ -205,6 +206,7 @@ export async function stubRetros(page: Page): Promise<RetroStub> {
     at(/^\/api\/retros\/theme-merge-proposals\/[^/]+\/(merge|keep-apart)$/),
     handle(() => ({ status: 204 })),
   );
+  await stubImages(page);
   return {
     calls,
     writes: () => calls.filter((c) => c.method !== 'GET'),

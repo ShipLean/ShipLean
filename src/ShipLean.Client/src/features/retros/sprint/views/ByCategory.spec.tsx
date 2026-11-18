@@ -7,7 +7,6 @@ import { ByCategoryHarness } from '../../ct/ByCategoryHarness';
 import { sprintRetro, stubRetros } from '../../ct/retroFixtures';
 import { retroSharedTestIds as shared } from '../../../retroShared/testIds';
 import { retrosTestIds as ids } from '../../testIds';
-import { SprintRetroPanel } from '../SprintRetroPanel';
 
 const project = { id: 'p1', key: 'SHIP' } as ProjectDto;
 const sprint = { id: 'sprint-24', name: 'Sprint 24' } as SprintDto;
@@ -76,7 +75,7 @@ test('ByCategory_WhenNotesAreGrouped_ShouldShowNoThemeLineOnThem', async ({ moun
 
 test('ByCategory_WhenOpened_ShouldShowNoToolbarAddAPoint', async ({ mount, page }) => {
   await stubRetros(page);
-  await mount(<SprintRetroPanel project={project} sprint={sprint} />, retroRoute);
+  await mount(<SprintRetroAddressHarness project={project} sprint={sprint} />, retroRoute);
   await expect(page.getByTestId(shared.retroBoard)).toBeVisible();
   await expect(page.getByTestId(ids.retroAddPoint)).toHaveCount(0);
   await expect(page.getByTestId(shared.retroBoardAdd)).toHaveCount(4);
@@ -203,7 +202,7 @@ test('ByCategory_WhenActionItemPressed_ShouldOpenTheActionDialogForThatPoint', a
   await stubRetros(page);
   const target = allPoints.find((p) => p.decision === 'undecided');
   if (!target) throw new Error('fixture has no undecided point');
-  await mount(<SprintRetroPanel project={project} sprint={sprint} />, retroRoute);
+  await mount(<SprintRetroAddressHarness project={project} sprint={sprint} />, retroRoute);
   await page
     .locator(`[data-point-id="${target.id}"]`)
     .getByTestId(shared.retroNoteAddAction)

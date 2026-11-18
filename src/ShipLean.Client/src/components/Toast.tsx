@@ -18,7 +18,7 @@ export function Toast({ toast, durationMs }: { toast: ToastItem; durationMs: num
         toast.tone === 'default' ? undefined : { borderLeft: `3px solid ${toneColour[toast.tone]}` }
       }
     >
-      <span>{toast.message}</span>
+      <span className="touch:flex-1">{toast.message}</span>
       {toast.action ? (
         <button
           type="button"
@@ -36,6 +36,7 @@ export function Toast({ toast, durationMs }: { toast: ToastItem; durationMs: num
         type="button"
         data-testid={componentTestIds.toastDismiss}
         aria-label="Dismiss"
+        className="touch:-my-2 touch:-mr-2 touch:grid touch:min-h-(--touch-target) touch:min-w-(--touch-target) touch:place-items-center"
         onClick={() => dismissToast(toast.id)}
       >
         ×

@@ -86,7 +86,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
         var ids = rows.Select(r => r.Id).ToArray();
         var children = (await connection.QueryAsync<ChildRow>(new CommandDefinition(
             """
-            SELECT c.parent_id AS parentId, c.id, c.key, c.type, c.title, c.state_id AS stateId, c.assigned_to AS assigneeId, c.story_points AS points
+            SELECT c.parent_id AS parentId, c.id, c.key, c.type, c.title, c.state_id AS stateId, c.assigned_to AS assigneeId, c.story_points AS points, c.sprint_id AS sprintId
             FROM work_item c
             WHERE c.parent_id = ANY(@ids)
             ORDER BY c.backlog_order, c.number
@@ -117,7 +117,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
         var today = SprintLabels.Today(time);
         var sprints = (await connection.QueryAsync<SprintRow>(new CommandDefinition(
             "SELECT id, name, to_char(start_date, 'YYYY-MM-DD') AS startDate, to_char(end_date, 'YYYY-MM-DD') AS endDate FROM sprint WHERE id = ANY(@ids)",
-            new { ids = rows.Select(r => r.SprintId).OfType<Guid>().Distinct().ToArray() }, transaction, cancellationToken: cancellationToken)))
+            new { ids = rows.Select(r => r.SprintId).Concat(children.Select(c => c.SprintId)).OfType<Guid>().Distinct().ToArray() }, transaction, cancellationToken: cancellationToken)))
             .ToDictionary(s => s.Id, s => s.ToRef(today));
         var parents = (await connection.QueryAsync<ParentRow>(new CommandDefinition(
             "SELECT id, key, type, title FROM work_item WHERE id = ANY(@ids)",
@@ -168,7 +168,8 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             [.. links.Where(l => !l.Incoming && l.SourceId == row.Id).Select(l => l.ToDto(time.GetUtcNow(), viewerZone.Zone))],
             [.. links.Where(l => l.Incoming && l.SourceId == row.Id).Select(l => new CausedRefDto(l.TargetId!.Value, l.TargetKey!, l.TargetTitle!))],
             [.. children.Where(c => c.ParentId == row.Id).Select(c => new ChildSummaryDto(
-                c.Id, c.Key, WorkItemTypes.Ref(WorkItemTypes.Parse(c.Type)), c.Title, states[c.StateId], Lookup(users, c.AssigneeId), WorkItemPoints.Normalise(c.Points)))],
+                c.Id, c.Key, WorkItemTypes.Ref(WorkItemTypes.Parse(c.Type)), c.Title, states[c.StateId], Lookup(users, c.AssigneeId), WorkItemPoints.Normalise(c.Points),
+                c.SprintId is { } childSprint ? sprints[childSprint] : null))],
             row.Original,
             row.Revision,
             row.CreatedAt,
@@ -201,7 +202,7 @@ public sealed class WorkItemReads(NpgsqlDataSource dataSource, MarkdownRenderer 
             $"SELECT {UserRefs.Columns} FROM app_user u WHERE u.id = ANY(@ids)", new { ids }, transaction, cancellationToken: cancellationToken)))
             .ToDictionary(u => u.Id);
 
-    private sealed record ChildRow(Guid ParentId, Guid Id, string Key, string Type, string Title, Guid StateId, Guid? AssigneeId, decimal? Points);
+    private sealed record ChildRow(Guid ParentId, Guid Id, string Key, string Type, string Title, Guid StateId, Guid? AssigneeId, decimal? Points, Guid? SprintId);
 
     // An attachment as the image matching reads it. The attachment read model lives in Features/WorkItemDetails, which this
     // feature can't reference, so the kind rule below repeats its AttachmentKinds.

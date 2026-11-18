@@ -32,6 +32,7 @@
 //     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|quality|json&range=&cut=&p=&select=&tab=tasks|features
 //     /p/:key/import              Jira import
 //     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
+//     /p/:key/settings            the settings index on a phone (each pane a sub-page); above 900px it goes to General
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
 //
@@ -62,6 +63,17 @@ export const projectSettingsTabs = [
   'inspection',
 ] as const;
 export type ProjectSettingsTab = (typeof projectSettingsTabs)[number];
+
+// A settings pane's name: its tab, the phone index row and the pane's crumb (SHIP › Settings › States).
+export const projectSettingsTabLabels: Record<ProjectSettingsTab, string> = {
+  general: 'General',
+  states: 'States',
+  members: 'Members',
+  sprints: 'Sprints & forecast',
+  integrations: 'Integrations',
+  demos: 'Demos',
+  inspection: 'Inspection',
+};
 
 export const instanceSettingsTabs = [
   'general',
@@ -115,6 +127,7 @@ export interface RouteParams {
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
   mobileSignIn: Record<string, never>;
+  projectSettingsIndex: ProjectParams;
 }
 
 export type RouteId = keyof RouteParams;
@@ -392,7 +405,7 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     pattern: '/p/:key/settings/:tab',
     query: ['item'],
     installLevel: false,
-    crumbs: () => ['Settings'],
+    crumbs: (p) => ['Settings', projectSettingsTabLabels[p.tab]],
   },
   authorize: {
     pattern: '/authorize',
@@ -405,6 +418,13 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
     query: ['challenge', 'state', 'device'],
     installLevel: true,
     crumbs: () => ['Sign in to the app'],
+  },
+  // The tab-less settings address: the pane index on a phone, General above 900px (the page redirects).
+  projectSettingsIndex: {
+    pattern: '/p/:key/settings',
+    query: ['item'],
+    installLevel: false,
+    crumbs: () => ['Settings'],
   },
 };
 

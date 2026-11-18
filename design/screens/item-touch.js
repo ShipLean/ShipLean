@@ -100,8 +100,8 @@
     if (dirty && $('#sbWhat').textContent !== what) $('#sbWhat').textContent = what;
   };
 
-  /* Field sheets: the shell's scrim (<html data-sheet="field">) and sheet header with the field's name and Done.
-     Tapping the scrim or Done is a click outside the menu, which the page already treats as close. */
+  /* Field sheets: the shell's scrim (<html data-sheet="field">) and sheet header with the field's name and Close.
+     Tapping the scrim or Close is a click outside the menu, which the page already treats as close. */
   const syncSheets = () => {
     const m = $('.menu:not(.mention-menu)');
     if (m && touch()) root.dataset.sheet = 'field';
@@ -109,7 +109,7 @@
     if (m && !m.querySelector('.sheet-head')) {
       const opener = $('[aria-expanded="true"]');
       const name = opener?.closest('.fcell')?.querySelector('.lbl')?.textContent || opener?.dataset.sheetTitle || 'Choose';
-      m.insertAdjacentHTML('afterbegin', `<header class="sheet-head m-only"><b>${name}</b><button class="btn ghost" type="button" data-sheet-done>Done</button></header>`);
+      m.insertAdjacentHTML('afterbegin', `<header class="sheet-head m-only"><b>${name}</b><button class="btn ghost" type="button" data-sheet-done>Close</button></header>`);
       m.querySelector('[data-sheet-done]').addEventListener('click', e => { e.stopPropagation(); document.body.click(); });
     }
   };

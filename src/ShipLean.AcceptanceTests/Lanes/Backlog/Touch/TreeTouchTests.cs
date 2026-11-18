@@ -1,4 +1,5 @@
 using ShipLean.AcceptanceTests.Harness;
+using ShipLean.AcceptanceTests.Pages.Backlog;
 using ShipLean.AcceptanceTests.Pages.Backlog.Touch;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
@@ -13,9 +14,8 @@ public class TreeTouchTests : SeededAcceptanceTest
 {
     protected override AcceptanceViewport Viewport => AcceptanceViewport.Phone;
 
-    // A group's header, by the last name in its path.
-    private ILocator Group(string title) =>
-        Page.GetByTestId(BacklogTestIds.TreeGroup).Filter(new() { Has = Page.GetByTestId(BacklogTestIds.TreeGroupPath).Filter(new() { HasTextRegex = new($"(^| › ){title}$") }) });
+    // A group's header, by its key. The header shows its ancestors on a muted first line, then its key and title.
+    private ILocator Group(string key) => new TreeBacklog(Page).Group(key);
 
     private ILocator Row(string key) =>
         Page.GetByTestId(BacklogTestIds.Row).Filter(new() { Has = Page.GetByTestId(BacklogTestIds.Key).Filter(new() { HasTextRegex = new($"^{key}$") }) });
@@ -37,22 +37,23 @@ public class TreeTouchTests : SeededAcceptanceTest
     public async Task Row_WhenDroppedOnFeatureHeaderOnPhone_ShouldReparentAndRegroup()
     {
         await Page.GotoAsync(Links.Backlog("SHIP", mode: "tree"));
-        await Group("Mobile sign-in").WaitForAsync();
+        await Group("SHIP-102").WaitForAsync();
+        await Expect(Group("SHIP-102").GetByTestId(BacklogTestIds.Title)).ToHaveTextAsync("Mobile sign-in");
         (await UnderAsync("SHIP-101")).ShouldContain("SHIP-141");
         var tree = Page.GetByTestId(BacklogTestIds.TouchTree);
         (await TouchRules.ViolationsAsync(Page, tree)).ShouldBeEmpty();
 
         var patched = Page.RunAndWaitForResponseAsync(
-            () => TouchDrag.ByHandleAsync(Page, Row("SHIP-141").GetByTestId(BacklogTestIds.TouchHandle), Group("Mobile sign-in")),
+            () => TouchDrag.ByHandleAsync(Page, Row("SHIP-141").GetByTestId(BacklogTestIds.TouchHandle), Group("SHIP-102")),
             r => r.Request.Method == "PATCH" && r.Url.EndsWith($"/api/work-items/{SeedIds.WorkItems.Ship141}", StringComparison.Ordinal));
 
         (await patched).Ok.ShouldBeTrue();
-        await Expect(Group("Mobile sign-in")).ToHaveAttributeAsync("data-over", "false");
+        await Expect(Group("SHIP-102")).ToHaveAttributeAsync("data-over", "false");
         (await UnderAsync("SHIP-102")).ShouldContain("SHIP-141");
         (await UnderAsync("SHIP-101")).ShouldNotContain("SHIP-141");
 
         await Page.ReloadAsync();
-        await Group("Mobile sign-in").WaitForAsync();
+        await Group("SHIP-102").WaitForAsync();
         (await UnderAsync("SHIP-102")).ShouldContain("SHIP-141");
         (await UnderAsync("SHIP-101")).ShouldNotContain("SHIP-141");
         (await TouchRules.ViolationsAsync(Page, Page.GetByTestId(BacklogTestIds.TouchTree))).ShouldBeEmpty();

@@ -3,6 +3,7 @@ import { ActionSheet } from '../../../../touch/ActionSheet';
 import { locate } from '../../moves/applyMove';
 import type { CardActions } from './CardActionsContext';
 import { useCardActionRows } from './CardActionRows';
+import { CardSheetHeader } from './CardSheetHeader';
 
 /** The actions sheet opened by `useCardActions().open` (a long press): the same rows as the ⋯ button's. */
 export function CardActionsSheet({
@@ -30,5 +31,9 @@ function Rows({
   onClose: () => void;
 }) {
   const rows = useCardActionRows(card, actions);
-  return <ActionSheet open title={`${card.key} actions`} actions={rows} onClose={onClose} />;
+  return (
+    <ActionSheet open title={`${card.key} actions`} actions={rows} onClose={onClose}>
+      <CardSheetHeader card={card} />
+    </ActionSheet>
+  );
 }

@@ -8,7 +8,10 @@
     "itemUrl": "/p/SHIP/items/SHIP-200",
     "sessionState": "ended",
     "requestedLabel": "Requested today at 10:15",
-    "uploadExpiresLabel": "Link valid until tomorrow at 10:15"
+    "uploadExpiresLabel": "Link valid until tomorrow at 10:15",
+    "itemTitle": "Sprint 24 demo",
+    "itemType": "bau",
+    "requestedByLabel": "Requested today at 10:15 by Joel Dickson"
   },
   "video": {
     "attachmentId": "00000005-0000-4000-8000-0000000000a1",
@@ -68,5 +71,11 @@
     "createBlockedMessage": null,
     "canRetryYouTube": true,
     "createWarning": null
-  }
+  },
+  "numbers": {
+    "committed": 23,
+    "completed": 21,
+    "featuresMoved": 3
+  },
+  "agentSaid": null
 }

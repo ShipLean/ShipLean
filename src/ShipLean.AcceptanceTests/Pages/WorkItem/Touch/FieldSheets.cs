@@ -18,6 +18,12 @@ public sealed class FieldSheets(IPage page)
 
     public ILocator StateOption(string name) => StateOptions.Filter(new LocatorFilterOptions { HasText = name });
 
+    // The category heading a state's option sits under in the State sheet (K1b): the nearest group heading before it.
+    public Task<string?> StateHeadingAboveAsync(string name) =>
+        StateOption(name).EvaluateAsync<string?>(
+            "(option, id) => { let e = option.previousElementSibling; while (e && e.dataset.testid !== id) e = e.previousElementSibling; return e ? e.textContent : null; }",
+            TouchTestIds.ActionSheetGroup);
+
     public ILocator ParentOption(string text) =>
         page.GetByTestId(WorkItemTestIds.ParentOption).Filter(new LocatorFilterOptions { HasText = text });
 

@@ -40,10 +40,16 @@ export function PresenceStack({
           data-testid={ids.presenceCount}
           aria-expanded={open}
           aria-label={label}
-          className="inline-flex size-(--touch-target) items-center justify-center rounded-control border-0 bg-transparent text-[length:var(--text-sm)] font-semibold text-ink"
+          className="inline-flex h-(--touch-target) min-w-(--touch-target) items-center justify-center border-0 bg-transparent px-0 text-[length:var(--text-sm)] font-semibold text-ink"
           onClick={() => setOpen(true)}
         >
-          +{users.length}
+          {/* The pill is 24px inside the 32px hit area, as the design draws it. */}
+          <span
+            data-testid={ids.presenceCountPill}
+            className="inline-grid h-6 min-w-6 place-items-center rounded-full bg-sunken px-2"
+          >
+            +{users.length}
+          </span>
         </button>
         <PresenceSheet open={open} users={users} onClose={() => setOpen(false)} />
       </span>

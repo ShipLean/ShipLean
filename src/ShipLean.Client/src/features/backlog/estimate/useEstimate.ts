@@ -31,6 +31,10 @@ function subscribe(listener: () => void) {
 
 const MAX_POINTS = 9999.99;
 
+// Told whether a save went through, once the server answers it.
+type Answered = (saved: boolean) => void;
+const ignore: Answered = () => undefined;
+
 /** The points a field's text means: empty clears, a number from 0 to 9999.99 with up to two decimals sets; anything else is invalid. */
 export function parsePoints(text: string): { ok: true; value: number | null } | { ok: false } {
   const trimmed = text.trim();
@@ -59,9 +63,13 @@ export interface Estimate {
   open: () => void;
   /** Closes the field with nothing sent. */
   cancel: () => void;
-  /** Saves `value` (when it changed) and closes the field; `walk` opens the next row's field, if there is one. */
-  commit: (value: number | null, walk: boolean) => void;
-  useMine: () => void;
+  /**
+   * Saves `value` (when it changed) and closes the field; `walk` opens the next row's field, if there is one. Resolves
+   * when the server answers the save: true when it saved (or nothing changed), false on a conflict or an error.
+   */
+  commit: (value: number | null, walk: boolean) => Promise<boolean>;
+  /** Sends the conflicting value at the revision the conflict named. Resolves as `commit` does. */
+  useMine: () => Promise<boolean>;
   keepTheirs: () => void;
 }
 
@@ -76,7 +84,7 @@ export function useEstimate(row: BacklogRowDto): Estimate {
   // What our own last save wrote and the revision it made.
   const written = useRef<{ value: number | null; revision: number } | null>(null);
   const inFlight = useRef(false);
-  const queued = useRef<{ value: number | null } | null>(null);
+  const queued = useRef<{ value: number | null; answered: Answered } | null>(null);
 
   useListCommand('estimate', (arg) => {
     if (selection.focusedId === null) return;
@@ -104,7 +112,11 @@ export function useEstimate(row: BacklogRowDto): Estimate {
   // One save at a time per row: an edit made while one is pending waits in `queued` and goes out the moment that save
   // is answered, from the answer's value and revision, so it never depends on the backlog being read again.
   // `explicitRevision` is the conflict's, for Use mine.
-  async function send(value: number | null, explicitRevision?: number) {
+  async function send(
+    value: number | null,
+    explicitRevision?: number,
+    answered: Answered = ignore,
+  ) {
     const cached = latest();
     const base = cached?.row ?? row;
     // What the row holds now: our own last write, until a backlog read at or after its revision shows it.
@@ -112,12 +124,14 @@ export function useEstimate(row: BacklogRowDto): Estimate {
     const stored = own !== null && own.revision > base.revision ? own.value : base.points;
     if (explicitRevision === undefined && value === stored) {
       if (!inFlight.current) setPending(null);
+      answered(true);
       return;
     }
     const revision = explicitRevision ?? Math.max(base.revision, own?.revision ?? 0);
     inFlight.current = true;
     setPending({ value });
     let stale: EstimateConflict | null = null;
+    let saved = false;
     try {
       const result = await patchWorkItem(row.id, {
         expectedRevision: revision,
@@ -125,6 +139,7 @@ export function useEstimate(row: BacklogRowDto): Estimate {
       });
       written.current = { value, revision: result.revision };
       setConflict(null);
+      saved = true;
     } catch (error) {
       const conflicted = conflictOf(error);
       if (conflicted) {
@@ -141,12 +156,16 @@ export function useEstimate(row: BacklogRowDto): Estimate {
           tone: 'danger',
         });
       }
+    } finally {
+      // Whatever happened above, the caller hears back, so a sheet waiting on the save never stays waiting.
+      answered(saved);
     }
     const next = queued.current;
     queued.current = null;
     if (next !== null && stale !== null) {
       // The typed value replaces the conflicting one; Use mine sends it at the revision the conflict named.
       stale = { ...stale, value: next.value };
+      next.answered(false);
     }
     if (stale !== null) setConflict(stale);
     const projectId = latest()?.projectId ?? cached?.projectId;
@@ -154,7 +173,7 @@ export function useEstimate(row: BacklogRowDto): Estimate {
       // Straight away, whether or not the backlog read below works, or this cell is still on screen.
       inFlight.current = false;
       void refetch(projectId);
-      await send(next.value);
+      await send(next.value, undefined, next.answered);
       return;
     }
     inFlight.current = false;
@@ -162,17 +181,21 @@ export function useEstimate(row: BacklogRowDto): Estimate {
     if (!inFlight.current) setPending(null);
   }
 
-  function commit(value: number | null, walk: boolean) {
+  function commit(value: number | null, walk: boolean): Promise<boolean> {
     const at = selection.orderedIds.indexOf(row.id);
     const next = walk && at >= 0 ? selection.orderedIds[at + 1] : undefined;
     setEditing(next === undefined ? null : { id: next, seed: null });
     if (next !== undefined) selection.setFocused(next);
-    if (inFlight.current) {
-      queued.current = { value };
-      setPending({ value });
-      return;
-    }
-    void send(value);
+    return new Promise<boolean>((resolve) => {
+      if (inFlight.current) {
+        // A newer edit replaces one already waiting, which then counts as not saved.
+        queued.current?.answered(false);
+        queued.current = { value, answered: resolve };
+        setPending({ value });
+        return;
+      }
+      void send(value, undefined, resolve);
+    });
   }
 
   return {
@@ -187,9 +210,11 @@ export function useEstimate(row: BacklogRowDto): Estimate {
     },
     cancel: () => setEditing(null),
     commit,
-    useMine: () => {
-      if (conflict !== null) void send(conflict.value, conflict.currentRevision);
-    },
+    useMine: () =>
+      new Promise<boolean>((resolve) => {
+        if (conflict === null) resolve(false);
+        else void send(conflict.value, conflict.currentRevision, resolve);
+      }),
     keepTheirs: () => {
       setConflict(null);
       void refetch(latest()?.projectId);
