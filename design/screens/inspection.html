@@ -372,7 +372,8 @@ pre.json { margin: 0; padding: var(--space-3); font: 11.5px/1.5 var(--font-mono)
       <section class="panel"><header><h2>Mean lead time and every task</h2><span class="sm muted">click a ${unit} to see its tasks</span><span class="spacer"></span>${legendLead}</header>
         <div class="pad"><svg class="chart" id="lead" role="img" aria-label="Mean lead time per ${unit}"></svg></div></section>
       ${table}
-      ${vm.left_out.length ? `<p class="sm muted" style="margin:0">Left out: ${vm.left_out.map(x => `<span class="key">${x.key}</span> ${esc(x.title)} (${esc(x.why.toLowerCase())})`).join('; ')}. A task with no start has no lead time; the timeline shows it as a diamond.</p>` : ''}
+      ${vm.left_out.length ? `<details class="panel rule"${vm.left_out.length <= 5 ? ' open' : ''}><summary><h2>Left out: ${vm.left_out.length} ${vm.left_out.length === 1 ? 'task' : 'tasks'}</h2><span class="sm muted">a task with no start has no lead time; the timeline shows it as a diamond</span></summary>
+        <div style="max-height:320px;overflow-y:auto"><table class="sm" style="width:100%;table-layout:fixed">${vm.left_out.map(x => `<tr><td style="width:96px"><span class="key">${x.key}</span></td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.title)}</td><td class="muted" style="width:30%">${esc(x.why)}</td></tr>`).join('')}</table></div></details>` : ''}
     </div></div>`;
     later(() => leadChart(document.getElementById('lead'), vm.rows, { H: 230 }));
     later(() => drawRule(document.getElementById('rule')));

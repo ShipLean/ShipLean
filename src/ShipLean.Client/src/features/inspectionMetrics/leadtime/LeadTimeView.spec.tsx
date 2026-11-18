@@ -161,6 +161,31 @@ test('LeadTimeView_WhenADotIsClicked_ShouldOpenItsPeriodWithTheTaskAndPostTaskOp
 
 test('LeadTimeView_WhenTasksAreLeftOut_ShouldListThem', async ({ mount, page }) => {
   await open(mount, page);
+  await expect(page.getByTestId(ids.leftOut)).toHaveAttribute('open', '');
   await expect(page.getByTestId(ids.leftOutRow)).toHaveCount(VIEW.leftOut.length);
+  await expect(page.getByTestId(ids.leftOutRow).first()).toBeVisible();
   await expect(page.getByTestId(ids.leadTimeRule)).toHaveAttribute('open', '');
+});
+
+test('LeadTimeView_WhenManyTasksAreLeftOut_ShouldFoldThemBehindTheirCount', async ({
+  mount,
+  page,
+}) => {
+  const leftOut = Array.from({ length: 120 }, (_, i) => ({
+    ...VIEW.leftOut[0],
+    key: `SHIP-${2000 + i}`,
+    title: `Follow-up ${i}: ${'a note long enough to wrap over several lines of the page '.repeat(4)}`,
+  }));
+  await open(mount, page, ROUTE, stubView({ leftOut }));
+  const list = page.getByTestId(ids.leftOut);
+  await expect(list).not.toHaveAttribute('open');
+  await expect(list.locator('summary')).toContainText('Left out: 120 tasks');
+  await expect(page.getByTestId(ids.leftOutRow).first()).toBeHidden();
+
+  await list.locator('summary').click();
+  await expect(page.getByTestId(ids.leftOutRow)).toHaveCount(120);
+  await expect(page.getByTestId(ids.leftOutRow).first()).toBeVisible();
+  // Open, it scrolls inside its own panel, and a long title stays on one line.
+  expect((await list.boundingBox())!.height).toBeLessThan(400);
+  expect((await page.getByTestId(ids.leftOutRow).first().boundingBox())!.height).toBeLessThan(40);
 });
