@@ -137,6 +137,6 @@ Recommended: a review event, not a state. Each time the review agent reviews a t
 
 ## Not in this Feature
 
-- **The agent's run inside a task:** Aspire / OpenTelemetry traces, SHIP-1463. The rail has a disabled *Agent run · later* button for it.
+- **The agent's run inside a task:** Aspire / OpenTelemetry traces, SHIP-1463. Built in SHIP-2158: with Inspection on, a selected task's rail lists its agent runs, each a link to its Run page.
 - **The code behind a bar:** diffs per task, SHIP-1460.
 - **Comparing Features:** review wait and blocked time across many Features would belong in Retrospectives › Insights.

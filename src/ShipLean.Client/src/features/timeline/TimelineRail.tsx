@@ -6,12 +6,12 @@ import { timelineTestIds as ids } from './testIds';
 import type { TimelineRailProps } from './TimelineRailProps';
 
 /** The right rail: the field guide in JSON mode, the selected item's facts, or the overview. */
-export function TimelineRail({ view, options, selected, onSelect }: TimelineRailProps) {
+export function TimelineRail({ view, options, selected, onSelect, runs }: TimelineRailProps) {
   const item = options.view === 'json' ? null : findRailItem(view, selected);
   let body;
   if (options.view === 'json') body = <RailJsonGuide />;
   else if (item?.kind === 'task')
-    body = <RailTask view={view} bar={item.bar} onSelect={onSelect} />;
+    body = <RailTask view={view} bar={item.bar} onSelect={onSelect} runs={runs?.(item.bar.key)} />;
   else if (item?.kind === 'story')
     body = <RailStory view={view} story={item.story} onSelect={onSelect} />;
   else body = <RailOverview view={view} />;

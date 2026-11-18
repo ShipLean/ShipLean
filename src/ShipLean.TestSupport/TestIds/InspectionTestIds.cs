@@ -31,6 +31,11 @@ public static class InspectionTestIds
     public const string AgentRunsLoading = "agent-runs-loading";
     public const string AgentRunsLoadFailed = "agent-runs-load-failed";
 
+    // Feature timeline rail
+    public const string RailAgentRuns = "rail-agent-runs";
+    public const string RailAgentRunsRow = "rail-agent-runs-row";
+    public const string RailAgentRunsNote = "rail-agent-runs-note";
+
     // Run page
     public const string RunPage = "run-page";
     public const string RunPageNarrow = "run-page-narrow";

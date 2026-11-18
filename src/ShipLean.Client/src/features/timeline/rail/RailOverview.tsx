@@ -13,7 +13,7 @@ const guide: [string, string][] = [
   ['Critical path', 'once the Feature is Done, the chain that set its finish'],
 ];
 
-/** What the chart means, the items not yet started while the Feature runs, and the agent run card. */
+/** What the chart means, and the items not yet started while the Feature runs. */
 export function RailOverview({ view }: Pick<TimelineRailProps, 'view'>) {
   const projectKey = projectKeyOf(view);
   return (
@@ -48,13 +48,6 @@ export function RailOverview({ view }: Pick<TimelineRailProps, 'view'>) {
           </ul>
         </section>
       )}
-      <button
-        type="button"
-        disabled
-        className="rounded-md border border-edge bg-panel p-3 text-left text-[length:var(--text-sm)] text-ink-muted"
-      >
-        Agent run · later
-      </button>
     </div>
   );
 }
