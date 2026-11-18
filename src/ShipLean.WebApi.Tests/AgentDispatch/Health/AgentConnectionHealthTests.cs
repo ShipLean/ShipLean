@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
@@ -27,9 +28,12 @@ public class AgentConnectionHealthTests : ApiFixture
         return JsonSerializer.Deserialize<T>(text, Wire)!;
     }
 
-    private TimeProvider Clock => Host.Services.GetRequiredService<TimeProvider>();
+    // Midday, so "3h ago" is the same day at any hour the suite runs: on the real clock a run before 03:00 UTC read "Yesterday".
+    private static readonly FakeTimeProvider Clock = new(TestDates.Today.AddHours(12));
 
-    private DateTimeOffset Ago(TimeSpan age) => DateTimeOffset.FromUnixTimeSeconds(Clock.GetUtcNow().Add(-age).ToUnixTimeSeconds());
+    protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddSingleton<TimeProvider>(Clock);
+
+    private static DateTimeOffset Ago(TimeSpan age) => DateTimeOffset.FromUnixTimeSeconds(Clock.GetUtcNow().Add(-age).ToUnixTimeSeconds());
 
     private static async Task<Guid> NewDeliveryAsync(NpgsqlConnection database, Guid connectionId)
     {
