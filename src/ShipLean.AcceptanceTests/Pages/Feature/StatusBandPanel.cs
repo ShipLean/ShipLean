@@ -22,7 +22,8 @@ public sealed class StatusBandPanel(IPage page)
 
     public ILocator EditHint => page.GetByTestId(FeatureTestIds.StatusEditHint);
 
-    public ILocator HealthSelect => page.GetByTestId(FeatureTestIds.StatusHealthSelect);
+    // At touch the Health control is a pill that opens the Health sheet; there is no select.
+    public ILocator HealthButton => page.GetByTestId(FeatureTestIds.StatusHealthButton);
 
     public ILocator Done => page.GetByTestId(FeatureTestIds.StatusEditSave);
 

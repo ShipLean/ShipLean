@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import type { Page } from 'playwright';
 import { AppRoutes } from '../../../AppRoutes';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { retroSharedTestIds as shared } from '../../retroShared/testIds';
@@ -14,6 +15,11 @@ const THEMES = ['light', 'dark'] as const;
 const point = retroSearch.rows[0];
 const route = `/p/SHIP/retros?q=masked&selected=${retroSearch.selected!.id}&point=${point.id}`;
 const searchRoute = (url: URL) => /^\/api\/projects\/[^/]+\/retros$/.test(url.pathname);
+
+// A tap leaves Chromium's pointer on the tapped note, and .paper-sheet:hover rings it until the browser next works out
+// what is under the pointer, which races the shot once a sheet's scrim covers the note. Moving the pointer to the
+// corner settles it: the note is not hovered in any shot.
+const settleHover = (page: Page) => page.mouse.move(0, 0);
 
 for (const theme of THEMES) {
   test(`OpenRetroPhone_WhenOpenedAtAPoint_ShouldMatchItsScreenshot_retro-search-retro-phone_${theme}`, async ({
@@ -44,6 +50,7 @@ for (const theme of THEMES) {
     await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteTheme).tap();
     await expect(page.getByTestId(touchTestIds.sheetTitle)).toHaveText('Move to theme');
     await expect(page.getByTestId(shared.retroNotePreview)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-theme-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -75,6 +82,7 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(touchTestIds.moreButton).tap();
     await expect(page.getByTestId(touchTestIds.sheet)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-note-phone.${theme}.png`, {
       animations: 'disabled',
     });
@@ -91,6 +99,7 @@ for (const theme of THEMES) {
     await expect(page.getByTestId(ids.retrosOpenRetro)).toBeVisible();
     await page.locator('[data-highlighted="true"]').getByTestId(shared.retroNoteAddAction).tap();
     await expect(page.getByTestId(shared.retroActionCreate)).toBeVisible();
+    await settleHover(page);
     await expect(page).toHaveScreenshot(`retro-search-action-phone.${theme}.png`, {
       animations: 'disabled',
     });
