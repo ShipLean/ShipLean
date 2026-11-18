@@ -27,6 +27,10 @@ export const inspectionTestIds = {
   agentRunsDown: 'agent-runs-down',
   agentRunsLoading: 'agent-runs-loading',
   agentRunsLoadFailed: 'agent-runs-load-failed',
+  // Feature timeline rail
+  railAgentRuns: 'rail-agent-runs',
+  railAgentRunsRow: 'rail-agent-runs-row',
+  railAgentRunsNote: 'rail-agent-runs-note',
   // Run page
   runPage: 'run-page',
   runPageNarrow: 'run-page-narrow',

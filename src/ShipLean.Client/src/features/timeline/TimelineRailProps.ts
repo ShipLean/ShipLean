@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import type { TimelineOptions } from './TimelineOptions';
 
@@ -6,4 +7,6 @@ export interface TimelineRailProps {
   options: TimelineOptions;
   selected: string | null;
   onSelect(key: string | null): void;
+  /** The agent runs of a selected task, shown under its history; absent when the project has Inspection off. */
+  runs?(taskKey: string): ReactNode;
 }

@@ -16,8 +16,6 @@ test('TimelineRail_WhenNothingSelected_ShouldShowOverview', async ({ mount, page
     />,
   );
   await expect(page.getByTestId(ids.railOverview)).toContainText('Reading the chart');
-  await expect(page.getByTestId(ids.railOverview)).toContainText('Agent run · later');
-  await expect(page.getByRole('button', { name: 'Agent run · later' })).toBeDisabled();
   await expect(page.getByTestId(ids.railNotStarted)).toHaveCount(0);
   await expect(page.getByTestId(ids.railSelected)).toHaveCount(0);
 });

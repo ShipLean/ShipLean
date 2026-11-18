@@ -5,6 +5,7 @@ import type {
   TimelinePersonDto,
   TimelineStoryDto,
 } from '@shiplean/core/api/views';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { routePath } from '../../../routes';
 import { timelineTestIds as ids } from '../testIds';
@@ -87,7 +88,12 @@ function EdgeList({
   );
 }
 
-export function RailTask({ view, bar, onSelect }: Common & { bar: TimelineBarDto }) {
+export function RailTask({
+  view,
+  bar,
+  onSelect,
+  runs,
+}: Common & { bar: TimelineBarDto; runs?: ReactNode }) {
   return (
     <div data-testid={ids.railSelected} data-key={bar.key} className="grid gap-3 p-4">
       <Header
@@ -140,6 +146,7 @@ export function RailTask({ view, bar, onSelect }: Common & { bar: TimelineBarDto
           </ul>
         </section>
       )}
+      {runs}
       <EdgeList
         testId={ids.railWaitedOn}
         title="Waited on"

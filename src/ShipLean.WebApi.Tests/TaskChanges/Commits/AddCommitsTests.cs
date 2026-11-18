@@ -131,15 +131,32 @@ public class AddCommitsTests : ApiFixture
     {
         var item = await NewItemAsync("task");
         var before = await RevisionsAsync(item);
+        // The bus delivers on its own pump task after PublishAsync returns, so wait for the event instead of reading a list at once.
         var events = new List<ProjectEvent>();
-        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e => Record(events, e));
+        var arrived = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = Host.Services.GetRequiredService<IProjectEvents>().Subscribe(null, e =>
+        {
+            lock (events)
+            {
+                events.Add(e);
+            }
+            if (e is CommitsChanged changed && changed.WorkItemId == item)
+            {
+                arrived.TrySetResult();
+            }
+            return Task.CompletedTask;
+        });
 
         var outcome = await AddAsync(item, CommitSource.ReportTask, new CommitRef(Storefront, Shas.First), new CommitRef(PaymentsUrl, Shas.PaymentsOnly));
 
         var after = await RevisionsAsync(item);
         after.Count.ShouldBe(before.Count + 1);
         after[^1].ShouldContain("Commits +2 (acme/storefront, acme/payments)");
-        events.OfType<CommitsChanged>().Where(e => e.WorkItemId == item).ShouldHaveSingleItem();
+        (await Task.WhenAny(arrived.Task, Task.Delay(TimeSpan.FromSeconds(10)))).ShouldBe(arrived.Task, "CommitsChanged did not arrive within 10 s.");
+        lock (events)
+        {
+            events.OfType<CommitsChanged>().Where(e => e.WorkItemId == item).ShouldHaveSingleItem();
+        }
         _comments.Marked.ShouldHaveSingleItem().Select(c => c.Sha).ShouldBe(outcome.Added.Select(c => c.Sha));
     }
 
