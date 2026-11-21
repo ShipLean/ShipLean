@@ -1,4 +1,3 @@
-using ShipLean.WebApi.Infrastructure.PlanningGuide;
 using System.ComponentModel;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;

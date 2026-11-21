@@ -1,8 +1,8 @@
-using ShipLean.WebApi.Infrastructure.PlanningGuide;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using ModelContextProtocol.Server;
+using ShipLean.Contracts.Prompts;
 using ShipLean.WebApi;
 using ShipLean.WebApi.Features.Mcp.Planning;
 

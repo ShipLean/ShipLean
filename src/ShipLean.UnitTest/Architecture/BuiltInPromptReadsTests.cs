@@ -1,5 +1,6 @@
-using ShipLean.WebApi.Infrastructure.PlanningGuide;
+using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
+using ShipLean.WebApi.Features.Prompts;
 
 namespace ShipLean.UnitTest.Architecture;
 
@@ -12,7 +13,7 @@ public class BuiltInPromptReadsTests
 
     private static readonly Rule[] Rules =
     [
-        new("PlanGuide.Read(", ["ShipLean.WebApi/Infrastructure/PlanningGuide/PlanGuide.cs", "ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
+        new("PlanGuide.Read(", ["ShipLean.WebApi/Features/Prompts/PlanGuide.cs", "ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
         new("sprint-demo/sprint-demo-prompt.md", ["ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
     ];
 

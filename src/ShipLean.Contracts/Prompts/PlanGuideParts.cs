@@ -1,6 +1,6 @@
 using ShipLean.Contracts.Errors;
 
-namespace ShipLean.WebApi.Infrastructure.PlanningGuide;
+namespace ShipLean.Contracts.Prompts;
 
 // The wire names of PlanGuidePart: work, guide, brief, report, plan_reviewer, code_reviewer, fix, lead, retro.
 public static class PlanGuideParts

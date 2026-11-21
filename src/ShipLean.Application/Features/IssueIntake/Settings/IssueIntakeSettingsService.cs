@@ -1,20 +1,20 @@
 using Agoda.IoC.Core;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using ShipLean.Application.Features.Webhooks;
-using ShipLean.Application.Integrations;
 using ShipLean.Application.Identity;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
-using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.WorkItems;
-using Microsoft.Extensions.Configuration;
 
 namespace ShipLean.Application.Features.IssueIntake.Settings;
 
