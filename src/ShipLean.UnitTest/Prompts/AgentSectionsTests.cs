@@ -54,23 +54,23 @@ public class AgentSectionsTests
         outputs[0].Split('\n').Intersect(LinesInsideTags(text)).ShouldBeEmpty();
     }
 
-    // An independent walk: a region starts at an open tag and ends at the next close tag of any id (or the end of the text).
+    // An independent walk (D21): a region starts at an open tag and ends only at the close tag of that same id (or the end of the text).
     private static List<string> LinesInsideTags(string text)
     {
         var inside = new List<string>();
-        var open = false;
+        string? open = null;
         foreach (var line in text.Split('\n'))
         {
             var trimmed = line.Trim();
-            if (trimmed.StartsWith("</", StringComparison.Ordinal))
+            if (open is null && trimmed.StartsWith('<') && !trimmed.StartsWith("</", StringComparison.Ordinal))
             {
-                open = false;
+                open = trimmed.Trim('<', '>');
             }
-            else if (trimmed.StartsWith('<'))
+            else if (open is not null && trimmed == $"</{open}>")
             {
-                open = true;
+                open = null;
             }
-            else if (open)
+            else if (open is not null)
             {
                 inside.Add(line);
             }

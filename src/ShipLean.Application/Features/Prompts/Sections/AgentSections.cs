@@ -19,11 +19,20 @@ public static class AgentSections
         string? section = null;
         foreach (var line in lines)
         {
-            if (line.IsTag && line.IsKnown)
+            if (section is null && line.IsTag && line.IsKnown)
             {
                 section = line.IsClose ? null : line.Name;
             }
-            else if (section is null || (!hasError && section == agent))
+            else if (section is not null)
+            {
+                // D21: a region ends only at the close tag of the open tag that started it; every other line and tag inside is dropped.
+                section = line.IsTag && line.IsKnown && line.IsClose && line.Name == section ? null : section;
+                if (!hasError && section == agent && !line.IsTag)
+                {
+                    kept.Add(line.Text);
+                }
+            }
+            else
             {
                 kept.Add(line.Text);
             }
@@ -85,29 +94,41 @@ public static class AgentSections
 
     private static List<Line> Scan(string text)
     {
-        var result = new List<Line>();
-        var fence = '\0';
-        foreach (var raw in text.Replace("\r\n", "\n").Split('\n'))
+        var raws = text.Replace("\r\n", "\n").Split('\n');
+        var result = new List<Line>(raws.Length);
+        var index = 0;
+        while (index < raws.Length)
         {
-            var trimmed = raw.Trim();
-            var marker = FenceMarker(trimmed);
-            if (fence == '\0' && marker != '\0')
+            var marker = FenceMarker(raws[index].Trim());
+            var close = marker == '\0' ? -1 : FenceClose(raws, index + 1, marker);
+            if (close < 0)
             {
-                fence = marker;
-                result.Add(new Line(raw, false, false, string.Empty, false));
+                result.Add(ParseTag(raws[index], raws[index].Trim()));
+                index++;
+                continue;
             }
-            else if (fence != '\0')
+
+            // A fence that is never closed is not a fence (D21): only a closed one makes its lines text.
+            for (; index <= close; index++)
             {
-                fence = marker == fence ? '\0' : fence;
-                result.Add(new Line(raw, false, false, string.Empty, false));
-            }
-            else
-            {
-                result.Add(ParseTag(raw, trimmed));
+                result.Add(new Line(raws[index], false, false, string.Empty, false));
             }
         }
 
         return result;
+    }
+
+    private static int FenceClose(string[] raws, int from, char marker)
+    {
+        for (var index = from; index < raws.Length; index++)
+        {
+            if (FenceMarker(raws[index].Trim()) == marker)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private static char FenceMarker(string trimmed)

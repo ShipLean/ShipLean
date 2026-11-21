@@ -90,10 +90,10 @@
       "name": "nestedFiltered",
       "text": "a\n<claude-code>\nb\n<cursor>\nc\n</cursor>\nd\n</claude-code>\ne",
       "filtered": {
-        "claude-code": "a\nd\ne",
-        "codex-cli": "a\nd\ne",
-        "cursor": "a\nd\ne",
-        "other": "a\nd\ne"
+        "claude-code": "a\ne",
+        "codex-cli": "a\ne",
+        "cursor": "a\ne",
+        "other": "a\ne"
       },
       "problems": [
         {
@@ -180,6 +180,35 @@
         "codex-cli": "a\nb",
         "cursor": "a\nb",
         "other": "a\nb"
+      },
+      "problems": []
+    },
+    {
+      "name": "mismatchedCloseFiltered",
+      "text": "a\n<cursor>\nA\n</claude-code>\nB\n</cursor>\nc",
+      "filtered": {
+        "claude-code": "a\nc",
+        "codex-cli": "a\nc",
+        "cursor": "a\nc",
+        "other": "a\nc"
+      },
+      "problems": [
+        {
+          "line": 4,
+          "kind": "strayClose",
+          "tag": "claude-code",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "unclosedFence",
+      "text": "a\n```\nb\n<cursor>\nonly cursor\n</cursor>\nc",
+      "filtered": {
+        "claude-code": "a\n```\nb\nc",
+        "codex-cli": "a\n```\nb\nc",
+        "cursor": "a\n```\nb\nonly cursor\nc",
+        "other": "a\n```\nb\nc"
       },
       "problems": []
     }
