@@ -67,7 +67,7 @@ test('PromptsList_WhenCustomFilter_ShouldKeepCustomsOnly', async ({ mount, page 
   await page.getByTestId(ids.filterCustom).click();
 
   await expect(page.getByTestId(ids.filterCustom)).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId(ids.listRow)).toHaveCount(3);
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(2);
   await page.getByTestId(ids.filterAll).click();
   await expect(page.getByTestId(ids.listRow)).toHaveCount(11);
 });
@@ -82,7 +82,7 @@ test('StageStrip_WhenStageClicked_ShouldMarkIt', async ({ mount, page }) => {
 
   await expect(strip.nth(5)).toHaveAttribute('aria-current', 'true');
   await expect(strip.nth(0)).toHaveAttribute('aria-current', 'false');
-  await expect(page.locator('#stage-retro')).toBeInViewport();
+  await expect(page.getByTestId(ids.listStage).nth(5)).toBeInViewport();
   await strip.nth(5).click();
   await expect(strip.nth(5)).toHaveAttribute('aria-current', 'false');
 });
@@ -121,6 +121,16 @@ test('PromptFacts_WhenSprintDemo_ShouldListInsertedParts', async ({ mount, page 
   await page.getByTestId(ids.listRow).nth(0).click();
   await expect(page.getByTestId(ids.factInsertedParts)).toHaveCount(0);
   await expect(page.getByTestId(ids.factNote)).toContainText('Replaces the Proposal instruct');
+});
+
+test('StageStrip_WhenLoaded_ShouldCountCustomsAsTheTabBadgeDoes', async ({ mount, page }) => {
+  await routes(page);
+  await mount(<PromptsBadgeHarness project={adminProject} />, hooks);
+
+  await expect(page.getByTestId(ids.tabBadge)).toHaveText('2 custom');
+  const counts = await page.getByTestId(ids.stageStripCustom).allTextContents();
+  const sum = counts.reduce((total, text) => total + Number.parseInt(text, 10), 0);
+  expect(sum).toBe(2);
 });
 
 test('PromptsTabBadge_WhenTwoCustoms_ShouldSayTwoCustom', async ({ mount, page }) => {

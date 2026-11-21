@@ -33,7 +33,7 @@ describe('filterPrompts', () => {
   });
 
   it('keeps customised prompts under the Custom filter', () => {
-    expect(keys('', 'custom')).toEqual(['issueProposal', 'guide', 'brief']);
+    expect(keys('', 'custom')).toEqual(['guide', 'brief']);
   });
 
   it('returns nothing when no prompt matches', () => {

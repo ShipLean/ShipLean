@@ -7,9 +7,9 @@ export function textInUse(prompt: PromptDto): string {
   return prompt.custom?.inUse === true ? prompt.custom.text : prompt.builtInText;
 }
 
-/** Custom, built-in updated and using built-in: every prompt that has a custom version behind it. */
+/** Custom here means a custom version in use: status custom or built-in updated (not using built-in). */
 export function isCustomised(prompt: PromptDto): boolean {
-  return prompt.status !== 'builtIn';
+  return prompt.status === 'custom' || prompt.status === 'builtInUpdated';
 }
 
 function matches(prompt: PromptDto, needle: string): boolean {

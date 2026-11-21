@@ -1,9 +1,10 @@
 import type { PromptStage, PromptStageDto } from '@shiplean/core/api/prompts';
 import { promptsTestIds as ids } from '../testIds';
+import { isCustomised } from './filterPrompts';
 
 export const stageAnchor = (stage: PromptStage) => `stage-${stage}`;
 
-const customCount = (stage: PromptStageDto) => stage.prompts.filter((p) => p.status !== 'builtIn');
+const customCount = (stage: PromptStageDto) => stage.prompts.filter(isCustomised);
 
 // The seven stages across the top, each with its prompt and custom counts; a click marks the stage and jumps the list to
 // it. It scrolls sideways inside its own box, so the page never does (SHIP-805 rule 7).

@@ -30,7 +30,9 @@ test('StageStrip_WhenOnAPhone_ShouldScrollSidewaysWithoutPageScroll', async ({ m
   const strip = page.getByTestId(ids.stageStrip);
   const sizes = await strip.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
   expect(sizes.scroll).toBeGreaterThan(sizes.client);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
 });
