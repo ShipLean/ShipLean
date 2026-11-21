@@ -176,7 +176,11 @@ export function PromptDetail({
                   role="tab"
                   aria-selected={t.id === active}
                   data-testid={t.testId}
-                  className={t.id === active ? 'btn-signal' : 'btn'}
+                  className={
+                    t.id === active
+                      ? 'btn-signal touch:min-h-[var(--touch-target)]'
+                      : 'btn touch:min-h-[var(--touch-target)]'
+                  }
                   onClick={() => setTab(t.id)}
                 >
                   {t.label}

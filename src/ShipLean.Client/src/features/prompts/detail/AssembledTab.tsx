@@ -35,7 +35,11 @@ export function AssembledTab(props: {
             data-testid={ids.agentOption}
             data-agent={a.id}
             aria-pressed={a.id === agent}
-            className={a.id === agent ? 'btn-signal' : 'btn'}
+            className={
+              a.id === agent
+                ? 'btn-signal touch:min-h-[var(--touch-target)]'
+                : 'btn touch:min-h-[var(--touch-target)]'
+            }
             onClick={() => setChosen(a.id)}
           >
             {a.label}
@@ -98,7 +102,7 @@ export function AssembledTab(props: {
               <button
                 type="button"
                 data-testid={ids.assembledCopy}
-                className="btn"
+                className="btn touch:min-h-[var(--touch-target)]"
                 onClick={() =>
                   void navigator.clipboard.writeText(assembled.data.text).catch(() => undefined)
                 }

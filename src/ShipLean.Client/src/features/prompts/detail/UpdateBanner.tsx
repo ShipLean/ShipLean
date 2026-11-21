@@ -27,7 +27,7 @@ export function UpdateBanner(props: {
         <button
           type="button"
           data-testid={ids.updateReview}
-          className="btn-signal"
+          className="btn-signal touch:min-h-[var(--touch-target)]"
           onClick={props.onReview}
         >
           Review the change

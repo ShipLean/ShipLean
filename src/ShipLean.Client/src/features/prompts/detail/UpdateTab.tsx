@@ -75,7 +75,7 @@ export function UpdateTab(props: {
             <button
               type="button"
               data-testid={ids.updateApply}
-              className="btn-signal"
+              className="btn-signal touch:min-h-[var(--touch-target)]"
               disabled={busy}
               onClick={apply}
             >
@@ -85,7 +85,11 @@ export function UpdateTab(props: {
           <button
             type="button"
             data-testid={ids.updateApplyEdit}
-            className={update.appliesCleanly ? 'btn' : 'btn-signal'}
+            className={
+              update.appliesCleanly
+                ? 'btn touch:min-h-[var(--touch-target)]'
+                : 'btn-signal touch:min-h-[var(--touch-target)]'
+            }
             disabled={busy}
             onClick={props.onApplyAndEdit}
           >
@@ -94,7 +98,7 @@ export function UpdateTab(props: {
           <button
             type="button"
             data-testid={ids.updateKeep}
-            className="btn"
+            className="btn touch:min-h-[var(--touch-target)]"
             disabled={busy}
             onClick={keepMine}
           >

@@ -21,7 +21,12 @@ export function PromptActions({
   const resumable = prompt.status === 'usingBuiltIn' ? prompt.custom : null;
   const paused = canEdit && resumable !== null;
   const copy = (
-    <button type="button" data-testid={ids.copyMarkdown} className="btn" onClick={onCopy}>
+    <button
+      type="button"
+      data-testid={ids.copyMarkdown}
+      className="btn touch:min-h-[var(--touch-target)]"
+      onClick={onCopy}
+    >
       Copy Markdown
     </button>
   );
@@ -31,7 +36,7 @@ export function PromptActions({
         <button
           type="button"
           data-testid={inUse || paused ? ids.actionEdit : ids.actionCustomize}
-          className="btn-signal"
+          className="btn-signal touch:min-h-[var(--touch-target)]"
           onClick={onEdit}
         >
           {inUse ? 'Edit' : paused ? 'Edit custom version' : 'Customize'}
@@ -41,7 +46,7 @@ export function PromptActions({
         <button
           type="button"
           data-testid={ids.actionResume}
-          className="btn"
+          className="btn touch:min-h-[var(--touch-target)]"
           onClick={() => onResume(resumable.number)}
         >
           Use custom v{resumable.number} again
@@ -51,7 +56,7 @@ export function PromptActions({
         <button
           type="button"
           data-testid={ids.actionUseBuiltIn}
-          className="btn"
+          className="btn touch:min-h-[var(--touch-target)]"
           onClick={onUseBuiltIn}
         >
           Use built-in

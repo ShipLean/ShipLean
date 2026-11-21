@@ -33,13 +33,18 @@ export function UseBuiltInDialog(props: {
       testId={ids.useBuiltInDialog}
       footer={
         <>
-          <button type="button" data-testid={ids.useBuiltInCancel} className="btn" onClick={close}>
+          <button
+            type="button"
+            data-testid={ids.useBuiltInCancel}
+            className="btn touch:min-h-[var(--touch-target)]"
+            onClick={close}
+          >
             Cancel
           </button>
           <button
             type="button"
             data-testid={ids.useBuiltInConfirm}
-            className="btn-signal"
+            className="btn-signal touch:min-h-[var(--touch-target)]"
             disabled={use.isPending}
             onClick={confirm}
           >
