@@ -40,7 +40,7 @@ public sealed class AgentTrigger(NpgsqlDataSource dataSource, AgentSessionStarte
         var (creator, transition, action) = match;
 
         var outcome = await starter.StartAsync(
-            updated.Id, creator, null, action.ConnectionId, action.Prompt,
+            updated.Id, creator, action.ConnectionId, action.Prompt,
             new AgentTransitionInput(transition.From?.Name ?? "Any", transition.To.Name), cancellationToken);
         if (outcome.SessionId is not null)
         {

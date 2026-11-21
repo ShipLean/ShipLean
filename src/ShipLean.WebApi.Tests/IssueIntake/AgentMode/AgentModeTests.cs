@@ -43,7 +43,7 @@ public class AgentModeTests : ApiFixture
     {
         var (_, item) = await ArrangeItemAsync();
 
-        var outcome = await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None);
+        var outcome = await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
 
         (await ModeAsync(outcome.SessionId!.Value)).ShouldBe("implement");
         (await CreatedBodyAsync(item)).AsObject().ContainsKey("shipleanMode").ShouldBeFalse();
@@ -55,7 +55,7 @@ public class AgentModeTests : ApiFixture
         var (arranged, item) = await ArrangeItemAsync();
         await InsertIssueAsync(arranged, item);
 
-        var outcome = await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose);
+        var outcome = await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose);
 
         (await ModeAsync(outcome.SessionId!.Value)).ShouldBe("propose");
         (await CreatedBodyAsync(item))["shipleanMode"]!.GetValue<string>().ShouldBe("propose");
@@ -69,7 +69,7 @@ public class AgentModeTests : ApiFixture
         await AddCommentsAsync(item);
         await MirrorAsync(issue, GitHubComment);
 
-        await Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose);
+        await Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose);
 
         var context = (await CreatedBodyAsync(item))["promptContext"]!.GetValue<string>();
         context.ShouldContain(GitHubComment);
@@ -90,7 +90,7 @@ public class AgentModeTests : ApiFixture
                 .AddAsAgentAsync(item, new CommentCreate(ImpersonatingComment), "GitHub @reporter", SeedIds.Users.Joel);
         }
 
-        await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose);
+        await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose);
 
         var context = (await CreatedBodyAsync(item))["promptContext"]!.GetValue<string>();
         context.ShouldNotContain(ImpersonatingComment);
@@ -122,7 +122,7 @@ public class AgentModeTests : ApiFixture
         }
 
         // Control: an implement session on the same item carries every sentinel, so each one is really reachable.
-        var implement = (await Starter.StartAsync(item, SeedIds.Users.Joel, fallback, null, null, null, CancellationToken.None)).SessionId!.Value;
+        var implement = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None)).SessionId!.Value;
         var implementBody = await CreatedOfModeAsync(item, "implement");
         foreach (var sentinel in sentinels.Append(instance).Append(BaseRef))
         {
@@ -133,7 +133,7 @@ public class AgentModeTests : ApiFixture
         var issue = await InsertIssueAsync(arranged, item);
         await MirrorAsync(issue, GitHubComment);
         await Starter.StartWinnerAsync(
-            item, SeedIds.Users.Joel, fallback, null, (_, _) => Task.FromResult(Guidance), CancellationToken.None, AgentSessionMode.Propose,
+            item, SeedIds.Users.Joel, null, (_, _) => Task.FromResult(Guidance), CancellationToken.None, AgentSessionMode.Propose,
             [new AgentRelatedWork("SHIP-12", "story", "Done", "Related title", ["https://github.com/o/r/pull/4"], [new AgentMergeCommit("abc1234", null)])]);
 
         var body = await CreatedOfModeAsync(item, "propose");
@@ -185,7 +185,7 @@ public class AgentModeTests : ApiFixture
             await database.ExecuteAsync("UPDATE comment SET body = 'Edited in ShipLean by the run-as user' WHERE id = @id", new { id = mirrored.CommentId });
         }
 
-        await Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose);
+        await Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose);
 
         var context = (await CreatedBodyAsync(item))["promptContext"]!.GetValue<string>();
         context.ShouldContain(GitHubComment);
@@ -198,7 +198,7 @@ public class AgentModeTests : ApiFixture
         var (_, item) = await ArrangeItemAsync();
 
         var refused = await Should.ThrowAsync<ApiException>(
-            () => Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose));
+            () => Starter.StartWinnerAsync(item, SeedIds.Users.Joel, null, (_, _) => Task.FromResult("Propose."), CancellationToken.None, AgentSessionMode.Propose));
 
         refused.Code.ShouldBe(ApiErrorCodes.Validation);
         await using var database = await OpenDatabaseAsync();
@@ -211,7 +211,7 @@ public class AgentModeTests : ApiFixture
         var (_, item) = await ArrangeItemAsync();
         await AddCommentsAsync(item);
 
-        await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None);
+        await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
 
         var context = (await CreatedBodyAsync(item))["promptContext"]!.GetValue<string>();
         context.ShouldContain(GitHubComment);
@@ -225,7 +225,7 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         var issue = await InsertIssueAsync(arranged, item);
-        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
+        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
 
         Jobs.FailAfterEnqueue = true;
         await Should.ThrowAsync<InvalidOperationException>(() => RespondAsync(arranged, sessionId, "The first proposal."));
@@ -251,7 +251,7 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         var issue = await InsertIssueAsync(arranged, item);
-        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None)).SessionId!.Value;
+        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None)).SessionId!.Value;
 
         await RespondAsync(arranged, sessionId, "Done: opened a pull request.");
 
@@ -264,7 +264,7 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         var issue = await InsertIssueAsync(arranged, item);
-        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
+        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
 
         await ReportAsync(arranged, sessionId, "thought", "Reading the backlog code.");
 
@@ -276,7 +276,7 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         var issue = await InsertIssueAsync(arranged, item);
-        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
+        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
         var other = (await arranged.CreateItemAsync(Api)).Id;
         await Host.Services.GetRequiredService<IGitHubIssueStore>().RepointAsync(issue.Id, other);
 
@@ -293,7 +293,7 @@ public class AgentModeTests : ApiFixture
     {
         var (arranged, item) = await ArrangeItemAsync();
         var issue = await InsertIssueAsync(arranged, item);
-        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
+        var sessionId = (await Starter.StartAsync(item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
         var activityId = Guid.CreateVersion7();
 
         var first = await ReportAsync(arranged, sessionId, "response", "The proposal.", activityId);
