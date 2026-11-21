@@ -10,6 +10,9 @@ namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
 // (SHIP-1702 D5): a brief is read by an agent, not shown to a viewer.
 public static class BriefPlanContext
 {
+    // The newest this many comments are shown; a cut drops the oldest, never the newest amendments.
+    public const int MaxComments = 30;
+
     public const string StateRule =
         "Progress, reports, decisions and brief changes live in ShipLean on the plan's items — use `comment`, `report_task`, and `get_work_item`; do not keep them in local files.";
 
@@ -27,28 +30,37 @@ public static class BriefPlanContext
             return text;
         }
 
-        var ids = new List<Guid> { tree.Feature.Id };
-        if (storyId is not null)
+        var sources = new List<(Guid Id, string Key)> { (tree.Feature.Id, tree.Feature.Key) };
+        if (storyId is not null && tree.Stories.FirstOrDefault(story => story.Id == storyId) is { } owner)
         {
-            ids.Add(storyId.Value);
+            sources.Add((owner.Id, owner.Key));
         }
-        var lines = new List<string>();
-        foreach (var id in ids)
+        var all = new List<(string Key, CommentDto Comment)>();
+        foreach (var (id, key) in sources)
         {
             foreach (var comment in (await comments.ListAsync(id, cancellationToken)).Where(c => c.CreatedAt >= since))
             {
-                lines.Add($"- ({DisplayDate.Format(comment.CreatedAt)}) {comment.Body.ReplaceLineEndings(" ")}");
+                all.Add((key, comment));
             }
         }
-        if (lines.Count == 0)
+        if (all.Count == 0)
         {
-            text += "\n\nComments since the plan was captured: none yet. Use `get_work_item` on the Feature or story for the full log.";
-            return text;
+            return text + "\n\nComments since the plan was captured: none yet. Use `get_work_item` on the Feature or story for the full log.";
         }
-        text += "\n\nComments since the plan was captured:\n" + string.Join("\n", lines.Take(30));
-        if (lines.Count > 30)
+        // Newest first so a cut drops the oldest; shown oldest to newest so the list still reads in order.
+        var newest = all.OrderByDescending(entry => entry.Comment.CreatedAt).ToList();
+        var shown = newest.Take(MaxComments).OrderBy(entry => entry.Comment.CreatedAt).ToList();
+        var lines = shown.Select(entry =>
+            $"- {entry.Key} ({DisplayDate.Format(entry.Comment.CreatedAt)}) {entry.Comment.Body.ReplaceLineEndings(" ")}");
+        text += "\n\nComments since the plan was captured:\n" + string.Join("\n", lines);
+        var omitted = newest.Skip(MaxComments).ToList();
+        if (omitted.Count > 0)
         {
-            text += "\n\n(More comments exist; page with `get_work_item` and `comments_before`.)";
+            var before = shown[0].Comment.CreatedAt.ToString("O");
+            var where = string.Join(" and ", omitted.GroupBy(entry => entry.Key).Select(group => $"{group.Key} ({group.Count()})"));
+            var keys = string.Join(" and ", omitted.Select(entry => entry.Key).Distinct().Select(key => $"`{key}`"));
+            text += $"\n\n({omitted.Count} older {(omitted.Count == 1 ? "comment is" : "comments are")} not shown: {where}. "
+                + $"Read {(omitted.Select(entry => entry.Key).Distinct().Count() == 1 ? "it" : "them")} with `get_work_item` on {keys} and `comments_before` = `{before}`, 5 at a time.)";
         }
         return text;
     }
