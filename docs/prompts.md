@@ -19,19 +19,19 @@ ShipLean tells agents how to plan, brief, review and report through built-in Mar
 | Shape | Work from idea to done (`work`) | `planning_guide` part `work` | any agent at the start of a session |
 | Plan | Planning and breakdown (`guide`) | `planning_guide` (default part) | the conductor |
 | Plan | Plan reviewer (`planReviewer`) | `planning_guide` part `plan_reviewer` | a reviewer |
-| Build | Lead brief (`lead`) | `get_brief` on a story | the lane lead |
-| Build | Task brief (`brief`) | `get_brief` on a task | the implementer |
-| Build | Report (`report`) | added to every task brief | the implementer |
+| Build | Lead brief (`lead`) | `get_brief` on a story, or `planning_guide` part `lead` | the lane lead |
+| Build | Task brief (`brief`) | `get_brief` on a task, or `planning_guide` part `brief` | the implementer |
+| Build | Report (`report`) | added to every task brief, or `planning_guide` part `report` | the implementer |
 | Review | Code reviewer (`codeReviewer`) | `planning_guide` part `code_reviewer` | a reviewer |
 | Review | Fix round (`fix`) | `planning_guide` part `fix` | the implementer |
 | Retro | Run retro (`retro`) | `planning_guide` part `retro` | the conductor |
-| Sprint demo | Sprint demo video (`sprintDemo`) | `create_sprint_demo` and the demo session ShipLean starts | the demo agent |
+| Sprint demo | Sprint demo video (`sprintDemo`) | `create_sprint_demo` (the caller gets its own sections) and the demo session ShipLean starts (untagged text only) | the demo agent |
 
 Two things stay built-in, and the page lists them as such: the 14 inserted parts of the sprint demo (they depend on where the agent runs), and the server instructions (sent when the agent connects, before it picks a project).
 
 ## Versions
 
-- Customize starts from the text in use. Each save needs a change note (at most 200 characters) and becomes custom v1, v2 and so on.
+- Customize starts from the text in use. When a project is on Using built-in with a kept custom version, the button reads "Edit custom version" and starts from that custom text. Each save needs a change note (at most 200 characters) and becomes custom v1, v2 and so on.
 - The text may not be empty and may not be over 64 KB (65,536 UTF-8 bytes).
 - **Use built-in** stops using the custom version. The project then reads the built-in again.
 - **History** lists every version, newest first. **Use vN** puts an earlier one back in use.
@@ -43,7 +43,7 @@ A line of text on its own, `<claude-code>`, `<codex-cli>` or `<cursor>`, opens a
 
 - Tags sit on their own line and do not nest.
 - Tags inside a code fence are text, not tags. An unclosed fence is not a fence.
-- An unknown tag is kept as typed. The editor flags it as a warning and suggests the nearest known tag.
+- An unknown tag is kept as typed. When it is close to a known tag (within 3 edits, such as `<cludecode>`), the editor warns and offers "Did you mean `<claude-code>`". Any other unknown tag (such as `<summary>`) is plain text and passes silently.
 - An unclosed, nested or stray closing tag is an error. It blocks Save.
 - A stored text that has such an error (a migrated Issue proposal, say) fails closed: every agent gets only the untagged text, and a region that was opened ends only at its own close tag, so nothing inside it reaches another agent. The tab flags the error until an admin fixes it.
 
@@ -60,11 +60,11 @@ ShipLean copies what DropMCP does. It reads these signals in order and takes the
 
 The value is made lowercase, other characters become `-`, and it is matched by substring: OpenAI's coding CLI (`codex-cli`), `cursor`, then `claude` with `code` (`claude-code`). Anything else is `other`.
 
-The match is self-reported. It picks sections and labels. It is never used for access. Background sessions that ShipLean starts itself (the issue proposal round, and the demo session through agent-relay) have no OAuth client, so they get the untagged text only.
+The match is self-reported. It picks sections and labels. It is never used for access. Background sessions that ShipLean starts itself (the issue proposal round, and every demo session ShipLean starts) have no OAuth client, so they get the untagged text only.
 
 ## Placeholders
 
-Two templates carry placeholders that ShipLean fills when it serves them:
+Three prompts carry placeholders that ShipLean fills when it serves them:
 
 - Task brief: `{{common_brief}}`, `{{task_key}}`, `{{task_title}}`, `{{task_brief}}`, `{{shared_branch}}`, `{{report_template}}`.
 - Lead brief: `{{feature_key}}`, `{{story_key}}`, `{{wave}}`, `{{lane}}`, `{{tasks}}`, `{{contracts}}`, `{{shared_branch}}`.
@@ -76,11 +76,11 @@ The editor checks them. If a placeholder is missing, it warns and offers **Put b
 
 Every version records the hash of the built-in it started from (`prompt_built_in`, filled at startup by `PromptBuiltInSnapshotter`). When ShipLean ships a new built-in, the custom version stays in use and the prompt shows **Built-in updated**. The admin sees only what changed in the built-in, as a patch, and chooses:
 
-- **Apply** saves a new version with the change merged in (source `builtInUpdate`).
-- **Apply and edit** opens the merged text in the editor.
-- **Keep mine** declines the change. `POST …/update/keep` records the hash, so the flag clears until the next built-in change.
+- **Apply** saves a new version with the change merged in (source `builtInUpdate`). It is offered only when the change applies cleanly.
+- **Apply and edit** opens the merged text in the editor. When the merge has conflicts, this is the only way to take the change.
+- **Keep mine** (the button reads "Keep mine as it is") declines the change. `POST …/update/keep` records the hash, so the flag clears until the next built-in change.
 
-The page says **Applies cleanly** when the merge needs no help. Otherwise the merged text carries conflict markers to resolve in the editor.
+The page says **Applies cleanly** when the merge needs no help. Otherwise the merged text carries conflict markers (`<<<<<<< yours`, `=======`, `>>>>>>> built-in`) to resolve in the editor.
 
 ## Issue proposal
 
@@ -92,13 +92,13 @@ The Proposal instructions box under Integrations moved here. Existing text was m
 
 1. Server instructions.
 2. The prompt in use, untagged text.
-3. The agent's own sections.
-4. Ways of working (SHIP-568). Planned, not built.
+3. The agent's own sections. There is no such layer for `other`.
+4. Ways of working (SHIP-568). Planned, not built. Shown only for Work, Planning and breakdown, Task brief and Lead brief.
 5. Client notes (SHIP-246). Planned, not built.
 
 ## Runs
 
-Each time ShipLean serves a prompt, it writes a `prompt_serving` row: project, prompt, version (null for the built-in), the built-in hash, agent, the client name and which signal gave it, the item key, the person and the time. Inspection shows a run the prompts served for the run's items inside the run's time window. It is not a link from one session to one serving, so two runs of the same item at the same time share a list.
+Each time ShipLean serves a prompt, it writes a `prompt_serving` row: project, prompt, version (null for the built-in), the built-in hash, agent, the client name and which signal gave it, the item key, the person and the time. Inspection shows, on a run's header, the prompts served to the run's items to the same agent as the run, from 5 minutes before the run started to its end (newest 20). It is not a link from one session to one serving, so two runs of the same item by the same agent at the same time share a list.
 
 ## For developers
 
