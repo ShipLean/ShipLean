@@ -17,8 +17,8 @@ public static class BriefMarkdown
     private const string Dash = "-";
 
     // commonBrief is the Feature's live common-brief.md, null when it has none.
-    public static string ForTask(PlanTree tree, PlanTask task, string? commonBrief, string reportTemplate)
-        => PlanTemplate.Fill(PlanGuide.Read(PlanGuidePart.Brief), new Dictionary<string, string>
+    public static string ForTask(PlanTree tree, PlanTask task, string? commonBrief, string reportTemplate, string briefTemplate)
+        => PlanTemplate.Fill(briefTemplate, new Dictionary<string, string>
         {
             [PlanPlaceholders.CommonBrief] = commonBrief ?? NoCommonBrief,
             [PlanPlaceholders.TaskKey] = task.Key,
@@ -28,8 +28,8 @@ public static class BriefMarkdown
             [PlanPlaceholders.ReportTemplate] = reportTemplate,
         });
 
-    public static string ForStory(PlanTree tree, PlanStory story)
-        => PlanTemplate.Fill(PlanGuide.Read(PlanGuidePart.Lead), new Dictionary<string, string>
+    public static string ForStory(PlanTree tree, PlanStory story, string leadTemplate)
+        => PlanTemplate.Fill(leadTemplate, new Dictionary<string, string>
         {
             [PlanPlaceholders.FeatureKey] = tree.Feature.Key,
             [PlanPlaceholders.StoryKey] = story.Key,

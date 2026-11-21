@@ -8,6 +8,7 @@ using ShipLean.Application.Features.Demos.Runs;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.WorkItems;
@@ -301,7 +302,7 @@ public class DemoRunStarterTests : ApiFixture
         var services = scope.ServiceProvider;
         var starter = new DemoRunStarter(
             shortTimeout, services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
-            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IPromptResolver>(), services.GetRequiredService<IDemoBrandSource>(),
             services.GetRequiredService<ITransferTokens>(), services.GetRequiredService<IProjectEvents>(), services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
         await using var holder = await OpenDatabaseAsync();
         await using var holding = await holder.BeginTransactionAsync();
@@ -353,7 +354,7 @@ public class DemoRunStarterTests : ApiFixture
         var services = scope.ServiceProvider;
         var starter = new DemoRunStarter(
             services.GetRequiredService<NpgsqlDataSource>(), services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
-            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IPromptResolver>(), services.GetRequiredService<IDemoBrandSource>(),
             services.GetRequiredService<ITransferTokens>(), events, services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
 
         await starter.HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None);

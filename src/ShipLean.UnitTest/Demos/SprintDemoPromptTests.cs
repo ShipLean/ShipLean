@@ -39,7 +39,7 @@ public class SprintDemoPromptTests
         ":root { --color-bg: #e8eef7; }\n:root { --color-accent: #c2410c; }", null);
 
     private static string Render(SprintDemoData? data = null, DemoBrand? brand = null, DemoPromptChannel channel = DemoPromptChannel.Handover)
-        => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand, channel);
+        => new SprintDemoPrompt().Render(data ?? Data("Run the app with make dev."), Upload, brand ?? DefaultBrand, channel, Template);
 
     private static SprintDemoData Data(string environment, IReadOnlyList<SprintDemoFeatureData>? features = null)
         => new(
@@ -625,7 +625,7 @@ public class SprintDemoPromptTests
     {
         var upload = new DemoUploadTarget("https://sl.example/u?t={{curl_command}}", Upload.ExpiresAt, Upload.MaxVideoBytes, "BAU-{{demo_item}}", "Sprint {{upload_url}}");
 
-        var text = new SprintDemoPrompt().Render(Data("Run the app with make dev."), upload, DefaultBrand, DemoPromptChannel.Handover);
+        var text = new SprintDemoPrompt().Render(Data("Run the app with make dev."), upload, DefaultBrand, DemoPromptChannel.Handover, Template);
 
         text.ShouldNotContain("{{");
         CountOf(text, "-F video=@demo.mp4").ShouldBe(1);

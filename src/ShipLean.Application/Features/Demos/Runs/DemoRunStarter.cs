@@ -7,6 +7,7 @@ using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.Mcp;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.WorkItems;
 
@@ -21,6 +22,7 @@ public sealed class DemoRunStarter(
     IAgentSessionStarter sessions,
     ISprintDemoData sprintData,
     ISprintDemoPrompt prompt,
+    IPromptResolver prompts,
     IDemoBrandSource brandSource,
     ITransferTokens transfers,
     IProjectEvents events,
@@ -136,6 +138,9 @@ public sealed class DemoRunStarter(
         var baseUrl = request.BaseUrl.TrimEnd('/');
         var uploadUrl = $"{baseUrl}/api/uploads/demo?token={Uri.EscapeDataString(issued.Token)}";
         var target = new DemoUploadTarget(uploadUrl, issued.ExpiresAt, limits.MaxDemoBytes, itemKey, data.Sprint.Name);
+        // A relay session has no OAuth client (D16), so it is addressed as another agent; a handover goes to the caller.
+        var template = await prompts.ResolveAsync(
+            new PromptRequest(request.ProjectId, PromptKey.SprintDemo, channel == DemoPromptChannel.Session ? PromptAgents.Other : null, itemKey, request.UserId), cancellationToken);
         return new SprintDemoHandover(
             request.SprintId,
             itemKey,
@@ -145,6 +150,6 @@ public sealed class DemoRunStarter(
             issued.ExpiresAt,
             limits.MaxDemoBytes,
             brand,
-            prompt.Render(data, target, brand, channel));
+            prompt.Render(data, target, brand, channel, template.Text));
     }
 }

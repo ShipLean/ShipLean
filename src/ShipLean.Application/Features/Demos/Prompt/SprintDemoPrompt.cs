@@ -8,7 +8,6 @@ namespace ShipLean.Application.Features.Demos.Prompt;
 
 public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
 {
-    private const string Resource = "sprint-demo/sprint-demo-prompt.md";
     private const string DefaultLogoResource = "sprint-demo/shiplean-logo-on-light.svg";
 
     // C4: where the channels differ, the template holds a placeholder and each channel a part file, sprint-demo-<part>-<channel>.md.
@@ -24,7 +23,7 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
 
     private static readonly JsonSerializerOptions DataJson = new(JsonSerializerDefaults.Web);
 
-    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel)
+    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel, string template)
     {
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -41,7 +40,7 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
         };
         // One pass, so a value that happens to hold "{{name}}" is never filled a second time. The channel blocks are template text, not data:
         // they are spliced in before the pass and their own placeholders are filled by it.
-        return Placeholder().Replace(Template(channel), match => values.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
+        return Placeholder().Replace(Template(template, channel), match => values.TryGetValue(match.Groups[1].Value, out var value) ? value : match.Value);
     }
 
     // K11: a rendered prompt holds no "{{". Data is escaped, never filled: a pair of braces gets a space between, in a URL a %7B,
@@ -99,8 +98,8 @@ public sealed partial class SprintDemoPrompt : ISprintDemoPrompt
     }
 
     // C4: the tools, the narration commands and the closing comment differ per channel; the rest of the template is one body.
-    private static string Template(DemoPromptChannel channel)
-        => ChannelParts.Aggregate(ReadResource(Resource),
+    private static string Template(string template, DemoPromptChannel channel)
+        => ChannelParts.Aggregate(template,
             (text, part) => text.Replace("{{" + part.Placeholder + "}}", Block(PartResource(part.Part, channel)), StringComparison.Ordinal));
 
     private static string PartResource(string part, DemoPromptChannel channel) => channel switch
