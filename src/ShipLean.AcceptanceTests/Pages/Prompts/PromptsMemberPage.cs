@@ -1,0 +1,60 @@
+using ShipLean.AcceptanceTests.Harness;
+using ShipLean.TestSupport.TestIds;
+
+namespace ShipLean.AcceptanceTests.Pages.Prompts;
+
+// The Prompts tab of project settings as a member, the Issue proposal journey and the phone tests read it.
+public sealed class PromptsMemberPage(IPage page)
+{
+    public ILocator Root => page.GetByTestId(PromptsTestIds.Page);
+
+    public ILocator ReadOnlyNote => page.GetByTestId(PromptsTestIds.ReadOnlyNote);
+
+    public ILocator ReadOnlyAdmins => page.GetByTestId(PromptsTestIds.ReadOnlyAdmins);
+
+    public ILocator Rows => page.GetByTestId(PromptsTestIds.ListRow);
+
+    public ILocator List => page.GetByTestId(PromptsTestIds.List);
+
+    public ILocator StageStrip => page.GetByTestId(PromptsTestIds.StageStrip);
+
+    public ILocator Detail => page.GetByTestId(PromptsTestIds.Detail);
+
+    public ILocator DetailName => page.GetByTestId(PromptsTestIds.DetailName);
+
+    public ILocator DetailChip => page.GetByTestId(PromptsTestIds.DetailChip);
+
+    public ILocator Actions => page.GetByTestId(PromptsTestIds.Actions);
+
+    public ILocator Customize => page.GetByTestId(PromptsTestIds.ActionCustomize);
+
+    public ILocator Edit => page.GetByTestId(PromptsTestIds.ActionEdit);
+
+    public ILocator UseBuiltIn => page.GetByTestId(PromptsTestIds.ActionUseBuiltIn);
+
+    public ILocator HistoryUse => page.GetByTestId(PromptsTestIds.HistoryUse);
+
+    public ILocator HistoryBuiltInUse => page.GetByTestId(PromptsTestIds.HistoryBuiltInUse);
+
+    public ILocator UpdateApply => page.GetByTestId(PromptsTestIds.UpdateApply);
+
+    public ILocator UpdateKeep => page.GetByTestId(PromptsTestIds.UpdateKeep);
+
+    public ILocator PanelHistory => page.GetByTestId(PromptsTestIds.PanelHistory);
+
+    public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow);
+
+    public ILocator HistoryNote => page.GetByTestId(PromptsTestIds.HistoryNote);
+
+    public ILocator Tab(string testId) => page.GetByTestId(testId);
+
+    public ILocator Panel(string testId) => page.GetByTestId(testId);
+
+    public ILocator RowOf(string file) => Rows.Filter(new() { Has = page.GetByTestId(PromptsTestIds.ListRowFile).Filter(new() { HasTextString = file }) });
+
+    public async Task OpenAsync(string projectKey, string prompt)
+    {
+        await page.GotoAsync(Links.ProjectSettings(projectKey, "prompts", prompt));
+        await Assertions.Expect(Detail).ToBeVisibleAsync();
+    }
+}
