@@ -24,7 +24,7 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
     public const int InlineAttachmentBytes = 200 * 1024;
 
     public async Task<AgentContextInput> LoadAsync(
-        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? fallbackBaseUrl, string? guidance, CancellationToken cancellationToken)
+        Guid workItemId, Guid sessionId, DateTimeOffset createdAt, Guid connectionId, Guid creatorId, AgentRepositoryInput repository, string? guidance, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var item = await connection.QuerySingleOrDefaultAsync<AgentItemRow>(new CommandDefinition(
@@ -83,7 +83,8 @@ internal sealed class AgentContextLoader(NpgsqlDataSource dataSource, Lazy<IBlob
             """,
             new { workItemId }, cancellationToken: cancellationToken))).ToList();
         var baseUrl = await connection.QuerySingleOrDefaultAsync<string>(new CommandDefinition("SELECT base_url FROM instance_settings", cancellationToken: cancellationToken));
-        baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? fallbackBaseUrl ?? string.Empty : baseUrl;
+        // The links come from base_url only (SHIP-1919): the request that started the session chooses its own Host. With none they are relative.
+        baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? string.Empty : baseUrl;
 
         string Url(string key) => McpOpenUrls.WorkItem(baseUrl, item.ProjectKey, key);
         AgentRelatedItemInput Related(AgentRelatedRow row) => new(row.Id.ToString(), row.Key, row.Title, Blank(row.Description), Url(row.Key));

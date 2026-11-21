@@ -11,8 +11,8 @@ public sealed class SprintDemos(ISprintDemoReader reader, ISprintDemoRuns runs, 
     public Task<SprintDemoDto> GetAsync(Guid sprintId, CancellationToken cancellationToken = default)
         => reader.GetAsync(sprintId, cancellationToken);
 
-    public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, string requestOrigin, CancellationToken cancellationToken = default)
-        => runs.CreateFromButtonAsync(sprintId, requestOrigin, cancellationToken);
+    public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, CancellationToken cancellationToken = default)
+        => runs.CreateFromButtonAsync(sprintId, cancellationToken);
 
     public Task<SprintDemoHandover> CreateForAgentAsync(Guid sprintId, string baseUrl, string agentStamp, Guid? authorizationId, CancellationToken cancellationToken = default)
         => runs.CreateForAgentAsync(sprintId, baseUrl, agentStamp, authorizationId, cancellationToken);
