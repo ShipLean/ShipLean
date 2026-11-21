@@ -80,7 +80,7 @@ export function PlanningRow({
       data-over={dropEdge !== null}
       data-edge={dropEdge ?? undefined}
       style={{ opacity: isDragging || withGroup ? 0.4 : 1 }}
-      className={`h-9 data-[edge=bottom]:[&>td]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[edge=top]:[&>td]:shadow-[inset_0_2px_0_var(--color-accent)] text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${mark ? 'border-b-2 border-signal' : 'border-b border-edge'} ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`h-9 data-[edge=bottom]:[&>td]:shadow-[inset_0_-2px_0_var(--color-accent)] data-[edge=top]:[&>td]:shadow-[inset_0_2px_0_var(--color-accent)] text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-signal-soft ${flash ? 'bg-signal-soft' : ''} ${mark ? 'border-b-2 border-signal' : 'border-b border-edge'} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
       <RowSelectCell row={row} />
       {forecast ? (
@@ -100,7 +100,7 @@ export function PlanningRow({
       {columns.map((column) => (
         <td
           key={column}
-          className={`px-2 ${numeric.includes(column) ? 'text-right' : ''} ${pulled && numeric.includes(column) ? 'font-semibold text-accent' : ''}`}
+          className={`px-2 ${numeric.includes(column) ? 'text-right' : ''} ${pulled && numeric.includes(column) ? 'font-semibold text-signal' : ''}`}
         >
           <ListCell row={row} column={column} projectKey={projectKey} />
         </td>

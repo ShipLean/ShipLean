@@ -2,7 +2,8 @@ import { Avatar } from '../../../../components/Avatar';
 import { Chip } from '../../../../components/Chip';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
-import { retroCategoryColours, retroCategoryLabels } from '../../../retroShared/retroCategories';
+import { RetroCategoryIcon } from '../../../retroShared/RetroCategoryIcon';
+import { retroCategoryLabels } from '../../../retroShared/retroCategories';
 import { retrosTestIds as ids } from '../../testIds';
 import { Highlight } from '../parts/Highlight';
 import { matchesRootCause } from '../parts/matches';
@@ -40,11 +41,7 @@ export function PhoneSearchRow({
     >
       <span className="flex min-w-0 items-center gap-2 text-[length:var(--text-xs)] text-ink-muted">
         <span className="inline-flex items-center gap-1.5 text-ink">
-          <span
-            aria-hidden="true"
-            className="size-2 flex-none rounded-[2px]"
-            style={{ background: retroCategoryColours[point.category] }}
-          />
+          <RetroCategoryIcon category={point.category} decorative />
           {retroCategoryLabels[point.category]}
         </span>
         <span className="ml-auto inline-flex items-center gap-1.5">

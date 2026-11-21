@@ -21,7 +21,7 @@ import {
   heardFailureNothingChangedId,
   heardFailureWhatCanISayId,
 } from './HeardFailure.testIds';
-import { nothingHeardToast, tooShortToast, unclearCopy } from './heardCopy';
+import { engineFailedToast, nothingHeardToast, tooShortToast, unclearCopy } from './heardCopy';
 import { readSpecContext } from './specContext';
 import {
   resetSilentHolds,
@@ -30,7 +30,7 @@ import {
 } from './silentHolds';
 import { useSilentHolds } from './useSilentHolds';
 
-export type HeardFailureKind = 'tooShort' | 'nothingHeard' | 'unclear';
+export type HeardFailureKind = 'tooShort' | 'nothingHeard' | 'engineFailed' | 'unclear';
 
 export interface HeardFailureProps {
   failure: Extract<VoiceFailure, { kind: HeardFailureKind }>;
@@ -63,7 +63,7 @@ export function HeardFailure(props: HeardFailureProps) {
 
 // A tap or silence: a toast and no sheet. The second silent hold in a row adds a Tune mic action; the third pushes the
 // Mic tuning page instead of another toast (voice D1, D2). The page is pushed, so Back restores the screen as it was.
-function SilentFailure({ failure, spec, onClose }: HeardFailureProps) {
+function SilentFailure({ failure, spec, onTypeInstead, onClose }: HeardFailureProps) {
   const toast = useToast();
   const router = useRouter();
   const holds = useSilentHolds(failure);
@@ -79,6 +79,16 @@ function SilentFailure({ failure, spec, onClose }: HeardFailureProps) {
     if (silent && holds >= SILENT_HOLDS_FOR_MIC_TUNING) {
       resetSilentHolds();
       router.push(links.micTuning('third_hold', key));
+      onClose();
+      return;
+    }
+    if (failure.kind === 'engineFailed') {
+      // The engine failed, not the mic: no Tune mic and no silent-hold count. Type instead is the way on; another hold
+      // tries the engine again.
+      toast.show({
+        ...engineFailedToast(failure.detail.stage),
+        action: { label: 'Type instead', onPress: onTypeInstead },
+      });
       onClose();
       return;
     }
@@ -101,7 +111,7 @@ function SilentFailure({ failure, spec, onClose }: HeardFailureProps) {
         : copy,
     );
     onClose();
-  }, [silent, holds, failure, toast, router, spec, onClose]);
+  }, [silent, holds, failure, toast, router, spec, onTypeInstead, onClose]);
 
   return null;
 }

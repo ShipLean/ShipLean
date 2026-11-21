@@ -7,7 +7,9 @@ using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport;
+using ShipLean.Contracts;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.WorkItemDetails.Attachments;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
@@ -187,9 +189,41 @@ public class AgentContextDetailsTests : ApiFixture
         document.Descendants("guidance").Single().Value.ShouldContain("oldest comment");
     }
 
+    [Test]
+    public async Task Start_WhenBaseUrlBlankAndHostForged_ShouldNeverPutTheRequestOriginInTheLinks()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        var child = await CreateAsync(arranged, "task", "A child");
+        await database.ExecuteAsync("UPDATE work_item SET parent_id = @id, parent_type = 'story' WHERE id = @child", new { id = item.Id, child });
+        var childKey = await database.ExecuteScalarAsync<string>("SELECT key FROM work_item WHERE id = @child", new { child });
+        var original = await database.ExecuteScalarAsync<string>("SELECT base_url FROM instance_settings") ?? string.Empty;
+        await database.ExecuteAsync("UPDATE instance_settings SET base_url = ''");
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{item.Id}/agent-session");
+            request.Headers.Add(ClientHeader.Name, ApiClient.ClientId);
+            request.Headers.Add(TestAuthentication.UserHeader, TestUser.Joel.Id.ToString());
+            request.Headers.Host = "attacker.example";
+            using var response = await Api.Http.SendAsync(request);
+
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            var body = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem().Body;
+            body.ShouldNotContain("attacker.example");
+            var context = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).Single())["promptContext"]!.GetValue<string>();
+            context.ShouldContain($"url=\"/p/{arranged.Project.Key}/items/{childKey}\"");
+            System.Text.RegularExpressions.Regex.IsMatch(context, "://[^\"\\s]*/p/").ShouldBeFalse();
+        }
+        finally
+        {
+            await database.ExecuteAsync("UPDATE instance_settings SET base_url = @original", new { original });
+        }
+    }
+
     private async Task<XDocument> StartAndParseAsync(Npgsql.NpgsqlConnection database, Guid itemId)
     {
-        var outcome = await Starter.StartAsync(itemId, SeedIds.Users.Joel, "https://planner.test", null, null, null, CancellationToken.None);
+        var outcome = await Starter.StartAsync(itemId, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
         outcome.SessionId.ShouldNotBeNull();
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, itemId)).ShouldHaveSingleItem());
         return XDocument.Parse("<root>" + body["promptContext"]!.GetValue<string>() + "</root>");

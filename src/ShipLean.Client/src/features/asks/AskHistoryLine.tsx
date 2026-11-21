@@ -37,7 +37,7 @@ function wording(line: AskHistoryLineDto): {
 const badgeTone: Partial<Record<AskHistoryLineDto['kind'], string>> = {
   confirmed: 'border-ok/60',
   answered: 'border-ok/60',
-  withdrawn: 'border-dashed border-accent/45 text-ink-muted',
+  withdrawn: 'border-dashed border-signal/45 text-ink-muted',
 };
 
 // One ask event in the History rail: its D or Q badge (a folded raise "D1–D7" shows its first label, as the design does), who (an agent first, when one acted), when, and the wording.
@@ -52,7 +52,7 @@ export function AskHistoryLine({ line }: AskHistoryLineProps) {
     >
       <span
         title={line.badge}
-        className={`-ml-0.5 grid h-5.5 w-6.5 place-items-center rounded-control border bg-surface font-mono text-[length:var(--text-2xs)] font-semibold ${badgeTone[line.kind] ?? 'border-accent/45'}`}
+        className={`-ml-0.5 grid h-5.5 w-6.5 place-items-center rounded-control border bg-surface font-mono text-[length:var(--text-2xs)] font-semibold ${badgeTone[line.kind] ?? 'border-signal/45'}`}
       >
         {line.badge.split('–')[0]}
       </span>

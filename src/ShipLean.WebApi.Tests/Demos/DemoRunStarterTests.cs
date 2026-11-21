@@ -207,7 +207,7 @@ public class DemoRunStarterTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var (projectId, sprintId, itemId) = await NewDemoAsync(database);
         using var scope = NewScope();
-        await scope.ServiceProvider.GetRequiredService<AgentSessionStarter>().StartAsync(itemId, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<AgentSessionStarter>().StartAsync(itemId, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
 
         var outcome = await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
 

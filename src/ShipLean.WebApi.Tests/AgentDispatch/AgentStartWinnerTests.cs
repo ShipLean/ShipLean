@@ -20,7 +20,7 @@ public class AgentStartWinnerTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var item = await (await AgentDispatchArrange.CreateAsync(database, Api)).CreateItemAsync(Api);
 
-        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult("The <winner> prompt."), CancellationToken.None);
+        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, (_, _) => Task.FromResult("The <winner> prompt."), CancellationToken.None);
 
         outcome.SessionId.ShouldNotBeNull();
         var body = AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem());
@@ -35,10 +35,10 @@ public class AgentStartWinnerTests : ApiFixture
     {
         await using var database = await OpenDatabaseAsync();
         var item = await (await AgentDispatchArrange.CreateAsync(database, Api)).CreateItemAsync(Api);
-        await Starter.StartAsync(item.Id, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None);
+        await Starter.StartAsync(item.Id, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
         var calls = 0;
 
-        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult($"call {++calls}"), CancellationToken.None);
+        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, (_, _) => Task.FromResult($"call {++calls}"), CancellationToken.None);
 
         outcome.Block.ShouldBe(AgentStartBlock.LiveSession);
         calls.ShouldBe(0);
@@ -55,7 +55,7 @@ public class AgentStartWinnerTests : ApiFixture
         var racers = Enumerable.Range(0, 6).Select(_ => Task.Run(async () =>
         {
             await barrier.Task;
-            return await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult($"call {Interlocked.Increment(ref calls)}"), CancellationToken.None);
+            return await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, (_, _) => Task.FromResult($"call {Interlocked.Increment(ref calls)}"), CancellationToken.None);
         })).ToList();
         barrier.SetResult();
         var outcomes = await Task.WhenAll(racers);
@@ -73,7 +73,7 @@ public class AgentStartWinnerTests : ApiFixture
         await using var database = await OpenDatabaseAsync();
         var item = await (await AgentDispatchArrange.CreateAsync(database, Api)).CreateItemAsync(Api);
 
-        var failure = await Should.ThrowAsync<InvalidOperationException>(() => Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, null, async (transaction, token) =>
+        var failure = await Should.ThrowAsync<InvalidOperationException>(() => Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, async (transaction, token) =>
         {
             await transaction.Connection!.ExecuteAsync(new CommandDefinition("UPDATE work_item SET title = 'Written by the factory' WHERE id = @id", new { id = item.Id }, transaction, cancellationToken: token));
             throw new InvalidOperationException("The factory failed.");
@@ -92,7 +92,7 @@ public class AgentStartWinnerTests : ApiFixture
         var item = await (await AgentDispatchArrange.CreateAsync(database, Api, connection: false)).CreateItemAsync(Api);
         var calls = 0;
 
-        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, null, (_, _) => Task.FromResult($"call {++calls}"), CancellationToken.None);
+        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, (_, _) => Task.FromResult($"call {++calls}"), CancellationToken.None);
 
         outcome.Block.ShouldBe(AgentStartBlock.NoConnection);
         calls.ShouldBe(0);
@@ -106,7 +106,7 @@ public class AgentStartWinnerTests : ApiFixture
         var item = await (await AgentDispatchArrange.CreateAsync(database, Api, connection: false)).CreateItemAsync(Api);
         var other = (await AgentConnectionsWire.CreateAsync(Api, $"Relay {Guid.NewGuid():N}")).Connection.Id;
 
-        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, null, other, (_, _) => Task.FromResult("Go."), CancellationToken.None);
+        var outcome = await Starter.StartWinnerAsync(item.Id, SeedIds.Users.Joel, other, (_, _) => Task.FromResult("Go."), CancellationToken.None);
 
         outcome.SessionId.ShouldNotBeNull();
         (await AgentDispatchArrange.SessionsAsync(database, item.Id)).ShouldHaveSingleItem().ConnectionId.ShouldBe(other);

@@ -25,7 +25,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
     private const int MaxNewActions = 3;
 
     [McpServerTool(Name = "decide_retro_actions"), McpScope(McpScopes.Plan, PreviewScope = McpScopes.Read)]
-    [Description("Decide what to do with the undecided retrospective points in one scope (a Feature, a sprint, or a date range): create action items over them, add them to open actions, mark points Not needed with a reason, set themes, and propose theme merges for a person to accept. Give exactly one scope. Without `plan` it only previews and returns a plan; call again with that plan to apply exactly it. At most 3 new action items per call. A point already decided is skipped, never an error. A merge is only ever proposed; a person decides it.")]
+    [Description("Decide what to do with the undecided retrospective points in one scope (a Feature, a sprint, or a date range): create action items over them, add them to open actions, mark points Not needed with a reason, set themes, and propose theme merges for a person to accept. Give exactly one scope. Without `plan` it only previews and returns a plan; call again with that plan to apply exactly it. At most 3 new action items per call. A point already decided is skipped, never an error. A merge is only ever proposed here, never applied: a person accepts or rejects it, and when they ask you to, decide_theme_merges lists the pending proposals and answers them.")]
     public async Task<CallToolResult> DecideRetroActions(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("Scope: a Feature's key. Its own retro plus its stories' and bugs'.")] string? feature = null,
@@ -35,7 +35,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
         [Description("Action items to create, or to add points to when `existing` names an open action.")] IReadOnlyList<DecideActionInput>? actions = null,
         [Description("Points that need no action, each with a reason.")] IReadOnlyList<DecideNotNeededInput>? not_needed = null,
         [Description("Themes to set on points. A theme a person chose is never overwritten.")] IReadOnlyList<DecideThemeInput>? themes = null,
-        [Description("Pairs of themes to propose merging. Never applied: a person accepts or keeps them apart.")] IReadOnlyList<DecideMergeInput>? merges = null,
+        [Description("Pairs of themes to propose merging. Never applied by this tool: a person accepts or keeps them apart, or asks you to with decide_theme_merges.")] IReadOnlyList<DecideMergeInput>? merges = null,
         [Description("The plan a preview returned. Applies exactly what it holds and ignores every other argument.")] string? plan = null,
         CancellationToken cancellationToken = default)
     {

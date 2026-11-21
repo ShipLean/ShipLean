@@ -37,6 +37,10 @@ type Heard = HeardFailureProps['failure'];
 
 const silent = (): Heard => ({ kind: 'nothingHeard', detail: {} });
 const short = (): Heard => ({ kind: 'tooShort', detail: { heldMs: 200 } });
+const engine = (stage: 'start' | 'stop' = 'start'): Heard => ({
+  kind: 'engineFailed',
+  detail: { stage },
+});
 const unclear = (heard: string): Heard => ({ kind: 'unclear', detail: { heard } });
 
 function props(failure: Heard, over: Partial<HeardFailureProps> = {}): HeardFailureProps {
@@ -85,6 +89,33 @@ async function hold(failure: Heard, over: Partial<HeardFailureProps> = {}) {
 }
 
 describe('HeardFailure', () => {
+  it('engineFailed says the voice engine failed, offers Type instead, and never Tune mic', async () => {
+    installFakeEngines();
+    const first = await hold(engine('start'));
+    expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(
+      /Voice couldn't start · nothing was changed/,
+    );
+    expect(screen.getByTestId(primitiveIds.toastAction)).toHaveTextContent('Type instead');
+    await fireEvent.press(screen.getByTestId(primitiveIds.toastAction));
+    expect(first.p.onTypeInstead).toHaveBeenCalledTimes(1);
+    expect(first.p.onClose).toHaveBeenCalledTimes(1);
+    await first.unmount();
+
+    const stop = await hold(engine('stop'));
+    expect(screen.getByTestId(primitiveIds.toast)).toHaveTextContent(
+      /Voice stopped working · nothing was changed/,
+    );
+    await stop.unmount();
+
+    // Three in a row are not silent holds: no Tune mic, and the Mic tuning page never opens.
+    for (let i = 0; i < 3; i += 1) {
+      const again = await hold(engine());
+      expect(screen.getByTestId(primitiveIds.toastAction)).toHaveTextContent('Type instead');
+      await again.unmount();
+    }
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('tooShort shows the hold hint toast and no sheet', async () => {
     installFakeEngines();
     const { p, unmount } = await hold(short());

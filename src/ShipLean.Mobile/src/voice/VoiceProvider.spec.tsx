@@ -415,18 +415,18 @@ describe('VoiceProvider', () => {
     expect(model.prepared).toEqual(['SHIP-906 Voice commands']);
   });
 
-  it('a rejected release never leaves listening: nothingHeard, or the open preview back', async () => {
+  it('a rejected release never leaves listening: engineFailed (never nothingHeard), or the open preview back', async () => {
     const { recognizer, model } = await mount();
     model.respond(SET_STATE);
     jest.spyOn(recognizer, 'start').mockResolvedValueOnce(brokenSession());
     await hold();
     expect(probe.states).toContainEqual({
       kind: 'failure',
-      failure: { kind: 'nothingHeard', detail: {} },
+      failure: { kind: 'engineFailed', detail: { stage: 'stop' } },
       heard: null,
       source: 'voice',
     });
-    // A silent hold is a toast and no sheet (voice D1): the toast closes the failure, never back to listening.
+    // A toast and no sheet (voice D1): the toast closes the failure, never back to listening.
     expect(kind()).toBe('idle');
 
     await hold();

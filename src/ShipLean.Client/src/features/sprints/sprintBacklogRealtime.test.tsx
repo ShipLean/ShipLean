@@ -55,6 +55,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.paths = [];
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -88,28 +90,28 @@ const events = [
 test.each(events)(
   'useSprintBacklogRealtime_When$type, ShouldRefetchTheItemsAndTheFigures',
   async (event) => {
-    expect(count('/work-items')).toBe(1);
+    expect(count('/work-items')).toBe(0);
     await deliver(event);
-    expect(count('/work-items')).toBe(2);
-    expect(count('/metrics')).toBe(2);
-    expect(count('/capacity')).toBe(2);
+    expect(count('/work-items')).toBe(1);
+    expect(count('/metrics')).toBe(1);
+    expect(count('/capacity')).toBe(1);
   },
 );
 
 test('useSprintBacklogRealtime_WhenWorkItemReordered_ShouldRefetchTheItemsOnly', async () => {
   await deliver({ type: 'workItemReordered', id: 'i', backlogOrder: 'a' });
-  expect(count('/work-items')).toBe(2);
-  expect(count('/metrics')).toBe(1);
+  expect(count('/work-items')).toBe(1);
+  expect(count('/metrics')).toBe(0);
 });
 
 test('useSprintBacklogRealtime_WhenStatesChanged_ShouldRefetchTheItemsAndTheMetrics', async () => {
   await deliver({ type: 'statesChanged' });
-  expect(count('/work-items')).toBe(2);
-  expect(count('/metrics')).toBe(2);
+  expect(count('/work-items')).toBe(1);
+  expect(count('/metrics')).toBe(1);
 });
 
 test('useSprintBacklogRealtime_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async () => {
   await deliver({ type: 'presenceChanged', screenId: 'sprintBacklog', userIds: [], sequence: 1 });
-  expect(count('/work-items')).toBe(1);
-  expect(count('/metrics')).toBe(1);
+  expect(count('/work-items')).toBe(0);
+  expect(count('/metrics')).toBe(0);
 });

@@ -262,6 +262,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.not_needed_undone` |  | `RetroDecisions.UndoNotNeeded` |
 | `retro.merge_kept_apart` |  | `RetroMergeProposals.KeepApart` |
 | `retro.actions_decided` | `decide_retro_actions` |  |
+| `retro.merges_decided` | `decide_theme_merges` |  |
 | `decision.recorded` | `record_decisions` |  |
 | `decision.answered` | `answer_decision` |  |
 | `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count` only) |

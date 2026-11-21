@@ -77,7 +77,7 @@ export function SectionCapacity({
         <span
           data-testid={ids.sectionPreview}
           data-over={preview.over}
-          className={`text-[length:var(--text-xs)] font-semibold whitespace-nowrap ${preview.over ? 'text-alert' : 'text-accent'}`}
+          className={`text-[length:var(--text-xs)] font-semibold whitespace-nowrap ${preview.over ? 'text-alert' : 'text-signal'}`}
         >
           {preview.text}
         </span>

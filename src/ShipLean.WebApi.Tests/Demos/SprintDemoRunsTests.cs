@@ -1,10 +1,12 @@
 using System.Net;
 using Dapper;
+using Npgsql;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Agents;
 using ShipLean.TestSupport;
 using ShipLean.Contracts;
+using ShipLean.TestSupport.Fixtures;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.TestSupport.Hosting;
@@ -315,6 +317,68 @@ public class SprintDemoRunsTests : McpFixture
             }
 
             usable.ShouldBe(1);
+        }
+    }
+
+    private static async Task<string> SetBaseUrlAsync(NpgsqlConnection database, string baseUrl)
+    {
+        var original = await database.ExecuteScalarAsync<string>("SELECT base_url FROM instance_settings") ?? string.Empty;
+        await database.ExecuteAsync("UPDATE instance_settings SET base_url = @baseUrl", new { baseUrl });
+        return original;
+    }
+
+    // The button with a Host header of the caller's choosing.
+    private async Task<HttpResponseMessage> ButtonWithHostAsync(Guid sprintId, string host)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"api/sprints/{sprintId}/demo");
+        request.Headers.Add(ClientHeader.Name, ApiClient.ClientId);
+        request.Headers.Add(TestAuthentication.UserHeader, TestUser.Joel.Id.ToString());
+        request.Headers.Host = host;
+        return await Api.Http.SendAsync(request);
+    }
+
+    [Test]
+    public async Task Button_WhenBaseUrlBlankAndHostForged_ShouldRefuseAndIssueNoTokenOrDemoRequest()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (project, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
+        var original = await SetBaseUrlAsync(database, "");
+        try
+        {
+            var error = await ErrorOfAsync(await ButtonWithHostAsync(sprintId, "attacker.example"), HttpStatusCode.BadRequest);
+
+            error.Error.ShouldContain("base URL");
+            (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldBeNull();
+            (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM transfer_token t JOIN work_item w ON w.id = t.work_item_id WHERE w.project_id = @projectId AND t.kind = 'demo'", new { projectId = project.Id })).ShouldBe(0);
+            (await database.ExecuteScalarAsync<int>("SELECT count(*) FROM agent_session s JOIN work_item w ON w.id = s.work_item_id WHERE w.project_id = @projectId", new { projectId = project.Id })).ShouldBe(0);
+            (await database.QuerySingleAsync<(DateTimeOffset? At, string? Via)>("SELECT demo_requested_at AS at, demo_requested_via AS via FROM sprint WHERE id = @sprintId", new { sprintId }))
+                .ShouldBe((null, null));
+        }
+        finally
+        {
+            await SetBaseUrlAsync(database, original);
+        }
+    }
+
+    [Test]
+    public async Task Button_WhenBaseUrlSetAndHostForged_ShouldBuildTheUploadUrlFromBaseUrl()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (_, sprintId, _) = await DemoRunCalls.ArrangeAsync(database, Api);
+        var original = await SetBaseUrlAsync(database, "https://ship.example.test/");
+        try
+        {
+            using var response = await ButtonWithHostAsync(sprintId, "attacker.example");
+
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            var itemId = (await DemoRunCalls.ItemOfAsync(database, sprintId)).ShouldNotBeNull();
+            var body = await DemoRunCalls.DeliveredBodyAsync(database, itemId);
+            body.ShouldContain("https://ship.example.test/api/uploads/demo?token=");
+            body.ShouldNotContain("attacker.example");
+        }
+        finally
+        {
+            await SetBaseUrlAsync(database, original);
         }
     }
 }

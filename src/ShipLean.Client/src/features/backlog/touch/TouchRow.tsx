@@ -78,7 +78,7 @@ export function TouchRow({
         if (event.key === 'Enter' && event.target === event.currentTarget && !selecting)
           peek.open(row.key);
       }}
-      className={`flex min-h-[var(--touch-target)] items-stretch border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`flex min-h-[var(--touch-target)] items-stretch border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-signal-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
       <div
         data-testid={ids.touchRowHandle}

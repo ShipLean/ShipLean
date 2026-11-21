@@ -58,6 +58,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.paths = [];
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -70,18 +72,18 @@ async function deliver(event: Record<string, unknown>) {
 }
 
 test('useCapacityRealtime_WhenProjectChanged_ShouldRefetchTheMembers', async () => {
-  expect(reads_('/members')).toBe(1);
+  expect(reads_('/members')).toBe(0);
   await deliver({ type: 'projectChanged' });
-  expect(reads_('/members')).toBe(2);
+  expect(reads_('/members')).toBe(1);
 });
 
 test('useCapacityRealtime_WhenThisSprintChanged_ShouldRefetchItsCapacityNotTheMembers', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's1' });
-  expect(reads_('/capacity')).toBe(2);
-  expect(reads_('/members')).toBe(1);
+  expect(reads_('/capacity')).toBe(1);
+  expect(reads_('/members')).toBe(0);
 });
 
 test('useCapacityRealtime_WhenAnotherSprintChanged_ShouldRefetchThisCapacityToo', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's2' });
-  expect(reads_('/capacity')).toBe(2);
+  expect(reads_('/capacity')).toBe(1);
 });

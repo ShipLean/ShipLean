@@ -23,7 +23,7 @@ public interface IAgentSessionStarter
     // the item's only live one; it returns false to abort the start: everything rolls back and the outcome has neither SessionId
     // nor Block. A caller claims an idempotency key there (the round job worker's round-session:<jobKey>).
     Task<AgentStartOutcome> StartWinnerAsync(
-        Guid workItemId, Guid creatorId, string? fallbackBaseUrl, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
+        Guid workItemId, Guid creatorId, Guid? connectionId, Func<DbTransaction, CancellationToken, Task<string>> winnerPrompt, CancellationToken cancellationToken,
         AgentSessionMode mode = AgentSessionMode.Implement, IReadOnlyList<AgentRelatedWork>? relatedItems = null, Func<DbTransaction, CancellationToken, Task<bool>>? fence = null);
 
     // The most related items a propose session takes (the rounds' "Closest existing items").

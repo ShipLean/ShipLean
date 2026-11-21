@@ -50,6 +50,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.count = 0;
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -68,12 +70,12 @@ test.each([
   { type: 'workItemRemoved', id: 'c', parentId: 'item-1' },
   { type: 'statesChanged' },
 ])('useOpenChildren_WhenEvent_$type_ShouldRefetchTheChildren', async (event) => {
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   await deliver(event);
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
 });
 
 test('useOpenChildren_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's1' });
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
 });

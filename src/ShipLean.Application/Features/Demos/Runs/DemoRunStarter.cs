@@ -66,7 +66,7 @@ public sealed class DemoRunStarter(
         var data = await sprintData.ReadAsync(request.SprintId, cancellationToken);
         var inspection = await brandSource.InspectAsync(request.ProjectId, cancellationToken);
         var outcome = await sessions.StartWinnerAsync(
-            request.ItemId, request.UserId, request.BaseUrl, null,
+            request.ItemId, request.UserId, null,
             async (transaction, token) =>
             {
                 // After the starter's guards, so a blocked start records no serving. The serving is on its own connection.

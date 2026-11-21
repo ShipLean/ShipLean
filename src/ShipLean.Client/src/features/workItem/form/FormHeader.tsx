@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { WorkItemDto } from '@shiplean/core/api/workItems';
 import { TypeIcon } from '../../../components/TypeIcon';
 import { showToast } from '../../../components/toastStore';
@@ -40,6 +40,7 @@ export function FormHeader({
   const inModal = useInItemPeek();
   const who = (name: string | undefined) => name ?? 'Jira import';
   const { touch } = useTouchShell();
+  const back = backTarget(item, projectKey, useLocation().state);
   const names = changedFieldNames(changed);
   return (
     <section
@@ -51,10 +52,10 @@ export function FormHeader({
         {inModal ? null : (
           <Link
             data-testid={ids.back}
-            to={routePath('storiesBacklog', { key: projectKey })}
+            to={back.to}
             className="text-signal hover:underline touch:hidden"
           >
-            ← Back to Stories backlog
+            ← Back to {back.label}
           </Link>
         )}
         <span
@@ -148,6 +149,26 @@ export function FormHeader({
       </div>
     </section>
   );
+}
+
+// Where Back goes. The link that opened the item can say (state backTo and backLabel, as the Demo tab's link to its BAU
+// item does). A BAU item is on no backlog, so without that it goes to the sprints page; everything else to Stories.
+function backTarget(
+  item: WorkItemDto,
+  projectKey: string,
+  state: unknown,
+): { to: string; label: string } {
+  const from = (state ?? {}) as { backTo?: unknown; backLabel?: unknown };
+  if (
+    typeof from.backTo === 'string' &&
+    from.backTo.startsWith('/p/') &&
+    typeof from.backLabel === 'string'
+  ) {
+    return { to: from.backTo, label: from.backLabel };
+  }
+  if (item.type.id === 'bau')
+    return { to: routePath('sprints', { key: projectKey }), label: 'Sprints' };
+  return { to: routePath('storiesBacklog', { key: projectKey }), label: 'Stories backlog' };
 }
 
 // Two overlapping sheets: an icon rather than the ⧉ glyph, which many phone fonts lack (design/screens/item-touch.css).

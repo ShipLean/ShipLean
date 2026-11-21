@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
@@ -9,7 +7,7 @@ using ShipLean.WebApi.Infrastructure;
 namespace ShipLean.WebApi.Features.AgentDispatch;
 
 [Route("api/work-items/{id:guid}")]
-public sealed class AgentSessionController(AgentSessionEndpoints endpoints, IOptions<ForwardedHeadersOptions> forwarding) : ApiControllerBase
+public sealed class AgentSessionController(AgentSessionEndpoints endpoints) : ApiControllerBase
 {
     // Start agent: opens a session by hand when the item has no live one (the lost-event and retry cases).
     [HttpPost("agent-session")]
@@ -18,7 +16,7 @@ public sealed class AgentSessionController(AgentSessionEndpoints endpoints, IOpt
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
     public Task<AgentSessionStartedDto> Start(Guid id, CancellationToken cancellationToken)
-        => endpoints.StartAsync(id, RequestOrigin.Of(Request, forwarding.Value), cancellationToken);
+        => endpoints.StartAsync(id, cancellationToken);
 
     // The Agent panel's one request: sessions newest first with their activities, and whether Start agent works.
     [HttpGet("agent-sessions")]
@@ -40,5 +38,5 @@ public sealed class AgentSessionController(AgentSessionEndpoints endpoints, IOpt
     [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ApiError>(StatusCodes.Status409Conflict)]
     public async Task<NoContentResult> Stop(Guid id, CancellationToken cancellationToken)
-        => await NoContentAfter(endpoints.StopAsync(id, RequestOrigin.Of(Request, forwarding.Value), cancellationToken));
+        => await NoContentAfter(endpoints.StopAsync(id, cancellationToken));
 }

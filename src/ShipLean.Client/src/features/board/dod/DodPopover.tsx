@@ -84,7 +84,7 @@ export function DodDetails({
         <button
           type="button"
           data-testid={ids.dodSettings}
-          className="cursor-pointer border-0 bg-transparent p-0 text-accent underline touch:min-h-[var(--touch-target)]"
+          className="cursor-pointer border-0 bg-transparent p-0 text-signal underline touch:min-h-[var(--touch-target)]"
           onClick={() => {
             openSettings();
             onClose();

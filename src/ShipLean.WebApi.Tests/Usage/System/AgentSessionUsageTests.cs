@@ -126,7 +126,7 @@ public class AgentSessionUsageTests : ApiFixture
             new IssueRef(IssueRef.GitHubHost, "shiplean-tests/usage-end-reasons", Random.Shared.Next(1, int.MaxValue)), arranged.Project.Id, item, "reporter",
             "Login button says Sing in", "The login page says Sing in.", IssuePhase.Proposing);
         var sessionId = (await Host.Services.GetRequiredService<AgentSessionStarter>().StartAsync(
-            item, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
+            item, SeedIds.Users.Joel, null, null, null, CancellationToken.None, AgentSessionMode.Propose)).SessionId!.Value;
         await issues.RepointAsync(issue.Id, (await arranged.CreateItemAsync(Api)).Id);
         Recorder.Clear();
 
