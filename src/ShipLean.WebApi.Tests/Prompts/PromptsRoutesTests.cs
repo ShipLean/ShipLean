@@ -50,7 +50,7 @@ public class PromptsRoutesTests : ApiFixture
     }
 
     [Test]
-    public async Task Save_WhenStubbed_ShouldReturnTheSavedShape()
+    public async Task Save_WhenValid_ShouldReturnTheSavedShape()
     {
         using var response = await Api.PostJsonAsync(Route("/guide/versions"), new { text = "Custom text.", note = "A change.", source = "editor" });
 
