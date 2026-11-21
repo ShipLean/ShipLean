@@ -27,6 +27,16 @@ const NOT_A_TAG = (text: string): Line => ({
   name: '',
   isKnown: false,
 });
+// .NET's string.Trim() set (char.IsWhiteSpace): not U+FEFF, but U+0085.
+const DOTNET_WHITESPACE =
+  '\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000';
+const DOTNET_TRIM = new RegExp(`^[${DOTNET_WHITESPACE}]+|[${DOTNET_WHITESPACE}]+$`, 'g');
+
+/** Trims exactly as the server's string.Trim() does, so both sides see the same tag lines. */
+export function dotnetTrim(text: string): string {
+  return text.replace(DOTNET_TRIM, '');
+}
+
 const TAG_NAME = /^[a-z][a-z0-9-]*$/;
 
 function fenceMarker(trimmed: string): string {
@@ -36,13 +46,13 @@ function fenceMarker(trimmed: string): string {
 
 function fenceClose(raws: string[], from: number, marker: string): number {
   for (let index = from; index < raws.length; index++) {
-    if (fenceMarker(raws[index]!.trim()) === marker) return index;
+    if (fenceMarker(dotnetTrim(raws[index]!)) === marker) return index;
   }
   return -1;
 }
 
 function parseTag(raw: string): Line {
-  const trimmed = raw.trim();
+  const trimmed = dotnetTrim(raw);
   if (trimmed.length < 3 || !trimmed.startsWith('<') || !trimmed.endsWith('>')) {
     return NOT_A_TAG(raw);
   }
@@ -64,7 +74,7 @@ function scan(text: string): Line[] {
   const result: Line[] = [];
   let index = 0;
   while (index < raws.length) {
-    const marker = fenceMarker(raws[index]!.trim());
+    const marker = fenceMarker(dotnetTrim(raws[index]!));
     const close = marker === '' ? -1 : fenceClose(raws, index + 1, marker);
     if (close < 0) {
       result.push(parseTag(raws[index]!));
@@ -155,7 +165,7 @@ export function checkSections(text: string): AgentSectionProblem[] {
   return problemsOf(scan(text));
 }
 
-/** Closed `<id>` sections per agent id, for the side panel's counts. */
+/** Opening `<id>` tags per agent id, for the side panel's counts. */
 export function countSections(text: string): Record<AgentId, number> {
   const counts: Record<AgentId, number> = { 'claude-code': 0, 'codex-cli': 0, cursor: 0 };
   for (const line of scan(text)) {
@@ -164,15 +174,15 @@ export function countSections(text: string): Record<AgentId, number> {
   return counts;
 }
 
-/** Replaces the tag on a 1-based line (open or close form) with the suggested id, keeping its indentation. */
+/** Replaces the tag on a 1-based line (open or close form) with the suggested id, keeping its indentation and line ending. */
 export function fixTagLine(text: string, line: number, suggestion: string): string {
-  const eol = text.includes('\r\n') ? '\r\n' : '\n';
-  const raws = text.replace(/\r\n/g, '\n').split('\n');
+  const raws = text.split('\n');
   const raw = raws[line - 1];
   if (raw === undefined) return text;
-  const trimmed = raw.trim();
-  const close = trimmed.startsWith('</');
-  const indent = raw.slice(0, raw.indexOf('<'));
-  raws[line - 1] = `${indent}<${close ? '/' : ''}${suggestion}>`;
-  return raws.join(eol);
+  const ending = raw.endsWith('\r') ? '\r' : '';
+  const body = ending === '' ? raw : raw.slice(0, -1);
+  const close = dotnetTrim(body).startsWith('</');
+  const indent = body.slice(0, body.indexOf('<'));
+  raws[line - 1] = `${indent}<${close ? '/' : ''}${suggestion}>${ending}`;
+  return raws.join('\n');
 }

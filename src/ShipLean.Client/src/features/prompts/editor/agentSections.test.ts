@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-sections.json';
-import { checkSections, countSections, filterSections, fixTagLine } from './agentSections';
+import {
+  checkSections,
+  countSections,
+  dotnetTrim,
+  filterSections,
+  fixTagLine,
+} from './agentSections';
 
 interface Case {
   name: string;
@@ -34,5 +40,16 @@ describe('agentSections helpers', () => {
     expect(fixTagLine(fixTagLine(text, 1, 'claude-code'), 3, 'claude-code')).toBe(
       '<claude-code>\nx\n</claude-code>',
     );
+  });
+
+  it('fixTagLine_WhenCrlfText_ShouldKeepEachLineEnding', () => {
+    expect(fixTagLine('<claudecode>\r\nx\n</claudecode>', 1, 'claude-code')).toBe(
+      '<claude-code>\r\nx\n</claudecode>',
+    );
+  });
+
+  it('dotnetTrim_ShouldMatchTheServerWhitespaceSet', () => {
+    expect(dotnetTrim('\u0085 a\u00A0')).toBe('a');
+    expect(dotnetTrim('\uFEFFa\uFEFF')).toBe('\uFEFFa\uFEFF');
   });
 });

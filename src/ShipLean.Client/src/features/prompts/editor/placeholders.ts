@@ -20,19 +20,29 @@ export function unknownPlaceholders(text: string, placeholders: readonly string[
  * unchanged line before it (else before the nearest unchanged line after it), else the line is appended at the end.
  */
 export function putBack(text: string, placeholder: string, builtInText: string): string {
-  const eol = text.includes('\r\n') ? '\r\n' : '\n';
-  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  // Lines keep their own ending: a trailing "\r" is carried by the line, and compared without it.
+  const lines = text.split('\n');
+  const bare = lines.map(stripCr);
   const builtIn = builtInText.replace(/\r\n/g, '\n').split('\n');
   const at = builtIn.findIndex((line) => line.includes(placeholder));
   const insertion = at < 0 ? placeholder : builtIn[at]!;
-  const position = anchor(lines, builtIn, at);
-  if (position < 0) {
-    const trailing = lines.length > 0 && lines[lines.length - 1] === '';
-    lines.splice(trailing ? lines.length - 1 : lines.length, 0, insertion);
+  const position = anchor(bare, builtIn, at);
+  const trailing = lines.length > 1 && lines[lines.length - 1] === '';
+  const index = position >= 0 ? position : trailing ? lines.length - 1 : lines.length;
+  if (index === lines.length) {
+    // Appended after a last line with no terminator: that line gets the text's ending, the new one stays bare.
+    if (text.includes('\r\n')) lines[index - 1] = `${lines[index - 1]}\r`;
+    lines.push(insertion);
   } else {
-    lines.splice(position, 0, insertion);
+    // Inserted mid-text: the new line ends like the line before it.
+    const crlf = lines[index - 1]?.endsWith('\r') ?? text.includes('\r\n');
+    lines.splice(index, 0, crlf ? `${insertion}\r` : insertion);
   }
-  return lines.join(eol);
+  return lines.join('\n');
+}
+
+function stripCr(line: string): string {
+  return line.endsWith('\r') ? line.slice(0, -1) : line;
 }
 
 // The index in `lines` to insert at, or -1 when no surrounding built-in line survives unchanged.

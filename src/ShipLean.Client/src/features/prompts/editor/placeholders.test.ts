@@ -27,4 +27,15 @@ describe('placeholders', () => {
   it('putBack_WhenTextEndsWithNewline_ShouldAppendBeforeIt', () => {
     expect(putBack('new\n', '{{wave}}', 'old {{wave}}')).toBe('new\nold {{wave}}\n');
   });
+
+  it('putBack_WhenTextIsCrlf_ShouldKeepEveryLineEnding', () => {
+    const builtIn = 'intro\nWave: {{wave}}\noutro';
+    expect(putBack('intro\r\nmine\r\noutro', '{{wave}}', builtIn)).toBe(
+      'intro\r\nWave: {{wave}}\r\nmine\r\noutro',
+    );
+  });
+
+  it('putBack_WhenMixedEndings_ShouldNotRewriteOtherLines', () => {
+    expect(putBack('a\r\nb\nc', '{{wave}}', 'a\n{{wave}}')).toBe('a\r\n{{wave}}\r\nb\nc');
+  });
 });
