@@ -152,4 +152,16 @@ public class ConnectedAgentTests : McpFixture
 
         (await StoredNameAsync("Sender")).ShouldBe("cursor");
     }
+
+    [Test]
+    public async Task Initialize_WhenClassicInitializeSent_ShouldRememberParamsClientInfo()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly, "Classic Agent");
+
+        var reply = await PostAsync(token, """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"claude-code","version":"2.0"}}}""");
+
+        reply.Status.ShouldBe(System.Net.HttpStatusCode.OK);
+        (await StoredNameAsync("Classic Agent")).ShouldBe("claude-code");
+        (await ProbeAsync(token)).Id.ShouldBe(PromptAgents.ClaudeCode);
+    }
 }

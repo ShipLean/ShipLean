@@ -1,4 +1,4 @@
-namespace ShipLean.Application.Features.Agents.Stores;
+namespace ShipLean.Application.Features.Prompts;
 
 // The name and version an MCP client sent in initialize, kept on its OAuth authorization (the transport is stateless). Self-reported.
 public interface IAgentClientInfo

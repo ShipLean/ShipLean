@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using ShipLean.Application.Features.Agents.Stores;
+using ShipLean.Application.Features.Prompts;
 using ShipLean.WebApi.Features.Mcp.Transport;
 
 namespace ShipLean.WebApi.Features.Prompts;

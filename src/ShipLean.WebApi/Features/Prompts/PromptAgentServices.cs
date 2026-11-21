@@ -1,4 +1,4 @@
-using ShipLean.Application.Features.Agents.Stores;
+using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts;
 
 namespace ShipLean.WebApi.Features.Prompts;
