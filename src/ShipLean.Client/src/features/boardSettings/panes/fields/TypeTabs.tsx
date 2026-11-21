@@ -36,7 +36,7 @@ export function TypeTabs({
             data-testid={ids.fieldsTypeTab}
             data-type={type}
             aria-pressed={type === current}
-            className="inline-flex items-center gap-1.5 px-2 py-1 text-[length:var(--text-sm)] aria-pressed:bg-accent-soft"
+            className="inline-flex items-center gap-1.5 px-2 py-1 text-[length:var(--text-sm)] aria-pressed:bg-signal-soft"
             onClick={() => onSelect(type)}
           >
             <TypeIcon type={type} />

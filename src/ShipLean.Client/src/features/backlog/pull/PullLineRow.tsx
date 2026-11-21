@@ -30,7 +30,7 @@ export function PullLineRow({
       <td
         data-testid={ids.pullCell}
         colSpan={columnCount}
-        className="h-[42px] border-y-2 border-accent bg-accent-soft px-2 text-[length:var(--text-sm)]"
+        className="h-[42px] border-y-2 border-signal bg-signal-soft px-2 text-[length:var(--text-sm)]"
       >
         <div data-testid={ids.pullContent} className="flex flex-wrap items-center gap-2">
           <button
@@ -38,7 +38,7 @@ export function PullLineRow({
             type="button"
             data-testid={ids.pullGrip}
             aria-label="Move the pull line. Drag, or Alt with the up and down arrows"
-            className="inline-grid h-6 w-[26px] cursor-ns-resize touch-none place-items-center rounded-control border border-accent bg-panel text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            className="inline-grid h-6 w-[26px] cursor-ns-resize touch-none place-items-center rounded-control border border-signal bg-panel text-signal focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal"
             {...line.grip}
           >
             ⠿
