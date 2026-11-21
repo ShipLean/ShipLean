@@ -1,0 +1,29 @@
+{
+  "how": "patch = `git diff --no-index -U3 a b` for the two texts written to temp files, with the diff/index/---/+++ header lines removed (everything from the first @@ line on, ending with the final newline git writes).",
+  "cases": [
+    {
+      "name": "oneChangedLine",
+      "from": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\n",
+      "to": "line 1\nline 2\nline 3\nline 4\nline 5\nline six, reworded\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\n",
+      "patch": "@@ -3,7 +3,7 @@ line 2\n line 3\n line 4\n line 5\n-line 6\n+line six, reworded\n line 7\n line 8\n line 9\n"
+    },
+    {
+      "name": "twoHunksFarApart",
+      "from": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline 27\nline 28\nline 29\nline 30\n",
+      "to": "line 1\nline 2\nline three, reworded\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20\nline 21\nline 22\nline 23\nline 24\nline 25\nline 26\nline twenty-seven, reworded\nline 28\nline 29\nline 30\n",
+      "patch": "@@ -1,6 +1,6 @@\n line 1\n line 2\n-line 3\n+line three, reworded\n line 4\n line 5\n line 6\n@@ -24,7 +24,7 @@ line 23\n line 24\n line 25\n line 26\n-line 27\n+line twenty-seven, reworded\n line 28\n line 29\n line 30\n"
+    },
+    {
+      "name": "noTrailingNewline",
+      "from": "line 1\nline 2\nline 3\nline 4\nline 5\n",
+      "to": "line 1\nline 2\nline 3\nline 4\nline 5 changed",
+      "patch": "@@ -2,4 +2,4 @@ line 1\n line 2\n line 3\n line 4\n-line 5\n+line 5 changed\n\\ No newline at end of file\n"
+    },
+    {
+      "name": "insertAtEnd",
+      "from": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\n",
+      "to": "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nadded at the end\n",
+      "patch": "@@ -4,3 +4,4 @@ line 3\n line 4\n line 5\n line 6\n+added at the end\n"
+    }
+  ]
+}
