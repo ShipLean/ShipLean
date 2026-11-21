@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { stubShell } from '../../pages/screenshots/shellStub';
+import type { Page } from '../../pages/screenshots/shoot';
 import { realtimeTestIds } from '../realtime/testIds';
 import { stubHub } from '../retros/ct/retroFixtures';
 import { AsksHarness } from './ct/AsksHarness';
@@ -16,6 +17,18 @@ const item: AsksItem = {
   type: { id: 'story', name: 'Story' },
 };
 const view = <AsksHarness projectKey="SHIP" item={item} />;
+
+// The first join refetches what loaded before it, unless that first fetch was still in flight (then it is shared):
+// so wait until the read count stops changing and count from there.
+async function settledReads(page: Page, asks: { reads: () => number }) {
+  await expect.poll(() => asks.reads()).toBeGreaterThan(0);
+  let last = -1;
+  while (asks.reads() !== last) {
+    last = asks.reads();
+    await page.waitForTimeout(300);
+  }
+  return last;
+}
 
 test('DecisionsSection_WhenLoaded_ShouldShowHeading', async ({ mount, page }) => {
   await stubAsks(page, waiting);
@@ -45,7 +58,7 @@ test('DecisionsSection_WhenAsksChangedEventArrives_ShouldRefetch', async ({ moun
   const component = await mount(view);
   await expect(component.getByTestId(ids.section)).toBeVisible();
   await expect(page.getByTestId(realtimeTestIds.liveDot)).toHaveAttribute('data-state', 'live');
-  await expect.poll(() => asks.reads()).toBe(1);
+  const before = await settledReads(page, asks);
 
   await hub.push({
     type: 'asksChanged',
@@ -55,7 +68,7 @@ test('DecisionsSection_WhenAsksChangedEventArrives_ShouldRefetch', async ({ moun
   });
   await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
 
-  await expect.poll(() => asks.reads()).toBe(2);
+  await expect.poll(() => asks.reads()).toBe(before + 1);
   await expect(component.getByTestId(ids.loadFailed)).toHaveCount(0);
 });
 
@@ -66,7 +79,7 @@ test('DecisionsSection_WhenOtherItemAsksChange_ShouldNotRefetch', async ({ mount
   const component = await mount(view);
   await expect(component.getByTestId(ids.section)).toBeVisible();
   await expect(page.getByTestId(realtimeTestIds.liveDot)).toHaveAttribute('data-state', 'live');
-  await expect.poll(() => asks.reads()).toBe(1);
+  const before = await settledReads(page, asks);
 
   await hub.push({
     type: 'asksChanged',
@@ -79,5 +92,5 @@ test('DecisionsSection_WhenOtherItemAsksChange_ShouldNotRefetch', async ({ mount
   await hub.push({ type: 'asksChanged', projectId: 'p1', clientId: null, workItemId: item.id });
   await sentinel;
 
-  expect(asks.reads()).toBe(2);
+  expect(asks.reads()).toBe(before + 1);
 });
