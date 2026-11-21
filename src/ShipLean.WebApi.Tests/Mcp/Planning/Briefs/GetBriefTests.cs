@@ -106,6 +106,57 @@ public class GetBriefTests : McpFixture
         block.ShouldBeLessThan(markdown.IndexOf(plan.CommonBrief.Trim(), StringComparison.Ordinal));
     }
 
+    private async Task<string> CommentedBriefAsync(string taskKey, params (string Item, int Hour, string Body)[] comments)
+    {
+        var start = DateTimeOffset.UtcNow.AddDays(1);
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            foreach (var (item, hour, body) in comments)
+            {
+                await new CommentBuilder(_keys.Ids[item]).WithBody(body).WithCreatedAt(start.AddMinutes(hour)).InsertAsync(connection);
+            }
+        }
+        return (await BriefAsync(taskKey)).GetProperty("markdown").GetString()!;
+    }
+
+    private (string Story, string Task) OwnedTask()
+    {
+        var story = PlanFixture.FeatureEditor.Stories.First(candidate => candidate.Tasks.Count > 0);
+        return (_keys.Stories[story.Title], _keys.Tasks[story.Tasks[0].Title]);
+    }
+
+    [Test]
+    public async Task GetBrief_WhenMoreCommentsThanTheCap_ShouldKeepTheNewestAndSayHowToReadTheRest()
+    {
+        var (_, task) = OwnedTask();
+        var comments = Enumerable.Range(0, BriefPlanContext.MaxComments + 3).Select(n => (_keys.Feature, n, $"amend-{n:00}")).ToArray();
+
+        var markdown = await CommentedBriefAsync(task, comments);
+
+        markdown.ShouldNotContain("amend-00 ");
+        markdown.ShouldNotContain("amend-02");
+        markdown.ShouldContain("amend-03");
+        markdown.ShouldContain($"amend-{BriefPlanContext.MaxComments + 2:00}");
+        markdown.IndexOf("amend-03", StringComparison.Ordinal).ShouldBeLessThan(markdown.IndexOf("amend-32", StringComparison.Ordinal));
+        markdown.ShouldContain($"- {_keys.Feature} (");
+        markdown.ShouldContain($"(3 older comments are not shown: {_keys.Feature} (3).");
+        markdown.ShouldContain($"`get_work_item` on `{_keys.Feature}` and `comments_before` = `");
+    }
+
+    [Test]
+    public async Task GetBrief_WhenStoryAndFeatureCommentsInterleave_ShouldMergeByTimeWithKeys()
+    {
+        var (story, task) = OwnedTask();
+
+        var markdown = await CommentedBriefAsync(task, (_keys.Feature, 1, "first-feature"), (story, 2, "second-story"), (_keys.Feature, 3, "third-feature"));
+
+        var order = new[] { "first-feature", "second-story", "third-feature" }.Select(b => markdown.IndexOf(b, StringComparison.Ordinal)).ToList();
+        order.ShouldBe(order.Order().ToList());
+        order[0].ShouldBeGreaterThan(0);
+        markdown.ShouldContain($"- {story} (");
+        markdown.ShouldNotContain("not shown");
+    }
+
     [Test]
     public async Task GetBrief_WhenNoAsks_ShouldOmitTheBlock()
     {
