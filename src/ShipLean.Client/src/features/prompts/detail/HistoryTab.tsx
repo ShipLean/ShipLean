@@ -108,7 +108,7 @@ export function HistoryTab(props: {
               <tr
                 key={v.number}
                 data-testid={v.inUse ? ids.historyRowInUse : ids.historyRow}
-                className={v.inUse ? 'bg-accent-soft' : undefined}
+                className={v.inUse ? 'bg-signal-soft' : undefined}
               >
                 <td>v{v.number}</td>
                 <td>{v.note}</td>

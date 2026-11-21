@@ -12,7 +12,7 @@ const AGENTS: { id: AgentId; label: string; addId: string }[] = [
 
 const SMALL = 'text-[length:var(--text-xs)]';
 const HEADING = `m-0 mb-1 font-semibold uppercase tracking-wide text-muted ${SMALL}`;
-const LINK_BUTTON = `cursor-pointer border-0 bg-transparent p-0 text-accent ${SMALL}`;
+const LINK_BUTTON = `cursor-pointer border-0 bg-transparent p-0 text-signal ${SMALL}`;
 
 // The editor's side panel: placeholders with Put back, agent-specific sections with Add and Did you mean.
 export function EditorChecks(props: {
