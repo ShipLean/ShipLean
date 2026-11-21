@@ -67,6 +67,11 @@ describe('voiceSettingsView', () => {
     expect(accountVoiceValue(ready, 'granted', FILES)).toBe('Ready · Qwen3 4B');
 
     const downloading = status({ phase: 'downloading', bytesDone: 650, bytesTotal: 1000 });
+    expect(voiceStatusView(ready, 'granted', PHONE, false)).toMatchObject({
+      kind: 'starting',
+      line: 'Voice is starting',
+      setUp: false,
+    });
     expect(voiceStatusView(downloading, 'granted', PHONE)).toMatchObject({
       kind: 'downloading',
       line: 'Downloading voice models · 65%',

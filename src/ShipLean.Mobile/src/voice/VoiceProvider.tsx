@@ -510,9 +510,10 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
             }
             void internals.resolve(out.transcript, { source: 'voice' });
           },
-          // A recognizer that fails to start or stop never leaves 'listening'.
+          // Backstop: a recognizer that fails to start or stop never leaves 'listening'. The hold normally reports it
+          // as engineFailed itself; this is the speech engine failing, never a silent hold.
           () => {
-            if (store.turn === turn) failed({ kind: 'nothingHeard', detail: {} });
+            if (store.turn === turn) failed({ kind: 'engineFailed', detail: { stage: 'start' } });
           },
         );
       },

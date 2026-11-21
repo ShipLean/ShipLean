@@ -17,6 +17,7 @@ import { formatGb, modelChoiceView } from './modelChoice';
 import { ProgressLine } from './SetupParts';
 import { storageRowId, voiceSettingsIds } from './VoiceSettings.testIds';
 import { useMicStatus } from './useMicStatus';
+import { useEngineReady } from './useEngineReady';
 import { useModelStatus } from './useModelStatus';
 import {
   changeUnderWay,
@@ -63,6 +64,7 @@ export function VoiceSettings({ now = systemNow }: { now?: () => Date } = {}) {
   const { colors } = theme;
   const store = engines().models;
   const status = useModelStatus();
+  const engineReady = useEngineReady();
   const { mic, refresh } = useMicStatus();
   const { inUse, tuningOf } = useVoiceInputs();
   const tuned = tuningOf(inUse.id);
@@ -73,10 +75,15 @@ export function VoiceSettings({ now = systemNow }: { now?: () => Date } = {}) {
   const [deleteFailed, setDeleteFailed] = useState(false);
   const memory = store.deviceMemory();
   const choiceView = modelChoiceView(memory);
-  const card = voiceStatusView(status, mic, {
-    model: Device.modelName ?? 'This phone',
-    memoryGb: memory.soldGb,
-  });
+  const card = voiceStatusView(
+    status,
+    mic,
+    {
+      model: Device.modelName ?? 'This phone',
+      memoryGb: memory.soldGb,
+    },
+    engineReady,
+  );
   const underWay = changeUnderWay(status);
   const storage = storageView(status);
   const micOn = mic !== null && micIsOn(mic);

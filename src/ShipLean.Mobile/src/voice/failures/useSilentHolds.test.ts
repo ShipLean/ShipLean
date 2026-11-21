@@ -4,6 +4,7 @@ import { recordFailure, resetSilentHolds, SILENT_HOLDS_RESET_MS, silentHolds } f
 
 const silent = (): VoiceFailure => ({ kind: 'nothingHeard', detail: {} });
 const short = (): VoiceFailure => ({ kind: 'tooShort', detail: { heldMs: 200 } });
+const engineFailed = (): VoiceFailure => ({ kind: 'engineFailed', detail: { stage: 'start' } });
 const unclear = (): VoiceFailure => ({ kind: 'unclear', detail: { heard: 'hmm' } });
 const noMatch = (): VoiceFailure => ({
   kind: 'noMatch',
@@ -17,11 +18,17 @@ describe('useSilentHolds', () => {
     expect(recordFailure(silent(), 0)).toBe(1);
     expect(recordFailure(silent(), 1000)).toBe(2);
     expect(recordFailure(silent(), 2000)).toBe(3);
-    for (const other of [short, unclear, noMatch]) {
+    for (const other of [short, unclear, noMatch, engineFailed]) {
       expect(recordFailure(other(), 3000)).toBe(0);
       expect(recordFailure(silent(), 4000)).toBe(1);
       expect(recordFailure(silent(), 5000)).toBe(2);
     }
+  });
+
+  it('an engine failure is not a silent hold: it counts none and starts the count again', () => {
+    expect(recordFailure(engineFailed(), 0)).toBe(0);
+    expect(recordFailure(silent(), 1000)).toBe(1);
+    expect(recordFailure(engineFailed(), 2000)).toBe(0);
   });
 
   it('counts the same failure once', () => {

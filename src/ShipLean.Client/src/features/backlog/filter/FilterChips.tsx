@@ -26,7 +26,7 @@ export function FilterChips({
             type="button"
             data-testid={ids.filterChip}
             aria-label={`Remove filter: ${text}`}
-            className="inline-flex min-h-[var(--touch-target)] max-w-full items-center gap-2 rounded-full bg-accent-soft px-3 text-[length:var(--text-sm)] font-medium text-ink"
+            className="inline-flex min-h-[var(--touch-target)] max-w-full items-center gap-2 rounded-full bg-signal-soft px-3 text-[length:var(--text-sm)] font-medium text-ink"
             onClick={() => onRemoveClause(index)}
           >
             <span className="min-w-0 truncate">{text}</span>

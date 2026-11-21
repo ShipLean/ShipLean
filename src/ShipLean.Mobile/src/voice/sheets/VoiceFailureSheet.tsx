@@ -20,7 +20,12 @@ export interface VoiceFailureSheetProps {
 }
 
 // The failures where nothing usable was heard; every other kind names what to correct.
-const HEARD_KINDS: readonly HeardFailureKind[] = ['tooShort', 'nothingHeard', 'unclear'];
+const HEARD_KINDS: readonly HeardFailureKind[] = [
+  'tooShort',
+  'nothingHeard',
+  'engineFailed',
+  'unclear',
+];
 
 function isHeard(f: VoiceFailure): f is Extract<VoiceFailure, { kind: HeardFailureKind }> {
   return (HEARD_KINDS as readonly string[]).includes(f.kind);

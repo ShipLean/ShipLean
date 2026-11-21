@@ -9,7 +9,7 @@ import { fakeVoice, FakeVoiceProvider } from '../../test-support/voiceUi';
 import type { ScreenVoiceSpec, VoiceFailure } from '../contracts';
 import type { VoiceSource } from '../internals';
 import { heardQuoteId, heardQuoteMissId, heardQuoteTextId } from '../sheets/HeardQuote.testIds';
-import { CorrectionFailure } from './CorrectionFailure';
+import { CorrectionFailure, type CorrectionFailureKind } from './CorrectionFailure';
 import {
   correctionCandidateId,
   correctionClosestId,
@@ -66,10 +66,7 @@ const retroBoard = {
 const HEARD = 'Set the onboarding story to Active';
 
 async function show(
-  failure: Extract<
-    VoiceFailure,
-    { kind: Exclude<VoiceFailure['kind'], 'tooShort' | 'nothingHeard' | 'unclear'> }
-  >,
+  failure: Extract<VoiceFailure, { kind: CorrectionFailureKind }>,
   opts: { heard?: string; source?: VoiceSource; spec?: ScreenVoiceSpec; projectKey?: string } = {},
 ) {
   const voice = fakeVoice();

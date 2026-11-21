@@ -113,7 +113,7 @@ export function DoneConfirm({
             type="button"
             ref={confirmButton}
             data-testid={ids.doneConfirmMove}
-            className="rounded-control bg-accent px-3 py-1 text-[length:var(--text-sm)] font-medium text-signal-ink"
+            className="rounded-control bg-signal px-3 py-1 text-[length:var(--text-sm)] font-medium text-signal-ink"
             onClick={onMove}
           >
             Move to Done anyway

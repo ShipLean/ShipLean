@@ -22,7 +22,7 @@ export function SprintPill({ sprint }: { sprint: SprintRef | null }) {
       data-sprint={sprint.status}
       title={current ? 'Current sprint' : sprint.name}
       className={`inline-flex h-5 items-center gap-1 rounded-full px-[7px] text-[length:var(--text-xs)] whitespace-nowrap text-ink ${
-        current ? 'bg-accent-soft' : 'bg-sunken'
+        current ? 'bg-signal-soft' : 'bg-sunken'
       }`}
     >
       ◷ {sprint.name}

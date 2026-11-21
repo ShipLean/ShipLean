@@ -32,7 +32,7 @@ export function TouchBacklogBlock({
       data-section={section.id}
       data-drop-target={sectionDropId(section.id)}
       data-over={lit !== null}
-      className={`border-y border-edge px-2 py-2 ${lit === null ? 'bg-signal-soft' : 'bg-accent-soft outline-2 -outline-offset-2 outline-signal'}`}
+      className={`border-y border-edge px-2 py-2 ${lit === null ? 'bg-signal-soft' : 'bg-signal-soft outline-2 -outline-offset-2 outline-signal'}`}
     >
       <div className="flex items-center gap-1">
         <SectionToggle
@@ -68,7 +68,7 @@ export function TouchBacklogBlock({
       {lit === null ? null : (
         <p
           data-testid={ids.planningDropMessage}
-          className="pl-[var(--touch-target)] pt-1 text-[length:var(--text-sm)] font-semibold text-accent"
+          className="pl-[var(--touch-target)] pt-1 text-[length:var(--text-sm)] font-semibold text-signal"
         >
           {lit.message}
         </p>

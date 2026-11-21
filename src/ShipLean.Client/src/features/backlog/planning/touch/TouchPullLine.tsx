@@ -17,7 +17,7 @@ export function TouchPullLine({ line }: { line: PullLine }) {
     <div
       data-testid={ids.pullLine}
       data-over={sum.over}
-      className="border-y-2 border-accent bg-accent-soft px-3 py-2 text-[length:var(--text-sm)]"
+      className="border-y-2 border-signal bg-signal-soft px-3 py-2 text-[length:var(--text-sm)]"
     >
       <div data-testid={ids.pullContent} className="flex flex-wrap items-center gap-2">
         <button

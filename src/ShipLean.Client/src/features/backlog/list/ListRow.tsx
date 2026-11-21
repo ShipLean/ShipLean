@@ -50,7 +50,7 @@ export function ListRow({
         transition,
         opacity: isDragging || withGroup ? 0.4 : 1,
       }}
-      className={`h-9 border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-accent-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
+      className={`h-9 border-b border-edge text-[length:var(--text-sm)] transition-colors duration-700 data-[selected=true]:bg-signal-soft ${flash ? 'bg-signal-soft' : ''} ${closed ? 'text-ink-muted' : 'text-ink'}`}
     >
       <RowSelectCell row={row} />
       <td className="w-6 px-1 text-center">
