@@ -4,7 +4,7 @@ import { realtime } from './realtime';
 import { useProjectByKey } from './useProjectByKey';
 
 // Joins the project the key names for as long as the caller is mounted: resolves the key (the same query every screen
-// shares), joins, and leaves when the key changes or the caller unmounts. After a reconnect every query of the
+// shares), joins, and leaves when the key changes or the caller unmounts. After a reconnect, and once the project is first joined, every query of the
 // project is invalidated, so what is on screen is read again.
 export function useProjectRealtime(projectKey: string | undefined): void {
   const queryClient = useQueryClient();

@@ -22,7 +22,7 @@ export interface Realtime extends Omit<RemoteChanges, 'handle' | 'reconnected'> 
   setProject: ProjectSubscription['setProject'];
   setScreen: ProjectSubscription['setScreen'];
   retryNow: ProjectSubscription['retryNow'];
-  /** Invalidates every query of a project and returns how many; called after a reconnect. */
+  /** Invalidates every query of a project and returns how many; called after a reconnect and after a project's first join. */
   setInvalidator(invalidate: (projectId: string) => number): void;
   connectionState: Store<ConnectionState>;
   presence: Store<PresenceByScreen>;
@@ -51,6 +51,7 @@ export function createRealtime(deps: RealtimeDeps): Realtime {
     },
     onReconnected: (projectId) =>
       remote.reconnected(projectId === undefined ? 0 : invalidate(projectId)),
+    onJoined: (projectId) => void invalidate(projectId),
     onEvent: (value) => {
       const event = value as ProjectEvent;
       // The screen id, user ids and sequence come from the wire: only a known screen, plain strings and a number are

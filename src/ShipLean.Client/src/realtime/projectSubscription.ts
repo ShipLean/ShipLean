@@ -13,6 +13,12 @@ export interface SubscriptionDeps {
   /** A connection that had dropped is up again and the project and screen are joined again. */
   onReconnected: (projectId: string | undefined) => void;
   /**
+   * The wanted project has just been joined, by a first connect or by a switch of project. Not called for the join that
+   * a reconnect makes: onReconnected covers that one. An event published before the join was never delivered, so the
+   * caller reads again what it fetched before.
+   */
+  onJoined?: (projectId: string) => void;
+  /**
    * The server refused the connection or a call as if the session were over (401, 403, session_ended,
    * password_change_required). Asks the API whether it is: resolves false when the API refuses too (its client then sends
    * the user to sign in, and reconnecting stops), true when the API is fine (a proxy or Origin problem: keep retrying).
@@ -79,6 +85,9 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
   // What the server refused (a failed call while the connection stayed up, e.g. its HubException): not asked again until the wanted state or the connection changes.
   let refused = new Set<string>();
 
+  // True from a reconnect until its onReconnected: the joins it makes are reported there, not through onJoined.
+  let reconnectPending = false;
+
   let syncing = false;
   let syncAgain = false;
 
@@ -138,8 +147,10 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
     ) {
       const project = wantedProject;
       const epochBefore = epoch;
-      if (await call('JoinProject', project)) joinedProject = project;
-      else if (epoch === epochBefore) {
+      if (await call('JoinProject', project)) {
+        joinedProject = project;
+        if (!reconnectPending && project === wantedProject) deps.onJoined?.(project);
+      } else if (epoch === epochBefore) {
         refused.add(`p:${project}`);
         if (project === wantedProject) setState('offline');
       }
@@ -234,7 +245,9 @@ export function createProjectSubscription(deps: SubscriptionDeps): ProjectSubscr
     const reconnect = everConnected || attemptFailed;
     everConnected = true;
     attemptFailed = false;
+    reconnectPending = reconnect;
     await sync();
+    reconnectPending = false;
     if (reconnect && connected) deps.onReconnected(joinedProject);
   }
 
