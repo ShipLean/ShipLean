@@ -211,6 +211,17 @@
         "other": "a\n```\nb\nc"
       },
       "problems": []
+    },
+    {
+      "name": "unknownTagInsideSection",
+      "text": "<claude-code>\n<details>\nx\n</details>\n</claude-code>",
+      "filtered": {
+        "claude-code": "<details>\nx\n</details>",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": []
     }
   ]
 }

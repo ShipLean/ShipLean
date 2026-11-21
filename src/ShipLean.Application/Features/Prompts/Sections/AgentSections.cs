@@ -27,7 +27,7 @@ public static class AgentSections
             {
                 // D21: a region ends only at the close tag of the open tag that started it; every other line and tag inside is dropped.
                 section = line.IsTag && line.IsKnown && line.IsClose && line.Name == section ? null : section;
-                if (!hasError && section == agent && !line.IsTag)
+                if (!hasError && section == agent && !(line.IsTag && line.IsKnown))
                 {
                     kept.Add(line.Text);
                 }
