@@ -17,6 +17,10 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
 
     private sealed record VersionRow(Guid Id, string BaseHash);
 
+    private sealed record Pointer(Guid? InUseId, string? KeptHash);
+
+    private sealed record InUse(int Number, string Text, string BaseHash);
+
     private sealed record State(Guid? InUseId, int? InUseNumber, string? InUseText, string? InUseBaseHash, string? KeptHash);
 
     public async Task<PromptSavedDto> SaveAsync(Guid projectId, PromptKey key, PromptSaveDto save, CancellationToken cancellationToken = default)
@@ -156,15 +160,19 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
         await connection.ExecuteAsync(new CommandDefinition(
             "INSERT INTO project_prompt (project_id, prompt, updated_at) VALUES (@projectId, @wire, @now) ON CONFLICT DO NOTHING",
             new { projectId, wire, now = clock.GetUtcNow().UtcDateTime }, transaction, cancellationToken: cancellationToken));
-        return await connection.QuerySingleAsync<State>(new CommandDefinition(
-            """
-            SELECT p.in_use_version_id AS InUseId, v.number AS InUseNumber, v.text AS InUseText, v.base_hash AS InUseBaseHash, p.kept_built_in_hash AS KeptHash
-            FROM project_prompt p
-            LEFT JOIN prompt_version v ON v.id = p.in_use_version_id
-            WHERE p.project_id = @projectId AND p.prompt = @wire
-            FOR UPDATE OF p
-            """,
+        // Lock the pointer row alone, then read the version in a second statement: a join under FOR UPDATE returns nulls for the joined columns when the lock waited.
+        var pointer = await connection.QuerySingleAsync<Pointer>(new CommandDefinition(
+            "SELECT in_use_version_id AS InUseId, kept_built_in_hash AS KeptHash FROM project_prompt WHERE project_id = @projectId AND prompt = @wire FOR UPDATE",
             new { projectId, wire }, transaction, cancellationToken: cancellationToken));
+        if (pointer.InUseId is null)
+        {
+            return new State(null, null, null, null, pointer.KeptHash);
+        }
+
+        var version = await connection.QuerySingleAsync<InUse>(new CommandDefinition(
+            "SELECT number AS Number, text AS Text, base_hash AS BaseHash FROM prompt_version WHERE id = @id",
+            new { id = pointer.InUseId }, transaction, cancellationToken: cancellationToken));
+        return new State(pointer.InUseId, version.Number, version.Text, version.BaseHash, pointer.KeptHash);
     }
 
     private async Task SetPointerAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, string wire, Guid? versionId, bool clearKept, CancellationToken cancellationToken)

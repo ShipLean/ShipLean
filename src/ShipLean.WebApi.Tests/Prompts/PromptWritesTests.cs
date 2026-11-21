@@ -345,4 +345,33 @@ public class PromptWritesTests : ApiFixture
 
         saved.Select(s => s.InUseVersion).Order().ShouldBe([1, 2]);
     }
+
+    [Test]
+    public async Task Save_WhenTwoWaitOnTheLockWithACustomInUse_ShouldKeepTheOldBaseAndNumberDistinctly()
+    {
+        var project = await ArrangeProjectAsync();
+        await SeedOldBaseAsync(project, PromptKey.Brief);
+        await using var holder = await OpenDatabaseAsync();
+        await using var transaction = await holder.BeginTransactionAsync();
+        await holder.ExecuteAsync(
+            "SELECT 1 FROM project_prompt WHERE project_id = @project AND prompt = 'brief' FOR UPDATE", new { project }, transaction);
+
+        var first = SavedAsync(project, "brief", "Edited while waiting.");
+        var second = SavedAsync(project, "brief", "Edited too, while waiting.");
+        await WaitForWaitersAsync(2);
+        await transaction.CommitAsync();
+        var saved = await Task.WhenAll(first, second);
+
+        saved.Select(s => s.InUseVersion).Order().ShouldBe([2, 3]);
+        saved.Select(s => s.Status).ShouldAllBe(status => status == PromptStatus.BuiltInUpdated);
+    }
+
+    private async Task WaitForWaitersAsync(int count)
+    {
+        await using var database = await OpenDatabaseAsync();
+        while (await database.QuerySingleAsync<int>("SELECT count(*)::int FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND query ILIKE '%FROM project_prompt%FOR UPDATE%'") < count)
+        {
+            await Task.Yield();
+        }
+    }
 }
