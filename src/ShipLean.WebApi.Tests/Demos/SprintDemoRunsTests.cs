@@ -320,7 +320,7 @@ public class SprintDemoRunsTests : McpFixture
         }
     }
 
-    private async Task<string> SetBaseUrlAsync(NpgsqlConnection database, string baseUrl)
+    private static async Task<string> SetBaseUrlAsync(NpgsqlConnection database, string baseUrl)
     {
         var original = await database.ExecuteScalarAsync<string>("SELECT base_url FROM instance_settings") ?? string.Empty;
         await database.ExecuteAsync("UPDATE instance_settings SET base_url = @baseUrl", new { baseUrl });
