@@ -30,7 +30,8 @@ test('reconnect_ShouldReportInvalidatedCount', async () => {
   hub.drop();
   await vi.advanceTimersByTimeAsync(0);
 
-  expect(invalidated).toEqual([project]);
+  // the first join, then the reconnect
+  expect(invalidated).toEqual([project, project]);
   expect(reported).toEqual([4]);
 });
 
@@ -98,4 +99,56 @@ test('presence_WhenAnOlderListArrivesLate_ShouldKeepTheNewerOne', async () => {
   await vi.advanceTimersByTimeAsync(0);
   list('sprints', ['u4'], 1);
   expect(realtime.presence.get().get('sprints')).toEqual(['u4']);
+});
+
+function invalidatingRealtime(hub: ReturnType<typeof fakeConnection>) {
+  const realtime = createRealtime({
+    connect: () => hub.connection,
+    ownClientId: 'tab-1',
+    confirmSession: async () => true,
+    retryDelaysMs: [0],
+  });
+  const invalidated: string[] = [];
+  realtime.setInvalidator((id) => {
+    invalidated.push(id);
+    return 1;
+  });
+  return { realtime, invalidated };
+}
+
+test('firstJoin_ShouldInvalidateTheProjectOnceWithoutReportingAReconnect', async () => {
+  const hub = fakeConnection();
+  const { realtime, invalidated } = invalidatingRealtime(hub);
+  const reported: number[] = [];
+  realtime.onReconnected((count) => reported.push(count));
+
+  realtime.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+
+  expect(invalidated).toEqual([project]);
+  expect(reported).toEqual([]);
+});
+
+test('reconnect_AfterFirstJoin_ShouldInvalidateOncePerJoin', async () => {
+  const hub = fakeConnection();
+  const { realtime, invalidated } = invalidatingRealtime(hub);
+  realtime.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  hub.drop();
+  await vi.advanceTimersByTimeAsync(0);
+
+  // one for the first join, one for the reconnect: the reconnect's own join does not add a third
+  expect(invalidated).toEqual([project, project]);
+});
+
+test('join_OfAnotherProject_ShouldInvalidateOnlyThatProject', async () => {
+  const hub = fakeConnection();
+  const { realtime, invalidated } = invalidatingRealtime(hub);
+  const other = '0199a000-0000-7000-8000-000000000013';
+  realtime.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  realtime.setProject(other);
+  await vi.advanceTimersByTimeAsync(0);
+
+  expect(invalidated).toEqual([project, other]);
 });
