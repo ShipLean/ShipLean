@@ -188,3 +188,54 @@ test('RunPage_WhenErrorsOnlyToggledWithFindText_ShouldKeepTheFindBoxMounted', as
   await expect(rows(page)).toHaveCount(1);
   await expect(find).toHaveAttribute('data-mounted-marker', 'same');
 });
+
+test('RunHeader_WhenPrompts_ShouldShowTheirLabels', async ({ mount, page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.route('**/api/inspection/projects/*/items/*/runs/sess-cc-1', (r) =>
+    r.fulfill({
+      json: {
+        ...claudeRunPage,
+        header: {
+          ...claudeRunPage.header,
+          prompts: [
+            {
+              key: 'brief',
+              file: 'brief.md',
+              version: 2,
+              agent: 'claude-code',
+              label: 'brief.md custom v2 · Claude Code',
+              atLabel: '10 Nov, 09:58',
+            },
+            {
+              key: 'work',
+              file: 'work.md',
+              version: null,
+              agent: 'claude-code',
+              label: 'work.md built-in · Claude Code',
+              atLabel: '10 Nov, 09:59',
+            },
+          ],
+        },
+      },
+    }),
+  );
+  await mount(<RunPageHarness />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.runPrompt)).toHaveText([
+    'brief.md custom v2 · Claude Code',
+    'work.md built-in · Claude Code',
+  ]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});
+
+test('RunHeader_WhenNoPrompts_ShouldHideTheLine', async ({ mount, page }) => {
+  await setup(page);
+  await page.route('**/api/inspection/projects/*/items/*/runs/sess-cc-1', (r) =>
+    r.fulfill({ json: { ...claudeRunPage, header: { ...claudeRunPage.header, prompts: [] } } }),
+  );
+  await mount(<RunPageHarness />, { hooksConfig: { route } });
+  await expect(page.getByTestId(ids.runHeader)).toBeVisible();
+  await expect(page.getByTestId(ids.runPrompts)).toHaveCount(0);
+});

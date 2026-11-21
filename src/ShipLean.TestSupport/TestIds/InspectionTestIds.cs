@@ -143,4 +143,6 @@ public static class InspectionTestIds
     public const string InspectionHealthProblem = "inspection-health-problem";
     public const string InspectionHealthCheckFields = "inspection-health-check-fields";
     public const string InspectionHealthField = "inspection-health-field";
+    public const string RunPrompts = "run-prompts";
+    public const string RunPrompt = "run-prompt";
 }

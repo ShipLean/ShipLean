@@ -154,6 +154,21 @@ export function RunHeader({
           onChange={(e) => onQuery(e.target.value)}
         />
       </div>
+      {header.prompts.length === 0 ? null : (
+        <div className="rv-prompts" data-testid={ids.runPrompts}>
+          <span className="rv-muted">Prompts</span>
+          {header.prompts.map((p, i) => (
+            <span
+              key={`${p.key}-${p.atLabel}-${i}`}
+              className="rv-pill"
+              data-testid={ids.runPrompt}
+              title={p.atLabel}
+            >
+              {p.label}
+            </span>
+          ))}
+        </div>
+      )}
     </header>
   );
 }
