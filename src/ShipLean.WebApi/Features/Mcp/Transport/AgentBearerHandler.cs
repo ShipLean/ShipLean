@@ -7,8 +7,10 @@ using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Users;
 using ShipLean.WebApi.Features.Mcp.Contracts;
+using ShipLean.WebApi.Features.Prompts;
 
 namespace ShipLean.WebApi.Features.Mcp.Transport;
 
@@ -78,6 +80,7 @@ public sealed class AgentBearerHandler(
         }
 
         Context.Items[RequestCurrentAgent.ItemKey] = new AgentIdentity(agent.ClientName, agent.ClientHost, agent.Verified);
+        Context.Items[RequestConnectedAgent.SignalsItemKey] = SignalsFor(agent.McpClientName, agent.ClientName);
         return AuthenticateResult.Success(new AuthenticationTicket(AgentClaims.For(agent), Scheme.Name));
     }
 
@@ -91,8 +94,13 @@ public sealed class AgentBearerHandler(
             return AuthenticateResult.Fail("Disabled user.");
         }
 
+        Context.Items[RequestConnectedAgent.SignalsItemKey] = SignalsFor(null, null);
         return AuthenticateResult.Success(new AuthenticationTicket(AgentClaims.ForGateway(user.Id), Scheme.Name));
     }
+
+    // The self-reported signals of this request, for picking prompt sections and labels only (never access).
+    private AgentSignals SignalsFor(string? mcpClientName, string? oAuthClientName)
+        => new(mcpClientName, Request.Headers["originator"].FirstOrDefault(), Request.Headers.UserAgent.FirstOrDefault(), oAuthClientName);
 
     // The header's one usable email, or null when it is absent, blank, repeated or not an email. The value is never logged.
     private string? EmailFrom(string headerName)

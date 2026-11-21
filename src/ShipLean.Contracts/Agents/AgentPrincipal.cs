@@ -9,4 +9,5 @@ public sealed record AgentPrincipal(
     string ClientName,
     string? ClientHost,
     bool Verified,
-    IReadOnlySet<string> Scopes);
+    IReadOnlySet<string> Scopes,
+    string? McpClientName = null);
