@@ -13,7 +13,10 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
 {
     private const string RunId = "sess-cc-1";
 
-    private static string RunPath => $"/p/{ProjectKey}/items/{ItemKey}/runs/{RunId}";
+    // Servings are listed for the run's own agent, so the Codex run (no servings are arranged for that agent) is the one with no prompts line.
+    private const string OtherAgentRunId = "sess-cx-1";
+
+    protected override IReadOnlyList<string> FixtureNames => ["claude-code-synthetic", "codex-cli-synthetic"];
 
     // The run's start, as the fake serves it, so the servings are placed against the real window.
     private async Task<RunSummary> TheRunAsync()
@@ -23,14 +26,13 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
         return search.Runs.Single(r => r.RunId == RunId);
     }
 
-    private async Task OpenRunAsync()
+    private async Task OpenRunAsync(string runId = RunId)
     {
-        await Page.GotoAsync(BaseUrl + RunPath);
+        await Page.GotoAsync($"{BaseUrl}/p/{ProjectKey}/items/{ItemKey}/runs/{runId}");
         await Expect(Page.GetByTestId(InspectionTestIds.RunHeader)).ToBeVisibleAsync();
     }
 
-    // One cloned database serves both tests and servings cannot be removed, so the test that needs none runs first.
-    [Test, Order(2)]
+    [Test]
     public async Task Run_WhenAgentGotACustomBrief_ShouldShowItInInspection()
     {
         var run = await TheRunAsync();
@@ -56,10 +58,10 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
         await Expect(line).Not.ToContainTextAsync("custom v1");
     }
 
-    [Test, Order(1)]
+    [Test]
     public async Task Run_WhenNoPromptsServed_ShouldHideThePromptsLine()
     {
-        await OpenRunAsync();
+        await OpenRunAsync(OtherAgentRunId);
 
         await Expect(Page.GetByTestId(InspectionTestIds.RunPrompts)).ToHaveCountAsync(0);
     }

@@ -43,7 +43,7 @@ export function HistoryTab(props: {
         <button
           type="button"
           data-testid={ids.historyUse}
-          className="btn"
+          className="btn touch:min-h-[var(--touch-target)]"
           onClick={() => setConfirming(v.number)}
         >
           Use v{v.number}
@@ -55,13 +55,17 @@ export function HistoryTab(props: {
         <span data-testid={ids.historyNote}>Agents get v{v.number} from their next call.</span>
         <button
           type="button"
-          className="btn-signal"
+          className="btn-signal touch:min-h-[var(--touch-target)]"
           disabled={use.isPending}
           onClick={() => confirm(v.number)}
         >
           Confirm
         </button>
-        <button type="button" className="btn" onClick={() => setConfirming(null)}>
+        <button
+          type="button"
+          className="btn touch:min-h-[var(--touch-target)]"
+          onClick={() => setConfirming(null)}
+        >
           Cancel
         </button>
       </span>
@@ -125,7 +129,7 @@ export function HistoryTab(props: {
                     <button
                       type="button"
                       data-testid={ids.historyBuiltInUse}
-                      className="btn"
+                      className="btn touch:min-h-[var(--touch-target)]"
                       onClick={props.onUseBuiltIn}
                     >
                       Use built-in

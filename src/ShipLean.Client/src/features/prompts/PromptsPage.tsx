@@ -93,7 +93,7 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
         <button
           type="button"
           data-testid={ids.retry}
-          className="btn w-fit"
+          className="btn w-fit touch:min-h-[var(--touch-target)]"
           onClick={() => void query.refetch()}
         >
           Try again
@@ -135,7 +135,7 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
               <button
                 type="button"
                 data-testid={ids.editorLeaveStay}
-                className="btn-ghost"
+                className="btn-ghost touch:min-h-[var(--touch-target)]"
                 onClick={() => setSwitchTo(null)}
               >
                 Keep editing
@@ -143,7 +143,7 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
               <button
                 type="button"
                 data-testid={ids.editorLeaveDiscard}
-                className="btn-danger-ghost"
+                className="btn-danger-ghost touch:min-h-[var(--touch-target)]"
                 onClick={() => {
                   const key = switchTo;
                   setSwitchTo(null);

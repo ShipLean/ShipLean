@@ -241,7 +241,7 @@ export function PromptEditor(props: {
           <button
             type="button"
             data-testid={ids.editorCancel}
-            className="btn-ghost"
+            className="btn-ghost touch:min-h-[var(--touch-target)]"
             onClick={cancel}
           >
             Cancel
@@ -249,7 +249,7 @@ export function PromptEditor(props: {
           <button
             type="button"
             data-testid={ids.editorSave}
-            className="btn-signal"
+            className="btn-signal touch:min-h-[var(--touch-target)]"
             disabled={!canSave}
             onClick={doSave}
           >
@@ -278,7 +278,7 @@ export function PromptEditor(props: {
               <button
                 type="button"
                 data-testid={ids.editorLeaveStay}
-                className="btn-ghost"
+                className="btn-ghost touch:min-h-[var(--touch-target)]"
                 onClick={() => setLeaving(false)}
               >
                 Keep editing
@@ -286,7 +286,7 @@ export function PromptEditor(props: {
               <button
                 type="button"
                 data-testid={ids.editorLeaveDiscard}
-                className="btn-danger-ghost"
+                className="btn-danger-ghost touch:min-h-[var(--touch-target)]"
                 onClick={onClose}
               >
                 Discard
