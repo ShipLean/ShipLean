@@ -1,3 +1,4 @@
+using ShipLean.Contracts.Prompts;
 using System.Text;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Application.Features.Mcp.Planning.Tree;

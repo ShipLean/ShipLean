@@ -7,6 +7,7 @@ using ShipLean.Application.Identity;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Projects;
@@ -22,7 +23,7 @@ namespace ShipLean.Application.Features.IssueIntake.Settings;
 public sealed class IssueIntakeSettingsService(
     NpgsqlDataSource dataSource, TimeProvider clock, IStateCatalog states, IProjectEvents events, ICurrentUser currentUser, IIntegrationSettings integrations, IConfiguration configuration)
 {
-    public const string DefaultInstructions = "Write a proposal for this issue to the project's standards.";
+    public const string DefaultInstructions = PromptDefaults.IssueProposal;
 
     private const int MaxInstructions = 20000;
     private static readonly WorkItemTypeId[] IntakeTypes = [WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Feature];

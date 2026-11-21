@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace ShipLean.WebApi.Features.Mcp.Planning;
+namespace ShipLean.WebApi.Infrastructure.PlanningGuide;
 
 // The guide's Markdown files, embedded in this assembly as planning-guide/<wire name>.md. Each is read once.
 public static class PlanGuide

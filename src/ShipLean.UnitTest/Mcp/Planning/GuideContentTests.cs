@@ -1,3 +1,4 @@
+using ShipLean.WebApi.Infrastructure.PlanningGuide;
 using ShipLean.WebApi.Features.Mcp.Planning;
 
 namespace ShipLean.UnitTest.Mcp.Planning;

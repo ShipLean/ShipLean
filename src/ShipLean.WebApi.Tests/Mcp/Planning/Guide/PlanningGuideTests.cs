@@ -1,3 +1,4 @@
+using ShipLean.WebApi.Infrastructure.PlanningGuide;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Tests.Mcp.Transport;

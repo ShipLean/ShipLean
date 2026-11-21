@@ -1,3 +1,5 @@
+using ShipLean.WebApi.Infrastructure.PlanningGuide;
+using ShipLean.Contracts.Prompts;
 using System.Text.RegularExpressions;
 using ShipLean.Contracts.Errors;
 using ShipLean.WebApi.Features.Mcp.Planning;
