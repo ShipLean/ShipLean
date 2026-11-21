@@ -358,7 +358,7 @@ public class PromptWritesTests : ApiFixture
 
         var first = SavedAsync(project, "brief", "Edited while waiting.");
         var second = SavedAsync(project, "brief", "Edited too, while waiting.");
-        await WaitForWaitersAsync(2);
+        await WaitForWaitersAsync(2, first, second);
         await transaction.CommitAsync();
         var saved = await Task.WhenAll(first, second);
 
@@ -366,11 +366,17 @@ public class PromptWritesTests : ApiFixture
         saved.Select(s => s.Status).ShouldAllBe(status => status == PromptStatus.BuiltInUpdated);
     }
 
-    private async Task WaitForWaitersAsync(int count)
+    private async Task WaitForWaitersAsync(int count, params Task[] writes)
     {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var database = await OpenDatabaseAsync();
         while (await database.QuerySingleAsync<int>("SELECT count(*)::int FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> pg_backend_pid() AND query ILIKE '%FROM project_prompt%FOR UPDATE%'") < count)
         {
+            if (writes.Any(write => write.IsCompleted) || timeout.IsCancellationRequested)
+            {
+                throw new InvalidOperationException("A write finished or the lock wait timed out before both writes were waiting on the lock.");
+            }
+
             await Task.Yield();
         }
     }
