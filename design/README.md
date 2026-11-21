@@ -49,6 +49,7 @@ The screens here are reference designs for every page of the v1 domain model: **
 | `screens/task-changes.html`, `ship-1460-task-changes.md` | **Task changes** (SHIP-1460, mockup for approval, not built yet): the commits a Task or Bug was done in, the Changes page with the diff and line comments, Approve and Request changes. Desktop only. `?view=task\|review`, `&item=bug`, `&state=empty\|compose\|commits\|split\|request\|approve\|outdated\|noaccess`. The data model, agent contract and decisions D1–D16 (Joel, 14 Nov 2026) are in the `.md`. See [Task changes](#task-changes-ship-1460). |
 | `screens/agent-runs.html`, `ship-1463-agent-runs.md` | **Agent runs** (SHIP-1463, mockup for approval, not built yet): the runs of Claude Code, OpenAI CLI and Cursor on a Task, read from the team's ClickHouse or Tempo + Loki; the Run page with a waterfall (or an event timeline for log-only agents) and a span detail panel. Desktop only. `?view=task\|run`, `&run=claude\|openai\|cursor`, `&state=empty\|down\|zoom\|errors\|permission\|edit\|hidden\|truncated\|expired`. Screens and decisions D14–D22 (Joel, 14 Nov 2026: no cost and no span comments in v1) in the `.md`. See [Agent runs](#agent-runs-ship-1463). |
 | `screens/inspection.html`, `ship-1398-inspection.md` | **Inspection** (SHIP-1398, mockup for approval, not built yet): a new top-level menu after Retrospectives with Overview, Lead time, Quality and Cost. Mean lead time per task (first Active to last commit) by sprint with a dot per task, quarter roll-ups, the drill-down into one sprint's tasks and Features, escaping bugs (wave 2) and tokens (wave 3). `?view=overview\|leadtime\|period\|quality\|cost\|json`, `&range=6\|q\|lq\|all`, `&cut=feature\|who`, `&p=s23&tab=features&select=<key>`, `&cadence=weeks`, `&coverage=low`, `&wave=1`. Sample data and the view model in `inspection-data.js`; decisions D1–D14 (Joel, 15 Nov 2026) in the `.md`. See [Inspection](#inspection-ship-1398). |
+| `screens/prompts.html`, `screens/prompts-data.js`, `ship-744-prompts.md` | **Project settings › Prompts** (SHIP-744, mockup for approval, not built yet): every built-in prompt in workflow order (Intake → Sprint demo), when each runs, and a project's custom version of it: editor with placeholder checks and agent-specific `<claude-code>`/`<codex-cli>`/`<cursor>` sections, built-in updates, History, What the agent gets. `?state=edit\|tags\|custom\|merge\|revert\|history\|assembled\|member`, `&prompt=<file>`. `prompts-data.js` is the real prompt texts (regenerate with `node design/screens/prompts-data.mjs`). Decisions D1–D11 (Joel, 21 Nov 2026) and D12–D14 in the `.md`. See [Prompts](#prompts-ship-744). |
 | `ship-1465-feature-timeline.md` | **Feature timeline** (SHIP-1465): how to read the chart, where each value comes from, the `feature_timeline` MCP response, review events (D15, open), what gets built and decisions D1–D15. |
 | `screenshots.sh` | Regenerates `screens/<name>.<theme>.png` (1440×900, 2× scale) with headless Chrome. Variants (such as `taskboard-people`, `backlog-tree`, `work-item-bug`, `import-run`) shoot one screen in another state. |
 | `logo/` | The logo: the mark, the light and dark lockups, and PNG exports. See [Logo](#logo). |
@@ -544,6 +545,22 @@ How an agent did a work item, read from the team's own trace and log stores (Cli
 | Run page · zoomed to a turn | ![Run page zoomed to Turn 1, light](screens/agent-runs-zoom.light.png) | ![Run page zoomed to Turn 1, dark](screens/agent-runs-zoom.dark.png) |
 | Run page · log-only run | ![OpenAI CLI run, light](screens/agent-runs-openai.light.png) | ![OpenAI CLI run, dark](screens/agent-runs-openai.dark.png) |
 
+## Prompts (SHIP-744)
+
+The built-in prompts agents get from ShipLean, made visible and overridable per project. **Project settings › Prompts** lists them by workflow stage, says when each runs and who reads it, and lets an admin save a custom version that agents in the project get instead; members read only. A custom prompt can hold sections for one agent only (`<claude-code>`, `<codex-cli>`, `<cursor>`). When ShipLean ships a new built-in, the custom version stays in use and the admin can apply the built-in's change as a new version. Nothing is deleted: Use built-in keeps every version in History. Everything is in [`ship-744-prompts.md`](ship-744-prompts.md). Not built.
+
+| Screen | Light | Dark |
+|---|---|---|
+| Prompts tab | ![Prompts tab, light](screens/prompts.light.png) | ![Prompts tab, dark](screens/prompts.dark.png) |
+| Customize | ![Editing the Lead brief, light](screens/prompts-edit.light.png) | ![Editing the Lead brief, dark](screens/prompts-edit.dark.png) |
+| Agent-specific sections | ![Tags in the editor, light](screens/prompts-tags.light.png) | ![Tags in the editor, dark](screens/prompts-tags.dark.png) |
+| Custom version in use | ![Task brief custom v2, light](screens/prompts-custom.light.png) | ![Task brief custom v2, dark](screens/prompts-custom.dark.png) |
+| Built-in updated | ![Built-in update to apply, light](screens/prompts-merge.light.png) | ![Built-in update to apply, dark](screens/prompts-merge.dark.png) |
+| Use built-in | ![Use built-in dialog, light](screens/prompts-revert.light.png) | ![Use built-in dialog, dark](screens/prompts-revert.dark.png) |
+| History | ![History, light](screens/prompts-history.light.png) | ![History, dark](screens/prompts-history.dark.png) |
+| What the agent gets | ![Layers and preview per agent, light](screens/prompts-assembled.light.png) | ![Layers and preview per agent, dark](screens/prompts-assembled.dark.png) |
+| Member view | ![Read-only for members, light](screens/prompts-member.light.png) | ![Read-only for members, dark](screens/prompts-member.dark.png) |
+
 ## Inspection (SHIP-1398)
 
 How the team is going on velocity, quality and cost, and the way down from each number to the work behind it. **Inspection** is a new side-menu item after Retrospectives with Overview, Lead time, Quality and Cost. A task's lead time runs from its first move to Active to its last commit (`committed_at`, new on `report_task`); the headline is the mean per sprint, with a dot per task so the long ones show. Click a sprint for its tasks, slowest first, each split into active, blocked and rework; a task opens its Feature timeline (SHIP-1465) and agent runs (SHIP-1463). One Feature in three waves: lead time, then escaping bugs (every Bug unless marked **Found before release**), then tokens. Everything is in [`ship-1398-inspection.md`](ship-1398-inspection.md). Not built.
@@ -689,6 +706,7 @@ These come from [#2](https://github.com/joeldickson/ShipLean/issues/2) and the r
 - **Members:** role (Admin or Member), joined date and open items. Removing someone waits for Save and can be undone. The last admin can't be removed or made a Member.
 - **Sprints & forecast:** links to All sprints. The velocity window (last N sprints, default 3) and the velocity override (blank uses the calculated velocity) show the resulting forecast velocity and which sprints are in the window.
 - **Integrations:** the Jira connection summary with Test connection, managed in Jira import.
+- **Prompts** (SHIP-744): the last tab, a page of its own that saves each prompt on its own versioned history rather than through the settings draft. See [Prompts](#prompts-ship-744).
 - **Read-only for members** (Preview panel): someone who isn't an admin sees every tab with the controls disabled, and a banner naming who to ask.
 
 ## Jira import patterns (`screens/import.html`)
