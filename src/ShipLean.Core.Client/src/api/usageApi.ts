@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { PromptKey } from './prompts';
 
 /** POST api/usage/screen: one screen view (mode: the backlog mode on a backlog screen). The server answers 204. */
 export function postScreenView(body: {
@@ -95,5 +96,18 @@ export function postRetroThemeSheetOpened(
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/retro-theme-sheet-opened`,
     { sheet },
+  );
+}
+
+/** POST api/projects/{id}/usage/prompts-opened: the Prompts settings tab opened. The server answers 204. */
+export function promptsOpened(projectId: string): Promise<void> {
+  return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/prompts-opened`, {});
+}
+
+/** POST api/projects/{id}/usage/prompt-customize-opened: the editor opened on this prompt (Customize, Edit or Apply and edit). The server answers 204. */
+export function promptCustomizeOpened(projectId: string, prompt: PromptKey): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/prompt-customize-opened`,
+    { prompt },
   );
 }
