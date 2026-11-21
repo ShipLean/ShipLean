@@ -54,7 +54,7 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
         saved.Ok.ShouldBeTrue();
 
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v2");
-        await Expect(prompts.UpdateBanner).ToHaveCountAsync(0);
+        await Expect(prompts.UpdateBanner).ToBeHiddenAsync();
         var served = await PromptsAdminPage.ServedGuideAsync(new Uri($"{BaseUrl}/mcp"), token, Project);
         served.ShouldContain(older.Current);
         served.ShouldContain(ProjectRule);
@@ -75,7 +75,7 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
 
         await prompts.OpenAsync(Project, "report");
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v1");
-        await Expect(prompts.UpdateBanner).ToHaveCountAsync(0);
+        await Expect(prompts.UpdateBanner).ToBeHiddenAsync();
     }
 
     [Test]

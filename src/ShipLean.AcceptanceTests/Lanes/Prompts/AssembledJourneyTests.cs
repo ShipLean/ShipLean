@@ -46,7 +46,7 @@ public class AssembledJourneyTests : SeededAcceptanceTest
         await Expect(prompts.AssembledLayers).Not.ToHaveCountAsync(0);
         await Expect(prompts.AssembledPlanned).ToHaveCountAsync(2);
         await Expect(prompts.AssembledPlanned.First).ToContainTextAsync("Ways of working");
-        await Expect(prompts.AssembledPlanned.Last).ToContainTextAsync("Client notes");
+        await Expect(prompts.AssembledPlanned.Last).ToContainTextAsync("Notes for the connecting agent");
     }
 
     [Test]
@@ -66,10 +66,10 @@ public class AssembledJourneyTests : SeededAcceptanceTest
 
         await prompts.AgentOption("Claude Code").ClickAsync();
         await Expect(prompts.AssembledText).ToContainTextAsync(ClaudeLine);
-        (await prompts.AssembledText.InnerTextAsync()).Trim().ShouldBe(claudeServed.Trim());
+        (await prompts.AssembledRawTextAsync()).Trim().ShouldBe(claudeServed.Trim());
 
         await prompts.AgentOption("Another agent").ClickAsync();
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(ClaudeLine);
-        (await prompts.AssembledText.InnerTextAsync()).Trim().ShouldBe(otherServed.Trim());
+        (await prompts.AssembledRawTextAsync()).Trim().ShouldBe(otherServed.Trim());
     }
 }

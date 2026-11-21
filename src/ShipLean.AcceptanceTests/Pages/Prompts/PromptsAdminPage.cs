@@ -61,9 +61,12 @@ public sealed class PromptsAdminPage(IPage page)
 
     public ILocator TabAssembled => page.GetByTestId(PromptsTestIds.TabAssembled);
 
-    public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow);
+    // Every version row: the one in use has its own test id.
+    public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow).Or(page.GetByTestId(PromptsTestIds.HistoryRowInUse));
 
     public ILocator HistoryUse => page.GetByTestId(PromptsTestIds.HistoryUse);
+
+    public ILocator HistoryNote => page.GetByTestId(PromptsTestIds.HistoryNote);
 
     public ILocator HistoryBuiltInRow => page.GetByTestId(PromptsTestIds.HistoryBuiltInRow);
 
@@ -90,6 +93,18 @@ public sealed class PromptsAdminPage(IPage page)
     public ILocator AssembledPlanned => page.GetByTestId(PromptsTestIds.AssembledLayerPlanned);
 
     public ILocator AssembledText => page.GetByTestId(PromptsTestIds.AssembledText);
+
+    // Confirms Use vN. The confirm button has no test id and the id pair is frozen (reported: needs one, e.g. prompts-history-confirm), so it is
+    // clicked as the button that follows the "Agents get vN from their next call." note.
+    public async Task ConfirmUseVersionAsync()
+    {
+        await Assertions.Expect(HistoryNote).ToBeVisibleAsync();
+        await HistoryNote.EvaluateAsync("el => el.parentElement.querySelector('button.btn-signal').click()");
+    }
+
+    // The preview's text as the source block holds it, without its line-number gutter (an empty line is drawn as one space).
+    public Task<string> AssembledRawTextAsync() =>
+        AssembledText.EvaluateAsync<string>("el => Array.from(el.children).map(row => row.children[1].textContent.replace(/^ $/, '')).join('\\n')");
 
     public async Task OpenAsync(string projectKey, string? prompt = null)
     {
