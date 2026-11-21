@@ -91,6 +91,11 @@ public class PromptResolutionMcpTests : McpFixture
     [Test]
     public async Task GetBrief_WhenAnotherProjectHasACustomBrief_ShouldServeTheBuiltIn()
     {
+        // SHIP goes back to the built-in whatever other tests put in use.
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE project_prompt SET in_use_version_id = NULL WHERE project_id = @project AND prompt = 'brief'", new { project = SeedIds.Projects.Ship });
+        }
         var builtIn = await BriefAsync(FirstTask);
         await UseAsync(SeedIds.Projects.Mob, PromptKey.Brief, "Mob only brief {{task_key}}.");
 

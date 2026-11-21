@@ -218,6 +218,22 @@ public class DemoRunStarterTests : ApiFixture
     }
 
     [Test]
+    public async Task StartSession_WhenBlocked_ShouldRecordNoServing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        using var scope = NewScope();
+        await scope.ServiceProvider.GetRequiredService<AgentSessionStarter>().StartAsync(itemId, SeedIds.Users.Joel, null, null, null, null, CancellationToken.None);
+
+        var outcome = await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
+
+        outcome.Block.ShouldBe(AgentStartBlock.LiveSession);
+        (await database.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM prompt_serving WHERE project_id = @projectId AND prompt = @prompt", new { projectId, prompt = PromptKeys.ToWire(PromptKey.SprintDemo) }))
+            .ShouldBe(0);
+    }
+
+    [Test]
     public async Task Session_ShouldRevokeTheOldLinks()
     {
         await using var database = await OpenDatabaseAsync();

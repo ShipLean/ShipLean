@@ -65,11 +65,14 @@ public sealed class DemoRunStarter(
     {
         var data = await sprintData.ReadAsync(request.SprintId, cancellationToken);
         var inspection = await brandSource.InspectAsync(request.ProjectId, cancellationToken);
-        // The session's prompt is stored inside the winner's transaction, so it is resolved just before it (the serving is on its own connection).
-        var template = await ResolveTemplateAsync(request, DemoPromptChannel.Session, cancellationToken);
         var outcome = await sessions.StartWinnerAsync(
             request.ItemId, request.UserId, request.BaseUrl, null,
-            async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, token)).Finish(prompt, data, DemoPromptChannel.Session, template.Text).Instructions,
+            async (transaction, token) =>
+            {
+                // After the starter's guards, so a blocked start records no serving. The serving is on its own connection.
+                var template = await ResolveTemplateAsync(request, DemoPromptChannel.Session, token);
+                return (await DecideAsync(transaction, request, data, inspection, token)).Finish(prompt, data, DemoPromptChannel.Session, template.Text).Instructions;
+            },
             cancellationToken, AgentSessionMode.Demo);
         if (outcome.SessionId is not null)
         {
