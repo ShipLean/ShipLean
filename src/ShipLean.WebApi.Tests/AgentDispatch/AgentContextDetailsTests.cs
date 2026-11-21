@@ -7,7 +7,9 @@ using ShipLean.Application.Features.AgentDispatch;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Blobs;
 using ShipLean.TestSupport;
+using ShipLean.Contracts;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.WorkItemDetails.Attachments;
 
 namespace ShipLean.WebApi.Tests.AgentDispatch;
@@ -185,6 +187,36 @@ public class AgentContextDetailsTests : ApiFixture
         comments.Count.ShouldBeLessThan(10);
         comments[^1].ShouldStartWith("1h ");
         document.Descendants("guidance").Single().Value.ShouldContain("oldest comment");
+    }
+
+    [Test]
+    public async Task Start_WhenBaseUrlBlankAndHostForged_ShouldNeverPutTheRequestOriginInTheLinks()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var arranged = await AgentDispatchArrange.CreateAsync(database, Api);
+        var item = await arranged.CreateItemAsync(Api);
+        var original = await database.ExecuteScalarAsync<string>("SELECT base_url FROM instance_settings") ?? string.Empty;
+        await database.ExecuteAsync("UPDATE instance_settings SET base_url = ''");
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"api/work-items/{item.Id}/agent-session");
+            request.Headers.Add(ClientHeader.Name, ApiClient.ClientId);
+            request.Headers.Add(TestAuthentication.UserHeader, TestUser.Joel.Id.ToString());
+            request.Headers.Host = "attacker.example";
+            using var response = await Api.Http.SendAsync(request);
+
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            var body = (await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).ShouldHaveSingleItem().Body;
+            body.ShouldNotContain("attacker.example");
+            var document = XDocument.Parse("<root>" + AgentDispatchArrange.BodyOf((await AgentDispatchArrange.DeliveriesAsync(database, item.Id)).Single())["promptContext"]!.GetValue<string>() + "</root>");
+            var urls = document.Descendants().Attributes("url").Select(a => a.Value).ToList();
+            urls.ShouldNotBeEmpty();
+            urls.ShouldAllBe(url => url.StartsWith("/p/", StringComparison.Ordinal));
+        }
+        finally
+        {
+            await database.ExecuteAsync("UPDATE instance_settings SET base_url = @original", new { original });
+        }
     }
 
     private async Task<XDocument> StartAndParseAsync(Npgsql.NpgsqlConnection database, Guid itemId)
