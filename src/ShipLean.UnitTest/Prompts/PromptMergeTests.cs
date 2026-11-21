@@ -87,4 +87,17 @@ public class PromptMergeTests
     {
         Gen.Select(Texts, Texts).Sample(t => PromptMerge.Merge(t.Item1, t.Item2, t.Item2).ShouldBe(new PromptMergeResult(t.Item2, true)));
     }
+
+    [Test]
+    public void Merge_When32000ShortLinesAllDiffer_ShouldFinish()
+    {
+        var baseText = string.Concat(Enumerable.Repeat("a\n", 32000));
+        var mine = string.Concat(Enumerable.Repeat("b\n", 32000));
+        var theirs = string.Concat(Enumerable.Repeat("c\n", 32000));
+
+        var result = PromptMerge.Merge(baseText, mine, theirs);
+
+        result.Clean.ShouldBeFalse();
+        result.Text.ShouldStartWith("<<<<<<< yours\n");
+    }
 }

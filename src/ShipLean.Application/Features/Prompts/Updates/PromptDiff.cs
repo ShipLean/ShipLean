@@ -109,8 +109,15 @@ public static class PromptDiff
             var line = a[i];
             if (line.Length > 0 && (char.IsAsciiLetter(line[0]) || line[0] == '_' || line[0] == '$'))
             {
-                var text = line.TrimEnd();
-                output.Append(' ').Append(text.Length > FunctionNameLimit ? text[..FunctionNameLimit] : text);
+                // git cuts at 80 bytes first and trims after; back off to a whole character.
+                var bytes = Encoding.UTF8.GetBytes(line);
+                var length = Math.Min(bytes.Length, FunctionNameLimit);
+                while (length > 0 && length < bytes.Length && (bytes[length] & 0xC0) == 0x80)
+                {
+                    length--;
+                }
+
+                output.Append(' ').Append(Encoding.UTF8.GetString(bytes, 0, length).TrimEnd());
                 return;
             }
         }

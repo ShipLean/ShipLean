@@ -117,6 +117,15 @@ public class PromptDiffTests
         Apply(from, PromptDiff.Patch(from, unrelated)).ShouldBe(unrelated);
     }
 
+    [Test]
+    public void Patch_When32000ShortLinesAllDiffer_ShouldFinish()
+    {
+        var from = string.Concat(Enumerable.Repeat("a\n", 32000));
+        var to = string.Concat(Enumerable.Repeat("b\n", 32000));
+
+        Apply(from, PromptDiff.Patch(from, to)).ShouldBe(to);
+    }
+
     // Applies hunks to the old text: kept and '-' lines are checked against it, '+' lines are written.
     private static string Apply(string from, string patch)
     {
