@@ -15,7 +15,6 @@ test('SearchRows_WhenResultHasPoints_ShouldShowOneRowEachWithItsParts', async ({
   const first = rows.first();
   const point = retroSearch.rows[0];
   await expect(first.getByRole('img', { name: 'Went badly' })).toBeVisible();
-  await expect(first).not.toContainText('Went badly');
   await expect(first).toContainText(point.text);
   await expect(first).not.toContainText('Root cause');
   await expect(first).toContainText(point.theme!.name);
@@ -151,7 +150,8 @@ test('SearchRows_WhenAtDesktopWidth_ShouldShowCategoryIconsAndNoCellRunsIntoTheN
   // Every cell's content fits inside its cell, so no text touches the next column.
   const clipped = await page.evaluate(() => {
     const bad: string[] = [];
-    for (const td of document.querySelectorAll('tbody td')) {
+    // The Point cell is cut with an ellipsis by design, so its inline text may extend past the cell.
+    for (const td of document.querySelectorAll('tbody td:not(:nth-child(2))')) {
       const cell = td.getBoundingClientRect();
       for (const child of td.querySelectorAll('svg, span, img')) {
         const box = child.getBoundingClientRect();

@@ -55,22 +55,21 @@ export function SearchRow({
         ) : null}
         {logOnly ? <span className="text-ink-muted"> · Match in the raw failure log</span> : null}
       </td>
-      <td className={`${cell} ${oneLine}`} title={theme?.name}>
-        {theme ? (
-          <span className="text-[length:var(--text-sm)]">
-            <Highlight text={theme.name} q={q} />
-          </span>
-        ) : (
-          <span className="text-[length:var(--text-sm)] text-ink-muted italic">Unthemed</span>
-        )}
-        {point.recurring ? (
-          <>
-            {' '}
-            <span title="Recurring">
+      <td className={cell} title={theme?.name}>
+        <span className="flex min-w-0 items-center gap-1.5 text-[length:var(--text-sm)]">
+          {theme ? (
+            <span className="min-w-0 truncate">
+              <Highlight text={theme.name} q={q} />
+            </span>
+          ) : (
+            <span className="min-w-0 truncate text-ink-muted italic">Unthemed</span>
+          )}
+          {point.recurring ? (
+            <span title="Recurring" className="flex-none">
               <Chip tone="warn">↻</Chip>
             </span>
-          </>
-        ) : null}
+          ) : null}
+        </span>
       </td>
       <td className={`${cell} ${oneLine}`} title={workItem?.title}>
         {workItem ? (

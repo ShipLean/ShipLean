@@ -78,7 +78,7 @@ export function SearchRows({ query, search, pointId, select, change }: RetrosSea
                 <span className="sr-only">Category</span>
               </th>
               <th className={head}>Point</th>
-              <th className={`${head} w-[130px]`}>Theme</th>
+              <th className={`${head} w-[160px]`}>Theme</th>
               <th className={`${head} w-[100px]`}>Work item</th>
               <th className={`${head} w-[104px]`}>Sprint</th>
               <th className={`${head} w-[40px]`}>By</th>
