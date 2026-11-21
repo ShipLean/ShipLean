@@ -106,34 +106,37 @@ public class GetBriefTests : McpFixture
         block.ShouldBeLessThan(markdown.IndexOf(plan.CommonBrief.Trim(), StringComparison.Ordinal));
     }
 
-    private async Task<string> CommentedBriefAsync(string taskKey, params (string Item, int Hour, string Body)[] comments)
+    // Each test's comments go a day after the last test's, so they are the newest on the shared Feature.
+    private static int _commentDay = 1;
+
+    private async Task<string> CommentedBriefAsync(PlanSeedKeys keys, string taskKey, params (string Item, int Hour, string Body)[] comments)
     {
-        var start = DateTimeOffset.UtcNow.AddDays(1);
+        var start = Host.Services.GetRequiredService<TimeProvider>().GetUtcNow().AddDays(_commentDay++);
         await using (var connection = await OpenDatabaseAsync())
         {
             foreach (var (item, hour, body) in comments)
             {
-                await new CommentBuilder(_keys.Ids[item]).WithBody(body).WithCreatedAt(start.AddMinutes(hour)).InsertAsync(connection);
+                await new CommentBuilder(keys.Ids[item]).WithBody(body).WithCreatedAt(start.AddMinutes(hour)).InsertAsync(connection);
             }
         }
         return (await BriefAsync(taskKey)).GetProperty("markdown").GetString()!;
     }
 
-    private (string Story, string Task) OwnedTask()
+    private static (string Story, string Task) OwnedTask(PlanSeedKeys keys)
     {
         var story = PlanFixture.FeatureEditor.Stories.First(candidate => candidate.Tasks.Count > 0);
-        return (_keys.Stories[story.Title], _keys.Tasks[story.Tasks[0].Title]);
+        return (keys.Stories[story.Title], keys.Tasks[story.Tasks[0].Title]);
     }
 
     [Test]
     public async Task GetBrief_WhenMoreCommentsThanTheCap_ShouldKeepTheNewestAndSayHowToReadTheRest()
     {
-        var (_, task) = OwnedTask();
+        var (_, task) = OwnedTask(_keys);
         var comments = Enumerable.Range(0, BriefPlanContext.MaxComments + 3).Select(n => (_keys.Feature, n, $"amend-{n:00}")).ToArray();
 
-        var markdown = await CommentedBriefAsync(task, comments);
+        var markdown = await CommentedBriefAsync(_keys, task, comments);
 
-        markdown.ShouldNotContain("amend-00 ");
+        markdown.ShouldNotContain("amend-00");
         markdown.ShouldNotContain("amend-02");
         markdown.ShouldContain("amend-03");
         markdown.ShouldContain($"amend-{BriefPlanContext.MaxComments + 2:00}");
@@ -146,9 +149,12 @@ public class GetBriefTests : McpFixture
     [Test]
     public async Task GetBrief_WhenStoryAndFeatureCommentsInterleave_ShouldMergeByTimeWithKeys()
     {
-        var (story, task) = OwnedTask();
+        // A fresh plan, so no other test's comments count against the cap.
+        Host.ActAs(SeedIds.Users.Joel);
+        var fresh = await PlanTreeSeed.SeedAsync(Host.Services, SeedIds.Projects.Ship, PlanFixture.FeatureEditor);
+        var (story, task) = OwnedTask(fresh);
 
-        var markdown = await CommentedBriefAsync(task, (_keys.Feature, 1, "first-feature"), (story, 2, "second-story"), (_keys.Feature, 3, "third-feature"));
+        var markdown = await CommentedBriefAsync(fresh, task, (fresh.Feature, 1, "first-feature"), (story, 2, "second-story"), (fresh.Feature, 3, "third-feature"));
 
         var order = new[] { "first-feature", "second-story", "third-feature" }.Select(b => markdown.IndexOf(b, StringComparison.Ordinal)).ToList();
         order.ShouldBe(order.Order().ToList());
