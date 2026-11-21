@@ -27,7 +27,8 @@ public sealed class AgentTokens(NpgsqlDataSource dataSource, TimeProvider clock)
         string? ClientHost,
         string ClientKind,
         string UserStamp,
-        bool UserDisabled)
+        bool UserDisabled,
+        string? McpClientName)
     {
     }
 
@@ -45,7 +46,8 @@ public sealed class AgentTokens(NpgsqlDataSource dataSource, TimeProvider clock)
                    a.id AS authorizationId, a.user_id AS userId, a.scopes, a.security_stamp AS authorizationStamp,
                    a.revoked_at AS authorizationRevokedAt, a.last_used_at AS lastUsedAt,
                    c.client_id AS clientId, c.client_name AS clientName, c.client_host AS clientHost, c.kind AS clientKind,
-                   u.security_stamp AS userStamp, (u.disabled_at IS NOT NULL) AS userDisabled
+                   u.security_stamp AS userStamp, (u.disabled_at IS NOT NULL) AS userDisabled,
+                   a.mcp_client_name AS mcpClientName
             FROM oauth_token t
             JOIN oauth_authorization a ON a.id = t.authorization_id
             JOIN oauth_client c ON c.client_id = a.client_id AND c.archived_at IS NULL
@@ -68,6 +70,6 @@ public sealed class AgentTokens(NpgsqlDataSource dataSource, TimeProvider clock)
         }
         return new AgentPrincipal(
             row.UserId, row.AuthorizationId, row.ClientId, row.ClientName, row.ClientHost,
-            row.ClientKind == "metadataDocument" && row.ClientHost is not null, new HashSet<string>((string[])row.Scopes, StringComparer.Ordinal));
+            row.ClientKind == "metadataDocument" && row.ClientHost is not null, new HashSet<string>((string[])row.Scopes, StringComparer.Ordinal), row.McpClientName);
     }
 }
