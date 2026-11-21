@@ -3,6 +3,7 @@ using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Prompts;
+using ShipLean.WebApi.Tests.Taskboard;
 
 namespace ShipLean.WebApi.Tests.Inspection.Views;
 

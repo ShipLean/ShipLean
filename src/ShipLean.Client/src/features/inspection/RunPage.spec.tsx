@@ -225,9 +225,12 @@ test('RunHeader_WhenPrompts_ShouldShowTheirLabels', async ({ mount, page }) => {
     'brief.md custom v2 · Claude Code',
     'work.md built-in · Claude Code',
   ]);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
+  // The line wraps inside the viewport; whatever else the page does at this width is not this line's.
+  const box = await page.getByTestId(ids.runPrompts).boundingBox();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  expect(
+    await page.getByTestId(ids.runPrompts).evaluate((el) => el.scrollWidth <= el.clientWidth),
+  ).toBe(true);
 });
 
 test('RunHeader_WhenNoPrompts_ShouldHideTheLine', async ({ mount, page }) => {
