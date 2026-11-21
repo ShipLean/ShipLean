@@ -1,0 +1,42 @@
+{
+  "key": "brief",
+  "agent": "claude-code",
+  "layers": [
+    {
+      "kind": "serverInstructions",
+      "title": "Server instructions",
+      "text": "ShipLean is where work lives from the first idea through delivery.",
+      "planned": false,
+      "note": "Sent when the agent connects. Same for every project."
+    },
+    {
+      "kind": "prompt",
+      "title": "Task brief, custom v2",
+      "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n",
+      "planned": false,
+      "note": null
+    },
+    {
+      "kind": "agentSections",
+      "title": "Agent-specific sections",
+      "text": null,
+      "planned": false,
+      "note": "1 section for Claude Code; the rest are dropped."
+    },
+    {
+      "kind": "waysOfWorking",
+      "title": "Ways of working",
+      "text": null,
+      "planned": true,
+      "note": "Added after the prompt once the project has them."
+    },
+    {
+      "kind": "clientNotes",
+      "title": "Notes for the connecting agent",
+      "text": null,
+      "planned": true,
+      "note": "Per-client notes, added last."
+    }
+  ],
+  "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n"
+}
