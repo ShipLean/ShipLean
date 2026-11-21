@@ -55,6 +55,7 @@ export function HistoryTab(props: {
         <span data-testid={ids.historyNote}>Agents get v{v.number} from their next call.</span>
         <button
           type="button"
+          data-testid={ids.historyConfirm}
           className="btn-signal"
           disabled={use.isPending}
           onClick={() => confirm(v.number)}

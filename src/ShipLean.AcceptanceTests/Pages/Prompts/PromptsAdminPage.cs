@@ -94,13 +94,7 @@ public sealed class PromptsAdminPage(IPage page)
 
     public ILocator AssembledText => page.GetByTestId(PromptsTestIds.AssembledText);
 
-    // Confirms Use vN. The confirm button has no test id and the id pair is frozen (reported: needs one, e.g. prompts-history-confirm), so it is
-    // clicked as the button that follows the "Agents get vN from their next call." note.
-    public async Task ConfirmUseVersionAsync()
-    {
-        await Assertions.Expect(HistoryNote).ToBeVisibleAsync();
-        await HistoryNote.EvaluateAsync("el => el.parentElement.querySelector('button.btn-signal').click()");
-    }
+    public ILocator HistoryConfirm => page.GetByTestId(PromptsTestIds.HistoryConfirm);
 
     // The preview's text as the source block holds it, without its line-number gutter (an empty line is drawn as one space).
     public Task<string> AssembledRawTextAsync() =>

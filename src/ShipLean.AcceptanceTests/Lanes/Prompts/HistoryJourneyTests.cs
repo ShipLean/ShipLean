@@ -48,7 +48,7 @@ public class HistoryJourneyTests : SeededAcceptanceTest
         await Expect(prompts.HistoryRows.Last).ToContainTextAsync("v1");
 
         await prompts.HistoryUse.Last.ClickAsync();
-        await prompts.ConfirmUseVersionAsync();
+        await prompts.HistoryConfirm.ClickAsync();
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v1");
         var restored = await PromptsAdminPage.ServedGuideAsync(endpoint, token, Project);
         restored.ShouldContain(V1Rule);
