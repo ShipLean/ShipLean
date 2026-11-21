@@ -17,7 +17,7 @@ public sealed class SprintDemoRuns(
     ICurrentUser currentUser) : ISprintDemoRuns
 {
     // Closed sprints only. A refusal (not closed, no agent, a live session) happens before anything changes, so a refused retry leaves the current link alive.
-    public async Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, string requestOrigin, CancellationToken cancellationToken = default)
+    public async Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, CancellationToken cancellationToken = default)
     {
         var sprint = await ReadSprintAsync(sprintId, cancellationToken);
         if (sprint.RolloverStatus != "decided")
@@ -35,9 +35,15 @@ public sealed class SprintDemoRuns(
             throw Refusal(itemBlock);
         }
 
+        // The upload link comes from the instance's base_url only (SHIP-1919): the request's Host is the caller's to choose. Checked before the item is made, so a refusal changes nothing.
+        var baseUrl = await BaseUrlAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            throw ApiException.Validation(SprintDemoAutomaticRun.BaseUrlMessage);
+        }
+
         var itemId = await starter.GetOrCreateItemAsync(sprint.ProjectId, sprintId, sprint.Name, cancellationToken);
-        var baseUrl = await BaseUrlAsync(requestOrigin, cancellationToken);
-        var request = new DemoRunRequest(sprint.ProjectId, sprintId, itemId, currentUser.Id, "button", baseUrl, "ShipLean", null);
+        var request = new DemoRunRequest(sprint.ProjectId, sprintId, itemId, currentUser.Id, "button", baseUrl.TrimEnd('/'), "ShipLean", null);
         var outcome = await starter.StartSessionAsync(request, cancellationToken);
         if (outcome.Block is { } block)
         {
@@ -60,12 +66,10 @@ public sealed class SprintDemoRuns(
         ? ApiException.Conflict("An agent session is already making this demo.")
         : ApiException.Validation(AgentStartMessages.For(block));
 
-    // The instance's base URL when it has one, else the request's own origin.
-    private async Task<string> BaseUrlAsync(string requestOrigin, CancellationToken cancellationToken)
+    private async Task<string?> BaseUrlAsync(CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        var configured = await connection.ExecuteScalarAsync<string?>(new CommandDefinition("SELECT base_url FROM instance_settings", cancellationToken: cancellationToken));
-        return string.IsNullOrWhiteSpace(configured) ? requestOrigin : configured.TrimEnd('/');
+        return await connection.ExecuteScalarAsync<string?>(new CommandDefinition("SELECT base_url FROM instance_settings", cancellationToken: cancellationToken));
     }
 
     private async Task<SprintFacts> ReadSprintAsync(Guid sprintId, CancellationToken cancellationToken)

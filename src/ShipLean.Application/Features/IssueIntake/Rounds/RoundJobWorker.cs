@@ -88,7 +88,7 @@ public sealed class RoundJobWorker(
         var related = await closest.FindAsync(issue, runAs, cancellationToken);
         var prompt = RoundPrompt.Build(project.ProposalInstructions, round, related);
         var outcome = await starter.StartWinnerAsync(
-            issue.WorkItemId, runAs, null, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related,
+            issue.WorkItemId, runAs, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related,
             (transaction, token) => ClaimSessionAsync(job, issue, transaction, token));
         if (outcome.Block is { } block)
         {

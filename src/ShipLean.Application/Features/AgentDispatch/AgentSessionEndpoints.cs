@@ -33,10 +33,10 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
     }
 
     // A live session is a Conflict (409); no connection or no repository is a Validation error naming what is missing.
-    public async Task<AgentSessionStartedDto> StartAsync(Guid workItemId, string requestOrigin, CancellationToken cancellationToken)
+    public async Task<AgentSessionStartedDto> StartAsync(Guid workItemId, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
-        var outcome = await starter.StartAsync(workItemId, currentUser.Id, requestOrigin, null, null, null, cancellationToken);
+        var outcome = await starter.StartAsync(workItemId, currentUser.Id, null, null, null, cancellationToken);
         return outcome switch
         {
             { SessionId: { } id } => new AgentSessionStartedDto(id, AgentSessionStates.Submitted),
@@ -48,10 +48,10 @@ public sealed class AgentSessionEndpoints(IProjectAccess access, ICurrentUser cu
 
     // Stop: sends the agent a `prompted` with signal "stop". The session stays live until the agent answers (or 10 minutes pass).
     // A second Stop on a session already stopping changes nothing. No live session is a Conflict (409).
-    public async Task StopAsync(Guid workItemId, string requestOrigin, CancellationToken cancellationToken)
+    public async Task StopAsync(Guid workItemId, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.WorkItem, workItemId, ProjectRole.Member, cancellationToken);
-        if (await prompter.StopAsync(workItemId, currentUser.Id, requestOrigin, cancellationToken) == AgentPromptOutcome.NoLiveSession)
+        if (await prompter.StopAsync(workItemId, currentUser.Id, cancellationToken) == AgentPromptOutcome.NoLiveSession)
         {
             throw ApiException.Conflict("No agent session is running on this item.");
         }

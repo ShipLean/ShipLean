@@ -16,7 +16,7 @@ public sealed class SprintDemoAutomaticRun(
     IProjectEvents events,
     ILogger<SprintDemoAutomaticRun> logger) : ISprintDemoAutomaticRun
 {
-    private const string BaseUrlMessage = "The instance has no base URL, so the demo's upload link cannot be made. Set it in the instance settings.";
+    public const string BaseUrlMessage = "The instance has no base URL, so the demo's upload link cannot be made. Set it in the instance settings.";
     public const string FailedMessage = "The demo could not be started. Start it again from the sprint's demo panel.";
 
     public async Task StartAsync(Guid projectId, Guid sprintId, Guid closedBy, CancellationToken cancellationToken = default)

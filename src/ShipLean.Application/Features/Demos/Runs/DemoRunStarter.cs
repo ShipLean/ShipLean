@@ -64,7 +64,7 @@ public sealed class DemoRunStarter(
         var data = await sprintData.ReadAsync(request.SprintId, cancellationToken);
         var inspection = await brandSource.InspectAsync(request.ProjectId, cancellationToken);
         var outcome = await sessions.StartWinnerAsync(
-            request.ItemId, request.UserId, request.BaseUrl, null,
+            request.ItemId, request.UserId, null,
             async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, DemoPromptChannel.Session, token)).Instructions,
             cancellationToken, AgentSessionMode.Demo);
         if (outcome.SessionId is not null)

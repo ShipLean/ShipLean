@@ -30,7 +30,7 @@ public sealed class AgentPrompter(NpgsqlDataSource dataSource, AgentSessionNotif
             }
 
             var author = await UserAsync(connection, authorId, cancellationToken);
-            await QueueAsync(comment.WorkItemId, author, comment.Body, commentId.ToString(), null, comment.CreatedAt, null, cancellationToken);
+            await QueueAsync(comment.WorkItemId, author, comment.Body, commentId.ToString(), null, comment.CreatedAt, cancellationToken);
         }
         catch (Exception failed) when (failed is not OperationCanceledException)
         {
@@ -38,12 +38,11 @@ public sealed class AgentPrompter(NpgsqlDataSource dataSource, AgentSessionNotif
         }
     }
 
-    // fallbackBaseUrl is the origin of the request, for an instance that has not set its base URL.
-    public async Task<AgentPromptOutcome> StopAsync(Guid workItemId, Guid userId, string? fallbackBaseUrl, CancellationToken cancellationToken)
+    public async Task<AgentPromptOutcome> StopAsync(Guid workItemId, Guid userId, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var author = await UserAsync(connection, userId, cancellationToken);
-        return await QueueAsync(workItemId, author, string.Empty, null, AgentPromptInput.StopSignal, time.GetUtcNow(), fallbackBaseUrl, cancellationToken);
+        return await QueueAsync(workItemId, author, string.Empty, null, AgentPromptInput.StopSignal, time.GetUtcNow(), cancellationToken);
     }
 
     private static Task<AgentUserInput> UserAsync(NpgsqlConnection connection, Guid userId, CancellationToken cancellationToken)
@@ -51,7 +50,7 @@ public sealed class AgentPrompter(NpgsqlDataSource dataSource, AgentSessionNotif
             "SELECT id::text AS id, name, email FROM app_user WHERE id = @userId", new { userId }, cancellationToken: cancellationToken));
 
     private async Task<AgentPromptOutcome> QueueAsync(
-        Guid workItemId, AgentUserInput author, string body, string? commentId, string? signal, DateTimeOffset at, string? fallbackBaseUrl, CancellationToken cancellationToken)
+        Guid workItemId, AgentUserInput author, string body, string? commentId, string? signal, DateTimeOffset at, CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var session = await connection.QuerySingleOrDefaultAsync<AgentSessionRow>(new CommandDefinition(
@@ -66,7 +65,7 @@ public sealed class AgentPrompter(NpgsqlDataSource dataSource, AgentSessionNotif
         }
 
         var input = await _loader.LoadAsync(
-            workItemId, session.Id, session.CreatedAt, session.ConnectionId, session.CreatedBy, new AgentRepositoryInput(session.RepoUrl, session.BaseBranch), fallbackBaseUrl, null, cancellationToken);
+            workItemId, session.Id, session.CreatedAt, session.ConnectionId, session.CreatedBy, new AgentRepositoryInput(session.RepoUrl, session.BaseBranch), null, cancellationToken);
 
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var locked = await connection.QuerySingleOrDefaultAsync<LockedSession>(new CommandDefinition(
