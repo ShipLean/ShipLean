@@ -14,11 +14,12 @@ export function PromptActions({
   canEdit: boolean;
   onEdit: () => void;
   onUseBuiltIn: () => void;
-  onResume: () => void;
+  onResume: (number: number) => void;
   onCopy: () => void;
 }) {
   const inUse = canEdit && prompt.custom?.inUse === true;
-  const paused = canEdit && prompt.status === 'usingBuiltIn' && prompt.custom !== null;
+  const resumable = prompt.status === 'usingBuiltIn' ? prompt.custom : null;
+  const paused = canEdit && resumable !== null;
   const copy = (
     <button type="button" data-testid={ids.copyMarkdown} className="btn" onClick={onCopy}>
       Copy Markdown
@@ -36,9 +37,14 @@ export function PromptActions({
           {inUse ? 'Edit' : paused ? 'Edit custom version' : 'Customize'}
         </button>
       ) : null}
-      {paused ? (
-        <button type="button" data-testid={ids.actionResume} className="btn" onClick={onResume}>
-          Use custom v{prompt.custom?.number} again
+      {canEdit && resumable !== null ? (
+        <button
+          type="button"
+          data-testid={ids.actionResume}
+          className="btn"
+          onClick={() => onResume(resumable.number)}
+        >
+          Use custom v{resumable.number} again
         </button>
       ) : null}
       {inUse ? (

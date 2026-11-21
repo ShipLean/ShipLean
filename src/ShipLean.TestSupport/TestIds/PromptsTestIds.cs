@@ -53,6 +53,7 @@ public static class PromptsTestIds
     public const string ActionEdit = "prompts-action-edit";
     public const string ActionUseBuiltIn = "prompts-action-use-built-in";
     public const string ActionResume = "prompts-action-resume";
+    public const string ActionError = "prompts-action-error";
     public const string CopyMarkdown = "prompts-copy-markdown";
     // source
     public const string TabBar = "prompts-tab-bar";

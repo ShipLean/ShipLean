@@ -88,6 +88,7 @@ test('PromptDetail_WhenMember_ShouldHideChangeActions', async ({ mount, page }) 
   await expect(page.getByTestId(ids.actionEdit)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionCustomize)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionUseBuiltIn)).toHaveCount(0);
+  await expect(page.getByTestId(ids.actionResume)).toHaveCount(0);
   await expect(page.getByTestId(ids.readOnlyNote)).toContainText(
     'Only project admins can customize',
   );
@@ -198,4 +199,40 @@ test('PromptsPage_WhenLoadFails_ShouldOfferRetry', async ({ mount, page }) => {
   fail = false;
   await page.getByTestId(ids.retry).click();
   await expect(page.getByTestId(ids.detailName)).toHaveText('Issue proposal');
+});
+
+const RESUME_URL = '**/api/projects/*/prompts/issueProposal/versions/1/use';
+
+test('PromptDetail_WhenResumeClicked_ShouldUseTheCustomVersionNumber', async ({ mount, page }) => {
+  const posted: string[] = [];
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route(RESUME_URL, (route) => {
+    posted.push(route.request().method());
+    return route.fulfill({ json: { key: 'issueProposal', status: 'custom', inUseVersion: 1 } });
+  });
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts' },
+  });
+
+  await expect(page.getByTestId(ids.actionResume)).toContainText('Use custom v1 again');
+  await page.getByTestId(ids.actionResume).click();
+
+  await expect.poll(() => posted).toEqual(['POST']);
+  await expect(page.getByTestId(ids.actionError)).toHaveCount(0);
+});
+
+test('PromptDetail_WhenResumeFails_ShouldShowTheError', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route(RESUME_URL, (route) =>
+    route.fulfill({ status: 404, json: { error: 'That version is gone.', code: 'not_found' } }),
+  );
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts' },
+  });
+
+  await page.getByTestId(ids.actionResume).click();
+
+  await expect(page.getByTestId(ids.actionError)).toHaveText('That version is gone.');
 });

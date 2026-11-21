@@ -59,9 +59,12 @@ export function PromptDetail({
   const [tab, setTab] = useState<TabId>('source');
   const [confirmingUseBuiltIn, setConfirmingUseBuiltIn] = useState(false);
   const custom = prompt.custom;
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const resume = useUseVersion(projectId, prompt.key);
   const inUseText = custom?.inUse === true ? custom.text : prompt.builtInText;
 
+  // A paused prompt's custom version is the newest one: Edit custom version starts from its text, not the built-in's.
+  const editText = prompt.status === 'usingBuiltIn' && custom !== null ? custom.text : inUseText;
   const open = (state: EditorState) => {
     if (editor !== null) return;
     void promptCustomizeOpened(projectId, prompt.key).catch(() => undefined);
@@ -128,11 +131,25 @@ export function PromptDetail({
             <PromptActions
               prompt={prompt}
               canEdit={page.canEdit}
-              onEdit={() => open({ initialText: inUseText, source: 'editor' })}
+              onEdit={() => open({ initialText: editText, source: 'editor' })}
               onUseBuiltIn={() => setConfirmingUseBuiltIn(true)}
-              onResume={() => void resume.mutateAsync(custom?.number ?? 0).catch(() => undefined)}
+              onResume={(number) => {
+                setResumeError(null);
+                resume.mutateAsync(number).catch((error: unknown) => {
+                  setResumeError(
+                    error instanceof Error
+                      ? error.message
+                      : 'The version could not be put back in use.',
+                  );
+                });
+              }}
               onCopy={() => void navigator.clipboard.writeText(inUseText).catch(() => undefined)}
             />
+            {resumeError === null ? null : (
+              <div role="alert" data-testid={ids.actionError} className="text-alert">
+                {resumeError}
+              </div>
+            )}
             <PromptFacts prompt={prompt} />
             <UpdateBanner
               projectId={projectId}

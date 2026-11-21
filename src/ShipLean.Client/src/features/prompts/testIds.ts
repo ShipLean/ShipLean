@@ -50,6 +50,7 @@ export const promptsTestIds = {
   actionEdit: 'prompts-action-edit',
   actionUseBuiltIn: 'prompts-action-use-built-in',
   actionResume: 'prompts-action-resume',
+  actionError: 'prompts-action-error',
   copyMarkdown: 'prompts-copy-markdown',
   // source
   tabBar: 'prompts-tab-bar',
