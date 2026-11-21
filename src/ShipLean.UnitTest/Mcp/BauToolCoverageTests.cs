@@ -58,6 +58,7 @@ public class BauToolCoverageTests
         ["capture_plan"] = Kind.ByKeyOnly,
         ["create_feature"] = Kind.ByKeyOnly,
         ["decide_retro_actions"] = Kind.ByKeyOnly,
+        ["decide_theme_merges"] = Kind.ByKeyOnly,
         ["record_decisions"] = Kind.ByKeyOnly,
         ["ask"] = Kind.ByKeyOnly,
         ["answer_decision"] = Kind.ByKeyOnly,
