@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Builders;
+using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Retros;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Tests.Mcp.Transport;
@@ -164,7 +166,12 @@ public class DecideThemeMergesTests : McpFixture
 
         public async Task<Guid> PointOnAsync(Guid theme, RetroThemeSetBy setBy)
         {
-            _retro ??= await _seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, AgentName: "claude-x"));
+            if (_retro is null)
+            {
+                var feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").InsertAsync(connection);
+                _retro = await _seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: feature, AgentName: "claude-x"));
+            }
+
             return await _seed.PointAsync(_retro.Value, new RetroSeedPoint(RetroCategory.WentBadly, $"Point {Guid.NewGuid():N}", ThemeId: theme, ThemeSetBy: setBy));
         }
 
