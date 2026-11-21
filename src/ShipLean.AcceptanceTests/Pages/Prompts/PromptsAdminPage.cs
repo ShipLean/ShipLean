@@ -90,7 +90,16 @@ public sealed class PromptsAdminPage(IPage page)
     public Task<string> AssembledRawTextAsync() =>
         AssembledText.EvaluateAsync<string>("el => Array.from(el.children).map(row => row.children[1].textContent.replace(/^ $/, '')).join('\\n')");
 
-    // Picks an agent in the preview and waits for that agent's text to arrive.
+    // Picks an agent in the preview; waits for that agent's response.
+    // Opens What the agent gets: the tab click fetches the preselected agent's text, so the wait wraps it.
+    public async Task OpenAssembledAsync(string agentId = "claude-code")
+    {
+        await page.RunAndWaitForResponseAsync(
+            () => TabAssembled.ClickAsync(),
+            r => r.Url.Contains("/assembled?agent=" + agentId, StringComparison.Ordinal) && r.Ok);
+        await Assertions.Expect(AgentOption("Claude Code")).ToHaveAttributeAsync("aria-pressed", "true");
+    }
+
     public async Task ChooseAgentAsync(string label, string agentId)
     {
         await page.RunAndWaitForResponseAsync(

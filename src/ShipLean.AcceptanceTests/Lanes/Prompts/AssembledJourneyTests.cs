@@ -35,9 +35,7 @@ public class AssembledJourneyTests : SeededAcceptanceTest
     {
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project, "guide");
-        await prompts.TabAssembled.ClickAsync();
-
-        await prompts.ChooseAgentAsync("Claude Code", "claude-code");
+        await prompts.OpenAssembledAsync();
         await Expect(prompts.AssembledText).ToContainTextAsync(GuideLine);
         await Expect(prompts.AssembledText).ToContainTextAsync(ClaudeLine);
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(OpenAiLine);
@@ -75,9 +73,7 @@ public class AssembledJourneyTests : SeededAcceptanceTest
 
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project, "guide");
-        await prompts.TabAssembled.ClickAsync();
-
-        await prompts.ChooseAgentAsync("Claude Code", "claude-code");
+        await prompts.OpenAssembledAsync();
         await Expect(prompts.AssembledText).ToContainTextAsync(ClaudeLine);
         (await prompts.AssembledRawTextAsync()).Trim().ShouldBe(claudeServed.Trim());
 
