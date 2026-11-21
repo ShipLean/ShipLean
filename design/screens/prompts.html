@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShipLean · Project settings › Prompts (reference)</title>
+<!--
+  Reference Project settings › Prompts (SHIP-744, mockup for approval, not built yet), for the Storefront project.
+  Open directly in a browser. Uses ../tokens.css, shiplean.css and shared.js; no build step.
+  prompts-data.js is a snapshot of the real built-in prompt texts (regenerate with prompts-data.mjs).
+  Spec and decisions D1-D13: ../ship-744-prompts.md.
+  Review states (?state=): list (default), edit, tags, custom, merge, revert, history, assembled, member.
+  ?prompt=<file> picks the prompt, e.g. ?state=merge&prompt=code_reviewer.md.
+  The "Preview" panel bottom-left is a review aid, not part of the design (hide it with ?shot).
+-->
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="shiplean.css">
+<script src="shared.js"></script>
+<script src="prompts-data.js"></script>
+<style>
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+.head { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex: none; flex-wrap: wrap; }
+.head h1 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+.dirty { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; background: color-mix(in srgb, var(--color-warn) 20%, transparent); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+.dirty::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--color-warn); }
+
+.sbody { flex: 1; min-height: 0; display: grid; grid-template-columns: 200px minmax(0, 1fr); }
+.stabs { display: flex; flex-direction: column; gap: 2px; padding: var(--space-3) var(--space-2); background: var(--color-surface); border-right: 1px solid var(--color-border); overflow: auto; }
+.stab { display: flex; align-items: center; gap: var(--space-2); height: 30px; padding: 0 var(--space-2); border-radius: var(--radius-sm); color: var(--color-muted); font-size: var(--text-base); font-weight: var(--weight-medium); text-decoration: none; }
+.stab:hover { background: var(--color-surface-2); color: var(--color-text); }
+.stab[aria-current="page"] { background: var(--color-accent-soft); color: var(--color-text); font-weight: var(--weight-semibold); }
+.stab .meta { margin-left: auto; font-size: var(--text-xs); font-weight: var(--weight-regular); color: var(--color-muted); }
+.stab .new { margin-left: auto; font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-accent); text-transform: uppercase; letter-spacing: .04em; }
+
+.content { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--color-bg); }
+
+/* Workflow strip */
+.flow { display: flex; gap: 0; align-items: stretch; padding: var(--space-3) var(--space-4) 0; overflow-x: auto; }
+.flow button { position: relative; flex: 1 1 0; min-width: 104px; display: grid; gap: 2px; justify-items: start; padding: 7px 10px 7px 18px; border: 1px solid var(--color-border); border-right: 0; background: var(--color-surface); text-align: left; cursor: pointer; color: var(--color-text); }
+.flow button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); padding-left: 12px; }
+.flow button:last-child { border-right: 1px solid var(--color-border); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.flow button::after { content: ""; position: absolute; right: -7px; top: 50%; width: 12px; height: 12px; transform: translateY(-50%) rotate(45deg); background: inherit; border-top: 1px solid var(--color-border); border-right: 1px solid var(--color-border); z-index: 1; }
+.flow button:last-child::after { display: none; }
+.flow button:hover { background: var(--color-surface-2); }
+.flow button[aria-current="true"] { background: var(--color-accent-soft); }
+.flow .n { font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); text-transform: uppercase; letter-spacing: .05em; }
+.flow .t { font-size: var(--text-sm); font-weight: var(--weight-semibold); white-space: nowrap; }
+.flow .c { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.flow .c b { color: var(--color-purple); font-weight: var(--weight-semibold); }
+
+.split { min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); }
+.pane { min-height: 0; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.pane > header { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-height: 44px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); flex: none; }
+.pane > header h2 { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+
+/* List */
+.list-tools { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); flex: none; }
+.list-tools .field { flex: 1; }
+.plist { overflow: auto; flex: 1; padding-bottom: var(--space-3); }
+.stage { position: relative; padding: var(--space-3) var(--space-3) 2px 38px; }
+.stage::before { content: ""; position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: var(--color-border); }
+.stage:first-child::before { top: 20px; }
+.stage:last-child::before { bottom: auto; height: 20px; }
+.stage .num { position: absolute; left: 10px; top: 10px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--color-surface); border: 2px solid var(--color-border); font-size: var(--text-2xs); font-weight: var(--weight-semibold); color: var(--color-muted); z-index: 1; }
+.stage h3 { margin: 0; font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.stage .when { margin: 1px 0 6px; font-size: var(--text-xs); color: var(--color-muted); }
+.prow { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-2); align-items: center; margin: 0 0 3px; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; text-align: left; cursor: pointer; color: var(--color-text); }
+.prow:hover { background: var(--color-surface-2); }
+.prow[aria-current="true"] { background: var(--color-accent-soft); border-color: color-mix(in srgb, var(--color-accent) 35%, transparent); }
+.prow .nm { font-size: var(--text-sm); font-weight: var(--weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .fn { grid-column: 1; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prow .chip { grid-row: 1 / span 2; grid-column: 2; }
+.chip.custom { background: color-mix(in srgb, var(--color-purple) 18%, transparent); }
+.chip.custom::before, .chip.drift::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--color-purple); }
+.chip.drift { background: color-mix(in srgb, var(--color-warn) 22%, transparent); }
+.chip.drift::before { background: var(--color-warn); }
+.chip.paused { background: var(--color-surface-2); color: var(--color-muted); }
+.chip.mono { font-family: var(--font-mono); font-weight: var(--weight-regular); }
+.empty { padding: var(--space-4); font-size: var(--text-sm); color: var(--color-muted); }
+
+/* Detail */
+.detail { min-height: 0; display: flex; flex-direction: column; }
+.dhead { padding: var(--space-3); border-bottom: 1px solid var(--color-border); display: grid; gap: var(--space-2); flex: none; }
+.dhead .titlerow { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.dhead h2 { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); }
+.dhead .fnm { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+.facts { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 5px var(--space-3); margin: 0; font-size: var(--text-sm); }
+.facts dt { color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); padding-top: 1px; }
+.facts dd { margin: 0; }
+.facts code, .md code, .hint code, .banner code { font-family: var(--font-mono); font-size: .92em; padding: 0 3px; border-radius: 3px; background: var(--color-surface-2); }
+.ph { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: var(--radius-xs); background: var(--color-surface-2); font-family: var(--font-mono); font-size: var(--text-2xs); margin: 0 3px 3px 0; }
+.ph.miss { background: color-mix(in srgb, var(--color-warn) 22%, transparent); text-decoration: line-through; }
+.actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.banner { display: flex; gap: var(--space-2); align-items: flex-start; padding: 8px var(--space-3); border: 1px solid var(--color-border); border-left: 3px solid var(--color-info); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-info) 7%, var(--color-surface)); font-size: var(--text-sm); }
+.banner.warn { border-left-color: var(--color-warn); background: color-mix(in srgb, var(--color-warn) 9%, var(--color-surface)); }
+.banner.purple { border-left-color: var(--color-purple); background: color-mix(in srgb, var(--color-purple) 7%, var(--color-surface)); }
+.banner .grow { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.banner b { font-weight: var(--weight-semibold); }
+
+.dtabs { display: flex; gap: 2px; align-items: center; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); background: var(--color-bg); flex: none; flex-wrap: wrap; }
+.dtabs .tab { cursor: pointer; border: 0; background: transparent; font: inherit; font-size: var(--text-sm); }
+.dtabs .tab .n { margin-left: 5px; font-size: var(--text-2xs); color: var(--color-muted); }
+.dbody { flex: 1; min-height: 0; overflow: auto; }
+
+.src { margin: 0; padding: var(--space-3); font-family: var(--font-mono); font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--color-text); }
+.src .h { color: var(--color-accent); font-weight: 600; }
+.src .p { color: var(--color-purple); background: color-mix(in srgb, var(--color-purple) 12%, transparent); border-radius: 3px; }
+.md { padding: var(--space-3) var(--space-4); font-size: var(--text-base); line-height: 1.55; max-width: 820px; }
+.md h1 { font-size: 17px; margin: 0 0 8px; } .md h2 { font-size: 14px; margin: 18px 0 6px; } .md h3 { font-size: 13px; margin: 14px 0 4px; }
+.md p { margin: 0 0 8px; } .md ul, .md ol { margin: 0 0 8px; padding-left: 20px; } .md li { margin: 2px 0; }
+.md pre { margin: 0 0 10px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--color-surface-2); overflow: auto; font-size: 11.5px; }
+.md pre code { background: none; padding: 0; }
+.md table { border-collapse: collapse; font-size: var(--text-xs); margin: 0 0 10px; } .md td, .md th { border: 1px solid var(--color-border); padding: 3px 6px; }
+.src .c { color: var(--color-info); font-weight: 600; background: color-mix(in srgb, var(--color-info) 13%, transparent); border-radius: 3px; }
+.md .cl { margin: 10px 0 4px; padding: 3px 8px; border-left: 3px solid var(--color-info); background: color-mix(in srgb, var(--color-info) 9%, transparent); font-size: var(--text-xs); font-weight: 600; color: var(--color-info); }
+.md .cl.end { margin: 0 0 10px; padding: 0; height: 2px; border: 0; background: color-mix(in srgb, var(--color-info) 30%, transparent); }
+.tagrow { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.tagrow span:last-child { white-space: nowrap; }
+.tagrow code { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-info); }
+.side .addtag { border: 0; background: none; color: var(--color-accent); cursor: pointer; font-size: var(--text-xs); padding: 0; margin-top: 4px; }
+.pvseg { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; margin-top: var(--space-3); }
+.pvbox { border: 1px solid var(--color-border); border-radius: var(--radius-sm); max-height: 360px; overflow: auto; background: var(--color-bg); }
+.md .p { color: var(--color-purple); font-family: var(--font-mono); font-size: .9em; background: color-mix(in srgb, var(--color-purple) 12%, transparent); border-radius: 3px; padding: 0 3px; }
+
+/* Editor */
+.editwrap { display: grid; grid-template-columns: minmax(0, 1fr) 230px; min-height: 100%; }
+.editor { width: 100%; min-height: 100%; height: 100%; padding: var(--space-3); border: 0; resize: none; background: var(--color-surface); color: var(--color-text); font-family: var(--font-mono); font-size: 12px; line-height: 1.55; outline: none; tab-size: 2; }
+.editor:focus { box-shadow: inset 0 0 0 2px var(--color-accent); }
+.side { border-left: 1px solid var(--color-border); background: var(--color-bg); padding: var(--space-3); display: grid; gap: var(--space-3); align-content: start; font-size: var(--text-xs); }
+.side h4 { margin: 0 0 4px; font-size: var(--text-xs); font-weight: var(--weight-semibold); text-transform: uppercase; letter-spacing: .04em; color: var(--color-muted); }
+.side .ok { color: var(--color-ok); } .side .warnt { color: var(--color-warn); font-weight: var(--weight-medium); }
+.side .phl { display: grid; gap: 3px; }
+.side .phl > div { display: flex; gap: 6px; align-items: center; justify-content: space-between; }
+.side .phl button { border: 0; background: none; color: var(--color-accent); cursor: pointer; font-size: var(--text-2xs); padding: 0; }
+.meter { height: 4px; border-radius: 2px; background: var(--color-surface-2); overflow: hidden; } .meter i { display: block; height: 100%; background: var(--color-accent); }
+.dfoot { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); background: var(--color-bg); font-size: var(--text-xs); color: var(--color-muted); flex: none; }
+.dfoot .field { flex: 1; min-width: 200px; }
+
+/* Diff */
+.diff { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; padding: var(--space-2) 0; }
+.diff .l { display: grid; grid-template-columns: 38px 38px 16px minmax(0, 1fr); white-space: pre-wrap; overflow-wrap: anywhere; }
+.diff .l span:nth-child(-n+2) { color: var(--color-muted); text-align: right; padding-right: 6px; font-size: 11px; user-select: none; }
+.diff .l span:nth-child(3) { text-align: center; color: var(--color-muted); user-select: none; }
+.diff .add { background: color-mix(in srgb, var(--color-ok) 14%, transparent); } .diff .add span:nth-child(3) { color: var(--color-ok); }
+.diff .del { background: color-mix(in srgb, var(--color-danger) 12%, transparent); } .diff .del span:nth-child(3) { color: var(--color-danger); }
+.diff .gap { padding: 2px 0 2px 92px; color: var(--color-muted); font-size: var(--text-xs); background: var(--color-surface-2); margin: 2px 0; font-family: var(--font-sans); }
+.diffhead { display: flex; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); font-size: var(--text-xs); color: var(--color-muted); border-bottom: 1px dashed var(--color-border); flex-wrap: wrap; }
+.diffhead .k { display: inline-flex; gap: 4px; align-items: center; } .diffhead .k i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* Merge (built-in changed) */
+.merge { display: grid; gap: var(--space-3); padding: var(--space-3); }
+.mcard { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); overflow: hidden; }
+.mcard > header { display: flex; gap: var(--space-2); align-items: center; padding: 6px var(--space-3); background: var(--color-surface-2); font-size: var(--text-sm); font-weight: var(--weight-semibold); flex-wrap: wrap; }
+.mcard > header .sm { font-weight: var(--weight-regular); }
+
+/* Assembled */
+.stack3 { display: grid; gap: 6px; padding: var(--space-3); max-width: 760px; }
+.layer { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: var(--text-sm); }
+.layer .i { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: var(--text-2xs); font-weight: 700; background: var(--color-surface-2); color: var(--color-muted); }
+.layer.this { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent) inset; }
+.layer.this .i { background: var(--color-accent); color: var(--color-accent-fg); }
+.layer .d { font-size: var(--text-xs); color: var(--color-muted); }
+.layer.future { border-style: dashed; }
+
+/* History */
+table.hist td { font-size: var(--text-sm); }
+table.hist tr.cur td { background: color-mix(in srgb, var(--color-accent-soft) 60%, transparent); }
+
+.member-note { display: none; }
+body.member .member-note { display: flex; }
+body.member .admin-only { display: none !important; }
+
+@media (max-width: 1180px) { .split { grid-template-columns: 290px minmax(0, 1fr); } .editwrap { grid-template-columns: minmax(0, 1fr); } .side { border-left: 0; border-top: 1px solid var(--color-border); } }
+@media (max-width: 900px) { .sbody { grid-template-columns: minmax(0, 1fr); } .stabs { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--color-border); } .split { grid-template-columns: minmax(0, 1fr); } .pane.listpane { max-height: 46vh; } }
+</style>
+</head>
+<body>
+<div id="appbar"></div>
+<section class="head" aria-label="Project settings">
+  <h1>Project settings</h1>
+  <span class="sm muted">Storefront · changes apply to every agent working in this project</span>
+  <span class="spacer"></span>
+  <span id="status" class="row"></span>
+</section>
+<div class="sbody">
+  <nav class="stabs" aria-label="Settings sections">
+    <a class="stab" href="settings.html#general">General</a>
+    <a class="stab" href="settings.html#states">States</a>
+    <a class="stab" href="settings.html#members">Members <span class="meta">6</span></a>
+    <a class="stab" href="settings.html#sprints">Sprints &amp; forecast</a>
+    <a class="stab" href="settings.html#integrations">Integrations</a>
+    <a class="stab" href="settings.html#demos">Demos</a>
+    <a class="stab" href="prompts.html" aria-current="page">Prompts <span class="meta" id="tabCount"></span></a>
+  </nav>
+  <main class="content">
+    <nav class="flow" id="flow" aria-label="Workflow stages"></nav>
+    <div class="split">
+      <section class="pane listpane" aria-label="Built-in prompts">
+        <header>
+          <h2>Prompts</h2>
+          <span class="sm muted">in the order agents meet them</span>
+        </header>
+        <div class="list-tools">
+          <input class="field" id="q" type="search" placeholder="Find a prompt or placeholder" aria-label="Find a prompt">
+          <div class="seg" role="group" aria-label="Show">
+            <button type="button" data-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-filter="custom" aria-pressed="false">Custom</button>
+          </div>
+        </div>
+        <div class="plist" id="plist"></div>
+      </section>
+      <section class="pane detail" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+</div>
+
+<div class="backdrop" id="dlg" hidden></div>
+
+<script>
+(() => {
+  document.getElementById('appbar').outerHTML = SL.appBar('settings');
+  const { esc, toast } = SL;
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const B = window.BUILTIN;
+
+  // ---------- Inventory: the real built-in prompts, in workflow order ----------
+  const STAGES = [
+    { id: 'intake', name: 'Intake', when: 'A GitHub issue arrives on a connected repository.' },
+    { id: 'shape', name: 'Shape', when: 'An idea or research question might become work.' },
+    { id: 'plan', name: 'Plan', when: 'A Feature or Epic is broken down into stories and tasks.' },
+    { id: 'build', name: 'Build', when: 'Each wave runs: leads and implementers pick up their briefs.' },
+    { id: 'review', name: 'Review', when: 'Each task’s commits are reviewed, then fixed.' },
+    { id: 'retro', name: 'Retro', when: 'The plan run ends and the conductor writes up what happened.' },
+    { id: 'demo', name: 'Sprint demo', when: 'The sprint closes and someone asks for a demo video.' },
+  ];
+  const PROMPTS = [
+    { file: 'issue-proposal.md', name: 'Issue proposal', stage: 'intake', tool: 'Issue intake round (agent-relay session)', reader: 'The intake agent, working in a read-only checkout',
+      used: 'When someone opens a GitHub issue on a connected repository, ShipLean starts an intake round. This is the agent’s session prompt: it restates the request, checks what already exists and posts a proposal on the issue.',
+      note: 'Replaces the <b>Proposal instructions</b> box under Integrations. Its output is public, so keep the “Public text only” rules.' },
+    { file: 'work.md', name: 'Work from idea to done', stage: 'shape', tool: '<code>planning_guide</code> part <code>work</code>', reader: 'Any agent, at the start of a session',
+      used: 'The first thing an agent reads when it gets an idea or a research question: find or create a Proposed Feature, put findings on it, and end with <code>comment</code> and <code>set_status</code>.' },
+    { file: 'guide.md', name: 'Planning and breakdown', stage: 'plan', tool: '<code>planning_guide</code> (default part)', reader: 'The conductor, before any breakdown',
+      used: 'Read before breaking a Feature or Epic down, whatever its size. It picks the mode (Direct, orchestrator or conductor), shapes waves and contracts, and walks the run through to the retro.' },
+    { file: 'plan_reviewer.md', name: 'Plan reviewer', stage: 'plan', tool: '<code>planning_guide</code> part <code>plan_reviewer</code>', reader: 'A reviewer from a different model family',
+      used: 'After <code>capture_plan</code> and before wave 0: a fresh reviewer checks the plan against the four constraints (context size, no in-wave dependencies, flow, contracts first).' },
+    { file: 'lead.md', name: 'Lead brief', stage: 'build', tool: '<code>get_brief</code> on a story (conductor mode)', reader: 'The lead of one lane',
+      used: 'In conductor mode, each lane lead gets this when it calls <code>get_brief</code> on its story. It launches sub-agents, runs reviews and keeps the plan current; it never touches code.' },
+    { file: 'brief.md', name: 'Task brief', stage: 'build', tool: '<code>get_brief</code> on a task', reader: 'The implementer, alone in its worktree',
+      used: 'The wrapper around every task brief: ShipLean fills in the common brief, the task’s own brief, contracts and the shared branch. The implementer follows it from <code>pick_up</code> to <code>report_task</code>.' },
+    { file: 'report.md', name: 'Report', stage: 'build', tool: 'Appended to every task brief (<code>{{report_template}}</code>)', reader: 'The implementer, when it stops',
+      used: 'How to fill <code>report_task</code>: status, commits, answered comments, tests run and acceptance tests. Inserted at the end of the Task brief.' },
+    { file: 'code_reviewer.md', name: 'Code reviewer', stage: 'review', tool: '<code>planning_guide</code> part <code>code_reviewer</code>', reader: 'A reviewer from a different model family',
+      used: 'After an implementer reports, a reviewer reads only that task’s commits on the shared branch, comments <code>Review · </code> and calls <code>log_review</code>.' },
+    { file: 'fix.md', name: 'Fix round', stage: 'review', tool: '<code>planning_guide</code> part <code>fix</code>', reader: 'The implementer, after changes are requested',
+      used: 'When <code>log_review</code> says changes_requested: fix each blocking finding with new commits, never amend or force-push, then report again.' },
+    { file: 'retro.md', name: 'Run retro', stage: 'retro', tool: '<code>planning_guide</code> part <code>retro</code>', reader: 'The conductor, at the end of the run',
+      used: 'The template for the run retro: budget, timeline table, what slowed it down. It feeds <code>log_retrospective</code> and, with SHIP-568, the project’s Ways of working.' },
+    { file: 'sprint-demo-prompt.md', name: 'Sprint demo video', stage: 'demo', tool: '<code>create_sprint_demo</code>', reader: 'The demo agent (handover or agent-relay session)',
+      used: 'When a sprint closes and a demo is requested, this is the whole recipe for the narrated video: chapters, narration, recording, upload.',
+      parts: ['tools', 'models', 'ffmpeg', 'level', 'start', 'intro', 'return'] },
+  ];
+  const P = Object.fromEntries(PROMPTS.map(p => [p.file, p]));
+  const phs = t => [...new Set((t.match(/\{\{[a-z_]+\}\}/g) || []))];
+
+  // ---------- Mock overrides (state the server would hold per project + prompt) ----------
+  const reviewerPara = B['code_reviewer.md'].split('\n\n').find(s => s.includes('found_before_release'));
+  const reviewerBase = B['code_reviewer.md'].replace(reviewerPara + '\n\n', '');
+  const ADD_REVIEW = '\n\n## Project rules\n\nEvery new endpoint needs an acceptance test under `src/ShipLean.AcceptanceTests`. A missing one is a blocking finding.\n\nCheck that new user-facing text is in the en-GB spelling the rest of the app uses.';
+  const ADD_BRIEF = '\n\n## Project rules\n\n- Run `pnpm -C src/ShipLean.Web lint` and `dotnet format --verify-no-changes` before you report; put both in `tests_run`.\n- Never add a page-shot baseline from your machine. CI writes them.\n\n<claude-code>\nRun the acceptance tests in a background sub-agent with the Task tool, so your own context stays on the change.\n</claude-code>\n\n<codex-cli>\nWhen a command waits for approval, stop and report the task as blocked instead of waiting.\n</codex-cli>';
+  // Agents ShipLean recognises by their OAuth client (SHIP-744 D9): a custom prompt may hold sections only they get.
+  const CLIENTS = { 'claude-code': 'Claude Code', 'codex-cli': 'Codex CLI', cursor: 'Cursor' };
+  const TAGLINE = /^<(\/?)([a-z][a-z0-9-]*)>$/;
+  function tagScan(t) {
+    const found = {}, unknown = new Set(), bad = new Set(); const stack = [];
+    for (const l of t.split('\n')) {
+      const m = l.trim().match(TAGLINE); if (!m) continue;
+      const [, close, name] = m;
+      if (!CLIENTS[name]) { if (!close) unknown.add(name); continue; }
+      if (!close) { if (stack.length) bad.add(name); stack.push(name); found[name] = (found[name] || 0) + 1; }
+      else if (stack.pop() !== name) bad.add(name);
+    }
+    stack.forEach(n => bad.add(n));
+    return { found, unknown: [...unknown], bad: [...bad] };
+  }
+  function forClient(t, client) {
+    const out = []; let cur = null;
+    for (const l of t.split('\n')) { const m = l.trim().match(/^<(\/?)(claude-code|codex-cli|cursor)>$/); if (m) { cur = m[1] ? null : m[2]; continue; } if (!cur || cur === client) out.push(l); }
+    return out.join('\n').replace(/\n{3,}/g, '\n\n');
+  }
+  const guess = u => Object.keys(CLIENTS).find(k => k[0] === u[0] && Math.abs(k.length - u.length) <= 2);
+  const OV = {
+    'brief.md': { v: 2, by: 'Joel Dickson', at: '18 Nov', base: BUILTIN_SHA, baseAt: '14 Nov', text: B['brief.md'] + ADD_BRIEF, on: true,
+      hist: [{ v: 2, by: 'Joel Dickson', at: '18 Nov 09:12', note: 'Added the CI baseline rule' }, { v: 1, by: 'Priya Shah', at: '14 Nov 16:40', note: 'Lint and format before report' }] },
+    'code_reviewer.md': { v: 1, by: 'Priya Shah', at: '12 Nov', base: 'a91c3e0', baseAt: '12 Nov', text: reviewerBase + ADD_REVIEW, on: true, drift: { at: '20 Nov', sha: BUILTIN_SHA, oldBuiltin: reviewerBase },
+      hist: [{ v: 1, by: 'Priya Shah', at: '12 Nov 11:03', note: 'Acceptance test and en-GB rules' }] },
+    'issue-proposal.md': { v: 1, by: 'Joel Dickson', at: '6 Nov', base: BUILTIN_SHA, baseAt: '6 Nov', text: B['issue-proposal.md'].replace('5. If you need more from the reporter, ask at most 3 questions.', '5. If you need more from the reporter, ask at most 3 questions.\n6. Answer in British English, and name the Feature you would put it under when one fits.'), on: true, migrated: true,
+      hist: [{ v: 1, by: 'Joel Dickson', at: '6 Nov 08:20', note: 'Moved from Integrations › Proposal instructions' }] },
+  };
+
+  // ---------- State ----------
+  const S = {
+    sel: params.get('prompt') || (['drift', 'merge'].includes(params.get('state')) ? 'code_reviewer.md' : ['custom', 'history', 'revert'].includes(params.get('state')) ? 'brief.md' : 'brief.md'),
+    mode: 'view', tab: 'prompt', client: 'claude-code', filter: 'all', q: '', draft: null,
+    member: params.get('state') === 'member',
+  };
+  const st = params.get('state');
+  if (st === 'edit') { S.sel = params.get('prompt') || 'lead.md'; S.mode = 'edit'; S.etab = 'edit'; S.draft = (OV[S.sel] && OV[S.sel].on) ? OV[S.sel].text : B[S.sel]; S.draft = S.draft.replace(', wave {{wave}}', '') + '\n\n## Project rules\n\n- Prefer one Story in Direct mode for anything under a day of work.\n- Every plan names its shared branch `feat/<key>-<slug>`.'; }
+  if (st === 'custom') S.tab = 'changes';
+  if (st === 'merge') S.tab = 'merge';
+  if (st === 'history') S.tab = 'history';
+  if (st === 'assembled') S.tab = 'assembled';
+  if (st === 'tags') { S.sel = params.get('prompt') || 'brief.md'; S.mode = 'edit'; S.etab = 'edit'; S.draft = OV[S.sel].text + '\n\n<claudecode>\nWhen a test fails twice, stop and report it as blocked rather than retrying.\n</claudecode>'; }
+  S.client = 'claude-code';
+  if (st === 'list' || !st) S.sel = params.get('prompt') || 'guide.md';
+  document.body.classList.toggle('member', S.member);
+
+  const status = f => { const o = OV[f]; if (!o || !o.on) return o ? 'paused' : 'builtin'; return o.drift ? 'drift' : 'custom'; };
+  const chip = f => ({ builtin: '<span class="chip">Built-in</span>', custom: `<span class="chip custom">Custom v${OV[f]?.v}</span>`, drift: '<span class="chip drift">Built-in updated</span>', paused: '<span class="chip paused">Using built-in</span>' })[status(f)];
+  const current = f => (OV[f] && OV[f].on) ? OV[f].text : B[f];
+
+  // ---------- Small helpers: Markdown, highlighting, diff ----------
+  function hl(text) {
+    return esc(text).split('\n').map(l => /^#{1,4} /.test(l) ? `<span class="h">${l}</span>` : /^&lt;\/?(claude-code|codex-cli|cursor)&gt;\s*$/.test(l) ? `<span class="c">${l}</span>` : l).join('\n').replace(/\{\{[a-z_]+\}\}/g, m => `<span class="p">${m}</span>`);
+  }
+  function inline(s) {
+    return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\{\{[a-z_]+\}\}/g, m => `<span class="p">${m}</span>`);
+  }
+  function md(text) {
+    const out = []; const lines = text.split('\n'); let i = 0;
+    while (i < lines.length) {
+      const l = lines[i];
+      const tg = l.trim().match(/^<(\/?)(claude-code|codex-cli|cursor)>$/); if (tg) { out.push(tg[1] ? '<div class="cl end"></div>' : `<div class="cl">Only for ${CLIENTS[tg[2]]}</div>`); i++; continue; }
+      if (/^```/.test(l)) { const buf = []; i++; while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]); i++; out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`); continue; }
+      const h = l.match(/^(#{1,4}) (.*)/); if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+      if (/^\|/.test(l)) { const rows = []; while (i < lines.length && /^\|/.test(lines[i])) rows.push(lines[i++]); out.push('<table>' + rows.filter(r => !/^\|[-| ]+\|$/.test(r)).map((r, k) => '<tr>' + r.split('|').slice(1, -1).map(c => k ? `<td>${inline(c.trim())}</td>` : `<th>${inline(c.trim())}</th>`).join('') + '</tr>').join('') + '</table>'); continue; }
+      if (/^\s*([-*]|\d+\.) /.test(l)) { const ol = /^\s*\d+\./.test(l); const items = []; while (i < lines.length && /^\s*([-*]|\d+\.) /.test(lines[i])) items.push(lines[i++].replace(/^\s*([-*]|\d+\.) /, '')); out.push(`<${ol ? 'ol' : 'ul'}>${items.map(x => `<li>${inline(x)}</li>`).join('')}</${ol ? 'ol' : 'ul'}>`); continue; }
+      if (!l.trim()) { i++; continue; }
+      const buf = []; while (i < lines.length && lines[i].trim() && !/^(#{1,4} |```|\||\s*([-*]|\d+\.) |<\/?(claude-code|codex-cli|cursor)>)/.test(lines[i])) buf.push(lines[i++]);
+      out.push(`<p>${inline(buf.join(' '))}</p>`);
+    }
+    return out.join('');
+  }
+  function diffLines(a, b) {
+    const A = a.split('\n'), Bl = b.split('\n'), n = A.length, m = Bl.length;
+    const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === Bl[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    const ops = []; let i = 0, j = 0;
+    while (i < n && j < m) { if (A[i] === Bl[j]) { ops.push(['=', A[i], i + 1, j + 1]); i++; j++; } else if (dp[i + 1][j] >= dp[i][j + 1]) { ops.push(['-', A[i], i + 1, '']); i++; } else { ops.push(['+', Bl[j], '', j + 1]); j++; } }
+    while (i < n) { ops.push(['-', A[i], i + 1, '']); i++; } while (j < m) { ops.push(['+', Bl[j], '', j + 1]); j++; }
+    return ops;
+  }
+  function diffHtml(a, b, ctx = 3) {
+    const ops = diffLines(a, b); const keep = new Set();
+    ops.forEach((o, k) => { if (o[0] !== '=') for (let d = -ctx; d <= ctx; d++) keep.add(k + d); });
+    let html = '', skipped = 0, adds = 0, dels = 0;
+    ops.forEach((o, k) => {
+      if (o[0] === '+') adds++; if (o[0] === '-') dels++;
+      if (!keep.has(k)) { skipped++; return; }
+      if (skipped) { html += `<div class="gap">${skipped} unchanged line${skipped > 1 ? 's' : ''}</div>`; skipped = 0; }
+      const cls = o[0] === '+' ? 'add' : o[0] === '-' ? 'del' : '';
+      html += `<div class="l ${cls}"><span>${o[2]}</span><span>${o[3]}</span><span>${o[0] === '=' ? '' : o[0]}</span><span>${esc(o[1]) || ' '}</span></div>`;
+    });
+    if (skipped) html += `<div class="gap">${skipped} unchanged line${skipped > 1 ? 's' : ''}</div>`;
+    if (!adds && !dels) html = '<div class="empty">No differences.</div>';
+    return { html, adds, dels };
+  }
+
+  // ---------- Render: flow strip + list ----------
+  function renderFlow() {
+    const curStage = P[S.sel].stage;
+    $('flow').innerHTML = STAGES.map((s, k) => {
+      const ps = PROMPTS.filter(p => p.stage === s.id); const c = ps.filter(p => status(p.file) !== 'builtin' && status(p.file) !== 'paused').length;
+      return `<button type="button" data-stage="${s.id}" aria-current="${s.id === curStage}"><span class="n">${k + 1}</span><span class="t">${s.name}</span><span class="c">${ps.length} prompt${ps.length > 1 ? 's' : ''}${c ? ` · <b>${c} custom</b>` : ''}</span></button>`;
+    }).join('');
+    const nCustom = PROMPTS.filter(p => ['custom', 'drift'].includes(status(p.file))).length;
+    $('tabCount').textContent = nCustom ? `${nCustom} custom` : '';
+  }
+  function renderList() {
+    const q = S.q.toLowerCase();
+    const html = STAGES.map((s, k) => {
+      const ps = PROMPTS.filter(p => p.stage === s.id)
+        .filter(p => S.filter === 'all' || ['custom', 'drift'].includes(status(p.file)))
+        .filter(p => !q || (p.name + ' ' + p.file + ' ' + current(p.file)).toLowerCase().includes(q));
+      if (!ps.length) return '';
+      return `<div class="stage" id="stage-${s.id}"><span class="num">${k + 1}</span><h3>${s.name}</h3><p class="when">${s.when}</p>
+        ${ps.map(p => `<button type="button" class="prow" data-file="${p.file}" aria-current="${p.file === S.sel}"><span class="nm">${p.name}</span><span class="fn">${p.file}</span>${chip(p.file)}</button>`).join('')}</div>`;
+    }).join('');
+    $('plist').innerHTML = html || '<div class="empty">No prompt matches. Placeholders are searchable too, for example <code>task_key</code>.</div>';
+  }
+
+  // ---------- Render: detail ----------
+  function header(p) {
+    const o = OV[p.file]; const s = status(p.file);
+    const phList = phs(B[p.file]);
+    const editing = S.mode === 'edit';
+    const btns = editing ? '' : s === 'builtin' || s === 'paused'
+      ? `<button class="btn primary admin-only" type="button" data-act="customize">${s === 'paused' ? 'Edit custom version' : 'Customize for this project'}</button>${s === 'paused' ? '<button class="btn admin-only" type="button" data-act="resume">Use custom v' + o.v + ' again</button>' : ''}<button class="btn" type="button" data-act="copy">Copy Markdown</button>`
+      : `<button class="btn primary admin-only" type="button" data-act="edit">Edit</button><button class="btn admin-only" type="button" data-act="revert">Use built-in</button><button class="btn" type="button" data-act="copy">Copy Markdown</button>`;
+    let banner = '';
+    if (s === 'drift' && !editing) banner = `<div class="banner warn"><div class="grow"><span><b>The built-in prompt changed on ${o.drift.at}.</b> Agents still get your custom v${o.v}, which started from the ${o.baseAt} built-in, so they miss the change until you take it.</span>
+      <span class="actions admin-only"><button class="btn primary" type="button" data-act="merge">Review the change</button><button class="btn ghost" type="button" data-act="keep">Keep mine as it is</button></span></div></div>`;
+    if (s === 'custom' && !editing) banner = `<div class="banner purple"><div class="grow"><span>Agents in this project get <b>custom v${o.v}</b> (${esc(o.by)}, ${o.at}) instead of the built-in.${o.migrated ? ' Moved here from Integrations › Proposal instructions.' : ''}</span></div></div>`;
+    if (s === 'paused' && !editing) banner = `<div class="banner"><div class="grow"><span>Agents get the <b>built-in</b> prompt. Your custom v${o.v} is kept in History.</span></div></div>`;
+    const member = `<div class="banner member-note"><div class="grow"><span>You can read every prompt. Only project admins can customize them: ask Priya Shah or Joel Dickson.</span></div></div>`;
+    return `<div class="dhead">
+      <div class="titlerow"><h2>${p.name}</h2>${chip(p.file)}<span class="fnm">${p.file}</span><span class="spacer"></span>${btns}</div>
+      ${editing ? '' : `<dl class="facts">
+        <dt>When it runs</dt><dd>${p.used}</dd>
+        <dt>Served by</dt><dd>${p.tool}</dd>
+        <dt>Read by</dt><dd>${p.reader}</dd>
+        ${phList.length ? `<dt>ShipLean fills in</dt><dd>${phList.map(x => `<span class="ph">${x}</span>`).join('')}</dd>` : ''}
+        ${p.parts ? `<dt>Inserted parts</dt><dd class="sm muted">${p.parts.length} blocks, each in a handover and a session variant (for example <code>sprint-demo-tools-session.md</code>). They depend on where the agent runs, so they stay built-in.</dd>` : ''}
+        ${p.note ? `<dt>Note</dt><dd>${p.note}</dd>` : ''}
+      </dl>`}
+      ${banner}${member}
+    </div>`;
+  }
+
+  function tabsBar(p) {
+    const s = status(p.file); const o = OV[p.file];
+    const t = (id, label, n = '') => `<button type="button" class="tab" data-tab="${id}" aria-current="${S.tab === id ? 'page' : 'false'}">${label}${n !== '' ? `<span class="n">${n}</span>` : ''}</button>`;
+    const changes = o ? diffHtml(o.drift ? o.drift.oldBuiltin : B[p.file], o.text) : null;
+    return `<div class="dtabs" role="tablist">
+      ${t('prompt', s === 'builtin' || s === 'paused' ? 'Built-in prompt' : 'Custom v' + o.v)}
+      ${t('rendered', 'Rendered')}
+      ${o ? t('changes', 'Your changes', `+${changes.adds} −${changes.dels}`) : ''}
+      ${s === 'drift' ? t('merge', 'Built-in update', '') : ''}
+      ${o ? t('history', 'History', o.hist.length) : ''}
+      ${t('assembled', 'What the agent gets')}
+    </div>`;
+  }
+
+  function body(p) {
+    const f = p.file; const o = OV[f];
+    if (S.tab === 'prompt') return `<pre class="src">${hl(current(f))}</pre>`;
+    if (S.tab === 'rendered') return `<div class="md">${md(current(f))}</div>`;
+    if (S.tab === 'changes' && o) {
+      const base = o.drift ? o.drift.oldBuiltin : B[f]; const d = diffHtml(base, o.text);
+      return `<div class="diffhead"><span class="k"><i style="background:color-mix(in srgb,var(--color-danger) 30%,transparent)"></i>Built-in (${o.baseAt})</span><span class="k"><i style="background:color-mix(in srgb,var(--color-ok) 30%,transparent)"></i>Custom v${o.v}</span><span class="spacer"></span><span>${d.adds} added · ${d.dels} removed</span></div><div class="diff">${d.html}</div>`;
+    }
+    if (S.tab === 'merge' && o && o.drift) {
+      const d1 = diffHtml(o.drift.oldBuiltin, B[f]);
+      return `<div class="merge">
+        <div class="banner warn"><div class="grow"><span>ShipLean shipped a new built-in <code>${f}</code> on ${o.drift.at} (<code>${o.drift.sha}</code>). Below is only what changed in the built-in. It doesn’t touch the lines you changed, so it applies cleanly to your version.</span></div></div>
+        <div class="mcard"><header>What changed in the built-in <span class="sm muted">${o.baseAt} → ${o.drift.at}</span><span class="spacer"></span><span class="chip ok">Applies cleanly</span></header><div class="diff">${d1.html}</div></div>
+        <div class="actions admin-only"><button class="btn primary" type="button" data-act="apply">Apply to my version (makes v${o.v + 1})</button><button class="btn" type="button" data-act="apply-edit">Apply and edit</button><button class="btn ghost" type="button" data-act="keep">Keep mine as it is</button><span class="sm muted">Keep mine hides this until the built-in changes again.</span></div>
+      </div>`;
+    }
+    if (S.tab === 'history' && o) {
+      const rows = o.hist.map((h, k) => `<tr class="${k === 0 && o.on ? 'cur' : ''}"><td>v${h.v}</td><td>${esc(h.note)}</td><td>${esc(h.by)}</td><td>${h.at}</td><td>${k === 0 && o.on ? '<span class="chip accent">In use</span>' : `<button class="btn ghost admin-only" type="button" data-act="restore">Use v${h.v}</button>`}</td></tr>`).join('');
+      return `<table class="list hist"><thead><tr><th>Version</th><th>What changed</th><th>Who</th><th>When</th><th></th></tr></thead><tbody>${rows}
+        <tr><td>—</td><td class="muted">Built-in from ShipLean <code>${o.base}</code></td><td class="muted">ShipLean</td><td>${o.baseAt}</td><td>${o.on ? '<button class="btn ghost admin-only" type="button" data-act="revert">Use built-in</button>' : '<span class="chip accent">In use</span>'}</td></tr></tbody></table>
+        <p class="sm muted" style="padding:0 var(--space-3)">Nothing is deleted. “Use built-in” stops using your version; it stays here to restore.</p>`;
+    }
+    if (S.tab === 'assembled') {
+      const s = status(f);
+      const L = [
+        ['1', 'Server instructions', 'Sent when the agent connects, before it picks a project. Same for every project, so not editable here.', ''],
+        ['2', `${p.name} — ${s === 'builtin' || s === 'paused' ? 'built-in' : 'custom v' + o.v}`, `${p.tool.replace(/<[^>]+>/g, '')}. ShipLean fills in ${phs(B[f]).length || 'no'} placeholder${phs(B[f]).length === 1 ? '' : 's'}.`, 'this'],
+        ...(['guide.md', 'work.md', 'brief.md', 'lead.md'].includes(f) ? [['3', 'Ways of working', 'The project’s own process notes (SHIP-568), added after this prompt. Edited under Retrospectives, not here.', 'future']] : []),
+        ['+', 'Notes for the connecting agent', 'Per-client notes for Claude Code or Codex CLI (SHIP-246), added last.', 'future'],
+      ];
+      const ts = tagScan(current(f)); const n = Object.values(ts.found).reduce((a, b) => a + b, 0);
+      if (n) L.splice(2, 0, ['2a', 'Agent-specific sections', `${Object.entries(ts.found).map(([k, c]) => `${c} for ${CLIENTS[k]}`).join(', ')}. ShipLean knows the agent from its sign-in (OAuth client), keeps that agent’s sections and drops the rest. Any other agent gets neither.`, 'this']);
+      const pv = `<div class="pvseg"><b class="sm">Preview as</b><div class="seg" role="group" aria-label="Preview as agent">${[...Object.entries(CLIENTS), ['other', 'Another agent']].map(([k, nm]) => `<button type="button" data-client="${k}" aria-pressed="${S.client === k}">${nm}</button>`).join('')}</div><span class="sm muted">${n ? 'Tags are removed; only this agent’s sections stay.' : 'This prompt has no agent-specific sections, so every agent gets the same text.'}</span></div>
+        <div class="pvbox"><pre class="src">${hl(forClient(current(f), S.client))}</pre></div>`;
+      return `<div class="stack3"><p class="sm muted" style="margin:0 0 4px">What an agent receives for this step, top to bottom. Your custom version replaces only the highlighted layer.</p>
+        ${L.map(l => `<div class="layer ${l[3]}"><span class="i">${l[0]}</span><span><b>${l[1]}</b><br><span class="d">${l[2]}</span></span>${l[3] === 'this' ? chip(f) : l[3] === 'future' ? '<span class="chip">Planned</span>' : '<span class="chip">Fixed</span>'}</div>`).join('')}
+        <p class="sm muted" style="margin:6px 0 0">Agent runs record which version they got, so Inspection can show “brief.md custom v2 · Claude Code” on a run.</p>${pv}</div>`;
+    }
+    return '';
+  }
+
+  function editorView(p) {
+    const f = p.file; const t = S.draft;
+    const req = phs(B[f]); const used = new Set(phs(t));
+    const missing = req.filter(x => !used.has(x)); const unknown = [...used].filter(x => !req.includes(x));
+    const ts = tagScan(t);
+    const max = 65536; const pct = Math.min(100, Math.round(t.length / max * 100));
+    const d = diffHtml(B[f], t);
+    const etab = S.etab || 'edit';
+    const t2 = (id, label, n = '') => `<button type="button" class="tab" data-etab="${id}" aria-current="${etab === id ? 'page' : 'false'}">${label}${n !== '' ? `<span class="n">${n}</span>` : ''}</button>`;
+    return `<div class="dtabs">${t2('edit', 'Edit')}${t2('preview', 'Preview')}${t2('diff', 'Changes from built-in', `+${d.adds} −${d.dels}`)}<span class="spacer"></span><span class="sm muted">Started from the built-in of ${OV[f]?.baseAt || 'today'}</span></div>
+      <div class="dbody">
+        ${etab === 'edit' ? `<div class="editwrap"><textarea class="editor" id="ed" spellcheck="false" aria-label="Custom ${esc(p.name)} Markdown">${esc(t)}</textarea>
+          <aside class="side">
+            <div><h4>Placeholders</h4><div class="phl">${req.length ? req.map(x => `<div><span class="ph ${used.has(x) ? '' : 'miss'}">${x}</span>${used.has(x) ? '<span class="ok">✓</span>' : `<button type="button" data-ins="${x}">Put back</button>`}</div>`).join('') : '<span class="muted">This prompt has none.</span>'}</div>
+              ${missing.length ? `<p class="warnt" style="margin:6px 0 0">Without ${missing.map(x => `<code>${x}</code>`).join(', ')} agents won’t get that part. You can still save.</p>` : ''}
+              ${unknown.length ? `<p class="warnt" style="margin:6px 0 0">${unknown.map(x => `<code>${x}</code>`).join(', ')} isn’t one ShipLean fills in for this prompt; it stays as typed.</p>` : ''}</div>
+            <div><h4>Agent-specific sections</h4><p class="muted" style="margin:0 0 5px">Put a tag on its own line before and after text that only one agent should get. Other agents never see it.</p>
+              ${Object.entries(CLIENTS).map(([k, n]) => `<div class="tagrow"><code>&lt;${k}&gt;</code><span>${n}</span><span class="${ts.found[k] ? 'ok' : 'muted'}">${ts.found[k] ? ts.found[k] + ' section' + (ts.found[k] > 1 ? 's' : '') : 'none'}</span></div>`).join('')}
+              ${ts.unknown.map(u => `<p class="warnt" style="margin:6px 0 0"><code>&lt;${esc(u)}&gt;</code> isn’t an agent ShipLean recognises, so every agent gets it as typed.${guess(u) ? ` Did you mean <code>&lt;${guess(u)}&gt;</code>? <button type="button" class="addtag" data-fixtag="${esc(u)}|${guess(u)}">Fix it</button>` : ''}</p>`).join('')}
+              ${ts.bad.map(b => `<p class="warnt" style="margin:6px 0 0"><code>&lt;${b}&gt;</code> isn’t closed with <code>&lt;/${b}&gt;</code>, or is inside another section. Fix it before saving.</p>`).join('')}
+              ${Object.entries(CLIENTS).map(([k, n]) => `<button type="button" class="addtag" data-ins="&#10;&lt;${k}&gt;&#10;&#10;&lt;/${k}&gt;&#10;">+ ${n}</button>`).join(' ')}</div>
+            <div><h4>Size</h4><div class="meter"><i style="width:${pct}%"></i></div><p class="muted" style="margin:4px 0 0">${(t.length / 1024).toFixed(1)} KB of 64 KB</p></div>
+            <div><h4>Tips</h4><p class="muted" style="margin:0">Add project rules at the end rather than rewriting built-in sections: built-in updates then apply cleanly.</p></div>
+          </aside></div>`
+        : etab === 'preview' ? `<div class="md">${md(t)}</div>` : `<div class="diff">${d.html}</div>`}
+      </div>
+      <div class="dfoot"><input class="field" id="note" placeholder="What did you change? (shown in History)" aria-label="Change note"><button class="btn" type="button" data-act="cancel">Cancel</button><button class="btn primary" type="button" data-act="save" ${tagScan(t).bad.length ? 'disabled title="Close every agent section first"' : ''}>Save as custom v${(OV[f]?.v || 0) + 1}</button></div>`;
+  }
+
+  function renderDetail() {
+    const p = P[S.sel];
+    const el = $('detail');
+    if (S.mode === 'edit') { el.innerHTML = header(p) + editorView(p); wireEditor(); }
+    else el.innerHTML = header(p) + tabsBar(p) + `<div class="dbody">${body(p)}</div>`;
+    $('status').innerHTML = S.mode === 'edit' && S.draft !== current(S.sel) ? '<span class="dirty">Unsaved custom prompt</span>' : '';
+  }
+  function wireEditor() {
+    const ed = $('ed'); if (!ed) return;
+    let tmr; ed.addEventListener('input', () => { S.draft = ed.value; clearTimeout(tmr); tmr = setTimeout(() => { const pos = ed.selectionStart, top = ed.scrollTop; renderDetail(); const e2 = $('ed'); e2.focus(); e2.selectionStart = e2.selectionEnd = pos; e2.scrollTop = top; }, 500); });
+  }
+  function render() { renderFlow(); renderList(); renderDetail(); }
+
+  // ---------- Dialogs ----------
+  function dialog(html) { $('dlg').innerHTML = html; $('dlg').hidden = false; }
+  function closeDialog() { $('dlg').hidden = true; $('dlg').innerHTML = ''; }
+  function revertDialog() {
+    const p = P[S.sel]; const o = OV[S.sel];
+    dialog(`<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="rvh" style="width:min(480px,100%)">
+      <header><h2 id="rvh">Use the built-in ${esc(p.name)}?</h2></header>
+      <div class="body sm"><p style="margin:0">Agents in ShipLean get the built-in prompt from their next call. Runs already going keep what they were given.</p>
+      <p style="margin:0">Custom v${o.v} isn’t deleted: it stays in History and you can use it again.</p></div>
+      <footer><span class="spacer"></span><button class="btn" type="button" data-act="close">Cancel</button><button class="btn primary" type="button" data-act="do-revert">Use built-in</button></footer></div>`);
+  }
+  function leaveDialog(next) {
+    dialog(`<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="lvh" style="width:min(440px,100%)">
+      <header><h2 id="lvh">Discard your unsaved custom prompt?</h2></header>
+      <div class="body sm"><p style="margin:0">Your edits to ${esc(P[S.sel].name)} haven’t been saved.</p></div>
+      <footer><span class="spacer"></span><button class="btn" type="button" data-act="close">Keep editing</button><button class="btn danger" type="button" data-act="discard" data-next="${next}">Discard</button></footer></div>`);
+  }
+
+  // ---------- Events ----------
+  function select(file) {
+    if (S.mode === 'edit' && S.draft !== current(S.sel)) return leaveDialog(file);
+    S.sel = file; S.mode = 'view'; S.tab = 'prompt'; render();
+  }
+  document.addEventListener('click', e => {
+    const row = e.target.closest('.prow'); if (row) return select(row.dataset.file);
+    const stg = e.target.closest('[data-stage]'); if (stg) { const first = PROMPTS.find(p => p.stage === stg.dataset.stage); select(first.file); document.getElementById('stage-' + stg.dataset.stage)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    const fb = e.target.closest('[data-filter]'); if (fb) { S.filter = fb.dataset.filter; document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', b === fb)); renderList(); return; }
+    const cb = e.target.closest('[data-client]'); if (cb) { S.client = cb.dataset.client; renderDetail(); return; }
+    const fx = e.target.closest('[data-fixtag]'); if (fx) { const [from, to] = fx.dataset.fixtag.split('|'); S.draft = S.draft.split('<' + from + '>').join('<' + to + '>').split('</' + from + '>').join('</' + to + '>'); renderDetail(); return; }
+    const tb = e.target.closest('[data-tab]'); if (tb) { S.tab = tb.dataset.tab; renderDetail(); return; }
+    const et = e.target.closest('[data-etab]'); if (et) { S.etab = et.dataset.etab; renderDetail(); return; }
+    const ins = e.target.closest('[data-ins]'); if (ins) { const ed = $('ed'); const pos = ed.selectionStart; S.draft = S.draft.slice(0, pos) + ins.dataset.ins + S.draft.slice(pos); renderDetail(); return; }
+    const a = e.target.closest('[data-act]'); if (!a) { if (e.target === $('dlg')) closeDialog(); return; }
+    const f = S.sel; const o = OV[f];
+    switch (a.dataset.act) {
+      case 'customize': case 'edit': S.mode = 'edit'; S.etab = 'edit'; S.draft = current(f); renderDetail(); $('ed')?.focus(); break;
+      case 'cancel': if (S.draft !== current(f)) leaveDialog(f); else { S.mode = 'view'; renderDetail(); } break;
+      case 'save': {
+        const note = $('note').value.trim() || 'Edited';
+        const v = (o?.v || 0) + 1;
+        OV[f] = { ...(o || { base: BUILTIN_SHA, baseAt: '21 Nov', hist: [] }), v, by: 'Priya Shah', at: '21 Nov', text: S.draft, on: true, drift: o?.drift && S.draft.includes(reviewerPara) ? null : o?.drift, hist: [{ v, by: 'Priya Shah', at: '21 Nov 10:52', note }, ...(o?.hist || [])] };
+        S.mode = 'view'; S.tab = 'changes'; render(); toast(`Saved custom v${v}. Agents get it from their next call.`); break; }
+      case 'revert': revertDialog(); break;
+      case 'do-revert': o.on = false; closeDialog(); S.tab = 'prompt'; render(); toast('Agents now get the built-in prompt. Your version is in History.'); break;
+      case 'resume': case 'restore': o.on = true; S.tab = 'prompt'; render(); toast(`Agents get custom v${o.v} again.`); break;
+      case 'merge': S.tab = 'merge'; renderDetail(); break;
+      case 'keep': o.drift = null; S.tab = 'prompt'; render(); toast('Kept your version. You’ll be told when the built-in changes again.'); break;
+      case 'apply': case 'apply-edit': {
+        const idx = B[f].indexOf(reviewerPara); const before = B[f].slice(0, idx);
+        const text = before + reviewerPara + '\n\n' + o.text.slice(before.length);
+        if (a.dataset.act === 'apply') { OV[f] = { ...o, v: o.v + 1, text, drift: null, base: o.drift.sha, baseAt: o.drift.at, hist: [{ v: o.v + 1, by: 'Priya Shah', at: '21 Nov 10:55', note: 'Took the 20 Nov built-in change' }, ...o.hist] }; S.tab = 'changes'; render(); toast(`Applied. Agents get custom v${o.v + 1}.`); }
+        else { S.mode = 'edit'; S.etab = 'edit'; S.draft = text; renderDetail(); }
+        break; }
+      case 'copy': navigator.clipboard?.writeText(current(f)).catch(() => {}); toast('Copied the Markdown.'); break;
+      case 'close': closeDialog(); break;
+      case 'discard': closeDialog(); S.mode = 'view'; S.sel = a.dataset.next; S.tab = 'prompt'; render(); break;
+    }
+  });
+  $('q').addEventListener('input', e => { S.q = e.target.value; renderList(); });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's' && S.mode === 'edit') { e.preventDefault(); document.querySelector('[data-act="save"]')?.click(); }
+    if (e.key === 'Escape' && !$('dlg').hidden) closeDialog();
+  });
+
+  render();
+  if (st === 'revert') revertDialog();
+
+  if (!params.has('shot')) SL.preview([
+    { label: 'View as member', run: () => { S.member = !S.member; document.body.classList.toggle('member', S.member); } },
+    { label: 'Built-in updated', run: () => select('code_reviewer.md') },
+    { label: 'Edit a prompt', run: () => { select('guide.md'); document.querySelector('[data-act="customize"]')?.click(); } },
+  ]);
+})();
+</script>
+</body>
+</html>

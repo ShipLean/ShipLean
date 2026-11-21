@@ -168,6 +168,7 @@
     'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], 'sprint-demo': ['Sprints', 'Sprint 23', 'Demo'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
     inspection: ['Inspection', { leadtime: 'Lead time', period: 'Lead time', quality: 'Quality', cost: 'Cost', json: 'Overview' }[new URLSearchParams(location.search).get('view')] || 'Overview'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
+    prompts: ['Settings', 'Prompts'],
     decisions: new URLSearchParams(location.search).get('state') === 'feature' ? ['Backlogs', 'Features', 'SHIP-101'] : ['Backlogs', 'SHIP-141'],
   };
   // Detail pages: under 900px ‹ back takes the left of the top bar and Menu moves to the far right, after Search

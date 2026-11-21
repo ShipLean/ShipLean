@@ -347,7 +347,8 @@ dl.facts { display: grid; grid-template-columns: 180px minmax(0, 1fr); margin: 0
     $('tabs').innerHTML = TABS.map(([id, label]) => {
       const err = errs.some(k => tabOfErr(k) === id), dirty = ch.some(c => c.tab === id);
       return `<a class="stab" href="#${id}" data-tab="${id}"${id === view.tab ? ' aria-current="page"' : ''}>${label}${err ? '<span class="dot err on" title="Has errors"></span>' : dirty ? '<span class="dot on" title="Unsaved changes"></span>' : ''}<span class="meta">${meta[id] ?? ''}</span></a>`;
-    }).join('') + `<div class="foot">Only project admins can change these settings. Members see them read-only.</div>`;
+    }).join('') + `<a class="stab" href="prompts.html">Prompts<span class="meta">3 custom</span></a>` // SHIP-744: its own page, saved per prompt
+      + `<div class="foot">Only project admins can change these settings. Members see them read-only.</div>`;
   }
 
   /* Update errors, dots and changed marks in place, so typing never loses focus. */
