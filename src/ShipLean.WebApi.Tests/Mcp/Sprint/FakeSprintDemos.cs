@@ -47,7 +47,7 @@ public sealed class FakeSprintDemos : ISprintDemos
 
     public Task<SprintDemoDto> GetAsync(Guid sprintId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
-    public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, string requestOrigin, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
     public Task StartAutomaticAsync(Guid projectId, Guid sprintId, Guid closedBy, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 

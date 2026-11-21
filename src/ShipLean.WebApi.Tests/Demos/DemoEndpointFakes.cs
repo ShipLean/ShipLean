@@ -84,7 +84,7 @@ public sealed class DemoEndpointFakes
 
         public Task<SprintDemoDto> GetAsync(Guid sprintId, CancellationToken cancellationToken = default) => Task.FromResult(Get.Take());
 
-        public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, string requestOrigin, CancellationToken cancellationToken = default) => Task.FromResult(Create.Take());
+        public Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, CancellationToken cancellationToken = default) => Task.FromResult(Create.Take());
 
         public Task<SprintDemoDto> RetryYouTubeAsync(Guid sprintId, CancellationToken cancellationToken = default) => Task.FromResult(Retry.Take());
 

@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Errors;
@@ -9,7 +7,7 @@ using ShipLean.WebApi.Infrastructure;
 namespace ShipLean.WebApi.Features.Demos;
 
 [Route("api/sprints/{id:guid}/demo")]
-public sealed class SprintDemoController(ISprintDemos demos, IProjectAccess access, IOptions<ForwardedHeadersOptions> forwarding) : ApiControllerBase
+public sealed class SprintDemoController(ISprintDemos demos, IProjectAccess access) : ApiControllerBase
 {
     [HttpGet]
     [ProducesResponseType<SprintDemoDto>(StatusCodes.Status200OK)]
@@ -28,7 +26,7 @@ public sealed class SprintDemoController(ISprintDemos demos, IProjectAccess acce
     public async Task<SprintDemoDto> Create(Guid id, CancellationToken cancellationToken)
     {
         await access.RequireAsync(ProjectItem.Sprint, id, ProjectRole.Member, cancellationToken);
-        return await demos.CreateFromButtonAsync(id, RequestOrigin.Of(Request, forwarding.Value), cancellationToken);
+        return await demos.CreateFromButtonAsync(id, cancellationToken);
     }
 
     [HttpPost("youtube/retry")]

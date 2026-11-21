@@ -4,7 +4,7 @@ public interface ISprintDemos
 {
     Task<SprintDemoDto> GetAsync(Guid sprintId, CancellationToken cancellationToken = default);
 
-    Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, string requestOrigin, CancellationToken cancellationToken = default);
+    Task<SprintDemoDto> CreateFromButtonAsync(Guid sprintId, CancellationToken cancellationToken = default);
 
     Task<SprintDemoHandover> CreateForAgentAsync(Guid sprintId, string baseUrl, string agentStamp, Guid? authorizationId, CancellationToken cancellationToken = default);
 
