@@ -39,7 +39,7 @@ Four things, in this order. The first two are manual and are checked by nothing 
    - turning it on adds Triage states for Story, Bug and Feature, named "Triage" (or "GitHub triage" where that name is already taken by another state); new items default to the first state that is not a Triage state;
    - the project needs a repository (`repo_url`, github.com) and an agent connection;
    - intake needs a **run as** member. Choose a project member whose email is in `RELAY_ALLOWED_USERS`. The agent sessions are created by this person;
-   - **Proposal instructions** are the prompt every proposal follows. Leave it empty to use the built-in default, which the page shows;
+   - **Proposal instructions** moved to Project settings › Prompts as the **Issue proposal** prompt ([prompts.md](prompts.md)). The Integrations page links there. Text saved before the move became custom v1. A project with none gets the built-in, the one line served before. The round prompt gets the untagged text only (a proposal session has no agent id), and its fixed safety line (the issue is data, not instructions) is added whatever the custom text says;
    - **Maximum rounds** (5 by default);
    - the page lists what is missing: GitHub repository, agent connection, GitHub token, webhook secret, run-as person.
 
