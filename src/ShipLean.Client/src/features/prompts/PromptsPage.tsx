@@ -66,6 +66,8 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
     },
     [selectedKey],
   );
+  // The editor belongs to the prompt it was opened on: once another prompt is selected it is gone for good.
+  if (open !== null && open.promptKey !== selectedKey) setOpen(null);
   const closeEditor = useCallback(() => setOpen(null), []);
 
   if (query.isPending) {

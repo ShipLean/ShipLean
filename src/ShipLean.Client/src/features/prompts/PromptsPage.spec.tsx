@@ -74,7 +74,7 @@ test('PromptsPage_WhenOpened_ShouldPostPromptsOpenedOnce', async ({ mount, page 
   await page.getByTestId(ids.listRow).nth(2).click();
   await expect(page.getByTestId(ids.detailName)).toHaveText('Planning and breakdown');
 
-  expect(posts).toBe(1);
+  await expect.poll(() => posts).toBe(1);
 });
 
 test('PromptDetail_WhenMember_ShouldHideChangeActions', async ({ mount, page }) => {
@@ -85,10 +85,75 @@ test('PromptDetail_WhenMember_ShouldHideChangeActions', async ({ mount, page }) 
   });
 
   await expect(page.getByTestId(ids.detailName)).toHaveText('Task brief');
-  await expect(page.getByTestId(ids.actions)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionEdit)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionCustomize)).toHaveCount(0);
   await expect(page.getByTestId(ids.actionUseBuiltIn)).toHaveCount(0);
+  await expect(page.getByTestId(ids.readOnlyNote)).toContainText(
+    'Only project admins can customize',
+  );
+  await expect(page.getByTestId(ids.readOnlyAdmins)).toHaveText('Joel Dickson or Maria Santos');
+  await expect(page.getByTestId(ids.copyMarkdown)).toBeVisible();
+});
+
+test('PromptDetail_WhenAdmin_ShouldNotShowTheReadOnlyNote', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts' },
+  });
+
+  await expect(page.getByTestId(ids.copyMarkdown)).toBeVisible();
+  await expect(page.getByTestId(ids.readOnlyNote)).toHaveCount(0);
+});
+
+test('PromptDetail_WhenEditorOpen_ShouldHideTheChromeAndPostCustomizeOnce', async ({
+  mount,
+  page,
+}) => {
+  let customizePosts = 0;
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route('**/api/projects/*/usage/prompt-customize-opened', (route) => {
+    customizePosts += 1;
+    return route.fulfill({ status: 204 });
+  });
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=work' },
+  });
+  await expect(page.getByTestId(ids.facts)).toBeAttached();
+
+  await page.getByTestId(ids.actionCustomize).click();
+
+  await expect(page.getByTestId(ids.editor)).toBeVisible();
+  await expect(page.getByTestId(ids.actions)).toHaveCount(0);
+  await expect(page.getByTestId(ids.facts)).toHaveCount(0);
+  await expect(page.getByTestId(ids.updateBanner)).toHaveCount(0);
+  await expect.poll(() => customizePosts).toBe(1);
+});
+
+test('PromptsPage_WhenAnotherPromptSelected_ShouldNotReopenTheEditorOnReturn', async ({
+  mount,
+  page,
+}) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route('**/api/projects/*/usage/prompt-customize-opened', (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=work' },
+  });
+  await page.getByTestId(ids.actionCustomize).click();
+  await expect(page.getByTestId(ids.editor)).toBeVisible();
+
+  await page.getByTestId(ids.listRow).nth(3).click();
+  await expect(page.getByTestId(ids.detailName)).toHaveText('Plan reviewer');
+  await expect(page.getByTestId(ids.editor)).toHaveCount(0);
+  await page.getByTestId(ids.listRow).nth(1).click();
+
+  await expect(page.getByTestId(ids.detailName)).toHaveText('Work from idea to done');
+  await expect(page.getByTestId(ids.editor)).toHaveCount(0);
+  await expect(page.getByTestId(ids.actionCustomize)).toBeVisible();
 });
 
 test('PromptDetail_WhenAdminOnABuiltIn_ShouldOfferCustomize', async ({ mount, page }) => {

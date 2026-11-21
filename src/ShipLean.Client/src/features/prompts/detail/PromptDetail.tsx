@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PromptDto, PromptStatus, PromptsPageDto } from '@shiplean/core/api/prompts';
 import { promptCustomizeOpened } from '@shiplean/core/api/usageApi';
 import { Chip, type ChipTone } from '../../../components/Chip';
+import { useUseVersion } from '../usePrompts';
 import { PromptEditor } from '../editor/PromptEditor';
 import type { EditorState } from '../PromptsPage';
 import { promptsTestIds as ids } from '../testIds';
@@ -58,9 +59,11 @@ export function PromptDetail({
   const [tab, setTab] = useState<TabId>('source');
   const [confirmingUseBuiltIn, setConfirmingUseBuiltIn] = useState(false);
   const custom = prompt.custom;
+  const resume = useUseVersion(projectId, prompt.key);
   const inUseText = custom?.inUse === true ? custom.text : prompt.builtInText;
 
   const open = (state: EditorState) => {
+    if (editor !== null) return;
     void promptCustomizeOpened(projectId, prompt.key).catch(() => undefined);
     openEditor(state);
   };
@@ -82,6 +85,15 @@ export function PromptDetail({
     { id: 'history', label: 'History', testId: ids.tabHistory, show: true },
     { id: 'assembled', label: 'What the agent gets', testId: ids.tabAssembled, show: true },
   ];
+  const readOnlyNote = page.canEdit ? null : (
+    <div
+      data-testid={ids.readOnlyNote}
+      className="rounded-control border border-edge px-3 py-2 text-[length:var(--text-sm)]"
+    >
+      You can read every prompt. Only project admins can customize them: ask{' '}
+      <span data-testid={ids.readOnlyAdmins}>{page.adminNames.join(' or ')}</span>.
+    </div>
+  );
   const active = tabs.find((t) => t.id === tab && t.show)?.id ?? 'source';
   const status = STATUS[prompt.status];
 
@@ -111,20 +123,27 @@ export function PromptDetail({
             </span>
           </span>
         </div>
-        <PromptActions
-          prompt={prompt}
-          canEdit={page.canEdit}
-          onEdit={() => open({ initialText: inUseText, source: 'editor' })}
-          onUseBuiltIn={() => setConfirmingUseBuiltIn(true)}
-        />
-        <PromptFacts prompt={prompt} />
-        <UpdateBanner
-          projectId={projectId}
-          prompt={prompt}
-          canEdit={page.canEdit}
-          onApplyAndEdit={applyAndEdit}
-          onReview={() => setTab('update')}
-        />
+        {editor === null ? (
+          <>
+            <PromptActions
+              prompt={prompt}
+              canEdit={page.canEdit}
+              onEdit={() => open({ initialText: inUseText, source: 'editor' })}
+              onUseBuiltIn={() => setConfirmingUseBuiltIn(true)}
+              onResume={() => void resume.mutateAsync(custom?.number ?? 0).catch(() => undefined)}
+              onCopy={() => void navigator.clipboard.writeText(inUseText).catch(() => undefined)}
+            />
+            <PromptFacts prompt={prompt} />
+            <UpdateBanner
+              projectId={projectId}
+              prompt={prompt}
+              canEdit={page.canEdit}
+              onApplyAndEdit={applyAndEdit}
+              onReview={() => setTab('update')}
+            />
+          </>
+        ) : null}
+        {readOnlyNote}
       </header>
       {editor === null ? (
         <>
@@ -157,7 +176,12 @@ export function PromptDetail({
             />
           )}
           {active === 'history' && (
-            <HistoryTab projectId={projectId} prompt={prompt} canEdit={page.canEdit} />
+            <HistoryTab
+              projectId={projectId}
+              prompt={prompt}
+              canEdit={page.canEdit}
+              onUseBuiltIn={() => setConfirmingUseBuiltIn(true)}
+            />
           )}
           {active === 'assembled' && (
             <AssembledTab projectId={projectId} prompt={prompt} agents={page.agents} />

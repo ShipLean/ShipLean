@@ -15,6 +15,8 @@ export function PromptEditor(props: {
       data-testid={ids.editor}
       aria-label={`Edit ${props.prompt.name}`}
       data-source={props.source}
-    />
+    >
+      Editing {props.prompt.name}
+    </section>
   );
 }

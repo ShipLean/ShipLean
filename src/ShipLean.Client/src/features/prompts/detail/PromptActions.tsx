@@ -7,24 +7,40 @@ export function PromptActions({
   canEdit,
   onEdit,
   onUseBuiltIn,
+  onResume,
+  onCopy,
 }: {
   prompt: PromptDto;
   canEdit: boolean;
   onEdit: () => void;
   onUseBuiltIn: () => void;
+  onResume: () => void;
+  onCopy: () => void;
 }) {
-  if (!canEdit) return null;
-  const inUse = prompt.custom?.inUse === true;
+  const inUse = canEdit && prompt.custom?.inUse === true;
+  const paused = canEdit && prompt.status === 'usingBuiltIn' && prompt.custom !== null;
+  const copy = (
+    <button type="button" data-testid={ids.copyMarkdown} className="btn" onClick={onCopy}>
+      Copy Markdown
+    </button>
+  );
   return (
     <div data-testid={ids.actions} className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        data-testid={inUse ? ids.actionEdit : ids.actionCustomize}
-        className="btn-signal"
-        onClick={onEdit}
-      >
-        {inUse ? 'Edit' : 'Customize'}
-      </button>
+      {canEdit ? (
+        <button
+          type="button"
+          data-testid={inUse || paused ? ids.actionEdit : ids.actionCustomize}
+          className="btn-signal"
+          onClick={onEdit}
+        >
+          {inUse ? 'Edit' : paused ? 'Edit custom version' : 'Customize'}
+        </button>
+      ) : null}
+      {paused ? (
+        <button type="button" data-testid={ids.actionResume} className="btn" onClick={onResume}>
+          Use custom v{prompt.custom?.number} again
+        </button>
+      ) : null}
       {inUse ? (
         <button
           type="button"
@@ -35,6 +51,7 @@ export function PromptActions({
           Use built-in
         </button>
       ) : null}
+      {copy}
     </div>
   );
 }

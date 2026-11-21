@@ -52,6 +52,8 @@ public static class PromptsTestIds
     public const string ActionCustomize = "prompts-action-customize";
     public const string ActionEdit = "prompts-action-edit";
     public const string ActionUseBuiltIn = "prompts-action-use-built-in";
+    public const string ActionResume = "prompts-action-resume";
+    public const string CopyMarkdown = "prompts-copy-markdown";
     // source
     public const string TabBar = "prompts-tab-bar";
     public const string TabSource = "prompts-tab-source";
@@ -84,6 +86,7 @@ public static class PromptsTestIds
     public const string HistoryRowInUse = "prompts-history-row-in-use";
     public const string HistoryUse = "prompts-history-use";
     public const string HistoryBuiltInRow = "prompts-history-built-in-row";
+    public const string HistoryBuiltInUse = "prompts-history-built-in-use";
     public const string HistoryNote = "prompts-history-note";
     public const string HistoryEmpty = "prompts-history-empty";
     public const string AgentPicker = "prompts-agent-picker";

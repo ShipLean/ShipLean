@@ -49,6 +49,8 @@ export const promptsTestIds = {
   actionCustomize: 'prompts-action-customize',
   actionEdit: 'prompts-action-edit',
   actionUseBuiltIn: 'prompts-action-use-built-in',
+  actionResume: 'prompts-action-resume',
+  copyMarkdown: 'prompts-copy-markdown',
   // source
   tabBar: 'prompts-tab-bar',
   tabSource: 'prompts-tab-source',
@@ -81,6 +83,7 @@ export const promptsTestIds = {
   historyRowInUse: 'prompts-history-row-in-use',
   historyUse: 'prompts-history-use',
   historyBuiltInRow: 'prompts-history-built-in-row',
+  historyBuiltInUse: 'prompts-history-built-in-use',
   historyNote: 'prompts-history-note',
   historyEmpty: 'prompts-history-empty',
   agentPicker: 'prompts-agent-picker',
