@@ -133,6 +133,19 @@ public class WorkToolsTests : McpFixture
     }
 
     [Test]
+    public async Task UpdateProgress_WhenStoryMovedToClosed_ShouldCloseTheStoryWithTheNote()
+    {
+        var story = await ArrangeAsync(b => b.WithType("story").WithTitle("Done story").WithStateNamed("New").WithSprint(_sprintId));
+        await ArrangeAsync(b => b.WithType("task").WithTitle("Its only task").WithParent(story).WithStateNamed("Closed"));
+
+        var result = await CallAsync("update_progress", $$"""{"item":"{{await KeyOfAsync(story)}}","state":"Closed","note":"PR merged."}""");
+
+        result.GetProperty("state").GetString().ShouldBe("Closed");
+        result.GetProperty("note_added").GetBoolean().ShouldBeTrue();
+        (await GetAsync(story)).StateId.ShouldBe(SeedIds.States.Ship.StoryClosed);
+    }
+
+    [Test]
     public async Task UpdateProgress_WhenOtherTasksStillOpen_ShouldNotOfferParent()
     {
         var story = await ArrangeAsync(b => b.WithType("story").WithTitle("Parent two").WithStateNamed("Active"));

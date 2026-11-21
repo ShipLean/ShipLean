@@ -53,6 +53,7 @@ public class FeatureToolsTests : McpFixture
 
         reply.IsToolError().ShouldBeTrue();
         reply.Structured().GetProperty("error").GetProperty("code").GetString().ShouldBe(ApiErrorCodes.Validation);
+        reply.Structured().GetProperty("error").GetProperty("message").GetString()!.ShouldContain("update_progress");
     }
 
     [Test]

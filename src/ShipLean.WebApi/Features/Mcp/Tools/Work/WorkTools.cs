@@ -104,7 +104,7 @@ internal sealed class WorkTools(
     }
 
     [McpServerTool(Name = "update_progress"), McpScope(McpScopes.Write)]
-    [Description("Report progress on a work item in one call, for example when a PR is up: move it to a state by name, add a note, add a link (a URL and a title) and adjust its points. Give at least one. When this finishes the last open task of a story, the answer says so and offers the state to move the story to; it does not move the story itself.")]
+    [Description("Report progress on any work item (a Story, Bug, action item, Task or Feature) in one call: move it to a state by name, add a note, add a link (a URL and a title) and adjust its points. Give at least one. This is the tool that closes a Story or Bug when its work is done: set state to its Completed state, such as Closed, and name the commits in the note. When this finishes the last open task of a story, the answer says so and offers the state to move the story to; it does not move the story itself, so call update_progress again on the story.")]
     public async Task<CallToolResult> UpdateProgress(
         [Description("The work item key, such as SHIP-123.")] string item,
         [Description("Move to this state, by name (for example In review or Closed). States differ per work item type.")] string? state = null,
@@ -164,7 +164,7 @@ internal sealed class WorkTools(
             lastTaskClosed,
             parentKey,
             moveParentTo);
-        return WorkReply.Of(result, $"{result.Key} is {result.State}." + (result.MoveParentTo is { } parentState ? $" That was the last open task: {result.ParentKey} can move to {parentState}." : string.Empty));
+        return WorkReply.Of(result, $"{result.Key} is {result.State}." + (result.MoveParentTo is { } parentState ? $" That was the last open task: {result.ParentKey} can move to {parentState} (update_progress on {result.ParentKey})." : string.Empty));
     }
 
     [McpServerTool(Name = "hand_back"), McpScope(McpScopes.Write)]

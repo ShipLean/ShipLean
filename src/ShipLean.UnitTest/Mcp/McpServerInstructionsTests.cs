@@ -35,7 +35,7 @@ public class McpServerInstructionsTests
     public void Instructions_ShouldOnlyNameRegisteredTools()
     {
         var allowed = GuideScan.RegisteredNames();
-        foreach (var token in new[] { "attach_markdown", "comment", "set_status", "create_feature", "planning_guide", "get_brief", "report_task" })
+        foreach (var token in new[] { "attach_markdown", "comment", "set_status", "create_feature", "planning_guide", "get_brief", "report_task", "update_progress" })
         {
             McpServerServices.Instructions.ShouldContain(token);
             allowed.ShouldContain(token);
