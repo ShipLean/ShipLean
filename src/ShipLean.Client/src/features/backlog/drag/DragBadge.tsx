@@ -5,7 +5,7 @@ export function DragBadge({ count }: { count: number }) {
   return (
     <span
       data-testid={ids.dragBadge}
-      className="inline-flex h-7 items-center gap-1.5 rounded-full bg-accent px-2.5 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-accent-fg shadow-md"
+      className="inline-flex h-7 items-center gap-1.5 rounded-full bg-signal px-2.5 text-[length:var(--text-sm)] font-semibold whitespace-nowrap text-signal-ink shadow-md"
     >
       {count} items
     </span>

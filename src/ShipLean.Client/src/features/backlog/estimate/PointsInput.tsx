@@ -50,7 +50,7 @@ export function PointsInput({
       aria-invalid={invalid}
       inputMode="decimal"
       value={text}
-      className="h-[22px] w-[46px] rounded-control border border-accent bg-panel px-1 text-right font-semibold tabular-nums outline-none aria-invalid:border-alert"
+      className="h-[22px] w-[46px] rounded-control border border-signal bg-panel px-1 text-right font-semibold tabular-nums outline-none aria-invalid:border-alert"
       onChange={(event) => {
         setText(event.target.value);
         setInvalid(false);
