@@ -222,6 +222,35 @@
         "other": ""
       },
       "problems": []
+    },
+    {
+      "name": "bomBeforeClose",
+      "text": "<claude-code>\nx\n﻿</claude-code>",
+      "filtered": {
+        "claude-code": "",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": [
+        {
+          "line": 1,
+          "kind": "unclosed",
+          "tag": "claude-code",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "nelAroundTag",
+      "text": "\u0085<claude-code>\u0085\nx\n\u0085</claude-code>\u0085",
+      "filtered": {
+        "claude-code": "x",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": []
     }
   ]
 }
