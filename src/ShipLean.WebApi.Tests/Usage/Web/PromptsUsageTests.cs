@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
+using ShipLean.TestSupport.Prompts;
 using ShipLean.TestSupport.Usage;
 
 namespace ShipLean.WebApi.Tests.Usage.Web;
@@ -72,6 +74,8 @@ public class PromptsUsageTests : ApiFixture
     [Test]
     public async Task UseBuiltIn_WhenDone_ShouldTrackBuiltInUsed()
     {
+        await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Work).InUse().InsertAsync(ConnectionString);
+
         await PostAsync("prompts/work/use-built-in");
 
         var tracked = Only("api:ProjectPrompts.UseBuiltIn");
@@ -83,6 +87,8 @@ public class PromptsUsageTests : ApiFixture
     [Test]
     public async Task UseVersion_WhenDone_ShouldTrackVersionRestored()
     {
+        await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Brief).WithNumber(1).InsertAsync(ConnectionString);
+
         await PostAsync("prompts/brief/versions/1/use");
 
         var tracked = Only("api:ProjectPrompts.UseVersion");
@@ -94,6 +100,8 @@ public class PromptsUsageTests : ApiFixture
     [Test]
     public async Task KeepMine_WhenDone_ShouldTrackUpdateKept()
     {
+        await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Fix).WithBuiltInText("The old built-in.").InUse().InsertAsync(ConnectionString);
+
         await PostAsync("prompts/fix/update/keep");
 
         var tracked = Only("api:ProjectPrompts.KeepMine");
