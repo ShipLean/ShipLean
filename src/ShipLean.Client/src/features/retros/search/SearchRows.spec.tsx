@@ -14,7 +14,8 @@ test('SearchRows_WhenResultHasPoints_ShouldShowOneRowEachWithItsParts', async ({
   await expect(rows).toHaveCount(retroSearch.rows.length);
   const first = rows.first();
   const point = retroSearch.rows[0];
-  await expect(first).toContainText('Went badly');
+  await expect(first.getByRole('img', { name: 'Went badly' })).toBeVisible();
+  await expect(first).not.toContainText('Went badly');
   await expect(first).toContainText(point.text);
   await expect(first).not.toContainText('Root cause');
   await expect(first).toContainText(point.theme!.name);
@@ -124,6 +125,48 @@ test('SearchRows_WhenResultIsEmpty_ShouldShowTheEmptyState', async ({ mount, pag
   await mount(<AppRoutes />, open('/p/SHIP/retros?q=zzz'));
   await expect(page.getByTestId(ids.retrosEmpty)).toContainText('No point matches');
   await expect(page.getByTestId(ids.retrosRow)).toHaveCount(0);
+});
+
+test('SearchRows_WhenAtDesktopWidth_ShouldShowCategoryIconsAndNoCellRunsIntoTheNext', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 1700, height: 900 });
+  await stubShell(page);
+  await stubRetros(page);
+  await mount(<AppRoutes />, open('/p/SHIP/retros'));
+  const rows = page.getByTestId(ids.retrosRow);
+  await expect(rows).toHaveCount(retroSearch.rows.length);
+  for (const [i, row] of retroSearch.rows.entries()) {
+    const label = {
+      wentWell: 'Went well',
+      wentBadly: 'Went badly',
+      improve: 'Can be improved',
+      notInPlan: 'Not in the plan',
+    }[row.category];
+    const icon = rows.nth(i).getByRole('img', { name: label });
+    await expect(icon).toHaveAttribute('data-category', row.category);
+    await expect(icon.locator('title')).toHaveText(label);
+  }
+  // Every cell's content fits inside its cell, so no text touches the next column.
+  const clipped = await page.evaluate(() => {
+    const bad: string[] = [];
+    for (const td of document.querySelectorAll('tbody td')) {
+      const cell = td.getBoundingClientRect();
+      for (const child of td.querySelectorAll('svg, span, img')) {
+        const box = child.getBoundingClientRect();
+        if (box.right > cell.right + 0.5 || box.left < cell.left - 0.5)
+          bad.push(td.textContent ?? '');
+      }
+    }
+    return bad;
+  });
+  expect(clipped).toEqual([]);
+  // The sprint shows its distinguishing part, and the full name is on hover.
+  const sprint = retroSearch.rows[0].sprint!;
+  const cell = rows.first().locator('td').nth(4);
+  await expect(cell).toHaveAttribute('title', sprint.name);
+  await expect(cell).not.toHaveText('');
 });
 
 for (const theme of ['light', 'dark'] as const) {

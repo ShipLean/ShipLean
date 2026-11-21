@@ -2,10 +2,11 @@ import { Avatar } from '../../../../components/Avatar';
 import { Chip } from '../../../../components/Chip';
 import { TypeIcon } from '../../../../components/TypeIcon';
 import type { RetroPointDto } from '@shiplean/core/api/retros';
-import { retroCategoryColours, retroCategoryLabels } from '../../../retroShared/retroCategories';
+import { RetroCategoryIcon } from '../../../retroShared/RetroCategoryIcon';
 import { retrosTestIds as ids } from '../../testIds';
 import { Highlight } from './Highlight';
 import { matchesRootCause } from './matches';
+import { shortSprintName } from './shortSprintName';
 
 /** One point of the result on one line (the hover title carries the root cause only when the search matched it): category, text (the root cause too when the search matched it), theme, work item key, sprint and author. The rest is on hover and in the selected retro. Clicking it opens its retro. */
 export function SearchRow({
@@ -41,15 +42,8 @@ export function SearchRow({
         if (event.key === 'Enter') onSelect();
       }}
     >
-      <td className={cell}>
-        <span className="inline-flex items-center gap-1.5 text-[length:var(--text-sm)] whitespace-nowrap">
-          <span
-            aria-hidden="true"
-            className="size-2 flex-none rounded-[2px]"
-            style={{ background: retroCategoryColours[point.category] }}
-          />
-          {retroCategoryLabels[point.category]}
-        </span>
+      <td className={`${cell} text-center`}>
+        <RetroCategoryIcon category={point.category} />
       </td>
       <td className={`${cell} ${oneLine}`} title={fullText}>
         <Highlight text={point.text} q={q} />
@@ -90,7 +84,9 @@ export function SearchRow({
           <span className="text-[length:var(--text-sm)] text-ink-muted">Sprint</span>
         )}
       </td>
-      <td className={`${cell} ${oneLine} text-[length:var(--text-sm)]`}>{sprint?.name}</td>
+      <td className={`${cell} ${oneLine} text-[length:var(--text-sm)]`} title={sprint?.name}>
+        {sprint ? shortSprintName(sprint.name) : null}
+      </td>
       <td
         className={cell}
         title={author.agentName ? `${author.user.name} · ${author.agentName}` : author.user.name}
