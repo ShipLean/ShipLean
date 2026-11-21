@@ -83,20 +83,31 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         var forAgent = AgentSections.Filter(text, agent);
         var layers = new List<PromptLayerDto>
         {
-            new(PromptLayerKind.ServerInstructions, "Server instructions", builtIns.ServerInstructions, false, "The same for every project"),
-            new(PromptLayerKind.Prompt, inUse is null ? $"{facts.File} built-in" : $"{facts.File} custom v{inUse.Number}", untagged, false, null),
+            new(PromptLayerKind.ServerInstructions, "Server instructions", builtIns.ServerInstructions, false, "Sent when the agent connects. Same for every project."),
+            new(PromptLayerKind.Prompt, inUse is null ? $"{facts.Name}, built-in" : $"{facts.Name}, custom v{inUse.Number}", untagged, false, null),
         };
         if (agent != PromptAgents.Other)
         {
             var own = SectionLines(untagged, forAgent);
-            layers.Add(new PromptLayerDto(PromptLayerKind.AgentSections, $"Only for {label}", own, false, own is null ? $"No sections for {label}" : null));
+            layers.Add(new PromptLayerDto(PromptLayerKind.AgentSections, "Agent-specific sections", own, false, SectionNote(text, agent, label)));
         }
         if (key is PromptKey.Work or PromptKey.Guide or PromptKey.Brief or PromptKey.Lead)
         {
-            layers.Add(new PromptLayerDto(PromptLayerKind.WaysOfWorking, "Ways of working", null, true, "SHIP-568, planned"));
+            layers.Add(new PromptLayerDto(PromptLayerKind.WaysOfWorking, "Ways of working", null, true, "Added after the prompt once the project has them."));
         }
-        layers.Add(new PromptLayerDto(PromptLayerKind.ClientNotes, "Client notes", null, true, "SHIP-246, planned"));
+        layers.Add(new PromptLayerDto(PromptLayerKind.ClientNotes, "Notes for the connecting agent", null, true, "Per-client notes, added last."));
         return new PromptAssembledDto(key, agent, layers, forAgent);
+    }
+
+    private static string SectionNote(string text, string agent, string label)
+    {
+        var count = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Count(line => line.Trim() == $"<{agent}>");
+        if (count == 0 || AgentSections.Check(text).Count > 0)
+        {
+            return $"No sections for {label}";
+        }
+        var noun = count == 1 ? "section" : "sections";
+        return $"{count} {noun} for {label}; the rest are dropped.";
     }
 
     // The lines the agent gets beyond the untagged text: filtering keeps the untagged lines in order, so what is left over is the agent's sections.
@@ -142,7 +153,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         {
             return Build(facts, PromptStatus.Custom, currentText, currentHash, custom, patch, null, errors);
         }
-        var changedAt = builtInRows.TryGetValue((PromptKeys.ToWire(facts.Key), currentHash), out var row) ? row.FirstSeenAt : inUse.BaseFirstSeen;
+        var changedAt = builtInRows[(PromptKeys.ToWire(facts.Key), currentHash)].FirstSeenAt;
         var merge = PromptMerge.Merge(inUse.BaseText, inUse.Text, currentText);
         var update = new PromptUpdateDto($"{Day(changedAt, zone)} built-in", BaseLabel(inUse.BaseFirstSeen, zone),
             PromptDiff.Patch(inUse.BaseText, currentText), merge.Clean, merge.Text);

@@ -26,7 +26,28 @@ public class PromptReadsTests : ApiFixture
     private static string Route(Guid projectId, string tail = "") => $"api/projects/{projectId}/prompts{tail}";
 
     // The label every seeded timestamp gets: all are seeded at the moment of the test, and the viewer's zone is UTC.
-    private static string Today() => TimeProvider.System.GetUtcNow().ToOffset(TimeSpan.Zero).ToString("d MMM", CultureInfo.InvariantCulture);
+    private static DateTimeOffset Ago(int days) => TimeProvider.System.GetUtcNow().ToOffset(TimeSpan.Zero).AddDays(-days);
+
+    // The label a viewer in UTC sees: the day and month, with the year when it is not this year's.
+    private static string Day(int days)
+    {
+        var at = Ago(days);
+        return at.ToString(at.Year == TimeProvider.System.GetUtcNow().Year ? "d MMM" : "d MMM yyyy", CultureInfo.InvariantCulture);
+    }
+
+    // Puts the built-in with this text in prompt_built_in as first seen that many days ago (the startup snapshot's own row is moved).
+    private async Task FirstSeenAsync(PromptKey key, string text, int days)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO prompt_built_in (prompt, hash, text, first_seen_at) VALUES (@wire, @hash, @text, @at)
+            ON CONFLICT (prompt, hash) DO UPDATE SET first_seen_at = excluded.first_seen_at
+            """,
+            new { wire = PromptKeys.ToWire(key), hash = PromptHash.Of(text), text, at = Ago(days).UtcDateTime });
+    }
+
+    private string Current(PromptKey key) => _builtIns.Text(key).Replace("\r\n", "\n", StringComparison.Ordinal);
 
     private async Task<PromptsPageDto> PageAsync(Guid projectId, TestUser? actingAs = null)
     {
@@ -85,8 +106,9 @@ public class PromptReadsTests : ApiFixture
     [Test]
     public async Task Page_WhenCustomV2InUse_ShouldShowV2WithAuthorNoteAndCount()
     {
-        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Pay, PromptKey.Guide).WithText("first").WithNote("one").WithCreatedBy(SeedIds.Users.Joel));
-        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Pay, PromptKey.Guide).WithText("second").WithNote("two").WithCreatedBy(SeedIds.Users.Joel).InUse());
+        await FirstSeenAsync(PromptKey.Guide, Current(PromptKey.Guide), 9);
+        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Pay, PromptKey.Guide).WithText("first").WithNote("one").WithCreatedBy(SeedIds.Users.Joel).WithCreatedAt(Ago(5)));
+        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Pay, PromptKey.Guide).WithText("second").WithNote("two").WithCreatedBy(SeedIds.Users.Joel).WithCreatedAt(Ago(3)).InUse());
         await using var connection = await OpenDatabaseAsync();
         var joel = await connection.QuerySingleAsync<string>("SELECT name FROM app_user WHERE id = @id", new { id = SeedIds.Users.Joel });
 
@@ -100,8 +122,8 @@ public class PromptReadsTests : ApiFixture
         guide.Custom.InUse.ShouldBeTrue();
         guide.Custom.By.ShouldBe(joel);
         guide.Custom.Note.ShouldBe("two");
-        guide.Custom.AtLabel.ShouldBe(Today());
-        guide.Custom.BaseLabel.ShouldBe($"built-in of {Today()}");
+        guide.Custom.AtLabel.ShouldBe(Day(3));
+        guide.Custom.BaseLabel.ShouldBe($"built-in of {Day(9)}");
         guide.Custom.BaseText.ShouldBe(_builtIns.Text(PromptKey.Guide).Replace("\r\n", "\n", StringComparison.Ordinal));
         guide.YourChangesPatch.ShouldNotBeNull();
         page.CustomCount.ShouldBe(1);
@@ -131,15 +153,18 @@ public class PromptReadsTests : ApiFixture
     [Test]
     public async Task Page_WhenBuiltInChangedAfterTheCustom_ShouldFlagBuiltInUpdated()
     {
-        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Data, PromptKey.Retro).WithBuiltInText("An older retro built-in.").WithText("Mine.").InUse());
+        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Data, PromptKey.Retro).WithBuiltInText("An older retro built-in.").WithText("Mine.").WithCreatedAt(Ago(10)).InUse());
+        await FirstSeenAsync(PromptKey.Retro, "An older retro built-in.", 20);
+        await FirstSeenAsync(PromptKey.Retro, Current(PromptKey.Retro), 4);
 
         var page = await PageAsync(SeedIds.Projects.Data);
 
         var retro = Find(page, PromptKey.Retro);
         retro.Status.ShouldBe(PromptStatus.BuiltInUpdated);
         retro.Update.ShouldNotBeNull();
-        retro.Update.BaseLabel.ShouldBe($"built-in of {Today()}");
-        retro.Update.ChangedLabel.ShouldBe($"{Today()} built-in");
+        retro.Update.BaseLabel.ShouldBe($"built-in of {Day(20)}");
+        retro.Update.ChangedLabel.ShouldBe($"{Day(4)} built-in");
+        retro.Custom!.AtLabel.ShouldBe(Day(10));
     }
 
     [Test]
@@ -175,9 +200,10 @@ public class PromptReadsTests : ApiFixture
     [Test]
     public async Task History_ShouldListEveryVersionNewestFirst()
     {
-        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Mob, PromptKey.Lead).WithText("v1 text").WithNote("n1").WithNumber(1));
+        await FirstSeenAsync(PromptKey.Lead, Current(PromptKey.Lead), 8);
+        await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Mob, PromptKey.Lead).WithText("v1 text").WithNote("n1").WithNumber(1).WithCreatedAt(Ago(5)));
         await SeedAsync(new PromptVersionBuilder(SeedIds.Projects.Mob, PromptKey.Lead).WithText("v2 text").WithNote("n2").WithNumber(2)
-            .WithSource(PromptVersionSource.BuiltInUpdate).InUse());
+            .WithSource(PromptVersionSource.BuiltInUpdate).WithCreatedAt(Ago(2)).InUse());
 
         var history = await GetAsync<PromptHistoryDto>(Route(SeedIds.Projects.Mob, "/lead/history"));
 
@@ -186,8 +212,8 @@ public class PromptReadsTests : ApiFixture
         history.Versions.Select(v => v.InUse).ShouldBe([true, false]);
         history.Versions.Select(v => v.Source).ShouldBe([PromptVersionSource.BuiltInUpdate, PromptVersionSource.Editor]);
         history.Versions.Select(v => v.Text).ShouldBe(["v2 text", "v1 text"]);
-        history.Versions[0].AtLabel.ShouldBe(Today());
-        history.BaseLabel.ShouldBe($"built-in of {Today()}");
+        history.Versions.Select(v => v.AtLabel).ShouldBe([Day(2), Day(5)]);
+        history.BaseLabel.ShouldBe($"built-in of {Day(8)}");
     }
 
     [Test]
@@ -210,10 +236,11 @@ public class PromptReadsTests : ApiFixture
         assembled.Layers.Select(l => l.Kind).ShouldBe(
             [PromptLayerKind.ServerInstructions, PromptLayerKind.Prompt, PromptLayerKind.AgentSections, PromptLayerKind.WaysOfWorking, PromptLayerKind.ClientNotes]);
         assembled.Layers[0].Text.ShouldBe(_builtIns.ServerInstructions);
-        assembled.Layers[0].Note.ShouldBe("The same for every project");
-        assembled.Layers[1].Title.ShouldBe("brief.md custom v1");
+        assembled.Layers[0].Note.ShouldBe("Sent when the agent connects. Same for every project.");
+        assembled.Layers[2].Note.ShouldBe("1 section for Claude Code; the rest are dropped.");
+        assembled.Layers[1].Title.ShouldBe("Task brief, custom v1");
         assembled.Layers[1].Text.ShouldBe("Plain line.\nLast line.");
-        assembled.Layers[2].Title.ShouldBe("Only for Claude Code");
+        assembled.Layers[2].Title.ShouldBe("Agent-specific sections");
         assembled.Layers[2].Text.ShouldBe("Claude only.");
         assembled.Text.ShouldBe("Plain line.\nClaude only.\nLast line.");
         assembled.Layers.ShouldAllBe(l => l.Text == null || !l.Text.Contains("Other CLI only.", StringComparison.Ordinal));
@@ -250,10 +277,11 @@ public class PromptReadsTests : ApiFixture
     {
         var assembled = await GetAsync<PromptAssembledDto>(Route(SeedIds.Projects.Mob, "/guide/assembled?agent=claude-code"));
 
-        assembled.Layers[1].Title.ShouldBe("guide.md built-in");
+        assembled.Layers[1].Title.ShouldBe("Planning and breakdown, built-in");
         var planned = assembled.Layers.Where(l => l.Planned).ToList();
         planned.Select(l => l.Kind).ShouldBe([PromptLayerKind.WaysOfWorking, PromptLayerKind.ClientNotes]);
-        planned.Select(l => l.Note).ShouldBe(["SHIP-568, planned", "SHIP-246, planned"]);
+        planned.Select(l => l.Note).ShouldBe(["Added after the prompt once the project has them.", "Per-client notes, added last."]);
+        assembled.Layers[4].Title.ShouldBe("Notes for the connecting agent");
         assembled.Text.ShouldBe(_builtIns.Text(PromptKey.Guide).Replace("\r\n", "\n", StringComparison.Ordinal));
     }
 
