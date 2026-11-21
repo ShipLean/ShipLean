@@ -63,12 +63,14 @@ for (const level of ['features', 'epics'] as const) {
       });
       await act(() => vi.advanceTimersByTimeAsync(0));
       const reads = () => gets.filter((u) => u.includes(`/backlogs/${level}?`)).length;
-      expect(reads()).toBe(1);
+      // The first join refetches what mounted before it: count from after that settles.
+      const before = reads();
+      expect(before).toBeGreaterThan(0);
       act(() =>
         hub.deliver({ type, projectId, clientId: 'someone-else', id: 'x', fields: ['title'] }),
       );
       await act(() => vi.advanceTimersByTimeAsync(0));
-      expect(reads()).toBe(2);
+      expect(reads()).toBe(before + 1);
       act(() => root.unmount());
     });
   }

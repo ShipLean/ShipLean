@@ -70,13 +70,15 @@ test.each(['sprintChanged', 'projectChanged', 'workItemMoved'])(
       );
     });
     await act(() => vi.advanceTimersByTimeAsync(0));
-    expect(reads).toHaveLength(1);
+    // The first join refetches what mounted before it: count from after that settles.
+    const before = reads.length;
+    expect(before).toBeGreaterThan(0);
     expect(reads[0]).toContain('mode=planning');
 
     act(() => hub.deliver({ type, projectId, clientId: 'someone-else', sprintId: 'sp24' }));
     await act(() => vi.advanceTimersByTimeAsync(0));
 
-    expect(reads).toHaveLength(2);
+    expect(reads).toHaveLength(before + 1);
     act(() => root.unmount());
   },
 );

@@ -385,3 +385,28 @@ test('subscription_WhenScreenJoinIsPendingAfterProjectChange_ShouldHoldLive', as
   await vi.advanceTimersByTimeAsync(0);
   expect(states.at(-1)).toBe('live');
 });
+
+test('subscription_WhenJoinedFirstTime_ShouldReportJoinedOnceAndNotReconnected', async () => {
+  const hub = fakeConnection();
+  const joined: string[] = [];
+  const reconnected: (string | undefined)[] = [];
+  const subscription = createProjectSubscription({
+    connect: () => hub.connection,
+    retryDelaysMs: [0],
+    onEvent: () => undefined,
+    onState: () => undefined,
+    onReset: () => undefined,
+    onReconnected: (id) => reconnected.push(id),
+    onJoined: (id) => joined.push(id),
+    confirmSession: async () => true,
+  });
+  subscription.setProject(project);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(joined).toEqual([project]);
+  expect(reconnected).toEqual([]);
+
+  hub.drop();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(joined).toEqual([project]);
+  expect(reconnected).toEqual([project]);
+});

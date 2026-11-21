@@ -245,6 +245,22 @@ test('Form_WhenBau_ShouldOpen', async ({ mount, page }) => {
   await expect(screen.getByTestId(ids.sprint)).toHaveCount(0);
   await expect(screen.getByTestId(ids.criteria)).toHaveCount(0);
   await expect(screen.getByTestId(ids.repro)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.points)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.priority)).toHaveCount(0);
+  await expect(screen.getByTestId(ids.back)).toHaveText('← Back to Sprints');
+  await expect(screen.getByTestId(ids.back)).toHaveAttribute('href', /\/sprints$/);
+});
+
+test('WorkItemForm_WhenStory_ShouldBackToStoriesBacklogWithPointsAndPriority', async ({
+  mount,
+  page,
+}) => {
+  await stubApi(page, story);
+  const screen = await mount(<WorkItemFormHarness itemKey="SHIP-141" />, route('SHIP-141'));
+
+  await expect(screen.getByTestId(ids.back)).toHaveText('← Back to Stories backlog');
+  await expect(screen.getByTestId(ids.points)).toBeVisible();
+  await expect(screen.getByTestId(ids.priority)).toBeVisible();
 });
 
 test('WorkItemForm_WhenTitleEmptied_ShouldRefuseToSave', async ({ mount, page }) => {

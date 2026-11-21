@@ -55,6 +55,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.count = 0;
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -72,9 +74,9 @@ test.each([
   { type: 'workItemUpdated', id: 'i', revision: 2, fields: ['title'], pulled: false },
   reordered,
 ])('useTaskboard_WhenEvent$type_ShouldRefetch', async (event) => {
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   await deliver(event);
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
 });
 
 test('useTaskboard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEvent', async () => {
@@ -95,7 +97,7 @@ test('useTaskboard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEvent', async
     fields: ['title'],
     pulled: false,
   });
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
 
   finish();
   await act(() => move);
@@ -106,7 +108,7 @@ test('useTaskboard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEvent', async
     fields: ['title'],
     pulled: false,
   });
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
 });
 
 const sprintScope = { kind: 'sprint', sprintId } as const;

@@ -49,6 +49,8 @@ const mountWith = async (enabled: boolean) => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.count = 0;
 };
 beforeEach(() => {
   vi.useFakeTimers();
@@ -75,9 +77,9 @@ test.each([
 ])('useChildren_WhenEvent$type_ShouldRefetchTheList', async (event) => {
   await mountWith(true);
   expect(container.textContent).toBe('1');
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   await deliver(event);
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
 });
 
 test('useChildren_WhenNoListIsOpen_ShouldFetchNothing', async () => {
