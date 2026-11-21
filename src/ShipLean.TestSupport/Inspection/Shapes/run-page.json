@@ -14,7 +14,17 @@
     "tokensIn": 7000,
     "tokensOut": 1470,
     "errors": 4,
-    "waitMs": 3000
+    "waitMs": 3000,
+    "prompts": [
+      {
+        "key": "brief",
+        "file": "brief.md",
+        "version": 2,
+        "agent": "claude-code",
+        "label": "brief.md custom v2 · Claude Code",
+        "atLabel": "10 Nov, 09:58"
+      }
+    ]
   },
   "logOnly": false,
   "banner": null,

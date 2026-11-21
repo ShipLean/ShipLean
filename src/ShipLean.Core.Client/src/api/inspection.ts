@@ -2,6 +2,7 @@
 // Pinned by ShipLean.TestSupport/Inspection/Shapes/*.json and round-tripped by inspection.test.ts. The server makes
 // every label and every percentage; times are milliseconds offsets from the run start, never Dates.
 import { api } from './client';
+import type { PromptKey } from './prompts';
 
 export const INSPECTION_STORE_MODES = ['clickhouse', 'tempoLoki'] as const;
 export type InspectionStoreMode = (typeof INSPECTION_STORE_MODES)[number];
@@ -60,6 +61,16 @@ export interface AgentRunsSectionDto {
   setupUrl: string;
 }
 
+// One prompt served to the run's items around its time: label reads "brief.md custom v2 · Claude Code".
+export interface PromptServingDto {
+  key: PromptKey;
+  file: string;
+  version: number | null;
+  agent: string;
+  label: string;
+  atLabel: string;
+}
+
 export interface RunHeaderDto {
   agent: string;
   agentLabel: string;
@@ -75,6 +86,7 @@ export interface RunHeaderDto {
   tokensOut: number | null;
   errors: number;
   waitMs: number;
+  prompts: PromptServingDto[];
 }
 
 export interface RunWaitDto {

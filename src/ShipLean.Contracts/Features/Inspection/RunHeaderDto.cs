@@ -1,3 +1,5 @@
+using ShipLean.Contracts.Prompts;
+
 namespace ShipLean.Contracts.Inspection;
 
 public sealed record RunHeaderDto(
@@ -14,4 +16,5 @@ public sealed record RunHeaderDto(
     long? TokensIn,
     long? TokensOut,
     int Errors,
-    long WaitMs);
+    long WaitMs,
+    IReadOnlyList<PromptServingDto> Prompts);
