@@ -18,6 +18,7 @@ Mock-ups: `voice.html` (`?state=<id>`).
 |---|---|---|
 | `too-short` | Nothing heard | A tap under half a second. Toast: "Hold the mic while you speak". |
 | `nothing-heard` | Nothing heard | Held, but silent. The sheet closes. Toast: "Didn't hear anything · nothing was changed", and which mic was used. |
+| `engine-failed` | Nothing heard | The speech engine failed to start or stop, so the mic was never the problem (SHIP-1459). Toast: "Voice couldn't start · nothing was changed" ("Voice stopped working · …" if it failed mid-hold) with *Type instead*. Not a silent hold: no Tune mic, and it doesn't count toward the mic check. Another hold tries the engine again. |
 | `mic-check` | Nothing heard | The third silent hold in a row. Mic check: a live level meter, the input in use (AirPods Pro) with *Use iPhone mic*, *Type instead*. |
 | `mic-blocked` | Nothing heard | Microphone permission is off. The dock's mic is crossed out, and holding it opens a sheet with *Open Settings*. |
 | `no-match` | Nothing matched | "Set the onboarding story to Active": no item is called that. Search's two closest items, each one tap to use instead, plus Fix and Search. |

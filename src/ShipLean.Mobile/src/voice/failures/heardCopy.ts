@@ -8,6 +8,7 @@ export interface ToastCopy {
 
 export const TOO_SHORT_MS = 3000;
 export const NOTHING_HEARD_MS = 4000;
+export const ENGINE_FAILED_MS = 6000;
 
 // A tap under half a second (voice D2).
 export function tooShortToast(): ToastCopy {
@@ -18,6 +19,18 @@ export function tooShortToast(): ToastCopy {
 export function nothingHeardToast(inputName: string | null): ToastCopy {
   const base = "Didn't hear anything · nothing was changed";
   return { text: inputName === null ? base : `${base} · ${inputName}`, ms: NOTHING_HEARD_MS };
+}
+
+// The speech engine failed to start or stop (SHIP-1459 D1, D2): the mic is fine, so it says so in words about voice and
+// never names a microphone or offers Tune mic. Try again is a new hold, so the toast offers only Type instead.
+export function engineFailedToast(stage: 'start' | 'stop'): ToastCopy {
+  return {
+    text:
+      stage === 'start'
+        ? "Voice couldn't start · nothing was changed"
+        : 'Voice stopped working · nothing was changed',
+    ms: ENGINE_FAILED_MS,
+  };
 }
 
 export interface UnclearCopy {

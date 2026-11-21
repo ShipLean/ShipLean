@@ -10,6 +10,7 @@ import type { MicStatus } from '../voice/internals';
 import { useVoice } from '../voice/VoiceProvider';
 import { canAskMic, coachVariant, markGuide, readGuide, type CoachVariant } from './guide';
 import { readyCoachMarkIds } from './ReadyCoachMark.testIds';
+import { useEngineReady } from './useEngineReady';
 import { useModelStatus } from './useModelStatus';
 
 export interface ReadyCoachMarkProps {
@@ -26,6 +27,8 @@ export const ReadyCoachMark: FunctionComponent<ReadyCoachMarkProps> = ({ onTry, 
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const status = useModelStatus();
+  // "Voice is ready" waits for the speech engine itself, not just the model files (SHIP-1459).
+  const engineReady = useEngineReady();
   const voice = useVoice();
   const [mic, setMic] = useState<MicStatus | null>(null);
   const [variant, setVariant] = useState<CoachVariant | null>(null);
@@ -54,7 +57,9 @@ export const ReadyCoachMark: FunctionComponent<ReadyCoachMarkProps> = ({ onTry, 
 
   // What to show is worked out here from the phone's flags, and kept while the mark is on screen.
   const next =
-    mic === null ? null : coachVariant(status.phase, mic, readGuide(platform().persistentStore()));
+    mic === null
+      ? null
+      : coachVariant(status.phase, mic, readGuide(platform().persistentStore()), engineReady);
   if (next !== null && (variant === null || (variant === 'micOff' && next === 'try'))) {
     setVariant(next);
   }

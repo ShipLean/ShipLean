@@ -83,6 +83,24 @@ describe('ReadyCoachMark', () => {
     expect(screen.getByTestId(readyCoachMarkIds.root)).toBeOnTheScreen();
   });
 
+  it('waits for the speech engine: files ready but the recognizer not loaded says nothing, then Voice is ready', async () => {
+    const fakes = setup({ phase: 'ready' });
+    fakes.recognizer.setReady(false);
+    jest.useFakeTimers();
+    await renderScreen(<ReadyCoachMark onTry={jest.fn()} onSkip={jest.fn()} />);
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByTestId(readyCoachMarkIds.card)).toBeNull();
+
+    fakes.recognizer.setReady(true);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(await screen.findByTestId(readyCoachMarkIds.card)).toBeOnTheScreen();
+    jest.useRealTimers();
+  });
+
   it('is not shown again on a later launch even without pressing Skip', async () => {
     setup({ phase: 'ready' });
     const first = await renderScreen(<ReadyCoachMark onTry={jest.fn()} onSkip={jest.fn()} />);
