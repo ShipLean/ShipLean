@@ -1,11 +1,8 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
-using ShipLean.Application.Features.Demos.Prompt;
-using ShipLean.Application.Features.IssueIntake.Settings;
+using ShipLean.Application;
 using ShipLean.Contracts.Prompts;
-using ShipLean.WebApi.Features.Mcp.Planning;
-using ShipLean.WebApi.Features.Mcp.Transport;
 
 namespace ShipLean.WebApi.Features.Prompts;
 
@@ -80,7 +77,7 @@ public sealed partial class BuiltInPrompts : IBuiltInPrompts
 
     public IReadOnlyList<PromptFacts> All => Facts_;
 
-    public string ServerInstructions => McpServerServices.Instructions;
+    public string ServerInstructions => PromptDefaults.ServerInstructions;
 
     public IReadOnlyList<PromptBuiltInOnlyDto> BuiltInOnly => BuiltInOnlyRows;
 
@@ -97,7 +94,7 @@ public sealed partial class BuiltInPrompts : IBuiltInPrompts
 
     private static string Load(PromptKey key) => key switch
     {
-        PromptKey.IssueProposal => IssueIntakeSettingsService.DefaultInstructions,
+        PromptKey.IssueProposal => PromptDefaults.IssueProposal,
         PromptKey.Work => PlanGuide.Read(PlanGuidePart.Work),
         PromptKey.Guide => PlanGuide.Read(PlanGuidePart.Guide),
         PromptKey.PlanReviewer => PlanGuide.Read(PlanGuidePart.PlanReviewer),
@@ -113,7 +110,7 @@ public sealed partial class BuiltInPrompts : IBuiltInPrompts
 
     private static string ReadSprintDemo()
     {
-        using var stream = typeof(SprintDemoPrompt).Assembly.GetManifestResourceStream(SprintDemoResource)
+        using var stream = ApplicationMarker.Assembly.GetManifestResourceStream(SprintDemoResource)
             ?? throw new InvalidOperationException($"The embedded template {SprintDemoResource} is missing.");
         using var reader = new StreamReader(stream, Encoding.UTF8);
         return reader.ReadToEnd();

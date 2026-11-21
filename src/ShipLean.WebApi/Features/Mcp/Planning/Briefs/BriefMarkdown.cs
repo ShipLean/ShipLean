@@ -4,6 +4,7 @@ using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Asks;
+using ShipLean.Contracts.Prompts;
 using ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;

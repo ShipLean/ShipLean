@@ -1,19 +1,20 @@
 using Agoda.IoC.Core;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using ShipLean.Application.Features.Webhooks;
-using ShipLean.Application.Integrations;
 using ShipLean.Application.Identity;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.WorkItems;
-using Microsoft.Extensions.Configuration;
 
 namespace ShipLean.Application.Features.IssueIntake.Settings;
 
@@ -22,7 +23,7 @@ namespace ShipLean.Application.Features.IssueIntake.Settings;
 public sealed class IssueIntakeSettingsService(
     NpgsqlDataSource dataSource, TimeProvider clock, IStateCatalog states, IProjectEvents events, ICurrentUser currentUser, IIntegrationSettings integrations, IConfiguration configuration)
 {
-    public const string DefaultInstructions = "Write a proposal for this issue to the project's standards.";
+    public const string DefaultInstructions = PromptDefaults.IssueProposal;
 
     private const int MaxInstructions = 20000;
     private static readonly WorkItemTypeId[] IntakeTypes = [WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Feature];

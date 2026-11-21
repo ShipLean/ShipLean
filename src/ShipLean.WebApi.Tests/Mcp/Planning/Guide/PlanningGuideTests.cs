@@ -1,5 +1,7 @@
+using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Features.Mcp.Planning;
+using ShipLean.WebApi.Features.Prompts;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Planning.Guide;
