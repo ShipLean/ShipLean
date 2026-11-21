@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Prompts;

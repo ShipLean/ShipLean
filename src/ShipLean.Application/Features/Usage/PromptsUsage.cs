@@ -1,5 +1,4 @@
 using Agoda.IoC.Core;
-using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Usage;

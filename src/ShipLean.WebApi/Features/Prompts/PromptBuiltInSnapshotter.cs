@@ -1,6 +1,5 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts.Prompts;
 
 namespace ShipLean.WebApi.Features.Prompts;
@@ -9,6 +8,7 @@ namespace ShipLean.WebApi.Features.Prompts;
 // built-ins are stored (hash, text, first seen) unless already there. StartAsync awaits the inserts, so the rows exist before the first request.
 public sealed class PromptBuiltInSnapshotter(NpgsqlDataSource dataSource, IBuiltInPrompts builtIns, TimeProvider time, ILogger<PromptBuiltInSnapshotter> logger) : IHostedService
 {
+    // Relies on the migration hosted service starting first, so the tables exist.
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);

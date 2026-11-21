@@ -109,6 +109,9 @@ public class PromptsUsageTests : ApiFixture
         using var history = await Api.GetAsync(Route("prompts/guide/history"));
         using var assembled = await Api.GetAsync(Route("prompts/guide/assembled?agent=other"));
 
+        page.IsSuccessStatusCode.ShouldBeTrue();
+        history.IsSuccessStatusCode.ShouldBeTrue();
+        assembled.IsSuccessStatusCode.ShouldBeTrue();
         Recorder.Events.Where(e => e.Source.StartsWith("api:ProjectPrompts.", StringComparison.Ordinal)).ShouldBeEmpty();
     }
 }

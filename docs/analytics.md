@@ -317,6 +317,7 @@ Why (SHIP-744): if projects can see and change the built-in prompts their agents
 
 - `prompts.opened` against `screen.viewed` for Project settings in the same weeks (does anyone come to the tab), then `prompt.customize_opened` split by `prompt` against `prompt.saved` split by `prompt`: Customize pressed but nothing saved is a prompt people look at and decide not to change.
 - `prompt.update_applied`, `prompt.update_kept` and `prompt.built_in_used` split by `prompt`: what happens when ShipLean's own text moves. `prompt.version_restored` is people going back.
+- Distinct projects that save a custom prompt (`prompt.saved` or `prompt.update_applied`) against distinct projects that open the Prompts tab (`prompts.opened`), per week: how many projects that look go on to change anything.
 
 `prompt` is a closed set (the 11 keys), so it stays low-cardinality. The three reads (page, history, assembled) are untracked: `prompts.opened` counts the tab. Targets are still to be confirmed.
 

@@ -1,6 +1,5 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts.Prompts;
 using ShipLean.WebApi.Features.Prompts;
 
@@ -99,7 +98,7 @@ public sealed class PromptVersionBuilder(Guid projectId, PromptKey key)
             new
             {
                 id, projectId, wire, number = _number, text = _text, hash, note = _note,
-                source = char.ToLowerInvariant(_source.ToString()[0]) + _source.ToString()[1..], createdBy = _createdBy, createdAt = _createdAt.UtcDateTime,
+                source = PromptKeys.ToWire(_source), createdBy = _createdBy, createdAt = _createdAt.UtcDateTime,
             });
         if (_inUse || _keptBuiltInHash is not null)
         {

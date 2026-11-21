@@ -22,7 +22,7 @@ public class PromptsSchemaTests
     [Test]
     public async Task PromptVersion_WhenOver64KB_ShouldBeRefusedByTheCheck()
     {
-        var builder = new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Work).WithText(new string('x', 65_537));
+        var builder = new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Work).WithText(new string('é', 32_769));
 
         var thrown = await Should.ThrowAsync<PostgresException>(() => builder.InsertAsync(_database.ConnectionString));
 

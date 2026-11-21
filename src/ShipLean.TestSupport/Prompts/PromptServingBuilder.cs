@@ -1,6 +1,5 @@
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Prompts;
 using ShipLean.Contracts.Prompts;
 
 namespace ShipLean.TestSupport.Prompts;
