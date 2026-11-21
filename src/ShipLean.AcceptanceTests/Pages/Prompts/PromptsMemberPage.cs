@@ -44,6 +44,12 @@ public sealed class PromptsMemberPage(IPage page)
 
     public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow);
 
+    public ILocator HistoryRowInUse => page.GetByTestId(PromptsTestIds.HistoryRowInUse);
+
+    public ILocator UpdateReview => page.GetByTestId(PromptsTestIds.UpdateReview);
+
+    public ILocator Resume => page.GetByTestId(PromptsTestIds.ActionResume);
+
     public ILocator HistoryNote => page.GetByTestId(PromptsTestIds.HistoryNote);
 
     public ILocator Tab(string testId) => page.GetByTestId(testId);

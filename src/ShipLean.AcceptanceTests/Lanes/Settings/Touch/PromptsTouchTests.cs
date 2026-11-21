@@ -49,8 +49,9 @@ public class PromptsTouchTests : SeededAcceptanceTest
         (await TouchRules.ViolationsAsync(Page)).ShouldBeEmpty();
         // The stage strip scrolls sideways inside itself by design; only its own overflow line is expected.
         (await TouchRules.ViolationsAsync(Page, prompts.StageStrip))
-            .Where(line => !line.Contains("scrolls sideways", StringComparison.Ordinal))
+            .Where(line => !line.Contains($"[data-testid={PromptsTestIds.StageStrip}] scrolls sideways", StringComparison.Ordinal))
             .ShouldBeEmpty();
+        await Expect(prompts.Panel(PromptsTestIds.PanelSource)).ToBeVisibleAsync();
         (await TouchRules.ViolationsAsync(Page, prompts.Detail)).ShouldBeEmpty();
     }
 

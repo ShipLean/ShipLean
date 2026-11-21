@@ -12,14 +12,14 @@ namespace ShipLean.AcceptanceTests.Lanes.Prompts;
 [TestFixture]
 public class IssueProposalJourneyTests : SeededAcceptanceTest
 {
-    private const string MigratedNote = "Moved from Integrations › Proposal instructions";
+    private const string MigratedLabel = "Moved from Integrations";
 
     [OneTimeSetUp]
     public async Task ArrangeAMigratedProposalAsync()
     {
         await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.IssueProposal)
             .WithText("Write a proposal in the team's voice.")
-            .WithNote(MigratedNote)
+            .WithNote("Team voice for proposals")
             .WithSource(PromptVersionSource.Migrated)
             .InUse()
             .InsertAsync(ConnectionString);
@@ -30,16 +30,19 @@ public class IssueProposalJourneyTests : SeededAcceptanceTest
     {
         await Page.GotoAsync(Links.ProjectSettings("SHIP", "integrations"));
         var panel = Page.GetByTestId(SettingsTestIds.IssueIntakePanel);
-        await Expect(panel).ToBeVisibleAsync();
-        await Expect(panel).Not.ToContainTextAsync("Proposal instructions");
+        var link = Page.GetByTestId(SettingsTestIds.IssueIntakePromptsLink);
+        await Expect(link).ToBeVisibleAsync();
+        (await panel.EvaluateAsync<int>("el => el.querySelectorAll('textarea').length")).ShouldBe(0, "the old Proposal instructions box is still in the panel");
 
-        await Page.GetByTestId(SettingsTestIds.IssueIntakePromptsLink).ClickAsync();
+        await link.ClickAsync();
 
         var prompts = new PromptsMemberPage(Page);
         await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/settings/prompts\\?prompt=issueProposal$"));
         await Expect(prompts.DetailName).ToContainTextAsync("Issue proposal");
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v1");
         await Page.GetByTestId(PromptsTestIds.TabHistory).ClickAsync();
-        await Expect(prompts.PanelHistory).ToContainTextAsync(MigratedNote);
+        // The in-use row's note is "Team voice for proposals", so the label can only come from its Source cell (the cells carry no ids).
+        await Expect(prompts.HistoryRowInUse).ToContainTextAsync("Team voice for proposals");
+        await Expect(prompts.HistoryRowInUse).ToContainTextAsync(MigratedLabel);
     }
 }

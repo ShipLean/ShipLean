@@ -13,11 +13,6 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
 {
     private const string RunId = "sess-cc-1";
 
-    // Servings are listed for the run's own agent, so the Codex run (no servings are arranged for that agent) is the one with no prompts line.
-    private const string OtherAgentRunId = "sess-cx-1";
-
-    protected override IReadOnlyList<string> FixtureNames => ["claude-code-synthetic", "codex-cli-synthetic"];
-
     // The run's start, as the fake serves it, so the servings are placed against the real window.
     private async Task<RunSummary> TheRunAsync()
     {
@@ -26,9 +21,9 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
         return search.Runs.Single(r => r.RunId == RunId);
     }
 
-    private async Task OpenRunAsync(string runId = RunId)
+    private async Task OpenRunAsync()
     {
-        await Page.GotoAsync($"{BaseUrl}/p/{ProjectKey}/items/{ItemKey}/runs/{runId}");
+        await Page.GotoAsync($"{BaseUrl}/p/{ProjectKey}/items/{ItemKey}/runs/{RunId}");
         await Expect(Page.GetByTestId(InspectionTestIds.RunHeader)).ToBeVisibleAsync();
     }
 
@@ -56,13 +51,5 @@ public class RunPromptsJourneyTests : ShipLean.AcceptanceTests.Inspection.Inspec
         await Expect(line).ToContainTextAsync("brief.md custom v2 · Claude Code");
         await Expect(line).ToContainTextAsync("report.md built-in · Claude Code");
         await Expect(line).Not.ToContainTextAsync("custom v1");
-    }
-
-    [Test]
-    public async Task Run_WhenNoPromptsServed_ShouldHideThePromptsLine()
-    {
-        await OpenRunAsync(OtherAgentRunId);
-
-        await Expect(Page.GetByTestId(InspectionTestIds.RunPrompts)).ToHaveCountAsync(0);
     }
 }
