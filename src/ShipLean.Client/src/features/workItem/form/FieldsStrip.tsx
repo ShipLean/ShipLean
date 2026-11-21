@@ -51,16 +51,20 @@ export function FieldsStrip({
           onChange={(sprint) => onChange({ sprint })}
         />
       ) : null}
-      <PointsField
-        value={draft.points}
-        changed={isChanged('points')}
-        onChange={(points) => onChange({ points })}
-      />
-      <PriorityField
-        value={draft.priority}
-        changed={isChanged('priority')}
-        onChange={(priority) => onChange({ priority })}
-      />
+      {item.type.id === 'bau' ? null : (
+        <>
+          <PointsField
+            value={draft.points}
+            changed={isChanged('points')}
+            onChange={(points) => onChange({ points })}
+          />
+          <PriorityField
+            value={draft.priority}
+            changed={isChanged('priority')}
+            onChange={(priority) => onChange({ priority })}
+          />
+        </>
+      )}
       <ParentField
         projectId={item.projectId}
         itemId={item.id}

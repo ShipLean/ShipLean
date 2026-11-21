@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { SprintDemoDto, SprintDemoStatus } from '@shiplean/core/api/demos';
 import { Chip, type ChipTone } from '../../components/Chip';
 import { showToast } from '../../components/toastStore';
@@ -92,6 +92,7 @@ const buttonClass =
  */
 export function DemoStatusBand({ demo }: DemoProps) {
   const { touch } = useTouchShell();
+  const { pathname } = useLocation();
   const create = useCreateSprintDemo(demo.sprintId);
   const look = LOOKS[demo.status];
   const note = detail(demo);
@@ -131,6 +132,7 @@ export function DemoStatusBand({ demo }: DemoProps) {
               <Link
                 data-testid={ids.demoItemLink}
                 to={run.itemUrl}
+                state={{ backTo: pathname, backLabel: 'Demo' }}
                 className="text-signal touch:order-4 touch:col-span-2 touch:flex touch:min-h-[var(--touch-target)] touch:w-full touch:items-center touch:justify-between touch:gap-2 touch:font-mono touch:text-ink"
               >
                 {touch ? (
