@@ -56,6 +56,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.count = 0;
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -88,31 +90,31 @@ const refetches = [
 ] satisfies Record<string, unknown>[];
 
 test.each(refetches)('useBoard_WhenEvent$type_ShouldRefetchTheBoard', async (event) => {
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   await deliver(event);
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
   expect(settingsChanges()).toBe(0);
 });
 
 test('useBoard_WhenAnotherBoardsSettingsChange_ShouldNeitherRefetchNorFlash', async () => {
   await deliver({ type: 'boardSettingsChanged', boardId: 'board-2', sections: ['columns'] });
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   expect(settingsChanges()).toBe(0);
 });
 
 test('useBoard_WhenThisBoardsSettingsChange_ShouldRefetchAndCountTheChange', async () => {
   await deliver({ type: 'boardSettingsChanged', boardId, sections: ['columns'] });
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
   expect(settingsChanges()).toBe(1);
 });
 
 test('useBoard_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's1' } satisfies Partial<ProjectEvent>);
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
 });
 
 test('useBoard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEventUntilTheLastMoveSettles', async () => {
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   moveStarted(boardId);
   moveStarted(boardId);
   await deliver({
@@ -123,9 +125,9 @@ test('useBoard_WhenAMoveIsInFlight_ShouldNotRefetchOnATeammatesEventUntilTheLast
     pulled: false,
   });
   await deliver({ type: 'statesChanged' });
-  expect(reads.count).toBe(1);
+  expect(reads.count).toBe(0);
   expect(moveSettled(boardId)).toBe(false);
   expect(moveSettled(boardId)).toBe(true);
   await deliver({ type: 'statesChanged' });
-  expect(reads.count).toBe(2);
+  expect(reads.count).toBe(1);
 });

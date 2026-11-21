@@ -58,6 +58,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.paths = [];
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -92,31 +94,31 @@ test.each(refetches.filter((event) => event.type !== 'sprintChanged'))(
   'useSprintsRealtime_WhenEvent$type_ShouldRefetchEverySprintFigure',
   async (event) => {
     for (const suffix of ['/sprints', '/velocity', '/metrics', '/capacity']) {
-      expect(reads_(suffix)).toBe(1);
+      expect(reads_(suffix)).toBe(0);
     }
     await deliver(event);
     for (const suffix of ['/sprints', '/velocity', '/metrics', '/capacity']) {
-      expect(reads_(suffix)).toBe(2);
+      expect(reads_(suffix)).toBe(1);
     }
   },
 );
 
 test('useSprintsRealtime_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async () => {
   await deliver({ type: 'statesChanged' });
-  expect(reads.paths).toHaveLength(4);
+  expect(reads.paths).toHaveLength(0);
 });
 
 test('useSprintsRealtime_WhenSprintChanged_ShouldRefetchThatSprintsFigures', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's1' });
   for (const suffix of ['/sprints', '/velocity', '/metrics', '/capacity']) {
-    expect(reads_(suffix)).toBe(2);
+    expect(reads_(suffix)).toBe(1);
   }
 });
 
 test('useSprintsRealtime_WhenAnotherSprintChanged_ShouldLeaveThisSprintsMetricsAloneButRefetchItsCapacity', async () => {
   await deliver({ type: 'sprintChanged', sprintId: 's2' });
-  expect(reads_('/sprints')).toBe(2);
-  expect(reads_('/velocity')).toBe(2);
-  expect(reads_('/metrics')).toBe(1);
-  expect(reads_('/capacity')).toBe(2);
+  expect(reads_('/sprints')).toBe(1);
+  expect(reads_('/velocity')).toBe(1);
+  expect(reads_('/metrics')).toBe(0);
+  expect(reads_('/capacity')).toBe(1);
 });

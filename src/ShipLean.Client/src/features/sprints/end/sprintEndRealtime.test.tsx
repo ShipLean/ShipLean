@@ -61,6 +61,8 @@ beforeEach(async () => {
     );
   });
   await act(() => vi.advanceTimersByTimeAsync(0));
+  // The first join refetches what mounted before it: count from after that settles.
+  reads.paths = [];
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -83,16 +85,16 @@ const events = [
 test.each(events)(
   'useSprintEndRealtime_When$type, ShouldRefetchTheSprintsAndTheRollover',
   async (event) => {
+    expect(count('/rollover')).toBe(0);
+    expect(count('/sprints')).toBe(0);
+    await deliver(event);
     expect(count('/rollover')).toBe(1);
     expect(count('/sprints')).toBe(1);
-    await deliver(event);
-    expect(count('/rollover')).toBe(2);
-    expect(count('/sprints')).toBe(2);
   },
 );
 
 test('useSprintEndRealtime_WhenAnUnrelatedEventArrives_ShouldNotRefetch', async () => {
   await deliver({ type: 'presenceChanged', screenId: 'backlog', userIds: [], sequence: 1 });
-  expect(count('/rollover')).toBe(1);
-  expect(count('/sprints')).toBe(1);
+  expect(count('/rollover')).toBe(0);
+  expect(count('/sprints')).toBe(0);
 });
