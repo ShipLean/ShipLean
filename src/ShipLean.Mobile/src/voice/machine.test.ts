@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { AppAction, PreviewLine } from '../actions/types';
 import { FakeCommandModel, FakeModelStore, FakeRecognizer } from '../test-support/voice';
 import type { ModelStatus, ResolveResult, ScreenVoiceSpec, ViewIntent } from './contracts';
@@ -71,6 +71,38 @@ describe('machine', () => {
     });
     expect(recognizer.cancelled).toBe(1);
     expect(recognizer.starts).toEqual([{ hotwords: ['Active'] }]);
+  });
+
+  it('a recognizer that fails to start is engineFailed, not nothingHeard', async () => {
+    const recognizer = new FakeRecognizer();
+    vi.spyOn(recognizer, 'start').mockRejectedValueOnce(new Error('The engine did not load.'));
+    const c = clock();
+    const hold = startHold(recognizer, [], c.now, () => {});
+    c.advance(1200);
+
+    expect(await hold.release()).toEqual({
+      kind: 'failure',
+      failure: { kind: 'engineFailed', detail: { stage: 'start' } },
+    });
+  });
+
+  it('a session whose stop() rejects is engineFailed with stage stop', async () => {
+    const recognizer = new FakeRecognizer();
+    vi.spyOn(recognizer, 'start').mockResolvedValueOnce({
+      onPartial: () => {},
+      onLevel: () => {},
+      frames: () => [],
+      stop: () => Promise.reject(new Error('The recognizer stopped.')),
+      cancel: () => {},
+    });
+    const c = clock();
+    const hold = startHold(recognizer, [], c.now, () => {});
+    c.advance(1200);
+
+    expect(await hold.release()).toEqual({
+      kind: 'failure',
+      failure: { kind: 'engineFailed', detail: { stage: 'stop' } },
+    });
   });
 
   it('a transcript with no words is nothingHeard', async () => {

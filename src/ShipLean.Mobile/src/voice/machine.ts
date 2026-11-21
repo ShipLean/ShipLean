@@ -43,12 +43,18 @@ export type HoldOutcome =
   { kind: 'heard'; transcript: Transcript } | { kind: 'failure'; failure: VoiceFailure };
 
 export interface Hold {
-  // Stops listening: a release under MIN_HOLD_MS cancels the session (tooShort); no words is nothingHeard. Rejects
-  // when the recognizer fails to start or stop.
+  // Stops listening: a release under MIN_HOLD_MS cancels the session (tooShort); no words is nothingHeard; a
+  // recognizer that fails to start or stop is engineFailed.
   release(): Promise<HoldOutcome>;
   // Drops the session and its words.
   cancel(): void;
 }
+
+// The speech engine itself failed, not the microphone: never a silent hold.
+const engineFailed = (stage: 'start' | 'stop'): HoldOutcome => ({
+  kind: 'failure',
+  failure: { kind: 'engineFailed', detail: { stage } },
+});
 
 // Starts the recognizer with the screen's hotwords and passes on its partial text. now() is in milliseconds.
 // Recorded PCM stays in the recognizer's memory; a hold keeps only the transcript text.
@@ -68,12 +74,22 @@ export function startHold(
   return {
     release: async (): Promise<HoldOutcome> => {
       const heldMs = now() - startedAt;
-      const s = await session;
+      let s: RecognitionSession;
+      try {
+        s = await session;
+      } catch {
+        return engineFailed('start');
+      }
       if (heldMs < MIN_HOLD_MS) {
         s.cancel();
         return { kind: 'failure', failure: { kind: 'tooShort', detail: { heldMs } } };
       }
-      const transcript = await s.stop();
+      let transcript: Transcript;
+      try {
+        transcript = await s.stop();
+      } catch {
+        return engineFailed('stop');
+      }
       if (transcript.text.trim() === '')
         return { kind: 'failure', failure: { kind: 'nothingHeard', detail: {} } };
       return { kind: 'heard', transcript };
@@ -152,6 +168,7 @@ function whyRejected(failure: VoiceFailure): string {
       return NO_VALID_ACTION_WHY[failure.detail.reason];
     case 'unclear':
     case 'nothingHeard':
+    case 'engineFailed':
     case 'tooShort':
       return 'Couldn’t make that out.';
   }

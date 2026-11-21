@@ -43,7 +43,7 @@ import { useOffline } from './useOffline';
 
 export type CorrectionFailureKind = Exclude<
   VoiceFailure['kind'],
-  'tooShort' | 'nothingHeard' | 'unclear'
+  'tooShort' | 'nothingHeard' | 'engineFailed' | 'unclear'
 >;
 
 export interface CorrectionFailureProps {

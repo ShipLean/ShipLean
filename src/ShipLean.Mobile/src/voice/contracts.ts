@@ -107,9 +107,11 @@ export type ViewIntent =
 
 export type NoValidActionReason = 'noSuchState' | 'notAllowed' | 'invalidArgs' | 'none';
 
-// The kind decides the detail. Which failure a call gets is decided only in resolve.ts.
+// The kind decides the detail. Which failure a spoken call gets is decided only in resolve.ts; the one failure that
+// isn't about a call, the speech engine failing to start or stop, is raised by the hold (machine.ts startHold).
 export type VoiceFailure =
   | { kind: 'nothingHeard'; detail: Record<string, never> }
+  | { kind: 'engineFailed'; detail: { stage: 'start' | 'stop' } }
   | { kind: 'tooShort'; detail: { heldMs: number } }
   | { kind: 'unclear'; detail: { heard: string } }
   | {

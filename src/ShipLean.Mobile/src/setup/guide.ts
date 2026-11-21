@@ -42,8 +42,9 @@ export function coachVariant(
   phase: ModelStatus['phase'],
   mic: MicStatus,
   flags: GuideFlags,
+  engineReady = true,
 ): CoachVariant | null {
-  if (phase !== 'ready') return null;
+  if (phase !== 'ready' || !engineReady) return null;
   if (flags.voiceReadyShown || flags.firstCommandShown) return null;
   if (mic === 'granted') return 'try';
   return flags.micCoachShown ? null : 'micOff';

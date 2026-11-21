@@ -13,7 +13,7 @@ export interface Phone {
   memoryGb: number;
 }
 
-export type VoiceStatusKind = 'ready' | 'downloading' | 'off' | 'micOff' | 'failed';
+export type VoiceStatusKind = 'ready' | 'downloading' | 'off' | 'micOff' | 'failed' | 'starting';
 
 export interface VoiceStatusView {
   kind: VoiceStatusKind;
@@ -51,6 +51,8 @@ export function voiceStatusView(
   status: ModelStatus,
   mic: MicState | null,
   phone: Phone,
+  // False while the speech engine is still loading, or failed to: the files being checked is not "ready" (SHIP-1459).
+  engineReady = true,
 ): VoiceStatusView {
   if (WORKING.has(status.phase)) {
     const percent = percentOf(status);
@@ -66,6 +68,9 @@ export function voiceStatusView(
   }
   if (status.phase !== 'ready') {
     return { kind: 'off', line: 'Voice is off', setUp: true, percent: null };
+  }
+  if (!engineReady) {
+    return { kind: 'starting', line: 'Voice is starting', setUp: false, percent: null };
   }
   if (mic !== null && !micIsOn(mic)) {
     return {
