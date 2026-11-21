@@ -28,7 +28,7 @@ internal sealed class FeatureTools(
     private const string HealthDescription = "Feature health: onTrack, atRisk or blocked. Set explicitly; a status that says blocked doesn't set it.";
 
     [McpServerTool(Name = "set_status"), McpScope(McpScopes.Write)]
-    [Description("Write a Feature's one-line status (up to 500 characters) and stamp it verified now, by you and through this tool, even when the text is unchanged. Call this at the end of every session on a Feature, even when nothing changed, so it shows the Feature was checked. Optionally move the Feature to a state by name, and set its health (onTrack, atRisk or blocked), in the same write. Feature health: set explicitly; a status that says blocked doesn't set it. Only a Feature has a status.")]
+    [Description("Write a Feature's one-line status (up to 500 characters) and stamp it verified now, by you and through this tool, even when the text is unchanged. Call this at the end of every session on a Feature, even when nothing changed, so it shows the Feature was checked. Optionally move the Feature to a state by name, and set its health (onTrack, atRisk or blocked), in the same write. Feature health: set explicitly; a status that says blocked doesn't set it. Only a Feature has a status: to move or close a Story, Bug, action item or Task, use update_progress with state.")]
     public async Task<CallToolResult> SetStatus(
         [Description("The Feature's key, such as SHIP-12.")] string feature,
         [Description("The status, one line.")] string status,
@@ -39,6 +39,11 @@ internal sealed class FeatureTools(
         var resolved = await itemResolver.ResolveAsync(feature, ProjectRole.Member, field: "feature", cancellationToken: cancellationToken);
         var parsedHealth = ParseHealth(health);
         var snapshot = await store.GetAsync(resolved.Id, cancellationToken);
+        if (snapshot.Type != WorkItemTypeId.Feature)
+        {
+            throw ApiException.Validation($"Only a Feature has a status. To move or close {resolved.Key}, use update_progress with state.", "feature");
+        }
+
         var target = string.IsNullOrWhiteSpace(state) ? null : await states.ResolveAsync(snapshot.ProjectId, snapshot.Type, state, cancellationToken: cancellationToken);
 
         var changes = new WorkItemChanges
