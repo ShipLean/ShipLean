@@ -55,7 +55,7 @@ export function UpdateTab(props: {
       <div className="rounded-control border border-edge">
         <div className="flex flex-wrap items-center gap-3 border-b border-dashed border-edge px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">
           <span data-testid={ids.updateBaseNote}>
-            What changed in the built-in: {update.baseLabel} to {update.changedLabel}
+            What changed in the built-in, from the {update.baseLabel} to the {update.changedLabel}
           </span>
           {update.appliesCleanly ? (
             <span data-testid={ids.updateAppliesCleanly} className="chip">

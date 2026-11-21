@@ -52,7 +52,7 @@ test('UpdateBanner_WhenBuiltInUpdated_ShouldNameBothDates', async ({ mount, page
   await open(mount, page, 'guide');
 
   await expect(page.getByTestId(ids.updateBannerText)).toHaveText(
-    'The built-in prompt changed on 20 Nov built-in. Agents still get your custom v1, which started from the built-in of 10 Nov.',
+    'The built-in prompt has changed (the 20 Nov built-in). Agents still get your custom v1, which started from the built-in of 10 Nov, so they miss the change until you take it.',
   );
 });
 

@@ -19,8 +19,9 @@ export function UpdateBanner(props: {
       className="flex flex-wrap items-center gap-3 rounded-control border border-edge bg-sunken px-3 py-2"
     >
       <span data-testid={ids.updateBannerText} className="min-w-0 flex-1">
-        The built-in prompt changed on {update.changedLabel}. Agents still get your custom v
-        {custom?.number}, which started from the {update.baseLabel}.
+        The built-in prompt has changed (the {update.changedLabel}). Agents still get your custom v
+        {custom?.number}, which started from the {update.baseLabel}, so they miss the change until
+        you take it.
       </span>
       {props.canEdit ? (
         <button
