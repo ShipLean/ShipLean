@@ -1,19 +1,20 @@
 using Agoda.IoC.Core;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using ShipLean.Application.Features.Webhooks;
-using ShipLean.Application.Integrations;
 using ShipLean.Application.Identity;
+using ShipLean.Application.Integrations;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
 using ShipLean.Contracts.Links;
 using ShipLean.Contracts.Projects;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Users;
 using ShipLean.Contracts.WorkItems;
-using Microsoft.Extensions.Configuration;
 
 namespace ShipLean.Application.Features.IssueIntake.Settings;
 
@@ -22,9 +23,8 @@ namespace ShipLean.Application.Features.IssueIntake.Settings;
 public sealed class IssueIntakeSettingsService(
     NpgsqlDataSource dataSource, TimeProvider clock, IStateCatalog states, IProjectEvents events, ICurrentUser currentUser, IIntegrationSettings integrations, IConfiguration configuration)
 {
-    public const string DefaultInstructions = "Write a proposal for this issue to the project's standards.";
+    public const string DefaultInstructions = PromptDefaults.IssueProposal;
 
-    private const int MaxInstructions = 20000;
     private static readonly WorkItemTypeId[] IntakeTypes = [WorkItemTypeId.Story, WorkItemTypeId.Bug, WorkItemTypeId.Feature];
 
     public async Task<IssueIntakeSettingsDto> GetAsync(Guid projectId, CancellationToken cancellationToken = default)
@@ -33,7 +33,7 @@ public sealed class IssueIntakeSettingsService(
         var row = await connection.QuerySingleOrDefaultAsync<Row>(new CommandDefinition(
             $"""
             SELECT p.repo_url AS repoUrl, (p.agent_connection_id IS NOT NULL AND c.archived_at IS NULL) AS hasConnection,
-                   COALESCE(i.enabled, false) AS enabled, i.repository, i.proposal_instructions AS instructions, COALESCE(i.max_rounds, 5) AS maxRounds,
+                   COALESCE(i.enabled, false) AS enabled, i.repository, COALESCE(i.max_rounds, 5) AS maxRounds,
                    {UserRefs.Columns}
             FROM project p
             LEFT JOIN agent_connection c ON c.id = p.agent_connection_id
@@ -52,13 +52,11 @@ public sealed class IssueIntakeSettingsService(
             row.Enabled,
             row.Enabled ? row.Repository : fromUrl,
             runAs,
-            row.Instructions ?? string.Empty,
-            DefaultInstructions,
             row.MaxRounds,
             new IssueIntakeReadiness(fromUrl is not null, row.HasConnection, !string.IsNullOrEmpty(token), !string.IsNullOrWhiteSpace(configuration[WebhookSecrets.GithubKey]), runAs is not null));
     }
 
-    // Throws ApiException.NotFound (no such project), Validation (maxRounds under 1, instructions too long), NoRepoUrl
+    // Throws ApiException.NotFound (no such project), Validation (maxRounds under 1), NoRepoUrl
     // (turning on without a github.com repo_url), NotMember (turning on without a run-as member, or one who is not a member)
     // and RepositoryTaken (another project has intake on for that repository). Turning intake on adds the Triage states.
     public async Task<IssueIntakeSettingsDto> SaveAsync(Guid projectId, IssueIntakeSaveDto save, CancellationToken cancellationToken = default)
@@ -66,12 +64,6 @@ public sealed class IssueIntakeSettingsService(
         if (save.MaxRounds < 1)
         {
             throw ApiException.Validation("The round cap is at least 1.", "maxRounds");
-        }
-
-        var instructions = save.ProposalInstructions?.Trim() ?? string.Empty;
-        if (instructions.Length > MaxInstructions)
-        {
-            throw ApiException.Validation($"The proposal instructions are at most {MaxInstructions} characters.", "proposalInstructions");
         }
 
         var statesAdded = false;
@@ -90,14 +82,14 @@ public sealed class IssueIntakeSettingsService(
             {
                 await connection.ExecuteAsync(new CommandDefinition(
                     """
-                    INSERT INTO project_issue_intake (project_id, enabled, repository, run_as_user_id, proposal_instructions, max_rounds, updated_by, updated_at)
-                    VALUES (@projectId, @enabled, @repository, @runAs, @instructions, @maxRounds, @by, @now)
+                    INSERT INTO project_issue_intake (project_id, enabled, repository, run_as_user_id, max_rounds, updated_by, updated_at)
+                    VALUES (@projectId, @enabled, @repository, @runAs, @maxRounds, @by, @now)
                     ON CONFLICT (project_id) DO UPDATE SET enabled = EXCLUDED.enabled,
                         repository = COALESCE(EXCLUDED.repository, project_issue_intake.repository), run_as_user_id = EXCLUDED.run_as_user_id,
-                        proposal_instructions = EXCLUDED.proposal_instructions, max_rounds = EXCLUDED.max_rounds,
+                        max_rounds = EXCLUDED.max_rounds,
                         updated_by = EXCLUDED.updated_by, updated_at = EXCLUDED.updated_at
                     """,
-                    new { projectId, enabled = save.Enabled, repository, runAs = save.RunAsUserId, instructions, maxRounds = save.MaxRounds, by = currentUser.Id, now = clock.GetUtcNow() },
+                    new { projectId, enabled = save.Enabled, repository, runAs = save.RunAsUserId, maxRounds = save.MaxRounds, by = currentUser.Id, now = clock.GetUtcNow() },
                     transaction, cancellationToken: cancellationToken));
             }
             catch (PostgresException taken) when (taken.SqlState == PostgresErrorCodes.UniqueViolation && taken.ConstraintName == "ux_project_issue_intake_repository")
@@ -165,5 +157,5 @@ public sealed class IssueIntakeSettingsService(
     }
 
     private sealed record Row(
-        string? RepoUrl, bool HasConnection, bool Enabled, string? Repository, string? Instructions, int MaxRounds, Guid? Id, string? Name, string? Initials, string? AvatarColour, string? PhotoUrl);
+        string? RepoUrl, bool HasConnection, bool Enabled, string? Repository, int MaxRounds, Guid? Id, string? Name, string? Initials, string? AvatarColour, string? PhotoUrl);
 }

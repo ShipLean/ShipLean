@@ -13,7 +13,7 @@ internal sealed class UploadUrlPrompt : ISprintDemoPrompt
     // The channel the last render was given (null before any render).
     public DemoPromptChannel? LastChannel { get; private set; }
 
-    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel)
+    public string Render(SprintDemoData data, DemoUploadTarget upload, DemoBrand brand, DemoPromptChannel channel, string template)
     {
         LastBrand = brand;
         LastChannel = channel;

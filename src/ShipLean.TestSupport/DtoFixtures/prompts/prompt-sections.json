@@ -1,0 +1,256 @@
+{
+  "cases": [
+    {
+      "name": "noTags",
+      "text": "Line one\nLine two\n",
+      "filtered": {
+        "claude-code": "Line one\nLine two\n",
+        "codex-cli": "Line one\nLine two\n",
+        "cursor": "Line one\nLine two\n",
+        "other": "Line one\nLine two\n"
+      },
+      "problems": []
+    },
+    {
+      "name": "oneSectionPerAgent",
+      "text": "common\n<claude-code>\nCC\n</claude-code>\n<codex-cli>\nCX\n</codex-cli>\n<cursor>\nCU\n</cursor>\nend",
+      "filtered": {
+        "claude-code": "common\nCC\nend",
+        "codex-cli": "common\nCX\nend",
+        "cursor": "common\nCU\nend",
+        "other": "common\nend"
+      },
+      "problems": []
+    },
+    {
+      "name": "twoAgents",
+      "text": "head\n<claude-code>\nonly one\n</claude-code>\nmid\n<cursor>\nonly two\n</cursor>",
+      "filtered": {
+        "claude-code": "head\nonly one\nmid",
+        "codex-cli": "head\nmid",
+        "cursor": "head\nmid\nonly two",
+        "other": "head\nmid"
+      },
+      "problems": []
+    },
+    {
+      "name": "unknownTagWithSuggestion",
+      "text": "a\n<claudecode>\nb\n</claudecode>\nc",
+      "filtered": {
+        "claude-code": "a\n<claudecode>\nb\n</claudecode>\nc",
+        "codex-cli": "a\n<claudecode>\nb\n</claudecode>\nc",
+        "cursor": "a\n<claudecode>\nb\n</claudecode>\nc",
+        "other": "a\n<claudecode>\nb\n</claudecode>\nc"
+      },
+      "problems": [
+        {
+          "line": 2,
+          "kind": "unknownTag",
+          "tag": "claudecode",
+          "suggestion": "claude-code"
+        },
+        {
+          "line": 4,
+          "kind": "unknownTag",
+          "tag": "claudecode",
+          "suggestion": "claude-code"
+        }
+      ]
+    },
+    {
+      "name": "unknownTagFarFromAnyId",
+      "text": "a\n<details>\nb\n</details>\nc",
+      "filtered": {
+        "claude-code": "a\n<details>\nb\n</details>\nc",
+        "codex-cli": "a\n<details>\nb\n</details>\nc",
+        "cursor": "a\n<details>\nb\n</details>\nc",
+        "other": "a\n<details>\nb\n</details>\nc"
+      },
+      "problems": []
+    },
+    {
+      "name": "unclosedFiltered",
+      "text": "a\n<cursor>\nb\nc",
+      "filtered": {
+        "claude-code": "a",
+        "codex-cli": "a",
+        "cursor": "a",
+        "other": "a"
+      },
+      "problems": [
+        {
+          "line": 2,
+          "kind": "unclosed",
+          "tag": "cursor",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "nestedFiltered",
+      "text": "a\n<claude-code>\nb\n<cursor>\nc\n</cursor>\nd\n</claude-code>\ne",
+      "filtered": {
+        "claude-code": "a\ne",
+        "codex-cli": "a\ne",
+        "cursor": "a\ne",
+        "other": "a\ne"
+      },
+      "problems": [
+        {
+          "line": 4,
+          "kind": "nested",
+          "tag": "cursor",
+          "suggestion": null
+        },
+        {
+          "line": 6,
+          "kind": "strayClose",
+          "tag": "cursor",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "strayCloseFiltered",
+      "text": "a\n</cursor>\nb",
+      "filtered": {
+        "claude-code": "a\nb",
+        "codex-cli": "a\nb",
+        "cursor": "a\nb",
+        "other": "a\nb"
+      },
+      "problems": [
+        {
+          "line": 2,
+          "kind": "strayClose",
+          "tag": "cursor",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "tagWithSpaces",
+      "text": "a\n  <cursor>  \nb\n\t</cursor>\nc",
+      "filtered": {
+        "claude-code": "a\nc",
+        "codex-cli": "a\nc",
+        "cursor": "a\nb\nc",
+        "other": "a\nc"
+      },
+      "problems": []
+    },
+    {
+      "name": "tagInsideFence",
+      "text": "a\n```\n<cursor>\nx\n</cursor>\n```\nb",
+      "filtered": {
+        "claude-code": "a\n```\n<cursor>\nx\n</cursor>\n```\nb",
+        "codex-cli": "a\n```\n<cursor>\nx\n</cursor>\n```\nb",
+        "cursor": "a\n```\n<cursor>\nx\n</cursor>\n```\nb",
+        "other": "a\n```\n<cursor>\nx\n</cursor>\n```\nb"
+      },
+      "problems": []
+    },
+    {
+      "name": "tagMidSentence",
+      "text": "use <cursor> here\nand </cursor> there",
+      "filtered": {
+        "claude-code": "use <cursor> here\nand </cursor> there",
+        "codex-cli": "use <cursor> here\nand </cursor> there",
+        "cursor": "use <cursor> here\nand </cursor> there",
+        "other": "use <cursor> here\nand </cursor> there"
+      },
+      "problems": []
+    },
+    {
+      "name": "crlfInput",
+      "text": "a\r\n<claude-code>\r\nb\r\n</claude-code>\r\nc",
+      "filtered": {
+        "claude-code": "a\nb\nc",
+        "codex-cli": "a\nc",
+        "cursor": "a\nc",
+        "other": "a\nc"
+      },
+      "problems": []
+    },
+    {
+      "name": "emptySection",
+      "text": "a\n<cursor>\n</cursor>\nb",
+      "filtered": {
+        "claude-code": "a\nb",
+        "codex-cli": "a\nb",
+        "cursor": "a\nb",
+        "other": "a\nb"
+      },
+      "problems": []
+    },
+    {
+      "name": "mismatchedCloseFiltered",
+      "text": "a\n<cursor>\nA\n</claude-code>\nB\n</cursor>\nc",
+      "filtered": {
+        "claude-code": "a\nc",
+        "codex-cli": "a\nc",
+        "cursor": "a\nc",
+        "other": "a\nc"
+      },
+      "problems": [
+        {
+          "line": 4,
+          "kind": "strayClose",
+          "tag": "claude-code",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "unclosedFence",
+      "text": "a\n```\nb\n<cursor>\nonly cursor\n</cursor>\nc",
+      "filtered": {
+        "claude-code": "a\n```\nb\nc",
+        "codex-cli": "a\n```\nb\nc",
+        "cursor": "a\n```\nb\nonly cursor\nc",
+        "other": "a\n```\nb\nc"
+      },
+      "problems": []
+    },
+    {
+      "name": "unknownTagInsideSection",
+      "text": "<claude-code>\n<details>\nx\n</details>\n</claude-code>",
+      "filtered": {
+        "claude-code": "<details>\nx\n</details>",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": []
+    },
+    {
+      "name": "bomBeforeClose",
+      "text": "<claude-code>\nx\n﻿</claude-code>",
+      "filtered": {
+        "claude-code": "",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": [
+        {
+          "line": 1,
+          "kind": "unclosed",
+          "tag": "claude-code",
+          "suggestion": null
+        }
+      ]
+    },
+    {
+      "name": "nelAroundTag",
+      "text": "\u0085<claude-code>\u0085\nx\n\u0085</claude-code>\u0085",
+      "filtered": {
+        "claude-code": "x",
+        "codex-cli": "",
+        "cursor": "",
+        "other": ""
+      },
+      "problems": []
+    }
+  ]
+}

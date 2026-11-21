@@ -7,6 +7,7 @@ using Npgsql;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
+using ShipLean.Contracts.Prompts;
 
 namespace ShipLean.Application.Features.IssueIntake.Rounds;
 
@@ -86,7 +87,8 @@ public sealed class RoundJobWorker(
         var round = JsonSerializer.Deserialize<RoundJobPayload>(job.Payload)?.Round
             ?? throw new InvalidOperationException($"Round job {job.Id} has no round.");
         var related = await closest.FindAsync(issue, runAs, cancellationToken);
-        var prompt = RoundPrompt.Build(project.ProposalInstructions, round, related);
+        var instructions = await ResolveInstructionsAsync(project, issue, runAs, cancellationToken);
+        var prompt = RoundPrompt.Build(instructions, round, related);
         var outcome = await starter.StartWinnerAsync(
             issue.WorkItemId, runAs, null, (_, _) => Task.FromResult(prompt), cancellationToken, AgentSessionMode.Propose, related,
             (transaction, token) => ClaimSessionAsync(job, issue, transaction, token));
@@ -102,6 +104,19 @@ public sealed class RoundJobWorker(
         }
 
         await jobs.CompleteAsync(job.Id, job.LeaseToken, null, cancellationToken);
+    }
+
+    // The Issue proposal in use for the project (D7), served as "other": a proposal session has no OAuth client (D16). Off a request, so
+    // the run-as member rides on the request (C3).
+    private async Task<string> ResolveInstructionsAsync(IssueIntakeProject project, GitHubIssueRecord issue, Guid runAs, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var itemKey = await connection.QuerySingleAsync<string>(new CommandDefinition(
+            "SELECT key FROM work_item WHERE id = @WorkItemId", new { issue.WorkItemId }, cancellationToken: cancellationToken));
+        await using var scope = scopes.CreateAsyncScope();
+        var resolved = await scope.ServiceProvider.GetRequiredService<IPromptResolver>().ResolveAsync(
+            new PromptRequest(project.ProjectId, PromptKey.IssueProposal, PromptAgents.Other, itemKey, runAs), cancellationToken);
+        return resolved.Text;
     }
 
     // Inside the start's transaction, after the session insert: the new session is the item's only live one.

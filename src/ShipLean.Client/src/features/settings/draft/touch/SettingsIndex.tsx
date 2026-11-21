@@ -16,6 +16,7 @@ const HOLDS: Record<ProjectSettingsTab, (projectName: string) => string> = {
   integrations: () => 'The Jira connection and import',
   demos: () => 'Automatic demos, brand and YouTube',
   inspection: () => 'Agent run inspection and agent setup',
+  prompts: () => "Built-in agent prompts and this project's versions",
 };
 
 /**

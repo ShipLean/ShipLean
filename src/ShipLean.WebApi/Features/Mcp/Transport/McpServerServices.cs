@@ -1,36 +1,12 @@
 using ShipLean.Contracts;
+using ShipLean.Contracts.Prompts;
 
 namespace ShipLean.WebApi.Features.Mcp.Transport;
 
 // What the server tells an agent when it connects. Program.cs adds the MCP server and its tools; this adds to it.
 public sealed class McpServerServices : IServiceModule
 {
-    public const string Instructions =
-        "ShipLean is where work lives from the first idea through delivery: it is the record, not local files on your machine. "
-        + "When someone has an idea or asks you to research something that might become work, search for its Feature or create "
-        + "one in a Proposed state with create_feature, put findings on it with attach_markdown, and end each session with comment and set_status. "
-        + "When you work on a plan's items, put progress, reports, decisions and brief changes back into ShipLean. "
-        + "Record decisions you make on an item with record_decisions and ask its owner with ask (give up to 6 options for a pick-one question), not in Markdown or a comment; carry on with your recommended answers and never wait: the owner answers on the item, and the next agent to pick it up reads the answers with get_work_item or get_brief. "
-        + "Name things the way the team does: a work item by its key (SHIP-123), a sprint as current, next or by its name, "
-        + "a state by its name, a person by name or email, and a project by its key. Leave project out on a read and you get "
-        + "the user's most recent project; a write that cannot tell the project from an item key needs it when the user is in "
-        + "more than one. Anything that moves many items returns a preview and a plan first: look at the preview, then call "
-        + "again with that plan to apply exactly it. Large arguments go by create_payload_upload and then payload: upload when the content is already in a file or is over about 20 KB, otherwise send it inline; with no shell, send inline and keep each call small. A tool error comes back as {ok:false, error:{code, message, field, "
-        + "candidates}}: when the code is ambiguous, pick one of the candidates and call again. For the full flow from idea to "
-        + "done, call planning_guide with part work. Before any breakdown of a feature or epic into stories and tasks, whatever "
-        + "its size (when asked to break down, do a breakdown, plan this or split into tasks), call planning_guide first and "
-        + "follow it: it picks the mode, even for one story, and the plan goes in with capture_plan. To run a captured plan, call get_brief on the Feature for its waves, then get_brief on each task "
-        + "and give that brief to the agent doing it, and have each agent call report_task when it is done. "
-        + "Move or close any work item with update_progress and its state by name: that is how a Story or Bug is closed when its work is done (set_status is only a Feature's status line). "
-        + "When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else. Each commit is its repository, as `git remote get-url origin` prints it, and its full sha (`git log --format=%H origin/main..HEAD`, only your own commits on a shared branch). Commits go on Tasks and Bugs only, never a Story or Feature. When one comes back with open_code_comments, fix each one and answer it in answered_comments. "
-        + "When you stop work on an item, done or not (on its story, bug, action item or Feature, not a task), log what happened with log_retrospective, truthfully and with a raw failure log; list_retrospectives reads what others logged, and decide_retro_actions turns undecided points into action items on request; decide_theme_merges answers proposed theme merges when asked. "
-        + "To find out why an agent run failed, call get_agent_session. "
-        + "Every result is one summary line, then the Markdown for a brief or a guide part, then a JSON object with the full "
-        + "result (the same object as the structured content). If you see only the summary line, your client is hiding the "
-        + "rest: do not search saved output, transcripts or ShipLean's source for it; tell the person, and carry on with the "
-        + "tools whose summary line has what you need. Agents reach ShipLean only through these tools; there is no API token, "
-        + "CLI or header to use instead.";
-
+    public const string Instructions = PromptDefaults.ServerInstructions;
     public void AddServices(IServiceCollection services, IConfiguration configuration)
         => services.AddMcpServer(options => options.ServerInstructions = Instructions);
 }

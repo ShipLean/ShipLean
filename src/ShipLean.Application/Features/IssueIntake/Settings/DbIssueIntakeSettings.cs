@@ -18,7 +18,7 @@ public sealed class DbIssueIntakeSettings(NpgsqlDataSource dataSource) : IIssueI
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<Row>(new CommandDefinition(
             """
-            SELECT p.id AS projectId, p.key AS projectKey, i.repository, i.run_as_user_id AS runAsUserId, i.proposal_instructions AS instructions, i.max_rounds AS maxRounds
+            SELECT p.id AS projectId, p.key AS projectKey, i.repository, i.run_as_user_id AS runAsUserId, i.max_rounds AS maxRounds
             FROM project_issue_intake i JOIN project p ON p.id = i.project_id
             WHERE i.enabled AND lower(i.repository) = lower(@repository)
             """,
@@ -28,9 +28,8 @@ public sealed class DbIssueIntakeSettings(NpgsqlDataSource dataSource) : IIssueI
             return null;
         }
 
-        var instructions = string.IsNullOrWhiteSpace(row.Instructions) ? IssueIntakeSettingsService.DefaultInstructions : row.Instructions;
-        return new IssueIntakeProject(row.ProjectId, row.ProjectKey, row.Repository, row.RunAsUserId, instructions, row.MaxRounds);
+        return new IssueIntakeProject(row.ProjectId, row.ProjectKey, row.Repository, row.RunAsUserId, row.MaxRounds);
     }
 
-    private sealed record Row(Guid ProjectId, string ProjectKey, string Repository, Guid? RunAsUserId, string Instructions, int MaxRounds);
+    private sealed record Row(Guid ProjectId, string ProjectKey, string Repository, Guid? RunAsUserId, int MaxRounds);
 }

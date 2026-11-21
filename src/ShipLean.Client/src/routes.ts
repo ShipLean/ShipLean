@@ -31,7 +31,7 @@
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
 //     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|quality|json&range=&cut=&p=&select=&tab=tasks|features
 //     /p/:key/import              Jira import
-//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
+//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection | prompts   ?prompt=<key> (the prompt open on prompts)
 //     /p/:key/settings            the settings index on a phone (each pane a sub-page); above 900px it goes to General
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
@@ -61,6 +61,7 @@ export const projectSettingsTabs = [
   'integrations',
   'demos',
   'inspection',
+  'prompts',
 ] as const;
 export type ProjectSettingsTab = (typeof projectSettingsTabs)[number];
 
@@ -73,6 +74,7 @@ export const projectSettingsTabLabels: Record<ProjectSettingsTab, string> = {
   integrations: 'Integrations',
   demos: 'Demos',
   inspection: 'Inspection',
+  prompts: 'Prompts',
 };
 
 export const instanceSettingsTabs = [
@@ -191,6 +193,8 @@ export interface RouteQuery {
   cut?: string;
   p?: string;
   tab?: string;
+  // Project settings, Prompts tab: the prompt open (its key, like planReviewer).
+  prompt?: string;
 }
 
 interface RouteDef<I extends RouteId> {
@@ -403,7 +407,7 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   projectSettings: {
     pattern: '/p/:key/settings/:tab',
-    query: ['item'],
+    query: ['item', 'prompt'],
     installLevel: false,
     crumbs: (p) => ['Settings', projectSettingsTabLabels[p.tab]],
   },

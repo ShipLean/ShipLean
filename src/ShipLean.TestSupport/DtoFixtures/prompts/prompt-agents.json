@@ -1,0 +1,18 @@
+{
+  "source": "github.com/agoda-com/dropmcp @ ca92342a2b62c8e60b679e34f8b196cf954781f2: src/dropmcp/telemetry.py (_resolve_client_fields, _normalize_client_name), tests/test_telemetry.py, tests/test_prompts.py; the OAuth client name signal is ShipLean's own",
+  "cases": [
+    { "id": "initialize-openai-cli-name", "signals": { "mcpClientName": "OpenAI {Cli} CLI" }, "source": "initialize", "agent": "codex-cli", "raw": "OpenAI {Cli} CLI" },
+    { "id": "initialize-mcp-client", "signals": { "mcpClientName": "{cli}-mcp-client" }, "source": "initialize", "agent": "codex-cli", "raw": "{cli}-mcp-client" },
+    { "id": "originator-cli-rs", "signals": { "originator": "{cli}_cli_rs" }, "source": "originator", "agent": "codex-cli", "raw": "{cli}_cli_rs" },
+    { "id": "user-agent-with-version", "signals": { "userAgent": "OpenAI {Cli} CLI/0.142.3" }, "source": "userAgent", "agent": "codex-cli", "raw": "OpenAI {Cli} CLI" },
+    { "id": "initialize-claude-code", "signals": { "mcpClientName": "claude-code" }, "source": "initialize", "agent": "claude-code", "raw": "claude-code" },
+    { "id": "initialize-cursor", "signals": { "mcpClientName": "cursor" }, "source": "initialize", "agent": "cursor", "raw": "cursor" },
+    { "id": "initialize-internal-wrapper", "signals": { "mcpClientName": "Internal Wrapper 872364987263" }, "source": "initialize", "agent": "other", "raw": "Internal Wrapper 872364987263" },
+    { "id": "no-signal", "signals": {}, "source": "none", "agent": "other", "raw": null },
+    { "id": "oauth-claude-code", "signals": { "oAuthClientName": "Claude Code" }, "source": "oAuthClient", "agent": "claude-code", "raw": "Claude Code" },
+    { "id": "oauth-cursor", "signals": { "oAuthClientName": "Cursor" }, "source": "oAuthClient", "agent": "cursor", "raw": "Cursor" },
+    { "id": "oauth-test-agent", "signals": { "oAuthClientName": "Test Agent" }, "source": "oAuthClient", "agent": "other", "raw": "Test Agent" },
+    { "id": "initialize-beats-oauth", "signals": { "mcpClientName": "claude-code", "oAuthClientName": "Cursor" }, "source": "initialize", "agent": "claude-code", "raw": "claude-code" },
+    { "id": "originator-beats-user-agent", "signals": { "originator": "{cli}_cli_rs", "userAgent": "claude-code/1.0" }, "source": "originator", "agent": "codex-cli", "raw": "{cli}_cli_rs" }
+  ]
+}

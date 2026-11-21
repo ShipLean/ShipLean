@@ -1,0 +1,356 @@
+{
+  "stages": [
+    {
+      "id": "intake",
+      "name": "Intake",
+      "when": "A GitHub issue arrives on a connected repository.",
+      "prompts": [
+        {
+          "key": "issueProposal",
+          "file": "issue-proposal.md",
+          "name": "Issue proposal",
+          "whenRuns": "When someone opens a GitHub issue on a connected repository, ShipLean starts an intake round. This is the agent’s session prompt: it restates the request, checks what already exists and posts a proposal on the issue.",
+          "servedBy": "Issue intake round (agent-relay session)",
+          "readBy": "The intake agent, working in a read-only checkout",
+          "note": "Replaces the Proposal instructions box under Integrations. Its output is public, so keep the “Public text only” rules.",
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "usingBuiltIn",
+          "builtInText": "# issueProposal\n\nShort built-in text for issueProposal.\nSecond line.\n",
+          "builtInHash": "6f9a9dbdffaee8e7388922a0c3e0073c6df1297acbeabeaa8f041b44788fd58d",
+          "custom": {
+            "number": 1,
+            "text": "Write a proposal for this issue to the project's standards. Public text only.",
+            "inUse": false,
+            "by": "Joel Dickson",
+            "atLabel": "15 Nov",
+            "note": "Moved from Integrations › Proposal instructions",
+            "baseLabel": "built-in of 10 Nov",
+            "baseText": "# issueProposal\n\nShort built-in text for issueProposal.\nSecond line.\n"
+          },
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "shape",
+      "name": "Shape",
+      "when": "An idea or research question might become work.",
+      "prompts": [
+        {
+          "key": "work",
+          "file": "work.md",
+          "name": "Work from idea to done",
+          "whenRuns": "The first thing an agent reads when it gets an idea or a research question: find or create a Proposed Feature, put findings on it, and end with comment and set_status.",
+          "servedBy": "planning_guide part work",
+          "readBy": "Any agent, at the start of a session",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# work\n\nShort built-in text for work.\nSecond line.\n",
+          "builtInHash": "caa39d60f92bdd6a6c687d43ca4d9e8d911cdf700bf0c6f3e63718c674046de3",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "plan",
+      "name": "Plan",
+      "when": "A Feature or Epic is broken down into stories and tasks.",
+      "prompts": [
+        {
+          "key": "guide",
+          "file": "guide.md",
+          "name": "Planning and breakdown",
+          "whenRuns": "Read before breaking a Feature or Epic down, whatever its size. It picks the mode (Direct, orchestrator or conductor), shapes waves and contracts, and walks the run through to the retro.",
+          "servedBy": "planning_guide (default part)",
+          "readBy": "The conductor, before any breakdown",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtInUpdated",
+          "builtInText": "# guide\n\nShort built-in text for guide.\nSecond line.\n",
+          "builtInHash": "2b162279cdf19a424e3513284b9c8b5ae9e3f0f8ebd4a686a4b8b69309f288d6",
+          "custom": {
+            "number": 1,
+            "text": "# guide\n\nShort built-in text for guide.\nOur own line.\n",
+            "inUse": true,
+            "by": "Maria Santos",
+            "atLabel": "12 Nov",
+            "note": "Add our own line",
+            "baseLabel": "built-in of 10 Nov",
+            "baseText": "# guide\n\nShort built-in text for guide.\nSecond line.\n"
+          },
+          "yourChangesPatch": "@@ -3,7 +3,7 @@ line 2\n line 3\n line 4\n line 5\n-line 6\n+line six, reworded\n line 7\n line 8\n line 9\n",
+          "update": {
+            "changedLabel": "20 Nov built-in",
+            "baseLabel": "built-in of 10 Nov",
+            "patch": "@@ -1,6 +1,6 @@\n line 1\n line 2\n-line 3\n+line three, reworded\n line 4\n line 5\n line 6\n@@ -24,7 +24,7 @@ line 23\n line 24\n line 25\n line 26\n-line 27\n+line twenty-seven, reworded\n line 28\n line 29\n line 30\n",
+            "appliesCleanly": true,
+            "mergedText": "# guide\n\nShort built-in text for guide, now updated.\nOur own line.\n"
+          },
+          "sectionErrors": 1
+        },
+        {
+          "key": "planReviewer",
+          "file": "plan_reviewer.md",
+          "name": "Plan reviewer",
+          "whenRuns": "After capture_plan and before wave 0: a fresh reviewer checks the plan against the four constraints (context size, no in-wave dependencies, flow, contracts first).",
+          "servedBy": "planning_guide part plan_reviewer",
+          "readBy": "A reviewer from a different model family",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# planReviewer\n\nShort built-in text for planReviewer.\nSecond line.\n",
+          "builtInHash": "d5fefaec5fceb26772bd34cbffb2bd834fe03da8bca0c326ef2ccf9fb0dfd332",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "name": "Build",
+      "when": "Each wave runs: leads and implementers pick up their briefs.",
+      "prompts": [
+        {
+          "key": "lead",
+          "file": "lead.md",
+          "name": "Lead brief",
+          "whenRuns": "In conductor mode, each lane lead gets this when it calls get_brief on its story. It launches sub-agents, runs reviews and keeps the plan current; it never touches code.",
+          "servedBy": "get_brief on a story (conductor mode)",
+          "readBy": "The lead of one lane",
+          "note": null,
+          "placeholders": [
+            "{{feature_key}}",
+            "{{story_key}}",
+            "{{wave}}",
+            "{{lane}}",
+            "{{tasks}}",
+            "{{contracts}}",
+            "{{shared_branch}}"
+          ],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# lead\n\nShort built-in text for lead.\nSecond line.\n",
+          "builtInHash": "98d448910af3559177dfe3551978540e93bdaf8de498468d1b94d782d50fbda5",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        },
+        {
+          "key": "brief",
+          "file": "brief.md",
+          "name": "Task brief",
+          "whenRuns": "The wrapper around every task brief: ShipLean fills in the common brief, the task’s own brief, contracts and the shared branch. The implementer follows it from pick_up to report_task.",
+          "servedBy": "get_brief on a task",
+          "readBy": "The implementer, alone in its worktree",
+          "note": null,
+          "placeholders": [
+            "{{common_brief}}",
+            "{{task_key}}",
+            "{{task_title}}",
+            "{{task_brief}}",
+            "{{shared_branch}}",
+            "{{report_template}}"
+          ],
+          "insertedParts": [],
+          "status": "custom",
+          "builtInText": "# brief\n\nShort built-in text for brief.\nSecond line.\n",
+          "builtInHash": "dcd7e9aa788f8193906a986c9cb4884f5100ffe37ced6883645636d06edd18af",
+          "custom": {
+            "number": 2,
+            "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n",
+            "inUse": true,
+            "by": "Joel Dickson",
+            "atLabel": "18 Nov",
+            "note": "Reword the second line",
+            "baseLabel": "built-in of 10 Nov",
+            "baseText": "# brief\n\nShort built-in text for brief.\nSecond line.\n"
+          },
+          "yourChangesPatch": "@@ -3,7 +3,7 @@ line 2\n line 3\n line 4\n line 5\n-line 6\n+line six, reworded\n line 7\n line 8\n line 9\n",
+          "update": null,
+          "sectionErrors": 0
+        },
+        {
+          "key": "report",
+          "file": "report.md",
+          "name": "Report",
+          "whenRuns": "How to fill report_task: status, commits, answered comments, tests run and acceptance tests. Inserted at the end of the Task brief.",
+          "servedBy": "Appended to every task brief ({{report_template}})",
+          "readBy": "The implementer, when it stops",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# report\n\nShort built-in text for report.\nSecond line.\n",
+          "builtInHash": "72e2973819711daebc414247af9498df2c8b2e9ed4e562998f8260f37d969638",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "name": "Review",
+      "when": "Each task’s commits are reviewed, then fixed.",
+      "prompts": [
+        {
+          "key": "codeReviewer",
+          "file": "code_reviewer.md",
+          "name": "Code reviewer",
+          "whenRuns": "After an implementer reports, a reviewer reads only that task’s commits on the shared branch, comments Review · and calls log_review.",
+          "servedBy": "planning_guide part code_reviewer",
+          "readBy": "A reviewer from a different model family",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# codeReviewer\n\nShort built-in text for codeReviewer.\nSecond line.\n",
+          "builtInHash": "63da8ede9def8e719b7cea139225c57868881081ae934ec1773b7c8fc1b12c47",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        },
+        {
+          "key": "fix",
+          "file": "fix.md",
+          "name": "Fix round",
+          "whenRuns": "When log_review says changes_requested: fix each blocking finding with new commits, never amend or force-push, then report again.",
+          "servedBy": "planning_guide part fix",
+          "readBy": "The implementer, after changes are requested",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# fix\n\nShort built-in text for fix.\nSecond line.\n",
+          "builtInHash": "36ef8ed58a6bae88003f766741c424af21c564f50f01830513f600ee12bd5e23",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "retro",
+      "name": "Retro",
+      "when": "The plan run ends and the conductor writes up what happened.",
+      "prompts": [
+        {
+          "key": "retro",
+          "file": "retro.md",
+          "name": "Run retro",
+          "whenRuns": "The template for the run retro: budget, timeline table, what slowed it down. It feeds log_retrospective and, with SHIP-568, the project’s Ways of working.",
+          "servedBy": "planning_guide part retro",
+          "readBy": "The conductor, at the end of the run",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# retro\n\nShort built-in text for retro.\nSecond line.\n",
+          "builtInHash": "a30d3b62f4f6e88d1ec37ae82f0859aa58452eb05c78455c5988d40ac72d1044",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    },
+    {
+      "id": "sprintDemo",
+      "name": "Sprint demo",
+      "when": "The sprint closes and someone asks for a demo video.",
+      "prompts": [
+        {
+          "key": "sprintDemo",
+          "file": "sprint-demo-prompt.md",
+          "name": "Sprint demo video",
+          "whenRuns": "When a sprint closes and a demo is requested, this is the whole recipe for the narrated video: chapters, narration, recording, upload.",
+          "servedBy": "create_sprint_demo",
+          "readBy": "The demo agent (handover or agent-relay session)",
+          "note": null,
+          "placeholders": [
+            "{{sprint_name}}",
+            "{{intro_block}}",
+            "{{environment_block}}",
+            "{{tools_block}}",
+            "{{models_block}}",
+            "{{level_block}}",
+            "{{logo_block}}",
+            "{{tokens_css}}",
+            "{{ffmpeg}}",
+            "{{max_video_mb}}",
+            "{{curl_command}}",
+            "{{upload_expires}}",
+            "{{return_block}}",
+            "{{sprint_data_json}}"
+          ],
+          "insertedParts": [
+            "intro",
+            "tools",
+            "models",
+            "level",
+            "ffmpeg",
+            "return",
+            "start"
+          ],
+          "status": "builtIn",
+          "builtInText": "# sprintDemo\n\nShort built-in text for sprintDemo.\nSecond line.\n",
+          "builtInHash": "3019722f08d4e81ff4bc6945887b977ca0748358b2e70c324a7f74ede2ce3cc0",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
+        }
+      ]
+    }
+  ],
+  "customCount": 2,
+  "canEdit": true,
+  "adminNames": [
+    "Joel Dickson",
+    "Maria Santos"
+  ],
+  "agents": [
+    {
+      "id": "claude-code",
+      "label": "Claude Code"
+    },
+    {
+      "id": "codex-cli",
+      "label": "Codex CLI"
+    },
+    {
+      "id": "cursor",
+      "label": "Cursor"
+    },
+    {
+      "id": "other",
+      "label": "Another agent"
+    }
+  ],
+  "builtInOnly": [
+    {
+      "name": "Sprint demo inserted parts (14 files: tools, models, ffmpeg, level, start, intro and return, each for handover and session)",
+      "why": "They depend on where the agent runs, so they stay built-in."
+    },
+    {
+      "name": "Server instructions",
+      "why": "Sent when the agent connects, before it picks a project. Same for every project, so not editable here."
+    }
+  ]
+}

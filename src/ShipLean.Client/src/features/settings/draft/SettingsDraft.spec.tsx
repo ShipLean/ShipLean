@@ -4,6 +4,7 @@ import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import demoSettings from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
 import { demosTestIds as demosIds } from '../../demos/testIds';
 import { inspectionTestIds } from '../../inspection/testIds';
+import { promptsTestIds } from '../../prompts/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
 import { PROJECT_ID } from './ct/projectDto';
@@ -347,7 +348,7 @@ test('Draft_WhenStatesTab_ShouldShowTheStatesNodeUntouched', async ({ mount, pag
   await expect(view.getByTestId('harness-states')).toBeVisible();
 });
 
-test('Tabs_ShouldListDemosThenInspectionLast', async ({ mount, page }) => {
+test('Tabs_ShouldListDemosInspectionThenPromptsLast', async ({ mount, page }) => {
   await stub(page);
   const view = await mount(<SettingsDraftHarness role="admin" />, {
     hooksConfig: { route: '/p/SHIP/settings/general' },
@@ -361,6 +362,7 @@ test('Tabs_ShouldListDemosThenInspectionLast', async ({ mount, page }) => {
       ids.tabIntegrations,
       ids.tabDemos,
       inspectionTestIds.settingsTabInspection,
+      promptsTestIds.settingsTabPrompts,
     ]
       .map((testId) => `[data-testid="${testId}"]`)
       .join(', '),
@@ -373,10 +375,11 @@ test('Tabs_ShouldListDemosThenInspectionLast', async ({ mount, page }) => {
     'Integrations',
     'Demos',
     'Inspection',
+    'Prompts',
   ]);
   await expect(
     view.getByRole('navigation', { name: 'Settings sections' }).getByRole('link').last(),
-  ).toHaveAttribute('data-testid', inspectionTestIds.settingsTabInspection);
+  ).toHaveAttribute('data-testid', promptsTestIds.settingsTabPrompts);
 });
 
 test('DemosTab_ShouldNotJoinTheDraftsSave', async ({ mount, page }) => {

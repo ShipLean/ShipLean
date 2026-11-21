@@ -63,6 +63,9 @@ public static class UsageProps
     // Which kind of sprint was opened on Inspection, on inspection_metrics.period_opened: finished or running.
     public const string Period = "period";
 
+    // Which built-in prompt (its camelCase key) a prompts.* event is about.
+    public const string Prompt = "prompt";
+
     // Why an agent session ended, on agent_session.finished: one of AgentEndReasons.
     public const string EndReason = "end_reason";
 

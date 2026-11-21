@@ -58,6 +58,24 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
     }
 
     [Test]
+    public async Task Get_ShouldNotCarryProposalInstructions()
+    {
+        var project = await ArrangeAsync();
+        await using (var database = await OpenDatabaseAsync())
+        {
+            await ArrangeIntakeAsync(database, project, "https://github.com/ShipLean/ShipLean", withConnection: true);
+            await database.ExecuteAsync(
+                "INSERT INTO project_issue_intake (project_id, enabled, proposal_instructions) VALUES (@id, false, 'Saved before the move.')", new { id = project.Id });
+        }
+
+        using var response = await Api.ActingAs(TestUser.Priya).GetAsync(PathOf(project));
+
+        var body = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
+        body.ContainsKey("proposalInstructions").ShouldBeFalse();
+        body.ContainsKey("defaultProposalInstructions").ShouldBeFalse();
+    }
+
+    [Test]
     public async Task Get_WhenMember_ShouldReportReadiness()
     {
         var bare = await ArrangeAsync();
@@ -332,7 +350,7 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
         return JsonSerializer.Deserialize<IssueIntakeSettingsDto>(text, JsonSerializerOptions.Web)!;
     }
 
-    private static object Save(bool enabled, Guid? runAs) => new { enabled, runAsUserId = runAs, proposalInstructions = "", maxRounds = 5 };
+    private static object Save(bool enabled, Guid? runAs) => new { enabled, runAsUserId = runAs, maxRounds = 5 };
 
     private static async Task ArrangeIntakeAsync(NpgsqlConnection database, ArrangedProject project, string repoUrl, bool withConnection)
     {
@@ -365,7 +383,7 @@ public class IssueIntakeSettingsHttpTests : ApiFixture
     public async Task Put_WhenMember_ShouldBeForbidden()
     {
         var project = await ArrangeAsync();
-        var save = new { enabled = false, runAsUserId = (Guid?)null, proposalInstructions = "", maxRounds = 5 };
+        var save = new { enabled = false, runAsUserId = (Guid?)null, maxRounds = 5 };
 
         using var refused = await Api.ActingAs(TestUser.Priya).PutJsonAsync(PathOf(project), save);
         using var saved = await Api.PutJsonAsync(PathOf(project), save);

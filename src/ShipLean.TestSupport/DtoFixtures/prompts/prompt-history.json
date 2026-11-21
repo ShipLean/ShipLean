@@ -1,0 +1,24 @@
+{
+  "key": "brief",
+  "versions": [
+    {
+      "number": 2,
+      "note": "Reword the second line",
+      "by": "Joel Dickson",
+      "atLabel": "18 Nov",
+      "inUse": true,
+      "source": "editor",
+      "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n"
+    },
+    {
+      "number": 1,
+      "note": "First custom copy",
+      "by": "Maria Santos",
+      "atLabel": "12 Nov",
+      "inUse": false,
+      "source": "editor",
+      "text": "# brief\n\nShort built-in text for brief.\nSecond line, first try.\n"
+    }
+  ],
+  "baseLabel": "built-in of 10 Nov"
+}

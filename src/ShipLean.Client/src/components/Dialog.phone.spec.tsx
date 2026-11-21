@@ -83,6 +83,10 @@ test('Dialog_WhenContentTallerThanScreenWithAnOverflowChild_ShouldKeepTheChildsH
 
 test('Dialog_WhenEscPressedOnAPhone_ShouldClose', async ({ mount, page }) => {
   await mount(<FullScreenDialogHarness />);
+  // The panel handles Escape in its own keydown, so the key only reaches it once useModalFocus has moved focus
+  // inside; pressing straight after mount races that effect on a slow runner.
+  const dialog = page.getByTestId(ids.dialog);
+  await expect.poll(() => dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId(ids.dialog)).toHaveCount(0);
 });

@@ -15,13 +15,7 @@ public sealed class ProjectResolver(NpgsqlDataSource dataSource, ICurrentUser cu
     public async Task<ResolvedProject> ResolveAsync(string? key, bool forWrite, CancellationToken cancellationToken = default)
     {
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
-        IReadOnlyList<ProjectRow> projects = [.. await connection.QueryAsync<ProjectRow>(new CommandDefinition(
-            """
-            SELECT p.id, p.key, p.name, m.role AS roleText
-            FROM project p JOIN project_member m ON m.project_id = p.id AND m.user_id = @me AND m.archived_at IS NULL
-            ORDER BY p.key
-            """,
-            new { me = currentUser.Id }, cancellationToken: cancellationToken))];
+        var projects = await MembershipsAsync(connection, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(key))
         {
@@ -42,6 +36,33 @@ public sealed class ProjectResolver(NpgsqlDataSource dataSource, ICurrentUser cu
             throw ApiException.Validation($"You are in {projects.Count} projects: name a project (one of {string.Join(", ", projects.Select(p => p.Key))}).", "project");
         }
 
+        return await MostRecentAsync(connection, projects, cancellationToken);
+    }
+
+    // The project a read with no key falls back to: the same rule as ResolveAsync(null, forWrite: false), null when the user is in no project.
+    public async Task<ResolvedProject?> TryResolveRecentAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        var projects = await MembershipsAsync(connection, cancellationToken);
+        return projects.Count switch
+        {
+            0 => null,
+            1 => projects[0].ToResolved(),
+            _ => await MostRecentAsync(connection, projects, cancellationToken),
+        };
+    }
+
+    private async Task<IReadOnlyList<ProjectRow>> MembershipsAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+        => [.. await connection.QueryAsync<ProjectRow>(new CommandDefinition(
+            """
+            SELECT p.id, p.key, p.name, m.role AS roleText
+            FROM project p JOIN project_member m ON m.project_id = p.id AND m.user_id = @me AND m.archived_at IS NULL
+            ORDER BY p.key
+            """,
+            new { me = currentUser.Id }, cancellationToken: cancellationToken))];
+
+    private async Task<ResolvedProject> MostRecentAsync(NpgsqlConnection connection, IReadOnlyList<ProjectRow> projects, CancellationToken cancellationToken)
+    {
         foreach (var id in await RecentAsync(connection, cancellationToken))
         {
             if (projects.FirstOrDefault(p => p.Id == id) is { } recent)

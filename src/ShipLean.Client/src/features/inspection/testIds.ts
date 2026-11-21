@@ -135,4 +135,6 @@ export const inspectionTestIds = {
   inspectionHealthProblem: 'inspection-health-problem',
   inspectionHealthCheckFields: 'inspection-health-check-fields',
   inspectionHealthField: 'inspection-health-field',
+  runPrompts: 'run-prompts',
+  runPrompt: 'run-prompt',
 } as const;

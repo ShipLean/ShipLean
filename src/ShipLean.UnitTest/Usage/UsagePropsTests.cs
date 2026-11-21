@@ -12,7 +12,7 @@ public class UsagePropsTests
         UsageProps.All.Order(StringComparer.Ordinal).ShouldBe(
             [
                 "agent_name", "answer_kind", "board", "column", "count", "direction", "end_reason", "from", "health", "input", "item_type",
-                "level", "method", "mode", "period", "provider", "reason", "screen", "sheet", "trigger", "view", "viewport", "zone_source"
+                "level", "method", "mode", "period", "prompt", "provider", "reason", "screen", "sheet", "trigger", "view", "viewport", "zone_source"
             ]);
     }
 }

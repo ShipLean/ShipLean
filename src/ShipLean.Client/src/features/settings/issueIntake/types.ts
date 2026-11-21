@@ -12,14 +12,12 @@ export interface IssueIntakeReadiness {
 
 /**
  * C#: ShipLean.Contracts.IssueIntake.IssueIntakeSettingsDto. `repository` is "owner/name", null when the project's
- * repo URL names no github.com repository; an empty `proposalInstructions` means `defaultProposalInstructions`.
+ * repo URL names no github.com repository. The proposal instructions are the Issue proposal prompt (Prompts).
  */
 export interface IssueIntakeSettingsDto {
   enabled: boolean;
   repository: string | null;
   runAs: UserRef | null;
-  proposalInstructions: string;
-  defaultProposalInstructions: string;
   maxRounds: number;
   readiness: IssueIntakeReadiness;
 }
@@ -28,7 +26,6 @@ export interface IssueIntakeSettingsDto {
 export interface IssueIntakeSaveDto {
   enabled: boolean;
   runAsUserId: string | null;
-  proposalInstructions: string;
   maxRounds: number;
 }
 

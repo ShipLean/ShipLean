@@ -5,10 +5,12 @@ using Shouldly;
 using ShipLean.Application.Features.IssueIntake.Rounds;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.IssueIntake;
+using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.IssueIntake;
 using ShipLean.WebApi.Tests.AgentDispatch;
+using ShipLean.WebApi.Tests.Prompts;
 
 namespace ShipLean.WebApi.Tests.IssueIntake.Rounds;
 
@@ -25,6 +27,9 @@ public class RoundTests : ApiFixture
     {
         services.AddSingleton<FixedIssueIntakeSettings>();
         services.AddScoped<IIssueIntakeSettings>(sp => sp.GetRequiredService<FixedIssueIntakeSettings>());
+        services.AddSingleton<ResolverCalls>();
+        services.AddSingleton<RoundPromptText>();
+        services.AddScoped<IPromptResolver, RoundPromptResolverDouble>();
     };
 
     private IIssueProposalSessions Sessions => Host.Services.GetRequiredService<IIssueProposalSessions>();
@@ -211,7 +216,7 @@ public class RoundTests : ApiFixture
     }
 
     [Test]
-    public async Task Worker_ShouldStartProposeSessionWithInstructionsAndMatches()
+    public async Task Worker_ShouldStartProposeSessionWithTheResolvedInstructions()
     {
         var (arranged, item, issue) = await ArrangeAsync(title: "Export the sprint burndown chart");
         var match = await AddMatchAsync(arranged, "Export the sprint burndown chart as an image");
@@ -226,6 +231,7 @@ public class RoundTests : ApiFixture
         var body = (await AgentDispatchArrange.DeliveriesAsync(database, item)).ShouldHaveSingleItem().Body;
         var prompt = JsonNode.Parse(body)!["guidance"]![0]!["body"]!.GetValue<string>();
         prompt.ShouldStartWith(Instructions);
+        prompt.ShouldContain(RoundPrompt.SafetyLines);
         prompt.ShouldContain("This is round 1 of the proposal");
         prompt.ShouldContain("## Closest existing items");
         prompt.ShouldContain($"- {match.Key} (story, Resolved): Export the sprint burndown chart as an image");
@@ -516,7 +522,7 @@ public class RoundTests : ApiFixture
         {
             var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
             Host.Services.GetRequiredService<FixedIssueIntakeSettings>()
-                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, Instructions, maxRounds));
+                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, maxRounds));
         }
 
         return (arranged, item, issue);

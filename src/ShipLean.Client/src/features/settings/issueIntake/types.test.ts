@@ -31,15 +31,7 @@ test('IssueIntakeSettingsDto_ShouldMatchThePinnedBody', () => {
   const settings: IssueIntakeSettingsDto = typed<IssueIntakeSettingsDto>()(fixture);
 
   expect(Object.keys(settings).sort()).toEqual(
-    [
-      'defaultProposalInstructions',
-      'enabled',
-      'maxRounds',
-      'proposalInstructions',
-      'readiness',
-      'repository',
-      'runAs',
-    ].sort(),
+    ['enabled', 'maxRounds', 'readiness', 'repository', 'runAs'].sort(),
   );
   expect(Object.keys(settings.readiness).sort()).toEqual(
     [

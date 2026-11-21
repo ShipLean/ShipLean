@@ -1,4 +1,6 @@
+using ShipLean.Contracts.Prompts;
 using ShipLean.WebApi.Features.Mcp.Planning;
+using ShipLean.WebApi.Features.Prompts;
 
 namespace ShipLean.UnitTest.Mcp.Planning;
 

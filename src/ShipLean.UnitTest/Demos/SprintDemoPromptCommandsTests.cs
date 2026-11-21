@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ShipLean.Application.Features.Demos.Prompt;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Prompts;
+using ShipLean.WebApi.Features.Prompts;
 
 namespace ShipLean.UnitTest.Demos;
 
@@ -10,6 +12,8 @@ namespace ShipLean.UnitTest.Demos;
 [TestFixture]
 public partial class SprintDemoPromptCommandsTests
 {
+    private static readonly string Template = new BuiltInPrompts().Text(PromptKey.SprintDemo);
+
     private const string UploadUrl = "https://sl.example/api/uploads/demo?token=UPLOADSENTINEL";
     private const string LogoUrl = "https://sl.example/api/downloads/demo-logo?token=LOGOSENTINEL";
 
@@ -25,7 +29,7 @@ public partial class SprintDemoPromptCommandsTests
     private static readonly DemoBrand ProjectBrand = new(false, null, LogoUrl, "image/png", Expires, false, ":root { --color-bg: #e8eef7; }", null);
 
     private static string Render(string environment = "Run the app with make dev.", DemoBrand? brand = null, string uploadUrl = UploadUrl, DemoPromptChannel channel = DemoPromptChannel.Session)
-        => new SprintDemoPrompt().Render(Data(environment), new DemoUploadTarget(uploadUrl, Expires, 200L * 1024 * 1024, "BAU-7", "Sprint 24"), brand ?? DefaultBrand, channel);
+        => new SprintDemoPrompt().Render(Data(environment), new DemoUploadTarget(uploadUrl, Expires, 200L * 1024 * 1024, "BAU-7", "Sprint 24"), brand ?? DefaultBrand, channel, Template);
 
     private static SprintDemoData Data(string environment)
         => new(

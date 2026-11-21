@@ -3,12 +3,14 @@ using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using ShipLean.Application.Features.Mcp.Planning.Markers;
 using ShipLean.Contracts.Attachments;
+using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Plans;
 using ShipLean.WebApi.Features.Mcp.Planning;
 using ShipLean.WebApi.Features.Mcp.Planning.Briefs;
+using ShipLean.WebApi.Features.Prompts;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Planning.Briefs;

@@ -1,4 +1,4 @@
-namespace ShipLean.WebApi.Features.Mcp.Planning;
+namespace ShipLean.Contracts.Prompts;
 
 // The {{name}} placeholders of the two templates that carry any, each exactly once and in the order listed.
 public static class PlanPlaceholders

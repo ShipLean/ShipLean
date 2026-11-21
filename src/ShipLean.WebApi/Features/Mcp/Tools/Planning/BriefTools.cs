@@ -11,6 +11,7 @@ using ShipLean.Contracts.Asks;
 using ShipLean.Contracts.Attachments;
 using ShipLean.Contracts.Comments;
 using ShipLean.Contracts.Mcp;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.TaskChanges;
 using ShipLean.WebApi.Features.Mcp.Contracts;
@@ -22,7 +23,7 @@ using ShipLean.WebApi.Features.Mcp.Tools.Orient;
 namespace ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 [McpServerToolType]
-internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses, IItemAsks asks, ITaskCommits taskCommits, ICodeComments codeComments)
+internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachmentStore attachments, ICommentStore comments, IAgentAddresses addresses, IItemAsks asks, ITaskCommits taskCommits, ICodeComments codeComments, IPromptResolver prompts)
 {
     [McpServerTool(Name = "get_brief"), McpScope(McpScopes.Read)]
     [Description("The brief to work from for an item of a plan capture_plan created. For a task, the whole brief its agent follows: the common brief, the task's own brief, the shared branch and the report to send back with report_task. For a story, the lead's brief for that lane. For a feature, the conductor's view: its waves in order, each with its stories and whether they are done, and the first wave that can start.")]
@@ -45,11 +46,12 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         }
         else if (tree.Stories.FirstOrDefault(story => story.Id == itemId) is { } story)
         {
-            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForStory(tree, story))), null, null, [], []);
+            var lead = await prompts.ResolveAsync(new PromptRequest(resolved.ProjectId, PromptKey.Lead, ItemKey: story.Key), cancellationToken);
+            result = new BriefResult(projectKey, openUrl, resolved.Key, "story", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForStory(tree, story, lead.Text))), null, null, [], []);
         }
         else
         {
-            result = await TaskBriefAsync(tree, itemId, projectKey, openUrl, resolved.Key, prefix, asksMarkdown, cancellationToken);
+            result = await TaskBriefAsync(tree, itemId, resolved.ProjectId, projectKey, openUrl, resolved.Key, prefix, asksMarkdown, cancellationToken);
         }
         return PlanningReply.Of(result, $"The brief for {resolved.Key}; the Markdown follows.", result.Markdown);
     }
@@ -95,10 +97,12 @@ internal sealed class BriefTools(ItemResolver items, IPlanReads plans, IAttachme
         return new BriefResult(projectKey, openUrl, tree.Feature.Key, "feature", Prefix(prefix, WithAsks(asksMarkdown, BriefMarkdown.ForFeature(tree, waves, startable))), view, startable?.Text, [], []);
     }
 
-    private async Task<BriefResult> TaskBriefAsync(PlanTree tree, Guid taskId, string projectKey, string openUrl, string key, string prefix, string? asksMarkdown, CancellationToken cancellationToken)
+    private async Task<BriefResult> TaskBriefAsync(PlanTree tree, Guid taskId, Guid projectId, string projectKey, string openUrl, string key, string prefix, string? asksMarkdown, CancellationToken cancellationToken)
     {
         var task = tree.Stories.SelectMany(story => story.Tasks).First(candidate => candidate.Id == taskId);
-        var markdown = BriefMarkdown.ForTask(tree, task, await CommonBriefAsync(tree.Feature.Id, cancellationToken), PlanGuide.Read(PlanGuidePart.Report));
+        var brief = await prompts.ResolveAsync(new PromptRequest(projectId, PromptKey.Brief, ItemKey: key), cancellationToken);
+        var report = await prompts.ResolveAsync(new PromptRequest(projectId, PromptKey.Report, ItemKey: key), cancellationToken);
+        var markdown = BriefMarkdown.ForTask(tree, task, await CommonBriefAsync(tree.Feature.Id, cancellationToken), report.Text, brief.Text);
         var (commits, open) = await ItemCodeReads.ReadAsync(taskCommits, codeComments, WorkItemTypeId.Task, taskId, cancellationToken);
         var header = BriefMarkdown.OpenCodeComments(open) is { } section ? WithAsks(asksMarkdown, section) : asksMarkdown;
         return new BriefResult(projectKey, openUrl, key, "task", Prefix(prefix, WithAsks(header, markdown)), null, null, commits, open);

@@ -3,7 +3,9 @@
    Every rule starts at the editor's own toolbar (`> .w-md-editor-toolbar`): the heading list is a second
    .w-md-editor-toolbar nested inside it, which must not get the bar's rules. */
 @media (max-width: 900px) {
-  .attachment-editor-touch.w-md-editor {
+  /* Also names .work-item-markdown, so it outranks markdownEditor.css's border whatever order the bundle loads the
+     two sheets in (another screen importing markdownEditor.css can move it after this one). */
+  .work-item-markdown.attachment-editor-touch.w-md-editor {
     border-radius: 0;
     border-inline: 0;
   }

@@ -4,6 +4,7 @@ using ShipLean.Application.Features.Inspection.ClickHouse.Schema;
 using ShipLean.Application.Features.Inspection.Settings;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Core;
 using ShipLean.Contracts.Inspection;
 
@@ -12,7 +13,7 @@ namespace ShipLean.Application.Features.Inspection.Views;
 // The three run views behind K5, built from ITraceSource and IRunAssembler. Every RunQuery and RunRef comes from IInspectionItemLookup
 // through RunWindow, and every label is formatted here with DisplayDate.
 [RegisterPerRequest]
-public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time, IViewerZone viewerZone) : IInspectionViews
+public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup items, ITraceSource source, IRunAssembler assembler, TimeProvider time, IViewerZone viewerZone, IPromptServingReads promptServings) : IInspectionViews
 {
     // The section shows the newest runs; it assembles each one for its timeline, so it is capped.
     public const int MaxSectionRuns = 50;
@@ -20,6 +21,8 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
     private const int MaxParallelReads = 4;
 
     private const int RowLineCap = 40;
+
+    private static readonly TimeSpan PromptLeadIn = TimeSpan.FromMinutes(5);
 
     private static readonly Dictionary<string, string> Labels = new(StringComparer.Ordinal)
     {
@@ -93,9 +96,12 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
 
         var older = read.Runs.LastOrDefault(r => r.StartedAt < summary.StartedAt);
         var newer = read.Runs.FirstOrDefault(r => r.StartedAt > summary.StartedAt);
+        // D19: the prompts the run's items were served around its time; a serving can land just before the first span.
+        var prompts = await promptServings.ForRunAsync(
+            projectKey, [.. summary.Links.Select(l => l.ItemKey).Distinct(StringComparer.Ordinal)], agent, summary.StartedAt - PromptLeadIn, summary.EndedAt, ct);
         var header = new RunHeaderDto(
             agent, Label(agent), StartedLabel(summary.StartedAt), summary.StartedBy, summary.Links.First(l => l.ItemKey == itemKey).Source,
-            older?.RunId, newer?.RunId, totalMs, run.Turns.Count, summary.SpanCount + summary.LogCount, summary.TokensIn, summary.TokensOut, summary.ErrorCount, WaitMs(run));
+            older?.RunId, newer?.RunId, totalMs, run.Turns.Count, summary.SpanCount + summary.LogCount, summary.TokensIn, summary.TokensOut, summary.ErrorCount, WaitMs(run), prompts);
 
         var overview = run.Turns.Select(t => new RunOverviewTurnDto(
             t.Number, Pct(Ms(t.Start), totalMs), Pct(Ms(t.End), totalMs), t.Rows.Any(r => r.IsError),
@@ -218,7 +224,7 @@ public sealed class InspectionViews(InspectionGate gate, IInspectionItemLookup i
         var newer = runs.FirstOrDefault(r => r.StartedAt > summary.StartedAt);
         var header = new RunHeaderDto(
             agent, Label(agent), StartedLabel(summary.StartedAt), summary.StartedBy, summary.Links.First(l => l.ItemKey == itemKey).Source,
-            older?.RunId, newer?.RunId, DurationMs(summary.StartedAt, summary.EndedAt), 0, summary.SpanCount + summary.LogCount, summary.TokensIn, summary.TokensOut, summary.ErrorCount, 0);
+            older?.RunId, newer?.RunId, DurationMs(summary.StartedAt, summary.EndedAt), 0, summary.SpanCount + summary.LogCount, summary.TokensIn, summary.TokensOut, summary.ErrorCount, 0, []);
         return new RunPageDto(true, header, false, null, false, null, false, [], new RunAxisDto(0, 0), []);
     }
 

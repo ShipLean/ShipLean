@@ -13,6 +13,7 @@ using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.WebApi.Tests.Inspection.Wiring;
 using ShipLean.WebApi.Tests.Instance.AgentConnections;
+using ShipLean.WebApi.Tests.Prompts;
 using ShipLean.WebApi.Tests.Retros.Api;
 using ShipLean.WebApi.Tests.TaskChanges.Http;
 
@@ -94,6 +95,10 @@ public class AllowedSweepTests : ApiFixture
         await using var connection = await OpenDatabaseAsync();
         await RetroSweepData.InsertAsync(connection);
     }
+
+    // The prompts use-version row needs a real version 1 on SHIP: a made-up number is a 404.
+    [OneTimeSetUp]
+    public async Task InsertPromptSweepRows() => await PromptSweepData.InsertAsync(ConnectionString);
 
     // The code comment reply and resolve rows need a real comment on their Task.
     [OneTimeSetUp]

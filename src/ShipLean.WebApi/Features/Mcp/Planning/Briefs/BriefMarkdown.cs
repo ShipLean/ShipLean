@@ -4,6 +4,7 @@ using ShipLean.Application.Features.Mcp.Planning.Tree;
 using ShipLean.Application.Features.Mcp.Planning.Waves;
 using ShipLean.Application.Plans;
 using ShipLean.Contracts.Asks;
+using ShipLean.Contracts.Prompts;
 using ShipLean.WebApi.Features.Mcp.Tools.Orient;
 
 namespace ShipLean.WebApi.Features.Mcp.Planning.Briefs;
@@ -17,8 +18,8 @@ public static class BriefMarkdown
     private const string Dash = "-";
 
     // commonBrief is the Feature's live common-brief.md, null when it has none.
-    public static string ForTask(PlanTree tree, PlanTask task, string? commonBrief, string reportTemplate)
-        => PlanTemplate.Fill(PlanGuide.Read(PlanGuidePart.Brief), new Dictionary<string, string>
+    public static string ForTask(PlanTree tree, PlanTask task, string? commonBrief, string reportTemplate, string briefTemplate)
+        => PlanTemplate.Fill(briefTemplate, new Dictionary<string, string>
         {
             [PlanPlaceholders.CommonBrief] = commonBrief ?? NoCommonBrief,
             [PlanPlaceholders.TaskKey] = task.Key,
@@ -28,8 +29,8 @@ public static class BriefMarkdown
             [PlanPlaceholders.ReportTemplate] = reportTemplate,
         });
 
-    public static string ForStory(PlanTree tree, PlanStory story)
-        => PlanTemplate.Fill(PlanGuide.Read(PlanGuidePart.Lead), new Dictionary<string, string>
+    public static string ForStory(PlanTree tree, PlanStory story, string leadTemplate)
+        => PlanTemplate.Fill(leadTemplate, new Dictionary<string, string>
         {
             [PlanPlaceholders.FeatureKey] = tree.Feature.Key,
             [PlanPlaceholders.StoryKey] = story.Key,

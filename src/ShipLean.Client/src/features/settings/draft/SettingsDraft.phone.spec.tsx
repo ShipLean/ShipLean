@@ -189,6 +189,7 @@ test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader',
     /^Integrations/,
     /^Demos/,
     /^Inspection/,
+    /^Prompts/,
   ]);
   await expect(page.getByTestId(ids.tabRow)).toHaveCount(0);
   await expect(page.getByTestId('harness-back')).toHaveCount(0);

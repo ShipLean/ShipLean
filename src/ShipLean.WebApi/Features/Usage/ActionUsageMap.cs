@@ -151,7 +151,8 @@ public static class ActionUsageMap
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected", "ProjectUsage.BoardFilterOpened", "ProjectUsage.BoardHealthFiltered",
-            "ProjectUsage.InspectionMetricsViewed", "ProjectUsage.InspectionMetricsPeriodOpened", "ProjectUsage.InspectionMetricsTaskOpened", "ProjectUsage.RetroThemeSheetOpened");
+            "ProjectUsage.InspectionMetricsViewed", "ProjectUsage.InspectionMetricsPeriodOpened", "ProjectUsage.InspectionMetricsTaskOpened", "ProjectUsage.RetroThemeSheetOpened",
+            "ProjectUsage.PromptsOpened", "ProjectUsage.PromptCustomizeOpened");
 
         // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
         Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");
@@ -159,6 +160,13 @@ public static class ActionUsageMap
         Add(ActionUsage.Untracked(Helper), "InspectionAgentSetup.Get");
         Add(ActionUsage.Untracked("An operator's health check; no project."), "InspectionHealth.Get");
         Add(ActionUsage.SelfEmitted, "InspectionUsage.Report");
+
+        // Prompts (SHIP-744): the tab's own report counts the screen; each write names its event, and the prompt is added in the action.
+        Add(ActionUsage.Untracked("A read: prompts.opened counts the tab."), "ProjectPrompts.Page", "ProjectPrompts.History", "ProjectPrompts.Assembled");
+        Add(ActionUsage.SelfEmitted, "ProjectPrompts.SaveVersion");
+        Add(ActionUsage.Track(UsageEventNames.PromptBuiltInUsed), "ProjectPrompts.UseBuiltIn");
+        Add(ActionUsage.Track(UsageEventNames.PromptVersionRestored), "ProjectPrompts.UseVersion");
+        Add(ActionUsage.Track(UsageEventNames.PromptUpdateKept), "ProjectPrompts.KeepMine");
 
         // Device sessions: the exchange is the sign-in event; revoke and current carry the reason they ended.
         Add(ActionUsage.Untracked("Issues a code; the exchange is the event."), "DeviceSignIn.Codes");

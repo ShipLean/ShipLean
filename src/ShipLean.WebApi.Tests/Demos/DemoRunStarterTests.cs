@@ -8,6 +8,7 @@ using ShipLean.Application.Features.Demos.Runs;
 using ShipLean.Application.Storage;
 using ShipLean.Contracts.Agents;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Events;
 using ShipLean.Contracts.WorkItems;
@@ -217,6 +218,22 @@ public class DemoRunStarterTests : ApiFixture
     }
 
     [Test]
+    public async Task StartSession_WhenBlocked_ShouldRecordNoServing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        using var scope = NewScope();
+        await scope.ServiceProvider.GetRequiredService<AgentSessionStarter>().StartAsync(itemId, SeedIds.Users.Joel, null, null, null, CancellationToken.None);
+
+        var outcome = await StarterOf(scope).StartSessionAsync(DemoRunArrange.Request(projectId, sprintId, itemId), CancellationToken.None);
+
+        outcome.Block.ShouldBe(AgentStartBlock.LiveSession);
+        (await database.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM prompt_serving WHERE project_id = @projectId AND prompt = @prompt", new { projectId, prompt = PromptKeys.ToWire(PromptKey.SprintDemo) }))
+            .ShouldBe(0);
+    }
+
+    [Test]
     public async Task Session_ShouldRevokeTheOldLinks()
     {
         await using var database = await OpenDatabaseAsync();
@@ -301,7 +318,7 @@ public class DemoRunStarterTests : ApiFixture
         var services = scope.ServiceProvider;
         var starter = new DemoRunStarter(
             shortTimeout, services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
-            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IPromptResolver>(), services.GetRequiredService<IDemoBrandSource>(),
             services.GetRequiredService<ITransferTokens>(), services.GetRequiredService<IProjectEvents>(), services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
         await using var holder = await OpenDatabaseAsync();
         await using var holding = await holder.BeginTransactionAsync();
@@ -314,6 +331,31 @@ public class DemoRunStarterTests : ApiFixture
         blocked.SqlState.ShouldBe(PostgresErrorCodes.LockNotAvailable);
         (await TokensAsync(database, itemId, "AND revoked_at IS NULL")).ShouldBe(1);
         (await UsableAsync(DemoRunArrange.TokenIn(handover.UploadUrl))).ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task HandOver_WhenTheDecisionRollsBack_ShouldRecordNoServing()
+    {
+        await using var database = await OpenDatabaseAsync();
+        var (projectId, sprintId, itemId) = await NewDemoAsync(database);
+        var settings = new NpgsqlConnectionStringBuilder(ConnectionString) { Options = "-c lock_timeout=500ms" };
+        await using var shortTimeout = NpgsqlDataSource.Create(settings);
+        using var scope = NewScope();
+        var services = scope.ServiceProvider;
+        var starter = new DemoRunStarter(
+            shortTimeout, services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IPromptResolver>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ITransferTokens>(), services.GetRequiredService<IProjectEvents>(), services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
+        await using var holder = await OpenDatabaseAsync();
+        await using var holding = await holder.BeginTransactionAsync();
+        await holder.ExecuteAsync("SELECT id FROM work_item WHERE id = @itemId FOR NO KEY UPDATE", new { itemId }, holding);
+
+        await Should.ThrowAsync<PostgresException>(() => starter.HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None));
+        await holding.RollbackAsync();
+
+        (await database.ExecuteScalarAsync<int>(
+            "SELECT count(*)::int FROM prompt_serving WHERE project_id = @projectId AND prompt = @prompt", new { projectId, prompt = PromptKeys.ToWire(PromptKey.SprintDemo) }))
+            .ShouldBe(0);
     }
 
     [Test]
@@ -353,7 +395,7 @@ public class DemoRunStarterTests : ApiFixture
         var services = scope.ServiceProvider;
         var starter = new DemoRunStarter(
             services.GetRequiredService<NpgsqlDataSource>(), services.GetRequiredService<IWorkItemStore>(), services.GetRequiredService<AgentSessionStarter>(),
-            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IDemoBrandSource>(),
+            services.GetRequiredService<ISprintDemoData>(), services.GetRequiredService<ISprintDemoPrompt>(), services.GetRequiredService<IPromptResolver>(), services.GetRequiredService<IDemoBrandSource>(),
             services.GetRequiredService<ITransferTokens>(), events, services.GetRequiredService<AttachmentLimits>(), TimeProvider.System);
 
         await starter.HandOverAsync(DemoRunArrange.Request(projectId, sprintId, itemId, "mcp"), CancellationToken.None);

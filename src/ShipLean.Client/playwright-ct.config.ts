@@ -19,6 +19,8 @@ export default defineConfig({
   ignoreSnapshots: !process.env.CI,
   use: {
     ...devices['Desktop Chrome'],
+    // Parallel agent worktrees each run their own component-test server, so the port comes from the environment.
+    ctPort: Number(process.env.SHIPLEAN_CT_PORT ?? 3100),
     // Playwright CT bundles components with its own internal Vite instance —
     // it does not read plugins from vite.config.ts, so Tailwind has to be
     // registered here too or component screenshots render unstyled.
