@@ -31,7 +31,7 @@ public class AcceptanceTests : ApiFixture
 
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
-        _settings = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(SeedIds.Projects.Ship, "SHIP", _repository, SeedIds.Users.Joel, "Write a proposal.", 5));
+        _settings = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(SeedIds.Projects.Ship, "SHIP", _repository, SeedIds.Users.Joel, 5));
         services.AddSingleton<IIssueIntakeSettings>(_settings);
         services.AddSingleton<IIssueProposalSessions>(_rounds);
         services.AddSingleton(sp => new CrashingIssueStore(ActivatorUtilities.CreateInstance<DbGitHubIssueStore>(sp)));

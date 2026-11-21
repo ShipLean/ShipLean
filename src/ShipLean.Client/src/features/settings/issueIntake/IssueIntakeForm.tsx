@@ -1,9 +1,11 @@
 import { useEffect, useId, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { ApiRequestError } from '@shiplean/core/api/client';
 import type { ProjectDto } from '@shiplean/core/api/projects';
 import { useProjectMembers } from '../../workItem/workItemApi';
 import { Panel } from '../draft/Panel';
+import { routePath } from '../../../routes';
 import { settingsTestIds as ids } from '../testIds';
 import { issueIntakeKey, saveIssueIntake } from './api';
 import { errorField, FieldError, fieldErrorId } from './FieldError';
@@ -14,7 +16,7 @@ const field =
   'h-[var(--control-height)] w-full max-w-md rounded-control border border-edge bg-panel px-2 text-[length:var(--text-sm)] text-ink disabled:opacity-60';
 
 // The fields a save refusal can name, in page order, with the one that takes focus.
-const fieldOrder = ['enabled', 'runAsUserId', 'proposalInstructions', 'maxRounds'] as const;
+const fieldOrder = ['enabled', 'runAsUserId', 'maxRounds'] as const;
 type FieldName = (typeof fieldOrder)[number];
 
 const controlId = (scope: string, name: FieldName) => `${scope}-control-${name}`;
@@ -34,18 +36,12 @@ export function IssueIntakeForm({
   const membersQuery = useProjectMembers(project.id);
   const [enabled, setEnabled] = useState(settings.enabled);
   const [runAsUserId, setRunAsUserId] = useState(settings.runAs?.id ?? '');
-  const [text, setText] = useState(
-    settings.proposalInstructions || settings.defaultProposalInstructions,
-  );
-  // Follow the default: set when stored empty or after Reset, cleared by any edit of the text.
-  const [useDefault, setUseDefault] = useState(settings.proposalInstructions === '');
   const [maxRounds, setMaxRounds] = useState(String(settings.maxRounds));
   const save = useMutation({
     mutationFn: () =>
       saveIssueIntake(project.id, {
         enabled,
         runAsUserId: runAsUserId === '' ? null : runAsUserId,
-        proposalInstructions: useDefault ? '' : text,
         maxRounds: Number(maxRounds),
       }),
     onSuccess: (saved) => queryClient.setQueryData(issueIntakeKey(project.id), saved),
@@ -146,35 +142,21 @@ export function IssueIntakeForm({
         </span>
         {errorFor('runAsUserId')}
       </div>
-      <label className="grid gap-2 text-[length:var(--text-sm)] font-medium text-ink">
-        Proposal instructions
-        <textarea
-          data-testid={ids.issueIntakeInstructions}
-          className={`${field} h-28 max-w-2xl py-1`}
-          value={text}
-          disabled={locked}
-          onChange={(e) => {
-            setText(e.target.value);
-            setUseDefault(false);
-          }}
-          {...mark('proposalInstructions')}
-        />
-        {errorFor('proposalInstructions')}
-      </label>
-      <div>
-        <button
-          type="button"
-          data-testid={ids.issueIntakeReset}
-          className="btn-ghost"
-          disabled={locked || useDefault}
-          onClick={() => {
-            setText(settings.defaultProposalInstructions);
-            setUseDefault(true);
-          }}
+      <p className="text-[length:var(--text-sm)] text-ink-muted">
+        Proposal instructions are now the{' '}
+        <Link
+          data-testid={ids.issueIntakePromptsLink}
+          className="font-medium text-signal"
+          to={routePath(
+            'projectSettings',
+            { key: project.key, tab: 'prompts' },
+            { prompt: 'issueProposal' },
+          )}
         >
-          Reset to default
-        </button>
-      </div>
+          Issue proposal
+        </Link>{' '}
+        prompt.
+      </p>
       <label className="grid gap-2 text-[length:var(--text-sm)] font-medium text-ink">
         Max rounds
         <input

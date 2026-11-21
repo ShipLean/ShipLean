@@ -62,42 +62,28 @@ test('IssueIntake_WhenSaved_ShouldSendDto', async ({ mount, page }) => {
     hooksConfig: { route: '/p/SHIP/settings/integrations' },
   });
 
-  await expect(page.getByTestId(ids.issueIntakeInstructions)).toHaveValue(
-    issueIntakeSample.defaultProposalInstructions,
-  );
   await page.getByTestId(ids.issueIntakeRunAs).selectOption(tom.id);
-  await page.getByTestId(ids.issueIntakeInstructions).fill('Keep it short.');
   await page.getByTestId(ids.issueIntakeMaxRounds).fill('3');
   await page.getByTestId(ids.issueIntakeSave).click();
   await expect.poll(() => saves.length).toBe(1);
   expect(saves[0]).toEqual({
     enabled: true,
     runAsUserId: tom.id,
-    proposalInstructions: 'Keep it short.',
     maxRounds: 3,
   });
-
-  await page.getByTestId(ids.issueIntakeReset).click();
-  await page.getByTestId(ids.issueIntakeSave).click();
-  await expect.poll(() => saves.length).toBe(2);
-  expect(saves[1].proposalInstructions).toBe('');
 });
 
-test('IssueIntake_WhenDefaultTextPastedByHand_ShouldSendTheText', async ({ mount, page }) => {
+test('IssueIntakeSection_ShouldLinkToTheIssueProposalPrompt', async ({ mount, page }) => {
   await stubMembers(page);
-  const saves = await stubIssueIntake(page, undefined, [priya]);
+  await stubIssueIntake(page);
   await mount(<IssueIntakeSection project={project} />, {
     hooksConfig: { route: '/p/SHIP/settings/integrations' },
   });
 
-  const box = page.getByTestId(ids.issueIntakeInstructions);
-  await expect(box).toHaveValue(issueIntakeSample.defaultProposalInstructions);
-  await box.fill('x');
-  await box.fill(issueIntakeSample.defaultProposalInstructions);
-  await expect(page.getByTestId(ids.issueIntakeReset)).toBeEnabled();
-  await page.getByTestId(ids.issueIntakeSave).click();
-  await expect.poll(() => saves.length).toBe(1);
-  expect(saves[0].proposalInstructions).toBe(issueIntakeSample.defaultProposalInstructions);
+  const link = page.getByTestId(ids.issueIntakePromptsLink);
+  await expect(link).toHaveText('Issue proposal');
+  await expect(link).toHaveAttribute('href', '/p/SHIP/settings/prompts?prompt=issueProposal');
+  await expect(page.getByTestId(ids.issueIntakeSave)).toBeVisible();
 });
 
 test('IssueIntake_WhenNotMember_ShouldTieErrorToRunAsAndFocusIt', async ({ mount, page }) => {
@@ -143,10 +129,10 @@ test('IssueIntake_WhenSaveFails_ShouldKeepEditsAndRunAsWhenTurnedOff', async ({ 
 
   await page.getByTestId(ids.issueIntakeRunAs).selectOption(tom.id);
   await page.getByTestId(ids.issueIntakeEnabled).uncheck();
-  await page.getByTestId(ids.issueIntakeInstructions).fill('Keep it short.');
+  await page.getByTestId(ids.issueIntakeMaxRounds).fill('4');
   await page.getByTestId(ids.issueIntakeSave).click();
   await expect(page.getByTestId(ids.issueIntakeError)).toBeVisible();
-  await expect(page.getByTestId(ids.issueIntakeInstructions)).toHaveValue('Keep it short.');
+  await expect(page.getByTestId(ids.issueIntakeMaxRounds)).toHaveValue('4');
   await expect(page.getByTestId(ids.issueIntakeRunAs)).toHaveValue(tom.id);
 
   fail = false;
@@ -226,8 +212,6 @@ test('IssueIntake_WhenMember_ShouldBeReadOnly', async ({ mount, page }) => {
 
   await expect(page.getByTestId(ids.issueIntakeEnabled)).toBeDisabled();
   await expect(page.getByTestId(ids.issueIntakeRunAs)).toBeDisabled();
-  await expect(page.getByTestId(ids.issueIntakeInstructions)).toBeDisabled();
-  await expect(page.getByTestId(ids.issueIntakeReset)).toBeDisabled();
   await expect(page.getByTestId(ids.issueIntakeMaxRounds)).toBeDisabled();
   await expect(page.getByTestId(ids.issueIntakeSave)).toHaveCount(0);
 });

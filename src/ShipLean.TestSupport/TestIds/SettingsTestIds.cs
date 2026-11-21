@@ -328,8 +328,7 @@ public static class SettingsTestIds
     public const string IssueIntakeMissing = "settings-issue-intake-missing";
     public const string IssueIntakeEnabled = "settings-issue-intake-enabled";
     public const string IssueIntakeRunAs = "settings-issue-intake-run-as";
-    public const string IssueIntakeInstructions = "settings-issue-intake-instructions";
-    public const string IssueIntakeReset = "settings-issue-intake-reset";
+    public const string IssueIntakePromptsLink = "settings-issue-intake-prompts-link";
     public const string IssueIntakeMaxRounds = "settings-issue-intake-max-rounds";
     public const string IssueIntakeSave = "settings-issue-intake-save";
     public const string IssueIntakeError = "settings-issue-intake-error";

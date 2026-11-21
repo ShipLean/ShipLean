@@ -23,7 +23,7 @@ public class IntakeTests : ApiFixture
     private readonly RecordingProposalSessions _rounds = new();
     private readonly FailOnceProposalSessions _failOnce = new();
     private readonly FixedIssueIntakeSettings _settings = new FixedIssueIntakeSettings()
-        .Take(new IssueIntakeProject(SeedIds.Projects.Ship, "SHIP", Repository, SeedIds.Users.Joel, "Write a proposal.", 5));
+        .Take(new IssueIntakeProject(SeedIds.Projects.Ship, "SHIP", Repository, SeedIds.Users.Joel, 5));
 
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {

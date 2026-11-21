@@ -9,7 +9,7 @@ const tom: UserRef = {
   avatarColour: '#112233',
   photoUrl: null,
 };
-const save = { enabled: true, proposalInstructions: '', maxRounds: 5 };
+const save = { enabled: true, maxRounds: 5 };
 
 test('applyIssueIntakeSave_WhenPersonSelectedThenCleared_ShouldFollowRunAsAndReadiness', () => {
   const selected = applyIssueIntakeSave(

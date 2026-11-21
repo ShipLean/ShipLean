@@ -17,7 +17,6 @@ export function applyIssueIntakeSave(
     ...settings,
     enabled: save.enabled,
     runAs,
-    proposalInstructions: save.proposalInstructions,
     maxRounds: save.maxRounds,
     readiness: { ...settings.readiness, hasRunAs: runAs !== null },
   };
