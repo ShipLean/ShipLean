@@ -14,6 +14,7 @@ namespace ShipLean.AcceptanceTests.Lanes.Prompts;
 public class HistoryJourneyTests : SeededAcceptanceTest
 {
     private const string Project = "SHIP";
+    private const string BuiltInLine = "Estimate in tokens only, never in time.";
 
     [Test]
     [CancelAfter(240_000)]
@@ -39,6 +40,7 @@ public class HistoryJourneyTests : SeededAcceptanceTest
         await prompts.UseBuiltInConfirm.ClickAsync();
         await Expect(prompts.DetailChip).ToContainTextAsync("Using built-in");
         var served = await PromptsAdminPage.ServedGuideAsync(endpoint, token, Project);
+        served.ShouldContain(BuiltInLine);
         served.ShouldNotContain(V1Rule);
         served.ShouldNotContain(V2Rule);
 
@@ -60,7 +62,7 @@ public class HistoryJourneyTests : SeededAcceptanceTest
     public async Task History_WhenMigratedVersion_ShouldSayMovedFromIntegrations()
     {
         await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.IssueProposal)
-            .WithNumber(1).WithText("Propose issues the way our team writes them.").WithNote("Moved from Integrations")
+            .WithNumber(1).WithText("Propose issues the way our team writes them.").WithNote("Our proposal rules")
             .WithSource(PromptVersionSource.Migrated).InUse().InsertAsync(ConnectionString);
         var prompts = new PromptsAdminPage(Page);
 
@@ -68,6 +70,7 @@ public class HistoryJourneyTests : SeededAcceptanceTest
         await prompts.TabHistory.ClickAsync();
 
         await Expect(prompts.HistoryRows).ToHaveCountAsync(1);
+        await Expect(prompts.HistoryRows.First).ToContainTextAsync("Our proposal rules");
         await Expect(prompts.HistoryRows.First).ToContainTextAsync("Moved from Integrations");
     }
 }

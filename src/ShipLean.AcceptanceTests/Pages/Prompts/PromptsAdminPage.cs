@@ -11,8 +11,6 @@ public sealed class PromptsAdminPage(IPage page)
 {
     public ILocator Page => page.GetByTestId(PromptsTestIds.Page);
 
-    public ILocator StageStripItems => page.GetByTestId(PromptsTestIds.StageStripItem);
-
     public ILocator ListStages => page.GetByTestId(PromptsTestIds.ListStage);
 
     public ILocator ListRows => page.GetByTestId(PromptsTestIds.ListRow);
@@ -30,8 +28,6 @@ public sealed class PromptsAdminPage(IPage page)
     public ILocator UseBuiltIn => page.GetByTestId(PromptsTestIds.ActionUseBuiltIn);
 
     public ILocator UseBuiltInConfirm => page.GetByTestId(PromptsTestIds.UseBuiltInConfirm);
-
-    public ILocator Editor => page.GetByTestId(PromptsTestIds.Editor);
 
     public ILocator EditorText => page.GetByTestId(PromptsTestIds.EditorText);
 
@@ -53,11 +49,7 @@ public sealed class PromptsAdminPage(IPage page)
 
     public ILocator FixTag => page.GetByTestId(PromptsTestIds.CheckFixTag);
 
-    public ILocator CheckSize => page.GetByTestId(PromptsTestIds.CheckSize);
-
     public ILocator TabHistory => page.GetByTestId(PromptsTestIds.TabHistory);
-
-    public ILocator TabUpdate => page.GetByTestId(PromptsTestIds.TabUpdate);
 
     public ILocator TabAssembled => page.GetByTestId(PromptsTestIds.TabAssembled);
 
@@ -65,10 +57,6 @@ public sealed class PromptsAdminPage(IPage page)
     public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow).Or(page.GetByTestId(PromptsTestIds.HistoryRowInUse));
 
     public ILocator HistoryUse => page.GetByTestId(PromptsTestIds.HistoryUse);
-
-    public ILocator HistoryNote => page.GetByTestId(PromptsTestIds.HistoryNote);
-
-    public ILocator HistoryBuiltInRow => page.GetByTestId(PromptsTestIds.HistoryBuiltInRow);
 
     public ILocator UpdateBanner => page.GetByTestId(PromptsTestIds.UpdateBanner);
 
@@ -88,7 +76,9 @@ public sealed class PromptsAdminPage(IPage page)
 
     public ILocator AgentOptions => page.GetByTestId(PromptsTestIds.AgentOption);
 
-    public ILocator AssembledLayers => page.GetByTestId(PromptsTestIds.AssembledLayer);
+    // Every layer row in the order drawn: the prompt's own layer, the planned ones, and the rest have different ids.
+    public ILocator AssembledLayerRows => page.GetByTestId(PromptsTestIds.AssembledLayer)
+        .Or(page.GetByTestId(PromptsTestIds.AssembledLayerThis)).Or(page.GetByTestId(PromptsTestIds.AssembledLayerPlanned));
 
     public ILocator AssembledPlanned => page.GetByTestId(PromptsTestIds.AssembledLayerPlanned);
 
@@ -99,6 +89,14 @@ public sealed class PromptsAdminPage(IPage page)
     // The preview's text as the source block holds it, without its line-number gutter (an empty line is drawn as one space).
     public Task<string> AssembledRawTextAsync() =>
         AssembledText.EvaluateAsync<string>("el => Array.from(el.children).map(row => row.children[1].textContent.replace(/^ $/, '')).join('\\n')");
+
+    // Picks an agent in the preview and waits for that agent's text to arrive.
+    public async Task ChooseAgentAsync(string label, string agentId)
+    {
+        await page.RunAndWaitForResponseAsync(
+            () => AgentOption(label).ClickAsync(),
+            r => r.Url.Contains("/assembled?agent=" + agentId, StringComparison.Ordinal) && r.Ok);
+    }
 
     public async Task OpenAsync(string projectKey, string? prompt = null)
     {
@@ -150,7 +148,7 @@ public sealed class PromptsAdminPage(IPage page)
         await using var mcp = clientInfo is null
             ? await McpTestClient.ConnectAsync(endpoint, token)
             : await McpTestClient.ConnectAsync(endpoint, token, clientInfo);
-        var result = await mcp.CallToolAsync("planning_guide", new Dictionary<string, object?> { ["project"] = project });
+        var result = await mcp.CallToolAsync("planning_guide", new Dictionary<string, object?> { ["project"] = project, ["part"] = "guide" });
         result.StructuredContent.ShouldNotBeNull();
         result.IsError.ShouldNotBe(true, result.StructuredContent.Value.ToString());
         return result.StructuredContent.Value.GetProperty("markdown").GetString()!;

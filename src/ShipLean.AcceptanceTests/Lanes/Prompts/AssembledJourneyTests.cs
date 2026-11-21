@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ModelContextProtocol.Protocol;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Prompts;
@@ -16,6 +17,7 @@ public class AssembledJourneyTests : SeededAcceptanceTest
 {
     private const string Project = "SHIP";
     private const string ClaudeLine = "Claude Code only: use the Task tool for subagents.";
+    private const string GuideLine = "Estimate in tokens only, never in time.";
     private const string OpenAiLine = "OpenAI CLI only: use its sandbox flag.";
 
     [OneTimeSetUp]
@@ -35,15 +37,26 @@ public class AssembledJourneyTests : SeededAcceptanceTest
         await prompts.OpenAsync(Project, "guide");
         await prompts.TabAssembled.ClickAsync();
 
-        await prompts.AgentOption("Claude Code").ClickAsync();
+        await prompts.ChooseAgentAsync("Claude Code", "claude-code");
+        await Expect(prompts.AssembledText).ToContainTextAsync(GuideLine);
         await Expect(prompts.AssembledText).ToContainTextAsync(ClaudeLine);
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(OpenAiLine);
+        await Expect(prompts.AssembledLayerRows).ToHaveCountAsync(5);
+        await Expect(prompts.AssembledLayerRows).ToContainTextAsync(new[]
+        {
+            new Regex("Server instructions"),
+            new Regex("Planning and breakdown.*custom v1"),
+            new Regex("Agent-specific sections"),
+            new Regex("Ways of working"),
+            new Regex("Notes for the connecting agent"),
+        });
 
-        await prompts.AgentOption("Another agent").ClickAsync();
+        await prompts.ChooseAgentAsync("Another agent", "other");
+        await Expect(prompts.AssembledText).ToContainTextAsync(GuideLine);
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(ClaudeLine);
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(OpenAiLine);
 
-        await Expect(prompts.AssembledLayers).Not.ToHaveCountAsync(0);
+        await Expect(prompts.AssembledLayerRows).ToHaveCountAsync(4);
         await Expect(prompts.AssembledPlanned).ToHaveCountAsync(2);
         await Expect(prompts.AssembledPlanned.First).ToContainTextAsync("Ways of working");
         await Expect(prompts.AssembledPlanned.Last).ToContainTextAsync("Notes for the connecting agent");
@@ -64,11 +77,12 @@ public class AssembledJourneyTests : SeededAcceptanceTest
         await prompts.OpenAsync(Project, "guide");
         await prompts.TabAssembled.ClickAsync();
 
-        await prompts.AgentOption("Claude Code").ClickAsync();
+        await prompts.ChooseAgentAsync("Claude Code", "claude-code");
         await Expect(prompts.AssembledText).ToContainTextAsync(ClaudeLine);
         (await prompts.AssembledRawTextAsync()).Trim().ShouldBe(claudeServed.Trim());
 
-        await prompts.AgentOption("Another agent").ClickAsync();
+        await prompts.ChooseAgentAsync("Another agent", "other");
+        await Expect(prompts.AssembledText).ToContainTextAsync(GuideLine);
         await Expect(prompts.AssembledText).Not.ToContainTextAsync(ClaudeLine);
         (await prompts.AssembledRawTextAsync()).Trim().ShouldBe(otherServed.Trim());
     }

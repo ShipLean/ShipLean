@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Prompts;
 using ShipLean.Contracts.Prompts;
@@ -18,7 +19,9 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
 
     private readonly DateTimeOffset _baseSeenAt = TimeProvider.System.GetUtcNow().AddDays(-3);
 
-    private string BaseLabel => _baseSeenAt.ToString("d MMM", System.Globalization.CultureInfo.InvariantCulture);
+    // The server's short day: "12 Nov" in the current year, else "12 Nov 2025".
+    private string BaseLabel => _baseSeenAt.ToString(
+        _baseSeenAt.Year == TimeProvider.System.GetUtcNow().Year ? "d MMM" : "d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
 
     [Test]
     [CancelAfter(240_000)]
@@ -29,11 +32,13 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
 
         await prompts.OpenAsync(Project, "brief");
         await Expect(prompts.DetailChip).ToContainTextAsync("Built-in updated");
-        await Expect(prompts.UpdateBannerText).ToContainTextAsync(BaseLabel);
+        await Expect(prompts.UpdateBannerText).ToContainTextAsync("started from the built-in of " + BaseLabel);
+        await Expect(prompts.UpdateBannerText).ToContainTextAsync(new Regex(@"\(the \d{1,2} \w{3}( \d{4})? built-in\)"));
         await Expect(prompts.UpdateBannerText).ToContainTextAsync("custom v1");
 
         await prompts.UpdateReview.ClickAsync();
         await Expect(prompts.UpdateDiff).ToContainTextAsync(older.Changed);
+        await Expect(prompts.UpdateDiff).ToContainTextAsync(older.Current.Split('\n')[0]);
         await Expect(prompts.UpdateDiff).Not.ToContainTextAsync(ProjectRule);
         await Expect(prompts.AppliesCleanly).ToBeVisibleAsync();
     }
@@ -90,10 +95,9 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
         await prompts.UpdateApplyEdit.ClickAsync();
 
         await Expect(prompts.EditorText).ToBeVisibleAsync();
-        var text = await prompts.EditorText.InputValueAsync();
-        text.ShouldContain(older.Current);
-        text.ShouldContain(ProjectRule);
-        text.ShouldNotContain(older.Changed);
+        await Expect(prompts.EditorText).ToHaveValueAsync(new Regex(Regex.Escape(older.Current)));
+        await Expect(prompts.EditorText).ToHaveValueAsync(new Regex(Regex.Escape(ProjectRule)));
+        await Expect(prompts.EditorText).Not.ToHaveValueAsync(new Regex(Regex.Escape(older.Changed)));
     }
 
     // Seeds custom v1 in use: an older built-in (one middle paragraph changed) plus the project rule at the end.

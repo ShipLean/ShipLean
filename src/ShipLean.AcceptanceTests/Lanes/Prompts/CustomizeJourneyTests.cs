@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Prompts;
 using ShipLean.TestSupport;
@@ -24,7 +25,7 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
         await Expect(prompts.ListStages.First).ToContainTextAsync("Intake");
         await Expect(prompts.ListStages.Last).ToContainTextAsync("Sprint demo");
 
-        await prompts.OpenAsync(Project, "brief");
+        await prompts.ListRows.Filter(new LocatorFilterOptions { HasText = "Task brief" }).ClickAsync();
         await Expect(prompts.DetailName).ToContainTextAsync("Task brief");
         await Expect(prompts.Facts).ToContainTextAsync("{{task_key}}");
     }
@@ -70,7 +71,7 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
 
         await prompts.PutBack.ClickAsync();
         await Expect(prompts.PlaceholderMissing).ToHaveCountAsync(0);
-        (await prompts.EditorText.InputValueAsync()).ShouldContain("{{task_key}}");
+        await Expect(prompts.EditorText).ToHaveValueAsync(new Regex(@"\{\{task_key\}\}"));
 
         await prompts.SetTextAsync(original.Replace("{{task_key}}", "the task", StringComparison.Ordinal));
         await Expect(prompts.PlaceholderMissing).ToBeVisibleAsync();
@@ -85,6 +86,7 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project, "retro");
         await prompts.OpenEditorAsync();
+        await prompts.EditorNote.FillAsync("Right at the limit");
 
         await prompts.SetTextAsync(new string('a', 65_537));
         await Expect(prompts.Save).ToBeDisabledAsync();
@@ -92,7 +94,6 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
 
         await prompts.SetTextAsync(new string('a', 65_536));
         await Expect(prompts.SizeText).Not.ToContainTextAsync("too large to save");
-        await prompts.EditorNote.FillAsync("Right at the limit");
         await Expect(prompts.Save).ToBeEnabledAsync();
     }
 
@@ -105,11 +106,12 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
         await prompts.OpenEditorAsync();
         var original = await prompts.EditorText.InputValueAsync();
         var head = original.TrimEnd('\n') + "\n\n";
+        var tagLine = head.Count(c => c == '\n') + 1;
 
         await prompts.SetTextAsync(head + "<claude-code>\nOnly for Claude Code.\n");
         await prompts.EditorNote.FillAsync("Claude Code section");
         await Expect(prompts.UnclosedTag).ToBeVisibleAsync();
-        await Expect(prompts.UnclosedTag).ToContainTextAsync("Line");
+        await Expect(prompts.UnclosedTag).ToContainTextAsync($"Line {tagLine}:");
         await Expect(prompts.Save).ToBeDisabledAsync();
 
         await prompts.SetTextAsync(head + "<claude-code>\nOnly for Claude Code.\n</claude-code>\n");
@@ -131,9 +133,8 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
         await Expect(prompts.Checks).ToContainTextAsync("Did you mean <claude-code>?");
         await prompts.FixTag.First.ClickAsync();
 
-        var fixedText = await prompts.EditorText.InputValueAsync();
-        fixedText.ShouldContain("<claude-code>");
-        fixedText.ShouldNotContain("<claudecode>");
+        await Expect(prompts.EditorText).ToHaveValueAsync(new Regex("<claude-code>"));
+        await Expect(prompts.EditorText).Not.ToHaveValueAsync(new Regex("<claudecode>"));
         await Expect(prompts.UnknownTag).ToHaveCountAsync(0);
     }
 }
