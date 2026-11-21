@@ -41,8 +41,10 @@ export function PromptEditor(props: {
   initialText: string;
   source: PromptVersionSource;
   onClose: () => void;
+  /** Tells the page whether there are unsaved edits, so it can ask before showing another prompt. */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
-  const { projectId, prompt, initialText, source, onClose } = props;
+  const { projectId, prompt, initialText, source, onClose, onDirtyChange } = props;
   const [text, setText] = useState(initialText);
   const [note, setNote] = useState('');
   const [tab, setTab] = useState<EditorTab>('edit');
@@ -51,7 +53,13 @@ export function PromptEditor(props: {
 
   const dirty = text !== initialText || note !== '';
   useUnsavedGuard(dirty);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+    return () => onDirtyChange?.(false);
+  }, [dirty, onDirtyChange]);
 
+  // What agents get now: P7 refuses only a save equal to it.
+  const inUseText = prompt.custom?.inUse === true ? prompt.custom.text : prompt.builtInText;
   const bytes = promptByteSize(text);
   const checks = checkPrompt(text, prompt);
   const nextNumber = (prompt.custom?.number ?? 0) + 1;
@@ -60,7 +68,7 @@ export function PromptEditor(props: {
     note.trim() !== '' &&
     note.length <= MAX_NOTE &&
     bytes <= MAX_PROMPT_BYTES &&
-    text !== initialText &&
+    text !== inUseText &&
     checks.canSave;
 
   // The built-in this text starts from: the new one after a built-in update, else the one the custom version was cut from.

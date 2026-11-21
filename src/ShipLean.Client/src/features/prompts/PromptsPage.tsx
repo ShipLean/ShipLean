@@ -8,6 +8,7 @@ import {
   type PromptVersionSource,
 } from '@shiplean/core/api/prompts';
 import { promptsOpened } from '@shiplean/core/api/usageApi';
+import { Dialog } from '../../components/Dialog';
 import { PromptDetail } from './detail/PromptDetail';
 import { PromptList } from './list/PromptList';
 import { StageStrip } from './list/StageStrip';
@@ -31,6 +32,8 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [stage, setStage] = useState<PromptStage | null>(null);
   const [open, setOpen] = useState<(EditorState & { promptKey: PromptKey }) | null>(null);
+  const [editorDirty, setEditorDirty] = useState(false);
+  const [switchTo, setSwitchTo] = useState<PromptKey | null>(null);
   const opened = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
   const requested = searchParams.get('prompt');
   const selected = prompts.find((p) => isPromptKey(requested) && p.key === requested) ?? prompts[0];
 
-  const select = useCallback(
+  const go = useCallback(
     (key: PromptKey) => {
       setSearchParams(
         (current) => {
@@ -58,6 +61,12 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
     [setSearchParams],
   );
   const selectedKey = selected?.key;
+  const editorOpen = open !== null && open.promptKey === selectedKey;
+  // Another prompt with unsaved edits in the editor asks first; keeping the edits leaves the address as it is.
+  const select = useCallback(
+    (key: PromptKey) => (editorOpen && editorDirty ? setSwitchTo(key) : go(key)),
+    [editorOpen, editorDirty, go],
+  );
   // The editor belongs to the prompt it was opened on: selecting another prompt (past the leave guard) shows no editor.
   const editor = open !== null && open.promptKey === selectedKey ? open : null;
   const openEditor = useCallback(
@@ -111,9 +120,45 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
             editor={editor}
             openEditor={openEditor}
             closeEditor={closeEditor}
+            onEditorDirtyChange={setEditorDirty}
           />
         )}
       </div>
+      {switchTo === null ? null : (
+        <Dialog
+          title="Discard your unsaved custom prompt?"
+          testId={ids.editorLeaveDialog}
+          width="440px"
+          onClose={() => setSwitchTo(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                data-testid={ids.editorLeaveStay}
+                className="btn-ghost"
+                onClick={() => setSwitchTo(null)}
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                data-testid={ids.editorLeaveDiscard}
+                className="btn-danger-ghost"
+                onClick={() => {
+                  const key = switchTo;
+                  setSwitchTo(null);
+                  setEditorDirty(false);
+                  go(key);
+                }}
+              >
+                Discard
+              </button>
+            </>
+          }
+        >
+          <p className="m-0">Your edits to {selected?.name} haven’t been saved.</p>
+        </Dialog>
+      )}
     </div>
   );
 }

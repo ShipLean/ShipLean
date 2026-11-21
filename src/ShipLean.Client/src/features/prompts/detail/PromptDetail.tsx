@@ -48,6 +48,7 @@ export function PromptDetail({
   editor,
   openEditor,
   closeEditor,
+  onEditorDirtyChange,
 }: {
   projectId: string;
   page: PromptsPageDto;
@@ -55,6 +56,7 @@ export function PromptDetail({
   editor: EditorState | null;
   openEditor: (state: EditorState) => void;
   closeEditor: () => void;
+  onEditorDirtyChange: (dirty: boolean) => void;
 }) {
   const [tab, setTab] = useState<TabId>('source');
   const [confirmingUseBuiltIn, setConfirmingUseBuiltIn] = useState(false);
@@ -211,6 +213,7 @@ export function PromptDetail({
           initialText={editor.initialText}
           source={editor.source}
           onClose={closeEditor}
+          onDirtyChange={onEditorDirtyChange}
         />
       )}
       <UseBuiltInDialog

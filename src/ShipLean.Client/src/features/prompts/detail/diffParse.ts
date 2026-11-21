@@ -31,7 +31,11 @@ const stripNewline = (line: string | undefined) => (line ?? '').replace(/\r?\n$/
 /** The patch as hunks of lines, ready for a view to render. An empty patch has no hunks. */
 export function promptDiffHunks(patch: string): PromptDiffHunk[] {
   const meta = parsePromptPatch(patch);
-  if (meta === undefined) return [];
+  return meta === undefined ? [] : hunksOfMeta(meta);
+}
+
+/** The parsed diff's hunks as lines, whether it came from a patch or from two texts. */
+export function hunksOfMeta(meta: FileDiffMetadata): PromptDiffHunk[] {
   return meta.hunks.map((hunk) => {
     const lines: PromptDiffLine[] = [];
     let oldLine = hunk.deletionStart;

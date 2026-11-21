@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { Page } from 'playwright';
-import { PromptEditor } from './editor/PromptEditor';
 import { PromptsHarness } from './ct/PromptsHarness';
 import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
@@ -85,28 +84,25 @@ test('PromptEditor_WhenOpenedFromApplyAndEdit_ShouldPrefillTheMergedTextAndSaveA
     posts.push(route.request().postDataJSON() as Posted);
     return route.fulfill({ status: 201, json: { key: 'guide', status: 'custom', number: 2 } });
   });
-  // The update banner's Apply and edit opens the editor with the merged text; mounted as it opens.
-  await mount(
-    <PromptEditor
-      projectId="p-ship"
-      prompt={guide}
-      initialText={guide.update!.mergedText}
-      source="builtInUpdate"
-      onClose={() => undefined}
-    />,
-    { hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=guide' } },
-  );
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route(CUSTOMIZE_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=guide' },
+  });
+  await page.getByTestId(ids.updateReview).click();
+  await page.getByTestId(ids.updateApplyEdit).click();
 
   const merged = guide.update!.mergedText;
   await expect(page.getByTestId(ids.editorText)).toHaveValue(merged);
   await expect(page.getByTestId(ids.editorSave)).toHaveText('Save as custom v2');
-  await page.getByTestId(ids.editorText).fill(`${merged}Plus ours.\n`);
   await page.getByTestId(ids.editorNote).fill('Took the update');
+  await expect(page.getByTestId(ids.editorSave)).toBeEnabled();
   await page.getByTestId(ids.editorSave).click();
 
   await expect.poll(() => posts.length).toBe(1);
   expect(posts[0]).toEqual({
-    text: `${merged}Plus ours.\n`,
+    text: merged,
     note: 'Took the update',
     source: 'builtInUpdate',
   });
@@ -263,5 +259,23 @@ test('PromptEditor_WhenLeavingWithoutEdits_ShouldCloseAtOnce', async ({ mount, p
   await page.getByTestId(ids.editorCancel).click();
 
   await expect(page.getByTestId(ids.editorLeaveDialog)).toHaveCount(0);
+  await expect(page.getByTestId(ids.editor)).toHaveCount(0);
+});
+
+test('PromptsPage_WhenSwitchingPromptWithUnsavedEdits_ShouldAskFirst', async ({ mount, page }) => {
+  await open(page, mount);
+
+  await page.getByTestId(ids.editorText).fill('# Edited\n');
+  await page.getByTestId(ids.listRow).nth(3).click();
+  await expect(page.getByTestId(ids.editorLeaveDialog)).toBeVisible();
+
+  await page.getByTestId(ids.editorLeaveStay).click();
+  await expect(page.getByTestId(ids.editorLeaveDialog)).toHaveCount(0);
+  await expect(page.getByTestId(ids.editorText)).toHaveValue('# Edited\n');
+  await expect(page.getByTestId('harness-search')).toHaveText('prompt=work');
+
+  await page.getByTestId(ids.listRow).nth(3).click();
+  await page.getByTestId(ids.editorLeaveDiscard).click();
+  await expect(page.getByTestId('harness-search')).toHaveText('prompt=planReviewer');
   await expect(page.getByTestId(ids.editor)).toHaveCount(0);
 });
