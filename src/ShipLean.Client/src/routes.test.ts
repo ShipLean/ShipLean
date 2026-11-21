@@ -259,13 +259,23 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
 
 test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
   expect(matchRoute('/p/SHIP/settings/demos')?.id).toBe('projectSettings');
-  expect(projectSettingsTabs.at(-2)).toBe('demos');
-  expect(projectSettingsTabs.at(-3)).toBe('integrations');
+  expect(projectSettingsTabs.at(-3)).toBe('demos');
+  expect(projectSettingsTabs.at(-4)).toBe('integrations');
 });
 
-test('routes_WhenSettingsTabIsInspection_ShouldMatchItLast', () => {
+test('routes_WhenSettingsTabIsInspection_ShouldMatchItBeforePrompts', () => {
   expect(matchRoute('/p/SHIP/settings/inspection')?.id).toBe('projectSettings');
-  expect(projectSettingsTabs.at(-1)).toBe('inspection');
+  expect(projectSettingsTabs.at(-2)).toBe('inspection');
+});
+
+test('routes_WhenSettingsTabIsPrompts_ShouldMatchItLastAndKeepThePromptQuery', () => {
+  expect(projectSettingsTabs.at(-1)).toBe('prompts');
+  const matched = matchRoute('/p/SHIP/settings/prompts', '?prompt=guide');
+  expect(matched?.id).toBe('projectSettings');
+  expect(matched?.query).toEqual({ prompt: 'guide' });
+  expect(
+    routePath('projectSettings', { key: 'SHIP', tab: 'prompts' }, { prompt: 'planReviewer' }),
+  ).toBe('/p/SHIP/settings/prompts?prompt=planReviewer');
 });
 
 test('routes_WhenAgentRunAddress_ShouldMatchWithItsParamsAndQuery', () => {

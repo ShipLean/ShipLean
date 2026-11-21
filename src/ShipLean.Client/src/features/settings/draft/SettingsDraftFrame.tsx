@@ -15,6 +15,7 @@ export function SettingsDraftFrame({
   integrations,
   demos,
   inspection = null,
+  prompts = null,
 }: {
   project: ProjectDto;
   tab: ProjectSettingsTab | undefined;
@@ -22,6 +23,7 @@ export function SettingsDraftFrame({
   integrations: ReactNode;
   demos: ReactNode;
   inspection?: ReactNode;
+  prompts?: ReactNode;
 }) {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -60,6 +62,7 @@ export function SettingsDraftFrame({
       integrations={integrations}
       demos={demos}
       inspection={inspection}
+      prompts={prompts}
     />
   );
 }

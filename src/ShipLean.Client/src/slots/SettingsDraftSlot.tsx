@@ -6,7 +6,7 @@ import { SettingsDraftFrame } from '../features/settings/draft/SettingsDraftFram
 
 // The frame of every project settings tab: the tab list with dirty dots, the one Save and Discard header, Save
 // jumping to the first error. `states`, `integrations` and `demos` are the content of those tabs; the frame shows each on
-// its tab. Demos and Inspection have their own Save and join no draft.
+// its tab. Demos, Inspection and Prompts have their own Save and join no draft.
 export interface SettingsDraftSlotProps {
   project: ProjectDto;
   /** Undefined on the tab-less address: the pane index at touch. */
@@ -15,6 +15,7 @@ export interface SettingsDraftSlotProps {
   integrations: ReactNode;
   demos: ReactNode;
   inspection?: ReactNode;
+  prompts?: ReactNode;
 }
 
 export function SettingsDraftSlot(props: SettingsDraftSlotProps) {
