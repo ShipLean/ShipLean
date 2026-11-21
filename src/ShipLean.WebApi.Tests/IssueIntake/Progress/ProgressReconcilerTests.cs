@@ -461,7 +461,7 @@ public class ProgressReconcilerTests : ApiFixture
 
             var projectKey = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = dispatch.Project.Id });
             Host.Services.GetRequiredService<FixedIssueIntakeSettings>()
-                .Take(new IssueIntakeProject(dispatch.Project.Id, projectKey, repository, SeedIds.Users.Joel, "Instructions.", 5));
+                .Take(new IssueIntakeProject(dispatch.Project.Id, projectKey, repository, SeedIds.Users.Joel, 5));
         }
 
         return new Arranged(dispatch, item, key, type, issue);

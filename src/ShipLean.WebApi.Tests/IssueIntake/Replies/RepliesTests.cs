@@ -365,7 +365,7 @@ public class RepliesTests : ApiFixture
         {
             var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
             Host.Services.GetRequiredService<SwitchableIntakeSettings>()
-                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, "Write a proposal.", maxRounds));
+                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, maxRounds));
             await database.ExecuteAsync("UPDATE github_issue SET rounds = 1 WHERE id = @Id", new { issue.Id });
         }
 

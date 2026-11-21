@@ -15,6 +15,7 @@ public class BuiltInPromptReadsTests
     [
         new("PlanGuide.Read(", ["ShipLean.WebApi/Features/Prompts/PlanGuide.cs", "ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
         new("sprint-demo/sprint-demo-prompt.md", ["ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
+        new("IssueIntakeSettingsService.DefaultInstructions", ["ShipLean.Application/Features/IssueIntake/Settings/IssueIntakeSettingsService.cs", "ShipLean.WebApi/Features/Prompts/BuiltInPrompts.cs"]),
     ];
 
     private static readonly string[] Projects = ["ShipLean.WebApi", "ShipLean.Application", "ShipLean.Contracts", "ShipLean.Core"];

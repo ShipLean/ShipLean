@@ -345,7 +345,7 @@ public class HappyJourneyTests : WebhookApiTest
         {
             // The real enablement seam: the settings PUT as the project's admin creates the Triage states and takes the repository.
             using var saved = await Api.PutJsonAsync(
-                $"api/projects/{arranged.Project.Id}/settings/issue-intake", new { enabled = true, runAsUserId = SeedIds.Users.Joel, proposalInstructions = "Write a proposal.", maxRounds = 5 });
+                $"api/projects/{arranged.Project.Id}/settings/issue-intake", new { enabled = true, runAsUserId = SeedIds.Users.Joel, maxRounds = 5 });
             saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
             return arranged;
         }
@@ -358,7 +358,7 @@ public class HappyJourneyTests : WebhookApiTest
         }
 
         var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
-        _settings.Current = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(arranged.Project.Id, key, _repository, SeedIds.Users.Joel, "Write a proposal.", 5));
+        _settings.Current = new FixedIssueIntakeSettings().Take(new IssueIntakeProject(arranged.Project.Id, key, _repository, SeedIds.Users.Joel, 5));
         return arranged;
     }
 

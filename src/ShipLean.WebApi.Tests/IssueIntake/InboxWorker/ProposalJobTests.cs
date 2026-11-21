@@ -461,7 +461,7 @@ public class ProposalJobTests : ApiFixture
         {
             var key = await database.QuerySingleAsync<string>("SELECT key FROM project WHERE id = @id", new { id = arranged.Project.Id });
             Host.Services.GetRequiredService<FixedIssueIntakeSettings>()
-                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, "Instructions.", 5));
+                .Take(new IssueIntakeProject(arranged.Project.Id, key, repository, SeedIds.Users.Joel, 5));
         }
 
         await StartedSessionAsync(issue, sessionId);

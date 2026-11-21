@@ -761,7 +761,7 @@ public class FailureJourneyTests : WebhookApiTest
         await database.ExecuteAsync("UPDATE project SET repo_url = 'https://github.com/Acme/Storefront' WHERE id = @Id", new { arranged.Project.Id });
         using var saved = await Api.PutJsonAsync(
             $"api/projects/{arranged.Project.Id}/settings/issue-intake",
-            new { enabled = true, runAsUserId = SeedIds.Users.Joel, proposalInstructions = "", maxRounds });
+            new { enabled = true, runAsUserId = SeedIds.Users.Joel, maxRounds });
         saved.IsSuccessStatusCode.ShouldBeTrue(await saved.Content.ReadAsStringAsync());
         return new Journey(arranged);
     }
