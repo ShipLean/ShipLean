@@ -36,6 +36,8 @@ The prompt, as Markdown, plus a one-time upload link. There are two ways an agen
 - **ShipLean starts the agent** (Create demo, or Automatic demos). It starts a session on the demo's BAU item through the project's agent connection, and the prompt is the session's body. Through agent-relay this is a demo session with its own tool profile; see [Demos made through agent-relay](#demos-made-through-agent-relay).
 - **An agent asks** with the MCP tool `create_sprint_demo` ([mcp.md](mcp.md#feature-editor-tools)). It always works: no closed-sprint check and no agent check. The one refusal is a live agent session already making this demo. With no `sprint` it takes the most recently closed sprint, else the current one. It fails, like `attach_file`, when the only host ShipLean knows is a cluster service name; set `base_url`.
 
+The task, presenters, honesty and environment text come from the **Sprint demo video** prompt, which a project admin can customize in Project settings › Prompts ([prompts.md](prompts.md)). The 14 inserted parts (tools, models, ffmpeg, level, start, intro and return, for handover and session) cannot be customized: they depend on where the agent runs. A session started through agent-relay gets the untagged text only.
+
 What the prompt holds, in order:
 
 - **The task.** One video: an intro, one chapter per Feature in the sprint, a short "Also this sprint" section, then a closing "What we'll measure".
