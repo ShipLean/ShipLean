@@ -65,9 +65,11 @@ public sealed class DemoRunStarter(
     {
         var data = await sprintData.ReadAsync(request.SprintId, cancellationToken);
         var inspection = await brandSource.InspectAsync(request.ProjectId, cancellationToken);
+        // The session's prompt is stored inside the winner's transaction, so it is resolved just before it (the serving is on its own connection).
+        var template = await ResolveTemplateAsync(request, DemoPromptChannel.Session, cancellationToken);
         var outcome = await sessions.StartWinnerAsync(
             request.ItemId, request.UserId, request.BaseUrl, null,
-            async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, DemoPromptChannel.Session, token)).Instructions,
+            async (transaction, token) => (await DecideAsync(transaction, request, data, inspection, token)).Finish(prompt, data, DemoPromptChannel.Session, template.Text).Instructions,
             cancellationToken, AgentSessionMode.Demo);
         if (outcome.SessionId is not null)
         {
@@ -93,10 +95,29 @@ public sealed class DemoRunStarter(
             throw ApiException.Conflict("An agent session is already making this demo.");
         }
 
-        var decided = await DecideAsync(transaction, request, data, inspection, DemoPromptChannel.Handover, cancellationToken);
+        var decision = await DecideAsync(transaction, request, data, inspection, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        // Nothing is stored with the handover's text, so it is resolved after the commit: a demo that rolls back leaves no serving behind.
+        var template = await ResolveTemplateAsync(request, DemoPromptChannel.Handover, cancellationToken);
+        var decided = decision.Finish(prompt, data, DemoPromptChannel.Handover, template.Text);
         await events.PublishAsync(new SprintDemoChanged(request.ProjectId, request.SprintId));
         return decided;
+    }
+
+    // The prompt is resolved before any transaction (the serving is recorded on its own connection), so a demo that rolls back never leaves a
+    // serving row behind that was recorded inside it.
+    private async Task<ResolvedPrompt> ResolveTemplateAsync(DemoRunRequest request, DemoPromptChannel channel, CancellationToken cancellationToken)
+    {
+        string itemKey;
+        await using (var connection = await dataSource.OpenConnectionAsync(cancellationToken))
+        {
+            itemKey = await connection.ExecuteScalarAsync<string>(new CommandDefinition(
+                "SELECT key FROM work_item WHERE id = @itemId", new { itemId = request.ItemId }, cancellationToken: cancellationToken)) ?? string.Empty;
+        }
+
+        // A relay session has no OAuth client (D16), so it is addressed as another agent; a handover goes to the caller.
+        return await prompts.ResolveAsync(
+            new PromptRequest(request.ProjectId, PromptKey.SprintDemo, channel == DemoPromptChannel.Session ? PromptAgents.Other : null, itemKey, request.UserId), cancellationToken);
     }
 
     // Runs under the project lock as the create's last step: the new item is the project's highest-numbered BAU item.
@@ -116,8 +137,8 @@ public sealed class DemoRunStarter(
 
     // The winner's writes, all on the transaction. The old links are revoked before the new one is issued; the sprint row is written after the
     // link so it carries the link's own expiry.
-    private async Task<SprintDemoHandover> DecideAsync(
-        DbTransaction transaction, DemoRunRequest request, SprintDemoData data, DemoBrandInspection inspection, DemoPromptChannel channel, CancellationToken cancellationToken)
+    private async Task<Decision> DecideAsync(
+        DbTransaction transaction, DemoRunRequest request, SprintDemoData data, DemoBrandInspection inspection, CancellationToken cancellationToken)
     {
         var connection = transaction.Connection!;
         await transfers.RevokeAsync(TransferKind.Demo, request.ItemId, transaction, cancellationToken);
@@ -138,18 +159,24 @@ public sealed class DemoRunStarter(
         var baseUrl = request.BaseUrl.TrimEnd('/');
         var uploadUrl = $"{baseUrl}/api/uploads/demo?token={Uri.EscapeDataString(issued.Token)}";
         var target = new DemoUploadTarget(uploadUrl, issued.ExpiresAt, limits.MaxDemoBytes, itemKey, data.Sprint.Name);
-        // A relay session has no OAuth client (D16), so it is addressed as another agent; a handover goes to the caller.
-        var template = await prompts.ResolveAsync(
-            new PromptRequest(request.ProjectId, PromptKey.SprintDemo, channel == DemoPromptChannel.Session ? PromptAgents.Other : null, itemKey, request.UserId), cancellationToken);
-        return new SprintDemoHandover(
-            request.SprintId,
-            itemKey,
-            McpOpenUrls.WorkItem(baseUrl, data.Project.Key, itemKey),
-            McpOpenUrls.SprintDemo(baseUrl, data.Project.Key, request.SprintId),
-            uploadUrl,
-            issued.ExpiresAt,
-            limits.MaxDemoBytes,
-            brand,
-            prompt.Render(data, target, brand, channel, template.Text));
+        return new Decision(
+            new SprintDemoHandover(
+                request.SprintId,
+                itemKey,
+                McpOpenUrls.WorkItem(baseUrl, data.Project.Key, itemKey),
+                McpOpenUrls.SprintDemo(baseUrl, data.Project.Key, request.SprintId),
+                uploadUrl,
+                issued.ExpiresAt,
+                limits.MaxDemoBytes,
+                brand,
+                string.Empty),
+            target);
+    }
+
+    // The writes' result: everything but the rendered instructions, which need the resolved prompt.
+    private sealed record Decision(SprintDemoHandover Handover, DemoUploadTarget Target)
+    {
+        public SprintDemoHandover Finish(ISprintDemoPrompt prompt, SprintDemoData data, DemoPromptChannel channel, string template)
+            => Handover with { Instructions = prompt.Render(data, Target, Handover.Brand, channel, template) };
     }
 }
