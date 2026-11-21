@@ -138,6 +138,16 @@ public static class UsageEventNames
     public const string InspectionMetricsToolRead = "inspection_metrics.tool_read";
     public const string InspectionMetricsCommitTimesBackfilled = "inspection_metrics.commit_times_backfilled";
 
+    // Prompts (SHIP-744 C9). prompts.opened is self-emitted by the tab's report, prompt.customize_opened by the Customize report,
+    // prompt.saved and prompt.update_applied by the save (by its source); the other three are tracked by their action.
+    public const string PromptsOpened = "prompts.opened";
+    public const string PromptCustomizeOpened = "prompt.customize_opened";
+    public const string PromptSaved = "prompt.saved";
+    public const string PromptUpdateApplied = "prompt.update_applied";
+    public const string PromptBuiltInUsed = "prompt.built_in_used";
+    public const string PromptVersionRestored = "prompt.version_restored";
+    public const string PromptUpdateKept = "prompt.update_kept";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";

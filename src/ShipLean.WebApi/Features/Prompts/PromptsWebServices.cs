@@ -9,5 +9,6 @@ public sealed class PromptsWebServices : IServiceModule
     {
         services.AddSingleton<IBuiltInPrompts, BuiltInPrompts>();
         services.AddScoped<IConnectedAgent, RequestConnectedAgent>();
+        services.AddHostedService<PromptBuiltInSnapshotter>();
     }
 }

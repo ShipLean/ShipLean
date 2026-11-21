@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ShipLean.Application.Features.Usage;
 using ShipLean.Contracts.Errors;
+using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Usage;
 using ShipLean.WebApi.Infrastructure;
 
@@ -8,7 +9,7 @@ namespace ShipLean.WebApi.Features.Usage;
 
 // What the SPA reports about how a project's screens are used, where no write already tells the server.
 [Route("api/projects/{id:guid}/usage")]
-public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline, BoardFilterUsage boardFilter, InspectionMetricsUsage inspectionMetrics, RetroThemeSheetUsage themeSheet) : ApiControllerBase
+public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage timeline, BoardFilterUsage boardFilter, InspectionMetricsUsage inspectionMetrics, RetroThemeSheetUsage themeSheet, PromptsUsage prompts) : ApiControllerBase
 {
     [HttpPost("backlog-sort")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -96,6 +97,25 @@ public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage tim
     public async Task<NoContentResult> RetroThemeSheetOpened(Guid id, RetroThemeSheetOpenedDto request, CancellationToken cancellationToken)
     {
         await themeSheet.OpenedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("prompts-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> PromptsOpened(Guid id, CancellationToken cancellationToken)
+    {
+        await prompts.OpenedAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("prompt-customize-opened")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> PromptCustomizeOpened(Guid id, PromptCustomizeOpenedDto request, CancellationToken cancellationToken)
+    {
+        await prompts.CustomizeOpenedAsync(id, request, cancellationToken);
         return NoContent();
     }
 }
