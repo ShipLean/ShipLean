@@ -28,7 +28,7 @@ Each point carries its text, `root_cause`, theme, the item (key, type, title, br
 
 Went-well points come with the rest. Set `include_went_well` to false only if the person asked for no went-well patterns.
 
-For a big scope, give each page to a sub-agent for steps 1 to 5 and collect what they return. Brief each one with the rewrite prompt below.
+For a big scope, give each page to a sub-agent for steps 3 to 5 and collect what they return. Brief each one with the rewrite prompt below, and tell it that `total_points` counts all pages, so a page holds only part of it. Do steps 1 and 2 yourself over all pages together: a page can end in the middle of a retro, and a pair to fold can sit on two pages.
 
 ### Step 1: Drop the noise
 
@@ -39,11 +39,13 @@ Mark a point `noise` when it:
 
 Keep the first of a duplicate pair and mark the later ones `noise`.
 
+Two went-badly points in one retro that describe the same issue in different words are one issue too: keep the first, and mark the other `folded` into it, as in step 2.
+
 Went-well points are not noise. Set them aside for step 6 (patterns of kind wentWell).
 
 ### Step 2: One point per issue per retro
 
-A went-badly point and its matching improve point in the same retro are one issue. Keep the went-badly point, put the improve text into its rewrite, and mark the improve point `folded` with `folded_into` set to the kept point's id.
+A went-badly point and its matching improve point in the same retro are one issue. Keep the went-badly point, put the improve text into its rewrite, and mark the improve point `folded` with `folded_into` set to the kept point's id. A folded point has no generic text of its own. Only fold within one retro: the same lesson in two different retros is evidence for a pattern, so keep both.
 
 ### Step 3: Hydrate
 
@@ -90,7 +92,7 @@ labels = HDBSCAN(min_cluster_size=3, min_samples=2).fit_predict(vectors)
 
 Points with label -1 get outcome `unclustered`. They come back in later exports, because a later run may find their pattern. Points in a cluster get outcome `clustered`.
 
-If almost everything lands in one cluster or almost nothing clusters, change the settings and look again. Say in the report what you used.
+If almost everything lands in one cluster or almost nothing clusters, change the settings and look again, once or twice. Lowering the minimum cluster size to 2 only makes pairs, so keep 3 unless pairs are what you want, and say how many points stay unclustered. A low clustered share is a result: the lessons are specific, or the scope is small. Say in the report what you used.
 
 Cluster the went-well points on their own, the same way. They never mix with the problem points. A went-well pattern tells the person what is working. It never makes a fix or an action item. Went-well points are never decided, so every run clusters them again.
 
@@ -106,6 +108,8 @@ Evidence for a continued pattern covers this run's points only.
 ### Step 7: Merge near-duplicate clusters, then name them
 
 HDBSCAN leaves near-duplicate clusters. Give a model each cluster's title and a handful of its generic lessons, and ask which clusters describe the same problem. Merge those: one pattern, the points of all of them. Check each merge by reading two or three lessons from each side. Do not merge two clusters only because they share a word; merge them when the same fix would stop both.
+
+The opposite happens too: a cluster can hold points that share wording but not a fix, for example two different process failures that both describe a first attempt failing. Read each cluster's lessons. When the same fix would not stop all of them, split it into patterns, one per fix. Two points that the same fix would stop are enough for a pattern. A point that fits no part goes back to outcome `unclustered`. Say in the report which clusters you split or merged.
 
 Name each pattern:
 
@@ -133,10 +137,10 @@ If an open action item from `open_actions` already covers the fix, send its key 
 
 ### Step 9: Write the report, then record
 
-Write the report using the template under Report. Then call `record_retro_analysis`:
+Write the report using the template under Report. Then call `record_retro_analysis`. The report is part of the arguments, and the apply must repeat them exactly, so send a draft report first, preview, write the final report with ShipLean's numbers, and preview again before you apply:
 
 1. Send the scope, `exclude_covered` as you exported, `embedding_model`, `rewrite_model` if you want it kept, `points` (every point you looked at, with `outcome`, `folded_into` for folded points, and `generic` for clustered, unclustered and oneOff ones), `patterns` (with `ref`, `kind`, `title`, `lesson`, `asks`, `point_ids`, an optional `centroid` and an optional `continues`), `fixes` (with `pattern_ref`, `title`, `fix_type`, `enforcement`, `enforced_by`, `reason`, `existing`) and `report_markdown`. Leave `plan` out. That is a preview.
-2. Read the preview. ShipLean has worked out the funnel and each pattern's evidence from its own data, ranked the patterns, and listed the action items it would create or add to. Check the numbers against yours. Points in scope that you did not send are listed in `warnings`: go back and look at them, or say in the report why you left them. Use ShipLean's numbers in your report, not your own.
+2. Read the preview. ShipLean has worked out the funnel and each pattern's evidence from its own data, ranked the patterns, and listed the action items it would create or add to. Check the numbers against yours. Points in scope that you did not send are listed in `warnings`: go back and look at them, or say in the report why you left them. Use ShipLean's numbers in your report, not your own, and preview again with the final report.
 3. Apply by calling it again with exactly the same arguments plus the `plan` the preview returned. Changed arguments are refused.
 
 When the arguments are large, write them to a JSON file, call `create_payload_upload` with tool `record_retro_analysis`, and send the file with the `curl -T` it returns. Preview with `payload` in place of the arguments, then apply with the same `payload` plus `plan`.
