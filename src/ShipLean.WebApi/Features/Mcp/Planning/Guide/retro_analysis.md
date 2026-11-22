@@ -120,7 +120,7 @@ For each problem pattern, propose one or more fixes. Place each in the highest t
 Then check each fix against what already exists. A fix is only "already enforced" if something actually stops the problem, so read what the thing does. Do not go by its name or by what a description says.
 
 - Analyzers, lint rules and CI steps in the repository: open the rule or the step and read what it matches and what it fails on.
-- Skills, `planning_guide` parts, CLAUDE.md and AGENTS.md files, and agent prompts: read the lines that bear on the problem and decide whether an agent following them would avoid it.
+- Skills, `planning_guide` parts, the project instruction files, and agent prompts: read the lines that bear on the problem and decide whether an agent following them would avoid it.
 
 Mark each fix:
 
