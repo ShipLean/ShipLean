@@ -31,7 +31,16 @@ export type RetroFailureKind = (typeof RETRO_FAILURE_KINDS)[number];
 export const RETRO_DECISIONS = ['undecided', 'actioned', 'notNeeded'] as const;
 export type RetroDecision = (typeof RETRO_DECISIONS)[number];
 
-export const RETRO_FIX_TYPES = ['skill', 'guide', 'test', 'analyzer', 'product', 'other'] as const;
+export const RETRO_FIX_TYPES = [
+  'fix',
+  'structure',
+  'analyzer',
+  'test',
+  'skill',
+  'guide',
+  'product',
+  'other',
+] as const;
 export type RetroFixType = (typeof RETRO_FIX_TYPES)[number];
 
 export const RETRO_INSIGHTS_MODES = ['sprint', 'week'] as const;

@@ -2,7 +2,7 @@
 // Round-tripped by prompts.test.ts over TestSupport/DtoFixtures/prompts. Labels are made by the server; the client formats nothing.
 import { api } from './client';
 
-/** The eleven prompts, in stage order. */
+/** The twelve prompts, in stage order. */
 export const PROMPT_KEYS = [
   'issueProposal',
   'work',
@@ -14,6 +14,7 @@ export const PROMPT_KEYS = [
   'codeReviewer',
   'fix',
   'retro',
+  'retroAnalysis',
   'sprintDemo',
 ] as const;
 export type PromptKey = (typeof PROMPT_KEYS)[number];
