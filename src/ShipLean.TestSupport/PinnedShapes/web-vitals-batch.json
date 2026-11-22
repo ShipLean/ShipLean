@@ -1,0 +1,14 @@
+{
+  "reports": [
+    {
+      "screen": "taskboard",
+      "navigation": "soft",
+      "lcp": 812.4,
+      "inp": 96,
+      "cls": 0.02,
+      "fcp": null,
+      "ttfb": null,
+      "screenSize": "1920x1080"
+    }
+  ]
+}

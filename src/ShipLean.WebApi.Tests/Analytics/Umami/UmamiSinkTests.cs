@@ -43,7 +43,7 @@ public class UmamiSinkTests
     {
         _handler = new AnalyticsSinkStubHandler();
         _sink = new UmamiSink(new StubFactory(_handler));
-        _target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com/"), SiteKey, "prod.shiplean.app", false, "1.2.3");
+        _target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com/"), SiteKey, "prod.shiplean.app", false, "1.2.3", false);
     }
 
     private static AnalyticsEvent Event(string name = "project.created", string distinctId = "u-1", string? projectKey = "SHIP", IReadOnlyDictionary<string, object>? properties = null)

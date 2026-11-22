@@ -43,7 +43,7 @@ public class AnalyticsDtoTests
     [TestCase(AnalyticsProvider.PostHog, "posthog")]
     public void AnalyticsProvider_WhenSerialised_ShouldUseTheWireString(AnalyticsProvider provider, string wire)
     {
-        var json = JsonSerializer.SerializeToNode(new AnalyticsSettingsDto(provider, null, null, false), Options)!;
+        var json = JsonSerializer.SerializeToNode(new AnalyticsSettingsDto(provider, null, null, false, false), Options)!;
 
         json["provider"]!.GetValue<string>().ShouldBe(wire);
         JsonSerializer.Deserialize<AnalyticsProvider>($"\"{wire}\"", Options).ShouldBe(provider);

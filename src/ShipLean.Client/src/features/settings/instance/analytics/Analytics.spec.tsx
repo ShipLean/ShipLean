@@ -68,7 +68,7 @@ test('InstanceAnalytics_WhenOffSaved_ShouldPutNullHostAndKey', async ({ mount, p
   await expect
     .poll(() => stub.puts)
     .toEqual([
-      { provider: 'none', host: null, siteKey: null, sendNames: analyticsUmami.sendNames },
+      { provider: 'none', host: null, siteKey: null, sendNames: analyticsUmami.sendNames, sendWebVitals: false },
     ]);
 });
 

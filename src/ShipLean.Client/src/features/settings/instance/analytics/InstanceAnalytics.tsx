@@ -41,6 +41,7 @@ interface Draft {
   host: string;
   siteKey: string;
   sendNames: boolean;
+  sendWebVitals: boolean;
 }
 
 const draftOf = (s: AnalyticsSettings): Draft => ({
@@ -48,6 +49,7 @@ const draftOf = (s: AnalyticsSettings): Draft => ({
   host: s.host ?? '',
   siteKey: s.siteKey ?? '',
   sendNames: s.sendNames,
+  sendWebVitals: s.sendWebVitals,
 });
 
 const orNull = (text: string) => (text.trim() === '' ? null : text.trim());
@@ -55,12 +57,13 @@ const orNull = (text: string) => (text.trim() === '' ? null : text.trim());
 // The C4 body: Off stores no host or key.
 const bodyOf = (d: Draft): AnalyticsSettings =>
   d.provider === 'none'
-    ? { provider: 'none', host: null, siteKey: null, sendNames: d.sendNames }
+    ? { provider: 'none', host: null, siteKey: null, sendNames: d.sendNames, sendWebVitals: d.sendWebVitals }
     : {
         provider: d.provider,
         host: orNull(d.host),
         siteKey: orNull(d.siteKey),
         sendNames: d.sendNames,
+        sendWebVitals: d.sendWebVitals,
       };
 
 const isDirty = (saved: AnalyticsSettings, d: Draft) => {
@@ -69,7 +72,8 @@ const isDirty = (saved: AnalyticsSettings, d: Draft) => {
     body.provider !== saved.provider ||
     body.host !== saved.host ||
     body.siteKey !== saved.siteKey ||
-    body.sendNames !== saved.sendNames
+    body.sendNames !== saved.sendNames ||
+    body.sendWebVitals !== saved.sendWebVitals
   );
 };
 
