@@ -128,6 +128,7 @@ export async function stubShell(page: Page, overrides: ShellOverrides = {}) {
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/me') return json(meDto(overrides.me));
     if (path === '/api/me/time-zones') return json(SHELL_TIME_ZONES);
+    if (path === '/api/usage/web-vitals/config') return json({ enabled: false });
     if (path === '/api/projects') return json(projects);
     if (path === `/api/projects/by-key/${project.key}`) return json(project);
     if (path === `/api/projects/${project.id}/sprints`) return json(sprints);

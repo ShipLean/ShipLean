@@ -92,6 +92,7 @@ export async function stubShell(page: StubbablePage, stubs: ShellStubs = {}) {
         })
       : json(route, stubs.me ?? meDto()),
   );
+  await page.route('**/api/usage/web-vitals/config', (route) => json(route, { enabled: false }));
   await page.route('**/api/projects', (route) => {
     stubs.onProjectsRequested?.();
     return json(route, projects);

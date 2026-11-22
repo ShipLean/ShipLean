@@ -55,6 +55,7 @@ export async function stubProjectApi(
     const json = (body: unknown, status = 200) =>
       route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     if (path === '/api/me') return json(meDto());
+    if (path === '/api/usage/web-vitals/config') return json({ enabled: false });
     if (path === '/api/projects') return json([]);
     if (path === `/api/projects/by-key/${key}`) return json(projectDto(key));
     if (path.startsWith('/api/projects/by-key/'))
