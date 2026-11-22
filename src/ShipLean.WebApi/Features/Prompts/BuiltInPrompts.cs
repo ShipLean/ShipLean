@@ -64,6 +64,9 @@ public sealed partial class BuiltInPrompts : IBuiltInPrompts
         new(PromptKey.Retro, PromptStage.Retro, "retro.md", "Run retro",
             "The template for the run retro: budget, timeline table, what slowed it down. It feeds log_retrospective and, with SHIP-568, the project’s Ways of working.",
             "planning_guide part retro", "The conductor, at the end of the run", null, None, None),
+        new(PromptKey.RetroAnalysis, PromptStage.Retro, "retro_analysis.md", "Analyse retros",
+            "The method for analysing a project's retro points in aggregate: export, rewrite, cluster, check what is already enforced, and record ranked fixes by tier.",
+            "planning_guide part retro_analysis", "The agent running an aggregate retro analysis", null, None, None),
         new(PromptKey.SprintDemo, PromptStage.SprintDemo, "sprint-demo-prompt.md", "Sprint demo video",
             "When a sprint closes and a demo is requested, this is the whole recipe for the narrated video: chapters, narration, recording, upload.",
             "create_sprint_demo", "The demo agent (handover or agent-relay session)", null, SprintDemoPlaceholders(),
@@ -104,6 +107,7 @@ public sealed partial class BuiltInPrompts : IBuiltInPrompts
         PromptKey.CodeReviewer => PlanGuide.Read(PlanGuidePart.CodeReviewer),
         PromptKey.Fix => PlanGuide.Read(PlanGuidePart.Fix),
         PromptKey.Retro => PlanGuide.Read(PlanGuidePart.Retro),
+        PromptKey.RetroAnalysis => PlanGuide.Read(PlanGuidePart.RetroAnalysis),
         PromptKey.SprintDemo => ReadSprintDemo(),
         _ => throw new ArgumentOutOfRangeException(nameof(key), key, "Unknown prompt."),
     };

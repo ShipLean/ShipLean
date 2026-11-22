@@ -19,7 +19,7 @@ public class PromptReadsTests : ApiFixture
 
     private static readonly PromptKey[] StageOrder =
         [PromptKey.IssueProposal, PromptKey.Work, PromptKey.Guide, PromptKey.PlanReviewer, PromptKey.Lead, PromptKey.Brief, PromptKey.Report,
-         PromptKey.CodeReviewer, PromptKey.Fix, PromptKey.Retro, PromptKey.SprintDemo];
+         PromptKey.CodeReviewer, PromptKey.Fix, PromptKey.Retro, PromptKey.RetroAnalysis, PromptKey.SprintDemo];
 
     private readonly BuiltInPrompts _builtIns = new();
 
@@ -70,7 +70,7 @@ public class PromptReadsTests : ApiFixture
     private Task<Guid> SeedAsync(PromptVersionBuilder builder) => builder.InsertAsync(ConnectionString);
 
     [Test]
-    public async Task Page_WhenNoCustom_ShouldListElevenPromptsInStageOrder()
+    public async Task Page_WhenNoCustom_ShouldListTwelvePromptsInStageOrder()
     {
         var page = await PageAsync(SeedIds.Projects.Empt);
 
