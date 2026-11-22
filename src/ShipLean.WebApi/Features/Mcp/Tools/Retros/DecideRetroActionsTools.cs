@@ -22,10 +22,9 @@ namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
 internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolver projects, SprintResolver sprints, IProjectAccess access, CaptureSupport support, FeatureKind features, PlanEnvelope envelope, IRetroDecidePlanner planner, ICurrentUser user, ICurrentAgent agent)
 {
     private const string PlanKind = "decide_retro_actions";
-    private const int MaxNewActions = 3;
 
     [McpServerTool(Name = "decide_retro_actions"), McpScope(McpScopes.Plan, PreviewScope = McpScopes.Read)]
-    [Description("Decide what to do with the undecided retrospective points in one scope (a Feature, a sprint, or a date range): create action items over them, add them to open actions, mark points Not needed with a reason, set themes, and propose theme merges for a person to accept. Give exactly one scope. Without `plan` it only previews and returns a plan; call again with that plan to apply exactly it. At most 3 new action items per call. A point already decided is skipped, never an error. A merge is only ever proposed here, never applied: a person accepts or rejects it, and when they ask you to, decide_theme_merges lists the pending proposals and answers them.")]
+    [Description("Decide what to do with the undecided retrospective points in one scope (a Feature, a sprint, or a date range): create action items over them, add them to open actions, mark points Not needed with a reason, set themes, and propose theme merges for a person to accept. Give exactly one scope. Without `plan` it only previews and returns a plan; call again with that plan to apply exactly it. Each new action item gets a priority and a fix:<type> tag by its fix type; the preview is the check on how many are created. A point already decided is skipped, never an error. A merge is only ever proposed here, never applied: a person accepts or rejects it, and when they ask you to, decide_theme_merges lists the pending proposals and answers them.")]
     public async Task<CallToolResult> DecideRetroActions(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("Scope: a Feature's key. Its own retro plus its stories' and bugs'.")] string? feature = null,
@@ -53,10 +52,6 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
 
         var scope = await RetroScopeArgs.RequireOneAsync(items, sprints, features, resolved.Id, feature, sprint, from, to, cancellationToken);
         RequireFields(actions, not_needed, themes, merges);
-        if (actions?.Count(action => string.IsNullOrWhiteSpace(action.Existing)) > MaxNewActions)
-        {
-            throw ApiException.Validation($"At most {MaxNewActions} new action items per call. Fold the points into fewer actions, or add them to an open action with `existing`.", "actions");
-        }
 
         var request = new DecidePlan(
             scope,

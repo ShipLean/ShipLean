@@ -109,7 +109,7 @@ public class DecideRetroActionsJourneyTests : SeededAcceptanceTest
     }
 
     [Test]
-    public async Task Decide_WhenFourNew_ShouldBeRefused()
+    public async Task Decide_WhenFourNew_ShouldPreview()
     {
         var feature = await ArrangeFeatureAsync();
         await using var mcp = await ConnectAsync();
@@ -125,10 +125,7 @@ public class DecideRetroActionsJourneyTests : SeededAcceptanceTest
             ["actions"] = ids.Select((id, i) => new { title = $"Action {i}", fix_type = "other", points = new[] { id } }).ToArray(),
         });
 
-        result.IsError.ShouldBe(true);
-        var text = result.StructuredContent?.ToString() ?? string.Join(" ", result.Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().Select(b => b.Text));
-        text.ShouldContain("actions");
-        text.ShouldContain("3 new action items");
+        result.IsError.ShouldNotBe(true);
         (await CountActionsAsync("Action ")).ShouldBe(0);
     }
 
