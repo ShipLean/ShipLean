@@ -10,7 +10,7 @@ using ShipLean.TestSupport;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.WebVitals;
-using ShipLean.WebApi.Features.Usage;
+using ShipLean.WebApi.Features.WebVitals;
 
 namespace ShipLean.WebApi.Tests.WebVitals.Endpoint;
 
@@ -113,7 +113,8 @@ public class WebVitalsEndpointTests : ApiFixture
     public async Task Post_WhenValid_ShouldQueueASampleWithTheUserAndUserAgent()
     {
         var userAgent = "Mozilla/5.0 " + new string('a', 600);
-        var before = DateTimeOffset.UtcNow;
+        var clock = Host.Services.GetRequiredService<TimeProvider>();
+        var before = clock.GetUtcNow();
 
         using var response = await PostWithUserAgentAsync(userAgent, new { reports = new[] { Report(fcp: 120, ttfb: 40) } });
 
@@ -129,7 +130,7 @@ public class WebVitalsEndpointTests : ApiFixture
         sample.UserAgent.ShouldBe(userAgent[..512]);
         sample.ScreenSize.ShouldBe("1920x1080");
         sample.DistinctId.ShouldBe(UsageActor.ForUser(SeedIds.Users.Joel).DistinctId);
-        sample.OccurredAt.ShouldBeInRange(before.AddSeconds(-5), DateTimeOffset.UtcNow.AddSeconds(5));
+        sample.OccurredAt.ShouldBeInRange(before, clock.GetUtcNow());
     }
 
     [Test]
@@ -200,7 +201,7 @@ public class WebVitalsEndpointTests : ApiFixture
     [Test]
     public async Task Post_WhenBodyTooLarge_ShouldAnswer413()
     {
-        var body = JsonSerializer.Serialize(new { reports = new[] { Report() }, padding = new string('x', UsageController.WebVitalsMaxBodyBytes) }, JsonSerializerOptions.Web);
+        var body = JsonSerializer.Serialize(new { reports = new[] { Report() }, padding = new string('x', WebVitalsController.MaxBodyBytes) }, JsonSerializerOptions.Web);
         using var request = new HttpRequestMessage(HttpMethod.Post, PostPath);
         request.Headers.Add(ClientHeader.Name, ApiClient.ClientId);
         // Kestrel refuses the body by its Content-Length; asking to continue first gets the 413 before any of the body is sent.

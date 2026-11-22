@@ -148,8 +148,8 @@ public static class ActionUsageMap
         Add(ActionUsage.Track(UsageEventNames.RetroPointSupported), "RetroSupport.Support");
         Add(ActionUsage.Track(UsageEventNames.RetroPointUnsupported), "RetroSupport.Withdraw");
 
-        Add(ActionUsage.Untracked("Web vitals readings go to the analytics provider on their own pipeline, not as usage events."), "Usage.WebVitals");
-        Add(ActionUsage.Untracked("A settings read the SPA makes once per page load to decide whether to measure web vitals."), "Usage.WebVitalsConfig");
+        Add(ActionUsage.Untracked("Web vitals readings go to the analytics provider on their own pipeline, not as usage events."), "WebVitals.Post");
+        Add(ActionUsage.Untracked("A settings read the SPA makes once per page load to decide whether to measure web vitals."), "WebVitals.Config");
 
         // Self-emitted: the action knows what the filter cannot (which sign-in, which decision, the new project, the screen, the sort).
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
