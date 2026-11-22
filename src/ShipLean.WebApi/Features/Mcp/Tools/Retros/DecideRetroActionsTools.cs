@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Globalization;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Application.Features.Mcp.Planning.Lessons;
@@ -13,6 +12,7 @@ using ShipLean.WebApi.Features.Mcp.Plan;
 using ShipLean.WebApi.Features.Mcp.Resolve;
 using ShipLean.WebApi.Features.Mcp.Tools.Capture;
 using ShipLean.WebApi.Features.Mcp.Tools.Planning;
+using ShipLean.WebApi.Features.Mcp.Tools.Retros.Analysis;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Retros;
 
@@ -51,7 +51,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             return PlanningReply.Of(done, $"Applied: {applied.Created.Count} action items created, {applied.WouldAdd.Count} added to, {applied.WouldMarkNotNeeded.Count} marked Not needed, {applied.Skipped.Count} skipped, {applied.LeftUndecided} points still undecided.");
         }
 
-        var scope = await RequireOneScopeAsync(resolved.Id, feature, sprint, from, to, cancellationToken);
+        var scope = await RetroScopeArgs.RequireOneAsync(items, sprints, features, resolved.Id, feature, sprint, from, to, cancellationToken);
         RequireFields(actions, not_needed, themes, merges);
         if (actions?.Count(action => string.IsNullOrWhiteSpace(action.Existing)) > MaxNewActions)
         {
@@ -110,7 +110,7 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             RequireText(action!.FixType, $"actions[{i}].fix_type");
             if (!Enum.TryParse<RetroFixType>(action.FixType, ignoreCase: true, out var fixType) || !Enum.IsDefined(fixType))
             {
-                throw ApiException.Validation("fix_type is skill, guide, test, analyzer, product or other.", $"actions[{i}].fix_type");
+                throw ApiException.Validation("fix_type is fix, structure, analyzer, test, skill, guide, product or other.", $"actions[{i}].fix_type");
             }
 
             if (action.Points is not { Count: > 0 })
@@ -144,46 +144,4 @@ internal sealed class DecideRetroActionsTools(ItemResolver items, ProjectResolve
             throw ApiException.Validation($"{field} is required.", field);
         }
     }
-
-    private async Task<DecideScope> RequireOneScopeAsync(Guid projectId, string? feature, string? sprint, string? from, string? to, CancellationToken cancellationToken)
-    {
-        var hasFeature = !string.IsNullOrWhiteSpace(feature);
-        var hasSprint = !string.IsNullOrWhiteSpace(sprint);
-        var hasFrom = !string.IsNullOrWhiteSpace(from);
-        var hasTo = !string.IsNullOrWhiteSpace(to);
-        if (hasFrom != hasTo)
-        {
-            throw ApiException.Validation("Give `from` and `to` together, or neither.", "scope");
-        }
-
-        if (new[] { hasFeature, hasSprint, hasFrom }.Count(given => given) != 1)
-        {
-            throw ApiException.Validation("Give exactly one scope: `feature`, `sprint`, or `from` with `to`.", "scope");
-        }
-
-        if (hasFeature)
-        {
-            var resolvedFeature = await items.ResolveAsync(feature!, ProjectRole.Member, projectId, "feature", cancellationToken);
-            if (!await features.IsFeatureAsync(resolvedFeature.Id, cancellationToken))
-            {
-                throw ApiException.Validation($"{resolvedFeature.Key} is not a Feature. Give the key of a Feature.", "feature");
-            }
-
-            return new DecideScope(resolvedFeature.Id, null, null, null);
-        }
-
-        if (hasSprint)
-        {
-            return new DecideScope(null, (await sprints.ResolveAsync(projectId, sprint!, cancellationToken: cancellationToken)).Id, null, null);
-        }
-
-        var start = Day(from!, "from");
-        var end = Day(to!, "to");
-        return start > end ? throw ApiException.Validation("`from` is after `to`.", "from") : new DecideScope(null, null, start, end);
-    }
-
-    private static DateOnly Day(string text, string field)
-        => DateOnly.TryParseExact(text.Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)
-            ? day
-            : throw ApiException.Validation($"\"{text}\" is not a date like 2026-11-03.", field);
 }
