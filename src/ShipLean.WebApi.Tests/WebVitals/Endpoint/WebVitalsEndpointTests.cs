@@ -1,7 +1,9 @@
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Application.Features.WebVitals;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Analytics;
 using ShipLean.Contracts.Errors;
@@ -218,7 +220,7 @@ public class WebVitalsEndpointTests : ApiFixture
     public async Task Post_WhenMetricOutOfRange_ShouldDropOnlyThatMetric()
     {
         using var response = await PostAsync(
-            Report(lcp: 60_001, inp: 60_000, cls: 0.1, fcp: 0, ttfb: 10),
+            Report(lcp: 60_001, inp: 60_000, cls: 100, fcp: 0, ttfb: 10),
             Report(lcp: 812.4, inp: -1, cls: 100.5, fcp: 120, ttfb: null));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -226,7 +228,7 @@ public class WebVitalsEndpointTests : ApiFixture
         var first = Recorder.Samples[0];
         first.Lcp.ShouldBeNull();
         first.Inp.ShouldBe(60_000);
-        first.Cls.ShouldBe(0.1);
+        first.Cls.ShouldBe(100);
         first.Fcp.ShouldBe(0);
         first.Ttfb.ShouldBe(10);
         var second = Recorder.Samples[1];
@@ -247,5 +249,37 @@ public class WebVitalsEndpointTests : ApiFixture
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         Recorder.Samples.ShouldHaveSingleItem().Screen.ShouldBe("profile");
+    }
+    [Test]
+    public async Task Post_WhenAReportIsNull_ShouldAnswer400WithField()
+    {
+        using var response = await Api.PostJsonAsync(PostPath, new { reports = new[] { Report(), null } });
+
+        await ShouldBeValidationAsync(response, "reports");
+        Recorder.Samples.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Post_WhenMetricOutOfRange_ShouldCountItAsDiscarded()
+    {
+        var factory = Host.Services.GetRequiredService<IMeterFactory>();
+        long discarded = 0;
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, l) =>
+            {
+                if (instrument.Meter.Scope == factory && instrument.Meter.Name == WebVitalsQueue.MeterName && instrument.Name == WebVitalsMetrics.DiscardedCounterName)
+                {
+                    l.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>((_, value, _, _) => Interlocked.Add(ref discarded, value));
+        listener.Start();
+
+        using var response = await PostAsync(Report(lcp: 60_001, inp: 96, cls: -1), Report(lcp: 500, inp: 96, cls: 100));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        Interlocked.Read(ref discarded).ShouldBe(2);
     }
 }
