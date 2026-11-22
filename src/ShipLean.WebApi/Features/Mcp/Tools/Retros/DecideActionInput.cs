@@ -8,7 +8,7 @@ public sealed record DecideActionInput
     [JsonPropertyName("title"), Description("The action item's title.")]
     public required string Title { get; init; }
 
-    [JsonPropertyName("fix_type"), Description("skill, guide, test, analyzer, product or other.")]
+    [JsonPropertyName("fix_type"), Description("fix, structure, analyzer, test, skill, guide, product or other.")]
     public required string FixType { get; init; }
 
     [JsonPropertyName("points"), Description("The ids of the retro points this action covers.")]

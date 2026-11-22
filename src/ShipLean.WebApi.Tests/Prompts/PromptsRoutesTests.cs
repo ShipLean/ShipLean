@@ -17,7 +17,7 @@ public class PromptsRoutesTests : ApiFixture
     private static string Route(string tail = "") => $"api/projects/{SeedIds.Projects.Ship}/prompts{tail}";
 
     [Test]
-    public async Task Page_WhenOpened_ShouldReturnElevenPromptsInSevenStages()
+    public async Task Page_WhenOpened_ShouldReturnTwelvePromptsInSevenStages()
     {
         using var response = await Api.GetAsync(Route());
 
@@ -25,7 +25,7 @@ public class PromptsRoutesTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.OK, text);
         var page = JsonSerializer.Deserialize<PromptsPageDto>(text, Wire)!;
         page.Stages.Count.ShouldBe(7);
-        page.Stages.SelectMany(s => s.Prompts).Count().ShouldBe(11);
+        page.Stages.SelectMany(s => s.Prompts).Count().ShouldBe(12);
         page.CanEdit.ShouldBeTrue();
     }
 

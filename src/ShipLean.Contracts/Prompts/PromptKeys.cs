@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace ShipLean.Contracts.Prompts;
 
-// The camelCase wire value of a PromptKey (C1) and the way back: only the 11 names, never a number or another case.
+// The camelCase wire value of a PromptKey (C1) and the way back: only the 12 names, never a number or another case.
 public static class PromptKeys
 {
     private static readonly Dictionary<string, PromptKey> ByWire = Enum.GetValues<PromptKey>().ToDictionary(ToWire, StringComparer.Ordinal);

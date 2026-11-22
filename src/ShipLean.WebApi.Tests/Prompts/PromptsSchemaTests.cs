@@ -20,6 +20,23 @@ public class PromptsSchemaTests
     public async Task TearDown() => await _database.DisposeAsync();
 
     [Test]
+    public async Task PromptKey_WhenRetroAnalysis_ShouldBeAcceptedInEachPromptTable()
+    {
+        var versionId = await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.RetroAnalysis).InsertAsync(_database.ConnectionString);
+        await new PromptServingBuilder(SeedIds.Projects.Ship, PromptKey.RetroAnalysis).WithVersion(versionId, 1).InsertAsync(_database.ConnectionString);
+        await using var connection = await _database.OpenAsync();
+
+        await connection.ExecuteAsync(
+            "INSERT INTO project_prompt (project_id, prompt, in_use_version_id, updated_at) VALUES (@project, 'retroAnalysis', @versionId, now())",
+            new { project = SeedIds.Projects.Ship, versionId });
+
+        foreach (var table in new[] { "prompt_built_in", "prompt_version", "project_prompt", "prompt_serving" })
+        {
+            (await connection.QuerySingleAsync<int>($"SELECT count(*)::int FROM {table} WHERE prompt = 'retroAnalysis'")).ShouldBeGreaterThanOrEqualTo(1, table);
+        }
+    }
+
+    [Test]
     public async Task PromptVersion_WhenOver64KB_ShouldBeRefusedByTheCheck()
     {
         var builder = new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Work).WithText(new string('é', 32_769));

@@ -15,7 +15,7 @@ public class GuideRulesTests
     {
         var files = GuideScan.GuideFiles();
 
-        files.Count.ShouldBe(9);
+        files.Count.ShouldBe(10);
         GuideScan.UnregisteredTokens(files, GuideScan.RegisteredNames()).ShouldBeEmpty("Write a name that is not a tool, prompt, parameter or field without backticks.");
     }
 
@@ -31,7 +31,7 @@ public class GuideRulesTests
     {
         var files = GuideScan.GuideFiles();
 
-        files.Count.ShouldBe(9);
+        files.Count.ShouldBe(10);
         GuideScan.BannedMentions(files).ShouldBeEmpty("Use roles: the strongest model, a fast cheap model, a reviewer from a different model family.");
     }
 

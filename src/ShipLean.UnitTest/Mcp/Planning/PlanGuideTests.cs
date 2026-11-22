@@ -27,6 +27,12 @@ public partial class PlanGuideTests
         }
 
         PlanGuide.Read(PlanGuidePart.Retro).ReplaceLineEndings("\n").ShouldContain("\n## What to change next time\n");
+
+        var analysis = PlanGuide.Read(PlanGuidePart.RetroAnalysis).ReplaceLineEndings("\n");
+        foreach (var heading in new[] { "When to run", "Steps", "Tiers", "Report" })
+        {
+            analysis.ShouldContain($"\n## {heading}\n");
+        }
     }
 
     [Test]
@@ -40,7 +46,7 @@ public partial class PlanGuideTests
 
         PlanGuide.Read(PlanGuidePart.Guide).ShouldBeSameAs(PlanGuide.Read(PlanGuidePart.Guide));
         Enum.GetValues<PlanGuidePart>().Select(p => p.WireName())
-            .ShouldBe(["work", "guide", "brief", "report", "plan_reviewer", "code_reviewer", "fix", "lead", "retro"]);
+            .ShouldBe(["work", "guide", "brief", "report", "plan_reviewer", "code_reviewer", "fix", "lead", "retro", "retro_analysis"]);
     }
 
     [Test]

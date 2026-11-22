@@ -46,7 +46,7 @@ public class RetroDtoTests
         Name(RetroTone.Good).ShouldBe("good");
         Name(RetroThemeSetBy.Person).ShouldBe("person");
         Name(RetroDecision.NotNeeded).ShouldBe("notNeeded");
-        Name(RetroFixType.Analyzer).ShouldBe("analyzer");
+        Enum.GetValues<RetroFixType>().Select(value => Name(value)).ShouldBe(["fix", "structure", "analyzer", "test", "skill", "guide", "product", "other"]);
         Name(RetroInsightsMode.Week).ShouldBe("week");
         Name(RetroInsightColumnKind.Sprint).ShouldBe("sprint");
     }
