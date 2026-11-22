@@ -6,6 +6,7 @@ using ShipLean.Contracts.Analytics;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Analytics;
 using ShipLean.TestSupport.Usage;
+using ShipLean.WebApi.Tests.Backups;
 using ShipLean.WebApi.Tests.Backups.Job;
 
 namespace ShipLean.WebApi.Tests.WebVitals.Delivery;
@@ -77,28 +78,27 @@ public class WebVitalsDispatcherTests
         await done;
     }
 
+    private async Task AdvanceUntilAsync(Func<bool> condition)
+    {
+        using var limit = new CancellationTokenSource(Limit);
+        while (!condition())
+        {
+            limit.Token.ThrowIfCancellationRequested();
+            _clock.Advance(TimeSpan.FromSeconds(1));
+            await Task.Yield();
+        }
+    }
+
     private static async Task WaitAsync(SemaphoreSlim signal)
     {
         using var limit = new CancellationTokenSource(Limit);
         await signal.WaitAsync(limit.Token);
     }
 
-    // Fails the test when the task is not done in real time.
-    private static async Task<T> WithinAsync<T>(Task<T> task, TimeSpan limit)
+    private static async Task<T> Within<T>(Task<T> task, string what)
     {
-        await WithinAsync((Task)task, limit);
+        await Bounded.WithinAsync(task, what);
         return await task;
-    }
-
-    private static async Task WithinAsync(Task task, TimeSpan limit)
-    {
-        using var timer = new CancellationTokenSource();
-        if (await Task.WhenAny(task, Task.Delay(limit, timer.Token)) != task)
-        {
-            throw new TimeoutException($"Not done within {limit.TotalSeconds:0} s.");
-        }
-        await timer.CancelAsync();
-        await task;
     }
 
     private MeterListener Listen(string counter, TaskCompletionSource<(long Value, string? Provider)> measured)
@@ -142,7 +142,7 @@ public class WebVitalsDispatcherTests
         call.Batch.Count.ShouldBe(3);
         call.Batch.ShouldAllBe(s => s.Screen == "taskboard");
         call.Target.Provider.ShouldBe(AnalyticsProvider.Umami);
-        var (value, provider) = await WithinAsync(sent.Task, Limit);
+        var (value, provider) = await Within(sent.Task, "the sent counter");
         value.ShouldBe(3);
         provider.ShouldBe("umami");
     }
@@ -153,7 +153,7 @@ public class WebVitalsDispatcherTests
         UseTarget(Target(AnalyticsProvider.Umami, false));
         var reads = _reader.ReadCount;
         Track(100, "off");
-        await WithinAsync(_reader.WaitForReadsAsync(reads + 1), Limit);
+        await Bounded.WithinAsync(_reader.WaitForReadsAsync(reads + 1), "the settings read");
 
         // The same path with the switch on delivers, and only the later batch arrives.
         UseTarget(Target(AnalyticsProvider.Umami, true));
@@ -171,7 +171,7 @@ public class WebVitalsDispatcherTests
         UseTarget(null);
         var reads = _reader.ReadCount;
         Track(100, "none");
-        await WithinAsync(_reader.WaitForReadsAsync(reads + 1), Limit);
+        await Bounded.WithinAsync(_reader.WaitForReadsAsync(reads + 1), "the settings read");
 
         UseTarget(Target(AnalyticsProvider.Umami, true));
         Track(100, "after");
@@ -189,18 +189,20 @@ public class WebVitalsDispatcherTests
         using var listener = Listen(WebVitalsDispatcher.FailedCounterName, failed);
 
         Track(100, "failing");
-        var (value, provider) = await WithinAsync(failed.Task, Limit);
+        var (value, provider) = await Within(failed.Task, "the failed counter");
 
         value.ShouldBe(100);
         provider.ShouldBe("umami");
-        await WaitAsync(_umami.Attempts);
-        // Time well past any retry delay: still the one call.
+        // Exactly one send, already, when the failure was counted: a retrying dispatcher would have made two first.
+        _umami.AttemptCount.ShouldBe(1);
         _clock.Advance(TimeSpan.FromMinutes(5));
+        _umami.AttemptCount.ShouldBe(1);
+
         _umami.Inner.FailWith(null);
         Track(1, "next");
-        await AdvanceUntilAsync(WaitAsync(_umami.Attempts));
-        _umami.AttemptCount.ShouldBe(2);
+        await AdvanceUntilAsync(() => _umami.Inner.Calls.Count == 1);
         _umami.Inner.Samples.ShouldAllBe(s => s.Screen == "next");
+        _umami.AttemptCount.ShouldBe(2);
     }
 
     [Test]
@@ -236,7 +238,7 @@ public class WebVitalsDispatcherTests
         Track(5, "queued");
 
         // The sink is stuck inside SendAsync and ignores its token; the clock does not move.
-        await WithinAsync(_dispatcher.StopAsync(CancellationToken.None), TimeSpan.FromSeconds(5));
+        await Bounded.WithinAsync(_dispatcher.StopAsync(CancellationToken.None), "the dispatcher to stop");
 
         gate.SetResult();
         _umami.Inner.Samples.ShouldNotContain(s => s.Screen == "queued");

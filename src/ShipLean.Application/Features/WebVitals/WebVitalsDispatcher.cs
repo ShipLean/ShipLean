@@ -116,6 +116,7 @@ public sealed class WebVitalsDispatcher : BackgroundService
             await delivery;
             return;
         }
+        _logger.LogDebug("Web vitals send abandoned on stop ({Count} samples)", batch.Count);
         _ = ObserveAbandonedAsync(delivery);
     }
 
@@ -154,9 +155,13 @@ public sealed class WebVitalsDispatcher : BackgroundService
         {
             await sink.SendAsync(batch, target, cancellationToken);
         }
-        catch (Exception problem) when (!cancellationToken.IsCancellationRequested)
+        catch (Exception problem)
         {
-            Fail(provider, batch.Count, Describe(problem));
+            // Once the host is stopping the batch is dropped, whatever the sink threw: nothing may escape the loop.
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                Fail(provider, batch.Count, Describe(problem));
+            }
             return;
         }
         _sent.Add(batch.Count, new KeyValuePair<string, object?>("provider", provider));
