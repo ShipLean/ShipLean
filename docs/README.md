@@ -17,7 +17,7 @@ Working documentation for ShipLean that is too long for `AGENTS.md`. One file pe
 | `prompts.md` | Prompts: Project settings › Prompts, the 11 customizable prompts, versions, agent-specific sections and how the agent is recognised, placeholders, built-in updates, what the agent gets, runs, and the code map. |
 | `search.md` | Advanced search: the `search_doc` row contract (fields, weights, chunking, staleness, what is never indexed) and the embedder, index and ranker pieces. |
 | `navigation.md` | Routes, the shell, pages and their slots, and how screens link to each other. |
-| `analytics.md` | Usage analytics: the three capture seams, the event catalogue, the property rules, delivery to Umami or PostHog, and how a tracked action is added. |
+| `analytics.md` | Usage analytics: the three capture seams, the event catalogue, the property rules, delivery to Umami or PostHog, how a tracked action is added, and Core Web Vitals sent from signed-in browsers (the switch, what leaves the instance, first load versus in-app navigation). |
 | `observability.md` | OpenTelemetry: turning it on, the spans, metrics and log fields emitted, what is deliberately left out, and the local Aspire dashboard profile. |
 | `backups.md` | Scheduled backups: what is and isn't backed up, the bucket layout, setup in Instance settings › Backups, S3 permissions, passphrase generations, the restore runbook and troubleshooting. |
 | `mobile-release.md` | Releasing the phone app: building for testers, grabbing the built files, changing the store listing, the Play closed test, going live, version bumps and failed runs, each with copy-paste `gh` commands. |
