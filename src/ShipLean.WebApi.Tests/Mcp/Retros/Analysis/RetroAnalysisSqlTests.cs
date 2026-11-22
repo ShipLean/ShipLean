@@ -80,10 +80,10 @@ public sealed class RetroAnalysisSqlTests : ApiFixture
             new { pointIds = new[] { onStory, onFeature, onSprint } });
 
         evidence.Points.ShouldBe(3);
-        evidence.Items.ShouldBe(new[] { featureKey, storyKey }.Order(StringComparer.Ordinal).ToArray());
-        evidence.Features.ShouldBe([featureKey]);
+        evidence.Items.Cast<string>().ShouldBe(new[] { featureKey, storyKey }.Order(StringComparer.Ordinal).ToArray());
+        evidence.Features.Cast<string>().ShouldBe([featureKey]);
         evidence.Sprints.Length.ShouldBe(1);
-        evidence.Agents.ShouldBe(["agent-evidence-a", "agent-evidence-b"]);
+        evidence.Agents.Cast<string>().ShouldBe(["agent-evidence-a", "agent-evidence-b"]);
         (evidence.LastLogged - evidence.FirstLogged).ShouldBe(TimeSpan.FromDays(2));
     }
 
@@ -100,7 +100,7 @@ public sealed class RetroAnalysisSqlTests : ApiFixture
             new { pointIds = Array.Empty<Guid>() });
 
         evidence.Points.ShouldBe(0);
-        evidence.Items.ShouldBeEmpty();
+        evidence.Items.Length.ShouldBe(0);
         evidence.FirstLogged.ShouldBeNull();
     }
 
@@ -129,7 +129,8 @@ public sealed class RetroAnalysisSqlTests : ApiFixture
     }
 
     private static Task<bool> CoveredAsync(NpgsqlConnection connection, Guid project, Guid point)
-        => connection.ExecuteScalarAsync<bool>($"SELECT {RetroCoveredSql.Covered("p")} FROM retro_point p WHERE p.id = @point", new { project, point });
+        => connection.ExecuteScalarAsync<bool>($"SELECT {RetroCoveredSql.Covered("p")} FROM retro_point p WHERE p.id = @point", new { projectId = project, point });
 
-    private sealed record EvidenceRow(int Points, string[] Items, string[] Features, string[] Sprints, string[] Agents, DateTime? FirstLogged, DateTime? LastLogged);
+    // Array, not string[]: Dapper's constructor matching sees text[] as System.Array (as SprintStatusReads.ItemRow does).
+    private sealed record EvidenceRow(int Points, Array Items, Array Features, Array Sprints, Array Agents, DateTime? FirstLogged, DateTime? LastLogged);
 }

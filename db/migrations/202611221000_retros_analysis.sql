@@ -13,7 +13,7 @@ CREATE TABLE retro_analysis (
     embedding_model    text NOT NULL,
     rewrite_model      text,
     report_markdown    text NOT NULL,
-    created_at         timestamptz NOT NULL,
+    created_at         timestamptz NOT NULL DEFAULT now(),
     archived_at        timestamptz
 );
 CREATE INDEX ix_retro_analysis_project ON retro_analysis (project_id, created_at DESC);
