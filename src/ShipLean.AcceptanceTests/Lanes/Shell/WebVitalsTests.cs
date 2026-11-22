@@ -15,7 +15,16 @@ public class WebVitalsTests : SeededAcceptanceTest
 {
     private const string BacklogPath = "/p/SHIP/backlogs/stories";
     private const string WorkItemPath = "/p/SHIP/items/SHIP-124";
+    private const string SoftNavigationSeen =
+        "() => new Promise(resolve => new PerformanceObserver((_, observer) => { observer.disconnect(); resolve(); }).observe({ type: 'soft-navigation', buffered: true }))";
+
     private static readonly TimeSpan SampleTimeout = TimeSpan.FromSeconds(20);
+
+    // A keepalive sent by an earlier test's page can still land after Recorder.Clear(), and the server stamps OccurredAt
+    // on arrival, so a time cut-off would not exclude it. Each test's page reports its own screen size instead (the
+    // reporter sends screen.width x screen.height), and a test only counts samples with that size.
+    private static int _nextScreen = 1000;
+    private string _screenSize = "";
 
     private RecordingWebVitals Recorder => (RecordingWebVitals)Host.Services.GetRequiredService<IWebVitalsQueue>();
 
@@ -27,7 +36,7 @@ public class WebVitalsTests : SeededAcceptanceTest
         await OpenMeasuredAsync(BacklogPath, PagesTestIds.BacklogPage);
         await Page.GotoAsync("about:blank");
 
-        var sample = await Recorder.WaitForAsync(s => s.Screen == "storiesBacklog" && s.Navigation == WebVitalsNavigation.Hard && s.Lcp is not null, SampleTimeout);
+        var sample = await Recorder.WaitForAsync(s => Mine(s) && s.Screen == "storiesBacklog" && s.Navigation == WebVitalsNavigation.Hard && s.Lcp is not null, SampleTimeout);
         sample.Lcp!.Value.ShouldBeGreaterThan(0);
     }
 
@@ -39,9 +48,12 @@ public class WebVitalsTests : SeededAcceptanceTest
         await OpenMeasuredAsync(BacklogPath, PagesTestIds.BacklogPage);
         await Page.GetByTestId(ShellTestIds.NavSprints).ClickAsync();
         await Expect(Page.GetByTestId(PagesTestIds.SprintsPage)).ToBeVisibleAsync();
+        // Chromium emits the soft-navigation entry some time after the new screen paints; leave before it and web-vitals
+        // still counts everything against the first load, so wait for the browser to have recognised the navigation.
+        await Page.EvaluateAsync(SoftNavigationSeen);
         await Page.GotoAsync("about:blank");
 
-        var sample = await Recorder.WaitForAsync(s => s.Screen == "sprints" && s.Navigation == WebVitalsNavigation.Soft, SampleTimeout);
+        var sample = await Recorder.WaitForAsync(s => Mine(s) && s.Screen == "sprints" && s.Navigation == WebVitalsNavigation.Soft, SampleTimeout);
         sample.Ttfb.ShouldBeNull();
     }
 
@@ -77,7 +89,7 @@ public class WebVitalsTests : SeededAcceptanceTest
         // Only the reporter chunk sends readings, so no chunk means nothing can be sent. Playwright does not report the
         // keepalive POST a page sends while it unloads, so the sending side is checked on the server.
         chunks.ShouldBeEmpty();
-        Recorder.Samples.ShouldBeEmpty();
+        Recorder.Samples.Where(s => Mine(s)).ShouldBeEmpty();
     }
 
     [Test]
@@ -88,9 +100,9 @@ public class WebVitalsTests : SeededAcceptanceTest
         await OpenMeasuredAsync(WorkItemPath, PagesTestIds.WorkItemPage);
         await Page.GotoAsync("about:blank");
 
-        var sample = await Recorder.WaitForAsync(s => s.Screen == "workItem", SampleTimeout);
+        var sample = await Recorder.WaitForAsync(s => Mine(s) && s.Screen == "workItem", SampleTimeout);
         sample.Screen.ShouldBe("workItem");
-        Recorder.Samples.ShouldAllBe(s => !s.Screen.Contains("SHIP-") && !s.Screen.Contains('/'));
+        Recorder.Samples.Where(s => Mine(s)).ShouldAllBe(s => !s.Screen.Contains("SHIP-") && !s.Screen.Contains('/'));
     }
 
     // Opens a page and waits until the reporter's chunk has loaded, so its observers are in place before the test leaves.
@@ -103,6 +115,19 @@ public class WebVitalsTests : SeededAcceptanceTest
 
     private async Task SetSwitchAsync(bool on)
     {
+        var width = Interlocked.Increment(ref _nextScreen);
+        _screenSize = $"{width}x{width - 300}";
+        var viewport = Page.ViewportSize!;
+        var session = await Page.Context.NewCDPSessionAsync(Page);
+        await session.SendAsync("Emulation.setDeviceMetricsOverride", new Dictionary<string, object>
+        {
+            ["width"] = viewport.Width,
+            ["height"] = viewport.Height,
+            ["deviceScaleFactor"] = 0,
+            ["mobile"] = false,
+            ["screenWidth"] = width,
+            ["screenHeight"] = width - 300,
+        });
         var response = await Page.Context.APIRequest.PutAsync("/api/instance/analytics", new APIRequestContextOptions
         {
             DataObject = new { provider = "umami", host = "https://umami.example.com", siteKey = "7f3c1a52-9d4e-4b8a-a1c6-2e5f0b9d3c71", sendNames = false, sendWebVitals = on },
@@ -111,6 +136,8 @@ public class WebVitalsTests : SeededAcceptanceTest
         response.Ok.ShouldBeTrue(await response.TextAsync());
         Recorder.Clear();
     }
+
+    private bool Mine(WebVitalsSample sample) => sample.ScreenSize == _screenSize;
 
     private static bool IsReporterChunk(string url) => url.Contains("/assets/startReporter-", StringComparison.Ordinal);
 }
