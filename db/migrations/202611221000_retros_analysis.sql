@@ -13,6 +13,9 @@ CREATE TABLE retro_analysis (
     embedding_model    text NOT NULL,
     rewrite_model      text,
     report_markdown    text NOT NULL,
+    points_in          int NOT NULL DEFAULT 0,
+    actions_new        int NOT NULL DEFAULT 0,
+    actions_added      int NOT NULL DEFAULT 0,
     created_at         timestamptz NOT NULL DEFAULT now(),
     archived_at        timestamptz
 );

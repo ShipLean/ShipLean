@@ -12,7 +12,7 @@ internal sealed class RetroAnalysisStore(NpgsqlDataSource dataSource)
 {
     public async Task<Guid> StoreAsync(
         Guid projectId, RecordRetroAnalysisRequest request, RetroActor actor, IReadOnlyList<RetroAnalysisRanking.RankedPattern> ranked,
-        IReadOnlyDictionary<string, Guid> actionByPattern, CancellationToken cancellationToken)
+        IReadOnlyDictionary<string, Guid> actionByPattern, RetroFunnel funnel, CancellationToken cancellationToken)
     {
         var analysisId = Guid.NewGuid();
         var patternIds = ranked.ToDictionary(entry => entry.Pattern.Ref, _ => Guid.NewGuid(), StringComparer.Ordinal);
@@ -23,8 +23,8 @@ internal sealed class RetroAnalysisStore(NpgsqlDataSource dataSource)
         await connection.ExecuteAsync(
             new CommandDefinition(
                 """
-                INSERT INTO retro_analysis (id, project_id, scope_kind, feature_id, sprint_id, range_from, range_to, created_by_user_id, agent_name, embedding_model, rewrite_model, report_markdown)
-                VALUES (@analysisId, @projectId, @scopeKind, @featureId, @sprintId, @rangeFrom::date, @rangeTo::date, @userId, @agentName, @embeddingModel, @rewriteModel, @report)
+                INSERT INTO retro_analysis (id, project_id, scope_kind, feature_id, sprint_id, range_from, range_to, created_by_user_id, agent_name, embedding_model, rewrite_model, report_markdown, points_in, actions_new, actions_added)
+                VALUES (@analysisId, @projectId, @scopeKind, @featureId, @sprintId, @rangeFrom::date, @rangeTo::date, @userId, @agentName, @embeddingModel, @rewriteModel, @report, @pointsIn, @actionsNew, @actionsAdded)
                 """,
                 new
                 {
@@ -40,6 +40,9 @@ internal sealed class RetroAnalysisStore(NpgsqlDataSource dataSource)
                     embeddingModel = request.EmbeddingModel,
                     rewriteModel = request.RewriteModel,
                     report = request.ReportMarkdown,
+                    pointsIn = funnel.PointsIn,
+                    actionsNew = funnel.ActionsNew,
+                    actionsAdded = funnel.ActionsAdded,
                 },
                 transaction,
                 cancellationToken: cancellationToken));

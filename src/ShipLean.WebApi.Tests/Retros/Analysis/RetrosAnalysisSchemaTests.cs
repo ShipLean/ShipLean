@@ -29,7 +29,7 @@ public class RetrosAnalysisSchemaTests
             """)).ToLookup(row => row.Table, row => row.Column);
 
         columns["retro_analysis"].ShouldBe(
-            ["id", "project_id", "scope_kind", "feature_id", "sprint_id", "range_from", "range_to", "created_by_user_id", "agent_name", "embedding_model", "rewrite_model", "report_markdown", "created_at", "archived_at"],
+            ["id", "project_id", "scope_kind", "feature_id", "sprint_id", "range_from", "range_to", "created_by_user_id", "agent_name", "embedding_model", "rewrite_model", "report_markdown", "points_in", "actions_new", "actions_added", "created_at", "archived_at"],
             ignoreOrder: true);
         columns["retro_analysis_point"].ShouldBe(["analysis_id", "point_id", "outcome", "folded_into_point_id", "generic_text", "pattern_id"], ignoreOrder: true);
         columns["retro_pattern"].ShouldBe(["id", "analysis_id", "ref", "kind", "title", "lesson", "asks", "centroid", "continues_pattern_id", "rank"], ignoreOrder: true);

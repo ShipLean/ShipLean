@@ -25,7 +25,7 @@ public sealed class RetroAnalysisReadTests : ApiFixture
         var first = await PointOnAsync(seed, story, "agent-read-a");
         var second = await PointOnAsync(seed, feature, "agent-read-b");
         var third = await PointOnAsync(seed, await ItemAsync(connection, "task", story), "agent-read-a");
-        var analysis = await AnalysisAsync(connection, Project, feature: feature);
+        var analysis = await AnalysisAsync(connection, Project, feature: feature, funnel: new StoredFunnel(9, 4, 2));
         await PointRowAsync(connection, analysis, first, "clustered");
         await PointRowAsync(connection, analysis, second, "clustered");
         await PointRowAsync(connection, analysis, third, "clustered");
@@ -52,7 +52,9 @@ public sealed class RetroAnalysisReadTests : ApiFixture
         view.Patterns[1].Evidence.Agents.ShouldBe(["agent-read-a"]);
         view.Scope.Kind.ShouldBe(RetroScopeKind.Feature);
         view.Scope.Feature.ShouldBe(featureKey);
-        view.Funnel.PointsIn.ShouldBe(3);
+        view.Funnel.PointsIn.ShouldBe(9);
+        view.Funnel.ActionsNew.ShouldBe(4);
+        view.Funnel.ActionsAdded.ShouldBe(2);
         view.Funnel.Clustered.ShouldBe(3);
         view.Funnel.PatternsProblem.ShouldBe(2);
         view.ReportMarkdown.ShouldBe("# Report");
@@ -64,7 +66,7 @@ public sealed class RetroAnalysisReadTests : ApiFixture
         await using var connection = await OpenDatabaseAsync();
         var seed = new RetroSeed(connection, Project);
         var point = await PointOnAsync(seed, await ItemAsync(connection, "task"), "agent-read-fixes");
-        var analysis = await AnalysisAsync(connection, Project);
+        var analysis = await AnalysisAsync(connection, Project, funnel: new StoredFunnel(1, 3, 5));
         await PointRowAsync(connection, analysis, point, "clustered");
         var pattern = await PatternAsync(connection, analysis, "p1", "problem", 1);
         await AssignAsync(connection, pattern, point);
@@ -90,8 +92,8 @@ public sealed class RetroAnalysisReadTests : ApiFixture
         view.Funnel.AlreadyEnforcedFully.ShouldBe(1);
         view.Funnel.AlreadyEnforcedPartly.ShouldBe(1);
         view.Funnel.Discarded.ShouldBe(1);
-        view.Funnel.ActionsNew.ShouldBe(0);
-        view.Funnel.ActionsAdded.ShouldBe(1);
+        view.Funnel.ActionsNew.ShouldBe(3);
+        view.Funnel.ActionsAdded.ShouldBe(5);
     }
 
     [Test]
@@ -152,7 +154,7 @@ public sealed class RetroAnalysisReadTests : ApiFixture
         await PatternAsync(connection, ids[11], "w1", "wentWell", 1);
         var action = await ItemAsync(connection, "action", project: project);
         await FixAsync(connection, pattern, "Fix", "analyzer", "notCaught", 1, action, null);
-        await connection.ExecuteAsync("UPDATE work_item SET created_at = (SELECT created_at FROM retro_analysis WHERE id = @id) - interval '1 minute' WHERE id = @action", new { id = ids[11], action });
+        await connection.ExecuteAsync("UPDATE retro_analysis SET actions_new = 1 WHERE id = @id", new { id = ids[11] });
 
         var rows = await ListAsync(project);
 
@@ -186,19 +188,22 @@ public sealed class RetroAnalysisReadTests : ApiFixture
     private static async Task<Guid> PointOnAsync(RetroSeed seed, Guid item, string agent)
         => await seed.PointAsync(await seed.RetroAsync(new RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: item, AgentName: agent)), new RetroSeedPoint(RetroCategory.WentBadly, "A point."));
 
-    private static async Task<Guid> AnalysisAsync(NpgsqlConnection connection, Guid project, Guid? feature = null, bool archived = false, int createdDaysAgo = 0)
+    private static async Task<Guid> AnalysisAsync(NpgsqlConnection connection, Guid project, Guid? feature = null, bool archived = false, int createdDaysAgo = 0, StoredFunnel? funnel = null)
     {
         var id = Guid.NewGuid();
         await connection.ExecuteAsync(
             """
-            INSERT INTO retro_analysis (id, project_id, scope_kind, feature_id, range_from, range_to, created_by_user_id, agent_name, embedding_model, rewrite_model, report_markdown, created_at, archived_at)
+            INSERT INTO retro_analysis (id, project_id, scope_kind, feature_id, range_from, range_to, created_by_user_id, agent_name, embedding_model, rewrite_model, report_markdown, created_at, archived_at, points_in, actions_new, actions_added)
             VALUES (@id, @project, CASE WHEN @feature::uuid IS NULL THEN 'range' ELSE 'feature' END, @feature,
                     CASE WHEN @feature::uuid IS NULL THEN DATE '2001-01-01' END, CASE WHEN @feature::uuid IS NULL THEN DATE '2001-01-31' END,
-                    @user, 'agent-read', 'e5-small', 'claude-sonnet', '# Report', now() - make_interval(days => @createdDaysAgo), CASE WHEN @archived THEN now() END)
+                    @user, 'agent-read', 'e5-small', 'claude-sonnet', '# Report', now() - make_interval(days => @createdDaysAgo), CASE WHEN @archived THEN now() END,
+                    @pointsIn, @actionsNew, @actionsAdded)
             """,
-            new { id, project, feature, user = SeedIds.Users.Joel, archived, createdDaysAgo });
+            new { id, project, feature, user = SeedIds.Users.Joel, archived, createdDaysAgo, pointsIn = funnel?.PointsIn ?? 0, actionsNew = funnel?.ActionsNew ?? 0, actionsAdded = funnel?.ActionsAdded ?? 0 });
         return id;
     }
+
+    private sealed record StoredFunnel(int PointsIn, int ActionsNew, int ActionsAdded);
 
     private static Task PointRowAsync(NpgsqlConnection connection, Guid analysis, Guid point, string outcome)
         => connection.ExecuteAsync("INSERT INTO retro_analysis_point (analysis_id, point_id, outcome) VALUES (@analysis, @point, @outcome)", new { analysis, point, outcome });
