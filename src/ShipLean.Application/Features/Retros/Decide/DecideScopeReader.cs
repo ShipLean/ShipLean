@@ -12,15 +12,9 @@ internal sealed class DecideScopeReader(NpgsqlDataSource dataSource)
     // The decision rule is the shared SQL fragment, so the text is built once.
     private static readonly string PointsSql = $"""
         SELECT p.id, p.text, p.category, t.name AS themeName, COALESCE(p.theme_set_by = 'person', false) AS themeByPerson, {RetroDecisionSql.Decision("p")} AS decision
-        FROM retro_point p
-        JOIN retrospective r ON r.id = p.retrospective_id
-        LEFT JOIN work_item w ON w.id = r.work_item_id
+        FROM {DecideScopeSql.From}
         LEFT JOIN retro_theme t ON t.id = p.theme_id
-        WHERE r.project_id = @projectId AND r.archived_at IS NULL AND p.archived_at IS NULL
-          AND (@sprintId::uuid IS NULL OR r.sprint_id = @sprintId)
-          AND (@featureId::uuid IS NULL OR r.work_item_id = @featureId OR (w.parent_id = @featureId AND w.type IN ('story', 'bug')))
-          AND (@since::timestamptz IS NULL OR p.created_at >= @since)
-          AND (@until::timestamptz IS NULL OR p.created_at < @until)
+        WHERE {DecideScopeSql.Where}
         ORDER BY p.created_at, p.position, p.id
         """;
 
@@ -31,14 +25,7 @@ internal sealed class DecideScopeReader(NpgsqlDataSource dataSource)
         var rows = await connection.QueryAsync<PointRow>(
             new CommandDefinition(
                 PointsSql,
-                new
-                {
-                    projectId,
-                    sprintId = scope.SprintId,
-                    featureId = scope.FeatureId,
-                    since = scope.From is { } from ? Utc(from) : (DateTime?)null,
-                    until = scope.To is { } to ? Utc(to.AddDays(1)) : (DateTime?)null,
-                },
+                DecideScopeSql.Args(projectId, scope),
                 cancellationToken: cancellationToken));
         return rows.Select(Point).ToDictionary(point => point.Id);
     }
@@ -103,8 +90,6 @@ internal sealed class DecideScopeReader(NpgsqlDataSource dataSource)
                 new { fromTheme, intoTheme },
                 cancellationToken: cancellationToken));
     }
-
-    private static DateTime Utc(DateOnly day) => new(day.Year, day.Month, day.Day, 0, 0, 0, DateTimeKind.Utc);
 
     private static DecideScopePoint Point(PointRow row)
         => new(
