@@ -21,7 +21,6 @@ internal sealed class RetroAnalysisReads(NpgsqlDataSource dataSource) : IRetroAn
         }
 
         var outcomes = await connection.QuerySingleAsync<OutcomeRow>(new CommandDefinition(RetroAnalysisReadSql.Outcomes, args, cancellationToken: cancellationToken));
-        var actions = await connection.QuerySingleAsync<ActionRow>(new CommandDefinition(RetroAnalysisReadSql.Actions, args, cancellationToken: cancellationToken));
         var patternRows = (await connection.QueryAsync<PatternRow>(new CommandDefinition(RetroAnalysisReadSql.Patterns, args, cancellationToken: cancellationToken))).ToList();
         var fixRows = (await connection.QueryAsync<FixRow>(new CommandDefinition(RetroAnalysisReadSql.Fixes, args, cancellationToken: cancellationToken))).ToList();
 
@@ -40,7 +39,7 @@ internal sealed class RetroAnalysisReads(NpgsqlDataSource dataSource) : IRetroAn
 
         return new RetroAnalysisView(
             analysis.Id, Scope(analysis.ScopeKind, analysis.Feature, analysis.Sprint, analysis.RangeFrom, analysis.RangeTo), Utc(analysis.CreatedAt), analysis.AgentName,
-            analysis.EmbeddingModel, analysis.RewriteModel, Funnel(outcomes, actions, patterns, fixRows), [.. patterns.Where(pattern => pattern.Kind == RetroPatternKind.Problem)],
+            analysis.EmbeddingModel, analysis.RewriteModel, Funnel(analysis, outcomes, patterns, fixRows), [.. patterns.Where(pattern => pattern.Kind == RetroPatternKind.Problem)],
             [.. patterns.Where(pattern => pattern.Kind == RetroPatternKind.WentWell)], fixesByTier, [.. fixRows.Where(row => row.Enforcement == RetroEnforcement.Discarded).Select(View)],
             analysis.ReportMarkdown);
     }
@@ -52,15 +51,15 @@ internal sealed class RetroAnalysisReads(NpgsqlDataSource dataSource) : IRetroAn
         return [.. rows.Select(row => new RetroAnalysisRow(row.Id, Scope(row.ScopeKind, row.Feature, row.Sprint, row.RangeFrom, row.RangeTo), Utc(row.CreatedAt), row.AgentName, row.Patterns, row.ActionsNew))];
     }
 
-    // Funnel numbers come from the stored rows, so they can't drift from the data. PointsIn is the points the analysis recorded an outcome for: the in-scope count at the time of the run is not stored.
-    private static RetroFunnel Funnel(OutcomeRow outcomes, ActionRow actions, List<RetroViewPattern> patterns, List<FixRow> fixes)
+    // Funnel numbers come from the stored rows, so they can't drift from the data. PointsIn, ActionsNew and ActionsAdded are stored by the writer: they are not derivable from the rows.
+    private static RetroFunnel Funnel(AnalysisRow analysis, OutcomeRow outcomes, List<RetroViewPattern> patterns, List<FixRow> fixes)
     {
         var generic = outcomes.Clustered + outcomes.Unclustered;
         return new RetroFunnel(
-            outcomes.PointsIn, outcomes.Noise, outcomes.Folded, outcomes.OneOff, generic, outcomes.Clustered, generic == 0 ? 0 : Math.Round(outcomes.Clustered * 100.0 / generic, 1), outcomes.Unclustered,
+            analysis.PointsIn, outcomes.Noise, outcomes.Folded, outcomes.OneOff, generic, outcomes.Clustered, generic == 0 ? 0 : Math.Round(outcomes.Clustered * 100.0 / generic, 1), outcomes.Unclustered,
             patterns.Count(pattern => pattern.Kind == RetroPatternKind.Problem), patterns.Count(pattern => pattern.Kind == RetroPatternKind.WentWell), fixes.Count,
             fixes.Count(row => row.Enforcement == RetroEnforcement.Fully), fixes.Count(row => row.Enforcement == RetroEnforcement.Partly),
-            fixes.Count(row => row.Enforcement == RetroEnforcement.Discarded), actions.ActionsNew, actions.ActionsAdded);
+            fixes.Count(row => row.Enforcement == RetroEnforcement.Discarded), analysis.ActionsNew, analysis.ActionsAdded);
     }
 
     private static RetroViewPattern Pattern(PatternRow row, List<RetroViewFix> fixes)
@@ -83,13 +82,11 @@ internal sealed class RetroAnalysisReads(NpgsqlDataSource dataSource) : IRetroAn
 
     private sealed record AnalysisRow(
         Guid Id, string ScopeKind, string? Feature, string? Sprint, DateTime? RangeFrom, DateTime? RangeTo, DateTime CreatedAt, string AgentName, string EmbeddingModel, string? RewriteModel,
-        string ReportMarkdown);
+        string ReportMarkdown, int PointsIn, int ActionsNew, int ActionsAdded);
 
     private sealed record ListRow(Guid Id, string ScopeKind, string? Feature, string? Sprint, DateTime? RangeFrom, DateTime? RangeTo, DateTime CreatedAt, string AgentName, int Patterns, int ActionsNew);
 
-    private sealed record OutcomeRow(int PointsIn, int Noise, int Folded, int OneOff, int Clustered, int Unclustered);
-
-    private sealed record ActionRow(int ActionsNew, int ActionsAdded);
+    private sealed record OutcomeRow(int Noise, int Folded, int OneOff, int Clustered, int Unclustered);
 
     // Array, not string[]: Dapper's constructor matching sees Postgres text[] as System.Array.
     private sealed record PatternRow(

@@ -175,6 +175,7 @@ public class RetroAnalysisRecordTests : McpFixture
         applied.GetProperty("created").GetArrayLength().ShouldBe(2);
         applied.GetProperty("funnel").GetProperty("actions_new").GetInt32().ShouldBe(2);
         await using var connection = await OpenDatabaseAsync();
+        await StoredFunnelShouldMatchAsync(connection, applied);
         var actioned = await connection.QuerySingleAsync<int>("SELECT count(DISTINCT point_id)::int FROM retro_action_point WHERE point_id = ANY(@points)", new { points });
         actioned.ShouldBe(4);
     }
@@ -215,6 +216,25 @@ public class RetroAnalysisRecordTests : McpFixture
         applied.GetProperty("funnel").GetProperty("actions_added").GetInt32().ShouldBe(1);
         await using var connection = await OpenDatabaseAsync();
         (await connection.QuerySingleAsync<int>("SELECT count(*)::int FROM retro_action_point WHERE work_item_id = @id", new { id = existing.Id })).ShouldBe(3);
+    }
+
+    [Test]
+    public async Task Apply_WhenCreatingAndAdding_ShouldStoreTheFunnelItReturns()
+    {
+        var world = await WorldAsync();
+        var points = await world.PointsAsync(5);
+        var existing = await world.ExistingActionAsync(points[4]);
+
+        var applied = await world.ApplyAsync(
+            [.. points.Take(4).Select(id => Pt(id, "clustered"))], [Pat("a", "problem", points[0], points[1]), Pat("b", "problem", points[2], points[3])],
+            [Fx("a", "Extend", "analyzer", existing: existing.Key), Fx("b", "New one", "guide")]);
+
+        var funnel = applied.GetProperty("funnel");
+        funnel.GetProperty("points_in").GetInt32().ShouldBe(4);
+        funnel.GetProperty("actions_new").GetInt32().ShouldBe(1);
+        funnel.GetProperty("actions_added").GetInt32().ShouldBe(1);
+        await using var connection = await OpenDatabaseAsync();
+        await StoredFunnelShouldMatchAsync(connection, applied);
     }
 
     [Test]
@@ -300,6 +320,14 @@ public class RetroAnalysisRecordTests : McpFixture
 
         applied.GetProperty("created").GetArrayLength().ShouldBe(5);
         applied.GetProperty("funnel").GetProperty("actions_new").GetInt32().ShouldBe(5);
+    }
+
+    private static async Task StoredFunnelShouldMatchAsync(NpgsqlConnection connection, JsonElement applied)
+    {
+        var funnel = applied.GetProperty("funnel");
+        var stored = await connection.QuerySingleAsync<(int PointsIn, int ActionsNew, int ActionsAdded)>(
+            "SELECT points_in, actions_new, actions_added FROM retro_analysis WHERE id = @id", new { id = Guid.Parse(applied.GetProperty("analysis_id").GetString()!) });
+        stored.ShouldBe((funnel.GetProperty("points_in").GetInt32(), funnel.GetProperty("actions_new").GetInt32(), funnel.GetProperty("actions_added").GetInt32()));
     }
 
     private Task<Scenario> WorldAsync() => Scenario.CreateAsync(this);

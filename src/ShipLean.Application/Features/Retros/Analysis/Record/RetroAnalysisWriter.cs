@@ -33,10 +33,14 @@ internal sealed class RetroAnalysisWriter(
         var created = applied?.Outcome.Created ?? [];
         var actionByPattern = await ActionIdsAsync(projectId, run, applied?.Actions ?? [], cancellationToken);
 
+        var newActions = applied?.Actions.Count(action => action.Created) ?? 0;
+        var addedTo = applied?.Actions.Count(action => action.Key is not null && !action.Created) ?? 0;
+        var funnel = Funnel(run, newActions, addedTo);
+
         Guid analysisId;
         try
         {
-            analysisId = await store.StoreAsync(projectId, request, actor, run.Ranked, actionByPattern, cancellationToken);
+            analysisId = await store.StoreAsync(projectId, request, actor, run.Ranked, actionByPattern, funnel, cancellationToken);
         }
         catch (NpgsqlException exception) when (created.Count > 0)
         {
@@ -44,10 +48,8 @@ internal sealed class RetroAnalysisWriter(
             throw ApiException.Conflict($"The analysis could not be stored. These action items were already created: {string.Join(", ", created)}. {exception.Message}");
         }
 
-        var newActions = applied?.Actions.Count(action => action.Created) ?? 0;
-        var addedTo = applied?.Actions.Count(action => action.Key is not null && !action.Created) ?? 0;
         return new RetroAnalysisOutcome(
-            Funnel(run, newActions, addedTo), Views(run.Ranked), applied?.Outcome.WouldCreate ?? [], applied?.Outcome.WouldAdd ?? [], applied?.Outcome.Skipped ?? [], run.Warnings, analysisId, created);
+            funnel, Views(run.Ranked), applied?.Outcome.WouldCreate ?? [], applied?.Outcome.WouldAdd ?? [], applied?.Outcome.Skipped ?? [], run.Warnings, analysisId, created);
     }
 
     private async Task<Run> PrepareAsync(Guid projectId, RecordRetroAnalysisRequest request, bool strict, CancellationToken cancellationToken)
