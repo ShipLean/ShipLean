@@ -13,7 +13,7 @@ using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Retros;
 
-// decide_retro_actions (K8): the scope rule, the three-new-actions limit, what a preview lists, and that an apply does what the plan holds.
+// decide_retro_actions (K8): the scope rule, what a preview lists, and that an apply does what the plan holds.
 // Each scenario arranges its own sprint (or Feature, or far-past days) so the points of one never reach another.
 [TestFixture]
 public class DecideRetroActionsTests : McpFixture
@@ -186,31 +186,98 @@ public class DecideRetroActionsTests : McpFixture
     }
 
     [Test]
-    public async Task Preview_WhenFourNew_ShouldBeRefusedNamingTheLimit()
+    public async Task Preview_WhenSixNew_ShouldPass()
     {
         var world = await WorldAsync();
-        var points = await world.PointsAsync(4);
-
-        var reply = await world.PreviewRawAsync(world.NewActions(points));
-
-        ErrorField(reply).ShouldBe(("validation", "actions"));
-        reply.Body.ShouldContain("3 new action items");
-    }
-
-    [Test]
-    public async Task Preview_WhenThreeNewAndFiveExisting_ShouldPass()
-    {
-        var world = await WorldAsync();
-        var points = await world.PointsAsync(8);
+        var points = await world.PointsAsync(6);
         var existing = await world.ExistingActionAsync($"Open {world.Tag}", "New");
-        var actions = string.Join(",", points.Take(3).Select((id, index) => New($"New {index} {world.Tag}", id)).Concat(points.Skip(3).Select(id => $$"""{"title":"Add","fix_type":"skill","points":["{{id}}"],"existing":"{{existing.Key}}"}""")));
+        var extra = await world.PointsAsync(5);
+        var adds = extra.Select(id => $$"""{"title":"Add","fix_type":"skill","points":["{{id}}"],"existing":"{{existing.Key}}"}""");
+        var actions = string.Join(",", points.Select((id, index) => New($"New {index} {world.Tag}", id)).Concat(adds));
 
         var result = await world.PreviewAsync($$""", "actions":[{{actions}}]""");
 
-        result.GetProperty("would_create").GetArrayLength().ShouldBe(3);
+        result.GetProperty("would_create").GetArrayLength().ShouldBe(6);
         result.GetProperty("would_add").GetArrayLength().ShouldBe(5);
         result.GetProperty("would_add")[0].GetProperty("existing").GetString().ShouldBe(existing.Key);
         result.GetProperty("left_undecided").GetInt32().ShouldBe(0);
+    }
+
+    [Test]
+    public async Task Apply_WhenSixNew_ShouldCreateSix()
+    {
+        var world = await WorldAsync();
+        var points = await world.PointsAsync(6);
+
+        var applied = await world.ApplyAsync(await world.PlanAsync(world.NewActions(points)));
+
+        applied.GetProperty("created").GetArrayLength().ShouldBe(6);
+    }
+
+    [TestCase("fix", 1, "fix:fix")]
+    [TestCase("structure", 2, "fix:structure")]
+    [TestCase("analyzer", 3, "fix:analyzer")]
+    [TestCase("test", 4, "fix:test")]
+    [TestCase("skill", 4, "fix:skill")]
+    [TestCase("guide", 4, "fix:guide")]
+    public async Task Apply_WhenFixTypeHasATier_ShouldSetItsPriorityAndTag(string fixType, int priority, string tag)
+    {
+        var world = await WorldAsync();
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Point");
+
+        var applied = await world.ApplyAsync(await world.PlanAsync($$""", "actions":[{"title":"Fix {{world.Tag}}","fix_type":"{{fixType}}","points":["{{point}}"]}]"""));
+
+        var (actual, tags) = await ReadPriorityAndTagsAsync(applied.GetProperty("created").EnumerateArray().Single().GetString()!);
+        actual.ShouldBe(priority);
+        tags.ShouldContain(tag);
+    }
+
+    [Test]
+    public async Task Apply_WhenFixTypeStructure_ShouldSetPriority2AndTag()
+    {
+        var world = await WorldAsync();
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Point");
+
+        var applied = await world.ApplyAsync(await world.PlanAsync($$""", "actions":[{"title":"Fix {{world.Tag}}","fix_type":"structure","points":["{{point}}"]}]"""));
+
+        var (priority, tags) = await ReadPriorityAndTagsAsync(applied.GetProperty("created").EnumerateArray().Single().GetString()!);
+        priority.ShouldBe(2);
+        tags.ShouldBe(["fix:structure"]);
+    }
+
+    [TestCase("product")]
+    [TestCase("other")]
+    public async Task Apply_WhenFixTypeHasNoTier_ShouldKeepTheDefaultPriorityAndNoFixTag(string fixType)
+    {
+        var world = await WorldAsync();
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Point");
+        var other = await world.PointAsync(RetroCategory.WentBadly, "Other");
+        var applied = await world.ApplyAsync(await world.PlanAsync($$""", "actions":[{"title":"Fix {{world.Tag}}","fix_type":"{{fixType}}","points":["{{point}}"]}]"""));
+        var baseline = await world.ExistingActionAsync($"Baseline {world.Tag}", "New", other);
+
+        var (priority, tags) = await ReadPriorityAndTagsAsync(applied.GetProperty("created").EnumerateArray().Single().GetString()!);
+        var (baselinePriority, _) = await ReadPriorityAndTagsAsync(baseline.Key);
+
+        priority.ShouldBe(baselinePriority);
+        tags.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task Apply_WhenAddingToExisting_ShouldKeepItsPriority()
+    {
+        var world = await WorldAsync();
+        var point = await world.PointAsync(RetroCategory.WentBadly, "Point");
+        var existing = await world.ExistingActionAsync($"Open {world.Tag}", "New");
+        await using (var connection = await OpenDatabaseAsync())
+        {
+            await connection.ExecuteAsync("UPDATE work_item SET priority = 4, tags = ARRAY['mine'] WHERE id = @id", new { id = existing.Id });
+        }
+
+        await world.ApplyAsync(await world.PlanAsync($$""", "actions":[{"title":"Add","fix_type":"fix","points":["{{point}}"],"existing":"{{existing.Key}}"}]"""));
+
+        var (priority, tags) = await ReadPriorityAndTagsAsync(existing.Key);
+        priority.ShouldBe(4);
+        tags.ShouldBe(["mine"]);
     }
 
     [Test]
@@ -554,6 +621,12 @@ public class DecideRetroActionsTests : McpFixture
 
         preview.GetProperty("left_undecided").GetInt32().ShouldBe(2);
         applied.GetProperty("left_undecided").GetInt32().ShouldBe(2);
+    }
+
+    private async Task<(int Priority, string[] Tags)> ReadPriorityAndTagsAsync(string key)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await connection.QuerySingleAsync<(int, string[])>("SELECT priority, tags FROM work_item WHERE key = @key", new { key });
     }
 
     private static string Plan(JsonElement preview) => preview.GetProperty("plan").GetString()!;

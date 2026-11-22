@@ -101,7 +101,7 @@ internal sealed class RetroActionWriter(NpgsqlDataSource dataSource, IWorkItemSt
 
         var chosen = await ResolveThemeAsync(projectId, themeId, themeName, cancellationToken);
         var theme = chosen ?? Commonest(points);
-        var outcome = await store.CreateAsync(new WorkItemCreate(projectId, WorkItemTypeId.Action, title, null, null, null), WriteOptions.User, cancellationToken);
+        var outcome = await store.CreateAsync(new WorkItemCreate(projectId, WorkItemTypeId.Action, title, null, null, RetroFixTiers.Changes(fixType)), WriteOptions.User, cancellationToken);
         var created = outcome.Written ?? throw ApiException.Internal();
 
         try
