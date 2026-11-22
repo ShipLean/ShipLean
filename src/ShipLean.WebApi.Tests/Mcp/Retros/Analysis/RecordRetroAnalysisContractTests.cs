@@ -20,6 +20,8 @@ namespace ShipLean.WebApi.Tests.Mcp.Retros.Analysis;
 public class RecordRetroAnalysisContractTests : McpFixture
 {
     private string _featureKey = string.Empty;
+    private Guid _feature;
+    private Guid _retro;
 
     protected override bool WithProbeTools => false;
 
@@ -37,8 +39,18 @@ public class RecordRetroAnalysisContractTests : McpFixture
     public async Task ArrangeFeature()
     {
         await using var connection = await OpenDatabaseAsync();
-        var feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Record contract").InsertAsync(connection);
-        _featureKey = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @feature", new { feature });
+        _feature = await new WorkItemBuilder(SeedIds.Projects.Ship).WithType("feature").WithTitle("Record contract").InsertAsync(connection);
+        _featureKey = await connection.QuerySingleAsync<string>("SELECT key FROM work_item WHERE id = @feature", new { feature = _feature });
+        _retro = await new ShipLean.TestSupport.Retros.RetroSeed(connection, SeedIds.Projects.Ship)
+            .RetroAsync(new ShipLean.TestSupport.Retros.RetroSeedRetro(SeedIds.Users.Joel, WorkItemId: _feature, AgentName: "contract-agent"));
+    }
+
+    // A real undecided point on the Feature's retro: the writer checks the points against the database, and an apply decides the point, so each test takes its own.
+    private async Task<Guid> PointAsync()
+    {
+        await using var connection = await OpenDatabaseAsync();
+        var seed = new ShipLean.TestSupport.Retros.RetroSeed(connection, SeedIds.Projects.Ship);
+        return await seed.PointAsync(_retro, new ShipLean.TestSupport.Retros.RetroSeedPoint(ShipLean.Contracts.Retros.RetroCategory.WentBadly, "Contract point"));
     }
 
     [Test]
@@ -57,7 +69,7 @@ public class RecordRetroAnalysisContractTests : McpFixture
     [Test]
     public async Task Preview_ShouldReturnAPlanAndTheC2Shape()
     {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments("Fix one"));
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments(await PointAsync(), "Fix one"));
 
         reply.IsToolError().ShouldBeFalse(reply.Body);
         var result = reply.Structured();
@@ -80,9 +92,10 @@ public class RecordRetroAnalysisContractTests : McpFixture
     public async Task Apply_WhenSameArguments_ShouldApply()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
-        var preview = await CallToolAsync(token, "record_retro_analysis", Arguments("Fix one"));
+        var point = await PointAsync();
+        var preview = await CallToolAsync(token, "record_retro_analysis", Arguments(point, "Fix one"));
 
-        var applied = await CallToolAsync(token, "record_retro_analysis", Arguments("Fix one", Plan(preview)));
+        var applied = await CallToolAsync(token, "record_retro_analysis", Arguments(point, "Fix one", Plan(preview)));
 
         applied.IsToolError().ShouldBeFalse(applied.Body);
         applied.Structured().GetProperty("applied").GetBoolean().ShouldBeTrue();
@@ -94,9 +107,10 @@ public class RecordRetroAnalysisContractTests : McpFixture
     public async Task Apply_WhenArgumentsChanged_ShouldBeRefused()
     {
         var token = await TokenAsync(TestUser.Joel, ReadWritePlan);
-        var preview = await CallToolAsync(token, "record_retro_analysis", Arguments("Fix one"));
+        var point = await PointAsync();
+        var preview = await CallToolAsync(token, "record_retro_analysis", Arguments(point, "Fix one"));
 
-        var refused = await CallToolAsync(token, "record_retro_analysis", Arguments("Fix two", Plan(preview)));
+        var refused = await CallToolAsync(token, "record_retro_analysis", Arguments(point, "Fix two", Plan(preview)));
 
         ErrorField(refused).ShouldBe(("validation", "plan"));
     }
@@ -104,9 +118,10 @@ public class RecordRetroAnalysisContractTests : McpFixture
     [Test]
     public async Task Apply_WhenReadOnlyToken_ShouldBeForbidden()
     {
-        var preview = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments("Fix one"));
+        var point = await PointAsync();
+        var preview = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments(point, "Fix one"));
 
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments("Fix one", Plan(preview)));
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments(point, "Fix one", Plan(preview)));
 
         reply.Status.ShouldBe(HttpStatusCode.Forbidden);
     }
@@ -115,7 +130,8 @@ public class RecordRetroAnalysisContractTests : McpFixture
     public async Task Preview_WhenSentAsPayload_ShouldMatchInline()
     {
         var (token, authorization) = await AgentAsync(ReadWritePlan);
-        var inline = Arguments("Fix one");
+        var point = await PointAsync();
+        var inline = Arguments(point, "Fix one");
         var payload = Payloads.AddObject("record_retro_analysis", inline, SeedIds.Users.Joel, authorization);
         var byPayload = $$"""{"project":"SHIP","payload":"{{payload}}"}""";
 
@@ -147,7 +163,7 @@ public class RecordRetroAnalysisContractTests : McpFixture
     [Test]
     public async Task Preview_WhenFixTypeIsUnknown_ShouldNameFixType()
     {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments("Fix one", fixType: "wish"));
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "record_retro_analysis", Arguments(await PointAsync(), "Fix one", fixType: "wish"));
 
         ErrorField(reply).ShouldBe(("validation", "fixes[0].fix_type"));
     }
@@ -160,9 +176,8 @@ public class RecordRetroAnalysisContractTests : McpFixture
         ErrorField(reply).ShouldBe(("validation", "scope"));
     }
 
-    private string Arguments(string fixTitle, string? plan = null, string fixType = "analyzer")
+    private string Arguments(Guid point, string fixTitle, string? plan = null, string fixType = "analyzer")
     {
-        var point = Guid.Parse("a0000000-0000-4000-8000-0000000000aa");
         var planArgument = plan is null ? string.Empty : $",\"plan\":\"{plan}\"";
         return $$"""
             {"project":"SHIP","feature":"{{_featureKey}}","embedding_model":"e5-small","rewrite_model":"claude-sonnet","report_markdown":"# Report",
