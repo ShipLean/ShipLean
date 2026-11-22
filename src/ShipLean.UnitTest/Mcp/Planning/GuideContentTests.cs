@@ -230,10 +230,51 @@ public class GuideContentTests
         var stepNine = Guide[Guide.IndexOf("## Step 9", StringComparison.Ordinal)..];
         var decide = stepNine[stepNine.IndexOf("**Decide what to do.**", StringComparison.Ordinal)..];
 
-        decide.ShouldContain("at most 3 new");
+        decide.ShouldNotContain("at most 3 new");
         decide.ShouldContain("no sprint");
         decide.ShouldContain("human approval");
         decide.ShouldContain("not automatic");
+    }
+
+    [Test]
+    public void RetroAnalysis_ShouldNameTheThreeTools()
+    {
+        var part = PlanGuide.Read(PlanGuidePart.RetroAnalysis);
+
+        part.ShouldContain("`export_retro_points`");
+        part.ShouldContain("`record_retro_analysis`");
+        part.ShouldContain("`get_retro_analysis`");
+    }
+
+    [Test]
+    public void RetroAnalysis_ShouldListTheFiveTiersInOrder()
+    {
+        var part = PlanGuide.Read(PlanGuidePart.RetroAnalysis).ReplaceLineEndings("\n");
+        var tiers = part[part.IndexOf("\n## Tiers\n", StringComparison.Ordinal)..];
+
+        var order = new[] { "1. Fix the broken thing", "2. Type system", "3. Static code analysis", "4. Test automation", "5. Agent prompt" }
+            .Select(tier => tiers.IndexOf(tier, StringComparison.Ordinal))
+            .ToList();
+
+        order.ShouldAllBe(index => index >= 0);
+        order.ShouldBe(order.Order().ToList());
+    }
+
+    [Test]
+    public void RetroAnalysis_ShouldNotMentionACap()
+    {
+        var part = PlanGuide.Read(PlanGuidePart.RetroAnalysis);
+
+        part.ShouldNotContain("at most 3");
+        System.Text.RegularExpressions.Regex.IsMatch(part, @"\bcap\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase).ShouldBeFalse();
+    }
+
+    [Test]
+    public void Guide_ShouldNotMentionThreeNewActionItems()
+    {
+        Guide.ShouldNotContain("at most 3");
+        Guide.ShouldNotContain("3 new");
+        Guide.ShouldContain("`retro_analysis`");
     }
 
     [Test]
