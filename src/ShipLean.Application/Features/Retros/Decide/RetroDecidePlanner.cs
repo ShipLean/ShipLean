@@ -12,6 +12,7 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
     private const string ThemeByPerson = "The theme was set by a person.";
     private const string NoLongerInScope = "The point is no longer in the scope.";
     private const string ActionNotLive = "The action item is no longer open.";
+    private const string NothingToDo = "None of its points are still undecided and in the scope.";
 
     public async Task<DecideOutcome> PreviewAsync(Guid projectId, DecidePlan request, CancellationToken cancellationToken)
     {
@@ -89,6 +90,9 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
     }
 
     public async Task<DecideOutcome> ApplyAsync(Guid projectId, DecidePlan plan, RetroActor actor, CancellationToken cancellationToken)
+        => (await ApplyWithResultsAsync(projectId, plan, actor, cancellationToken)).Outcome;
+
+    public async Task<DecideApplyResult> ApplyWithResultsAsync(Guid projectId, DecidePlan plan, RetroActor actor, CancellationToken cancellationToken)
     {
         var points = await reader.PointsAsync(projectId, plan.Scope, cancellationToken);
         var skipped = new Skips();
@@ -135,9 +139,12 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
             }
         }
 
+        var results = new List<DecideActionResult>();
         foreach (var action in plan.Actions)
         {
             var kept = Undecided(action.PointIds, points, skipped);
+            var before = (create.Count, add.Count);
+            var resultsBefore = results.Count;
             // A point decided between the read and the write makes the writer conflict. Read again and retry with the points still undecided.
             // Each retry follows a smaller set, so the loop ends; a conflict that drops no point is a real one and propagates.
             while (kept.Count > 0)
@@ -145,6 +152,7 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
                 try
                 {
                     await ApplyActionAsync(projectId, action, kept, actor, skipped, create, add, created, cancellationToken);
+                    results.Add(Result(before, create, add, created));
                     break;
                 }
                 catch (ApiException exception) when (exception.Code == ApiErrorCodes.Conflict)
@@ -159,6 +167,11 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
                     kept = remaining;
                 }
             }
+
+            if (results.Count == resultsBefore)
+            {
+                results.Add(new DecideActionResult(null, false, NothingToDo));
+            }
         }
 
         var proposed = 0;
@@ -171,7 +184,18 @@ internal sealed class RetroDecidePlanner(DecideScopeReader reader, IRetroDecisio
         }
 
         var left = (await reader.PointsAsync(projectId, plan.Scope, cancellationToken)).Values.Count(point => point.Undecided);
-        return new DecideOutcome(create, add, notNeeded, themed, proposed, skipped.Lines, left, created, plan);
+        return new DecideApplyResult(new DecideOutcome(create, add, notNeeded, themed, proposed, skipped.Lines, left, created, plan), results);
+    }
+
+    // A created action is the newest key in created; an added-to one the newest add line; neither means it was skipped (its points were dropped, or its action item was not live).
+    private static DecideActionResult Result((int Create, int Add) before, List<DecideCreateLine> create, List<DecideAddLine> add, List<string> created)
+    {
+        if (create.Count > before.Create)
+        {
+            return new DecideActionResult(created[^1], true, null);
+        }
+
+        return add.Count > before.Add ? new DecideActionResult(add[^1].Existing, false, null) : new DecideActionResult(null, false, ActionNotLive);
     }
 
     // The scope check, over every point the request names: all must be in the scope and none wentWell; an action or Not needed entry owns its points alone.
