@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { useWebVitals } from './useWebVitals';
+import { webVitalsConfigKey } from './webVitalsApi';
 
 const mocks = vi.hoisted(() => ({
   getConfig: vi.fn(),
@@ -44,22 +45,27 @@ async function mount() {
       </QueryClientProvider>,
     );
   });
-  // The query, then the dynamic import, then the call.
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  });
+  return client;
+}
+
+// For the cases where nothing is expected: the config query has answered and every dynamic import has settled.
+async function settle(client: QueryClient) {
+  await vi.waitFor(() =>
+    expect(client.getQueryState(webVitalsConfigKey)?.status).not.toBe('pending'),
+  );
+  await vi.dynamicImportSettled();
 }
 
 test('useWebVitals_WhenEnabled_ShouldLoadTheReporter', async () => {
   mocks.getConfig.mockResolvedValue({ enabled: true });
   await mount();
+  await vi.waitFor(() => expect(mocks.start).toHaveBeenCalledTimes(1));
   expect(mocks.getConfig).toHaveBeenCalledTimes(1);
-  expect(mocks.start).toHaveBeenCalledTimes(1);
 });
 
 test('useWebVitals_WhenNotEnabled_ShouldNotLoadTheReporter', async () => {
   mocks.getConfig.mockResolvedValue({ enabled: false });
-  await mount();
+  await settle(await mount());
   expect(mocks.getConfig).toHaveBeenCalledTimes(1);
   expect(mocks.start).not.toHaveBeenCalled();
 });
@@ -69,7 +75,7 @@ test('useWebVitals_WhenTheChunkFailsToLoad_ShouldStaySilent', async () => {
   mocks.chunkFails = true;
   const unhandled = vi.fn();
   process.on('unhandledRejection', unhandled);
-  await mount();
+  await settle(await mount());
   process.off('unhandledRejection', unhandled);
   expect(mocks.start).not.toHaveBeenCalled();
   expect(unhandled).not.toHaveBeenCalled();
@@ -77,7 +83,7 @@ test('useWebVitals_WhenTheChunkFailsToLoad_ShouldStaySilent', async () => {
 
 test('useWebVitals_WhenConfigFails_ShouldStaySilent', async () => {
   mocks.getConfig.mockRejectedValue(new Error('500'));
-  await mount();
+  await settle(await mount());
   expect(mocks.getConfig).toHaveBeenCalledTimes(1);
   expect(mocks.start).not.toHaveBeenCalled();
 });

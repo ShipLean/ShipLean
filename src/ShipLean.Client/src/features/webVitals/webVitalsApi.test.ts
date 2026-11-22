@@ -10,10 +10,20 @@ const roundTrip = (value: unknown) => JSON.parse(JSON.stringify(value)) as unkno
 
 const reportKeys = ['cls', 'fcp', 'inp', 'lcp', 'navigation', 'screen', 'screenSize', 'ttfb'];
 
+// The JSON import types navigation as string; every other field is checked against the type by the assignment.
+function pinnedReports(): WebVitalsReport[] {
+  return batchJson.reports.map((report) => {
+    const { navigation } = report;
+    if (navigation !== 'hard' && navigation !== 'soft')
+      throw new Error(`Unknown navigation ${navigation}`);
+    return { ...report, navigation };
+  });
+}
+
 afterEach(() => vi.unstubAllGlobals());
 
 test('WebVitalsApi_WhenPinnedBatchRead_ShouldRoundTripThroughTheType', () => {
-  const reports: WebVitalsReport[] = batchJson.reports as WebVitalsReport[];
+  const reports = pinnedReports();
   expect(reports.length).toBeGreaterThan(0);
   for (const report of reports) expect(keysOf(report)).toEqual(reportKeys);
   expect(roundTrip({ reports })).toEqual(batchJson);
@@ -28,7 +38,7 @@ test('WebVitalsApi_WhenPinnedConfigRead_ShouldRoundTripThroughTheType', () => {
 test('postWebVitals_WhenCalled_ShouldSendKeepaliveJson', async () => {
   const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
   vi.stubGlobal('fetch', fetchMock);
-  const reports = batchJson.reports as WebVitalsReport[];
+  const reports = pinnedReports();
   await postWebVitals(reports);
   expect(fetchMock).toHaveBeenCalledTimes(1);
   const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
