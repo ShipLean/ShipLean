@@ -12,6 +12,7 @@ public sealed class WebVitalsServices : IServiceModule
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<WebVitalsQueue>();
+        services.AddHostedService<WebVitalsDispatcher>();
         Register(services);
     }
 
