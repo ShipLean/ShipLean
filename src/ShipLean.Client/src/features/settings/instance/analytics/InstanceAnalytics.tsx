@@ -57,7 +57,13 @@ const orNull = (text: string) => (text.trim() === '' ? null : text.trim());
 // The C4 body: Off stores no host or key.
 const bodyOf = (d: Draft): AnalyticsSettings =>
   d.provider === 'none'
-    ? { provider: 'none', host: null, siteKey: null, sendNames: d.sendNames, sendWebVitals: d.sendWebVitals }
+    ? {
+        provider: 'none',
+        host: null,
+        siteKey: null,
+        sendNames: d.sendNames,
+        sendWebVitals: d.sendWebVitals,
+      }
     : {
         provider: d.provider,
         host: orNull(d.host),
