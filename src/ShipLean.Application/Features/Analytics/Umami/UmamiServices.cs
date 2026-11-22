@@ -10,5 +10,6 @@ public sealed class UmamiServices : IServiceModule
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IAnalyticsSink, UmamiSink>();
+        services.AddSingleton<IWebVitalsSink, UmamiWebVitalsSink>();
     }
 }

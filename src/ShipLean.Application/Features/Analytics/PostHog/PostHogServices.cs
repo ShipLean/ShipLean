@@ -13,5 +13,6 @@ public sealed class PostHogServices : IServiceModule
         services.AddSingleton<IAnalyticsSink>(sp => new PostHogSink(
             sp.GetRequiredService<IHttpClientFactory>().CreateClient(AnalyticsServices.HttpClientName),
             sp.GetRequiredService<ILogger<PostHogSink>>()));
+        services.AddSingleton<IWebVitalsSink, PostHogWebVitalsSink>();
     }
 }
