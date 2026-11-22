@@ -15,7 +15,9 @@ public class AnalyticsWebVitalsTests : SeededAcceptanceTest
 
         await Expect(toggle).Not.ToBeCheckedAsync();
         await toggle.CheckAsync();
-        await Page.RunAndWaitForApiAsync("/api/instance/analytics", "PUT", () => Page.GetByTestId(SettingsTestIds.AnalyticsSaveButton).ClickAsync());
+        var saved = await Page.RunAndWaitForApiAsync("/api/instance/analytics", "PUT", () => Page.GetByTestId(SettingsTestIds.AnalyticsSaveButton).ClickAsync());
+        saved.Ok.ShouldBeTrue();
+        saved.Request.PostData.ShouldNotBeNull().ShouldContain("\"sendWebVitals\":true");
         await Page.ReloadAsync();
 
         await Expect(Page.GetByTestId(SettingsTestIds.AnalyticsContainer)).ToBeVisibleAsync();

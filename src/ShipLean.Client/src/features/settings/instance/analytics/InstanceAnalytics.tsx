@@ -136,8 +136,8 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
             ))}
           </select>
           <span className="font-normal text-ink-muted">
-            Usage events from people and agents are sent from this server. Nothing is loaded in
-            browsers.
+            Usage events from people and agents are sent from this server and load nothing in
+            browsers. Web vitals, when on, loads one first-party module.
           </span>
           <FieldError
             message={fieldMessage('provider')}
