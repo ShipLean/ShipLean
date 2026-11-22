@@ -40,7 +40,7 @@ public class WebVitalsQueueTests
         Interlocked.Read(ref dropped).ShouldBe(1);
         queue.Reader.Count.ShouldBe(WebVitalsQueue.Capacity);
         queue.Reader.TryRead(out var first).ShouldBeTrue();
-        first!.Lcp.ShouldBe(0);
+        first.Lcp.ShouldBe(0);
     }
 
     // A meter factory of the test's own, so the listener sees only this queue's counter.
