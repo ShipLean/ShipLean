@@ -23,10 +23,11 @@ public class BuiltInPromptsTests
         yield return new TestCaseData(PromptKey.CodeReviewer, PlanGuidePart.CodeReviewer);
         yield return new TestCaseData(PromptKey.Fix, PlanGuidePart.Fix);
         yield return new TestCaseData(PromptKey.Retro, PlanGuidePart.Retro);
+        yield return new TestCaseData(PromptKey.RetroAnalysis, PlanGuidePart.RetroAnalysis);
     }
 
     [Test]
-    public void All_ShouldListElevenPromptsInStageOrder()
+    public void All_ShouldListTwelvePromptsInStageOrder()
     {
         _prompts.All.Select(facts => facts.Key).ShouldBe(Enum.GetValues<PromptKey>());
         _prompts.All.Select(facts => facts.Stage).ShouldBe(_prompts.All.Select(facts => facts.Stage).Order());

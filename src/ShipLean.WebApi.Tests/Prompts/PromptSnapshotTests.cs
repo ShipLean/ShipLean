@@ -7,7 +7,7 @@ using ShipLean.WebApi.Features.Prompts;
 
 namespace ShipLean.WebApi.Tests.Prompts;
 
-// P5: the startup snapshot of the 11 built-ins. The host has already started, so the first read here is the first request after start.
+// P5: the startup snapshot of the 12 built-ins. The host has already started, so the first read here is the first request after start.
 [TestFixture]
 public class PromptSnapshotTests : ApiFixture
 {
@@ -18,9 +18,9 @@ public class PromptSnapshotTests : ApiFixture
     }
 
     [Test]
-    public async Task Startup_ShouldStoreElevenBuiltIns()
+    public async Task Startup_ShouldStoreTwelveBuiltIns()
     {
-        (await RowsAsync()).ShouldBe(11);
+        (await RowsAsync()).ShouldBe(12);
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class PromptSnapshotTests : ApiFixture
 
         await snapshotter.StartAsync(CancellationToken.None);
 
-        (await RowsAsync()).ShouldBe(11);
+        (await RowsAsync()).ShouldBe(12);
     }
 
     [Test]
@@ -39,6 +39,6 @@ public class PromptSnapshotTests : ApiFixture
         using var response = await Api.GetAsync($"api/projects/{SeedIds.Projects.Ship}/prompts");
 
         response.IsSuccessStatusCode.ShouldBeTrue();
-        (await RowsAsync()).ShouldBe(11);
+        (await RowsAsync()).ShouldBe(12);
     }
 }

@@ -33,7 +33,7 @@ Every point except Went well gets a decision, which is one of three: **undecided
 An action item is a work item of type `action` ("Action item"), at the same level as a story or bug: it takes points, goes into sprints and counts in velocity. New ones start in New with no sprint, so pulling one into a sprint is the human approval.
 
 - One action item covers many points, from Can be improved, Went badly or Not in the plan. Add points to an open one with Add to existing (`existing` for agents). A point belongs to at most one live action item.
-- It has a title, which a new one requires, a **type of fix** (skill, guide, test, analyzer, product or other) and one **theme**: the one given, otherwise the commonest among its points, and editable afterwards. Verdicts judge that theme. An action item raised before decisions existed has no type of fix and keeps it empty until someone sets one.
+- It has a title, which a new one requires, a **type of fix** (fix, structure, analyzer, test, skill, guide, product or other) and one **theme**: the one given, otherwise the commonest among its points, and editable afterwards. Verdicts judge that theme. An action item raised before decisions existed has no type of fix and keeps it empty until someone sets one.
 - It quotes its points and links back to them. A person creates one from `POST api/projects/{id}/retros/actions`; the old route that made one from a single point is gone.
 - An action item with no tasks shows no Tasks section on its page; one with tasks lists them, with no way to add more from that page. The Taskboard can still add a task under an action item.
 - Removing an action item moves it to Removed and returns all its points to undecided. Removed action items drop out of every retro view and count.
@@ -46,7 +46,35 @@ An agent can propose merging two themes (`merges` in `decide_retro_actions`). No
 
 ## Decide what to do
 
-`decide_retro_actions` is the agent step after the conductor compiles a Feature's retro (a `planning_guide` step, never automatic). It takes one scope (a Feature, a sprint, or a date range) and previews before it applies. A Feature scope means the Feature plus its stories and bugs. It creates at most 3 new action items per call; adding to existing ones and marking Not needed are unlimited, and the rest stay undecided for the next run. Apply does what the preview's plan says, and retries on a conflict while the undecided set shrinks.
+`decide_retro_actions` is the agent step after the conductor compiles a Feature's retro (a `planning_guide` step, never automatic). It takes one scope (a Feature, a sprint, or a date range) and previews before it applies. A Feature scope means the Feature plus its stories and bugs. There is no limit on new action items per call; the preview is the check on how many it makes. Each new one gets a priority and a `fix:<type>` tag from its type of fix (see Aggregate analysis). Apply does what the preview's plan says, and retries on a conflict while the undecided set shrinks.
+
+## Aggregate analysis
+
+Reading one retro at a time does not show which problems keep coming back. An aggregate analysis looks at many points at once and turns the repeated ones into ranked fixes. An agent runs it, only when asked or when a plan says to: nothing prompts it when a sprint or a Feature closes. ShipLean never changes a repository.
+
+**Scope.** One of a Feature (its own retro plus its stories' and bugs'), a sprint, or a date range for a whole project. Points that are already actioned or marked Not needed are left out. So are points an earlier analysis marked noise, folded or one-off, unless the agent asks for them back.
+
+**What a run does.** The agent exports the points with their context (root cause, item, Feature, sprint, agent, commits and the retro's failure log), drops the noise, rewrites each point as a lesson that fits any item, clusters the lessons, merges near-duplicate clusters, and checks each proposed fix against what is already enforced (analyzers, lint, CI, skills, the planning guide, agent prompts). It then records the result in one preview and apply. The method is the `retro_analysis` part of `planning_guide`.
+
+**What ShipLean stores and works out.** It stores the funnel from points in to action items, the patterns with their evidence (points, items, Features, sprints, agents, first and last logged), the fixes with how far each is already enforced, the fixes that were thrown out, and the report. The counts come from ShipLean's own data, so the report cannot misstate them. Reading an analysis back is an agent tool; there is no page for it yet.
+
+**What it creates.** One action item per problem pattern. The pattern's top-ranked fix that is not fully enforced becomes the action item, and it carries all the pattern's points. The pattern's other fixes are stored against the same action item and shown in the report. A fix that is fully enforced, or was discarded, makes no action item. New ones start in New with no sprint, as always.
+
+**Tiers and priority.** A fix goes in the most deterministic tier that can stop the problem, and the tier sets the priority and a tag. This applies to every new action item, from an analysis or from `decide_retro_actions`.
+
+| Tier | Type of fix | Priority |
+|---|---|---|
+| Fix the broken thing: flaky or unrunnable tests, environment, tooling | `fix` | 1 |
+| Type system, code and project structure | `structure` | 2 |
+| Static code analysis | `analyzer` | 3 |
+| Test automation | `test` | 4 |
+| Agent prompt and instructions | `skill` or `guide` | 4 |
+
+`product` and `other` have no tier: they keep the default priority and get no tag. The tag is `fix:` and the type, such as `fix:analyzer`. Within a priority, patterns rank by size, then how recent, then how many items they span.
+
+**What is working.** Went-well points are clustered on their own as went-well patterns. They never make an action item. They show the person what keeps going right, and every run clusters them again because they are never decided.
+
+**Later runs.** A run on demand clusters its whole range. A later run with the same embedding model can add new points to the patterns an earlier one stored; a different model clusters the range afresh.
 
 ## Insights by sprint or week
 

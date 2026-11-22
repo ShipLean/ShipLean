@@ -40,7 +40,7 @@ public class PromptsDtoPinnedTests
         var page = Read("prompts-page.json");
         var prompts = page["stages"]!.AsArray().SelectMany(stage => stage!["prompts"]!.AsArray()).Select(prompt => prompt!).ToList();
 
-        prompts.Count.ShouldBe(11);
+        prompts.Count.ShouldBe(12);
         page["stages"]!.AsArray().Count.ShouldBe(7);
         page["customCount"]!.GetValue<int>().ShouldBe(
             prompts.Count(prompt => prompt["status"]!.GetValue<string>() is "custom" or "builtInUpdated"));

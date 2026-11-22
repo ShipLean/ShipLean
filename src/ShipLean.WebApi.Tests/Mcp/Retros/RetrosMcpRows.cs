@@ -12,6 +12,9 @@ public sealed class RetrosMcpRows : IMcpSweepRows
         new("log_retrospective", McpScopes.Write, ProjectRole.Member, """{"item":"PART-1","went_well":[{"text":"Sweep"}]}"""),
         new("list_retrospectives", McpScopes.Read, ProjectRole.Member, """{"project":"PART"}""", ReadOnly: true),
         new("decide_retro_actions", McpScopes.Plan, ProjectRole.Member, """{"project":"PART","sprint":"current"}""", ReadOnly: true),
+        new("export_retro_points", McpScopes.Read, ProjectRole.Member, """{"project":"PART","sprint":"current"}""", ReadOnly: true),
+        new("record_retro_analysis", McpScopes.Plan, ProjectRole.Member, """{"project":"PART","sprint":"current"}""", ReadOnly: true),
+        new("get_retro_analysis", McpScopes.Read, ProjectRole.Member, """{"project":"PART"}""", ReadOnly: true),
         new("decide_theme_merges", McpScopes.Plan, ProjectRole.Member, """{"project":"PART"}""", ReadOnly: true),
     ];
 }

@@ -267,6 +267,24 @@
           "yourChangesPatch": null,
           "update": null,
           "sectionErrors": 0
+        },
+        {
+          "key": "retroAnalysis",
+          "file": "retro_analysis.md",
+          "name": "Retro analysis",
+          "whenRuns": "An agent is asked to analyse retrospective points across a project, a sprint or a Feature. The method turns repeated points into ranked fixes.",
+          "servedBy": "planning_guide part retro_analysis",
+          "readBy": "The agent running the analysis",
+          "note": null,
+          "placeholders": [],
+          "insertedParts": [],
+          "status": "builtIn",
+          "builtInText": "# retro_analysis\n\nShort built-in text for retro analysis.\nSecond line.\n",
+          "builtInHash": "b41e2c73a5f7d0986e1c4a2f93d8b7650a1c3e4f2d9b8a7c6e5d4f3a2b1c0d9e",
+          "custom": null,
+          "yourChangesPatch": null,
+          "update": null,
+          "sectionErrors": 0
         }
       ]
     },

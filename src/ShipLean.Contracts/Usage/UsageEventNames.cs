@@ -103,6 +103,9 @@ public static class UsageEventNames
     public const string RetroThemeSheetOpened = "retro.theme_sheet_opened";
     public const string RetroActionsDecided = "retro.actions_decided";
     public const string RetroMergesDecided = "retro.merges_decided";
+    public const string RetroPointsExported = "retro.points_exported";
+    public const string RetroAnalysisRecorded = "retro.analysis_recorded";
+    public const string RetroAnalysisViewed = "retro.analysis_viewed";
 
     // Decisions and questions on work items (SHIP-922). decision.answered is an MCP answer_decision; on the web a confirm or change
     // is decision.confirmed or decision.changed (self-emitted with count and answer_kind), so an answer counts once.

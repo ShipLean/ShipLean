@@ -13,7 +13,7 @@ namespace ShipLean.WebApi.Tests.Mcp.Payloads;
 [TestFixture]
 public class PayloadSurfaceTests : McpFixture
 {
-    private static readonly string[] PayloadTools = ["attach_markdown", "break_down", "capture_plan", "capture_work", "create_feature", "refine_work_item"];
+    private static readonly string[] PayloadTools = ["attach_markdown", "break_down", "capture_plan", "capture_work", "create_feature", "record_retro_analysis", "refine_work_item"];
 
     private string _featureKey = string.Empty;
     private string _storyKey = string.Empty;

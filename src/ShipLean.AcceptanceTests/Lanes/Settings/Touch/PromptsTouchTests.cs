@@ -30,7 +30,7 @@ public class PromptsTouchTests : SeededAcceptanceTest
     {
         var prompts = new PromptsMemberPage(Page);
         await prompts.OpenAsync("SHIP", "brief");
-        await Expect(prompts.Rows).ToHaveCountAsync(11);
+        await Expect(prompts.Rows).ToHaveCountAsync(12);
 
         var list = await prompts.List.BoundingBoxAsync();
         var detail = await prompts.Detail.BoundingBoxAsync();

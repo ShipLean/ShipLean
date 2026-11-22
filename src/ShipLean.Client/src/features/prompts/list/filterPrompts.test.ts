@@ -7,7 +7,7 @@ const keys = (query: string, filter: 'all' | 'custom' = 'all') =>
 
 describe('filterPrompts', () => {
   it('keeps every prompt when nothing is asked', () => {
-    expect(keys('')).toHaveLength(11);
+    expect(keys('')).toHaveLength(12);
   });
 
   it('matches the name, case-insensitively', () => {

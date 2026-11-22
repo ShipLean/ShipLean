@@ -59,6 +59,7 @@ public class BauToolCoverageTests
         ["create_feature"] = Kind.ByKeyOnly,
         ["decide_retro_actions"] = Kind.ByKeyOnly,
         ["decide_theme_merges"] = Kind.ByKeyOnly,
+        ["record_retro_analysis"] = Kind.ByKeyOnly,
         ["record_decisions"] = Kind.ByKeyOnly,
         ["ask"] = Kind.ByKeyOnly,
         ["answer_decision"] = Kind.ByKeyOnly,
@@ -70,6 +71,8 @@ public class BauToolCoverageTests
         ["backfill_commit_times"] = Kind.NoItems,
         ["planning_guide"] = Kind.NoItems,
         ["list_retrospectives"] = Kind.NoItems,
+        ["export_retro_points"] = Kind.NoItems,
+        ["get_retro_analysis"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,
         ["create_payload_upload"] = Kind.NoItems,
     };

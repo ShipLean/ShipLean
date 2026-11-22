@@ -20,7 +20,7 @@ internal sealed class GuideTools(ProjectResolver projects, IProjectAccess access
     [McpServerTool(Name = "planning_guide"), McpScope(McpScopes.Read)]
     [Description("How work moves through ShipLean from idea to done (part work), and how to break a feature or epic down into stories and tasks, from one story to several agents working in parallel (part guide and the templates). Returns one part as Markdown, the names of every part, and what the project's past retros said to change next time. Read work when research might become work; read guide before any breakdown, whatever its size.")]
     public async Task<CallToolResult> PlanningGuide(
-        [Description("Which part: work (idea to done), guide (the default for planning), brief, report, plan_reviewer, code_reviewer, fix, lead or retro.")] string? part = null,
+        [Description("Which part: work (idea to done), guide (the default for planning), brief, report, plan_reviewer, code_reviewer, fix, lead, retro or retro_analysis.")] string? part = null,
         [Description("The project key whose past retros the lessons come from, such as SHIP. The part is served as that project's version of it, and the lessons come from that project's retros. Left out, the part is your most recent project's version, without lessons.")] string? project = null,
         CancellationToken cancellationToken = default)
     {
@@ -57,6 +57,7 @@ internal sealed class GuideTools(ProjectResolver projects, IProjectAccess access
         PlanGuidePart.CodeReviewer => PromptKey.CodeReviewer,
         PlanGuidePart.Fix => PromptKey.Fix,
         PlanGuidePart.Retro => PromptKey.Retro,
+        PlanGuidePart.RetroAnalysis => PromptKey.RetroAnalysis,
         _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Unknown planning guide part."),
     };
 }

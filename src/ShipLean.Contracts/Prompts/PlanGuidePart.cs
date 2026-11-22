@@ -12,4 +12,5 @@ public enum PlanGuidePart
     Fix,
     Lead,
     Retro,
+    RetroAnalysis,
 }

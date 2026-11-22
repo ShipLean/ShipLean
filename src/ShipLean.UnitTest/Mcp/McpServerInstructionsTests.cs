@@ -51,6 +51,18 @@ public class McpServerInstructionsTests
     }
 
     [Test]
+    public void Instructions_ShouldNameTheRetroAnalysisTools()
+    {
+        foreach (var tool in new[] { "export_retro_points", "record_retro_analysis", "get_retro_analysis" })
+        {
+            McpServerServices.Instructions.ShouldContain(tool);
+            GuideScan.RegisteredNames().ShouldContain(tool);
+        }
+
+        McpServerServices.Instructions.ShouldContain("part retro_analysis");
+    }
+
+    [Test]
     public void McpServerInstructions_ShouldTellAgentsToSendCommits()
     {
         McpServerServices.Instructions.ShouldContain("When you stop work on a Task or Bug, send the commits you made for it: report_task's commits for a task of a plan, add_commits for anything else.");
