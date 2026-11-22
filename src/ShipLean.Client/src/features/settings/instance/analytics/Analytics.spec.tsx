@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { AnalyticsHarness } from './ct/AnalyticsHarness';
-import { analyticsUmami, stubAnalyticsApi } from './ct/analyticsStub';
+import { analyticsNone, analyticsUmami, stubAnalyticsApi } from './ct/analyticsStub';
 import { settingsTestIds as ids } from '../../testIds';
 
 test('InstanceAnalytics_WhenOpened_ShouldMountTheTab', async ({ mount, page }) => {
@@ -127,4 +127,44 @@ test('InstanceAnalytics_WhenUnsavedChanges_ShouldDisableTest', async ({ mount, p
   await view.getByTestId(ids.analyticsSendNamesToggle).check();
   await expect(view.getByTestId(ids.analyticsTestButton)).toBeDisabled();
   await expect(view).toContainText('Save first');
+});
+
+test('InstanceAnalytics_WhenWebVitalsTurnedOn_ShouldPutTrue', async ({ mount, page }) => {
+  const stub = await stubAnalyticsApi(page);
+  const view = await mount(<AnalyticsHarness />);
+  const toggle = view.getByTestId(ids.analyticsSendWebVitalsToggle);
+  await expect(toggle).not.toBeChecked();
+  await toggle.check();
+  await view.getByTestId(ids.analyticsSaveButton).click();
+  await expect.poll(() => stub.puts).toEqual([{ ...analyticsNone, sendWebVitals: true }]);
+  await expect(toggle).toBeChecked();
+  await expect(view.getByTestId(ids.analyticsSaveButton)).toBeDisabled();
+});
+
+test('InstanceAnalytics_WhenLoadedWithWebVitalsOn_ShouldShowItChecked', async ({ mount, page }) => {
+  await stubAnalyticsApi(page, { initial: { ...analyticsUmami, sendWebVitals: true } });
+  const view = await mount(<AnalyticsHarness />);
+  await expect(view.getByTestId(ids.analyticsSendWebVitalsToggle)).toBeChecked();
+  await expect(view.getByTestId(ids.analyticsSaveButton)).toBeDisabled();
+});
+
+test('InstanceAnalytics_WhenLocked_ShouldDisableWebVitals', async ({ mount, page }) => {
+  await stubAnalyticsApi(page, { initial: analyticsUmami });
+  // Hold the save open until the test lets it go; a later route runs before the stub's.
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/instance/analytics', async (route) => {
+    if (route.request().method() === 'PUT') await gate;
+    await route.fallback();
+  });
+  const view = await mount(<AnalyticsHarness />);
+  const toggle = view.getByTestId(ids.analyticsSendWebVitalsToggle);
+  await expect(toggle).toBeEnabled();
+  await toggle.check();
+  await view.getByTestId(ids.analyticsSaveButton).click();
+  await expect(toggle).toBeDisabled();
+  release();
+  await expect(toggle).toBeEnabled();
 });

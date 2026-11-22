@@ -196,6 +196,23 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
             Off: people are sent as ids only. On: their names and emails are sent too.
           </span>
         </label>
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          <span className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid={settingsTestIds.analyticsSendWebVitalsToggle}
+              checked={draft.sendWebVitals}
+              disabled={locked}
+              onChange={(e) => change({ sendWebVitals: e.target.checked })}
+            />
+            Send web vitals
+          </span>
+          <span className="font-normal text-ink-muted">
+            Off: browsers measure nothing. On: browsers measure how fast each screen loads and
+            responds, and ShipLean forwards the numbers with the person&apos;s id, browser and
+            screen size.
+          </span>
+        </label>
       </Panel>
       {message !== undefined && !named ? (
         <p
