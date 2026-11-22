@@ -87,11 +87,11 @@ Umami only filters on event properties on its Events page, which is why the proj
 
 **Umami must run with `DISABLE_BOT_CHECK=1`.** Every request comes from a server, and by default Umami excludes what it takes for bots. Umami also requires a `User-Agent` header on `/api/batch`; ShipLean sends `ShipLean/{version}`. Umami accepts a `payload.timestamp`, but ShipLean does not send one, so events are dated on arrival and a delayed or retried batch is dated when it lands.
 
-Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`/api/batch` takes a JSON array, requires a `User-Agent`), [Umami environment variables](https://docs.umami.is/docs/environment-variables) (`DISABLE_BOT_CHECK`), [PostHog capture API](https://posthog.com/docs/api/capture) (`/batch/`, `api_key`, `batch`, `historical_migration`), [Umami: performance](https://docs.umami.is/docs/performance) (the Performance tab), [PostHog: web vitals](https://posthog.com/docs/product-analytics/web-vitals) (the Web Vitals tab, which the public page describes without listing property names).
+Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`/api/batch` takes a JSON array, requires a `User-Agent`), [Umami environment variables](https://docs.umami.is/docs/environment-variables) (`DISABLE_BOT_CHECK`), [PostHog capture API](https://posthog.com/docs/api/capture) (`/batch/`, `api_key`, `batch`, `historical_migration`), [Umami: performance](https://docs.umami.is/docs/performance) (the Performance tab), [PostHog: web vitals](https://posthog.com/docs/product-analytics/web-vitals).
 
 ## Web vitals
 
-Web vitals are the Core Web Vitals of each signed-in person's browser. The browser measures them with the `web-vitals` library and posts them to ShipLean, and ShipLean forwards them to the configured provider. They appear on Umami's Performance tab, or on PostHog's Web Vitals tab under Web Analytics. They do not go to OpenTelemetry or Grafana.
+Web vitals are the Core Web Vitals of each signed-in person's browser. The browser measures them with the `web-vitals` library and posts them to ShipLean, and ShipLean forwards them to the configured provider. Umami's Performance tab shows them. For PostHog, ShipLean sends a `$web_vitals` event with `$web_vitals_LCP_value`, `$web_vitals_INP_value`, `$web_vitals_CLS_value` and `$web_vitals_FCP_value`. Whether PostHog's Web Vitals tab shows them is not yet confirmed. They do not go to OpenTelemetry or Grafana.
 
 ### The switch
 
@@ -118,24 +118,24 @@ A reading names a screen, not a project. Each reading is sent as the path `/web/
 - The navigation kind: `hard` for a page load, `soft` for a change of screen inside the app.
 - The metric values.
 
-Nothing else leaves. No name, no email and no IP address are sent with web vitals.
+Also sent: the instance's host name (Umami's `hostname`; PostHog's `$host` and `$current_url`, left out when the host is empty), the browser, operating system and device type derived from the user agent (`$browser`, `$os` and `$device_type` on PostHog), and the library name `$lib`. Never the visitor's IP address. No name or email is sent with web vitals.
 
 ### First load and in-app navigation
 
-LCP, INP and CLS are reported for in-app navigation as well as the first load, in Chromium-based browsers. Firefox and Safari ignore this and report the first load only. FCP and TTFB are reported for the first load only. Each metric is counted at most once per navigation: a later value for the same navigation and metric is ignored, so INP and CLS are never counted twice.
+LCP, INP and CLS are reported for in-app navigation as well as the first load. Firefox and Safari ignore this and report the first load only. Each metric is counted at most once per navigation: a later value for the same navigation and metric is ignored, so INP and CLS are never counted twice.
 
-Umami's Performance tab has no field for navigation kind, so its numbers mix first loads with in-app navigation. Umami does not receive the `navigation` value. PostHog keeps it as a property, so you can split the two there.
+Umami's Performance tab has no field for navigation kind, so its numbers mix first loads with in-app navigation. Umami does not receive the `navigation` value. PostHog receives it as the `navigation` property.
 
 ### Why web vitals have their own pipeline
 
 Web vitals are lossy by design. A reading that cannot be sent is dropped, not retried. The queue holds 2,000 readings. When it is full, new readings are dropped and counted on `shiplean.web_vitals.dropped`.
 
-They are kept apart from usage events because Umami rejects out-of-range values one item at a time, but fails the whole batch when any item is bad. One bad reading in a batch shared with usage events would lose those events and send the good ones again on retry. A metric outside its range is therefore dropped from its own reading and counted on `shiplean.web_vitals.discarded`. The ranges are 0 to 60,000 for LCP, INP, FCP and TTFB, in milliseconds, and 0 to 100 for CLS. A reading with no metric left is dropped without an error.
+They are kept apart from usage events because Umami rejects out-of-range values one item at a time, but fails the whole batch when any item is bad. One bad reading in a batch shared with usage events would lose those events and send the good ones again on retry. A metric outside its range is therefore dropped from its own reading and counted on `shiplean.web_vitals.discarded`. The ranges are 0 to 60,000 for LCP, INP, FCP and TTFB, and 0 to 100 for CLS. A reading with no metric left is dropped without an error.
 
 ### Where to see them
 
 - **Umami:** the website's **Performance** tab. Pick a metric card to focus the chart. Switch between p50, p75 and p95, and break the metric down by page and by device or browser.
-- **PostHog:** **Web Analytics**, then the **Web Vitals** tab. Filter by `navigation` to split first loads from in-app navigation, and by `screen` to see one screen.
+- **PostHog:** ShipLean sends `navigation` and `screen` as event properties on each `$web_vitals` event. Whether the Web Vitals tab under Web Analytics shows them is not yet confirmed.
 
 ### Counters
 
@@ -146,9 +146,9 @@ Web vitals use their own counters, which are ordinary ShipLean meter counters, l
 - `shiplean.web_vitals.dropped` counts samples dropped because the queue was full.
 - `shiplean.web_vitals.discarded` counts single metrics outside their range.
 
-Compare `sent` with `screen.viewed` for the same screens over the same weeks. A high `dropped` or `failed` count means readings are missing from the provider.
+A high `dropped` or `failed` count means readings are missing from the provider.
 
-An ad blocker that blocks the browser module stops web vitals completely. Nothing is measured, and no counter moves.
+An ad blocker that blocks the browser module stops web vitals. Nothing is measured.
 
 ## Settings
 
