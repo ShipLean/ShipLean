@@ -263,6 +263,9 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `retro.merge_kept_apart` |  | `RetroMergeProposals.KeepApart` |
 | `retro.actions_decided` | `decide_retro_actions` |  |
 | `retro.merges_decided` | `decide_theme_merges` |  |
+| `retro.points_exported` | `export_retro_points` |  |
+| `retro.analysis_recorded` | `record_retro_analysis` |  |
+| `retro.analysis_viewed` | `get_retro_analysis` |  |
 | `decision.recorded` | `record_decisions` |  |
 | `decision.answered` | `answer_decision` |  |
 | `decision.confirmed` |  | self-emitted: `WorkItemDecisions.Confirm` (property `count` only) |

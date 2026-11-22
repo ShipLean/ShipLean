@@ -221,7 +221,7 @@ All numbers are from one laptop (16 cores, 39 GB), not the 7 GB host the plan wa
 2. One action item can cover many points. **Add to existing** adds points to an open one.
 3. Went badly and Not in the plan points can become action items too: a link on the note, and listed in the dialog.
 4. An action item has one theme: the commonest among its points, and editable. Verdicts judge that theme.
-5. An action item quotes its points, links back to them, and has a type of fix: skill, guide, test, analyzer, product or other.
+5. An action item quotes its points, links back to them, and has a type of fix: fix, structure, analyzer, test, skill, guide, product or other.
 
 **Cards**
 
@@ -248,7 +248,7 @@ All numbers are from one laptop (16 cores, 39 GB), not the 7 GB host the plan wa
 **Agents: Decide what to do** (`decide_retro_actions`)
 
 19. It takes a Feature, a sprint or a date range, and uses the usual preview-then-apply flow. It creates items in New with no sprint, so pulling one into a sprint is the human approval.
-20. It creates at most 3 new action items per run, a hard limit. Adding to an existing one and marking Not needed stay unlimited, and the rest stay undecided for the next run.
+20. There is no limit on new action items per run; the preview is the check. Each new one gets a priority and a `fix:<type>` tag from its type of fix.
 21. It runs as a `planning_guide` step after the conductor compiles a Feature's retro. It isn't automatic. `list_retrospectives` returns each point's decision and gains undecided and no-sprint filters.
 
 **As built** (differences from the screens)
