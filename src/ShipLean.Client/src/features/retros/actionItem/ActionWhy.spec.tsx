@@ -133,6 +133,26 @@ test('the fix select has no empty option once a fix is stored', async ({ mount, 
   await expect(page.getByTestId(ids.retroActionWhyFix).locator('option[value=""]')).toHaveCount(0);
 });
 
+test('the fix select offers every fix type in tier order, starting with Fix the broken thing and Structure', async ({
+  mount,
+  page,
+}) => {
+  await stubRetros(page);
+  await answerWith(page, withFix('skill'));
+  await mountWhy(mount);
+  const options = page.getByTestId(ids.retroActionWhyFix).locator('option');
+  await expect(options).toHaveText([
+    'Fix the broken thing',
+    'Structure',
+    'Analyzer',
+    'Test',
+    'Skill',
+    'Guide',
+    'Product',
+    'Other',
+  ]);
+});
+
 test('+ Add points opens the dialog on this item', async ({ mount, page }) => {
   await stubRetros(page);
   await answerWith(page, withFix('guide'));

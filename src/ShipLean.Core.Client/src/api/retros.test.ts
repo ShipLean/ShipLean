@@ -121,6 +121,19 @@ test('sprintRetro_ShouldPinTheSpecialCases', () => {
   expect(cards.some((card) => card.partial)).toBe(true);
 });
 
+test('retroFixTypes_ShouldRunInTierOrder', () => {
+  expect([...RETRO_FIX_TYPES]).toEqual([
+    'fix',
+    'structure',
+    'analyzer',
+    'test',
+    'skill',
+    'guide',
+    'product',
+    'other',
+  ]);
+});
+
 test('retroCategories_ShouldRunInDisplayOrder', () => {
   expect([...RETRO_CATEGORIES]).toEqual(['wentWell', 'notInPlan', 'wentBadly', 'improve']);
 });

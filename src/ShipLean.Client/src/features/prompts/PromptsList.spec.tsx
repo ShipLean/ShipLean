@@ -12,13 +12,16 @@ async function routes(page: Page) {
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
 }
 
-test('PromptsList_WhenLoaded_ShouldGroupElevenPromptsUnderSevenStages', async ({ mount, page }) => {
+test('PromptsList_WhenLoaded_ShouldGroupTwelvePromptsUnderSevenStages', async ({ mount, page }) => {
   await routes(page);
   await mount(<PromptsHarness project={adminProject} />, hooks);
 
   await expect(page.getByTestId(ids.listStage)).toHaveCount(7);
-  await expect(page.getByTestId(ids.listRow)).toHaveCount(11);
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(12);
   await expect(page.getByTestId(ids.stageStripItem)).toHaveCount(7);
+  await expect(page.getByTestId(ids.listRowName).filter({ hasText: 'Retro analysis' })).toHaveCount(
+    1,
+  );
   await expect(page.getByTestId(ids.listStageWhen).first()).toHaveText(
     'A GitHub issue arrives on a connected repository.',
   );
@@ -69,7 +72,7 @@ test('PromptsList_WhenCustomFilter_ShouldKeepCustomsOnly', async ({ mount, page 
   await expect(page.getByTestId(ids.filterCustom)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId(ids.listRow)).toHaveCount(2);
   await page.getByTestId(ids.filterAll).click();
-  await expect(page.getByTestId(ids.listRow)).toHaveCount(11);
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(12);
 });
 
 test('StageStrip_WhenStageClicked_ShouldMarkIt', async ({ mount, page }) => {

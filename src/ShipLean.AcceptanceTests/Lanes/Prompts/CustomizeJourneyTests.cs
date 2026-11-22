@@ -15,12 +15,12 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
 
     [Test]
     [CancelAfter(240_000)]
-    public async Task PromptsTab_WhenOpened_ShouldListElevenPromptsByStage()
+    public async Task PromptsTab_WhenOpened_ShouldListTwelvePromptsByStage()
     {
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project);
 
-        await Expect(prompts.ListRows).ToHaveCountAsync(11);
+        await Expect(prompts.ListRows).ToHaveCountAsync(12);
         await Expect(prompts.ListStages).ToHaveCountAsync(7);
         await Expect(prompts.ListStages.First).ToContainTextAsync("Intake");
         await Expect(prompts.ListStages.Last).ToContainTextAsync("Sprint demo");
