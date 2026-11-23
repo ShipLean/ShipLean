@@ -75,7 +75,7 @@ test('TimelineRail_WhenTaskSelected_ShouldShowTheStructuredCard', async ({ mount
   ).toBeVisible();
   const facts = page.getByTestId(ids.railFacts);
   await expect(facts).toContainText('Claude Code');
-  await expect(page.getByTestId(ids.railAgentChip)).toHaveText('Agent');
+  await expect(facts.getByTestId(ids.railAgentChip)).toHaveText('Agent');
   await expect(facts).toContainText('ActiveTue 6 Oct, 10:30');
   await expect(facts).toContainText('ResolvedWed 7 Oct, 11:15');
   await expect(facts).toContainText('Took1 day');
