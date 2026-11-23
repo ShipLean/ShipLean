@@ -4,8 +4,17 @@ import { StateDot } from '../../components/StateDot';
 import { TypeIcon } from '../../components/TypeIcon';
 import { routePath } from '../../routes';
 import { KeyDates } from './KeyDates';
+import { TimelineKpis } from './TimelineKpis';
 import { timelineTestIds as ids } from './testIds';
 import type { TimelineHeaderProps } from './TimelineHeaderProps';
+
+// What the bars show: finished, they run Active to Resolved; running, open bars run to the server's "now".
+function caption(view: TimelineHeaderProps['view']) {
+  const finished = view.keyDates.find((k) => k.point === 'finished');
+  return finished?.at === null || finished === undefined
+    ? `Still running. Open bars run to now, ${view.asOfLabel}.`
+    : `Finished ${finished.dayLabel}. Bars run from Active to Resolved, from each task's state history.`;
+}
 
 /** The Feature's identity and its key dates; the chart below is the story, so no findings here. */
 export function TimelineHeader({ view, projectKey }: TimelineHeaderProps) {
@@ -40,8 +49,14 @@ export function TimelineHeader({ view, projectKey }: TimelineHeaderProps) {
           </span>
         )}
         <span className="flex-1" />
-        <span className="text-[length:var(--text-xs)] text-ink-muted">Timeline</span>
+        <span
+          data-testid={ids.headerCaption}
+          className="text-[length:var(--text-xs)] text-ink-muted"
+        >
+          {caption(view)}
+        </span>
       </div>
+      <TimelineKpis view={view} />
       <KeyDates view={view} compact={false} />
     </header>
   );

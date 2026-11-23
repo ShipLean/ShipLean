@@ -22,9 +22,16 @@ test('KeyDates_WhenRunning_ShouldSayNotYetAndSoFar', async ({ mount, page }) => 
   await mount(<KeyDates view={RUNNING_TIMELINE} compact={false} />);
   const finished = page.getByTestId(ids.keyDatePoint).nth(3);
   await expect(finished).toContainText('Not yet');
-  await expect(finished).toContainText('32 days so far');
+  await expect(finished).toContainText('32.2 days in execution so far');
   await expect(page.getByTestId(ids.keyDateGap).nth(2)).toHaveText('32 days so far');
   await expect(page.getByTestId(ids.keyDateGap).nth(0)).toHaveText('6 hours');
+});
+
+test('KeyDates_Finished_ShouldShowThePlannedSourceAsTheServerSendsIt', async ({ mount, page }) => {
+  await mount(<KeyDates view={FINISHED_TIMELINE} compact={false} />);
+  await expect(page.getByTestId(ids.keyDatePoint).nth(1)).toContainText(
+    'Plan captured: 4 stories and bugs, 9 tasks',
+  );
 });
 
 test('KeyDates_WhenCompact_ShouldShowNameOnly', async ({ mount, page }) => {
