@@ -176,3 +176,23 @@ test('AssembledTab_WhenAgentChanged_ShouldShowThatAgentsText', async ({ mount, p
 
   await expect(page.getByTestId(ids.assembledText)).toContainText('Text for cursor');
 });
+
+test('history shows the agent and MCP for a version saved over MCP', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await open(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const row = page.getByTestId(ids.historyRow);
+  await expect(row).toContainText('Maria Santos');
+  await expect(page.getByTestId(ids.historyAgent)).toHaveText('via Claude Code (claude.ai) Agent');
+  await expect(row).toContainText('MCP');
+});
+
+test('history shows no agent line for an editor version', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await open(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRowInUse)).toContainText('Editor');
+  await expect(page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyAgent)).toHaveCount(0);
+});
