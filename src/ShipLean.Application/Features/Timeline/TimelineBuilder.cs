@@ -1,6 +1,7 @@
 using ShipLean.Application.Features.Timeline.Build;
 using ShipLean.Application.Features.Timeline.Facts;
 using ShipLean.Contracts.Views.Timeline;
+using ShipLean.Core;
 
 namespace ShipLean.Application.Features.Timeline;
 
@@ -16,6 +17,7 @@ public static class TimelineBuilder
         return new FeatureTimelineViewDto(
             bars.Feature,
             asOf,
+            DisplayDate.DayTime(asOf, zone),
             bars.Finished,
             bars.KeyDates,
             bars.Gaps,

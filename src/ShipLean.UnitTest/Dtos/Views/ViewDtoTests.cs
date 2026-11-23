@@ -222,6 +222,22 @@ public class ViewDtoTests
     }
 
     [Test]
+    public void FeatureTimelineFixtures_WhenRead_ShouldCarryAsOfLabelShortLabelsWeekStartsAndAssignees()
+    {
+        var finished = BoardDtoFixture.Read("views", "feature-timeline-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+        var running = BoardDtoFixture.Read("views", "feature-timeline-running-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();
+
+        finished.AsOfLabel.ShouldBe("Sat 24 Oct, 14:00");
+        running.AsOfLabel.ShouldBe("Sat 24 Oct, 14:00");
+        finished.Scale.Days[0].ShortLabel.ShouldBe("5 Oct");
+        finished.Scale.Days.Where(d => d.WeekStart).Select(d => d.Label).ShouldBe(["Mon 5 Oct", "Mon 12 Oct", "Mon 19 Oct"]);
+        finished.KeyDates[1].Source.ShouldBe("Plan captured: 4 stories and bugs, 9 tasks");
+        running.KeyDates[1].Source.ShouldBe("First stories created (no captured plan)");
+        running.NotStarted.ShouldContain(n => n.Assignee == null);
+        running.NotStarted.ShouldContain(n => n.Assignee != null && !n.Assignee.Agent);
+    }
+
+    [Test]
     public void FeatureTimelineFixtures_ShouldShowEveryCase()
     {
         var finished = BoardDtoFixture.Read("views", "feature-timeline-view.json").Deserialize<FeatureTimelineViewDto>(BoardDtoFixture.Options).ShouldNotBeNull();

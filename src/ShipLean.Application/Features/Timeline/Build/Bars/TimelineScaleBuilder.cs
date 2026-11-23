@@ -29,8 +29,8 @@ internal static class TimelineScaleBuilder
         {
             var start = DisplayDate.StartOfDay(day, zone);
             days.Add(new TimelineDayDto(
-                lens.HoursAt(start), DisplayDate.WeekdayDay(day), day.Day.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday, day.Day == 1));
+                lens.HoursAt(start), DisplayDate.WeekdayDay(day), DisplayDate.DayMonth(day), day.Day.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday, day.Day == 1, day.DayOfWeek == DayOfWeek.Monday));
         }
 
         var endHours = lens.HoursAt(DisplayDate.StartOfDay(last.AddDays(1), zone));

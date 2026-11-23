@@ -11,6 +11,7 @@
     }
   },
   "asOf": "2026-10-24T14:00:00+00:00",
+  "asOfLabel": "Sat 24 Oct, 14:00",
   "finished": true,
   "keyDates": [
     {
@@ -33,7 +34,7 @@
         "name": "Claude Code",
         "agent": true
       },
-      "source": "Plan captured"
+      "source": "Plan captured: 4 stories and bugs, 9 tasks"
     },
     {
       "point": "executionStarted",
@@ -94,121 +95,155 @@
       {
         "startHours": 0,
         "label": "Mon 5 Oct",
+        "shortLabel": "5 Oct",
         "dayOfMonth": "5",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": true
       },
       {
         "startHours": 24,
         "label": "Tue 6 Oct",
+        "shortLabel": "6 Oct",
         "dayOfMonth": "6",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 48,
         "label": "Wed 7 Oct",
+        "shortLabel": "7 Oct",
         "dayOfMonth": "7",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 72,
         "label": "Thu 8 Oct",
+        "shortLabel": "8 Oct",
         "dayOfMonth": "8",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 96,
         "label": "Fri 9 Oct",
+        "shortLabel": "9 Oct",
         "dayOfMonth": "9",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 120,
         "label": "Sat 10 Oct",
+        "shortLabel": "10 Oct",
         "dayOfMonth": "10",
         "weekend": true,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 144,
         "label": "Sun 11 Oct",
+        "shortLabel": "11 Oct",
         "dayOfMonth": "11",
         "weekend": true,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 168,
         "label": "Mon 12 Oct",
+        "shortLabel": "12 Oct",
         "dayOfMonth": "12",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": true
       },
       {
         "startHours": 192,
         "label": "Tue 13 Oct",
+        "shortLabel": "13 Oct",
         "dayOfMonth": "13",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 216,
         "label": "Wed 14 Oct",
+        "shortLabel": "14 Oct",
         "dayOfMonth": "14",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 240,
         "label": "Thu 15 Oct",
+        "shortLabel": "15 Oct",
         "dayOfMonth": "15",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 264,
         "label": "Fri 16 Oct",
+        "shortLabel": "16 Oct",
         "dayOfMonth": "16",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 288,
         "label": "Sat 17 Oct",
+        "shortLabel": "17 Oct",
         "dayOfMonth": "17",
         "weekend": true,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 312,
         "label": "Sun 18 Oct",
+        "shortLabel": "18 Oct",
         "dayOfMonth": "18",
         "weekend": true,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 336,
         "label": "Mon 19 Oct",
+        "shortLabel": "19 Oct",
         "dayOfMonth": "19",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": true
       },
       {
         "startHours": 360,
         "label": "Tue 20 Oct",
+        "shortLabel": "20 Oct",
         "dayOfMonth": "20",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       },
       {
         "startHours": 384,
         "label": "Wed 21 Oct",
+        "shortLabel": "21 Oct",
         "dayOfMonth": "21",
         "weekend": false,
-        "monthStart": false
+        "monthStart": false,
+        "weekStart": false
       }
     ],
     "sprints": [

@@ -11,6 +11,7 @@
     }
   },
   "as_of": "2026-10-24T14:00:00+00:00",
+  "as_of_label": "Sat 24 Oct, 14:00",
   "finished": true,
   "key_dates": [
     {
@@ -33,7 +34,7 @@
         "name": "Claude Code",
         "agent": true
       },
-      "source": "Plan captured"
+      "source": "Plan captured: 4 stories and bugs, 9 tasks"
     },
     {
       "point": "execution_started",
@@ -94,121 +95,155 @@
       {
         "start_hours": 0,
         "label": "Mon 5 Oct",
+        "short_label": "5 Oct",
         "day_of_month": "5",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": true
       },
       {
         "start_hours": 24,
         "label": "Tue 6 Oct",
+        "short_label": "6 Oct",
         "day_of_month": "6",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 48,
         "label": "Wed 7 Oct",
+        "short_label": "7 Oct",
         "day_of_month": "7",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 72,
         "label": "Thu 8 Oct",
+        "short_label": "8 Oct",
         "day_of_month": "8",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 96,
         "label": "Fri 9 Oct",
+        "short_label": "9 Oct",
         "day_of_month": "9",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 120,
         "label": "Sat 10 Oct",
+        "short_label": "10 Oct",
         "day_of_month": "10",
         "weekend": true,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 144,
         "label": "Sun 11 Oct",
+        "short_label": "11 Oct",
         "day_of_month": "11",
         "weekend": true,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 168,
         "label": "Mon 12 Oct",
+        "short_label": "12 Oct",
         "day_of_month": "12",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": true
       },
       {
         "start_hours": 192,
         "label": "Tue 13 Oct",
+        "short_label": "13 Oct",
         "day_of_month": "13",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 216,
         "label": "Wed 14 Oct",
+        "short_label": "14 Oct",
         "day_of_month": "14",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 240,
         "label": "Thu 15 Oct",
+        "short_label": "15 Oct",
         "day_of_month": "15",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 264,
         "label": "Fri 16 Oct",
+        "short_label": "16 Oct",
         "day_of_month": "16",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 288,
         "label": "Sat 17 Oct",
+        "short_label": "17 Oct",
         "day_of_month": "17",
         "weekend": true,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 312,
         "label": "Sun 18 Oct",
+        "short_label": "18 Oct",
         "day_of_month": "18",
         "weekend": true,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 336,
         "label": "Mon 19 Oct",
+        "short_label": "19 Oct",
         "day_of_month": "19",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": true
       },
       {
         "start_hours": 360,
         "label": "Tue 20 Oct",
+        "short_label": "20 Oct",
         "day_of_month": "20",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       },
       {
         "start_hours": 384,
         "label": "Wed 21 Oct",
+        "short_label": "21 Oct",
         "day_of_month": "21",
         "weekend": false,
-        "month_start": false
+        "month_start": false,
+        "week_start": false
       }
     ],
     "sprints": [
