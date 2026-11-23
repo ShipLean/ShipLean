@@ -58,7 +58,7 @@ export function GanttRowLabels({ view, rows, options, selected, onSelect }: Gant
             aria-label="On the critical path"
             title="On the critical path"
             className="size-1.5 flex-none rounded-full"
-            style={{ background: 'var(--tl-accent)' }}
+            style={{ background: 'var(--color-text)' }}
           />
         )}
         <span className="ml-auto flex flex-none items-center gap-2">

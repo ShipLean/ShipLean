@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import { GanttChart } from '../GanttChart';
+import { StatefulGanttChart } from './StatefulGanttChart';
 import { DEFAULT_TIMELINE_OPTIONS, type TimelineOptions } from '../TimelineOptions';
 import { timelineTestIds as ids } from '../testIds';
 import { FINISHED_TIMELINE, RUNNING_TIMELINE } from './stubFeatureTimeline';
@@ -111,12 +112,27 @@ test('GanttRowLabels_WhenGroupPeople_ShouldShowUnassignedGroup', async ({ mount,
   await expect(last).toContainText('1 task');
 });
 
-test('GanttRowLabels_WhenSelected_ShouldMarkRowAndShowAccentBar', async ({ mount, page }) => {
-  await mountChart(mount, FINISHED_TIMELINE, { selected: 'SHIP-192' });
+test('GanttRowLabels_WhenRowClicked_ShouldMarkRowShowAccentBarAndBand', async ({ mount, page }) => {
+  await mount(<StatefulGanttChart view={FINISHED_TIMELINE} />);
   const r = page.getByTestId(ids.chartRow).and(page.locator('[data-key="SHIP-192"]'));
+  await expect(r).not.toHaveAttribute('data-selected', 'true');
+  await expect(page.getByTestId(ids.chartRowAccent)).toHaveCount(0);
+  await r.click();
   await expect(r).toHaveAttribute('data-selected', 'true');
-  await expect(r.getByTestId(ids.chartRowAccent)).toBeVisible();
+  const bar = r.getByTestId(ids.chartRowAccent);
+  await expect(bar).toBeVisible();
   await expect(page.getByTestId(ids.chartRowAccent)).toHaveCount(1);
+  expect(await bar.evaluate((el) => getComputedStyle(el).width)).toBe('3px');
+  const band = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.background = 'var(--tl-selected-band)';
+    document.body.appendChild(probe);
+    const colour = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return colour;
+  });
+  expect(band).not.toBe('rgba(0, 0, 0, 0)');
+  await expect(r).toHaveCSS('background-color', band);
 });
 
 test('GanttRowLabels_WhenClicked_ShouldSelectOnlyBarAndStoryRows', async ({ mount, page }) => {

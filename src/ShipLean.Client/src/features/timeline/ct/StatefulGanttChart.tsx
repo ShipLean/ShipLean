@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import { GanttChart } from '../GanttChart';
 import { DEFAULT_TIMELINE_OPTIONS } from '../TimelineOptions';
+import type { StatefulGanttChartProps } from './StatefulGanttChartProps';
 
-/** A GanttChart that keeps its own selection, so a spec can click to select and click to clear. */
-export function StatefulGanttChart({ view }: { view: FeatureTimelineViewDto }) {
+/** CT harness: a GanttChart that keeps its own selection, so a click selects for real. */
+export function StatefulGanttChart({ view }: StatefulGanttChartProps) {
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <GanttChart
