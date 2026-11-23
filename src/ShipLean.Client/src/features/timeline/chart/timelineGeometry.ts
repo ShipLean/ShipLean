@@ -8,6 +8,9 @@ export const AXIS_HEIGHT = 40;
 export const BAR_HEIGHT = 14;
 export const BRACKET_HEIGHT = 8;
 export const DIAMOND_SIZE = 7;
+/** A bar or bracket is never drawn narrower than this. */
+export const MIN_BAR = 3;
+export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;

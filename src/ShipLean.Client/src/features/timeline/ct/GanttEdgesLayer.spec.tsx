@@ -29,6 +29,7 @@ const layer = (
   <svg width={1800} height={400}>
     <GanttEdgesLayer
       boxes={boxes}
+      marks={[]}
       edges={over.edges ?? edges}
       criticalPath={criticalPath}
       options={{ ...DEFAULT_TIMELINE_OPTIONS, ...over.options }}
