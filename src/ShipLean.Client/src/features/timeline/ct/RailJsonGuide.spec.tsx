@@ -30,6 +30,9 @@ test('RailJsonGuide_ShouldShowTheCallTheEightRowMapAndTheRule', async ({ mount, 
     "Read-only. Any project member's agent. One call returns the whole picture; there is nothing to page through.",
   );
   await expect(page.getByTestId(ids.railJsonMap).locator('li')).toHaveCount(8);
+  const map = page.getByTestId(ids.railJsonMap);
+  for (const text of ['first Active', 'last Resolved', 'part-way', 'inferred: true'])
+    await expect(map).toContainText(text);
   await expect(page.getByTestId(ids.railJsonRule)).toContainText(
     "Rule for every chart from now on: the screen and the MCP tool are built from one server view model, so a person and an agent can't see different numbers.",
   );
