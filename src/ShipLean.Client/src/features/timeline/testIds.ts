@@ -79,6 +79,9 @@ export const timelineTestIds = {
   railBack: 'timeline-rail-back',
   // end SHIP-2250
   // SHIP-2251 (T1f): JSON view
+  railJsonCall: 'timeline-rail-json-call',
+  railJsonMap: 'timeline-rail-json-map',
+  railJsonRule: 'timeline-rail-json-rule',
   // end SHIP-2251
   // SHIP-2252 (T1g): chart axis, Now line and the selected band
   chartWeekTick: 'timeline-chart-week-tick',

@@ -12,6 +12,20 @@ test('TimelineJson_ShouldShowMcpNames', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.jsonFieldGuide)).toContainText('feature_timeline');
 });
 
+test('TimelineJson_ShouldHighlightKeysAndStringsAndFillTheChartHeight', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 900, height: 700 });
+  await mount(
+    <div style={{ height: 700, display: 'flex', flexDirection: 'column' }}>
+      <TimelineJson view={FINISHED_TIMELINE} />
+    </div>,
+  );
+  const json = page.getByTestId(ids.json);
+  await expect(json.locator('.json-k').first()).toBeVisible();
+  await expect(json.locator('.json-s').first()).toBeVisible();
+  const box = await json.boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(700);
+});
+
 test('TimelineJson_Copy_ShouldCopyTheJson', async ({ mount, page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await mount(<TimelineJson view={FINISHED_TIMELINE} />);

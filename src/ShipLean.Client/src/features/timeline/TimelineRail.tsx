@@ -9,7 +9,7 @@ import type { TimelineRailProps } from './TimelineRailProps';
 export function TimelineRail({ view, options, selected, onSelect, runs }: TimelineRailProps) {
   const item = options.view === 'json' ? null : findRailItem(view, selected);
   let body;
-  if (options.view === 'json') body = <RailJsonGuide />;
+  if (options.view === 'json') body = <RailJsonGuide featureKey={view.feature.key} />;
   else if (item?.kind === 'task')
     body = <RailTask view={view} bar={item.bar} onSelect={onSelect} runs={runs?.(item.bar.key)} />;
   else if (item?.kind === 'story')
