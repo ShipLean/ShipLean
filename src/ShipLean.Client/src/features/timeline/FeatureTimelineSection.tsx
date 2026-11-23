@@ -29,7 +29,12 @@ export function FeatureTimelineSection({ item, projectKey }: FeatureTimelineSect
           )}
           className="inline-flex items-center gap-1 rounded-sm border border-edge px-2 py-0.5 text-[length:var(--text-xs)] text-ink no-underline hover:border-signal hover:text-signal touch:hidden"
         >
-          <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3 fill-none stroke-current" strokeWidth="1.5">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="size-3 fill-none stroke-current"
+            strokeWidth="1.5"
+          >
             <path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5l-4.5 4.5M2.5 13.5L7 9" />
           </svg>
           Open timeline
