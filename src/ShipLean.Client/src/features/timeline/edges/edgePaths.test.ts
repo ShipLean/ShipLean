@@ -61,16 +61,32 @@ describe('edgePaths', () => {
     expect(b.title).toBe('A → C');
   });
 
-  it('skips an edge whose box is missing', () => {
+  it('EdgePaths_WhenAnEndIsAnUnknownKey_ShouldSkipTheEdge', () => {
     expect(edgePaths(boxes, [edge({ to: 'Z' }), edge({ from: 'Z' })], scale)).toEqual([]);
   });
 
-  it('EdgePaths_WhenAnEndIsABracketOrDiamond_ShouldSkipTheEdge', () => {
-    const marks = [...boxes, mark('S', 0, 200, 60, 'bracket'), mark('D', 90, 90, 80, 'diamond')];
-    const pairs = [edge({ to: 'S' }), edge({ from: 'S' }), edge({ to: 'D' }), edge({ from: 'D' })];
+  it('EdgePaths_WhenAnEndIsABracket_ShouldSkipTheEdge', () => {
+    const marks = [...boxes, mark('S', 0, 200, 60, 'bracket')];
+    const pairs = [edge({ to: 'S' }), edge({ from: 'S' })];
     expect(edgePaths(marks, [...pairs, edge({})], scale).map((p) => `${p.from}-${p.to}`)).toEqual([
       'A-B',
     ]);
+  });
+
+  it('EdgePaths_WhenTheToEndIsADiamond_ShouldEndAtItsLeftPoint', () => {
+    // A diamond at x = 90 (DIAMOND_SIZE 7) on a row whose middle is y = 85.
+    const marks = [...boxes, mark('D', 90, 90, 80, 'diamond')];
+    const [p] = edgePaths(marks, [edge({ to: 'D' })], scale);
+    expect(p.d).toBe('M50,5 H58 V85 H83');
+    expect(p.endX).toBe(83);
+    expect(p.horizontal).toEqual({ x0: 58, x1: 83, y: 85 });
+  });
+
+  it('EdgePaths_WhenTheFromEndIsADiamond_ShouldStartAtItsRightPoint', () => {
+    const marks = [...boxes, mark('D', 20, 20, 80, 'diamond')];
+    const [p] = edgePaths(marks, [edge({ from: 'D' })], scale);
+    expect(p.d).toBe('M27,85 H35 V25 H80');
+    expect(p.vertical).toEqual({ x: 35, y0: 25, y1: 85 });
   });
 
   it('EdgePaths_WhenThePairRepeats_ShouldDrawItOnce', () => {

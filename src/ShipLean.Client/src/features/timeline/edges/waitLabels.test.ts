@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureTimelineViewDto, TimelineEdgeDto } from '@shiplean/core/api/views';
-import { FINISHED_TIMELINE } from '../ct/stubFeatureTimeline';
+import { FINISHED_TIMELINE, RUNNING_TIMELINE } from '../ct/stubFeatureTimeline';
 import { durationLabelBox, markBox, type LabelBox } from '../chart/labelBoxes';
 import { timelineGeometry, type Mark } from '../chart/timelineGeometry';
 import { timelineRows } from '../chart/timelineRows';
 import { TIMELINE_GROUPS } from '../TimelineOptions';
 import { edgePaths } from './edgePaths';
+import { inferredNoteBox, openEndCueBox } from './markExtras';
 import { placeWaitLabels } from './waitLabels';
 
 const overlaps = (a: LabelBox, b: LabelBox) =>
@@ -59,6 +60,26 @@ const edge = (over: Partial<TimelineEdgeDto>): TimelineEdgeDto => ({
 });
 const scale = { pxPerHour: 1, originX: 0 };
 
+/** Labelled arrows into and out of the finished fixture's diamond (SHIP-198) and the running one's open bar (SHIP-172). */
+const withExtraEdges = (view: FeatureTimelineViewDto, extra: Partial<TimelineEdgeDto>[]) => ({
+  ...view,
+  edges: [...view.edges, ...extra.map((over) => edge({ waitHours: 50, ...over }))],
+});
+const extraLayouts = [
+  withExtraEdges(FINISHED_TIMELINE, [
+    { from: 'SHIP-197', to: 'SHIP-198', waitLabel: '8.2 days' },
+    { from: 'SHIP-198', to: 'SHIP-196', waitLabel: '2.7 days' },
+    { from: 'SHIP-193', to: 'SHIP-198', waitLabel: '10 days' },
+  ]),
+  withExtraEdges(RUNNING_TIMELINE, [
+    { from: 'SHIP-121', to: 'SHIP-172', waitLabel: '28 days' },
+    { from: 'SHIP-172', to: 'SHIP-122', waitLabel: '1 h' },
+    { from: 'SHIP-122', to: 'SHIP-171', waitLabel: '21 days' },
+  ]),
+].flatMap((view) =>
+  layouts.map((layout) => ({ ...layout, view, fixture: view.finished ? 'finished' : 'running' })),
+);
+
 describe('placeWaitLabels', () => {
   it.each(layouts)(
     'PlaceWaitLabels_WhenFinished_ShouldOverlapNoBarDurationOrOtherLabel ($group, $zoom, $width)',
@@ -76,6 +97,51 @@ describe('placeWaitLabels', () => {
       }
     },
   );
+
+  it.each(extraLayouts)(
+    'PlaceWaitLabels_WhenArrowsJoinADiamondOrOpenBar_ShouldOverlapNoNoteOrEndCue ($fixture, $group, $zoom, $width)',
+    ({ view, group, zoom, width }) => {
+      const { marks, labels } = place(view, group, zoom, width);
+      // Every diamond's note and every bar's end cue spot (the layer isn't told which bars are open).
+      const extras = marks.flatMap((m) =>
+        m.kind === 'diamond' ? [inferredNoteBox(m)] : m.kind === 'bar' ? [openEndCueBox(m)] : [],
+      );
+      expect(extras.length).toBeGreaterThan(0);
+      expect(labels.length).toBeGreaterThan(0);
+      for (const label of labels) {
+        expect(extras.filter((box) => overlaps(label.box, box))).toEqual([]);
+        expect(marks.filter((m) => overlaps(label.box, markBox(m)))).toEqual([]);
+      }
+    },
+  );
+
+  it('PlaceWaitLabels_WhenADiamondNoteSitsAboveTheSegment_ShouldGoBelow', () => {
+    // N's "Closed, no start recorded" note runs from x = 132 across the spot centred above A's arrow into B.
+    const note: Mark = {
+      ...mark('N', 120, 120, 0),
+      kind: 'diamond',
+      box: { key: 'N', x0: 120, x1: 120, y: 99, height: 14 },
+    };
+    const marks = [mark('A', 0, 50, 0), mark('B', 300, 400, 2), note];
+    const paths = edgePaths(marks, [edge({})], scale);
+    const [label] = placeWaitLabels([edge({})], paths, marks);
+    expect(overlaps(label.box, inferredNoteBox(note))).toBe(false);
+    expect(label.box.y0).toBeGreaterThanOrEqual(paths[0].horizontal.y);
+  });
+
+  it('PlaceWaitLabels_WhenAnEndCueSitsAboveTheSegment_ShouldGoBelow', () => {
+    // Q ends at x = 150, just left of the spot centred above A's arrow into B; only its end cue reaches into it.
+    const open: Mark = {
+      ...mark('Q', 100, 150, 0),
+      box: { key: 'Q', x0: 100, x1: 150, y: 99, height: 14 },
+    };
+    const marks = [mark('A', 0, 50, 0), mark('B', 300, 400, 2), open];
+    const paths = edgePaths(marks, [edge({})], scale);
+    const [label] = placeWaitLabels([edge({})], paths, marks);
+    expect(overlaps(label.box, markBox(open))).toBe(false);
+    expect(overlaps(label.box, openEndCueBox(open))).toBe(false);
+    expect(label.box.y0).toBeGreaterThanOrEqual(paths[0].horizontal.y);
+  });
 
   it('PlaceWaitLabels_WhenFinished_ShouldEndEveryTextInWaitAndPlaceSomeOncePerEdge', () => {
     const { paths, labels } = place(FINISHED_TIMELINE, 'stories', 'fit', 960);
