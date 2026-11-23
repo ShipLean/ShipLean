@@ -188,10 +188,14 @@ test('GanttEdgesLayer_WhenArrowsJoinADiamond_ShouldDrawThemClearOfItsNote', asyn
   const into = arrow(page.getByTestId(ids.edge), 'SHIP-197', 'SHIP-198');
   await expect(into).toHaveCount(1);
   await expect(arrow(page.getByTestId(ids.edge), 'SHIP-198', 'SHIP-196')).toHaveCount(1);
-  // The arrow ends at the diamond's left point.
-  const diamond = (await page.getByTestId(ids.chartDiamond).locator('polygon').boundingBox())!;
-  const line = (await into.boundingBox())!;
-  expect(Math.abs(line.x + line.width - diamond.x)).toBeLessThan(1);
+  // The arrow ends at the diamond's left point, the last point GanttMarks draws it with.
+  const points = (await page
+    .getByTestId(ids.chartDiamond)
+    .locator('polygon')
+    .getAttribute('points'))!;
+  const leftX = Number(points.trim().split(/\s+/).at(-1)!.split(',')[0]);
+  const d = (await into.locator('path').first().getAttribute('d'))!;
+  expect(Number(d.split('H').at(-1))).toBeCloseTo(leftX, 3);
   await expect(page.getByTestId(ids.chartInferredNote)).toBeVisible();
   const { found } = await overlapsWithMarks(page);
   expect(found).toEqual([]);
