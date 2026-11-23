@@ -20,6 +20,7 @@ export const timelineTestIds = {
   chartScroll: 'timeline-chart-scroll',
   chartLeft: 'timeline-chart-left',
   chartRow: 'timeline-chart-row',
+  chartRowStatus: 'timeline-chart-row-status',
   chartBar: 'timeline-chart-bar',
   chartBracket: 'timeline-chart-bracket',
   chartDiamond: 'timeline-chart-diamond',
@@ -45,4 +46,21 @@ export const timelineTestIds = {
   json: 'timeline-json',
   jsonCopy: 'timeline-json-copy',
   jsonFieldGuide: 'timeline-json-field-guide',
+  typeBadge: 'timeline-type-badge',
+  personAvatar: 'timeline-person-avatar',
+  // Wave 1 lanes: append your ids inside your own block only.
+  // SHIP-2246 (T1a): header KPIs, caption, key dates and the Feature page card
+  // end SHIP-2246
+  // SHIP-2247 (T1b): row labels column
+  // end SHIP-2247
+  // SHIP-2248 (T1c): chart marks
+  // end SHIP-2248
+  // SHIP-2249 (T1d): dependency arrows and wait labels
+  // end SHIP-2249
+  // SHIP-2250 (T1e): legend, Reading the chart and the selected-item card
+  // end SHIP-2250
+  // SHIP-2251 (T1f): JSON view
+  // end SHIP-2251
+  // SHIP-2252 (T1g): chart axis, Now line and the selected band
+  // end SHIP-2252
 } as const;

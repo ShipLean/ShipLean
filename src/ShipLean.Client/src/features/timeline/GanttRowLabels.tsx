@@ -24,6 +24,8 @@ function rowLabel(row: TimelineRow): { title: string; key: string | null; who: s
       return { title: row.story.title, key: row.key, who: initials(row.story.assignee) };
     case 'bar':
       return { title: row.bar.title, key: row.key, who: initials(row.bar.assignee) };
+    case 'notStarted':
+      return { title: row.item.title, key: row.key, who: '' };
   }
 }
 
@@ -44,16 +46,21 @@ export function GanttRowLabels({ rows, selected }: GanttRowLabelsProps) {
             data-key={row.kind === 'group' ? undefined : row.key}
             data-kind={row.kind}
             data-selected={row.key === selected ? true : undefined}
-            className="flex items-center gap-2 overflow-hidden px-2 whitespace-nowrap"
+            className={`flex items-center gap-2 overflow-hidden px-2 whitespace-nowrap${row.kind === 'notStarted' ? ' text-ink-muted italic' : ''}`}
             style={{
               height: ROW_HEIGHT,
-              fontWeight: row.kind === 'bar' ? 400 : 600,
+              fontWeight: row.kind === 'bar' || row.kind === 'notStarted' ? 400 : 600,
               background: row.key === selected ? 'var(--color-surface-2)' : undefined,
             }}
           >
             {label.key !== null && <span className="text-ink-muted">{label.key}</span>}
             <span className="truncate">{label.title}</span>
             {label.who !== '' && <span className="ml-auto text-ink-muted">{label.who}</span>}
+            {row.kind === 'notStarted' && (
+              <span data-testid={ids.chartRowStatus} className="ml-auto text-ink-muted">
+                Not started
+              </span>
+            )}
           </div>
         );
       })}
