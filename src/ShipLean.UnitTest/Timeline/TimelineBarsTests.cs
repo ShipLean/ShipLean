@@ -1,3 +1,4 @@
+using ShipLean.Application.Features.Timeline;
 using ShipLean.Application.Features.Timeline.Build;
 using ShipLean.Application.Features.Timeline.Facts;
 using ShipLean.Contracts.Refs;
@@ -252,7 +253,7 @@ public class TimelineBarsTests
         var planned = Build(f).KeyDates[1];
 
         planned.At.ShouldBe(T0);
-        planned.Source.ShouldBe("First story added");
+        planned.Source.ShouldBe("First stories created (no captured plan)");
     }
 
     [Test]
@@ -261,7 +262,98 @@ public class TimelineBarsTests
         var planned = Build(Facts().WithPlanApplied(T0.AddHours(5))).KeyDates[1];
 
         planned.At.ShouldBe(T0.AddHours(5));
-        planned.Source.ShouldBe("Plan captured");
+        planned.Source.ShouldBe("Plan captured: 1 story or bug, 1 task");
+    }
+
+    [Test]
+    public void Planned_WhenPlanCaptured_ShouldCountStoriesBugsAndTasksLeavingRemovedOut()
+    {
+        var f = Facts().WithPlanApplied(T0.AddHours(5))
+            .WithStory("SHIP-3", "Idle story").WithBug("SHIP-4", "Bug").WithTask("SHIP-5", "SHIP-4").WithTask("SHIP-6", "SHIP-3")
+            .WithTask("SHIP-7", "SHIP-1", "Dropped", null, "Removed", StateCategory.Removed)
+            .WithStory("SHIP-8", "Dropped story", null, null, "Removed", StateCategory.Removed).WithTask("SHIP-9", "SHIP-8");
+        Active(f, "SHIP-2", 9);
+
+        Build(f).KeyDates[1].Source.ShouldBe("Plan captured: 3 stories and bugs, 3 tasks");
+    }
+
+    [Test]
+    public void Planned_WhenPlanCapturedWithOneStoryAndOneTask_ShouldUseSingulars()
+    {
+        Build(Facts().WithPlanApplied(T0.AddHours(5))).KeyDates[1].Source.ShouldBe("Plan captured: 1 story or bug, 1 task");
+    }
+
+    [Test]
+    public void Planned_WhenNoPlanCaptured_ShouldSayFirstStoriesCreated()
+    {
+        Build(Facts()).KeyDates[1].Source.ShouldBe("First stories created (no captured plan)");
+    }
+
+    [Test]
+    public void AsOfLabel_WhenViewerSevenHoursAheadOfUtc_ShouldLabelTheLocalDayAndTime()
+    {
+        // Thu 15 Oct 20:00 UTC is Fri 16 Oct 03:00 in Bangkok.
+        var view = TimelineBuilder.Build(Facts().Build(), AsOf.AddHours(20), ViewerZoneTestData.Bangkok);
+
+        view.AsOfLabel.ShouldBe("Fri 16 Oct, 03:00");
+    }
+
+    [Test]
+    public void ShortLabel_WhenScaleDrawn_ShouldBeDayAndMonthOnly()
+    {
+        var f = Facts();
+        Active(f, "SHIP-2", 9);
+
+        var days = Build(f).Scale.Days;
+
+        days[0].ShortLabel.ShouldBe("5 Oct");
+        days.Select(d => d.ShortLabel).ShouldBe(days.Select(d => d.Label[4..]));
+    }
+
+    [Test]
+    public void WeekStart_WhenUtcSundayEveningIsLocalMonday_ShouldBeTrueOnLocalMondaysOnly()
+    {
+        // Sun 4 Oct 20:00 UTC is Mon 5 Oct 03:00 in Bangkok.
+        var f = Facts();
+        Active(f, "SHIP-2", -4);
+
+        var utc = Build(f).Scale.Days;
+        var bangkok = Build(f, ViewerZoneTestData.Bangkok).Scale.Days;
+
+        utc[0].Label.ShouldBe("Sun 4 Oct");
+        utc[0].WeekStart.ShouldBeFalse();
+        bangkok[0].Label.ShouldBe("Mon 5 Oct");
+        bangkok[0].WeekStart.ShouldBeTrue();
+        bangkok.Where(d => d.WeekStart).Select(d => d.Label).ShouldBe(["Mon 5 Oct", "Mon 12 Oct"]);
+        utc.Where(d => d.WeekStart).Select(d => d.Label).ShouldBe(["Mon 5 Oct", "Mon 12 Oct"]);
+    }
+
+    [Test]
+    public void NotStarted_WhenTaskAssigned_ShouldGiveThePersonEvenAfterAnAgentMove()
+    {
+        var f = Facts();
+        f.WithMove("SHIP-2", T0.AddHours(1), "New", StateCategory.Proposed, agentName: "Claude Code");
+
+        var item = Build(f).NotStarted.Single(n => n.Key == "SHIP-2");
+
+        item.Assignee.ShouldBe(new TimelinePersonDto(Ana, "Ana Costa", false));
+    }
+
+    [Test]
+    public void NotStarted_WhenUnassigned_ShouldGiveNullAssignee()
+    {
+        var part = Build(Facts().WithTask("SHIP-3", "SHIP-1", "Nobody's").WithStory("SHIP-4", "Idle story"));
+
+        part.NotStarted.Single(n => n.Key == "SHIP-3").Assignee.ShouldBeNull();
+        part.NotStarted.Single(n => n.Key == "SHIP-4").Assignee.ShouldBeNull();
+    }
+
+    [Test]
+    public void NotStarted_WhenStoryAssigned_ShouldGiveThePerson()
+    {
+        var part = Build(Facts().WithStory("SHIP-4", "Idle story", Tom));
+
+        part.NotStarted.Single(n => n.Key == "SHIP-4").Assignee.ShouldBe(new TimelinePersonDto(Tom, "Tom Okafor", false));
     }
 
     [Test]
@@ -277,7 +369,7 @@ public class TimelineBarsTests
     {
         var planned = Build(Facts().WithPlannedBy(Ana)).KeyDates[1];
 
-        planned.Source.ShouldBe("First story added");
+        planned.Source.ShouldBe("First stories created (no captured plan)");
         planned.By.ShouldBe(new TimelinePersonDto(Ana, "Ana Costa", false));
     }
 
