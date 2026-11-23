@@ -416,6 +416,77 @@ public class PromptWritesTests : ApiFixture
         saved.Select(s => s.Status).ShouldAllBe(status => status == PromptStatus.BuiltInUpdated);
     }
 
+    private async Task<PromptSavedDto> SaveExpectingAsync(Guid project, string text, PromptBase? expected)
+    {
+        using var scope = Host.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<IPromptWrites>()
+            .SaveAsync(project, PromptKey.Guide, new PromptSaveDto(text, "A change.", PromptVersionSource.Editor), expected);
+    }
+
+    private async Task<ApiException> RefusedExpectingAsync(Guid project, string text, PromptBase? expected)
+        => await Should.ThrowAsync<ApiException>(() => SaveExpectingAsync(project, text, expected));
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedDiffersAndTextEqualsInUse_ShouldConflictAsStale()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "Mine.");
+
+        var error = await RefusedExpectingAsync(project, "Mine.", new PromptBase(null));
+
+        error.Code.ShouldBe(ApiErrorCodes.Conflict);
+        error.Message.ShouldBe("The version in use changed since you read it: it is now v1. Read the prompt again with prompts, then save.");
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedDiffers_ShouldConflictAndWriteNothing()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "First.");
+        await SavedAsync(project, "guide", "Second.");
+
+        var error = await RefusedExpectingAsync(project, "Third.", new PromptBase(1));
+
+        error.Code.ShouldBe(ApiErrorCodes.Conflict);
+        error.Message.ShouldBe("The version in use changed since you read it: it is now v2. Read the prompt again with prompts, then save.");
+        (await RowsAsync(project, "guide")).ShouldBe((2, 2, null));
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedNamesAVersionAndTheBuiltInIsInUse_ShouldConflictNamingTheBuiltIn()
+    {
+        var project = await ArrangeProjectAsync();
+
+        var error = await RefusedExpectingAsync(project, "New.", new PromptBase(1));
+
+        error.Message.ShouldBe("The version in use changed since you read it: it is now the built-in. Read the prompt again with prompts, then save.");
+        (await RowsAsync(project, "guide")).Versions.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedMatches_ShouldSave()
+    {
+        var project = await ArrangeProjectAsync();
+
+        var first = await SaveExpectingAsync(project, "First.", new PromptBase(null));
+        var second = await SaveExpectingAsync(project, "Second.", new PromptBase(1));
+
+        first.InUseVersion.ShouldBe(1);
+        second.InUseVersion.ShouldBe(2);
+        (await RowsAsync(project, "guide")).ShouldBe((2, 2, null));
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedNull_ShouldNotCheck()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "First.");
+
+        var saved = await SaveExpectingAsync(project, "Second.", null);
+
+        saved.InUseVersion.ShouldBe(2);
+    }
+
     private async Task WaitForWaitersAsync(int count, params Task[] writes)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
