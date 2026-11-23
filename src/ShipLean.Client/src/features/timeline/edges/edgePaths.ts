@@ -1,5 +1,5 @@
 import type { TimelineEdgeDto } from '@shiplean/core/api/views';
-import type { Mark } from '../chart/timelineGeometry';
+import { DIAMOND_SIZE, type Mark } from '../chart/timelineGeometry';
 
 export interface EdgeScale {
   pxPerHour: number;
@@ -15,7 +15,7 @@ export interface EdgePath {
   head: string;
   endX: number;
   endY: number;
-  /** The long horizontal segment into the to bar (x0 ≤ x1). */
+  /** The long horizontal segment into the to task (x0 ≤ x1). */
   horizontal: { x0: number; x1: number; y: number };
   /** The elbow's vertical segment (y0 ≤ y1). */
   vertical: { x: number; y0: number; y1: number };
@@ -31,23 +31,38 @@ const HEAD = 5;
 export const edgePairKey = (edge: { from: string; to: string }): string =>
   `${edge.from}→${edge.to}`;
 
+/** A task's drawn span left to right at its middle: a bar's box, or a diamond's left and right points. */
+interface TaskEnds {
+  x0: number;
+  x1: number;
+  y: number;
+}
+
+const taskEnds = (mark: Mark): TaskEnds => {
+  const y = mark.box.y + mark.box.height / 2;
+  return mark.kind === 'diamond'
+    ? { x0: mark.box.x0 - DIAMOND_SIZE, x1: mark.box.x0 + DIAMOND_SIZE, y }
+    : { x0: mark.box.x0, x1: mark.box.x1, y };
+};
+
 /**
- * The edges whose two ends are drawn bars, in order, one per (from, to) pair (the first one the data gives).
- * An edge into or out of a bracket, a diamond or an item with no mark is skipped.
+ * The edges whose two ends are drawn tasks (a bar, or a diamond for a task closed with no start), in order, one
+ * per (from, to) pair (the first one the data gives). An edge into or out of a story or bug bracket, or an item
+ * with no mark, is skipped.
  */
 export function edgePaths(marks: Mark[], edges: TimelineEdgeDto[], scale: EdgeScale): EdgePath[] {
-  const bars = new Map(marks.filter((m) => m.kind === 'bar').map((m) => [m.key, m.box]));
+  const tasks = new Map(marks.filter((m) => m.kind !== 'bracket').map((m) => [m.key, taskEnds(m)]));
   const seen = new Set<string>();
   const paths: EdgePath[] = [];
   for (const edge of edges) {
-    const from = bars.get(edge.from);
-    const to = bars.get(edge.to);
+    const from = tasks.get(edge.from);
+    const to = tasks.get(edge.to);
     const pair = edgePairKey(edge);
     if (!from || !to || seen.has(pair)) continue;
     seen.add(pair);
     const x1 = from.x1;
-    const y1 = from.y + from.height / 2;
-    const y2 = to.y + to.height / 2;
+    const y1 = from.y;
+    const y2 = to.y;
     const x2 =
       edge.kind === 'blocked' && edge.unblockedHours !== null
         ? scale.originX + edge.unblockedHours * scale.pxPerHour

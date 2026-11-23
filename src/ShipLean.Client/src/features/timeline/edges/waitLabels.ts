@@ -2,6 +2,7 @@ import type { TimelineEdgeDto } from '@shiplean/core/api/views';
 import { durationLabelBox, markBox, textWidth, type LabelBox } from '../chart/labelBoxes';
 import { AXIS_HEIGHT, type Mark } from '../chart/timelineGeometry';
 import { edgePairKey, type EdgePath } from './edgePaths';
+import { markExtraBoxes } from './markExtras';
 
 /** Wait labels are drawn at this size, semibold, as the mock-up does. */
 export const WAIT_LABEL_FONT_SIZE = 9.5;
@@ -59,8 +60,8 @@ function candidates(path: EdgePath, width: number): LabelBox[] {
 }
 
 /**
- * Places each path's "{waitLabel} wait" label where it overlaps no mark, no duration label and no label placed
- * before it. Critical-path edges go first, then the longer waits, then by key. A label with no free spot is left
+ * Places each path's "{waitLabel} wait" label where it overlaps no mark, no duration label, no diamond note or
+ * end cue, and no label placed before it. Critical-path edges go first, then the longer waits, then by key. A label with no free spot is left
  * out (its arrow's title still says the wait); the result is in placement order.
  */
 export function placeWaitLabels(
@@ -75,7 +76,7 @@ export function placeWaitLabels(
   }
   const taken: LabelBox[] = marks.flatMap((m) => {
     const label = m.durationLabel === null ? null : durationLabelBox(m, m.durationLabel);
-    return label === null ? [markBox(m)] : [markBox(m), label];
+    return [markBox(m), ...(label === null ? [] : [label]), ...markExtraBoxes(m)];
   });
   const ordered = paths
     .filter((p) => p.waitLabel !== null)

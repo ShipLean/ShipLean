@@ -3,7 +3,7 @@ import { placeWaitLabels, WAIT_LABEL_FONT_SIZE, WAIT_LABEL_HALO } from './edges/
 import { timelineTestIds as ids } from './testIds';
 import type { GanttEdgesLayerProps } from './GanttEdgesLayerProps';
 
-/** With Critical path on, arrows off the path fade like the bars. */
+/** With Critical path on, arrows off the path fade like the bars; a blocked one stays red and dashed. */
 const FADED = 0.35;
 
 /** Dependency arrows, wait labels and the critical path outline, drawn inside the chart's SVG. */
@@ -22,9 +22,7 @@ export function GanttEdgesLayer({
   const outline = options.deps && options.cp && finished;
   const onPath = new Set(criticalPath);
   const fadedPairs = new Set(
-    paths
-      .filter((p) => outline && !p.onCriticalPath && p.kind !== 'blocked')
-      .map((p) => edgePairKey(p)),
+    paths.filter((p) => outline && !p.onCriticalPath).map((p) => edgePairKey(p)),
   );
   return (
     <g data-testid={ids.edges} data-boxes={boxes.length}>
