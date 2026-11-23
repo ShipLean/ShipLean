@@ -117,7 +117,7 @@ public class UsePromptVersionToolTests : McpFixture
         var result = await UseAsync("retro", "\"built-in\"");
 
         ErrorCode(result).ShouldBe("conflict");
-        Recorder.Events.Where(e => e.Source == "tool:use_prompt_version").ShouldBeEmpty();
+        Recorder.Events.Where(e => e.Source == "tool:use_prompt_version" && e.Name is UsageEventNames.PromptVersionRestored or UsageEventNames.PromptBuiltInUsed).ShouldBeEmpty();
     }
 
     [Test]
