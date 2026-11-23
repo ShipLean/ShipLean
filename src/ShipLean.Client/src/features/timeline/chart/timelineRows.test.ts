@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureTimelineViewDto, TimelineBarDto } from '@shiplean/core/api/views';
-import { FINISHED_TIMELINE } from '../ct/stubFeatureTimeline';
+import { FINISHED_TIMELINE, RUNNING_TIMELINE } from '../ct/stubFeatureTimeline';
 import { timelineRows } from './timelineRows';
 
 const withBars = (bars: TimelineBarDto[]): FeatureTimelineViewDto => ({
@@ -81,5 +81,61 @@ describe('timelineRows', () => {
       r.kind === 'group' ? [r.label] : [],
     );
     expect(labels).toEqual(['Ana', 'Unassigned']);
+  });
+
+  it('Stories_WhenTaskNotStarted_ShouldSitUnderItsStoryAfterItsStartedTasks', () => {
+    const rows = timelineRows(RUNNING_TIMELINE, 'stories').map((r) => `${r.kind}:${r.key}`);
+    const story = rows.indexOf('bracket:SHIP-141');
+    expect(rows.slice(story, story + 4)).toEqual([
+      'bracket:SHIP-141',
+      'bar:SHIP-171',
+      'bar:SHIP-172',
+      'notStarted:SHIP-173',
+    ]);
+  });
+
+  it('Stories_WhenStoryNotStarted_ShouldFollowTheStartedStoriesWithItsTasks', () => {
+    const [story] = RUNNING_TIMELINE.notStarted.filter((i) => i.parent === null);
+    const [task] = RUNNING_TIMELINE.notStarted.filter((i) => i.parent !== null);
+    const view: FeatureTimelineViewDto = {
+      ...FINISHED_TIMELINE,
+      notStarted: [
+        { ...story, key: 'SHIP-50' },
+        { ...task, key: 'SHIP-51', parent: 'SHIP-50' },
+        { ...task, key: 'SHIP-52', parent: 'SHIP-185' },
+      ],
+    };
+    const rows = timelineRows(view, 'stories').map((r) => `${r.kind}:${r.key}`);
+    const started = timelineRows(FINISHED_TIMELINE, 'stories').length;
+    expect(rows).toHaveLength(started + 3);
+    expect(rows.slice(-2)).toEqual(['notStarted:SHIP-50', 'notStarted:SHIP-51']);
+    expect(rows.slice(0, 5)).toEqual([
+      'bracket:SHIP-185',
+      'bar:SHIP-191',
+      'bar:SHIP-192',
+      'bar:SHIP-193',
+      'notStarted:SHIP-52',
+    ]);
+  });
+
+  it('Stories_ShouldShowRunningFixtureNotStartedStoryLast', () => {
+    const rows = timelineRows(RUNNING_TIMELINE, 'stories');
+    expect(`${rows.at(-1)!.kind}:${rows.at(-1)!.key}`).toBe('notStarted:SHIP-158');
+  });
+
+  it('Tasks_ShouldPutNotStartedTasksAfterEveryBar', () => {
+    const rows = timelineRows(RUNNING_TIMELINE, 'tasks');
+    expect(rows.map((r) => `${r.kind}:${r.key}`)).toEqual([
+      ...RUNNING_TIMELINE.bars.map((b) => `bar:${b.key}`),
+      'notStarted:SHIP-173',
+    ]);
+  });
+
+  it('People_ShouldBeUnchangedByNotStartedItems', () => {
+    const without = timelineRows({ ...RUNNING_TIMELINE, notStarted: [] }, 'people');
+    const rows = timelineRows(RUNNING_TIMELINE, 'people');
+    expect(RUNNING_TIMELINE.notStarted.length).toBeGreaterThan(0);
+    expect(rows).toEqual(without);
+    expect(rows.some((r) => r.kind === 'notStarted')).toBe(false);
   });
 });

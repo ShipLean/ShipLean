@@ -8,6 +8,9 @@ export const AXIS_HEIGHT = 40;
 export const BAR_HEIGHT = 14;
 export const BRACKET_HEIGHT = 8;
 export const DIAMOND_SIZE = 7;
+/** A bar or bracket is never drawn narrower than this. */
+export const MIN_BAR = 3;
+export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;
@@ -39,6 +42,8 @@ export interface Mark {
   reviews: ReviewDot[];
   /** Where the dashed line from the bar's end to the last review dot starts and ends. */
   reviewLine: { x0: number; x1: number } | null;
+  /** The text of the mark's duration label (the server's durationLabel); null for a diamond and while unknown. */
+  durationLabel: string | null;
 }
 export interface TimelineGeometry {
   pxPerHour: number;
@@ -92,6 +97,7 @@ export function timelineGeometry(
     width: x(s.endHours - s.startHours),
   }));
 
+  // Every row takes its y from its position; only bar and bracket rows get a mark.
   const marks: Mark[] = [];
   rows.forEach((row, index) => {
     const y = rowY(index);
@@ -105,7 +111,15 @@ export function timelineGeometry(
         y: y + (ROW_HEIGHT - BRACKET_HEIGHT) / 2,
         height: BRACKET_HEIGHT,
       };
-      marks.push({ key: row.key, kind: 'bracket', row: index, box, reviews: [], reviewLine: null });
+      marks.push({
+        key: row.key,
+        kind: 'bracket',
+        row: index,
+        box,
+        reviews: [],
+        reviewLine: null,
+        durationLabel: story.durationLabel,
+      });
     } else if (row.kind === 'bar') {
       const { bar } = row;
       const reviews = bar.reviews.map((r) => ({
@@ -123,7 +137,15 @@ export function timelineGeometry(
           y: y + (ROW_HEIGHT - BAR_HEIGHT) / 2,
           height: BAR_HEIGHT,
         };
-        marks.push({ key: row.key, kind: 'diamond', row: index, box, reviews, reviewLine: null });
+        marks.push({
+          key: row.key,
+          kind: 'diamond',
+          row: index,
+          box,
+          reviews,
+          reviewLine: null,
+          durationLabel: null,
+        });
         return;
       }
       const x1 = x(bar.endHours ?? nowHours);
@@ -142,6 +164,7 @@ export function timelineGeometry(
         box,
         reviews,
         reviewLine: last === null ? null : { x0: x1, x1: last },
+        durationLabel: bar.durationLabel,
       });
     }
   });

@@ -1,0 +1,15 @@
+/* The Feature timeline's shared properties (SHIP-2223 C6). Every lane uses them and none redefines them.
+   Each maps to a house token, so light and dark both follow the theme. */
+:root {
+  /* The selected row: a soft accent band with a 3px accent bar on its left edge (C7). */
+  --tl-selected-band: var(--color-accent-soft);
+  --tl-selected-bar: var(--color-accent);
+  /* Story, bug and group rows sit on a faint band. */
+  --tl-story-band: color-mix(in srgb, var(--color-surface-2) 40%, var(--color-surface));
+  /* Open "so far" text and the Now line. */
+  --tl-accent: var(--color-accent);
+  /* The S/T/B type badges. */
+  --tl-badge-story: var(--type-story);
+  --tl-badge-task: var(--type-task);
+  --tl-badge-bug: var(--type-bug);
+}
