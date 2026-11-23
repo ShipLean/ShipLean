@@ -6,7 +6,7 @@ import { timelineGeometry, type Mark } from '../chart/timelineGeometry';
 import { timelineRows } from '../chart/timelineRows';
 import { TIMELINE_GROUPS } from '../TimelineOptions';
 import { edgePaths } from './edgePaths';
-import { inferredNoteBox, markExtraBoxes, openEndCueBox } from './markExtras';
+import { inferredNoteBox, openEndCueBox } from './markExtras';
 import { placeWaitLabels } from './waitLabels';
 
 const overlaps = (a: LabelBox, b: LabelBox) =>
@@ -102,7 +102,10 @@ describe('placeWaitLabels', () => {
     'PlaceWaitLabels_WhenArrowsJoinADiamondOrOpenBar_ShouldOverlapNoNoteOrEndCue ($fixture, $group, $zoom, $width)',
     ({ view, group, zoom, width }) => {
       const { marks, labels } = place(view, group, zoom, width);
-      const extras = marks.flatMap(markExtraBoxes);
+      // Every diamond's note and every bar's end cue spot (the layer isn't told which bars are open).
+      const extras = marks.flatMap((m) =>
+        m.kind === 'diamond' ? [inferredNoteBox(m)] : m.kind === 'bar' ? [openEndCueBox(m)] : [],
+      );
       expect(extras.length).toBeGreaterThan(0);
       expect(labels.length).toBeGreaterThan(0);
       for (const label of labels) {
