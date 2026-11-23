@@ -12,7 +12,7 @@ public sealed class FixtureFeatureTimeline : IFeatureTimeline
 
     public Task<FeatureTimelineViewDto> GetAsync(Guid projectId, string featureKey, CancellationToken ct) => Task.FromResult(View);
 
-    internal static FeatureTimelineViewDto Read(string file)
+    public static FeatureTimelineViewDto Read(string file)
         => JsonSerializer.Deserialize<FeatureTimelineViewDto>(
             File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "views", file)),
             new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })!;
