@@ -8,11 +8,9 @@ function Kpi({ value, unit, label }: { value: string; unit: string; label: strin
   return (
     <div data-testid={ids.kpi} className="grid gap-px">
       <div className="text-[length:18px] font-semibold tabular-nums">
-        {value}
+        {value}{' '}
         {value === DASH ? null : (
-          <small className="ml-1 text-[length:var(--text-xs)] font-normal text-ink-muted">
-            {unit}
-          </small>
+          <small className="text-[length:var(--text-xs)] font-normal text-ink-muted">{unit}</small>
         )}
       </div>
       <div className="text-[length:var(--text-xs)] whitespace-nowrap text-ink-muted">{label}</div>
@@ -48,11 +46,7 @@ export function TimelineKpis({ view }: TimelineKpisProps) {
         unit="days"
         label={finished ? 'Execution' : 'Execution so far'}
       />
-      <Kpi
-        value={String(k.tasksStarted)}
-        unit={`of ${k.tasksTotal} tasks`}
-        label={startedLabel}
-      />
+      <Kpi value={String(k.tasksStarted)} unit={`of ${k.tasksTotal} tasks`} label={startedLabel} />
       <Kpi value={String(k.reviews)} unit="reviews" label={reviewsLabel} />
     </div>
   );
