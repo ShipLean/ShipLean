@@ -1,6 +1,7 @@
 import type {
   FeatureTimelineViewDto,
   TimelineBarDto,
+  TimelineNotStartedDto,
   TimelinePersonDto,
   TimelineStoryDto,
 } from '@shiplean/core/api/views';
@@ -9,7 +10,8 @@ import type { TimelineOptions } from '../TimelineOptions';
 export type TimelineRow =
   | { kind: 'group'; key: string; id: string; label: string; agent: boolean }
   | { kind: 'bracket'; key: string; story: TimelineStoryDto }
-  | { kind: 'bar'; key: string; bar: TimelineBarDto };
+  | { kind: 'bar'; key: string; bar: TimelineBarDto }
+  | { kind: 'notStarted'; key: string; item: TimelineNotStartedDto };
 
 const UNASSIGNED = 'Unassigned';
 
@@ -28,23 +30,46 @@ const byStart = (a: TimelineBarDto, b: TimelineBarDto): number => {
   return a.startHours - b.startHours || a.key.localeCompare(b.key);
 };
 
-/** The rows the chart draws top to bottom. Items that have not started are not rows. */
+/**
+ * The rows the chart draws top to bottom. Stories: each started story's bracket, its bars, then its
+ * not-started tasks; then each not-started story or bug followed by its tasks. Tasks: every bar, then
+ * the not-started tasks. People: bars only (not-started tasks are not grouped by person yet).
+ */
 export function timelineRows(
   view: FeatureTimelineViewDto,
   group: TimelineOptions['group'],
 ): TimelineRow[] {
   const bars = new Map(view.bars.map((bar) => [bar.key, bar]));
+  const waiting = view.notStarted;
   if (group === 'stories') {
-    return view.stories.flatMap((story) => [
+    const notStartedTasks = (parent: string) =>
+      waiting
+        .filter((item) => item.parent === parent)
+        .map((item) => ({ kind: 'notStarted' as const, key: item.key, item }));
+    const started = view.stories.flatMap((story) => [
       { kind: 'bracket' as const, key: story.key, story },
       ...story.tasks.flatMap((key) => {
         const bar = bars.get(key);
         return bar ? [{ kind: 'bar' as const, key, bar }] : [];
       }),
+      ...notStartedTasks(story.key),
     ]);
+    const unstarted = waiting
+      .filter((item) => item.parent === null)
+      .flatMap((item) => [
+        { kind: 'notStarted' as const, key: item.key, item },
+        ...notStartedTasks(item.key),
+      ]);
+    return [...started, ...unstarted];
   }
   const sorted = [...view.bars].sort(byStart);
-  if (group === 'tasks') return sorted.map((bar) => ({ kind: 'bar', key: bar.key, bar }));
+  if (group === 'tasks')
+    return [
+      ...sorted.map((bar) => ({ kind: 'bar' as const, key: bar.key, bar })),
+      ...waiting
+        .filter((item) => item.parent !== null)
+        .map((item) => ({ kind: 'notStarted' as const, key: item.key, item })),
+    ];
 
   const groups = new Map<string, { person: TimelinePersonDto | null; bars: TimelineBarDto[] }>();
   for (const bar of sorted) {
