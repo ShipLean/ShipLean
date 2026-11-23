@@ -9,14 +9,14 @@ namespace ShipLean.AcceptanceTests.Journeys.Agents;
 
 // An agent working for a project admin reads a prompt, previews and saves a new version over MCP, and the admin then sees it in Prompts > History with
 // the note, the person, the agent and "MCP". Each test opens the page after its MCP calls: the page does not refresh on an MCP write. The class shares one
-// database, so each test has its own prompt (fix, lead, stories); a member's agent is refused and History stays as it was.
+// database, so each test has its own prompt (fix, lead, report); a member's agent is refused and History stays as it was.
 [TestFixture]
 public class AgentPromptsJourneyTests : SeededAcceptanceTest
 {
     private const string Project = "SHIP";
     private const string Prompt = "fix";
     private const string UsedPrompt = "lead";
-    private const string MemberPrompt = "stories";
+    private const string MemberPrompt = "report";
     private const string Agent = "Prompt Scribe";
     private const string Note = "Ask for a failing test first";
     private static readonly IReadOnlySet<string> Scopes = new HashSet<string> { "shiplean:read", "shiplean:write", "shiplean:plan" };
