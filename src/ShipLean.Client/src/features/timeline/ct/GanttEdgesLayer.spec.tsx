@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/experimental-ct-react';
+import { expect, test } from '@playwright/experimental-ct-react';
 import type { FeatureTimelineViewDto, TimelineEdgeDto } from '@shiplean/core/api/views';
 import { GanttChart } from '../GanttChart';
 import { DEFAULT_TIMELINE_OPTIONS, type TimelineOptions } from '../TimelineOptions';
@@ -42,6 +42,10 @@ const openBarEdges = [
   edge({ from: 'SHIP-172', to: 'SHIP-122', waitLabel: '1 h' }),
 ];
 
+// The CT package does not re-export Page and Locator; take them from the test's fixtures.
+type Page = Parameters<Parameters<typeof test>[2]>[0]['page'];
+type Locator = ReturnType<Page['locator']>;
+
 const chart = (
   over: {
     view?: FeatureTimelineViewDto;
@@ -71,7 +75,7 @@ const arrow = (locator: Locator, from: string, to: string) =>
   locator.and(locator.page().locator(`[data-from="${from}"][data-to="${to}"]`));
 
 /** Every drawn wait text whose box overlaps a drawn mark's box (bars with their end cues, diamonds with their notes, brackets, duration labels, notes and cues). */
-async function overlapsWithMarks(page: ReturnType<Locator['page']>) {
+async function overlapsWithMarks(page: Page) {
   const marks = page.locator(
     [
       ids.chartBar,
