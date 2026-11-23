@@ -56,6 +56,9 @@ public sealed class PromptsAdminPage(IPage page)
     // Every version row: the one in use has its own test id.
     public ILocator HistoryRows => page.GetByTestId(PromptsTestIds.HistoryRow).Or(page.GetByTestId(PromptsTestIds.HistoryRowInUse));
 
+    // The "via <agent>" line on a version an agent saved.
+    public ILocator HistoryAgent => page.GetByTestId(PromptsTestIds.HistoryAgent);
+
     public ILocator HistoryUse => page.GetByTestId(PromptsTestIds.HistoryUse);
 
     public ILocator UpdateBanner => page.GetByTestId(PromptsTestIds.UpdateBanner);
