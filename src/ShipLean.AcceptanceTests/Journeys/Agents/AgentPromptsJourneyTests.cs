@@ -103,7 +103,7 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
 
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project, MemberPrompt);
-        await Expect(prompts.DetailChip).ToContainTextAsync("Using built-in");
+        await Expect(prompts.DetailChip).ToHaveTextAsync("Built-in");
         await prompts.TabHistory.ClickAsync();
         await Expect(prompts.HistoryRows).ToHaveCountAsync(0);
     }
