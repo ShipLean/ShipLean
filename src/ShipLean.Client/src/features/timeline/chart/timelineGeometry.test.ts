@@ -102,4 +102,31 @@ describe('timelineGeometry', () => {
     expect(g.marks.find((m) => m.key === 'SHIP-185')!.durationLabel).toBe(story.durationLabel);
     expect(g.marks.find((m) => m.key === 'SHIP-198')!.durationLabel).toBeNull();
   });
+
+  it('AxisLabels_WhenFitIsNarrow_ShouldLabelEachWeekStartWithItsShortLabel', () => {
+    const g = geometry(FINISHED_TIMELINE, 'fit', 300);
+    const weeks = FINISHED_TIMELINE.scale.days.filter((d) => d.weekStart).map((d) => d.shortLabel);
+    expect(weeks.length).toBeGreaterThan(1);
+    expect(g.axisLabels.map((l) => l.text)).toEqual(weeks);
+    expect(g.axisLabels.every((l) => l.kind === 'week')).toBe(true);
+  });
+
+  it('AxisLabels_WhenFitIsNarrowAndNoMonday_ShouldLabelTheFirstDay', () => {
+    const view = {
+      ...FINISHED_TIMELINE,
+      scale: {
+        ...FINISHED_TIMELINE.scale,
+        days: FINISHED_TIMELINE.scale.days.map((d) => ({ ...d, weekStart: false })),
+      },
+    };
+    const g = geometry(view, 'fit', 300);
+    expect(g.axisLabels.map((l) => l.text)).toEqual([FINISHED_TIMELINE.scale.days[0].shortLabel]);
+  });
+
+  it('AxisLabels_WhenZoomIsDays_ShouldGiveOneLabelPerDay', () => {
+    const g = geometry(FINISHED_TIMELINE, 'days', 300);
+    expect(g.axisLabels.map((l) => l.text)).toEqual(
+      FINISHED_TIMELINE.scale.days.map((d) => d.label),
+    );
+  });
 });

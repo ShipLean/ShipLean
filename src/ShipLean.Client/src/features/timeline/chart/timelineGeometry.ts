@@ -14,6 +14,8 @@ export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;
+/** Fit labels weeks instead of days once a day is narrower than this. */
+export const WEEK_LABEL_BELOW = 28;
 
 export interface DayColumn {
   x: number;
@@ -21,6 +23,12 @@ export interface DayColumn {
   weekend: boolean;
   label: string;
   dayOfMonth: string;
+}
+/** One axis label: a day (centred) or a week start (left-aligned beside a tick). */
+export interface AxisLabel {
+  x: number;
+  text: string;
+  kind: 'day' | 'week';
 }
 export interface SprintBand {
   name: string;
@@ -50,6 +58,7 @@ export interface TimelineGeometry {
   width: number;
   height: number;
   days: DayColumn[];
+  axisLabels: AxisLabel[];
   sprints: SprintBand[];
   nowX: number | null;
   marks: Mark[];
@@ -68,6 +77,29 @@ export function pxPerHourFor(
 ): number {
   if (zoom === 'days') return DAY_WIDTH / 24;
   return endHours > 0 ? availableWidth / endHours : 0;
+}
+
+/**
+ * The axis labels: one per day, or, when a day is narrower than WEEK_LABEL_BELOW, the server's shortLabel on each
+ * week start (the first day when the range has none). No date maths: the choice is by weekStart.
+ */
+export function axisLabels(
+  view: FeatureTimelineViewDto,
+  days: readonly DayColumn[],
+  zoom: TimelineOptions['zoom'],
+): AxisLabel[] {
+  const source = view.scale.days;
+  const narrow = zoom === 'fit' && days.length > 0 && days[0].width < WEEK_LABEL_BELOW;
+  if (!narrow) {
+    return days.map((day) => ({
+      x: day.x + day.width / 2,
+      text: zoom === 'days' ? day.label : day.dayOfMonth,
+      kind: 'day' as const,
+    }));
+  }
+  const starts = source.flatMap((day, i) => (day.weekStart ? [i] : []));
+  const picked = starts.length > 0 ? starts : source.length > 0 ? [0] : [];
+  return picked.map((i) => ({ x: days[i].x, text: source[i].shortLabel, kind: 'week' as const }));
 }
 
 export function timelineGeometry(
@@ -174,6 +206,7 @@ export function timelineGeometry(
     width: x(scale.endHours),
     height: AXIS_HEIGHT + rows.length * ROW_HEIGHT,
     days,
+    axisLabels: axisLabels(view, days, zoom),
     sprints,
     nowX: scale.nowHours === null ? null : x(scale.nowHours),
     marks,
