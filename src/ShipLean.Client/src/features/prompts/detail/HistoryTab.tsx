@@ -7,6 +7,7 @@ const sourceLabel: Record<PromptVersionSource, string> = {
   editor: 'Editor',
   builtInUpdate: 'Built-in update',
   migrated: 'Moved from Integrations',
+  mcp: 'MCP',
 };
 
 // Every version, newest first, with Use vN for admins, ending in the built-in the versions started from.

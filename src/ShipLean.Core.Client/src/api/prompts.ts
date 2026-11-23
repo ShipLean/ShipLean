@@ -33,7 +33,7 @@ export type PromptStage = (typeof PROMPT_STAGES)[number];
 export const PROMPT_STATUSES = ['builtIn', 'custom', 'builtInUpdated', 'usingBuiltIn'] as const;
 export type PromptStatus = (typeof PROMPT_STATUSES)[number];
 
-export const PROMPT_VERSION_SOURCES = ['editor', 'builtInUpdate', 'migrated'] as const;
+export const PROMPT_VERSION_SOURCES = ['editor', 'builtInUpdate', 'migrated', 'mcp'] as const;
 export type PromptVersionSource = (typeof PROMPT_VERSION_SOURCES)[number];
 
 export const PROMPT_LAYER_KINDS = [
@@ -121,6 +121,8 @@ export interface PromptVersionDto {
   inUse: boolean;
   source: PromptVersionSource;
   text: string;
+  /** The agent that saved the version over MCP ("Claude Code (claude.ai)"); null for a web save. */
+  agent: string | null;
 }
 
 /** Newest first. */

@@ -269,6 +269,9 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `prompt.built_in_used` |  | `ProjectPrompts.UseBuiltIn` (`prompt`) |
 | `prompt.version_restored` |  | `ProjectPrompts.UseVersion` (an earlier version put back in use; `prompt`) |
 | `prompt.update_kept` |  | `ProjectPrompts.KeepMine` (a built-in change declined, the project's own text kept; `prompt`) |
+| `prompts.mcp_read` | `prompts` |  |
+| `prompt.mcp_save_called` | `save_prompt` | (preview and apply; an applied save also self-emits `prompt.saved` with `prompt` and surface `mcp`) |
+| `prompt.mcp_version_used` | `use_prompt_version` | (an applied move also self-emits `prompt.built_in_used` or `prompt.version_restored` with `prompt` and surface `mcp`) |
 | `inspection_metrics.tool_read` | `inspection_metrics` |  |
 | `inspection_metrics.commit_times_backfilled` | `backfill_commit_times` (temporary) |  |
 | `changes.viewed` | `whats_changed_since` |  |

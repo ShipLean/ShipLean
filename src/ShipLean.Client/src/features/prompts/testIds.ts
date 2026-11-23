@@ -88,6 +88,7 @@ export const promptsTestIds = {
   historyNote: 'prompts-history-note',
   historyConfirm: 'prompts-history-confirm',
   historyEmpty: 'prompts-history-empty',
+  historyAgent: 'prompts-history-agent',
   agentPicker: 'prompts-agent-picker',
   agentOption: 'prompts-agent-option',
   assembledLayers: 'prompts-assembled-layers',
