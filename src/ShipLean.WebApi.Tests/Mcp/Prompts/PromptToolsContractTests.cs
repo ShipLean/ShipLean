@@ -160,7 +160,7 @@ public class PromptToolsContractTests : McpFixture
         foreach (var (tool, argument) in new[] { ("prompts", "version"), ("use_prompt_version", "version"), ("save_prompt", "based_on") })
         {
             var schema = tools.Single(t => t.GetProperty("name").GetString() == tool).GetProperty("inputSchema").GetProperty("properties").GetProperty(argument);
-            schema.TryGetProperty("type", out var type).ShouldBeFalse($"{tool}.{argument} advertised {schema}");
+            schema.TryGetProperty("type", out _).ShouldBeFalse($"{tool}.{argument} advertised {schema}");
         }
     }
 }
