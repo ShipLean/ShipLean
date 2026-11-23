@@ -37,6 +37,41 @@ public class PromptsSchemaTests
     }
 
     [Test]
+    public async Task SourceCheck_WhenMcp_ShouldAccept()
+    {
+        var versionId = await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Lead).WithSource(PromptVersionSource.Mcp).InsertAsync(_database.ConnectionString);
+        await using var connection = await _database.OpenAsync();
+
+        (await connection.QuerySingleAsync<string>("SELECT source FROM prompt_version WHERE id = @versionId", new { versionId })).ShouldBe("mcp");
+    }
+
+    [Test]
+    public async Task SourceCheck_WhenUnknown_ShouldBeRefusedByTheNamedCheck()
+    {
+        await using var connection = await _database.OpenAsync();
+
+        var thrown = await Should.ThrowAsync<PostgresException>(() => connection.ExecuteAsync(
+            """
+            INSERT INTO prompt_version (id, project_id, prompt, number, text, base_hash, note, source, created_at)
+            VALUES (gen_random_uuid(), @project, 'lead', 99, 'Text.', 'no-such-hash', 'A change.', 'chat', now())
+            """,
+            new { project = SeedIds.Projects.Ship }));
+
+        thrown.ConstraintName.ShouldBe("prompt_version_source_check");
+    }
+
+    [Test]
+    public async Task AgentName_WhenSaved_ShouldBeNullable()
+    {
+        var versionId = await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Report).InsertAsync(_database.ConnectionString);
+        await using var connection = await _database.OpenAsync();
+
+        (await connection.QuerySingleAsync<string?>("SELECT agent_name FROM prompt_version WHERE id = @versionId", new { versionId })).ShouldBeNull();
+        await connection.ExecuteAsync("UPDATE prompt_version SET agent_name = 'Claude Code (claude.ai)' WHERE id = @versionId", new { versionId });
+        (await connection.QuerySingleAsync<string?>("SELECT agent_name FROM prompt_version WHERE id = @versionId", new { versionId })).ShouldBe("Claude Code (claude.ai)");
+    }
+
+    [Test]
     public async Task PromptVersion_WhenOver64KB_ShouldBeRefusedByTheCheck()
     {
         var builder = new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Work).WithText(new string('é', 32_769));
