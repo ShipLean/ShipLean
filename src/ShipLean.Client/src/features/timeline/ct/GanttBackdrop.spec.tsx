@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import { GanttChart } from '../GanttChart';
+import { StatefulGanttChart } from './StatefulGanttChart';
 import { DEFAULT_TIMELINE_OPTIONS, type TimelineOptions } from '../TimelineOptions';
 import { ROW_HEIGHT, rowY } from '../chart/timelineGeometry';
 import { timelineTestIds as ids } from '../testIds';
@@ -12,20 +13,17 @@ const mountChart = (
   extra: { options?: Partial<TimelineOptions>; selected?: string | null } = {},
 ) =>
   mount(
-    <div style={{ width: 420 }}>
+    <>
       <GanttChart
         view={view}
         options={{ ...DEFAULT_TIMELINE_OPTIONS, ...extra.options }}
         selected={extra.selected ?? null}
         onSelect={() => undefined}
       />
-    </div>,
+    </>,
   );
 
-test('GanttBackdrop_WhenFitIsNarrow_ShouldLabelWeeksAndNoBareDayNumbers', async ({
-  mount,
-  page,
-}) => {
+test('GanttBackdrop_WhenFit_ShouldLabelWeeksAndNoBareDayNumbers', async ({ mount, page }) => {
   await mountChart(mount, FINISHED_TIMELINE);
   const weeks = FINISHED_TIMELINE.scale.days.filter((d) => d.weekStart).map((d) => d.shortLabel);
   const labels = page.getByTestId(ids.chartDayLabel);
@@ -64,11 +62,11 @@ test('GanttBackdrop_WhenARowIsSelected_ShouldDrawTheBandAtItsRowAcrossTheChart',
   mount,
   page,
 }) => {
-  await mountChart(mount, FINISHED_TIMELINE, { selected: 'SHIP-192' });
+  await mount(<StatefulGanttChart view={FINISHED_TIMELINE} />);
+  const row = page.getByTestId(ids.chartBar).and(page.locator('[data-key="SHIP-192"]'));
+  await row.click();
   const band = page.getByTestId(ids.chartSelectedBand);
   await expect(band).toHaveCount(1);
-  const row = page.getByTestId(ids.chartBar).and(page.locator('[data-key="SHIP-192"]'));
-  await expect(row).toHaveCount(1);
   const svgWidth = await page
     .getByRole('img', { name: /Timeline of/ })
     .evaluate((el) => Number(el.getAttribute('width')));
@@ -84,4 +82,17 @@ test('GanttBackdrop_WhenARowIsSelected_ShouldDrawTheBandAtItsRowAcrossTheChart',
   const bandBox = await band.boundingBox();
   expect(barBox!.y).toBeGreaterThanOrEqual(bandBox!.y);
   expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(bandBox!.y + bandBox!.height);
+});
+
+test('GanttBackdrop_WhenEmptySpaceInSelectedRowClicked_ShouldClearSelection', async ({
+  mount,
+  page,
+}) => {
+  await mount(<StatefulGanttChart view={FINISHED_TIMELINE} />);
+  await page.getByTestId(ids.chartBar).and(page.locator('[data-key="SHIP-192"]')).click();
+  const band = page.getByTestId(ids.chartSelectedBand);
+  await expect(band).toHaveCount(1);
+  const box = (await band.boundingBox())!;
+  await page.mouse.click(box.x + box.width - 3, box.y + box.height / 2);
+  await expect(band).toHaveCount(0);
 });

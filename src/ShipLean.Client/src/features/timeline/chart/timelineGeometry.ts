@@ -14,8 +14,6 @@ export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;
-/** Fit labels weeks instead of days once a day is narrower than this. */
-export const WEEK_LABEL_BELOW = 28;
 
 export interface DayColumn {
   x: number;
@@ -80,7 +78,7 @@ export function pxPerHourFor(
 }
 
 /**
- * The axis labels: one per day, or, when a day is narrower than WEEK_LABEL_BELOW, the server's shortLabel on each
+ * The axis labels: one per day in Days zoom, or, in Fit, the server's shortLabel on each
  * week start (the first day when the range has none). No date maths: the choice is by weekStart.
  */
 export function axisLabels(
@@ -89,11 +87,10 @@ export function axisLabels(
   zoom: TimelineOptions['zoom'],
 ): AxisLabel[] {
   const source = view.scale.days;
-  const narrow = zoom === 'fit' && days.length > 0 && days[0].width < WEEK_LABEL_BELOW;
-  if (!narrow) {
+  if (zoom === 'days') {
     return days.map((day) => ({
       x: day.x + day.width / 2,
-      text: zoom === 'days' ? day.label : day.dayOfMonth,
+      text: day.label,
       kind: 'day' as const,
     }));
   }
