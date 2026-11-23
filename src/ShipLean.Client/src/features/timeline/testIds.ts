@@ -54,6 +54,9 @@ export const timelineTestIds = {
   // SHIP-2247 (T1b): row labels column
   // end SHIP-2247
   // SHIP-2248 (T1c): chart marks
+  chartDurationLabel: 'timeline-chart-duration-label',
+  chartOpenEnd: 'timeline-chart-open-end',
+  chartInferredNote: 'timeline-chart-inferred-note',
   // end SHIP-2248
   // SHIP-2249 (T1d): dependency arrows and wait labels
   // end SHIP-2249
