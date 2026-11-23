@@ -1025,15 +1025,15 @@
       "on_critical_path": true
     },
     {
-      "from": "SHIP-185",
-      "to": "SHIP-186",
+      "from": "SHIP-195",
+      "to": "SHIP-199",
       "kind": "depends",
       "source": "wave",
-      "wait_hours": 21.8,
-      "wait_label": "21.8 h",
+      "wait_hours": 117,
+      "wait_label": "4.9 days",
       "unblocked_at": null,
       "unblocked_hours": null,
-      "on_critical_path": false
+      "on_critical_path": true
     }
   ],
   "not_started": [],

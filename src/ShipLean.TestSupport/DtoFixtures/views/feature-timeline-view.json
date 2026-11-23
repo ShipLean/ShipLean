@@ -1025,15 +1025,15 @@
       "onCriticalPath": true
     },
     {
-      "from": "SHIP-185",
-      "to": "SHIP-186",
+      "from": "SHIP-195",
+      "to": "SHIP-199",
       "kind": "depends",
       "source": "wave",
-      "waitHours": 21.8,
-      "waitLabel": "21.8 h",
+      "waitHours": 117,
+      "waitLabel": "4.9 days",
       "unblockedAt": null,
       "unblockedHours": null,
-      "onCriticalPath": false
+      "onCriticalPath": true
     }
   ],
   "notStarted": [],
