@@ -131,11 +131,27 @@ describe('timelineRows', () => {
     ]);
   });
 
-  it('People_ShouldBeUnchangedByNotStartedItems', () => {
-    const without = timelineRows({ ...RUNNING_TIMELINE, notStarted: [] }, 'people');
-    const rows = timelineRows(RUNNING_TIMELINE, 'people');
-    expect(RUNNING_TIMELINE.notStarted.length).toBeGreaterThan(0);
-    expect(rows).toEqual(without);
-    expect(rows.some((r) => r.kind === 'notStarted')).toBe(false);
+  it('People_ShouldPutNotStartedTasksUnderTheirAssigneeAndUnassignedLast', () => {
+    const [story, task] = RUNNING_TIMELINE.notStarted;
+    const ana = story.assignee!;
+    const view: FeatureTimelineViewDto = {
+      ...RUNNING_TIMELINE,
+      notStarted: [
+        story,
+        { ...task, key: 'SHIP-901', assignee: ana },
+        { ...task, key: 'SHIP-902', assignee: null },
+      ],
+    };
+    const rows = timelineRows(view, 'people');
+    const labels = rows.flatMap((r) => (r.kind === 'group' ? [r.label] : []));
+    expect(labels.at(-1)).toBe('Unassigned');
+    const keysUnder = (label: string) => {
+      const start = rows.findIndex((r) => r.kind === 'group' && r.label === label);
+      const next = rows.findIndex((r, i) => i > start && r.kind === 'group');
+      return rows.slice(start + 1, next === -1 ? undefined : next).map((r) => `${r.kind}:${r.key}`);
+    };
+    expect(keysUnder(ana.name)).toContain('notStarted:SHIP-901');
+    expect(keysUnder('Unassigned')).toEqual(['notStarted:SHIP-902']);
+    expect(rows.some((r) => r.key === story.key)).toBe(false);
   });
 });

@@ -52,6 +52,10 @@ export const timelineTestIds = {
   // SHIP-2246 (T1a): header KPIs, caption, key dates and the Feature page card
   // end SHIP-2246
   // SHIP-2247 (T1b): row labels column
+  chartLeftHead: 'timeline-chart-left-head',
+  chartRowTook: 'timeline-chart-row-took',
+  chartRowCp: 'timeline-chart-row-cp',
+  chartRowAccent: 'timeline-chart-row-accent',
   // end SHIP-2247
   // SHIP-2248 (T1c): chart marks
   chartDurationLabel: 'timeline-chart-duration-label',
