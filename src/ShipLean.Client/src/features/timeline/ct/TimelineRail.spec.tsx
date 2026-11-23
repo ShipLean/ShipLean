@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/experimental-ct-react';
 import { DEFAULT_TIMELINE_OPTIONS } from '../TimelineOptions';
 import { timelineTestIds as ids } from '../testIds';
 import { TimelineRail } from '../TimelineRail';
+import { StatefulTimelineRail } from './StatefulTimelineRail';
 import { FINISHED_TIMELINE, RUNNING_TIMELINE } from './stubFeatureTimeline';
 
 const noop = () => undefined;
@@ -89,13 +90,34 @@ test('TimelineRail_WhenTaskSelected_ShouldShowTheStructuredCard', async ({ mount
   await expect(page.getByTestId(ids.railReviewRow).first()).toContainText('Changes requested');
   await expect(page.getByTestId(ids.railReviewRow).first()).toContainText('wrong order');
   await expect(page.getByTestId(ids.railReviewRow).last()).toContainText('Approved');
+  await expect(
+    page.getByTestId(ids.railReviewRow).first().getByTestId(ids.railAgentChip),
+  ).toHaveText('Agent');
   await expect(page.getByRole('link', { name: 'Open SHIP-192' })).toHaveAttribute(
     'href',
     '/p/SHIP/items/SHIP-192',
   );
+  const duration = page.getByTestId(ids.railHistoryRow).first().locator('[data-duration]');
+  const durationBox = await duration.boundingBox();
+  const cardBox = await panel.boundingBox();
+  expect(durationBox).not.toBeNull();
+  expect(cardBox).not.toBeNull();
+  // The card has 16px padding; the duration's right edge sits on the content edge.
+  expect(
+    Math.abs(durationBox!.x + durationBox!.width - (cardBox!.x + cardBox!.width - 16)),
+  ).toBeLessThanOrEqual(2);
   await panel.getByRole('button', { name: 'SHIP-185' }).click();
+  expect(selections).toEqual(['SHIP-185']);
+});
+
+test('TimelineRail_WhenBackClicked_ShouldRenderOverviewAgain', async ({ mount, page }) => {
+  await mount(<StatefulTimelineRail view={FINISHED_TIMELINE} initial="SHIP-192" />);
+  await expect(page.getByTestId(ids.railSelected)).toBeVisible();
+  await expect(page.getByTestId(ids.railGlyph)).toHaveCount(0);
   await page.getByRole('button', { name: '← Reading the chart' }).click();
-  expect(selections).toEqual(['SHIP-185', null]);
+  await expect(page.getByTestId(ids.railSelected)).toHaveCount(0);
+  await expect(page.getByTestId(ids.railOverview)).toContainText('Reading the chart');
+  await expect(page.getByTestId(ids.railGlyph)).toHaveCount(6);
 });
 
 test('TimelineRail_WhenTaskHasLastCommit_ShouldShowItsLabel', async ({ mount, page }) => {

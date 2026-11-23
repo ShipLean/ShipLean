@@ -44,19 +44,23 @@ function Dot({ colour }: { colour: string }) {
   );
 }
 
+function AgentChip() {
+  return (
+    <span
+      data-testid={ids.railAgentChip}
+      className="rounded-sm border border-edge px-1 text-[length:var(--text-xs)] text-ink-muted"
+    >
+      Agent
+    </span>
+  );
+}
+
 function Person({ person }: { person: TimelinePersonDto | null }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       <PersonAvatar person={person} size="sm" />
       {person ? person.name : 'Unassigned'}
-      {person?.agent && (
-        <span
-          data-testid={ids.railAgentChip}
-          className="rounded-sm border border-edge px-1 text-[length:var(--text-xs)] text-ink-muted"
-        >
-          Agent
-        </span>
-      )}
+      {person?.agent && <AgentChip />}
     </span>
   );
 }
@@ -259,7 +263,10 @@ export function RailTask({
                   <span className="flex-1">
                     {r.verdict === 'approved' ? 'Approved' : 'Changes requested'} · {r.atLabel}
                   </span>
-                  <span className="text-right text-ink-muted">{r.by.name}</span>
+                  <span className="inline-flex items-center gap-1 text-right text-ink-muted">
+                    {r.by.name}
+                    {r.by.agent && <AgentChip />}
+                  </span>
                 </div>
                 {r.note && <div className="pl-4 text-ink-muted">{r.note}</div>}
               </li>
