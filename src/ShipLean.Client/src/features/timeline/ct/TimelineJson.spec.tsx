@@ -29,7 +29,6 @@ test('TimelineJson_WithShortJson_ShouldFillTheChartAreaHeight', async ({ mount, 
     bars: [],
     edges: [],
     notStarted: [],
-    links: [],
   };
   await page.setViewportSize({ width: 900, height: 1600 });
   await mount(
