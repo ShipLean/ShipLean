@@ -55,7 +55,9 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
         await Expect(row).ToContainTextAsync(Note);
         await Expect(row).ToContainTextAsync("Joel");
         await Expect(row).ToContainTextAsync("MCP");
-        await Expect(prompts.HistoryAgent).ToContainTextAsync($"via {Agent}");
+        var agent = PromptsAdminPage.HistoryAgentIn(row);
+        await Expect(agent).ToContainTextAsync($"via {Agent}");
+        await Expect(agent).ToContainTextAsync("Agent");
     }
 
     [Test]
@@ -105,6 +107,7 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
         await prompts.OpenAsync(Project, MemberPrompt);
         await Expect(prompts.DetailChip).ToHaveTextAsync("Built-in");
         await prompts.TabHistory.ClickAsync();
+        await Expect(prompts.HistoryEmpty).ToBeVisibleAsync();
         await Expect(prompts.HistoryRows).ToHaveCountAsync(0);
     }
 

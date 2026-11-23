@@ -59,6 +59,12 @@ public sealed class PromptsAdminPage(IPage page)
     // The "via <agent>" line on a version an agent saved.
     public ILocator HistoryAgent => page.GetByTestId(PromptsTestIds.HistoryAgent);
 
+    // The "via <agent>" line inside one version's row.
+    public static ILocator HistoryAgentIn(ILocator row) => row.GetByTestId(PromptsTestIds.HistoryAgent);
+
+    // Shown in place of the table when a prompt has no saved versions.
+    public ILocator HistoryEmpty => page.GetByTestId(PromptsTestIds.HistoryEmpty);
+
     public ILocator HistoryUse => page.GetByTestId(PromptsTestIds.HistoryUse);
 
     public ILocator UpdateBanner => page.GetByTestId(PromptsTestIds.UpdateBanner);
