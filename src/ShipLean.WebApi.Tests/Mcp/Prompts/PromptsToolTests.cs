@@ -55,6 +55,33 @@ public class PromptsToolTests : McpFixture
     }
 
     [Test]
+    public async Task Prompts_WhenOlderVersionInUse_ShouldListThatVersionAsInUse()
+    {
+        await VersionAsync(PromptKey.Lead, "One.", inUse: true, number: 1);
+        await VersionAsync(PromptKey.Lead, "Two.", number: 2);
+
+        var result = await ReadAsync("""{"project":"SHIP"}""");
+
+        var lead = result.GetProperty("prompts").EnumerateArray().Single(l => l.GetProperty("key").GetString() == "lead");
+        lead.GetProperty("status").GetString().ShouldBe("custom");
+        lead.GetProperty("in_use_version").GetInt32().ShouldBe(1);
+        lead.GetProperty("versions").GetInt32().ShouldBe(2);
+    }
+
+    [Test]
+    public async Task Prompts_WhenHistoryButBuiltInInUse_ShouldListNullInUseVersion()
+    {
+        await VersionAsync(PromptKey.Retro, "One.", number: 1);
+
+        var result = await ReadAsync("""{"project":"SHIP"}""");
+
+        var retro = result.GetProperty("prompts").EnumerateArray().Single(l => l.GetProperty("key").GetString() == "retro");
+        retro.GetProperty("status").GetString().ShouldBe("usingBuiltIn");
+        retro.GetProperty("in_use_version").ValueKind.ShouldBe(JsonValueKind.Null);
+        retro.GetProperty("versions").GetInt32().ShouldBe(1);
+    }
+
+    [Test]
     public async Task Prompts_WhenPromptGiven_ShouldReturnTheInUseTextAndHistoryWithAgent()
     {
         await VersionAsync(PromptKey.Work, "Old work text.");
