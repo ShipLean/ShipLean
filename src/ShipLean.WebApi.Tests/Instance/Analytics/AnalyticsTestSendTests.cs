@@ -116,7 +116,7 @@ public class AnalyticsTestSendTests : ApiFixture
         var clock = new FakeTimeProvider(TimeProvider.System.GetUtcNow());
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var sink = new WaitingSink(entered);
-        var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), UmamiKey, "shiplean.example.com", false, "1.0.0");
+        var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), UmamiKey, "shiplean.example.com", false, "1.0.0", false);
         var settings = new AnalyticsSettings(
             Host.Services.GetRequiredService<NpgsqlDataSource>(), new FixedReader(target), [sink], new FixedUser(TestUser.Joel.Id!.Value), clock);
 

@@ -14,7 +14,7 @@ public class UsageEventMapperTests
     private static readonly PersonLookup.Person Joel = new("Joel", "joel@example.com");
 
     private static AnalyticsTarget Target(bool sendNames)
-        => new(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), "site-key", "ship.example.com", sendNames, "1.2.3");
+        => new(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), "site-key", "ship.example.com", sendNames, "1.2.3", false);
 
     private static UsageEvent Event(
         UsageActor actor, string name = UsageEventNames.ProjectSettingsChanged, Guid? projectId = null,

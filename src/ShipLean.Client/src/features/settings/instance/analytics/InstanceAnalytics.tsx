@@ -41,6 +41,7 @@ interface Draft {
   host: string;
   siteKey: string;
   sendNames: boolean;
+  sendWebVitals: boolean;
 }
 
 const draftOf = (s: AnalyticsSettings): Draft => ({
@@ -48,6 +49,7 @@ const draftOf = (s: AnalyticsSettings): Draft => ({
   host: s.host ?? '',
   siteKey: s.siteKey ?? '',
   sendNames: s.sendNames,
+  sendWebVitals: s.sendWebVitals,
 });
 
 const orNull = (text: string) => (text.trim() === '' ? null : text.trim());
@@ -55,12 +57,19 @@ const orNull = (text: string) => (text.trim() === '' ? null : text.trim());
 // The C4 body: Off stores no host or key.
 const bodyOf = (d: Draft): AnalyticsSettings =>
   d.provider === 'none'
-    ? { provider: 'none', host: null, siteKey: null, sendNames: d.sendNames }
+    ? {
+        provider: 'none',
+        host: null,
+        siteKey: null,
+        sendNames: d.sendNames,
+        sendWebVitals: d.sendWebVitals,
+      }
     : {
         provider: d.provider,
         host: orNull(d.host),
         siteKey: orNull(d.siteKey),
         sendNames: d.sendNames,
+        sendWebVitals: d.sendWebVitals,
       };
 
 const isDirty = (saved: AnalyticsSettings, d: Draft) => {
@@ -69,7 +78,8 @@ const isDirty = (saved: AnalyticsSettings, d: Draft) => {
     body.provider !== saved.provider ||
     body.host !== saved.host ||
     body.siteKey !== saved.siteKey ||
-    body.sendNames !== saved.sendNames
+    body.sendNames !== saved.sendNames ||
+    body.sendWebVitals !== saved.sendWebVitals
   );
 };
 
@@ -126,8 +136,8 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
             ))}
           </select>
           <span className="font-normal text-ink-muted">
-            Usage events from people and agents are sent from this server. Nothing is loaded in
-            browsers.
+            Usage events from people and agents are sent from this server and load nothing in
+            browsers. Web vitals, when on, loads one first-party module.
           </span>
           <FieldError
             message={fieldMessage('provider')}
@@ -184,6 +194,23 @@ function AnalyticsForm({ saved }: { saved: AnalyticsSettings }) {
           </span>
           <span className="font-normal text-ink-muted">
             Off: people are sent as ids only. On: their names and emails are sent too.
+          </span>
+        </label>
+        <label className="grid gap-1 text-[length:var(--text-sm)] font-medium text-ink">
+          <span className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              data-testid={settingsTestIds.analyticsSendWebVitalsToggle}
+              checked={draft.sendWebVitals}
+              disabled={locked}
+              onChange={(e) => change({ sendWebVitals: e.target.checked })}
+            />
+            Send web vitals
+          </span>
+          <span className="font-normal text-ink-muted">
+            Off: browsers measure nothing. On: browsers measure how fast each screen loads and
+            responds, and ShipLean forwards the numbers with the person&apos;s id, browser and
+            screen size.
           </span>
         </label>
       </Panel>

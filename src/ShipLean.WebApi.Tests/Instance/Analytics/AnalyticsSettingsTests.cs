@@ -33,8 +33,8 @@ public class AnalyticsSettingsTests : ApiFixture
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
     }
 
-    private Task<HttpResponseMessage> PutAsync(string provider, string? host, string? siteKey, bool sendNames)
-        => Api.PutJsonAsync("api/instance/analytics", new { provider, host, siteKey, sendNames });
+    private Task<HttpResponseMessage> PutAsync(string provider, string? host, string? siteKey, bool sendNames, bool sendWebVitals = false)
+        => Api.PutJsonAsync("api/instance/analytics", new { provider, host, siteKey, sendNames, sendWebVitals });
 
     private async Task<JsonNode> GetStoredAsync()
     {
@@ -108,6 +108,39 @@ public class AnalyticsSettingsTests : ApiFixture
         stored["sendNames"]!.GetValue<bool>().ShouldBe(before["sendNames"]!.GetValue<bool>());
         before["provider"]!.GetValue<string>().ShouldBe("posthog");
         before["sendNames"]!.GetValue<bool>().ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task Put_WhenSendWebVitalsSet_ShouldStoreAndReturnIt()
+    {
+        using var response = await PutAsync("umami", "https://umami.example.com", UmamiKey, false, sendWebVitals: true);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        JsonNode.Parse(await response.Content.ReadAsStringAsync())!["sendWebVitals"]!.GetValue<bool>().ShouldBeTrue();
+        (await GetStoredAsync())["sendWebVitals"]!.GetValue<bool>().ShouldBeTrue();
+        using var off = await PutAsync("umami", "https://umami.example.com", UmamiKey, false, sendWebVitals: false);
+        off.EnsureSuccessStatusCode();
+        (await GetStoredAsync())["sendWebVitals"]!.GetValue<bool>().ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Reader_WhenSwitchOn_ShouldSetSendWebVitalsOnTheTarget()
+    {
+        (await PutAsync("posthog", "https://eu.i.posthog.com", PostHogKey, false, sendWebVitals: true)).EnsureSuccessStatusCode();
+        (await ReadTargetAsync())!.SendWebVitals.ShouldBeTrue();
+
+        (await PutAsync("posthog", "https://eu.i.posthog.com", PostHogKey, false, sendWebVitals: false)).EnsureSuccessStatusCode();
+        (await ReadTargetAsync())!.SendWebVitals.ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task Put_WhenProviderNone_ShouldKeepSendWebVitals()
+    {
+        using var response = await PutAsync("none", null, null, false, sendWebVitals: true);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        (await GetStoredAsync())["sendWebVitals"]!.GetValue<bool>().ShouldBeTrue();
+        (await ReadTargetAsync()).ShouldBeNull();
     }
 
     [Test]

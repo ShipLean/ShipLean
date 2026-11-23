@@ -313,6 +313,7 @@ public static class SettingsTestIds
     public const string AnalyticsHostInput = "instance-analytics-host";
     public const string AnalyticsSiteKeyInput = "instance-analytics-site-key";
     public const string AnalyticsSendNamesToggle = "instance-analytics-send-names";
+    public const string AnalyticsSendWebVitalsToggle = "instance-analytics-send-web-vitals";
     public const string AnalyticsSaveButton = "instance-analytics-save";
     public const string AnalyticsTestButton = "instance-analytics-test";
     public const string AnalyticsTestResult = "instance-analytics-test-result";

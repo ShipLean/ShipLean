@@ -11,7 +11,9 @@ These files are the contract between the database seed (`db/seed`, `SeedIds`) an
 | `import-job-state.json` | `ImportJobState`, `ImportStep`, `ImportJobProgressJson` examples | `import_job.status` (enum) + `import_job.progress` |
 | `refs.json` | `UserRef`, `StateRef`, `SprintRef`, `TypeRef` examples, **and the pinned seed ids** | Not stored: DTO pieces |
 | `me.json` | `MeDto` (Joel, as `GET /api/me` returns him), `UserDto` in every `UserStatus`, and the `user_preference` values `MeDto` reads | `app_user` + `user_preference` (read model, not stored as one document) |
-| `analytics-settings.json` | `AnalyticsSettingsDto` (`GET`/`PUT /api/instance/analytics`); provider wire values `none`, `umami`, `posthog` | `instance_settings.analytics_*` columns |
+| `analytics-settings.json` | `AnalyticsSettingsDto` (`GET`/`PUT /api/instance/analytics`, now with `sendWebVitals`); provider wire values `none`, `umami`, `posthog` | `instance_settings.analytics_*` columns |
+| `web-vitals-config.json` | `WebVitalsConfigDto` (`GET /api/usage/web-vitals/config`) | Not stored: `enabled` is the provider not none and `analytics_web_vitals` on |
+| `web-vitals-batch.json` | `WebVitalsBatchDto` (`POST /api/usage/web-vitals`), one report with `fcp` and `ttfb` absent (null) | Not stored: forwarded to the provider |
 | `analytics-test-result.json` | `AnalyticsTestResultDto` (`POST /api/instance/analytics/test`) | Not stored |
 | `backup-settings.json` | `BackupSettingsDto` (`GET`/`PUT /api/instance/backups`), examples `configured` and `notConfigured` | `backup_settings` (one row) + recent `backup_run` rows (read model) |
 | `backup-save.json` | `BackupSaveDto` (`PUT /api/instance/backups`), examples `first` and `keepSecrets` | `backup_settings` (secrets protected) |

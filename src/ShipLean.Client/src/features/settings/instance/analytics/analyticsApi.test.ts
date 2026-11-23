@@ -7,7 +7,13 @@ test('AnalyticsApi_WhenPinnedSettingsRead_ShouldRoundTripThroughTheType', () => 
   const settings: AnalyticsSettings = settingsJson as AnalyticsSettings;
   expect(JSON.parse(JSON.stringify(settings))).toEqual(settingsJson);
   expect(['none', 'umami', 'posthog']).toContain(settings.provider);
-  expect(Object.keys(settings).sort()).toEqual(['host', 'provider', 'sendNames', 'siteKey']);
+  expect(Object.keys(settings).sort()).toEqual([
+    'host',
+    'provider',
+    'sendNames',
+    'sendWebVitals',
+    'siteKey',
+  ]);
 });
 
 test('AnalyticsApi_WhenPinnedTestResultRead_ShouldRoundTripThroughTheType', () => {

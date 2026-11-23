@@ -13,6 +13,7 @@ export const analyticsNone = {
   host: null,
   siteKey: null,
   sendNames: false,
+  sendWebVitals: false,
 };
 
 export const analyticsUmami = {
@@ -20,6 +21,7 @@ export const analyticsUmami = {
   host: 'https://umami.example.com',
   siteKey: '7f3c1a52-9d4e-4b8a-a1c6-2e5f0b9d3c71',
   sendNames: false,
+  sendWebVitals: false,
 };
 
 export interface AnalyticsStubOptions {

@@ -18,7 +18,7 @@ public sealed class AnalyticsSettings(
     private const string TestEventName = "analytics.test";
     private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(10);
 
-    private sealed record Row(string Provider, string? Host, string? SiteKey, bool SendNames);
+    private sealed record Row(string Provider, string? Host, string? SiteKey, bool SendNames, bool SendWebVitals);
 
     public async Task<AnalyticsSettingsDto> GetAsync(CancellationToken cancellationToken)
     {
@@ -42,8 +42,8 @@ public sealed class AnalyticsSettings(
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(
-            "UPDATE instance_settings SET analytics_provider = @provider, analytics_host = @host, analytics_site_key = @siteKey, analytics_send_names = @sendNames, updated_at = @now",
-            new { provider = WireName(settings.Provider), host, siteKey, sendNames = settings.SendNames, now = clock.GetUtcNow() },
+            "UPDATE instance_settings SET analytics_provider = @provider, analytics_host = @host, analytics_site_key = @siteKey, analytics_send_names = @sendNames, analytics_web_vitals = @sendWebVitals, updated_at = @now",
+            new { provider = WireName(settings.Provider), host, siteKey, sendNames = settings.SendNames, sendWebVitals = settings.SendWebVitals, now = clock.GetUtcNow() },
             cancellationToken: cancellationToken));
         return await ReadAsync(connection, cancellationToken);
     }
@@ -157,8 +157,8 @@ public sealed class AnalyticsSettings(
     private static async Task<AnalyticsSettingsDto> ReadAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
     {
         var row = await connection.QuerySingleAsync<Row>(new CommandDefinition(
-            "SELECT analytics_provider AS provider, analytics_host AS host, analytics_site_key AS siteKey, analytics_send_names AS sendNames FROM instance_settings",
+            "SELECT analytics_provider AS provider, analytics_host AS host, analytics_site_key AS siteKey, analytics_send_names AS sendNames, analytics_web_vitals AS sendWebVitals FROM instance_settings",
             cancellationToken: cancellationToken));
-        return new AnalyticsSettingsDto(ParseProvider(row.Provider), row.Host, row.SiteKey, row.SendNames);
+        return new AnalyticsSettingsDto(ParseProvider(row.Provider), row.Host, row.SiteKey, row.SendNames, row.SendWebVitals);
     }
 }

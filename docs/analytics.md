@@ -1,6 +1,8 @@
 # Usage analytics
 
-ShipLean can send usage events to Umami or PostHog so an operator can see what people and agents do. It is off by default and chosen per instance in Instance settings → Analytics. Delivery is server-side only: the browser loads no analytics script, so there is no cookie banner, no ad-blocker loss and no CSP change.
+ShipLean can send usage events to Umami or PostHog so an operator can see what people and agents do. It is off by default and chosen per instance in Instance settings → Analytics. Usage events are sent by the ShipLean server only, so browser ad blockers do not affect them, and no cookie or CSP change is involved.
+
+The same tab can also turn on Core Web Vitals readings from signed-in browsers. Those readings have their own pipeline and are described in [Web vitals](#web-vitals). With web vitals on, the browser loads one first-party module and sends its readings only to ShipLean. An ad blocker that blocks that module stops web vitals; it does not affect usage events.
 
 The code is the source of truth. `UsageEventNames`, `ActionUsageMap` and `ToolUsageMap` define what is tracked; the table below is a copy of their current state and can go stale.
 
@@ -39,6 +41,8 @@ Three seams, so a feature never has to remember to track itself:
 - Nothing is persisted. A restart loses the queue.
 
 The dispatcher maps each `UsageEvent` to an `AnalyticsEvent` (`UsageEventMapper`) and hands the batch to the sink of the configured provider (`IAnalyticsSink`: `UmamiSink`, `PostHogSink`). A sink throws `AnalyticsSendException` on any failure.
+
+Web vitals do not pass through this queue, dispatcher or sink interface. They have their own, described in [Web vitals](#web-vitals).
 
 ### Standard properties
 
@@ -83,11 +87,72 @@ Umami only filters on event properties on its Events page, which is why the proj
 
 **Umami must run with `DISABLE_BOT_CHECK=1`.** Every request comes from a server, and by default Umami excludes what it takes for bots. Umami also requires a `User-Agent` header on `/api/batch`; ShipLean sends `ShipLean/{version}`. Umami accepts a `payload.timestamp`, but ShipLean does not send one, so events are dated on arrival and a delayed or retried batch is dated when it lands.
 
-Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`/api/batch` takes a JSON array, requires a `User-Agent`), [Umami environment variables](https://docs.umami.is/docs/environment-variables) (`DISABLE_BOT_CHECK`), [PostHog capture API](https://posthog.com/docs/api/capture) (`/batch/`, `api_key`, `batch`, `historical_migration`).
+Sources: [Umami: sending stats](https://docs.umami.is/docs/api/sending-stats) (`/api/batch` takes a JSON array, requires a `User-Agent`), [Umami environment variables](https://docs.umami.is/docs/environment-variables) (`DISABLE_BOT_CHECK`), [PostHog capture API](https://posthog.com/docs/api/capture) (`/batch/`, `api_key`, `batch`, `historical_migration`), [Umami: performance](https://docs.umami.is/docs/performance) (the Performance tab), [PostHog: web vitals](https://posthog.com/docs/product-analytics/web-vitals).
+
+## Web vitals
+
+Web vitals are the Core Web Vitals of each signed-in person's browser. The browser measures them with the `web-vitals` library and posts them to ShipLean, and ShipLean forwards them to the configured provider. Umami's Performance tab shows them. For PostHog, ShipLean sends a `$web_vitals` event with `$web_vitals_LCP_value`, `$web_vitals_INP_value`, `$web_vitals_CLS_value` and `$web_vitals_FCP_value`. Whether PostHog's Web Vitals tab shows them is not yet confirmed. They do not go to OpenTelemetry or Grafana.
+
+### The switch
+
+Instance settings → Analytics has a **Send web vitals** switch, off by default. Readings are sent only when a provider (Umami or PostHog) is selected, the switch is on, and the person is signed in. The sign-in page is not measured.
+
+The browser asks the server once per page load whether to measure, so turning the switch off applies to the next page load. The server also stops forwarding within about 30 seconds. With provider none, the switch keeps its value but web vitals are off.
+
+### What is sent, and to whom
+
+| Metric | Umami | PostHog |
+| --- | --- | --- |
+| LCP, INP, CLS | Yes | Yes |
+| FCP | Yes | Yes |
+| TTFB | Yes | No. PostHog's web vitals have no TTFB, so ShipLean drops it. |
+
+A reading names a screen, not a project. Each reading is sent as the path `/web/{screen}`, and its title is the screen id. ShipLean never sends a real URL, a query string, a work item key or the page title, because a title can hold a work item's name.
+
+### What leaves the instance
+
+- The person's id, as `user:<guid>`, the same id that usage events use.
+- The browser's user agent, cut to 512 characters.
+- The screen size, such as `1920x1080`.
+- The screen id, such as `taskboard`.
+- The navigation kind: `hard` for a page load, `soft` for a change of screen inside the app.
+- The metric values.
+
+Also sent: the instance's host name (Umami's `hostname`; PostHog's `$host` and `$current_url`, left out when the host is empty), the browser, operating system and device type derived from the user agent (`$browser`, `$os` and `$device_type` on PostHog), and the library name `$lib`. Never the visitor's IP address. No name or email is sent with web vitals.
+
+### First load and in-app navigation
+
+LCP, INP and CLS are reported for in-app navigation as well as the first load. Firefox and Safari ignore this and report the first load only. Each metric is counted at most once per navigation: a later value for the same navigation and metric is ignored, so INP and CLS are never counted twice.
+
+Umami's Performance tab has no field for navigation kind, so its numbers mix first loads with in-app navigation. Umami does not receive the `navigation` value. PostHog receives it as the `navigation` property.
+
+### Why web vitals have their own pipeline
+
+Web vitals are lossy by design. A reading that cannot be sent is dropped, not retried. The queue holds 2,000 readings. When it is full, new readings are dropped and counted on `shiplean.web_vitals.dropped`.
+
+They are kept apart from usage events because Umami rejects out-of-range values one item at a time, but fails the whole batch when any item is bad. One bad reading in a batch shared with usage events would lose those events and send the good ones again on retry. A metric outside its range is therefore dropped from its own reading and counted on `shiplean.web_vitals.discarded`. The ranges are 0 to 60,000 for LCP, INP, FCP and TTFB, and 0 to 100 for CLS. A reading with no metric left is dropped without an error.
+
+### Where to see them
+
+- **Umami:** the website's **Performance** tab. Pick a metric card to focus the chart. Switch between p50, p75 and p95, and break the metric down by page and by device or browser.
+- **PostHog:** ShipLean sends `navigation` and `screen` as event properties on each `$web_vitals` event. Whether the Web Vitals tab under Web Analytics shows them is not yet confirmed.
+
+### Counters
+
+Web vitals use their own counters, which are ordinary ShipLean meter counters, like `shiplean.analytics.sent`:
+
+- `shiplean.web_vitals.sent` counts samples sent to the provider.
+- `shiplean.web_vitals.failed` counts samples whose send failed.
+- `shiplean.web_vitals.dropped` counts samples dropped because the queue was full.
+- `shiplean.web_vitals.discarded` counts single metrics outside their range.
+
+A high `dropped` or `failed` count means readings are missing from the provider.
+
+An ad blocker that blocks the browser module stops web vitals. Nothing is measured.
 
 ## Settings
 
-Stored on `instance_settings` (`analytics_provider`, `analytics_host`, `analytics_site_key`, `analytics_send_names`), edited in Instance settings → Analytics by an instance admin through `GET` and `PUT api/instance/analytics`. The host must be an absolute `http` or `https` address with no query, fragment or credentials. An Umami site key is a GUID; a PostHog key starts with `phc_`. Provider `none` clears host and key.
+Stored on `instance_settings` (`analytics_provider`, `analytics_host`, `analytics_site_key`, `analytics_send_names`, `analytics_web_vitals`), edited in Instance settings → Analytics by an instance admin through `GET` and `PUT api/instance/analytics`. The host must be an absolute `http` or `https` address with no query, fragment or credentials. An Umami site key is a GUID; a PostHog key starts with `phc_`. Provider `none` clears host and key.
 
 **Send test event** calls `POST api/instance/analytics/test`. It sends one `analytics.test` event straight to the sink, with a 10 s timeout, and reports `ok` and a message. It does not go through the queue, and `analytics.test` is not in `UsageEventNames`.
 

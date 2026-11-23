@@ -306,6 +306,7 @@ export const settingsTestIds = {
   analyticsHostInput: 'instance-analytics-host',
   analyticsSiteKeyInput: 'instance-analytics-site-key',
   analyticsSendNamesToggle: 'instance-analytics-send-names',
+  analyticsSendWebVitalsToggle: 'instance-analytics-send-web-vitals',
   analyticsSaveButton: 'instance-analytics-save',
   analyticsTestButton: 'instance-analytics-test',
   analyticsTestResult: 'instance-analytics-test-result',

@@ -12,7 +12,7 @@ namespace ShipLean.WebApi.Tests.Analytics.PostHog;
 [TestFixture]
 public sealed class PostHogSinkTests
 {
-    private static readonly AnalyticsTarget Target = new(AnalyticsProvider.PostHog, new Uri("https://eu.i.posthog.com"), "phc_testkey", "ship.example", false, "1.2.3");
+    private static readonly AnalyticsTarget Target = new(AnalyticsProvider.PostHog, new Uri("https://eu.i.posthog.com"), "phc_testkey", "ship.example", false, "1.2.3", false);
     private static readonly DateTimeOffset At = new(2026, 11, 2, 10, 30, 0, 123, TimeSpan.Zero);
 
     private AnalyticsSinkStubHandler _handler = null!;

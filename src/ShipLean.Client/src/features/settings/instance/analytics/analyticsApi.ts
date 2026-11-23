@@ -9,6 +9,7 @@ export interface AnalyticsSettings {
   host: string | null;
   siteKey: string | null;
   sendNames: boolean;
+  sendWebVitals: boolean;
 }
 
 /** POST /api/instance/analytics/test: a send failure is `ok: false` with its reason, never an error response. */

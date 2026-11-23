@@ -29,7 +29,7 @@ public static class DeliveryEndToEndTests
     private static async Task SaveAsync(ShipLeanHost host, AnalyticsProvider provider, string? url, string? key)
     {
         await using var scope = host.Services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<AnalyticsSettings>().SaveAsync(new AnalyticsSettingsDto(provider, url, key, false), CancellationToken.None);
+        await scope.ServiceProvider.GetRequiredService<AnalyticsSettings>().SaveAsync(new AnalyticsSettingsDto(provider, url, key, false, false), CancellationToken.None);
     }
 
     [TestFixture]

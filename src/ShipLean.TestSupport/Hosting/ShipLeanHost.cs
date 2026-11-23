@@ -6,6 +6,7 @@ using ShipLean.Application.Http;
 using ShipLean.Application.Features.Retros.Theming;
 using ShipLean.Application.Identity;
 using ShipLean.Contracts.Agents;
+using ShipLean.Contracts.Analytics;
 using ShipLean.Contracts.Retros;
 using ShipLean.Contracts.Search;
 using ShipLean.Contracts.Usage;
@@ -14,6 +15,7 @@ using ShipLean.LocalEnvironment.Hosting;
 using ShipLean.TestSupport.Http;
 using ShipLean.TestSupport.Search;
 using ShipLean.TestSupport.Usage;
+using ShipLean.TestSupport.WebVitals;
 
 namespace ShipLean.TestSupport.Hosting;
 
@@ -78,6 +80,8 @@ public sealed class ShipLeanHost : IAsyncDisposable
                 services.Replace(ServiceDescriptor.Singleton<IEmbedder>(new FakeEmbedder()));
                 // Likewise usage events: the recorder keeps them for assertions and sends nothing. The dispatcher still starts and idles. A fixture opts into the real queue with UsageServices.Register.
                 services.Replace(ServiceDescriptor.Singleton<IUsageEvents>(new RecordingUsageEvents()));
+                // Likewise web vitals: the recorder keeps the queued samples and sends nothing. A fixture opts into the real queue with WebVitalsServices.Register.
+                services.Replace(ServiceDescriptor.Singleton<IWebVitalsQueue>(new RecordingWebVitals()));
                 // Likewise the retro themer: pick mode, so no test depends on auto clustering. A fixture opts into auto mode with RetroThemerServices.Register.
                 services.Replace(ServiceDescriptor.Singleton<IRetroThemer>(sp => sp.GetRequiredService<PickRetroThemer>()));
                 if (user != null)

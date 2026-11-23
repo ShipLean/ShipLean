@@ -9,6 +9,7 @@ import { useAppearanceOnLoad } from './features/shell/useAppearanceOnLoad';
 import { useBrowserZoneOnLoad } from './features/shell/timeZone/useBrowserZoneOnLoad';
 import { useRememberProject } from './features/shell/useRememberProject';
 import { useShellProject } from './features/shell/useShellProject';
+import { useWebVitals } from './features/webVitals/useWebVitals';
 import { TopBarRealtime } from './shell/slots/TopBarRealtime';
 import { appTestIds } from './testIds';
 import { TopBarProvider } from './touch/TopBar';
@@ -25,6 +26,7 @@ export function Shell() {
   const { touch } = useTouchShell();
   useAppearanceOnLoad();
   useBrowserZoneOnLoad();
+  useWebVitals();
   useRememberProject(onProjectRoute ? project : undefined);
   useProjectRealtime(onProjectRoute ? key : undefined);
   return (

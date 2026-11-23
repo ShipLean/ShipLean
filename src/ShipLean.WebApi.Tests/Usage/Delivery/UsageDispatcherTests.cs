@@ -38,7 +38,7 @@ public class UsageDispatcherTests : ApiFixture
     private IUsageEvents Usage => Host.Services.GetRequiredService<IUsageEvents>();
 
     private static AnalyticsTarget Target(AnalyticsProvider provider)
-        => new(provider, new Uri("https://analytics.example.com"), "site-key-0001", "ship.example.com", false, "1.0.0");
+        => new(provider, new Uri("https://analytics.example.com"), "site-key-0001", "ship.example.com", false, "1.0.0", false);
 
     // The dispatcher keeps a target for 30 seconds, so a test that changes it moves the clock past that first.
     private void UseTarget(AnalyticsTarget? target)

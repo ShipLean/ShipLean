@@ -10,7 +10,7 @@ public class UsageEventMapperAppSurfaceTests
     [Test]
     public void UsageEventMapper_WhenApp_ShouldWriteApp()
     {
-        var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), "site-key", "ship.example.com", false, "1.2.3");
+        var target = new AnalyticsTarget(AnalyticsProvider.Umami, new Uri("https://umami.example.com"), "site-key", "ship.example.com", false, "1.2.3", false);
         var usageEvent = new UsageEvent(
             UsageEventNames.DeviceSessionEnded, UsageSurface.App, UsageActor.ForUser(Guid.NewGuid()), null, 0, UsageOutcome.Ok, null, 5,
             "api:Test.Action", DateTimeOffset.UnixEpoch, new Dictionary<string, object>());

@@ -56,6 +56,8 @@ public static class RouteAllowList
         new("GET", "api/agents/consent/{id:guid}", "A pending authorize request is the caller's own; another user's is not_found."),
         new("POST", "api/agents/consent/{id:guid}", "Decides the caller's own pending authorize request; another user's is not_found."),
         new("POST", "api/usage/screen", "Reports a screen view for the caller's own usage; a project id goes through the member check before anything is recorded.", Body: """{"screen":"profile","projectId":null}"""),
+        new("GET", "api/usage/web-vitals/config", "Whether the caller's browser should measure web vitals; one instance-wide switch, touches no project data."),
+        new("POST", "api/usage/web-vitals", "Queues the caller's own browser readings; reads no database and takes no project id.", Body: """{"reports":[]}"""),
         new("POST", "api/auth/device-sessions/codes", "Makes a sign-in code for the caller's own phone; touches no project data.", Body: """{"challenge":"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM","deviceName":"Sweep phone"}"""),
         new("GET", "api/auth/device-sessions", "The caller's own signed-in phones."),
         new("DELETE", "api/auth/device-sessions/{id:guid}", "Signs out one of the caller's own phones; another user's is not_found."),
