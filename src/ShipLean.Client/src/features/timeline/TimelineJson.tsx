@@ -33,7 +33,7 @@ export function TimelineJson({ view }: TimelineJsonProps) {
       </div>
       <pre
         aria-label={`feature_timeline response for ${view.feature.key}`}
-        className="m-0 flex-1 overflow-auto whitespace-pre rounded-md border border-edge bg-panel px-4 py-3 font-mono text-[12px] leading-[1.55] text-ink [tab-size:2] [&_.json-b]:text-[color:var(--color-purple)] [&_.json-k]:text-[color:var(--color-accent)] [&_.json-n]:text-[color:var(--color-warn)] [&_.json-s]:text-[color:var(--color-ok)]"
+        className="m-0 flex-1 overflow-auto whitespace-pre rounded-md border border-edge bg-panel px-4 py-3 font-mono text-[12px] leading-[1.55] text-ink [tab-size:2] [&_.json-b]:text-[color:var(--color-purple)] [&_.json-k]:text-[color:var(--color-accent)] [&_.json-n]:text-[color:color-mix(in_srgb,var(--color-warn)_70%,var(--color-text))] [&_.json-s]:text-[color:color-mix(in_srgb,var(--color-ok)_70%,var(--color-text))]"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </section>

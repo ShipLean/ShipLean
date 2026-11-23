@@ -5,18 +5,48 @@ export interface RailJsonGuideProps {
 }
 
 // Each row: what the chart shows, then the MCP fields that draw it (checked against toMcpJson's output).
-const maps: [string, string[]][] = [
-  ['Key dates strip', ['key_dates', 'gaps']],
-  ['A bar', ['bars[].start', 'bars[].end', 'bars[].hours']],
-  ['Its history', ['bars[].history']],
+// A field is a code path; plain strings are the mock-up's words between them.
+type Part = { code: string } | string;
+const maps: [string, Part[]][] = [
+  ['Key dates strip', [{ code: 'key_dates' }, ', ', { code: 'gaps' }]],
+  [
+    'A bar',
+    [
+      { code: 'bars[]' },
+      ': ',
+      { code: 'bars[].start' },
+      ' (first Active), ',
+      { code: 'bars[].end' },
+      ' (last Resolved), ',
+      { code: 'bars[].hours' },
+    ],
+  ],
+  ['Its history', [{ code: 'bars[].history' }, ': each state']],
   [
     'Review markers',
-    ['bars[].reviews', 'bars[].reviews[].verdict', 'bars[].reviews[].by', 'bars[].reviews[].at'],
+    [
+      { code: 'bars[].reviews' },
+      ': ',
+      { code: 'bars[].reviews[].verdict' },
+      ', ',
+      { code: 'bars[].reviews[].by' },
+      ', ',
+      { code: 'bars[].reviews[].at' },
+    ],
   ],
-  ['A story’s bracket', ['stories']],
-  ['Arrows', ['edges', 'edges[].wait_hours', 'edges[].unblocked_at']],
-  ['Outlined bars', ['critical_path']],
-  ['Diamond marker', ['bars[].inferred']],
+  ['A story’s bracket', [{ code: 'stories[]' }]],
+  [
+    'Arrows',
+    [
+      { code: 'edges[]' },
+      ' with ',
+      { code: 'edges[].wait_hours' },
+      '; blocked part-way has ',
+      { code: 'edges[].unblocked_at' },
+    ],
+  ],
+  ['Outlined bars', [{ code: 'critical_path' }]],
+  ['Diamond marker', [{ code: 'bars[].inferred' }, ': inferred: true']],
 ];
 
 const overline =
@@ -43,15 +73,19 @@ export function RailJsonGuide({ featureKey }: RailJsonGuideProps) {
           data-testid={ids.railJsonMap}
           className="m-0 grid list-none gap-1.5 p-0 text-[length:var(--text-xs)]"
         >
-          {maps.map(([label, fields]) => (
+          {maps.map(([label, parts]) => (
             <li key={label} className="grid grid-cols-[110px_minmax(0,1fr)] gap-1.5">
               <span>{label}</span>
-              <span className="flex flex-wrap gap-x-1.5">
-                {fields.map((field) => (
-                  <code key={field} className="text-[10.5px]">
-                    {field}
-                  </code>
-                ))}
+              <span>
+                {parts.map((part, i) =>
+                  typeof part === 'string' ? (
+                    part
+                  ) : (
+                    <code key={i} className="text-[10.5px]">
+                      {part.code}
+                    </code>
+                  ),
+                )}
               </span>
             </li>
           ))}
