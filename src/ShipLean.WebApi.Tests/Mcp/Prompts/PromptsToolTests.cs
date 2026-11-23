@@ -98,7 +98,9 @@ public class PromptsToolTests : McpFixture
         var result = await ReadAsync("""{"project":"SHIP","prompt":"fix","version":"built-in"}""");
 
         result.GetProperty("text_of").GetString().ShouldBe("built-in");
-        result.GetProperty("text").GetString().ShouldNotBeNullOrEmpty().ShouldNotBe("A custom fix text.");
+        var text = result.GetProperty("text").GetString();
+        text.ShouldNotBeNullOrEmpty();
+        text.ShouldNotBe("A custom fix text.");
     }
 
     [Test]
