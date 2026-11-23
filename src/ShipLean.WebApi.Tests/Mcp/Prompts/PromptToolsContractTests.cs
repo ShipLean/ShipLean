@@ -1,13 +1,16 @@
 using System.Reflection;
 using ModelContextProtocol.Server;
+using ShipLean.Contracts.Prompts;
+using ShipLean.TestSupport;
 using ShipLean.TestSupport.Hosting;
+using ShipLean.TestSupport.Prompts;
 using ShipLean.WebApi.Features.Mcp.Contracts;
 using ShipLean.WebApi.Tests.Mcp.Transport;
 
 namespace ShipLean.WebApi.Tests.Mcp.Prompts;
 
 // SHIP-2231 C4: the three prompt tools' scopes and access rules, and the prompt-key check. Joel administers SHIP and is not in PART; Priya is a member of SHIP, not an admin.
-// Nothing here writes: every call is refused, or is a preview.
+// Nothing here writes through the tools: every call is refused, or is a preview, except the use_prompt_version binding test. Binding tests each own a prompt key no other test in the class touches.
 [TestFixture]
 public class PromptToolsContractTests : McpFixture
 {
@@ -99,7 +102,9 @@ public class PromptToolsContractTests : McpFixture
     [Test]
     public async Task UsePromptVersion_WhenVersionIsJsonNumber_ShouldBind()
     {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadWrite), "use_prompt_version", """{"project":"SHIP","prompt":"guide","version":3}""");
+        await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Lead).WithNumber(3).WithText("Lead text.").InsertAsync(ConnectionString);
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadWrite), "use_prompt_version", """{"project":"SHIP","prompt":"lead","version":3}""");
 
         reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
         reply.Structured().GetProperty("in_use_version").GetInt32().ShouldBe(3);
@@ -108,7 +113,9 @@ public class PromptToolsContractTests : McpFixture
     [Test]
     public async Task Prompts_WhenVersionIsNumericString_ShouldBind()
     {
-        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "prompts", """{"project":"SHIP","prompt":"guide","version":"3"}""");
+        await new PromptVersionBuilder(SeedIds.Projects.Ship, PromptKey.Retro).WithNumber(3).WithText("Retro text.").InsertAsync(ConnectionString);
+
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "prompts", """{"project":"SHIP","prompt":"retro","version":"3"}""");
 
         reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
         reply.Structured().GetProperty("text_of").GetString().ShouldBe("v3");
@@ -119,7 +126,7 @@ public class PromptToolsContractTests : McpFixture
     {
         var reply = await CallToolAsync(
             await TokenAsync(TestUser.Joel, ReadWritePlan), "save_prompt",
-            """{"project":"SHIP","prompt":"guide","text":"New text.","note":"A change.","based_on":"built-in"}""");
+            """{"project":"SHIP","prompt":"sprintDemo","text":"New text.","note":"A change.","based_on":"built-in"}""");
 
         reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
     }
@@ -129,9 +136,11 @@ public class PromptToolsContractTests : McpFixture
     {
         var reply = await CallToolAsync(
             await TokenAsync(TestUser.Joel, ReadWritePlan), "save_prompt",
-            """{"project":"SHIP","prompt":"guide","text":"New text.","note":"A change.","based_on":2}""");
+            """{"project":"SHIP","prompt":"issueProposal","text":"New text.","note":"A change.","based_on":2}""");
 
-        reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
+        // Reaching the stale-version check proves the JSON number bound.
+        ErrorCode(reply).ShouldBe("conflict");
+        reply.Structured().GetProperty("error").GetProperty("message").GetString().ShouldNotBeNull().ShouldContain("it is now the built-in");
     }
 
     [TestCase("0")]
