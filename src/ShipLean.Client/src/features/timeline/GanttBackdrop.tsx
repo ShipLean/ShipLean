@@ -67,7 +67,7 @@ export function GanttBackdrop({ rows, geometry, selected }: GanttBackdropProps) 
           y={rowY(selectedRow)}
           width={geometry.width}
           height={ROW_HEIGHT}
-          style={{ fill: 'var(--tl-selected-band)' }}
+          style={{ fill: 'var(--tl-selected-band)', pointerEvents: 'none' }}
         />
       )}
       {rows.map((row, i) => (

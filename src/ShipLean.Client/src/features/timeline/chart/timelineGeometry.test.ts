@@ -103,15 +103,15 @@ describe('timelineGeometry', () => {
     expect(g.marks.find((m) => m.key === 'SHIP-198')!.durationLabel).toBeNull();
   });
 
-  it('AxisLabels_WhenFitIsNarrow_ShouldLabelEachWeekStartWithItsShortLabel', () => {
-    const g = geometry(FINISHED_TIMELINE, 'fit', 300);
+  it('AxisLabels_WhenFit_ShouldLabelEachWeekStartWithItsShortLabel', () => {
+    const g = geometry(FINISHED_TIMELINE, 'fit', 816);
     const weeks = FINISHED_TIMELINE.scale.days.filter((d) => d.weekStart).map((d) => d.shortLabel);
     expect(weeks.length).toBeGreaterThan(1);
     expect(g.axisLabels.map((l) => l.text)).toEqual(weeks);
     expect(g.axisLabels.every((l) => l.kind === 'week')).toBe(true);
   });
 
-  it('AxisLabels_WhenFitIsNarrowAndNoMonday_ShouldLabelTheFirstDay', () => {
+  it('AxisLabels_WhenFitAndNoMonday_ShouldLabelTheFirstDay', () => {
     const view = {
       ...FINISHED_TIMELINE,
       scale: {
@@ -119,7 +119,7 @@ describe('timelineGeometry', () => {
         days: FINISHED_TIMELINE.scale.days.map((d) => ({ ...d, weekStart: false })),
       },
     };
-    const g = geometry(view, 'fit', 300);
+    const g = geometry(view, 'fit', 816);
     expect(g.axisLabels.map((l) => l.text)).toEqual([FINISHED_TIMELINE.scale.days[0].shortLabel]);
   });
 
