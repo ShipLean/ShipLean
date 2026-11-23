@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts;
@@ -26,7 +27,7 @@ internal sealed class SavePromptTools(ProjectResolver projects, IProjectAccess a
         [Description("A prompt's key, such as guide or work.")] string prompt,
         [Description("The full new text of the prompt, not a diff.")] string text,
         [Description("What you changed and why, at most 200 characters. It shows in the prompt's history.")] string note,
-        [Description("The version you read as in use with prompts: a version number such as 3, or built-in.")] string based_on,
+        [Description("The version you read as in use with prompts. A version number such as 3, or \"built-in\".")] JsonElement based_on,
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("The plan a preview returned. Pass it with the same arguments to save.")] string? plan = null,
         CancellationToken cancellationToken = default)

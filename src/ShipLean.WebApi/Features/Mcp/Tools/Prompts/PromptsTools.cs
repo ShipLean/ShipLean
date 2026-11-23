@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts;
@@ -20,7 +21,7 @@ internal sealed class PromptsTools(ProjectResolver projects, IProjectAccess acce
     public async Task<CallToolResult> Prompts(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("A prompt's key, such as guide or work. Leave it out to list every prompt.")] string? prompt = null,
-        [Description("The version whose text to return: a version number such as 3, or built-in. Defaults to the version in use.")] string? version = null,
+        [Description("The version whose text to return. A version number such as 3, or \"built-in\". Defaults to the version in use.")] JsonElement? version = null,
         CancellationToken cancellationToken = default)
     {
         var resolved = await projects.ResolveAsync(project, forWrite: false, cancellationToken);

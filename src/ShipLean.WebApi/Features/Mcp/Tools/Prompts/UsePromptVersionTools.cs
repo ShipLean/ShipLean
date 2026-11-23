@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ShipLean.Contracts;
@@ -19,7 +20,7 @@ internal sealed class UsePromptVersionTools(ProjectResolver projects, IProjectAc
     [Description("Choose which version of a project prompt agents get: a saved version number, or built-in to go back to ShipLean's own text. Nothing is deleted; saved versions stay in the prompt's history. Only a project admin can do this, and only when the person you work for asks.")]
     public async Task<CallToolResult> UsePromptVersion(
         [Description("A prompt's key, such as guide or work.")] string prompt,
-        [Description("A version number such as 3, or built-in.")] string version,
+        [Description("A version number such as 3, or \"built-in\".")] JsonElement version,
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         CancellationToken cancellationToken = default)
     {

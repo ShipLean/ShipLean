@@ -95,4 +95,72 @@ public class PromptToolsContractTests : McpFixture
         ErrorField(reply).ShouldBe("prompt");
         reply.Structured().GetProperty("error").GetProperty("message").GetString().ShouldNotBeNull().ShouldContain("retroAnalysis");
     }
+
+    [Test]
+    public async Task UsePromptVersion_WhenVersionIsJsonNumber_ShouldBind()
+    {
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadWrite), "use_prompt_version", """{"project":"SHIP","prompt":"guide","version":3}""");
+
+        reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
+        reply.Structured().GetProperty("in_use_version").GetInt32().ShouldBe(3);
+    }
+
+    [Test]
+    public async Task Prompts_WhenVersionIsNumericString_ShouldBind()
+    {
+        var reply = await CallToolAsync(await TokenAsync(TestUser.Joel, ReadOnly), "prompts", """{"project":"SHIP","prompt":"guide","version":"3"}""");
+
+        reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
+        reply.Structured().GetProperty("text_of").GetString().ShouldBe("v3");
+    }
+
+    [Test]
+    public async Task SavePrompt_WhenBasedOnIsBuiltIn_ShouldBind()
+    {
+        var reply = await CallToolAsync(
+            await TokenAsync(TestUser.Joel, ReadWritePlan), "save_prompt",
+            """{"project":"SHIP","prompt":"guide","text":"New text.","note":"A change.","based_on":"built-in"}""");
+
+        reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task SavePrompt_WhenBasedOnIsJsonNumber_ShouldBind()
+    {
+        var reply = await CallToolAsync(
+            await TokenAsync(TestUser.Joel, ReadWritePlan), "save_prompt",
+            """{"project":"SHIP","prompt":"guide","text":"New text.","note":"A change.","based_on":2}""");
+
+        reply.Structured().TryGetProperty("error", out _).ShouldBeFalse();
+    }
+
+    [TestCase("0")]
+    [TestCase("-1")]
+    [TestCase("2.5")]
+    [TestCase("\"abc\"")]
+    [TestCase("true")]
+    [TestCase("null")]
+    [TestCase("{}")]
+    [TestCase("[]")]
+    public async Task UsePromptVersion_WhenVersionInvalid_ShouldBeValidationOnVersion(string version)
+    {
+        var reply = await CallToolAsync(
+            await TokenAsync(TestUser.Joel, ReadWrite), "use_prompt_version", $$"""{"project":"SHIP","prompt":"guide","version":{{version}}}""");
+
+        ErrorCode(reply).ShouldBe("validation");
+        ErrorField(reply).ShouldBe("version");
+    }
+
+    [Test]
+    public async Task ListTools_WhenVersionArgumentsDeclared_ShouldNotRestrictThemToString()
+    {
+        var listed = await PostAsync(await TokenAsync(TestUser.Joel, ReadOnly), """{"jsonrpc":"2.0","id":1,"method":"tools/list"}""");
+        var tools = listed.Json().GetProperty("result").GetProperty("tools").EnumerateArray().ToList();
+
+        foreach (var (tool, argument) in new[] { ("prompts", "version"), ("use_prompt_version", "version"), ("save_prompt", "based_on") })
+        {
+            var schema = tools.Single(t => t.GetProperty("name").GetString() == tool).GetProperty("inputSchema").GetProperty("properties").GetProperty(argument);
+            schema.TryGetProperty("type", out var type).ShouldBeFalse($"{tool}.{argument} advertised {schema}");
+        }
+    }
 }

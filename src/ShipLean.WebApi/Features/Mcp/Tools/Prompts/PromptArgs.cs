@@ -17,18 +17,25 @@ internal static class PromptArgs
             ? key
             : throw ApiException.Validation($"There is no prompt \"{prompt}\". Use one of: {ValidKeys}.", "prompt");
 
-    // A version number (1 or more), or null for built-in.
-    public static int? Version(string? value, string field)
+    // A version number (1 or more), or null for built-in. Accepts a JSON number, the string built-in, or a string holding a number.
+    public static int? Version(JsonElement? value, string field)
     {
-        var text = value?.Trim();
-        if (string.Equals(text, BuiltIn, StringComparison.OrdinalIgnoreCase))
+        var invalid = ApiException.Validation($"{field} must be a version number such as 3, or {BuiltIn}.", field);
+        switch (value)
         {
-            return null;
-        }
+            case { ValueKind: JsonValueKind.Number } number:
+                return number.TryGetInt32(out var whole) && whole > 0 ? whole : throw invalid;
+            case { ValueKind: JsonValueKind.String } str:
+                var text = str.GetString()?.Trim();
+                if (string.Equals(text, BuiltIn, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
 
-        return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var number) && number > 0
-            ? number
-            : throw ApiException.Validation($"{field} is a version number (1 or more) or {BuiltIn}.", field);
+                return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) && parsed > 0 ? parsed : throw invalid;
+            default:
+                throw invalid;
+        }
     }
 
     // "v3", or built-in for null.
