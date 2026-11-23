@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { TimelineEdgeDto } from '@shiplean/core/api/views';
+import type { Mark, MarkKind } from '../chart/timelineGeometry';
 import { edgePaths } from './edgePaths';
 
-const box = (key: string, x0: number, x1: number, y: number) => ({ key, x0, x1, y, height: 10 });
-const boxes = [box('A', 10, 50, 0), box('B', 80, 120, 20), box('C', 30, 60, 40)];
+const mark = (key: string, x0: number, x1: number, y: number, kind: MarkKind = 'bar'): Mark => ({
+  key,
+  kind,
+  row: 0,
+  box: { key, x0, x1, y, height: 10 },
+  reviews: [],
+  reviewLine: null,
+  durationLabel: null,
+});
+const boxes = [mark('A', 10, 50, 0), mark('B', 80, 120, 20), mark('C', 30, 60, 40)];
 const scale = { pxPerHour: 2, originX: 0 };
 const edge = (over: Partial<TimelineEdgeDto>): TimelineEdgeDto => ({
   from: 'A',
@@ -54,5 +63,35 @@ describe('edgePaths', () => {
 
   it('skips an edge whose box is missing', () => {
     expect(edgePaths(boxes, [edge({ to: 'Z' }), edge({ from: 'Z' })], scale)).toEqual([]);
+  });
+
+  it('EdgePaths_WhenAnEndIsABracketOrDiamond_ShouldSkipTheEdge', () => {
+    const marks = [...boxes, mark('S', 0, 200, 60, 'bracket'), mark('D', 90, 90, 80, 'diamond')];
+    const pairs = [edge({ to: 'S' }), edge({ from: 'S' }), edge({ to: 'D' }), edge({ from: 'D' })];
+    expect(edgePaths(marks, [...pairs, edge({})], scale).map((p) => `${p.from}-${p.to}`)).toEqual([
+      'A-B',
+    ]);
+  });
+
+  it('EdgePaths_WhenThePairRepeats_ShouldDrawItOnce', () => {
+    const paths = edgePaths(
+      boxes,
+      [edge({ waitLabel: '1 h' }), edge({ kind: 'blocked' }), edge({ waitLabel: '2 h' })],
+      scale,
+    );
+    expect(paths).toHaveLength(1);
+    expect(paths[0].waitLabel).toBe('1 h');
+  });
+
+  it('EdgePaths_ShouldGiveTheHorizontalAndVerticalSegments', () => {
+    const [p] = edgePaths(boxes, [edge({})], scale);
+    expect(p.horizontal).toEqual({ x0: 58, x1: 80, y: 25 });
+    expect(p.vertical).toEqual({ x: 58, y0: 5, y1: 25 });
+  });
+
+  it('EdgePaths_WhenTheToBarStartsBeforeTheElbow_ShouldOrderTheSegmentEnds', () => {
+    const [p] = edgePaths(boxes, [edge({ from: 'B', to: 'C' })], scale);
+    expect(p.horizontal).toEqual({ x0: 30, x1: 128, y: 45 });
+    expect(p.vertical).toEqual({ x: 128, y0: 25, y1: 45 });
   });
 });

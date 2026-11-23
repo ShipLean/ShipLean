@@ -1,10 +1,15 @@
-import { edgePaths } from './edges/edgePaths';
+import { edgePairKey, edgePaths } from './edges/edgePaths';
+import { placeWaitLabels, WAIT_LABEL_FONT_SIZE, WAIT_LABEL_HALO } from './edges/waitLabels';
 import { timelineTestIds as ids } from './testIds';
 import type { GanttEdgesLayerProps } from './GanttEdgesLayerProps';
+
+/** With Critical path on, arrows off the path fade like the bars. */
+const FADED = 0.35;
 
 /** Dependency arrows, wait labels and the critical path outline, drawn inside the chart's SVG. */
 export function GanttEdgesLayer({
   boxes,
+  marks,
   edges,
   criticalPath,
   options,
@@ -12,9 +17,15 @@ export function GanttEdgesLayer({
   pxPerHour,
   originX,
 }: GanttEdgesLayerProps) {
-  const paths = options.deps ? edgePaths(boxes, edges, { pxPerHour, originX }) : [];
+  const paths = options.deps ? edgePaths(marks, edges, { pxPerHour, originX }) : [];
+  const labels = placeWaitLabels(edges, paths, marks);
   const outline = options.deps && options.cp && finished;
   const onPath = new Set(criticalPath);
+  const fadedPairs = new Set(
+    paths
+      .filter((p) => outline && !p.onCriticalPath && p.kind !== 'blocked')
+      .map((p) => edgePairKey(p)),
+  );
   return (
     <g data-testid={ids.edges} data-boxes={boxes.length}>
       {outline &&
@@ -42,12 +53,13 @@ export function GanttEdgesLayer({
         const colour = blocked ? 'var(--color-danger)' : 'var(--color-text)';
         return (
           <g
-            key={`${p.kind}-${p.from}-${p.to}`}
+            key={edgePairKey(p)}
             data-testid={ids.edge}
             data-from={p.from}
             data-to={p.to}
             data-kind={p.kind}
             data-critical={critical}
+            opacity={fadedPairs.has(edgePairKey(p)) ? FADED : undefined}
             pointerEvents="none"
           >
             <title>{p.title}</title>
@@ -60,20 +72,33 @@ export function GanttEdgesLayer({
               strokeDasharray={blocked ? '4 3' : undefined}
             />
             <path d={p.head} fill={colour} fillOpacity={critical || blocked ? 1 : 0.55} />
-            {p.waitLabel !== null && (
-              <text
-                data-testid={ids.edgeWaitLabel}
-                x={p.labelX}
-                y={p.labelY}
-                fontSize={10}
-                fill="var(--color-text)"
-              >
-                {p.waitLabel}
-              </text>
-            )}
           </g>
         );
       })}
+      {/* Labels after every arrow, so each halo clears the lines under it. */}
+      {labels.map((l) => (
+        <text
+          key={edgePairKey(l)}
+          data-testid={ids.edgeWaitLabel}
+          data-from={l.from}
+          data-to={l.to}
+          x={l.x}
+          y={l.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={WAIT_LABEL_FONT_SIZE}
+          fontWeight={600}
+          fill="var(--color-text)"
+          stroke="var(--color-panel)"
+          strokeWidth={WAIT_LABEL_HALO}
+          strokeLinejoin="round"
+          paintOrder="stroke"
+          opacity={fadedPairs.has(edgePairKey(l)) ? FADED : undefined}
+          pointerEvents="none"
+        >
+          {l.text}
+        </text>
+      ))}
     </g>
   );
 }
