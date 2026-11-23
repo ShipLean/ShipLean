@@ -40,19 +40,14 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var state = await LockAsync(connection, transaction, projectId, wire, cancellationToken);
-        // TODO: check expected against the in-use version under the lock
-        var unchanged = state.InUseText is not null
-            ? state.InUseText == text
-            : text == builtIns.Text(key).Replace("\r\n", "\n", StringComparison.Ordinal);
-        if (unchanged)
-        {
-            throw ApiException.Validation("Nothing changed from the version in use.", "text");
-        }
+        // Stale before unchanged: a save racing another writer who saved the same text is reported as stale.
+        PromptTextRules.Expected(expected, state.InUseNumber);
+        PromptTextRules.Changed(text, state.InUseText ?? PromptTextRules.Normalised(builtIns.Text(key)));
 
         var baseHash = save.Source == PromptVersionSource.BuiltInUpdate ? current : state.InUseBaseHash ?? current;
         await connection.ExecuteAsync(new CommandDefinition(
             "INSERT INTO prompt_built_in (prompt, hash, text, first_seen_at) VALUES (@wire, @current, @builtInText, @now) ON CONFLICT DO NOTHING",
-            new { wire, current, builtInText = builtIns.Text(key).Replace("\r\n", "\n", StringComparison.Ordinal), now = clock.GetUtcNow().UtcDateTime },
+            new { wire, current, builtInText = PromptTextRules.Normalised(builtIns.Text(key)), now = clock.GetUtcNow().UtcDateTime },
             transaction, cancellationToken: cancellationToken));
         var versionId = Guid.NewGuid();
         var number = await connection.QuerySingleAsync<int>(new CommandDefinition(
