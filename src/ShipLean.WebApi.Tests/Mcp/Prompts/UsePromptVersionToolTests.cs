@@ -96,6 +96,31 @@ public class UsePromptVersionToolTests : McpFixture
     }
 
     [Test]
+    public async Task UsePromptVersion_WhenBuiltIn_ShouldEmitTheBuiltInEventOnMcpSurface()
+    {
+        await VersionAsync(PromptKey.Lead, 1, inUse: true);
+        Recorder.Clear();
+
+        await UseAsync("lead", "\"built-in\"");
+
+        var tracked = Recorder.Events.Where(e => e.Source == "tool:use_prompt_version" && e.Name == UsageEventNames.PromptBuiltInUsed).ShouldHaveSingleItem();
+        tracked.Surface.ShouldBe(UsageSurface.Mcp);
+        tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+        tracked.Properties[UsageProps.Prompt].ShouldBe("lead");
+    }
+
+    [Test]
+    public async Task UsePromptVersion_WhenCallFails_ShouldEmitNoEventOfItsOwn()
+    {
+        Recorder.Clear();
+
+        var result = await UseAsync("retro", "\"built-in\"");
+
+        ErrorCode(result).ShouldBe("conflict");
+        Recorder.Events.Where(e => e.Source == "tool:use_prompt_version").ShouldBeEmpty();
+    }
+
+    [Test]
     public async Task UsePromptVersion_WhenAlreadyBuiltIn_ShouldConflict()
     {
         var result = await UseAsync("planReviewer", "\"built-in\"");
