@@ -107,10 +107,11 @@ test('GanttEdgesLayer_WhenNotFinished_ShouldNotOutline', async ({ mount, page })
 
 test('GanttEdgesLayer_ShouldShowWaitLabels', async ({ mount, page }) => {
   await mount(layer());
-  const first = page.getByTestId(ids.edgeWaitLabel).first();
-  await expect(first).toHaveText('22.8 h wait');
-  await expect(first).toHaveAttribute('data-from', 'SHIP-191');
-  await expect(first).toHaveAttribute('paint-order', 'stroke');
+  const label = page
+    .getByTestId(ids.edgeWaitLabel)
+    .and(page.locator('[data-from=SHIP-191][data-to=SHIP-192]'));
+  await expect(label).toHaveText('22.8 h wait');
+  await expect(label).toHaveAttribute('paint-order', 'stroke');
   await expect(page.locator('[data-from=SHIP-191][data-to=SHIP-192] title')).toHaveText(
     'SHIP-191 → SHIP-192, waited 22.8 h',
   );
