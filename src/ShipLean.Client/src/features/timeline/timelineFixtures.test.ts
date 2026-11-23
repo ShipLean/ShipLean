@@ -55,6 +55,8 @@ describe.each(FIXTURES)('the %s timeline fixture', (_name, view) => {
 describe('the running timeline fixture', () => {
   it('Fixture_WhenRunning_ShouldHaveNotStartedItemsWithAndWithoutAnAssignee', () => {
     expect(RUNNING_TIMELINE.notStarted.some((item) => item.assignee === null)).toBe(true);
-    expect(RUNNING_TIMELINE.notStarted.some((item) => item.assignee !== null && !item.assignee.agent)).toBe(true);
+    expect(
+      RUNNING_TIMELINE.notStarted.some((item) => item.assignee !== null && !item.assignee.agent),
+    ).toBe(true);
   });
 });
