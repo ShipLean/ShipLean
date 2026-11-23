@@ -48,4 +48,13 @@ public static class TimelineTestIds
     public const string Json = "timeline-json";
     public const string JsonCopy = "timeline-json-copy";
     public const string JsonFieldGuide = "timeline-json-field-guide";
+    public const string Kpis = "timeline-kpis";
+    public const string Kpi = "timeline-kpi";
+    public const string HeaderCaption = "timeline-header-caption";
+    public const string ChartLeftHead = "timeline-chart-left-head";
+    public const string ChartRowTook = "timeline-chart-row-took";
+    public const string RailOpen = "timeline-rail-open";
+    public const string RailBack = "timeline-rail-back";
+    public const string RailJsonCall = "timeline-rail-json-call";
+    public const string RailJsonMap = "timeline-rail-json-map";
 }
