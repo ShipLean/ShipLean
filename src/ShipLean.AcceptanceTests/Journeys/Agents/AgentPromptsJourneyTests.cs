@@ -8,13 +8,15 @@ using ShipLean.TestSupport.Mcp;
 namespace ShipLean.AcceptanceTests.Journeys.Agents;
 
 // An agent working for a project admin reads a prompt, previews and saves a new version over MCP, and the admin then sees it in Prompts > History with
-// the note, the person, the agent and "MCP". Each test opens the page after its MCP calls: the page does not refresh on an MCP write. The fix prompt
-// is this class's own; a member's agent is refused and History stays as it was.
+// the note, the person, the agent and "MCP". Each test opens the page after its MCP calls: the page does not refresh on an MCP write. The class shares one
+// database, so each test has its own prompt (fix, lead, stories); a member's agent is refused and History stays as it was.
 [TestFixture]
 public class AgentPromptsJourneyTests : SeededAcceptanceTest
 {
     private const string Project = "SHIP";
     private const string Prompt = "fix";
+    private const string UsedPrompt = "lead";
+    private const string MemberPrompt = "stories";
     private const string Agent = "Prompt Scribe";
     private const string Note = "Ask for a failing test first";
     private static readonly IReadOnlySet<string> Scopes = new HashSet<string> { "shiplean:read", "shiplean:write", "shiplean:plan" };
@@ -63,19 +65,19 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
         await using var mcp = await ConnectAsync(TestUser.Joel);
         var arguments = new Dictionary<string, object?>
         {
-            ["project"] = Project, ["prompt"] = Prompt, ["text"] = "Reproduce the bug first, then fix it.\n", ["note"] = Note, ["based_on"] = "built-in",
+            ["project"] = Project, ["prompt"] = UsedPrompt, ["text"] = "Reproduce the bug first, then fix it.\n", ["note"] = Note, ["based_on"] = "built-in",
         };
         var preview = await CallAsync(mcp, "save_prompt", arguments);
         arguments["plan"] = preview.GetProperty("plan").GetString();
         await CallAsync(mcp, "save_prompt", arguments);
-        (await CallAsync(mcp, "prompts", new() { ["project"] = Project, ["prompt"] = Prompt })).GetProperty("in_use_version").GetInt32().ShouldBe(1);
+        (await CallAsync(mcp, "prompts", new() { ["project"] = Project, ["prompt"] = UsedPrompt })).GetProperty("in_use_version").GetInt32().ShouldBe(1);
 
-        var used = await CallAsync(mcp, "use_prompt_version", new() { ["project"] = Project, ["prompt"] = Prompt, ["version"] = "built-in" });
+        var used = await CallAsync(mcp, "use_prompt_version", new() { ["project"] = Project, ["prompt"] = UsedPrompt, ["version"] = "built-in" });
         used.GetProperty("in_use_version").ValueKind.ShouldBe(JsonValueKind.Null);
-        (await CallAsync(mcp, "prompts", new() { ["project"] = Project, ["prompt"] = Prompt })).GetProperty("in_use_version").ValueKind.ShouldBe(JsonValueKind.Null);
+        (await CallAsync(mcp, "prompts", new() { ["project"] = Project, ["prompt"] = UsedPrompt })).GetProperty("in_use_version").ValueKind.ShouldBe(JsonValueKind.Null);
 
         var prompts = new PromptsAdminPage(Page);
-        await prompts.OpenAsync(Project, Prompt);
+        await prompts.OpenAsync(Project, UsedPrompt);
         await Expect(prompts.DetailChip).ToContainTextAsync("Using built-in");
         await prompts.TabHistory.ClickAsync();
         await Expect(prompts.HistoryRows).ToHaveCountAsync(1);
@@ -88,19 +90,19 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
         await using var member = await ConnectAsync(TestUser.Priya);
         var result = await member.CallToolAsync("save_prompt", new Dictionary<string, object?>
         {
-            ["project"] = Project, ["prompt"] = Prompt, ["text"] = "Member wording.\n", ["note"] = Note, ["based_on"] = "built-in",
+            ["project"] = Project, ["prompt"] = MemberPrompt, ["text"] = "Member wording.\n", ["note"] = Note, ["based_on"] = "built-in",
         });
         result.IsError.ShouldBe(true);
         result.StructuredContent.ShouldNotBeNull();
         result.StructuredContent.Value.GetProperty("error").GetProperty("code").GetString().ShouldBe("forbidden");
 
         await using var admin = await ConnectAsync(TestUser.Joel);
-        var read = await CallAsync(admin, "prompts", new() { ["project"] = Project, ["prompt"] = Prompt });
+        var read = await CallAsync(admin, "prompts", new() { ["project"] = Project, ["prompt"] = MemberPrompt });
         read.GetProperty("in_use_version").ValueKind.ShouldBe(JsonValueKind.Null);
         read.GetProperty("versions").GetArrayLength().ShouldBe(0);
 
         var prompts = new PromptsAdminPage(Page);
-        await prompts.OpenAsync(Project, Prompt);
+        await prompts.OpenAsync(Project, MemberPrompt);
         await Expect(prompts.DetailChip).ToContainTextAsync("Using built-in");
         await prompts.TabHistory.ClickAsync();
         await Expect(prompts.HistoryRows).ToHaveCountAsync(0);
