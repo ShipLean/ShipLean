@@ -13,7 +13,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
     private const string VersionColumns =
         """
         v.prompt, v.id, v.number, v.text, v.base_hash AS BaseHash, b.text AS BaseText, b.first_seen_at AS BaseFirstSeen, v.note, v.source,
-        COALESCE(u.name, 'ShipLean') AS "By", v.created_at AS CreatedAt
+        COALESCE(u.name, 'ShipLean') AS "By", v.created_at AS CreatedAt, v.agent_name AS AgentName
         """;
 
     private const string VersionJoins =
@@ -66,7 +66,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         var zone = viewerZone.Zone;
         var versions = rows.Versions
             .Select(v => new PromptVersionDto(v.Number, v.Note, v.By ?? "ShipLean", Label(v.CreatedAt, zone), v.Id == inUse,
-                Enum.GetValues<PromptVersionSource>().First(s => PromptKeys.ToWire(s) == v.Source), v.Text))
+                Enum.GetValues<PromptVersionSource>().First(s => PromptKeys.ToWire(s) == v.Source), v.Text, v.AgentName))
             .ToList();
         var oldest = rows.Versions.LastOrDefault();
         return new PromptHistoryDto(key, versions, oldest is null ? null : BaseLabel(oldest.BaseFirstSeen, zone));

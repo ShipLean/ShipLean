@@ -64,5 +64,8 @@ public static class ToolUsageMap
         ["get_run"] = UsageEventNames.InspectionRunViewed,
         ["agent_setup"] = UsageEventNames.InspectionAgentSetupViewed,
         ["answer_question"] = UsageEventNames.QuestionAnswered,
+        ["prompts"] = UsageEventNames.PromptsMcpRead,
+        ["save_prompt"] = UsageEventNames.PromptMcpSaveCalled,
+        ["use_prompt_version"] = UsageEventNames.PromptMcpVersionUsed,
     };
 }

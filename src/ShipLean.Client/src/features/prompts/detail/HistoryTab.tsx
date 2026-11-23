@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { PromptDto, PromptVersionDto, PromptVersionSource } from '@shiplean/core/api/prompts';
+import { Chip } from '../../../components/Chip';
 import { promptsTestIds as ids } from '../testIds';
 import { usePromptHistory, useUseVersion } from '../usePrompts';
 
@@ -7,6 +8,7 @@ const sourceLabel: Record<PromptVersionSource, string> = {
   editor: 'Editor',
   builtInUpdate: 'Built-in update',
   migrated: 'Moved from Integrations',
+  mcp: 'MCP',
 };
 
 // Every version, newest first, with Use vN for admins, ending in the built-in the versions started from.
@@ -112,7 +114,17 @@ export function HistoryTab(props: {
               >
                 <td>v{v.number}</td>
                 <td>{v.note}</td>
-                <td>{v.by}</td>
+                <td>
+                  {v.by}
+                  {v.agent ? (
+                    <span
+                      data-testid={ids.historyAgent}
+                      className="flex flex-wrap items-center gap-1"
+                    >
+                      via {v.agent} <Chip tone="purple">Agent</Chip>
+                    </span>
+                  ) : null}
+                </td>
                 <td>{v.atLabel}</td>
                 <td>{sourceLabel[v.source]}</td>
                 <td>{actions(v)}</td>

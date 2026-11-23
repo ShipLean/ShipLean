@@ -8,6 +8,7 @@ using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Contracts.Mcp;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Prompts;
 using ShipLean.WebApi.Features.Prompts;
@@ -23,11 +24,25 @@ public class PromptWritesTests : ApiFixture
     private const string ChangedBrief = "A newer built-in brief.";
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } };
 
+    private readonly SettableCurrentAgent _agent = new();
+
     protected override Action<IServiceCollection>? ConfigureTestServices => services =>
     {
+        services.RemoveAll<ICurrentAgent>();
+        services.AddSingleton<ICurrentAgent>(_agent);
         services.RemoveAll<IBuiltInPrompts>();
         services.AddSingleton<IBuiltInPrompts>(_ => new ChangedBuiltInPrompts(new BuiltInPrompts(), new Dictionary<PromptKey, string> { [PromptKey.Brief] = ChangedBrief }));
     };
+
+    [SetUp]
+    public void NoAgentByDefault() => _agent.Clear();
+
+    private async Task<(string Source, string? Agent)> NewestAsync(Guid project, string prompt)
+    {
+        await using var database = await OpenDatabaseAsync();
+        return await database.QuerySingleAsync<(string, string?)>(
+            "SELECT source, agent_name FROM prompt_version WHERE project_id = @project AND prompt = @prompt ORDER BY number DESC LIMIT 1", new { project, prompt });
+    }
 
     private async Task<Guid> ArrangeProjectAsync()
     {
@@ -203,6 +218,41 @@ public class PromptWritesTests : ApiFixture
     }
 
     [Test]
+    public async Task SaveAsync_WhenAgentActs_ShouldStampAgentName()
+    {
+        var project = await ArrangeProjectAsync();
+        _agent.ActAs("Claude Code", "claude.ai", verified: true);
+
+        await SavedAsync(project, "guide", "Saved by an agent.", "mcp");
+
+        (await NewestAsync(project, "guide")).ShouldBe(("mcp", "Claude Code (claude.ai)"));
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenMcpSourceWithoutAgent_ShouldRefuse()
+    {
+        var project = await ArrangeProjectAsync();
+
+        using var response = await SaveAsync(project, "guide", "Some text.", source: "mcp");
+
+        var error = await ErrorOfAsync(response);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("source");
+        error.Error.ShouldBe("Source mcp is only for agents.");
+        (await RowsAsync(project, "guide")).Versions.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenWeb_ShouldLeaveAgentNull()
+    {
+        var project = await ArrangeProjectAsync();
+
+        await SavedAsync(project, "guide", "Saved on the web.");
+
+        (await NewestAsync(project, "guide")).ShouldBe(("editor", null));
+    }
+
+    [Test]
     public async Task Save_WhenFromBuiltInUpdate_ShouldBaseOnTheCurrentBuiltIn()
     {
         var project = await ArrangeProjectAsync();
@@ -364,6 +414,77 @@ public class PromptWritesTests : ApiFixture
 
         saved.Select(s => s.InUseVersion).Order().ShouldBe([2, 3]);
         saved.Select(s => s.Status).ShouldAllBe(status => status == PromptStatus.BuiltInUpdated);
+    }
+
+    private async Task<PromptSavedDto> SaveExpectingAsync(Guid project, string text, PromptBase? expected)
+    {
+        using var scope = Host.Services.CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<IPromptWrites>()
+            .SaveAsync(project, PromptKey.Guide, new PromptSaveDto(text, "A change.", PromptVersionSource.Editor), expected);
+    }
+
+    private async Task<ApiException> RefusedExpectingAsync(Guid project, string text, PromptBase? expected)
+        => await Should.ThrowAsync<ApiException>(() => SaveExpectingAsync(project, text, expected));
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedDiffersAndTextEqualsInUse_ShouldConflictAsStale()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "Mine.");
+
+        var error = await RefusedExpectingAsync(project, "Mine.", new PromptBase(null));
+
+        error.Code.ShouldBe(ApiErrorCodes.Conflict);
+        error.Message.ShouldBe("The version in use changed since you read it: it is now v1. Read the prompt again with prompts, then save.");
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedDiffers_ShouldConflictAndWriteNothing()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "First.");
+        await SavedAsync(project, "guide", "Second.");
+
+        var error = await RefusedExpectingAsync(project, "Third.", new PromptBase(1));
+
+        error.Code.ShouldBe(ApiErrorCodes.Conflict);
+        error.Message.ShouldBe("The version in use changed since you read it: it is now v2. Read the prompt again with prompts, then save.");
+        (await RowsAsync(project, "guide")).ShouldBe((2, 2, null));
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedNamesAVersionAndTheBuiltInIsInUse_ShouldConflictNamingTheBuiltIn()
+    {
+        var project = await ArrangeProjectAsync();
+
+        var error = await RefusedExpectingAsync(project, "New.", new PromptBase(1));
+
+        error.Message.ShouldBe("The version in use changed since you read it: it is now the built-in. Read the prompt again with prompts, then save.");
+        (await RowsAsync(project, "guide")).Versions.ShouldBe(0);
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedMatches_ShouldSave()
+    {
+        var project = await ArrangeProjectAsync();
+
+        var first = await SaveExpectingAsync(project, "First.", new PromptBase(null));
+        var second = await SaveExpectingAsync(project, "Second.", new PromptBase(1));
+
+        first.InUseVersion.ShouldBe(1);
+        second.InUseVersion.ShouldBe(2);
+        (await RowsAsync(project, "guide")).ShouldBe((2, 2, null));
+    }
+
+    [Test]
+    public async Task SaveAsync_WhenExpectedNull_ShouldNotCheck()
+    {
+        var project = await ArrangeProjectAsync();
+        await SavedAsync(project, "guide", "First.");
+
+        var saved = await SaveExpectingAsync(project, "Second.", null);
+
+        saved.InUseVersion.ShouldBe(2);
     }
 
     private async Task WaitForWaitersAsync(int count, params Task[] writes)

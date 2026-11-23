@@ -75,6 +75,9 @@ public class BauToolCoverageTests
         ["get_retro_analysis"] = Kind.NoItems,
         ["log_retrospective"] = Kind.NoItems,
         ["create_payload_upload"] = Kind.NoItems,
+        ["prompts"] = Kind.NoItems,
+        ["save_prompt"] = Kind.NoItems,
+        ["use_prompt_version"] = Kind.NoItems,
     };
 
     private static IReadOnlyList<string> ToolNames()

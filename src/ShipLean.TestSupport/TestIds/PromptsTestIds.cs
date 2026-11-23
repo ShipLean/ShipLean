@@ -91,6 +91,7 @@ public static class PromptsTestIds
     public const string HistoryNote = "prompts-history-note";
     public const string HistoryConfirm = "prompts-history-confirm";
     public const string HistoryEmpty = "prompts-history-empty";
+    public const string HistoryAgent = "prompts-history-agent";
     public const string AgentPicker = "prompts-agent-picker";
     public const string AgentOption = "prompts-agent-option";
     public const string AssembledLayers = "prompts-assembled-layers";

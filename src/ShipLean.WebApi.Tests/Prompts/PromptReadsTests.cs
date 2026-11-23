@@ -2,12 +2,17 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dapper;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using ShipLean.Contracts;
 using ShipLean.Contracts.Prompts;
 using ShipLean.TestSupport;
+using ShipLean.TestSupport.Contracts.Mcp;
 using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Hosting;
 using ShipLean.TestSupport.Prompts;
 using ShipLean.WebApi.Features.Prompts;
+using ShipLean.WebApi.Tests.ProjectSettings.Api;
 
 namespace ShipLean.WebApi.Tests.Prompts;
 
@@ -22,6 +27,17 @@ public class PromptReadsTests : ApiFixture
          PromptKey.CodeReviewer, PromptKey.Fix, PromptKey.Retro, PromptKey.RetroAnalysis, PromptKey.SprintDemo];
 
     private readonly BuiltInPrompts _builtIns = new();
+
+    private readonly SettableCurrentAgent _agent = new();
+
+    protected override Action<IServiceCollection>? ConfigureTestServices => services =>
+    {
+        services.RemoveAll<ICurrentAgent>();
+        services.AddSingleton<ICurrentAgent>(_agent);
+    };
+
+    [SetUp]
+    public void NoAgentByDefault() => _agent.Clear();
 
     private static string Route(Guid projectId, string tail = "") => $"api/projects/{projectId}/prompts{tail}";
 
@@ -214,6 +230,31 @@ public class PromptReadsTests : ApiFixture
         history.Versions.Select(v => v.Text).ShouldBe(["v2 text", "v1 text"]);
         history.Versions.Select(v => v.AtLabel).ShouldBe([Day(2), Day(5)]);
         history.BaseLabel.ShouldBe($"built-in of {Day(8)}");
+    }
+
+    [Test]
+    public async Task HistoryAsync_WhenSavedByAgent_ShouldShowAgentAndMcpSource()
+    {
+        Guid project;
+        await using (var database = await OpenDatabaseAsync())
+        {
+            project = (await ArrangedProject.CreateAsync(database, (SeedIds.Users.Joel, ProjectRole.Admin))).Id;
+        }
+
+        using (var saved = await Api.PostJsonAsync(Route(project, "/work/versions"), new { text = "Web text.", note = "On the web.", source = "editor" }))
+        {
+            saved.IsSuccessStatusCode.ShouldBeTrue(await saved.Content.ReadAsStringAsync());
+        }
+
+        _agent.ActAs("Claude Code", "claude.ai", verified: true);
+        using (var saved = await Api.PostJsonAsync(Route(project, "/work/versions"), new { text = "Agent text.", note = "Over MCP.", source = "mcp" }))
+        {
+            saved.IsSuccessStatusCode.ShouldBeTrue(await saved.Content.ReadAsStringAsync());
+        }
+
+        var history = await GetAsync<PromptHistoryDto>(Route(project, "/work/history"));
+
+        history.Versions.Select(v => (v.Number, v.Source, v.Agent)).ShouldBe([(2, PromptVersionSource.Mcp, "Claude Code (claude.ai)"), (1, PromptVersionSource.Editor, (string?)null)]);
     }
 
     [Test]

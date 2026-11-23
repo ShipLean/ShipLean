@@ -48,7 +48,7 @@ public sealed class ProjectPromptsController(
     {
         var started = time.GetTimestamp();
         var key = await KeyAsync(id, prompt, ProjectRole.Admin, cancellationToken);
-        var saved = await writes.SaveAsync(id, key, save, cancellationToken);
+        var saved = await writes.SaveAsync(id, key, save, cancellationToken: cancellationToken);
         var name = save.Source == PromptVersionSource.BuiltInUpdate ? UsageEventNames.PromptUpdateApplied : UsageEventNames.PromptSaved;
         SelfEmittedUsage.TrackOk(
             events, scope, time, started, name, currentUser.Id, "api:ProjectPrompts.SaveVersion", id,

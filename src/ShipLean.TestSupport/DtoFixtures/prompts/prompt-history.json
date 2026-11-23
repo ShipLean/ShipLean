@@ -8,6 +8,7 @@
       "atLabel": "18 Nov",
       "inUse": true,
       "source": "editor",
+      "agent": null,
       "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n"
     },
     {
@@ -16,7 +17,8 @@
       "by": "Maria Santos",
       "atLabel": "12 Nov",
       "inUse": false,
-      "source": "editor",
+      "source": "mcp",
+      "agent": "Claude Code (claude.ai)",
       "text": "# brief\n\nShort built-in text for brief.\nSecond line, first try.\n"
     }
   ],

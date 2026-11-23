@@ -152,6 +152,12 @@ public static class UsageEventNames
     public const string PromptVersionRestored = "prompt.version_restored";
     public const string PromptUpdateKept = "prompt.update_kept";
 
+    // Prompts over MCP (SHIP-2231 C5): the tools prompts, save_prompt and use_prompt_version. An applied save or pointer move also
+    // self-emits the web event above (prompt.saved, prompt.built_in_used, prompt.version_restored) with surface mcp.
+    public const string PromptsMcpRead = "prompts.mcp_read";
+    public const string PromptMcpSaveCalled = "prompt.mcp_save_called";
+    public const string PromptMcpVersionUsed = "prompt.mcp_version_used";
+
     public const string ImportStarted = "import.started";
     public const string ImportJobChanged = "import.job_changed";
     public const string ImportJiraConnected = "import.jira_connected";
