@@ -37,6 +37,21 @@ Two things stay built-in, and the page lists them as such: the 14 inserted parts
 - **History** lists every version, newest first. **Use vN** puts an earlier one back in use.
 - Nothing is deleted. Versions stay forever; Use built-in and Use vN only move the pointer to the one in use.
 
+## Over MCP
+
+An agent working for a project can read the prompts and, for an admin, change them. The tools are `prompts`, `save_prompt` and `use_prompt_version`. The full arguments are in [mcp.md](mcp.md).
+
+- **Who.** Any project member can read with `prompts`. Only a project admin can call `save_prompt` or `use_prompt_version`. Anyone else is refused before anything is read or written.
+- **Read first.** `prompts` lists every prompt, or returns one prompt with its versions and the text of the version in use (or of the version asked for). It shows which version is in use.
+- **`based_on`.** A save names the version the agent read as in use: a number, or `built-in`. The agent sends the full new text and a change note, not a diff.
+- **Preview, then apply.** The first call writes nothing. It returns the next version number, a patch against the text in use, the size and any warnings, with a plan. The second call repeats the same arguments and adds the plan, and then it saves. If the text, note or `based_on` changed between the two calls, the save is refused and the agent previews again.
+- **Same checks as the browser.** The note is required and at most 200 characters. The text may not be empty or over 64 KB, and a broken agent section is an error. The checks run in that order, then `based_on`, then "Nothing changed".
+- **Warnings.** A missing placeholder, an unknown placeholder and a tag that is close to a known one (such as `<cludecode>`) are warnings. They say so, and the version still saves, as it does in the editor.
+- **Stale refusal.** If the version in use is no longer the one in `based_on`, the save is refused with the version now in use. The agent reads the prompt again and saves again. The check runs at the preview and again under the lock when the save is applied, so a save that races another is refused too.
+- **Use a version.** `use_prompt_version` puts a saved version, or the built-in, in use. Nothing is deleted.
+- **History.** A save from an agent is a version like any other, with source MCP and the agent's name. History shows both.
+- **Stays in the browser.** An agent cannot see or answer **Built-in updated**. Apply, Apply and edit and Keep mine are done on the page. Nor can it delete a version.
+
 ## Agent-specific sections
 
 A line of text on its own, `<claude-code>`, `<codex-cli>` or `<cursor>`, opens a section. The matching closing tag on its own line ends it. Only that agent gets the lines between. Any other agent gets the untagged text.
