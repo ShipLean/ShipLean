@@ -50,6 +50,9 @@ export const timelineTestIds = {
   personAvatar: 'timeline-person-avatar',
   // Wave 1 lanes: append your ids inside your own block only.
   // SHIP-2246 (T1a): header KPIs, caption, key dates and the Feature page card
+  kpis: 'timeline-kpis',
+  kpi: 'timeline-kpi',
+  headerCaption: 'timeline-header-caption',
   // end SHIP-2246
   // SHIP-2247 (T1b): row labels column
   // end SHIP-2247

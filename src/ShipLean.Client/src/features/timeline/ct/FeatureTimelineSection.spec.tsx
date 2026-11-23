@@ -22,6 +22,9 @@ test('FeatureTimelineSection_ShouldLinkToTimelineWithFromFeature', async ({ moun
   await stubFeatureTimeline(page, { fixture: 'finished' });
   await mountSection(mount);
   await expect(page.getByTestId(ids.keyDates)).toBeVisible();
+  await expect(page.getByTestId(featureTestIds.featureTimelineSection)).toContainText(
+    'The key dates. Open the timeline for every task and what waited on what.',
+  );
   await expect(page.getByRole('link', { name: 'Open timeline' })).toHaveAttribute(
     'href',
     `/p/SHIP/items/${feature.key}/timeline?from=feature`,
