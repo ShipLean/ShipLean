@@ -68,6 +68,8 @@ function MarkShape({
           stroke: bug ? 'var(--tl-badge-bug)' : 'var(--tl-badge-story)',
           strokeWidth: 2.5,
           strokeDasharray: story?.endHours === null ? '5 3' : undefined,
+          // The whole span under the bracket takes the click, though it is not filled.
+          pointerEvents: 'all',
         }}
       >
         <title>{title}</title>
