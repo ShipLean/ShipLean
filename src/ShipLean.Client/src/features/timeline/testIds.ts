@@ -78,5 +78,8 @@ export const timelineTestIds = {
   // SHIP-2251 (T1f): JSON view
   // end SHIP-2251
   // SHIP-2252 (T1g): chart axis, Now line and the selected band
+  chartWeekTick: 'timeline-chart-week-tick',
+  chartNowLabel: 'timeline-chart-now-label',
+  chartSelectedBand: 'timeline-chart-selected-band',
   // end SHIP-2252
 } as const;

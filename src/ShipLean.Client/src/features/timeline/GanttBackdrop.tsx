@@ -1,9 +1,10 @@
 import type { GanttBackdropProps } from './GanttBackdropProps';
 import { timelineTestIds as ids } from './testIds';
-import { AXIS_HEIGHT, rowY } from './chart/timelineGeometry';
+import { AXIS_HEIGHT, ROW_HEIGHT, rowY } from './chart/timelineGeometry';
 
 /** Drawn first, under the marks: sprint band, day labels, weekends, row lines and the now line. */
-export function GanttBackdrop({ rows, geometry, options }: GanttBackdropProps) {
+export function GanttBackdrop({ rows, geometry, selected }: GanttBackdropProps) {
+  const selectedRow = selected === null ? -1 : rows.findIndex((row) => row.key === selected);
   return (
     <>
       {geometry.sprints.map((band, i) => (
@@ -32,18 +33,43 @@ export function GanttBackdrop({ rows, geometry, options }: GanttBackdropProps) {
               style={{ fill: 'var(--color-surface-2)', opacity: 0.6 }}
             />
           )}
+        </g>
+      ))}
+      {geometry.axisLabels.map((label) => (
+        <g key={`${label.kind}-${label.x}`}>
+          {label.kind === 'week' && (
+            <line
+              data-testid={ids.chartWeekTick}
+              x1={label.x}
+              x2={label.x}
+              y1={AXIS_HEIGHT - 14}
+              y2={geometry.height}
+              style={{ stroke: 'var(--color-border)', strokeWidth: 0.5 }}
+            />
+          )}
           <text
             data-testid={ids.chartDayLabel}
-            x={day.x + day.width / 2}
+            data-kind={label.kind}
+            x={label.kind === 'week' ? label.x + 4 : label.x}
             y={AXIS_HEIGHT - 8}
             fontSize={10}
-            textAnchor="middle"
+            textAnchor={label.kind === 'week' ? 'start' : 'middle'}
             style={{ fill: 'var(--color-muted)' }}
           >
-            {options.zoom === 'days' ? day.label : day.dayOfMonth}
+            {label.text}
           </text>
         </g>
       ))}
+      {selectedRow >= 0 && (
+        <rect
+          data-testid={ids.chartSelectedBand}
+          x={0}
+          y={rowY(selectedRow)}
+          width={geometry.width}
+          height={ROW_HEIGHT}
+          style={{ fill: 'var(--tl-selected-band)' }}
+        />
+      )}
       {rows.map((row, i) => (
         <line
           key={row.key}
@@ -55,14 +81,27 @@ export function GanttBackdrop({ rows, geometry, options }: GanttBackdropProps) {
         />
       ))}
       {geometry.nowX !== null && (
-        <line
-          data-testid={ids.chartNowLine}
-          x1={geometry.nowX}
-          x2={geometry.nowX}
-          y1={14}
-          y2={geometry.height}
-          style={{ stroke: 'var(--color-danger)', strokeWidth: 1.5, strokeDasharray: '4 3' }}
-        />
+        <>
+          <text
+            data-testid={ids.chartNowLabel}
+            x={geometry.nowX - 6}
+            y={AXIS_HEIGHT - 8}
+            fontSize={10}
+            fontWeight={600}
+            textAnchor="end"
+            style={{ fill: 'var(--tl-accent)' }}
+          >
+            Now
+          </text>
+          <line
+            data-testid={ids.chartNowLine}
+            x1={geometry.nowX}
+            x2={geometry.nowX}
+            y1={14}
+            y2={geometry.height}
+            style={{ stroke: 'var(--tl-accent)', strokeWidth: 1.5, strokeDasharray: '4 3' }}
+          />
+        </>
       )}
     </>
   );
