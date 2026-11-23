@@ -87,5 +87,5 @@ internal sealed class SavePromptTools(
         => [.. warnings.Select(w => new PromptWarningLine(PromptArgs.Wire(w.Kind), w.Message, w.Placeholder, w.Tag, w.Line))];
 
     private static string WarningNote(IReadOnlyList<PromptWarningLine> warnings)
-        => warnings.Count == 0 ? string.Empty : $" {warnings.Count} warning{(warnings.Count == 1 ? string.Empty : "s")}: {string.Join(" ", warnings.Select(w => w.Message))}";
+        => warnings.Count == 0 ? string.Empty : $" Warnings ({warnings.Count}): {string.Join(" ", warnings.Select(w => w.Message))}";
 }
