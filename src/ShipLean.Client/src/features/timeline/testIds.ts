@@ -58,6 +58,15 @@ export const timelineTestIds = {
   // SHIP-2249 (T1d): dependency arrows and wait labels
   // end SHIP-2249
   // SHIP-2250 (T1e): legend, Reading the chart and the selected-item card
+  toolbarSwatch: 'timeline-toolbar-swatch',
+  railGlyph: 'timeline-rail-glyph',
+  railHint: 'timeline-rail-hint',
+  railFacts: 'timeline-rail-facts',
+  railAgentChip: 'timeline-rail-agent-chip',
+  railCriticalPill: 'timeline-rail-critical-pill',
+  railNoStart: 'timeline-rail-no-start',
+  railOpen: 'timeline-rail-open',
+  railBack: 'timeline-rail-back',
   // end SHIP-2250
   // SHIP-2251 (T1f): JSON view
   // end SHIP-2251
