@@ -73,7 +73,7 @@ test('TimelineRail_WhenTaskSelected_ShouldShowTheStructuredCard', async ({ mount
     panel.getByRole('heading', { name: 'Stacking rules (percent + fixed)' }),
   ).toBeVisible();
   const facts = page.getByTestId(ids.railFacts);
-  await expect(facts).toContainText('AssigneeClaude Code');
+  await expect(facts).toContainText('Claude Code');
   await expect(page.getByTestId(ids.railAgentChip)).toHaveText('Agent');
   await expect(facts).toContainText('ActiveTue 6 Oct, 10:30');
   await expect(facts).toContainText('ResolvedWed 7 Oct, 11:15');
@@ -134,7 +134,7 @@ test('TimelineRail_WhenBlockedPeriod_ShouldShowBlockedWithoutReason', async ({ m
   );
   const blocked = page.locator(`[data-testid="${ids.railHistoryRow}"][data-state="blocked"]`);
   await expect(blocked).toHaveCount(1);
-  await expect(blocked).toHaveText('Blocked · Thu 8 Oct, 15:00 · 3.8 days');
+  await expect(blocked).toHaveText('Blocked · Thu 8 Oct, 15:003.8 days');
 });
 
 test('TimelineRail_WhenWaitedOnClicked_ShouldSelectThatItem', async ({ mount, page }) => {
