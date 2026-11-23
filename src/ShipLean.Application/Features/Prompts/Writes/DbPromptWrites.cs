@@ -1,7 +1,5 @@
-using System.Text;
 using Dapper;
 using Npgsql;
-using ShipLean.Application.Features.Prompts.Sections;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Prompts;
@@ -10,11 +8,9 @@ namespace ShipLean.Application.Features.Prompts.Writes;
 
 // C6 over C7's tables. Every call is one transaction holding the project's project_prompt row for the prompt, so two writes can't take the same
 // version number. Nothing is deleted: a version stays, and "use built-in" only moves the pointer. Callers check access first (Admin).
-public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts builtIns, ICurrentUser currentUser, TimeProvider clock) : IPromptWrites
+// Every save stamps agent_name with the acting agent (null on the web); source mcp is only for an agent.
+public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts builtIns, ICurrentUser currentUser, ICurrentAgent currentAgent, TimeProvider clock) : IPromptWrites
 {
-    private const int MaxTextBytes = 65_536;
-    private const int MaxNoteLength = 200;
-
     private sealed record VersionRow(Guid Id, string BaseHash);
 
     private sealed record Pointer(Guid? InUseId, string? KeptHash);
@@ -23,32 +19,28 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
 
     private sealed record State(Guid? InUseId, int? InUseNumber, string? InUseText, string? InUseBaseHash, string? KeptHash);
 
-    public async Task<PromptSavedDto> SaveAsync(Guid projectId, PromptKey key, PromptSaveDto save, CancellationToken cancellationToken = default)
+    public async Task<PromptSavedDto> SaveAsync(Guid projectId, PromptKey key, PromptSaveDto save, PromptBase? expected = null, CancellationToken cancellationToken = default)
     {
         if (save.Source == PromptVersionSource.Migrated)
         {
             throw ApiException.Validation("A version can't be saved as migrated.", "source");
         }
 
-        var note = save.Note?.Trim() ?? string.Empty;
-        if (note.Length == 0)
+        var agentName = AgentStamp.Of(currentAgent);
+        if (save.Source == PromptVersionSource.Mcp && agentName is null)
         {
-            throw ApiException.Validation("Add a note saying what you changed.", "note");
+            throw ApiException.Validation("Source mcp is only for agents.", "source");
         }
 
-        if (note.Length > MaxNoteLength)
-        {
-            throw ApiException.Validation($"The note is at most {MaxNoteLength} characters.", "note");
-        }
-
-        var text = (save.Text ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal);
-        CheckText(text);
+        var note = PromptTextRules.Note(save.Note);
+        var text = PromptTextRules.Text(save.Text);
 
         var wire = PromptKeys.ToWire(key);
         var current = builtIns.Hash(key);
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         var state = await LockAsync(connection, transaction, projectId, wire, cancellationToken);
+        // TODO: check expected against the in-use version under the lock
         var unchanged = state.InUseText is not null
             ? state.InUseText == text
             : text == builtIns.Text(key).Replace("\r\n", "\n", StringComparison.Ordinal);
@@ -65,12 +57,12 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
         var versionId = Guid.NewGuid();
         var number = await connection.QuerySingleAsync<int>(new CommandDefinition(
             """
-            INSERT INTO prompt_version (id, project_id, prompt, number, text, base_hash, note, source, created_by, created_at)
-            SELECT @versionId, @projectId, @wire, COALESCE(MAX(number), 0) + 1, @text, @baseHash, @note, @source, @by, @now
+            INSERT INTO prompt_version (id, project_id, prompt, number, text, base_hash, note, source, agent_name, created_by, created_at)
+            SELECT @versionId, @projectId, @wire, COALESCE(MAX(number), 0) + 1, @text, @baseHash, @note, @source, @agentName, @by, @now
             FROM prompt_version WHERE project_id = @projectId AND prompt = @wire
             RETURNING number
             """,
-            new { versionId, projectId, wire, text, baseHash, note, source = PromptKeys.ToWire(save.Source), by = currentUser.Id, now = clock.GetUtcNow().UtcDateTime },
+            new { versionId, projectId, wire, text, baseHash, note, source = PromptKeys.ToWire(save.Source), agentName, by = currentUser.Id, now = clock.GetUtcNow().UtcDateTime },
             transaction, cancellationToken: cancellationToken));
         await SetPointerAsync(connection, transaction, projectId, wire, versionId, clearKept: true, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -128,31 +120,6 @@ public sealed class DbPromptWrites(NpgsqlDataSource dataSource, IBuiltInPrompts 
     }
 
     private static PromptStatus StatusFor(string baseHash, string current) => baseHash == current ? PromptStatus.Custom : PromptStatus.BuiltInUpdated;
-
-    private static void CheckText(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            throw ApiException.Validation("The prompt text can't be empty.", "text");
-        }
-
-        if (Encoding.UTF8.GetByteCount(text) > MaxTextBytes)
-        {
-            throw ApiException.Validation("The prompt text is at most 64 KB.", "text");
-        }
-
-        var error = AgentSections.Check(text).FirstOrDefault(problem => problem.Kind != AgentSectionProblemKind.UnknownTag);
-        if (error is not null)
-        {
-            var what = error.Kind switch
-            {
-                AgentSectionProblemKind.Unclosed => $"<{error.Tag}> is never closed",
-                AgentSectionProblemKind.Nested => $"<{error.Tag}> is opened inside another agent section",
-                _ => $"</{error.Tag}> has no matching opening tag",
-            };
-            throw ApiException.Validation($"Line {error.Line}: {what}.", "text");
-        }
-    }
 
     // Makes sure the project's row exists, then holds it for the rest of the transaction.
     private async Task<State> LockAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, Guid projectId, string wire, CancellationToken cancellationToken)

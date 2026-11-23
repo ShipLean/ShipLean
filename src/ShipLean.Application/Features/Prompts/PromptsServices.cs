@@ -14,6 +14,7 @@ public sealed class PromptsServices : IServiceModule
     {
         services.AddScoped<IPromptReads, DbPromptReads>();
         services.AddScoped<IPromptWrites, DbPromptWrites>();
+        services.AddScoped<IPromptSavePreview, DbPromptSavePreview>();
         services.AddScoped<IPromptServingReads, DbPromptServingReads>();
     }
 }
