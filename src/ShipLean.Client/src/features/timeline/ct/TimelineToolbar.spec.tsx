@@ -67,3 +67,14 @@ test('TimelineToolbar_ShouldKeepTheOptionAttributesOnItsRoot', async ({ mount, p
   await expect(root).toHaveAttribute('data-cp', 'false');
   await expect(root).toHaveAttribute('data-view', 'json');
 });
+
+test('TimelineToolbar_ShouldShowLegendWithNoStartAndNonPillSwatches', async ({ mount, page }) => {
+  await mount(<TimelineToolbar options={DEFAULT_TIMELINE_OPTIONS} finished onChange={() => {}} />);
+  const legend = page.getByTestId(ids.toolbarLegend);
+  await expect(legend).toContainText('No start');
+  await expect(legend).toContainText('Critical path');
+  const shapes = await legend
+    .getByTestId(ids.toolbarSwatch)
+    .evaluateAll((els) => els.map((el) => el.getAttribute('data-shape')));
+  expect(shapes).toEqual(['bar', 'diamond', 'dot', 'dot', 'box']);
+});

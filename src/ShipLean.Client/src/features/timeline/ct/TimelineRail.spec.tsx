@@ -18,6 +18,10 @@ test('TimelineRail_WhenNothingSelected_ShouldShowOverview', async ({ mount, page
   await expect(page.getByTestId(ids.railOverview)).toContainText('Reading the chart');
   await expect(page.getByTestId(ids.railNotStarted)).toHaveCount(0);
   await expect(page.getByTestId(ids.railSelected)).toHaveCount(0);
+  await expect(page.getByTestId(ids.railGlyph)).toHaveCount(6);
+  await expect(page.getByTestId(ids.railHint)).toHaveText(
+    "Click a bar, a row or a review to see that item's history.",
+  );
 });
 
 test('TimelineRail_WhenRunning_ShouldListNotStarted', async ({ mount, page }) => {
@@ -37,6 +41,8 @@ test('TimelineRail_WhenRunning_ShouldListNotStarted', async ({ mount, page }) =>
     'href',
     '/p/SHIP/items/SHIP-173',
   );
+  await expect(list.getByTestId(ids.typeBadge)).toHaveCount(2);
+  await expect(list.getByText('SHIP-158', { exact: true })).toBeVisible();
 });
 
 test('TimelineRail_WhenSelectedKeyUnknown_ShouldShowOverview', async ({ mount, page }) => {
@@ -52,28 +58,44 @@ test('TimelineRail_WhenSelectedKeyUnknown_ShouldShowOverview', async ({ mount, p
   await expect(page.getByTestId(ids.railSelected)).toHaveCount(0);
 });
 
-test('TimelineRail_WhenTaskSelected_ShouldShowHistoryAndReviews', async ({ mount, page }) => {
+test('TimelineRail_WhenTaskSelected_ShouldShowTheStructuredCard', async ({ mount, page }) => {
+  const selections: (string | null)[] = [];
   await mount(
     <TimelineRail
       view={FINISHED_TIMELINE}
       options={DEFAULT_TIMELINE_OPTIONS}
       selected="SHIP-192"
-      onSelect={noop}
+      onSelect={(key) => selections.push(key)}
     />,
   );
   const panel = page.getByTestId(ids.railSelected);
-  await expect(panel).toContainText('Stacking rules (percent + fixed)');
-  await expect(panel).toContainText('Claude Code (agent)');
-  await expect(panel).toContainText('On the critical path');
-  await expect(panel.getByRole('link', { name: 'SHIP-192' })).toHaveAttribute(
-    'href',
-    '/p/SHIP/items/SHIP-192',
-  );
+  await expect(
+    panel.getByRole('heading', { name: 'Stacking rules (percent + fixed)' }),
+  ).toBeVisible();
+  const facts = page.getByTestId(ids.railFacts);
+  await expect(facts).toContainText('AssigneeClaude Code');
+  await expect(page.getByTestId(ids.railAgentChip)).toHaveText('Agent');
+  await expect(facts).toContainText('ActiveTue 6 Oct, 10:30');
+  await expect(facts).toContainText('ResolvedWed 7 Oct, 11:15');
+  await expect(facts).toContainText('Took1 day');
+  await expect(facts).toContainText('ReviewedWed 7 Oct, 09:30');
+  await expect(page.getByTestId(ids.railCriticalPill)).toHaveText('Critical path');
+  await expect(panel.getByRole('button', { name: 'SHIP-185' })).toBeVisible();
   await expect(page.getByTestId(ids.railHistoryRow)).toHaveCount(4);
+  await expect(page.getByTestId(ids.railHistoryRow).first().locator('[data-duration]')).toHaveText(
+    '3.5 h',
+  );
   await expect(page.getByTestId(ids.railReviewRow)).toHaveCount(2);
   await expect(page.getByTestId(ids.railReviewRow).first()).toContainText('Changes requested');
   await expect(page.getByTestId(ids.railReviewRow).first()).toContainText('wrong order');
   await expect(page.getByTestId(ids.railReviewRow).last()).toContainText('Approved');
+  await expect(page.getByRole('link', { name: 'Open SHIP-192' })).toHaveAttribute(
+    'href',
+    '/p/SHIP/items/SHIP-192',
+  );
+  await panel.getByRole('button', { name: 'SHIP-185' }).click();
+  await page.getByRole('button', { name: '← Reading the chart' }).click();
+  expect(selections).toEqual(['SHIP-185', null]);
 });
 
 test('TimelineRail_WhenTaskHasLastCommit_ShouldShowItsLabel', async ({ mount, page }) => {
@@ -85,7 +107,7 @@ test('TimelineRail_WhenTaskHasLastCommit_ShouldShowItsLabel', async ({ mount, pa
       onSelect={noop}
     />,
   );
-  await expect(page.getByTestId(ids.railSelected)).toContainText('Last commit Wed 7 Oct, 11:05');
+  await expect(page.getByTestId(ids.railSelected)).toContainText('Last commitWed 7 Oct, 11:05');
 });
 
 test('TimelineRail_WhenTaskHasNoCommitTime_ShouldNotShowLastCommit', async ({ mount, page }) => {
@@ -154,7 +176,12 @@ test('TimelineRail_WhenInferred_ShouldSayClosedNoStartRecorded', async ({ mount,
       onSelect={noop}
     />,
   );
-  await expect(page.getByTestId(ids.railSelected)).toContainText('Closed, no start recorded');
+  const facts = page.getByTestId(ids.railFacts);
+  await expect(facts).toContainText('ActiveNot recorded');
+  await expect(facts).toContainText('Took—');
+  await expect(page.getByTestId(ids.railNoStart)).toHaveText(
+    'Closed in one bulk edit, so no start was recorded; it shows as a marker.',
+  );
 });
 
 test('TimelineRail_WhenStorySelected_ShouldListItsTasks', async ({ mount, page }) => {
