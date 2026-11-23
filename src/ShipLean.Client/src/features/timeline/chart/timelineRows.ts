@@ -8,7 +8,15 @@ import type {
 import type { TimelineOptions } from '../TimelineOptions';
 
 export type TimelineRow =
-  | { kind: 'group'; key: string; id: string; label: string; agent: boolean; person: TimelinePersonDto | null; tasks: number }
+  | {
+      kind: 'group';
+      key: string;
+      id: string;
+      label: string;
+      agent: boolean;
+      person: TimelinePersonDto | null;
+      tasks: number;
+    }
   | { kind: 'bracket'; key: string; story: TimelineStoryDto }
   | { kind: 'bar'; key: string; bar: TimelineBarDto }
   | { kind: 'notStarted'; key: string; item: TimelineNotStartedDto };

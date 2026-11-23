@@ -19,7 +19,11 @@ export function rowTook(row: TimelineRow, view: FeatureTimelineViewDto): RowTook
     case 'bar':
       if (row.bar.inferred) return { text: 'No start' };
       if (row.bar.state === 'inFlight')
-        return { text: `${row.bar.durationLabel ?? ''} ▸`, open: true, title: 'Still open: so far' };
+        return {
+          text: `${row.bar.durationLabel ?? ''} ▸`,
+          open: true,
+          title: 'Still open: so far',
+        };
       return { text: row.bar.durationLabel ?? '' };
     case 'notStarted':
       return {

@@ -42,7 +42,9 @@ describe('rowTook', () => {
 
   it('Group_ShouldCountItsTasks', () => {
     const people = timelineRows(FINISHED_TIMELINE, 'people');
-    const texts = people.filter((r) => r.kind === 'group').map((r) => rowTook(r, FINISHED_TIMELINE).text);
+    const texts = people
+      .filter((r) => r.kind === 'group')
+      .map((r) => rowTook(r, FINISHED_TIMELINE).text);
     expect(texts).toEqual(['5 tasks', '2 tasks', '1 task', '1 task']);
   });
 });

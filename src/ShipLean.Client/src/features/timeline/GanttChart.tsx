@@ -50,7 +50,7 @@ export function GanttChart({ view, options, selected, onSelect }: GanttChartProp
       ?.scrollIntoView?.({ block: 'nearest' });
   }, [selected]);
 
-  if (view.bars.length === 0 && view.stories.every((s) => s.startHours === null)) {
+  if (rows.length === 0) {
     return (
       <div
         data-testid={ids.chart}
