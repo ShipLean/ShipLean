@@ -189,7 +189,6 @@ test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader',
     /^Integrations/,
     /^Demos/,
     /^Inspection/,
-    /^Prompts/,
   ]);
   await expect(page.getByTestId(ids.tabRow)).toHaveCount(0);
   await expect(page.getByTestId('harness-back')).toHaveCount(0);
@@ -203,6 +202,18 @@ test('SettingsPhone_WhenOpenedWithNoPane_ShouldListThePanesWithoutTabsOrHeader',
   }));
   expect(page_.scroll).toBeLessThanOrEqual(page_.client);
   await expect(page.getByTestId(touchTestIds.saveBar)).toHaveCount(0);
+});
+
+// SHIP-2280 D2: the prompts live on their own page, Ways of working, and the phone's settings index has no Prompts row.
+test('SettingsDraft_ShouldNotOfferAPromptsTab', async ({ mount, page }) => {
+  await stub(page);
+  await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings' },
+  });
+  const rows = page.getByTestId(ids.settingsIndexRow);
+  await expect(rows.filter({ hasText: /^Inspection/ })).toBeVisible();
+  await expect(rows.filter({ hasText: /Prompts/ })).toHaveCount(0);
+  await expect(page.getByTestId('settings-tab-prompts')).toHaveCount(0);
 });
 
 // ND3a-9 (SHIP-1809 P3): the Save bar's message is a soft chip, ● count ▾, at least one touch target tall.

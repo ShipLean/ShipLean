@@ -32,6 +32,7 @@ export const pageRouteIds = {
   retroItem: 'retroItem',
   retroInsights: 'retroInsights',
   inspectionMetrics: 'inspectionMetrics',
+  waysOfWorking: 'waysOfWorking',
   importIntoProject: 'jiraImport',
   importWithoutProject: 'importStart',
   projectSettings: 'projectSettings',

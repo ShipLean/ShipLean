@@ -5,6 +5,7 @@ import {
   isInstanceLevel,
   matchRoute,
   newItemPath,
+  oldPromptsSettingsPattern,
   projectSettingsTabs,
   routeIds,
   routePath,
@@ -192,6 +193,12 @@ const samples: {
     path: '/p/SHIP/inspection?view=period&range=quarter&cut=who&p=s-23&select=SHIP-194&tab=features',
     crumbs: ['SHIP', 'Inspection', 'Lead time'],
   },
+  waysOfWorking: {
+    params: project,
+    query: { prompt: 'planReviewer' },
+    path: '/p/SHIP/ways-of-working?prompt=planReviewer',
+    crumbs: ['SHIP', 'Ways of working'],
+  },
   jiraImport: { params: project, path: '/p/SHIP/import', crumbs: ['SHIP', 'Jira import'] },
   projectSettings: {
     params: { ...project, tab: 'states' },
@@ -259,23 +266,35 @@ test('routes_WhenModeAndSettingsAreAbsent_ShouldDropTheExtraCrumb', () => {
 
 test('routes_WhenSettingsTabIsDemos_ShouldMatchItAfterIntegrations', () => {
   expect(matchRoute('/p/SHIP/settings/demos')?.id).toBe('projectSettings');
-  expect(projectSettingsTabs.at(-3)).toBe('demos');
-  expect(projectSettingsTabs.at(-4)).toBe('integrations');
+  expect(projectSettingsTabs.at(-2)).toBe('demos');
+  expect(projectSettingsTabs.at(-3)).toBe('integrations');
 });
 
-test('routes_WhenSettingsTabIsInspection_ShouldMatchItBeforePrompts', () => {
+// SHIP-2280: Prompts left Project settings, so Inspection is the last tab.
+test('routes_WhenSettingsTabIsInspection_ShouldMatchItLast', () => {
   expect(matchRoute('/p/SHIP/settings/inspection')?.id).toBe('projectSettings');
-  expect(projectSettingsTabs.at(-2)).toBe('inspection');
+  expect(projectSettingsTabs.at(-1)).toBe('inspection');
 });
 
-test('routes_WhenSettingsTabIsPrompts_ShouldMatchItLastAndKeepThePromptQuery', () => {
-  expect(projectSettingsTabs.at(-1)).toBe('prompts');
-  const matched = matchRoute('/p/SHIP/settings/prompts', '?prompt=guide');
-  expect(matched?.id).toBe('projectSettings');
-  expect(matched?.query).toEqual({ prompt: 'guide' });
-  expect(
-    routePath('projectSettings', { key: 'SHIP', tab: 'prompts' }, { prompt: 'planReviewer' }),
-  ).toBe('/p/SHIP/settings/prompts?prompt=planReviewer');
+// The old Prompts tab is no settings tab any more: the route table only redirects its address (D9).
+test('routes_WhenOldPromptsSettingsAddress_ShouldMatchNoScreen', () => {
+  expect(projectSettingsTabs).not.toContain('prompts');
+  expect(matchRoute('/p/SHIP/settings/prompts', '?prompt=guide')).toBeUndefined();
+  expect(oldPromptsSettingsPattern).toBe('/p/:key/settings/prompts');
+});
+
+test('Routes_WhenWaysOfWorking_ShouldBuildThePathWithPrompt', () => {
+  expect(routePath('waysOfWorking', { key: 'SHIP' }, { prompt: 'planReviewer' })).toBe(
+    '/p/SHIP/ways-of-working?prompt=planReviewer',
+  );
+  expect(routePath('waysOfWorking', { key: 'SHIP' })).toBe('/p/SHIP/ways-of-working');
+  const matched = matchRoute('/p/SHIP/ways-of-working', '?prompt=guide&item=SHIP-7');
+  expect(matched).toEqual({
+    id: 'waysOfWorking',
+    params: { key: 'SHIP' },
+    query: { prompt: 'guide', item: 'SHIP-7' },
+  });
+  expect(crumbTrail('waysOfWorking', { key: 'SHIP' })).toEqual(['SHIP', 'Ways of working']);
 });
 
 test('routes_WhenAgentRunAddress_ShouldMatchWithItsParamsAndQuery', () => {

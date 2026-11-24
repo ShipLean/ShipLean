@@ -82,7 +82,7 @@ test('IssueIntakeSection_ShouldLinkToTheIssueProposalPrompt', async ({ mount, pa
 
   const link = page.getByTestId(ids.issueIntakePromptsLink);
   await expect(link).toHaveText('Issue proposal');
-  await expect(link).toHaveAttribute('href', '/p/SHIP/settings/prompts?prompt=issueProposal');
+  await expect(link).toHaveAttribute('href', '/p/SHIP/ways-of-working?prompt=issueProposal');
   await expect(page.getByTestId(ids.issueIntakeSave)).toBeVisible();
 });
 

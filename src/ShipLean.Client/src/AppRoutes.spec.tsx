@@ -91,6 +91,7 @@ const scaffolds: Record<RouteId, { path: string; testId: string }> = {
   retroItem: { path: '/p/SHIP/retros/items/SHIP-141', testId: pagesTestIds.retroItemPage },
   retroInsights: { path: '/p/SHIP/retros/insights', testId: pagesTestIds.retroInsightsPage },
   inspectionMetrics: { path: '/p/SHIP/inspection', testId: inspectionMetricsTestIds.page },
+  waysOfWorking: { path: '/p/SHIP/ways-of-working', testId: pagesTestIds.waysOfWorkingPage },
   jiraImport: { path: '/p/SHIP/import', testId: pagesTestIds.importPage },
   projectSettings: {
     path: '/p/SHIP/settings/states',

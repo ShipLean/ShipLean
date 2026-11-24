@@ -30,8 +30,10 @@
 //     /p/:key/retros/items/:itemKey   one item's retros   ?retro=&decide=open&point=
 //     /p/:key/retros/insights     Retrospective insights  ?view=themes|actions|impact&range=6|3|all|w6|w12
 //     /p/:key/inspection          Inspection (desktop only)  ?view=overview|leadtime|period|quality|json&range=&cut=&p=&select=&tab=tasks|features
+//     /p/:key/ways-of-working     Ways of working: the project's agent prompts  ?prompt=<key> (the prompt open, like planReviewer)
 //     /p/:key/import              Jira import
-//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection | prompts   ?prompt=<key> (the prompt open on prompts)
+//     /p/:key/settings/:tab       tab: general | states | members | sprints | integrations | demos | inspection
+//                                 (/p/:key/settings/prompts, the old Prompts tab, redirects to Ways of working keeping ?prompt=)
 //     /p/:key/settings            the settings index on a phone (each pane a sub-page); above 900px it goes to General
 //   The three backlogs also take ?new=epic|feature|story|bug|action: the new-item row (or dialog) open with that type, see newItemPath.
 //   Every project-level route also takes ?item=<itemKey>: that work item open in a modal over the screen.
@@ -61,7 +63,6 @@ export const projectSettingsTabs = [
   'integrations',
   'demos',
   'inspection',
-  'prompts',
 ] as const;
 export type ProjectSettingsTab = (typeof projectSettingsTabs)[number];
 
@@ -74,7 +75,6 @@ export const projectSettingsTabLabels: Record<ProjectSettingsTab, string> = {
   integrations: 'Integrations',
   demos: 'Demos',
   inspection: 'Inspection',
-  prompts: 'Prompts',
 };
 
 export const instanceSettingsTabs = [
@@ -125,6 +125,7 @@ export interface RouteParams {
   retroItem: ProjectParams & { itemKey: string };
   retroInsights: ProjectParams;
   inspectionMetrics: ProjectParams;
+  waysOfWorking: ProjectParams;
   jiraImport: ProjectParams;
   projectSettings: ProjectParams & { tab: ProjectSettingsTab };
   authorize: Record<string, never>;
@@ -193,7 +194,7 @@ export interface RouteQuery {
   cut?: string;
   p?: string;
   tab?: string;
-  // Project settings, Prompts tab: the prompt open (its key, like planReviewer).
+  // Ways of working: the prompt open (its key, like planReviewer).
   prompt?: string;
 }
 
@@ -399,6 +400,13 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
             : 'Overview',
     ],
   },
+  // Ways of working (SHIP-2280): the project's agent prompts, the open one in ?prompt=.
+  waysOfWorking: {
+    pattern: '/p/:key/ways-of-working',
+    query: ['prompt', 'item'],
+    installLevel: false,
+    crumbs: () => ['Ways of working'],
+  },
   jiraImport: {
     pattern: '/p/:key/import',
     query: ['item'],
@@ -407,7 +415,7 @@ const routeDefs: { [I in RouteId]: RouteDef<I> } = {
   },
   projectSettings: {
     pattern: '/p/:key/settings/:tab',
-    query: ['item', 'prompt'],
+    query: ['item'],
     installLevel: false,
     crumbs: (p) => ['Settings', projectSettingsTabLabels[p.tab]],
   },
@@ -436,6 +444,10 @@ export const routeIds = Object.keys(routeDefs) as RouteId[];
 
 type AnyDef = RouteDef<RouteId> & { crumbs: (params: never, query: RouteQuery) => string[] };
 const defOf = (id: RouteId) => routeDefs[id] as AnyDef;
+
+// The old Prompts tab's address (SHIP-2280 D9): docs and agent text link to it, so the route table redirects it to Ways of
+// working, keeping ?prompt=. It is no route of its own: nothing renders there.
+export const oldPromptsSettingsPattern = '/p/:key/settings/prompts';
 
 // The router pattern of a route ("/p/:key/sprints/:sprintId/taskboard"), for the route table.
 export function routePattern(id: RouteId): string {
