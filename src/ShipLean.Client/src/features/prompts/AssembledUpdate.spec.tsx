@@ -73,10 +73,33 @@ test('AssembledTab_ShouldShowTheFullTextBelowTheStack', async ({ mount, page }) 
   const layers = page.getByTestId(ids.assembledLayers);
   const text = page.getByTestId(ids.assembledText);
   await expect(text).toContainText('Second line, reworded');
+  await expect(layers).not.toContainText('Second line, reworded');
   await expect(layers.getByTestId(ids.assembledText)).toHaveCount(0);
   const stack = await layers.boundingBox();
   const full = await text.boundingBox();
   expect(full!.y).toBeGreaterThanOrEqual(stack!.y + stack!.height);
+});
+
+test('AssembledTab_WhenBuiltIn_ShouldShowBuiltInOnTheOwnedLayers', async ({ mount, page }) => {
+  await page.route('**/api/projects/*/prompts/work/assembled?*', (route) =>
+    route.fulfill({
+      json: {
+        ...assembled,
+        key: 'work',
+        layers: assembled.layers.map((l) =>
+          l.kind === 'prompt' ? { ...l, title: 'Work, built-in' } : l,
+        ),
+      },
+    }),
+  );
+  await openByAdminFlag(mount, page, 'work');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const chips = page
+    .getByTestId(ids.assembledLayers)
+    .getByRole('listitem')
+    .getByTestId(ids.assembledLayerChip);
+  await expect(chips).toHaveText(['Fixed', 'Built-in', 'Built-in', 'Planned', 'Planned']);
 });
 
 test('AssembledTab_WhenAgentChanged_ShouldShowThatAgentsText', async ({ mount, page }) => {

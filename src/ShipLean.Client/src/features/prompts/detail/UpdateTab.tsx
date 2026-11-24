@@ -4,7 +4,7 @@ import { promptsTestIds as ids } from '../testIds';
 import { useKeepMine, useSavePromptVersion } from '../usePrompts';
 import { PatchView } from './update/PatchView';
 import { errorText } from './update/errorText';
-import { LayerChip } from './assembled/LayerChip';
+import { Chip } from '../../../components/Chip';
 import { Code } from './update/Code';
 
 // The built-in's own change, with Applies cleanly and the apply actions.
@@ -77,9 +77,9 @@ export function UpdateTab(props: {
           </span>
           <span className="flex-1" />
           {update.appliesCleanly ? (
-            <LayerChip tone="ok" testId={ids.updateAppliesCleanly}>
-              Applies cleanly
-            </LayerChip>
+            <span data-testid={ids.updateAppliesCleanly} className="inline-flex">
+              <Chip tone="ok">Applies cleanly</Chip>
+            </span>
           ) : (
             <span data-testid={ids.updateNeedsMerge} className="text-caution">
               Conflicts with your changes: Apply and edit to resolve them

@@ -1,26 +1,28 @@
-import type { PromptDto, PromptLayerDto } from '@shiplean/core/api/prompts';
+import type { PromptDto, PromptLayerDto, PromptStatus } from '@shiplean/core/api/prompts';
 import { promptsTestIds as ids } from '../../testIds';
-import { LayerChip } from './LayerChip';
+import { Chip, type ChipTone } from '../../../../components/Chip';
 import { isOwnedLayer, layerNumber } from './layerNumber';
 
+const statusLabels: Record<PromptStatus, { tone: ChipTone; label: (p: PromptDto) => string }> = {
+  builtIn: { tone: 'muted', label: () => 'Built-in' },
+  custom: { tone: 'purple', label: (p) => `Custom v${p.custom?.number}` },
+  builtInUpdated: { tone: 'warn', label: () => 'Built-in updated' },
+  usingBuiltIn: { tone: 'muted', label: () => 'Using built-in' },
+};
+
+// Planned layers say Planned, the layers this prompt owns carry its status chip, the rest are Fixed.
 function chipOf(layer: PromptLayerDto, prompt: PromptDto, owned: boolean) {
-  if (layer.planned)
-    return (
-      <LayerChip tone="planned" testId={ids.assembledLayerChip}>
-        Planned
-      </LayerChip>
-    );
-  if (owned && prompt.custom !== null && prompt.custom.inUse) {
-    return (
-      <LayerChip tone="custom" testId={ids.assembledLayerChip}>
-        Custom v{prompt.custom.number}
-      </LayerChip>
-    );
-  }
+  const status = statusLabels[prompt.status];
   return (
-    <LayerChip tone="fixed" testId={ids.assembledLayerChip}>
-      Fixed
-    </LayerChip>
+    <span data-testid={ids.assembledLayerChip} className="inline-flex">
+      {layer.planned ? (
+        <Chip>Planned</Chip>
+      ) : owned ? (
+        <Chip tone={status.tone}>{status.label(prompt)}</Chip>
+      ) : (
+        <Chip>Fixed</Chip>
+      )}
+    </span>
   );
 }
 
