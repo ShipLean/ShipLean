@@ -150,6 +150,29 @@ public class SprintDemoPromptTests
         ChannelSource(channel).ShouldContain("The one exception is the sample data you add to the local copy (step 5)");
     }
 
+    // SHIP-2330: work with no UI shows its interface as code, read from the repository.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldShowTheInterfaceOfWorkWithNoScreen(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Work with no screen");
+        ChannelSource(channel).ShouldContain("**Read the interface from the code**");
+        ChannelSource(channel).ShouldContain("**One slide per tool or endpoint**, as a monospace code block");
+        ChannelSource(channel).ShouldContain("Show only fields that exist in the code.");
+    }
+
+    // SHIP-2330: limits, retries, timeouts and defaults are given with their values, to invite feedback.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldGiveTheValuesBehindEveryLimitToInviteFeedback(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Be specific: invite feedback");
+        ChannelSource(channel).ShouldContain("Never say \"we have limits\", \"it retries\" or \"it's configurable\". Say what: **the number, the default, the unit, and why**.");
+        ChannelSource(channel).ShouldContain("**\"Choices to question\"** slide");
+        ChannelSource(channel).ShouldContain("Never round a number into a vague word.");
+        ChannelSource(channel).ShouldContain("Every limit, timeout, retry or default you mention has its value");
+    }
+
     // SHIP-2330: Feature slides put the points left and a framed screenshot right.
     [TestCase("handover")]
     [TestCase("session")]
@@ -575,12 +598,12 @@ public class SprintDemoPromptTests
     }
 
     [Test]
-    public void Prompt_ShouldBeUnderTwentyKilobytes()
+    public void Prompt_ShouldBeUnderTwentyFourKilobytes()
     {
         var bytes = Encoding.UTF8.GetByteCount(Template);
 
         bytes.ShouldBeGreaterThan(8 * 1024);
-        bytes.ShouldBeLessThan(20 * 1024);
+        bytes.ShouldBeLessThan(24 * 1024);
     }
 
     [Test]
@@ -1006,7 +1029,7 @@ public class SprintDemoPromptTests
     // ShouldInstallPlaywrightAndChromiumWithTheTools (the handover installs under ~/.local/demo-tools; a session installs nothing, C2),
     // ShouldCommentAndStopWhenAToolCannotBeHad, ShouldCommentOnTheDemoItemWhenDone and ShouldNotAskForARetrospectiveOnTheDemoItem
     // (the session has no comment or log_retrospective tool and returns through its final response: the counterparts below and
-    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderTwentyKilobytes (measures the template).
+    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderTwentyFourKilobytes (measures the template).
     [TestCase("**Install nothing.**")]
     [TestCase("If a check fails, end your run with the exact failure as your final response.")]
     [TestCase("Give the duration, the size, anything you left out, and any logo fallback reason from step 10.")]

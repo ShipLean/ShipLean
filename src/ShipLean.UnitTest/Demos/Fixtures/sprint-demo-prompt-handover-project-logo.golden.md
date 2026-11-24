@@ -16,7 +16,7 @@ One video: an intro, then one chapter per Feature in the data, then an **Other w
 - **Also this sprint:** the retro themes of the whole sprint (step 4), then the `actionItems`.
 - **What we'll measure:** every Feature's stated measure, one after another.
 
-**The data is enough: work from it.** You don't need to open any item. If you open one anyway, its comments, reports and any failure log are raw working material and never go in the script, a chapter, a slide or the narration. Numbers come from the data, or from an item you read.
+**The data is enough: work from it.** You don't need to open any item. If you open one anyway, its comments, reports and any failure log are raw working material and never go in the script, a chapter, a slide or the narration. Numbers come from the data, an item you read, or the project's code (step 1, Be specific).
 
 If `truncated` is true, say in the intro that the sprint was summarised.
 
@@ -29,6 +29,22 @@ Demo outcomes, not tickets. Stories are how the work was split, not what the vie
 - **Leave scaffolding out.** A story that sets up later work and changes nothing a user can see (skeleton or placeholder UI, contracts, DTOs, migrations, plumbing, refactors, tests, docs, flags) is not demoed and not narrated on its own. At most, the implementation says in one sentence that the groundwork was laid. A Feature that is only scaffolding this sprint gets a short chapter: what is in place now and what it makes possible, with no before and after and no clip.
 - **Each capability gets one before and after**, the before then the after back to back, about 15 to 30 seconds a pair. Name it by what it does for the user, not by story keys.
 - **Bugs:** a bug a user would have hit gets its own before and after, the broken behaviour then the fix, inside its Feature's chapter or under Other work when it has no Feature. Small or internal fixes are named together in one line.
+
+### Work with no screen
+
+Some work has no UI: MCP tools, an API, webhooks, a background job. Show its interface as code instead, the way a developer would meet it. This is its before and after and its clip, and it takes the same share of the chapter.
+
+- **Read the interface from the code**, in the repository checkout you run in (or the project's repository in the data): the tool or endpoint name, its parameters with types and defaults, and what it returns.
+- **One slide per tool or endpoint**, as a monospace code block: the signature, then an example call and a trimmed response, with the points about it on the left. Show only fields that exist in the code. Label an example you built from the code as an example; if the local copy runs, a real call to it with `curl` is better.
+- **Before and after:** what a caller had to do before, then the call now.
+
+### Be specific: invite feedback
+
+A demo is for feedback, and people can only push back on what they can see. Never say "we have limits", "it retries" or "it's configurable". Say what: **the number, the default, the unit, and why**.
+
+- For each Feature, find the choices someone might question: limits and caps, timeouts, retry counts and backoff, page sizes, defaults, thresholds, what is refused, what was left out. Take each value from the data or the code (a constant, a setting and its default) and name where it lives: a setting a project can change, or fixed in code.
+- Put them on a **"Choices to question"** slide near the end of the Feature's chapter, at most 6 lines, as `name: value, why`. End it with one spoken line that asks the viewer whether these are right.
+- If you can't find a value, say it isn't known. Never round a number into a vague word.
 
 ## 2. Presenters
 
@@ -46,7 +62,7 @@ Each presenter introduces themselves once, the first time they speak ("I'm Keith
 
 Narrate the why and the stated measure, **never results**: nothing has been measured yet. A Feature with no `why` gets the sentence "This feature has no recorded why" and nothing invented. A measure marked `(to confirm)` is said to be to confirm. A Feature whose `measure` is null gets "No measure is recorded", in its own section and again in the closing. Don't claim anything the data doesn't say.
 
-**Never make up data.** No invented numbers, names, dates, quotes, before states, results or stories, on a slide or in the narration. Everything comes from the data above or from an item you read. Where the data has nothing, say so in one sentence instead of filling the gap. The one exception is the sample data you add to the local copy (step 5): it may be invented, because it only appears in clips and screenshots, which the intro says come from a separate copy, and it is never narrated as the sprint's work.
+**Never make up data.** No invented numbers, names, dates, quotes, before states, results or stories, on a slide or in the narration. Everything comes from the data above, an item you read, or the project's code. Where the data has nothing, say so in one sentence instead of filling the gap. The one exception is the sample data you add to the local copy (step 5): it may be invented, because it only appears in clips and screenshots, which the intro says come from a separate copy, and it is never narrated as the sprint's work.
 
 Where the data holds nothing for a section (no `summary` or `criteria` for before and after or the implementation, no `plan` numbers), say so in one sentence and describe what the data does hold, such as the stories, their points and states, and their tasks. Quote the `plan` numbers as what the plan recorded, and don't try to reconcile them with the stories listed.
 
@@ -253,6 +269,7 @@ The first chapter starts at 0, starts ascend strictly, each is below `durationSe
 - The screens you show hold the added sample data, some of them busy, with a mix of title lengths, not only the bare seed.
 - In each Feature's chapter with something to show, the before and after and the clip take more than half its time.
 - The retro appears once, as sprint-wide themes in Also this sprint, one theme a slide, and not inside any Feature's chapter.
+- Every limit, timeout, retry or default you mention has its value; nothing says "we have limits" without them.
 - No chapter walks through its stories one by one, and no scaffolding story (skeleton, contracts, tests, docs) has its own before and after or its own narration.
 - No leftover placeholder (a pair of opening curly braces) appears in the script, the slides or the chapters.
 - No raw failure log or stack trace appears anywhere, and no person or agent named in the sprint and retro data appears by name. Only the presenters (Ann, Keith and Becky) are named.
