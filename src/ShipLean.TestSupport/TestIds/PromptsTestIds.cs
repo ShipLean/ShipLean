@@ -178,4 +178,12 @@ public static class PromptsTestIds
     public const string EditorStartedFrom = "prompts-editor-started-from";
     public const string EditorBody = "prompts-editor-body";
     public const string EditorFooter = "prompts-editor-footer";
+    // header search results menu (SHIP-2294)
+    public const string SearchResultName = "prompts-search-result-name";
+    public const string SearchResultStage = "prompts-search-result-stage";
+    public const string SearchResultStatus = "prompts-search-result-status";
+    public const string SearchResultLine = "prompts-search-result-line";
+    public const string SearchMatch = "prompts-search-match";
+    public const string SearchFoot = "prompts-search-foot";
+    public const string SearchEmpty = "prompts-search-empty";
 }

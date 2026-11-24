@@ -216,7 +216,7 @@ test('HeaderSearch_WhenTypedAndEnter_ShouldOpenTheFirstMatch', async ({ mount, p
 
   await page.getByTestId(ids.searchInput).fill('SPRINT_NAME');
   await expect(page.getByTestId(ids.searchResult)).toHaveCount(1);
-  await expect(page.getByTestId(ids.searchResult)).toHaveText('Sprint demo video');
+  await expect(page.getByTestId(ids.searchResultName)).toHaveText('Sprint demo video');
   await page.getByTestId(ids.searchInput).press('Enter');
 
   await expect(page.getByTestId('harness-search')).toHaveText('prompt=sprintDemo');

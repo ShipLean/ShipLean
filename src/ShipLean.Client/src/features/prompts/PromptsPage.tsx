@@ -103,7 +103,7 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
         project={project}
         customCount={page.customCount}
         unsaved={editorOpen && editorDirty}
-        search={<HeaderSearch page={page} onPick={select} />}
+        search={<HeaderSearch projectId={project.id} page={page} onPick={select} />}
       />
       {selected === undefined ? null : (
         <>
