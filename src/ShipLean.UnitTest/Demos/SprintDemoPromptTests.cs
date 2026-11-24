@@ -102,7 +102,7 @@ public class SprintDemoPromptTests
     [TestCase("session")]
     public void Prompt_ShouldPutTheFeatureSectionsInOrder(string channel)
     {
-        ChannelSource(channel).ShouldContain("why, before and after, a walkthrough clip, the implementation, how the agents built it");
+        ChannelSource(channel).ShouldContain("why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it");
     }
 
     // K11 item 2
@@ -798,40 +798,55 @@ public class SprintDemoPromptTests
         ChannelSource(channel).ShouldNotContain("demo mode");
     }
 
-    // SHIP-904: before and after stay next to each other, item by item.
+    // SHIP-2330: a demo shows each Feature at the level a user notices, grouped into capabilities, never story by story.
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldKeepOneBeforeAndAfterForAFeatureOfThreeStoriesOrFewer(string channel)
+    public void Prompt_ShouldGroupAFeaturesStoriesIntoCapabilities(string channel)
     {
-        ChannelSource(channel).ShouldContain("**3 stories or fewer:** one before and after for the whole Feature.");
+        ChannelSource(channel).ShouldContain("### Pick the level that shows impact");
+        ChannelSource(channel).ShouldContain("Most Features are **one** capability: one before and after for the whole Feature.");
+        ChannelSource(channel).ShouldContain("never give each story its own before and after just because it is a story");
+        ChannelSource(channel).ShouldContain("**What the stories change sets the level, not how many there are.**");
     }
 
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldShowBeforeThenAfterPerStoryInAFeatureOfMoreThanThree(string channel)
+    public void Prompt_ShouldNotCountStoriesToChooseTheLevel(string channel)
     {
-        ChannelSource(channel).ShouldContain("**More than 3 stories:** inside the Feature's chapter, show each story's before and then its after, back to back");
+        ChannelSource(channel).ShouldNotContain("More than 3 stories");
+        ChannelSource(channel).ShouldNotContain("3 stories or fewer");
+        ChannelSource(channel).ShouldNotContain("item by item");
     }
 
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldGiveAStoryWithNoVisibleChangeOneLine(string channel)
+    public void Prompt_ShouldLeaveScaffoldingStoriesOut(string channel)
     {
-        ChannelSource(channel).ShouldContain("A story with no visible change (contracts, skeleton, tests, docs) gets one spoken line and no before and after.");
+        ChannelSource(channel).ShouldContain("**Leave scaffolding out.** A story that sets up later work and changes nothing a user can see (skeleton or placeholder UI, contracts, DTOs, migrations, plumbing, refactors, tests, docs, flags) is not demoed and not narrated on its own.");
+        ChannelSource(channel).ShouldContain("No chapter walks through its stories one by one, and no scaffolding story");
     }
 
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldGiveEveryBugItsOwnBeforeAndAfter(string channel)
+    public void Prompt_ShouldGiveOnlyBugsAUserWouldHitTheirOwnBeforeAndAfter(string channel)
     {
-        ChannelSource(channel).ShouldContain("**Every bug gets its own before and after**, the broken behaviour then the fix: inside its Feature's chapter, or under Other work");
+        ChannelSource(channel).ShouldContain("**Bugs:** a bug a user would have hit gets its own before and after, the broken behaviour then the fix");
+        ChannelSource(channel).ShouldContain("Small or internal fixes are named together in one line.");
     }
 
     [TestCase("handover")]
     [TestCase("session")]
     public void Prompt_ShouldKeepEachPairShort(string channel)
     {
-        ChannelSource(channel).ShouldContain("about 10 to 20 seconds a pair");
+        ChannelSource(channel).ShouldContain("about 15 to 30 seconds a pair");
+    }
+
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldGroupOtherWorkByTheme(string channel)
+    {
+        ChannelSource(channel).ShouldContain("Group it by theme: a theme that changed something a user can see gets one before and after");
+        ChannelSource(channel).ShouldContain("never one line per item");
     }
 
     [TestCase("handover")]
@@ -866,9 +881,9 @@ public class SprintDemoPromptTests
 
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldHeadEachItemInTheScript(string channel)
+    public void Prompt_ShouldHeadEachCapabilityInTheScriptWithTheKeysItCovers(string channel)
     {
-        ChannelSource(channel).ShouldContain("a story or bug with its own lines gets its key and title as a heading above them");
+        ChannelSource(channel).ShouldContain("each capability or bug with its own lines gets a heading naming it, followed by a line listing the story and bug keys it covers");
     }
 
     [Test]
@@ -880,9 +895,9 @@ public class SprintDemoPromptTests
 
         var text = Render(data);
 
-        text.ShouldContain("**More than 3 stories:**");
-        text.ShouldContain("**3 stories or fewer:**");
-        text.ShouldContain("**Every bug gets its own before and after**");
+        text.ShouldContain("**Find the capabilities.**");
+        text.ShouldContain("**Leave scaffolding out.**");
+        text.ShouldContain("**Bugs:** a bug a user would have hit");
         text.ShouldContain("**Other work:** for `otherWork`");
         text.ShouldContain("opens with its own title slide");
         text.ShouldContain("\"key\":\"KEY-16\",\"type\":\"bug\"");
