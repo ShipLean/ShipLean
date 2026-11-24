@@ -77,7 +77,7 @@ public sealed partial class TaskCommits(
             switch (result.Status)
             {
                 case CommitReadStatus.Unreadable:
-                    throw ApiException.RepoUnreadable($"ShipLean can't read {repo.Name}. Check that the instance token can see it.");
+                    throw ApiException.RepoUnreadable($"ShipLean can't read {repo.Name}. Check that ShipLean can reach {repo.Host} and the instance token can see it.");
                 case CommitReadStatus.Missing:
                     throw ApiException.BadSha($"{repo.Name} has no commit {sha}.");
             }
