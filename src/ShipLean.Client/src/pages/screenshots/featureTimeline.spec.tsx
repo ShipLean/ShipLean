@@ -44,4 +44,18 @@ pageShots([
     arrange: (p) => arrange(p, 'finished'),
     ready: (p) => expect(p.getByTestId(timelineTestIds.json)).toBeVisible(),
   },
+  {
+    name: 'feature-timeline-people',
+    route: `${FINISHED_ROUTE}?group=people`,
+    shell: true,
+    arrange: (p) => arrange(p, 'finished'),
+    ready: chartReady,
+  },
+  {
+    name: 'feature-timeline-days',
+    route: `${FINISHED_ROUTE}?zoom=days`,
+    shell: true,
+    arrange: (p) => arrange(p, 'finished'),
+    ready: chartReady,
+  },
 ]);
