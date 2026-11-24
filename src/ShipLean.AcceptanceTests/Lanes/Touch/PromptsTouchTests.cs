@@ -1,3 +1,4 @@
+using Microsoft.Playwright;
 using ShipLean.AcceptanceTests.Harness;
 using ShipLean.AcceptanceTests.Pages.Prompts;
 using ShipLean.Contracts.Prompts;
@@ -47,10 +48,9 @@ public class PromptsTouchTests : SeededAcceptanceTest
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v1");
 
         (await TouchRules.ViolationsAsync(Page)).ShouldBeEmpty();
-        // The stage strip scrolls sideways inside itself by design; only its own overflow line is expected.
-        (await TouchRules.ViolationsAsync(Page, prompts.StageStrip))
-            .Where(line => !line.Contains($"[data-testid={PromptsTestIds.StageStrip}] scrolls sideways", StringComparison.Ordinal))
-            .ShouldBeEmpty();
+        // Under 900px the strip gives way to a stage select and the chips wrap: nothing scrolls sideways (D7).
+        await Expect(prompts.StageSelect).ToBeVisibleAsync();
+        (await TouchRules.ViolationsAsync(Page, prompts.StageNav)).ShouldBeEmpty();
         await Expect(prompts.Panel(PromptsTestIds.PanelSource)).ToBeVisibleAsync();
         (await TouchRules.ViolationsAsync(Page, prompts.Detail)).ShouldBeEmpty();
     }
@@ -61,10 +61,11 @@ public class PromptsTouchTests : SeededAcceptanceTest
         var prompts = new PromptsMemberPage(Page);
         await prompts.OpenAsync("SHIP", "brief");
 
-        await prompts.Stage("Plan").TapAsync();
-        await Expect(prompts.DetailName).ToContainTextAsync("Planning and breakdown");
         await Page.GetByTestId(PromptsTestIds.TabHistory).TapAsync();
         await Expect(prompts.PanelHistory).ToBeVisibleAsync();
+        await prompts.StageSelect.SelectOptionAsync(new SelectOptionValue { Label = "3 · Plan · 2 prompts" });
+        await Expect(prompts.DetailName).ToContainTextAsync("Planning and breakdown");
+        await Expect(Page.GetByTestId(PromptsTestIds.TabHistory)).ToHaveCountAsync(0);
         await Page.GetByTestId(PromptsTestIds.TabAssembled).TapAsync();
         await Expect(prompts.Panel(PromptsTestIds.PanelAssembled)).ToBeVisibleAsync();
     }

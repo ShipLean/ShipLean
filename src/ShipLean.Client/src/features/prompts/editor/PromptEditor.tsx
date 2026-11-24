@@ -111,7 +111,7 @@ export function PromptEditor(props: {
       data-testid={ids.editor}
       aria-label={`Edit ${prompt.name}`}
       data-source={source}
-      className="grid min-w-0 touch:[&>div>div:last-child]:ml-0"
+      className="grid min-w-0"
     >
       <TabBand
         label="Editor"

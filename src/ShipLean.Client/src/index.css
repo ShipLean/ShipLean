@@ -107,6 +107,15 @@
     font-size: var(--text-sm);
   }
 
+  /* The borderless text button of the mock-ups (shiplean.css .btn.ghost): no border, a hover tint. */
+  .btn-plain {
+    @apply inline-flex items-center justify-center rounded-control px-3 font-medium text-ink-muted
+           transition-colors hover:text-ink hover:bg-sunken touch:min-h-(--touch-target)
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal;
+    height: var(--control-height);
+    font-size: var(--text-sm);
+  }
+
   /* The outlined secondary button of the mock-ups (shiplean.css .btn): border, panel background, ink text (SHIP-2280 D12). */
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 rounded-control border border-edge bg-panel px-3
@@ -131,6 +140,7 @@
   .btn-signal:is(:disabled, [aria-disabled='true']),
   .btn:is(:disabled, [aria-disabled='true']),
   .btn-ghost:is(:disabled, [aria-disabled='true']),
+  .btn-plain:is(:disabled, [aria-disabled='true']),
   .btn-danger-ghost:is(:disabled, [aria-disabled='true']) {
     opacity: 0.5;
     cursor: default;
@@ -145,6 +155,11 @@
   }
 
   .btn-ghost:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
+    background-color: transparent;
+    color: var(--color-muted);
+  }
+
+  .btn-plain:is(:disabled, [aria-disabled='true']):is(:hover, :active) {
     background-color: transparent;
     color: var(--color-muted);
   }

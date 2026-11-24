@@ -21,6 +21,16 @@ test('TabBand_WhenCountAndAside_ShouldShowThem', async ({ mount, page }) => {
   await expect(page.getByTestId('band-aside')).toHaveText('Started from the built-in of 14 Nov');
 });
 
+test('TabBand_WhenOnAPhone_ShouldLeftAlignItsAside', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 500, height: 800 });
+  await mount(<TabBandHarness onChanged={() => undefined} />);
+
+  const history = await page.getByTestId('band-history').boundingBox();
+  const aside = await page.getByTestId('band-aside').boundingBox();
+  // Not pushed to the right edge: it follows the last tab (or starts the next row).
+  expect(aside?.x).toBeLessThan((history?.x ?? 0) + (history?.width ?? 0) + 20);
+});
+
 test('TabBand_WhenArrowRightPressed_ShouldMoveToTheNextTab', async ({ mount, page }) => {
   await mount(<TabBandHarness onChanged={() => undefined} />);
   await page.getByTestId('band-source').focus();

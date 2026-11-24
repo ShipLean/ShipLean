@@ -53,7 +53,7 @@ export function HistoryTab(props: {
         <button
           type="button"
           data-testid={ids.historyUse}
-          className="btn-ghost touch:min-h-[var(--touch-target)]"
+          className="btn-plain"
           onClick={() => setConfirming(v.number)}
         >
           Use v{v.number}
@@ -170,7 +170,7 @@ export function HistoryTab(props: {
                     <button
                       type="button"
                       data-testid={ids.historyBuiltInUse}
-                      className="btn-ghost touch:min-h-[var(--touch-target)]"
+                      className="btn-plain"
                       onClick={props.onUseBuiltIn}
                     >
                       Use built-in

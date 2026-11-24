@@ -60,6 +60,8 @@ public sealed class PromptsMemberPage(IPage page)
 
     public ILocator Panel(string testId) => page.GetByTestId(testId);
 
+    public ILocator StageSelect => page.GetByTestId(PromptsTestIds.StageSelect);
+
     // A stage in the strip, by its name as shown.
     public ILocator Stage(string name) => page.GetByTestId(PromptsTestIds.Stage).Filter(new() { HasText = name });
 

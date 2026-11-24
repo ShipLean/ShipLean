@@ -116,7 +116,7 @@ export function UpdateTab(props: {
           <button
             type="button"
             data-testid={ids.updateKeep}
-            className="btn touch:min-h-[var(--touch-target)]"
+            className="btn-plain"
             disabled={busy}
             onClick={keepMine}
           >

@@ -66,7 +66,9 @@ export function TabBand<T extends string>({
         })}
       </div>
       {aside !== undefined && (
-        <div className="ml-auto text-[length:var(--text-sm)] text-ink-muted">{aside}</div>
+        <div className="ml-auto touch:ml-0 text-[length:var(--text-sm)] text-ink-muted">
+          {aside}
+        </div>
       )}
     </div>
   );

@@ -331,7 +331,10 @@ test('PromptDetail_ShouldShowCountsOnYourChangesAndHistory', async ({ mount, pag
   expect(historyGets).toBe(1);
 });
 
-test('PromptDetail_WhenBuiltIn_ShouldShowNoCountsAndAskForNoHistory', async ({ mount, page }) => {
+test('PromptDetail_WhenBuiltIn_ShouldShowNoCountsNoHistoryTabAndAskForNoHistory', async ({
+  mount,
+  page,
+}) => {
   let historyGets = 0;
   await page.route('**/api/projects/*/prompts/work/history', (route) => {
     historyGets++;
@@ -339,7 +342,8 @@ test('PromptDetail_WhenBuiltIn_ShouldShowNoCountsAndAskForNoHistory', async ({ m
   });
   await openByAdminFlag(mount, page, 'work');
 
-  await expect(page.getByTestId(ids.tabHistory)).toHaveText('History');
+  await expect(page.getByTestId(ids.tabSource)).toBeVisible();
+  await expect(page.getByTestId(ids.tabHistory)).toHaveCount(0);
   await expect(page.getByTestId(ids.tabYourChanges)).toHaveCount(0);
   expect(historyGets).toBe(0);
 });

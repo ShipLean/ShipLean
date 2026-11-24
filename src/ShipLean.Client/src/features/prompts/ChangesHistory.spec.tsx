@@ -227,6 +227,15 @@ test('HistoryTab_ShouldAlignUseBuiltInUnderTheUseColumn', async ({ mount, page }
   expect(builtIn?.x).toBeCloseTo(use?.x ?? -1, 0);
 });
 
+test('HistoryTab_UseButtons_ShouldBeBorderless', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyUse)).toHaveCSS('border-top-width', '0px');
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCSS('border-top-width', '0px');
+});
+
 test('HistoryTab_WhenNoVersionInUse_ShouldMarkTheBuiltInRowInUse', async ({ mount, page }) => {
   const none = { ...history, versions: history.versions.map((v) => ({ ...v, inUse: false })) };
   await page.route(HISTORY_URL, (route) => route.fulfill({ json: none }));

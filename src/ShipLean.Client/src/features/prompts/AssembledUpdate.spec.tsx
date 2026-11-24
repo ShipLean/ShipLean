@@ -17,7 +17,7 @@ test('AssembledTab_ShouldShowTheLayersInOrderWithPlannedOnesMarked', async ({ mo
   await page.getByTestId(ids.tabAssembled).click();
 
   await expect(page.getByTestId(ids.assembledLayers).getByRole('listitem')).toHaveCount(5);
-  await expect(page.getByTestId(ids.assembledLayerThis)).toContainText('Task brief, custom v2');
+  await expect(page.getByTestId(ids.assembledLayerThis)).toContainText('Task brief — custom v2');
   await expect(page.getByTestId(ids.assembledLayerPlanned)).toHaveCount(2);
   await expect(page.getByTestId(ids.assembledLayerPlanned).first()).toContainText(
     'Ways of working',
@@ -192,6 +192,13 @@ test('UpdateTab_WhenApplyAndEdit_ShouldCallOnApplyAndEdit', async ({ mount, page
   await page.getByTestId(ids.updateApplyEdit).click();
 
   await expect(page.getByTestId(ids.editor)).toHaveAttribute('data-source', 'builtInUpdate');
+});
+
+test('UpdateTab_KeepMine_ShouldBeBorderless', async ({ mount, page }) => {
+  await openByPageJson(mount, page, 'guide');
+  await page.getByTestId(ids.tabUpdate).click();
+
+  await expect(page.getByTestId(ids.updateKeep)).toHaveCSS('border-top-width', '0px');
 });
 
 test('UpdateTab_WhenKept_ShouldPostKeep', async ({ mount, page }) => {

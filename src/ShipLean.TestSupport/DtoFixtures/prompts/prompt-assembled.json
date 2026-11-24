@@ -11,10 +11,10 @@
     },
     {
       "kind": "prompt",
-      "title": "Task brief, custom v2",
+      "title": "Task brief — custom v2",
       "text": "# brief\n\nShort built-in text for brief.\nSecond line, reworded by the team.\nThird line.\n",
       "planned": false,
-      "note": null
+      "note": "get_brief on a task. ShipLean fills in 6 placeholders."
     },
     {
       "kind": "agentSections",

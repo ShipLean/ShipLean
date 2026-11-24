@@ -113,7 +113,13 @@ export function PromptDetail({
       show: custom !== null,
     },
     { id: 'update', label: 'Built-in update', testId: ids.tabUpdate, show: prompt.update !== null },
-    { id: 'history', label: 'History', count: historyCount, testId: ids.tabHistory, show: true },
+    {
+      id: 'history',
+      label: 'History',
+      count: historyCount,
+      testId: ids.tabHistory,
+      show: custom !== null,
+    },
     { id: 'assembled', label: 'What the agent gets', testId: ids.tabAssembled, show: true },
   ];
   const readOnlyNote = page.canEdit ? null : (
