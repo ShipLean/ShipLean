@@ -33,7 +33,7 @@ export function SearchHit({
       tabIndex={-1}
       data-testid={ids.searchResult}
       data-prompt={prompt.key}
-      className={`grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-0.5 rounded-control px-[9px] py-[7px] text-left text-ink hover:bg-sunken touch:min-h-[var(--touch-target)] ${active ? 'bg-sunken' : ''}`}
+      className={`grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-0.5 rounded-control px-2.25 py-1.75 text-left text-ink hover:bg-sunken touch:min-h-[var(--touch-target)] ${active ? 'bg-sunken' : ''}`}
       // Keeps the focus in the search box, so the menu does not close before the click lands.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onPick}
@@ -59,7 +59,7 @@ export function SearchHit({
           className="col-span-2 truncate font-mono text-[length:var(--text-2xs)] text-ink-muted"
         >
           {excerpt.before}
-          <mark data-testid={ids.searchMatch} className="rounded-[2px] bg-caution/30 text-inherit">
+          <mark data-testid={ids.searchMatch} className="rounded-xs bg-caution/30 text-inherit">
             {excerpt.match}
           </mark>
           {excerpt.after}

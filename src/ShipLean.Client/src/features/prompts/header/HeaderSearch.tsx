@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { PromptKey, PromptsPageDto } from '@shiplean/core/api/prompts';
 import { promptsSearchPicked } from '@shiplean/core/api/usageApi';
 import { promptsTestIds as ids } from '../testIds';
@@ -33,6 +33,13 @@ export function HeaderSearch({
     : [];
   const showMenu = searching && menuOpen;
   const hitId = (index: number) => `${listId}-${index}`;
+  const activeId = showMenu && hits.length > 0 ? hitId(active) : undefined;
+
+  // The arrow keys move the highlight past the menu's fold: keep the highlighted hit in view.
+  useEffect(() => {
+    if (activeId !== undefined)
+      document.getElementById(activeId)?.scrollIntoView({ block: 'nearest' });
+  }, [activeId]);
 
   const pick = (key: PromptKey) => {
     setQuery('');
@@ -43,7 +50,7 @@ export function HeaderSearch({
 
   return (
     <div
-      className="relative w-[300px] min-w-0 touch:w-full"
+      className="relative w-75 min-w-0 touch:w-full"
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setMenuOpen(false);
       }}
@@ -57,7 +64,9 @@ export function HeaderSearch({
         aria-label="Find a prompt"
         aria-expanded={showMenu}
         aria-controls={listId}
-        aria-activedescendant={showMenu && hits.length > 0 ? hitId(active) : undefined}
+        aria-activedescendant={activeId}
+        aria-autocomplete="list"
+        aria-haspopup="listbox"
         autoComplete="off"
         value={query}
         onChange={(e) => {
@@ -89,12 +98,12 @@ export function HeaderSearch({
           role="listbox"
           aria-label="Matching prompts"
           data-testid={ids.searchResults}
-          className="absolute right-0 top-full z-20 mt-1 max-h-[420px] w-[440px] overflow-auto rounded-panel border border-edge bg-panel p-1 shadow-[var(--shadow-dialog)] touch:w-full"
+          className="absolute right-0 top-full z-20 mt-1 max-h-105 w-110 overflow-auto rounded-panel border border-edge bg-panel p-1 shadow-[var(--shadow-dialog)] touch:w-full"
         >
           {hits.length === 0 ? (
             <p
               data-testid={ids.searchEmpty}
-              className="m-0 px-[9px] py-2 text-[length:var(--text-sm)] text-ink-muted"
+              className="m-0 px-2.25 py-2 text-[length:var(--text-sm)] text-ink-muted"
             >
               No prompt matches. Placeholders are searchable too, for example{' '}
               <code className="font-mono">task_key</code>.
@@ -114,7 +123,7 @@ export function HeaderSearch({
               ))}
               <p
                 data-testid={ids.searchFoot}
-                className="m-0 mt-1 border-t border-edge px-[9px] pt-1.5 pb-1 text-[length:var(--text-2xs)] text-ink-muted"
+                className="m-0 mt-1 border-t border-edge px-2.25 pt-1.5 pb-1 text-[length:var(--text-2xs)] text-ink-muted"
               >
                 {hits.length} of {total} prompts · Enter opens the first
               </p>

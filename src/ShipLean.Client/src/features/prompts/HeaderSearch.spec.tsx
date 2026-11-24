@@ -101,6 +101,30 @@ test('HeaderSearch_WhenArrowDownAndEnter_ShouldOpenTheSecondHit', async ({ mount
   await expect.poll(() => posts.map((p) => p.body)).toEqual([{ prompt: 'codeReviewer' }]);
 });
 
+test('HeaderSearch_WhenArrowedToTheEighthHit_ShouldScrollItIntoView', async ({ mount, page }) => {
+  await mount(<HeaderSearch projectId="p-ship" page={adminPage} onPick={() => undefined} />);
+  const input = page.getByTestId(ids.searchInput);
+
+  await input.fill('second line');
+  await expect(page.getByTestId(ids.searchResult)).toHaveCount(11);
+  const eighth = page.getByTestId(ids.searchResult).nth(7);
+  await expect(eighth).not.toBeInViewport();
+  for (let i = 0; i < 7; i++) await input.press('ArrowDown');
+
+  await expect(eighth).toHaveAttribute('aria-selected', 'true');
+  await expect(eighth).toBeInViewport();
+  await expect(input).toHaveAttribute('aria-activedescendant', (await eighth.getAttribute('id'))!);
+});
+
+test('HeaderSearch_ShouldBeAListComboboxWithAListboxPopup', async ({ mount, page }) => {
+  await mount(<HeaderSearch projectId="p-ship" page={adminPage} onPick={() => undefined} />);
+
+  const input = page.getByTestId(ids.searchInput);
+  await expect(input).toHaveAttribute('role', 'combobox');
+  await expect(input).toHaveAttribute('aria-autocomplete', 'list');
+  await expect(input).toHaveAttribute('aria-haspopup', 'listbox');
+});
+
 test('HeaderSearch_WhenResultClicked_ShouldPickItAndPostSearchPicked', async ({ mount, page }) => {
   const posts = await recordPicks(page);
   const picked: PromptKey[] = [];
@@ -208,8 +232,14 @@ test.describe('on a phone', () => {
     expect(header).not.toBeNull();
     expect(input).not.toBeNull();
     expect(pill).not.toBeNull();
-    // The search runs the header's full width, on its own line under the pill.
-    expect(input!.width).toBeGreaterThanOrEqual(header!.width - 1);
+    // The search runs the full width inside the header band's padding, on its own line under the pill.
+    const padding = await page.getByTestId(ids.header).evaluate((el) => {
+      const style = getComputedStyle(el);
+      return parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    });
+    expect(padding).toBeGreaterThan(0);
+    expect(input!.width).toBeGreaterThanOrEqual(header!.width - padding - 1);
+    expect(header!.width).toBeLessThanOrEqual(390);
     expect(input!.y).toBeGreaterThanOrEqual(pill!.y + pill!.height);
 
     await page.getByTestId(ids.searchInput).fill('reviewer');

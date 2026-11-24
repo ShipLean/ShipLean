@@ -5,7 +5,7 @@ import { promptsTestIds as ids } from '../../testIds';
 // Built-in updated amber with a dot, Using built-in muted.
 export function PromptStatusChip({ prompt }: { prompt: PromptDto }) {
   const base =
-    'inline-flex h-5 items-center gap-1 whitespace-nowrap rounded-full px-[7px] text-[length:var(--text-xs)] font-medium';
+    'inline-flex h-5 items-center gap-1 whitespace-nowrap rounded-full px-1.75 text-[length:var(--text-xs)] font-medium';
   switch (prompt.status) {
     case 'custom':
       return (
