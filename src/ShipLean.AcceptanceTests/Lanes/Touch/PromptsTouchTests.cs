@@ -26,13 +26,13 @@ public class PromptsTouchTests : SeededAcceptanceTest
     }
 
     [Test]
-    public async Task Prompts_WhenOpenedOnAPhone_ShouldStackTheListAboveThePrompt()
+    public async Task Prompts_WhenOpenedOnAPhone_ShouldStackTheStageNavAboveThePrompt()
     {
         var prompts = new PromptsMemberPage(Page);
         await prompts.OpenAsync("SHIP", "brief");
-        await Expect(prompts.Rows).ToHaveCountAsync(12);
+        await Expect(prompts.StageCounts).ToHaveTextAsync(PromptsMemberPage.TwelvePromptsByStage);
 
-        var list = await prompts.List.BoundingBoxAsync();
+        var list = await prompts.StageNav.BoundingBoxAsync();
         var detail = await prompts.Detail.BoundingBoxAsync();
         list.ShouldNotBeNull();
         detail.ShouldNotBeNull();
@@ -61,7 +61,7 @@ public class PromptsTouchTests : SeededAcceptanceTest
         var prompts = new PromptsMemberPage(Page);
         await prompts.OpenAsync("SHIP", "brief");
 
-        await prompts.RowOf("guide.md").TapAsync();
+        await prompts.Stage("Plan").TapAsync();
         await Expect(prompts.DetailName).ToContainTextAsync("Planning and breakdown");
         await Page.GetByTestId(PromptsTestIds.TabHistory).TapAsync();
         await Expect(prompts.PanelHistory).ToBeVisibleAsync();

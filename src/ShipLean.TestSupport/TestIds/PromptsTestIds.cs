@@ -3,9 +3,10 @@ namespace ShipLean.TestSupport.TestIds;
 public static class PromptsTestIds
 {
     // shell
-    public const string SettingsTabPrompts = "settings-tab-prompts";
-    public const string TabBadge = "prompts-tab-badge";
     public const string Page = "prompts-page";
+    public const string Header = "prompts-header";
+    public const string CustomCountPill = "prompts-custom-count-pill";
+    public const string UnsavedPill = "prompts-unsaved-pill";
     public const string Loading = "prompts-loading";
     public const string LoadFailed = "prompts-load-failed";
     public const string Retry = "prompts-retry";
@@ -15,22 +16,18 @@ public static class PromptsTestIds
     public const string CustomCount = "prompts-custom-count";
     public const string BuiltInOnly = "prompts-built-in-only";
     public const string BuiltInOnlyRow = "prompts-built-in-only-row";
-    // list
+    // stage navigation and search
+    public const string StageNav = "prompts-stage-nav";
     public const string StageStrip = "prompts-stage-strip";
-    public const string StageStripItem = "prompts-stage-strip-item";
+    public const string Stage = "prompts-stage";
+    public const string StageChip = "prompts-stage-chip";
+    public const string StageWhen = "prompts-stage-when";
+    public const string StageSelect = "prompts-stage-select";
+    public const string SearchInput = "prompts-search-input";
+    public const string SearchResults = "prompts-search-results";
+    public const string SearchResult = "prompts-search-result";
     public const string StageStripCount = "prompts-stage-strip-count";
     public const string StageStripCustom = "prompts-stage-strip-custom";
-    public const string List = "prompts-list";
-    public const string ListSearch = "prompts-list-search";
-    public const string FilterAll = "prompts-filter-all";
-    public const string FilterCustom = "prompts-filter-custom";
-    public const string ListStage = "prompts-list-stage";
-    public const string ListStageWhen = "prompts-list-stage-when";
-    public const string ListRow = "prompts-list-row";
-    public const string ListRowName = "prompts-list-row-name";
-    public const string ListRowFile = "prompts-list-row-file";
-    public const string ListRowChip = "prompts-list-row-chip";
-    public const string ListEmpty = "prompts-list-empty";
     public const string ChipBuiltIn = "prompts-chip-built-in";
     public const string ChipCustom = "prompts-chip-custom";
     public const string ChipBuiltInUpdated = "prompts-chip-built-in-updated";

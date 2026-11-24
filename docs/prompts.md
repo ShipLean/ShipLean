@@ -4,12 +4,20 @@ ShipLean tells agents how to plan, brief, review and report through built-in Mar
 
 ## Where it is
 
-**Ways of working** is a side-menu item under Inspection, at `/p/:key/ways-of-working?prompt=<key>`; the old `/p/:key/settings/prompts` address redirects there. It lists the prompts by workflow stage (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
+**Ways of working** is a side-menu item under Inspection, at `/p/:key/ways-of-working?prompt=<key>`; the old `/p/:key/settings/prompts` address redirects there. The prompts follow the workflow's stages (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). One prompt is open at a time, full width. Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
+
+To find a prompt:
+
+- **Stage strip.** Click a stage to open its first prompt. Each stage shows how many prompts it has and, in purple, how many are custom.
+- **Chips.** Under the strip, a stage with two or more prompts has a chip per prompt; click one to open it. A dot marks a custom prompt (purple) or a built-in update (amber). A stage with one prompt shows no chips, only when it happens.
+- **Search.** The box at the right of the header finds a prompt by its name, file, text in use or a placeholder. Enter opens the first match.
+
+Moving to another prompt with unsaved edits in the editor asks first.
 
 - Project members read.
 - Project admins change. A write from anyone else is refused.
 - On a phone the page is readable. Editing is meant for a desktop.
-- The purple "N custom" pill in the page header appears once the page has been opened in the session (it is hidden at 0). It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
+- The purple "N custom" pill in the page header is hidden at 0. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
 
 ## The 11 prompts
 

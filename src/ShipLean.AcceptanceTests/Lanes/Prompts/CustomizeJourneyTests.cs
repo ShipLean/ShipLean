@@ -20,12 +20,14 @@ public class CustomizeJourneyTests : SeededAcceptanceTest
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project);
 
-        await Expect(prompts.ListRows).ToHaveCountAsync(12);
-        await Expect(prompts.ListStages).ToHaveCountAsync(7);
-        await Expect(prompts.ListStages.First).ToContainTextAsync("Intake");
-        await Expect(prompts.ListStages.Last).ToContainTextAsync("Sprint demo");
+        // Twelve prompts across seven stages, counted in the strip.
+        await Expect(prompts.StageCounts).ToHaveTextAsync(PromptsMemberPage.TwelvePromptsByStage);
+        await Expect(prompts.Stages).ToHaveCountAsync(7);
+        await Expect(prompts.Stages.First).ToContainTextAsync("Intake");
+        await Expect(prompts.Stages.Last).ToContainTextAsync("Sprint demo");
 
-        await prompts.ListRows.Filter(new LocatorFilterOptions { HasText = "Task brief" }).ClickAsync();
+        await prompts.Stage("Build").ClickAsync();
+        await prompts.Chip("Task brief").ClickAsync();
         await Expect(prompts.DetailName).ToContainTextAsync("Task brief");
         await Expect(prompts.Facts).ToContainTextAsync("{{task_key}}");
     }

@@ -12,9 +12,13 @@ public sealed class PromptsMemberPage(IPage page)
 
     public ILocator ReadOnlyAdmins => page.GetByTestId(PromptsTestIds.ReadOnlyAdmins);
 
-    public ILocator Rows => page.GetByTestId(PromptsTestIds.ListRow);
+    // The twelve built-in prompts as the strip counts them, Intake to Sprint demo.
+    public static readonly string[] TwelvePromptsByStage = ["1 prompt", "1 prompt", "2 prompts", "3 prompts", "2 prompts", "2 prompts", "1 prompt"];
 
-    public ILocator List => page.GetByTestId(PromptsTestIds.List);
+    // Each stage's "N prompts" count in the strip, in stage order.
+    public ILocator StageCounts => page.GetByTestId(PromptsTestIds.StageStripCount);
+
+    public ILocator StageNav => page.GetByTestId(PromptsTestIds.StageNav);
 
     public ILocator StageStrip => page.GetByTestId(PromptsTestIds.StageStrip);
 
@@ -56,7 +60,8 @@ public sealed class PromptsMemberPage(IPage page)
 
     public ILocator Panel(string testId) => page.GetByTestId(testId);
 
-    public ILocator RowOf(string file) => Rows.Filter(new() { Has = page.GetByTestId(PromptsTestIds.ListRowFile).Filter(new() { HasTextString = file }) });
+    // A stage in the strip, by its name as shown.
+    public ILocator Stage(string name) => page.GetByTestId(PromptsTestIds.Stage).Filter(new() { HasText = name });
 
     public async Task OpenAsync(string projectKey, string prompt)
     {
