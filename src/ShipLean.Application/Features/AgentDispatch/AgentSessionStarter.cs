@@ -157,7 +157,7 @@ public sealed class AgentSessionStarter(
 
     // A propose session's input is the allowlisted one (it throws Validation when the item has no github_issue, so nothing is written); it
     // never sees plan.RepoUrl, only the base branch. Implement and demo load the implement input; a demo one carries its mode so the
-    // renderer sends shipleanMode.
+    // renderer sends shipleanMode, and drops the item's comments and attachments (AgentContextInput.AsDemo).
     private async Task<AgentContextInput> LoadAsync(
         Guid workItemId, Guid sessionId, DateTimeOffset now, AgentStartPlan plan, Guid creatorId, string? prompt, AgentSessionMode mode,
         IReadOnlyList<AgentRelatedWork>? relatedItems, CancellationToken cancellationToken)
@@ -169,7 +169,7 @@ public sealed class AgentSessionStarter(
 
         var input = await _loader.LoadAsync(
             workItemId, sessionId, now, plan.ConnectionId, creatorId, new AgentRepositoryInput(plan.RepoUrl, plan.BaseBranch), prompt, cancellationToken);
-        return input with { Mode = mode };
+        return mode == AgentSessionMode.Demo ? input.AsDemo() : input with { Mode = mode };
     }
 
     // The attachment is stamped with the connection's name, as the agent that uploaded it for the session's creator. A propose session gets
