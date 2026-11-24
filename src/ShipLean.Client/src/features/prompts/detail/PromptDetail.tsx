@@ -227,7 +227,7 @@ export function PromptDetail({
               onChange={setTab}
             />
           </div>
-          <div className="min-w-0 p-3">
+          <div className="min-w-0">
             {active === 'source' && <SourceTab prompt={prompt} />}
             {active === 'rendered' && <RenderedTab projectId={projectId} text={inUseText} />}
             {active === 'yourChanges' && <YourChangesTab prompt={prompt} />}

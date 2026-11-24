@@ -18,7 +18,7 @@ export function YourChangesTab(props: { prompt: PromptDto }) {
       className="grid"
     >
       {hunks.length === 0 ? (
-        <p data-testid={ids.yourChangesEmpty} className="m-0 text-ink-muted">
+        <p data-testid={ids.yourChangesEmpty} className="m-0 p-3 text-ink-muted">
           No changes
         </p>
       ) : (

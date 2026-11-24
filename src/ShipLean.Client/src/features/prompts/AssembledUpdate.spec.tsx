@@ -207,3 +207,40 @@ test('UpdateTab_WhenKept_ShouldPostKeep', async ({ mount, page }) => {
 
   await expect.poll(() => posted).toBe(1);
 });
+
+test('AssembledTab_WhenCustom_ShouldDotTheCustomChipsAndSayWhatRunsRecord', async ({
+  mount,
+  page,
+}) => {
+  await page.route(ASSEMBLED_URL, (route) => route.fulfill({ json: assembled }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const cards = page.getByTestId(ids.assembledLayers).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  // Layers 2 and 2a carry the Custom chip, each with the purple dot; Fixed and Planned have none.
+  await expect(cards.getByTestId(ids.assembledLayerChipDot)).toHaveCount(2);
+  await expect(cards.nth(1).getByTestId(ids.assembledLayerChipDot)).toHaveCSS(
+    'background-color',
+    await page
+      .getByTestId(ids.detailChipDot)
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+  );
+  const agent = adminPage.agents[0].label;
+  await expect(page.getByTestId(ids.assembledFootnote)).toHaveText(
+    `Agent runs record which version they got, so Inspection can show “brief.md custom v2 · ${agent}” on a run.`,
+  );
+});
+
+test('AssembledTab_WhenBuiltIn_ShouldShowNoChipDots', async ({ mount, page }) => {
+  await page.route('**/api/projects/*/prompts/work/assembled?*', (route) =>
+    route.fulfill({ json: { ...assembled, key: 'work' } }),
+  );
+  await openByAdminFlag(mount, page, 'work');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const cards = page.getByTestId(ids.assembledLayers).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  await expect(cards.getByTestId(ids.assembledLayerChipDot)).toHaveCount(0);
+  await expect(page.getByTestId(ids.assembledFootnote)).toContainText('“work.md built-in · ');
+});

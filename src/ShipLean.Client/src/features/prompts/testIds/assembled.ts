@@ -25,4 +25,6 @@ export const assembledTestIds = {
   updateBaseNote: 'prompts-update-base-note',
   updateApplyError: 'prompts-update-apply-error',
   updateKeepError: 'prompts-update-keep-error',
+  assembledLayerChipDot: 'prompts-assembled-layer-chip-dot',
+  assembledFootnote: 'prompts-assembled-footnote',
 } as const;

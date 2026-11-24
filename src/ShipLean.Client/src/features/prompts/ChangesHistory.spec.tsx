@@ -4,6 +4,7 @@ import type { PromptHistoryDto } from '@shiplean/core/api/prompts';
 import savedJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-saved.json' with { type: 'json' };
 import { openByAdminFlag, openByPageJson } from './ct/openPrompt';
 import { PromptsHarness } from './ct/PromptsHarness';
+import { withPrompt } from './ct/promptVariants';
 import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
 
@@ -241,4 +242,49 @@ test('HistoryTab_WhenNoVersionInUse_ShouldMarkTheBuiltInRowInUse', async ({ moun
     'rgba(0, 0, 0, 0)',
   );
   await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCount(0);
+});
+
+test('YourChangesTab_ShouldRunToThePanelEdgesWithColouredSignsAndAlignedGaps', async ({
+  mount,
+  page,
+}) => {
+  const patch = '@@ -5,2 +5,2 @@\n-Old line.\n+New line.\n Same line.\n';
+  await openByAdminFlag(
+    mount,
+    page,
+    'brief',
+    true,
+    withPrompt(adminPage, 'brief', (p) => ({ ...p, yourChangesPatch: patch })),
+  );
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  // Full bleed: the legend and the diff are as wide as the panel inside its border.
+  const detail = (await page.getByTestId(ids.detail).boundingBox())!;
+  const legend = (await page.getByTestId(ids.diffKey).boundingBox())!;
+  const diff = (await page.getByTestId(ids.yourChangesDiff).boundingBox())!;
+  expect(legend.x).toBeLessThanOrEqual(detail.x + 1);
+  expect(legend.width).toBeGreaterThanOrEqual(detail.width - 2);
+  expect(diff.width).toBeGreaterThanOrEqual(detail.width - 2);
+
+  const colourOf = (kind: string) =>
+    page
+      .getByTestId(ids.diffLine)
+      .and(page.locator(`[data-kind=${kind}]`))
+      .getByTestId(ids.diffSign)
+      .evaluate((el) => getComputedStyle(el).color);
+  const text = await page
+    .getByTestId(ids.yourChangesDiff)
+    .evaluate((el) => ({ color: getComputedStyle(el).color, size: getComputedStyle(el).fontSize }));
+  const added = await colourOf('add');
+  const removed = await colourOf('del');
+  expect(added).not.toBe(text.color);
+  expect(removed).not.toBe(text.color);
+  expect(added).not.toBe(removed);
+  expect(text.size).toBe('12px');
+
+  // "4 unchanged lines" starts where the code column starts.
+  await expect(page.getByTestId(ids.diffGapText)).toHaveText('4 unchanged lines');
+  const gap = (await page.getByTestId(ids.diffGapText).boundingBox())!;
+  const sign = (await page.getByTestId(ids.diffSign).first().boundingBox())!;
+  expect(Math.abs(gap.x - (sign.x + sign.width))).toBeLessThanOrEqual(1);
 });

@@ -27,12 +27,12 @@ export function HistoryTab(props: {
 
   if (history.isError) {
     return (
-      <p role="alert" className="m-0 text-alert">
+      <p role="alert" className="m-0 p-3 text-alert">
         The history could not be loaded.
       </p>
     );
   }
-  if (!history.data) return <p className="m-0 text-ink-muted">Loading history...</p>;
+  if (!history.data) return <p className="m-0 p-3 text-ink-muted">Loading history...</p>;
 
   const { versions, baseLabel } = history.data;
   const anyInUse = versions.some((v) => v.inUse);
@@ -95,7 +95,7 @@ export function HistoryTab(props: {
         </p>
       ) : null}
       {versions.length === 0 ? (
-        <p data-testid={ids.historyEmpty} className="m-0 text-ink-muted">
+        <p data-testid={ids.historyEmpty} className="m-0 p-3 text-ink-muted">
           No custom versions yet.
         </p>
       ) : (

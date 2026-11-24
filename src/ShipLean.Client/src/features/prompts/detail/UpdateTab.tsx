@@ -52,7 +52,7 @@ export function UpdateTab(props: {
       data-testid={ids.panelUpdate}
       aria-label={`Built-in update of ${prompt.name}`}
       data-can-edit={props.canEdit}
-      className="grid gap-3"
+      className="grid gap-3 p-3"
     >
       <div
         role="note"

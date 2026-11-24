@@ -28,4 +28,6 @@ export const changesTestIds = {
   useBuiltInCancel: 'prompts-use-built-in-cancel',
   useBuiltInStays: 'prompts-use-built-in-stays',
   useBuiltInError: 'prompts-use-built-in-error',
+  diffSign: 'prompts-diff-sign',
+  diffGapText: 'prompts-diff-gap-text',
 } as const;

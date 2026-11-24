@@ -195,4 +195,9 @@ public static class PromptsTestIds
     public const string UpdateBannerKeepError = "prompts-update-banner-keep-error";
     // follow-up: empty note in History (SHIP-2315)
     public const string HistoryVersionNote = "prompts-history-version-note";
+    // parity polish A (SHIP-2316)
+    public const string AssembledLayerChipDot = "prompts-assembled-layer-chip-dot";
+    public const string AssembledFootnote = "prompts-assembled-footnote";
+    public const string DiffSign = "prompts-diff-sign";
+    public const string DiffGapText = "prompts-diff-gap-text";
 }

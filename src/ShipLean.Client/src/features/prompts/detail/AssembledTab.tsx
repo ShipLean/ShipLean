@@ -16,12 +16,14 @@ export function AssembledTab(props: {
   const [chosen, setChosen] = useState<string | null>(null);
   const agent = chosen ?? agents[0]?.id ?? '';
   const assembled = usePromptAssembled(projectId, prompt.key, agent, agent !== '');
+  const agentLabel = agents.find((a) => a.id === agent)?.label;
+  const version = prompt.custom?.inUse === true ? `custom v${prompt.custom.number}` : 'built-in';
 
   return (
     <section
       data-testid={ids.panelAssembled}
       aria-label={`What the agent gets for ${prompt.name}`}
-      className="grid gap-3"
+      className="grid gap-3 p-3"
     >
       <p
         data-testid={ids.assembledIntro}
@@ -49,6 +51,15 @@ export function AssembledTab(props: {
               <LayerCard key={layer.kind} layer={layer} prompt={prompt} />
             ))}
           </ol>
+          {agentLabel === undefined ? null : (
+            <p
+              data-testid={ids.assembledFootnote}
+              className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+            >
+              Agent runs record which version they got, so Inspection can show “{prompt.file}{' '}
+              {version} · {agentLabel}” on a run.
+            </p>
+          )}
           <div className="grid gap-2">
             <div className="flex items-center gap-2">
               <strong>What this agent receives</strong>

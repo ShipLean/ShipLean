@@ -4,8 +4,8 @@ import { highlightSource, type SpanKind } from './highlight';
 const spanClass: Record<SpanKind, string> = {
   plain: '',
   heading: 'font-semibold text-signal',
-  placeholder: 'rounded-sm bg-purple/10 text-purple',
-  agentTag: 'rounded-sm bg-info/10 font-semibold text-info',
+  placeholder: 'rounded-sm bg-label-purple/12 text-label-purple',
+  agentTag: 'rounded-sm bg-notice/13 font-semibold text-notice',
 };
 
 const spanTestId: Record<SpanKind, string | undefined> = {

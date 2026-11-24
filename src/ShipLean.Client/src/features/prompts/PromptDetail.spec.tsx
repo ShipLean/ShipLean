@@ -370,3 +370,32 @@ async function cssColor(page: Page, token: string): Promise<string> {
     return color;
   }, token);
 }
+
+test('PromptDetail_WhenOnAPhone_ShouldKeepFactsInTwoColumnsAndEditBesideTheTitle', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openByAdminFlag(mount, page, 'brief');
+
+  // Facts: values in the second column (labels take the first 112px), the first one on the list's top line.
+  const facts = (await page.getByTestId(ids.facts).boundingBox())!;
+  const whenRuns = (await page.getByTestId(ids.factWhenRuns).boundingBox())!;
+  const servedBy = (await page.getByTestId(ids.factServedBy).boundingBox())!;
+  expect(whenRuns.x).toBeGreaterThanOrEqual(facts.x + 112);
+  expect(servedBy.x).toBe(whenRuns.x);
+  expect(whenRuns.y).toBeLessThanOrEqual(facts.y + 2);
+
+  // Edit on the title row at the right; Use built-in and Copy Markdown on the next line, from the left.
+  const name = (await page.getByTestId(ids.detailName).boundingBox())!;
+  const edit = (await page.getByTestId(ids.actionEdit).boundingBox())!;
+  const useBuiltIn = (await page.getByTestId(ids.actionUseBuiltIn).boundingBox())!;
+  const copy = (await page.getByTestId(ids.copyMarkdown).boundingBox())!;
+  const detail = (await page.getByTestId(ids.detail).boundingBox())!;
+  expect(edit.y).toBeLessThan(name.y + name.height);
+  expect(edit.x + edit.width).toBeGreaterThan(detail.x + detail.width - 24);
+  expect(useBuiltIn.y).toBeGreaterThanOrEqual(edit.y + edit.height);
+  expect(useBuiltIn.x).toBeLessThanOrEqual(name.x + 1);
+  expect(Math.abs(copy.y - useBuiltIn.y)).toBeLessThanOrEqual(1);
+  expect(copy.x).toBeGreaterThan(useBuiltIn.x);
+});

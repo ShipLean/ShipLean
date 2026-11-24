@@ -3,11 +3,15 @@ import { promptsTestIds as ids } from '../../testIds';
 import { Chip, type ChipTone } from '../../../../components/Chip';
 import { isOwnedLayer, layerNumber } from './layerNumber';
 
-const statusLabels: Record<PromptStatus, { tone: ChipTone; label: (p: PromptDto) => string }> = {
-  builtIn: { tone: 'muted', label: () => 'Built-in' },
-  custom: { tone: 'purple', label: (p) => `Custom v${p.custom?.number}` },
-  builtInUpdated: { tone: 'warn', label: () => 'Built-in updated' },
-  usingBuiltIn: { tone: 'muted', label: () => 'Using built-in' },
+// The dot matches the detail header's status chip: purple for a custom in use, amber for a built-in that changed.
+const statusLabels: Record<
+  PromptStatus,
+  { tone: ChipTone; label: (p: PromptDto) => string; dot: string | null }
+> = {
+  builtIn: { tone: 'muted', label: () => 'Built-in', dot: null },
+  custom: { tone: 'purple', label: (p) => `Custom v${p.custom?.number}`, dot: 'bg-label-purple' },
+  builtInUpdated: { tone: 'warn', label: () => 'Built-in updated', dot: 'bg-caution' },
+  usingBuiltIn: { tone: 'muted', label: () => 'Using built-in', dot: null },
 };
 
 // Planned layers say Planned, the layers this prompt owns carry its status chip, the rest are Fixed.
@@ -18,7 +22,16 @@ function chipOf(layer: PromptLayerDto, prompt: PromptDto, owned: boolean) {
       {layer.planned ? (
         <Chip>Planned</Chip>
       ) : owned ? (
-        <Chip tone={status.tone}>{status.label(prompt)}</Chip>
+        <Chip tone={status.tone}>
+          {status.dot === null ? null : (
+            <span
+              aria-hidden="true"
+              data-testid={ids.assembledLayerChipDot}
+              className={`size-1.5 rounded-full ${status.dot}`}
+            />
+          )}
+          {status.label(prompt)}
+        </Chip>
       ) : (
         <Chip>Fixed</Chip>
       )}

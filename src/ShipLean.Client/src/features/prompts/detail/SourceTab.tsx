@@ -11,7 +11,7 @@ export function SourceTab(props: { prompt: PromptDto }) {
     <section
       data-testid={ids.panelSource}
       aria-label={`Source of ${prompt.name}`}
-      className="grid gap-3"
+      className="grid gap-3 p-3"
     >
       {prompt.sectionErrors > 0 ? (
         <p

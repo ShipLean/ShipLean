@@ -49,7 +49,7 @@ export function PromptFacts({ prompt }: { prompt: PromptDto }) {
     <dl
       data-testid={ids.facts}
       aria-label={`Facts of ${prompt.name}`}
-      className="m-0 grid grid-cols-[112px_minmax(0,1fr)] gap-x-3 gap-y-[5px] text-[length:var(--text-sm)] touch:grid-cols-1 touch:gap-y-0.5"
+      className="m-0 grid grid-cols-[112px_minmax(0,1fr)] gap-x-3 gap-y-[5px] text-[length:var(--text-sm)]"
     >
       <Fact label="When it runs" testId={ids.factWhenRuns}>
         <FactText text={prompt.whenRuns} />
