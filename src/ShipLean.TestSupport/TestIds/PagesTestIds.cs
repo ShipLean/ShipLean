@@ -23,6 +23,7 @@ public static class PagesTestIds
     public const string RetroInsightsPage = "page-retro-insights";
     public const string ImportPage = "page-import";
     public const string ProjectSettingsPage = "page-project-settings";
+    public const string WaysOfWorkingPage = "page-ways-of-working";
     public const string NewProjectPage = "page-new-project";
     public const string InstanceSettingsPage = "page-instance-settings";
     public const string InstanceSettingsTab = "page-instance-settings-tab";
