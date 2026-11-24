@@ -96,6 +96,8 @@ declare -A variants=(
   [prompts-history]="prompts.html?state=history&prompt=brief.md"
   [prompts-assembled]="prompts.html?state=assembled&prompt=brief.md"
   [prompts-member]="prompts.html?state=member&prompt=code_reviewer.md"
+  [prompts-search]="prompts.html?state=search&q=task_key"
+  [prompts-single]="prompts.html?prompt=work.md"
   [instance-integrations]="instance.html?tab=integrations"
   # Decisions and questions on the work item page (SHIP-922)
   [decisions-change]="decisions.html?state=change"
