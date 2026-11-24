@@ -169,7 +169,7 @@ test('HistoryTab_ShouldShowTheBuiltInRowAndTheFooterNote', async ({ mount, page 
 test('UseBuiltInDialog_ShouldNameTheVersionThatStaysInHistory', async ({ mount, page }) => {
   await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await mount(<PromptsHarness project={{ ...adminProject, name: 'Storefront' }} />, {
+  await mount(<PromptsHarness project={adminProject} />, {
     hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
   });
   await page.getByTestId(ids.actionUseBuiltIn).click();
@@ -194,4 +194,33 @@ test('UseBuiltInDialog_ShouldRightAlignCancelAndUseBuiltIn', async ({ mount, pag
   expect(confirm && dialog && dialog.x + dialog.width - (confirm.x + confirm.width)).toBeLessThan(
     24,
   );
+});
+
+test('HistoryTab_ShouldAlignUseBuiltInUnderTheUseColumn', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const use = await page.getByTestId(ids.historyUse).boundingBox();
+  const builtIn = await page.getByTestId(ids.historyBuiltInUse).boundingBox();
+  expect(use).not.toBeNull();
+  expect(builtIn).not.toBeNull();
+  expect(builtIn?.x).toBeCloseTo(use?.x ?? -1, 0);
+});
+
+test('HistoryTab_WhenNoVersionInUse_ShouldMarkTheBuiltInRowInUse', async ({ mount, page }) => {
+  const none = { ...history, versions: history.versions.map((v) => ({ ...v, inUse: false })) };
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: none }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRow)).toHaveCount(2);
+  await expect(
+    page.getByTestId(ids.historyBuiltInRow).getByTestId(ids.historyInUsePill),
+  ).toHaveText('In use');
+  await expect(page.getByTestId(ids.historyBuiltInRow)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCount(0);
 });

@@ -11,6 +11,8 @@ const sourceLabel: Record<PromptVersionSource, string> = {
   mcp: 'MCP',
 };
 
+const inUseTint = 'bg-[color-mix(in_srgb,var(--color-accent-soft)_60%,transparent)]';
+
 // Every version, newest first, with Use vN for admins, ending in the built-in the versions started from.
 export function HistoryTab(props: {
   projectId: string;
@@ -51,7 +53,7 @@ export function HistoryTab(props: {
         <button
           type="button"
           data-testid={ids.historyUse}
-          className="btn touch:min-h-[var(--touch-target)]"
+          className="btn-ghost touch:min-h-[var(--touch-target)]"
           onClick={() => setConfirming(v.number)}
         >
           Use v{v.number}
@@ -141,7 +143,10 @@ export function HistoryTab(props: {
               </tr>
             ))}
             {baseLabel === null ? null : (
-              <tr data-testid={ids.historyBuiltInRow} className="text-ink-muted">
+              <tr
+                data-testid={ids.historyBuiltInRow}
+                className={`text-ink-muted ${anyInUse ? '' : inUseTint}`}
+              >
                 <td>—</td>
                 <td>
                   Built-in from ShipLean{' '}
@@ -154,12 +159,18 @@ export function HistoryTab(props: {
                 </td>
                 <td>ShipLean</td>
                 <td>{baseLabel}</td>
+                <td />
                 <td>
+                  {anyInUse ? null : (
+                    <span data-testid={ids.historyInUsePill}>
+                      <Chip tone="accent">In use</Chip>
+                    </span>
+                  )}
                   {canEdit && anyInUse ? (
                     <button
                       type="button"
                       data-testid={ids.historyBuiltInUse}
-                      className="btn touch:min-h-[var(--touch-target)]"
+                      className="btn-ghost touch:min-h-[var(--touch-target)]"
                       onClick={props.onUseBuiltIn}
                     >
                       Use built-in
