@@ -9,7 +9,6 @@ export const editorTestIds = {
   editorNote: 'prompts-editor-note',
   editorSave: 'prompts-editor-save',
   editorCancel: 'prompts-editor-cancel',
-  editorDirty: 'prompts-editor-dirty',
   editorError: 'prompts-editor-error',
   editorSaveError: 'prompts-editor-save-error',
   editorSizeMeter: 'prompts-editor-size-meter',

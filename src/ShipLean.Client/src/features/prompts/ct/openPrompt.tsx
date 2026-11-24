@@ -22,7 +22,7 @@ export async function openByAdminFlag(
   await page.route(PROMPTS_URL, (route) => route.fulfill({ json: pageJson }));
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
   await mount(<PromptsHarness project={admin ? adminProject : memberProject} />, {
-    hooksConfig: { route: `/p/SHIP/settings/prompts?prompt=${prompt}` },
+    hooksConfig: { route: `/p/SHIP/ways-of-working?prompt=${prompt}` },
   });
 }
 
@@ -36,6 +36,6 @@ export async function openByPageJson(
   await page.route(PROMPTS_URL, (route) => route.fulfill({ json: pageJson }));
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
   await mount(<PromptsHarness project={member ? memberProject : adminProject} />, {
-    hooksConfig: { route: `/p/SHIP/settings/prompts?prompt=${prompt}` },
+    hooksConfig: { route: `/p/SHIP/ways-of-working?prompt=${prompt}` },
   });
 }
