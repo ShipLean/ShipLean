@@ -30,6 +30,7 @@ test('StageNav_WhenOnAPhone_ShouldShowAStageSelectWithCounts', async ({ mount, p
   const select = page.getByTestId(ids.stageSelect);
   await expect(select).toBeVisible();
   await expect(page.getByTestId(ids.stageStrip)).toBeHidden();
+  expect((await select.boundingBox())!.height).toBe(36);
   await expect(select.locator('option')).toHaveCount(7);
   await expect(select.locator('option:checked')).toHaveText('3 · Plan · 2 prompts, 1 custom');
   await expect(select.locator('option').nth(3)).toHaveText('4 · Build · 3 prompts, 1 custom');

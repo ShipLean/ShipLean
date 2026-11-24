@@ -19,7 +19,7 @@ export function StageSelect({
       hidden={stages.length === 0}
       value={selected ?? ''}
       onChange={(event) => onSelect(event.target.value as PromptStage)}
-      className="field hidden w-full touch:block"
+      className="field hidden h-9 w-full touch:block"
     >
       {stages.map((stage, index) => {
         const count = stage.prompts.length;

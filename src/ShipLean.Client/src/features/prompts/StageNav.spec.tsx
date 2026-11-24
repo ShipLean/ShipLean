@@ -94,6 +94,10 @@ test('StageChips_WhenCustom_ShouldShowThePurpleDot', async ({ mount, page }) => 
   const custom = page.locator(`[data-testid="${ids.stageChip}"][data-status="custom"]`);
   await expect(custom).toHaveCount(1);
   await expect(custom.getByTestId(ids.stageChipDot)).toHaveAttribute('data-dot', 'custom');
+  await expect(custom.getByTestId(ids.stageChipDot)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
   await expect(
     page
       .locator(`[data-testid="${ids.stageChip}"][data-status="builtIn"]`)
@@ -109,4 +113,8 @@ test('StageChips_WhenUpdated_ShouldShowTheAmberDot', async ({ mount, page }) => 
   const updated = page.locator(`[data-testid="${ids.stageChip}"][data-status="builtInUpdated"]`);
   await expect(updated).toHaveCount(1);
   await expect(updated.getByTestId(ids.stageChipDot)).toHaveAttribute('data-dot', 'updated');
+  await expect(updated.getByTestId(ids.stageChipDot)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
 });

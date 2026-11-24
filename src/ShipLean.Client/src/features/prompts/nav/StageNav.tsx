@@ -7,7 +7,7 @@ const dotOf = (prompt: PromptDto) =>
   prompt.status === 'custom'
     ? { kind: 'custom', className: 'bg-label-purple' }
     : prompt.status === 'builtInUpdated'
-      ? { kind: 'updated', className: 'bg-warn' }
+      ? { kind: 'updated', className: 'bg-caution' }
       : null;
 
 // The only stage picker (D1): the strip, then for a stage with two or more prompts a chip per prompt (D4), then when the
@@ -34,7 +34,11 @@ export function StageNav({
       {current === undefined ? null : (
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           {current.prompts.length > 1 ? (
-            <div className="flex flex-wrap gap-1.5" aria-label={`${current.name} prompts`}>
+            <div
+              className="flex flex-wrap gap-1.5"
+              role="group"
+              aria-label={`${current.name} prompts`}
+            >
               {current.prompts.map((prompt) => {
                 const dot = dotOf(prompt);
                 return (
@@ -46,10 +50,10 @@ export function StageNav({
                     data-status={prompt.status}
                     aria-current={prompt.key === selectedKey}
                     onClick={() => onSelect(prompt.key)}
-                    className={`inline-flex min-h-[var(--control-height,32px)] items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--text-sm)] hover:bg-sunken touch:min-h-[var(--touch-target)] ${
+                    className={`inline-flex min-h-[var(--control-height,32px)] items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)] ${
                       prompt.key === selectedKey
                         ? 'border-signal/45 bg-signal-soft font-semibold'
-                        : 'border-edge bg-panel font-medium'
+                        : 'border-edge bg-panel font-medium hover:bg-sunken'
                     }`}
                   >
                     {prompt.name}
