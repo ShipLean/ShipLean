@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import type { FeatureTimelineViewDto, TimelineEdgeDto } from '@shiplean/core/api/views';
 import { GanttChart } from '../GanttChart';
+import { LEFT_WIDTH } from '../GanttRowLabels';
 import { DEFAULT_TIMELINE_OPTIONS, type TimelineOptions } from '../TimelineOptions';
 import { timelineGeometry } from '../chart/timelineGeometry';
 import { timelineRows } from '../chart/timelineRows';
@@ -8,9 +9,9 @@ import { timelineTestIds as ids } from '../testIds';
 import { FINISHED_TIMELINE, RUNNING_TIMELINE } from './stubFeatureTimeline';
 
 // The real chart (marks lane and edges lane) on the finished fixture, with its scroll area 1800px wide: the
-// wrapper adds the 240px row labels and the chart's 1px border on each side.
+// wrapper adds the row labels' width (LEFT_WIDTH) and the chart's 1px border on each side.
 const WIDTH = 1800;
-const CHART_WIDTH = WIDTH + 240 + 2;
+const CHART_WIDTH = WIDTH + LEFT_WIDTH + 2;
 test.use({ viewport: { width: CHART_WIDTH + 40, height: 900 } });
 
 const { boxes } = timelineGeometry(

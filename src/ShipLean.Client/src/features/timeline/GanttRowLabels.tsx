@@ -8,7 +8,7 @@ import { TypeBadge } from './parts/TypeBadge';
 import { rowTook } from './rowTook';
 import type { TimelineOptions } from './TimelineOptions';
 
-const LEFT_WIDTH = 340;
+export const LEFT_WIDTH = 340;
 
 const HEADINGS: Record<TimelineOptions['group'], string> = {
   stories: 'STORY · TASK',

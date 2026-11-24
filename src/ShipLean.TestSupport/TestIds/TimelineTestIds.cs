@@ -57,4 +57,23 @@ public static class TimelineTestIds
     public const string RailBack = "timeline-rail-back";
     public const string RailJsonCall = "timeline-rail-json-call";
     public const string RailJsonMap = "timeline-rail-json-map";
+    public const string ChartRowStatus = "timeline-chart-row-status";
+    public const string TypeBadge = "timeline-type-badge";
+    public const string PersonAvatar = "timeline-person-avatar";
+    public const string ChartRowCp = "timeline-chart-row-cp";
+    public const string ChartRowAccent = "timeline-chart-row-accent";
+    public const string ChartDurationLabel = "timeline-chart-duration-label";
+    public const string ChartOpenEnd = "timeline-chart-open-end";
+    public const string ChartInferredNote = "timeline-chart-inferred-note";
+    public const string ToolbarSwatch = "timeline-toolbar-swatch";
+    public const string RailGlyph = "timeline-rail-glyph";
+    public const string RailHint = "timeline-rail-hint";
+    public const string RailFacts = "timeline-rail-facts";
+    public const string RailAgentChip = "timeline-rail-agent-chip";
+    public const string RailCriticalPill = "timeline-rail-critical-pill";
+    public const string RailNoStart = "timeline-rail-no-start";
+    public const string RailJsonRule = "timeline-rail-json-rule";
+    public const string ChartWeekTick = "timeline-chart-week-tick";
+    public const string ChartNowLabel = "timeline-chart-now-label";
+    public const string ChartSelectedBand = "timeline-chart-selected-band";
 }
