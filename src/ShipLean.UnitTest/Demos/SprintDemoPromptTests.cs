@@ -102,7 +102,87 @@ public class SprintDemoPromptTests
     [TestCase("session")]
     public void Prompt_ShouldPutTheFeatureSectionsInOrder(string channel)
     {
-        ChannelSource(channel).ShouldContain("why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it");
+        ChannelSource(channel).ShouldContain("why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its measure.");
+    }
+
+    // SHIP-2330: showing what happened is most of a Feature's chapter.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldGiveShowingWhatHappenedMostOfTheTime(string channel)
+    {
+        ChannelSource(channel).ShouldContain("the before and after and the walkthrough clip take more than half of its running time; aim for about two thirds.");
+        ChannelSource(channel).ShouldContain("In each Feature's chapter with something to show, the before and after and the clip take more than half its time.");
+    }
+
+    // SHIP-2330: the retro is summarised once, as sprint-wide themes, one theme a slide.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldSummariseTheRetroOnceForTheWholeSprint(string channel)
+    {
+        ChannelSource(channel).ShouldContain("## 4. Retro themes for the whole sprint");
+        ChannelSource(channel).ShouldContain("Pool every Feature's `retro` with `sprintRetro`");
+        ChannelSource(channel).ShouldContain("**One slide per theme**, at most 6 lines");
+        ChannelSource(channel).ShouldContain("A Feature's retro points go in the sprint-wide retro themes (step 4), not in its own chapter.");
+        ChannelSource(channel).ShouldNotContain("its retro items");
+        ChannelSource(channel).ShouldNotContain("In a Feature's execution section");
+    }
+
+    // SHIP-2330: a mobile change is recorded and shown at phone size in a phone frame.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldShowMobileChangesOnAPhone(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Mobile changes are shown on a phone");
+        ChannelSource(channel).ShouldContain("**never in a desktop or tablet window**, and never by narrowing a desktop window");
+        ChannelSource(channel).ShouldContain("`viewport` 390x844, `deviceScaleFactor` 2, `isMobile` and `hasTouch` on, and `recordVideo` at 390x844");
+        ChannelSource(channel).ShouldContain("Every mobile clip and screenshot is at phone size inside the phone frame, never a desktop or tablet window.");
+    }
+
+    // SHIP-2330: the local copy gets busy, realistic sample data before anything is recorded, pushed hard on a screen or two only.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldFillTheLocalCopyWithBusyRealisticSampleData(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Make the local copy look lived in");
+        ChannelSource(channel).ShouldContain("about one in five long (60 to 120 characters, the kind that wraps or gets cut off)");
+        ChannelSource(channel).ShouldContain("**Push it at times, not all the time.**");
+        ChannelSource(channel).ShouldContain("Never touch production. Use made-up people names, never names from the data above");
+        ChannelSource(channel).ShouldContain("The one exception is the sample data you add to the local copy (step 5)");
+    }
+
+    // SHIP-2330: work with no UI shows its interface as code, read from the repository.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldShowTheInterfaceOfWorkWithNoScreen(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Work with no screen");
+        ChannelSource(channel).ShouldContain("**Read the interface from the code**");
+        ChannelSource(channel).ShouldContain("**One slide per tool or endpoint**, as a monospace code block");
+        ChannelSource(channel).ShouldContain("Show only fields that exist in the code.");
+    }
+
+    // SHIP-2330: limits, retries, timeouts and defaults are given with their values, to invite feedback.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldGiveTheValuesBehindEveryLimitToInviteFeedback(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Be specific: invite feedback");
+        ChannelSource(channel).ShouldContain("Never say \"we have limits\", \"it retries\" or \"it's configurable\". Say what: **the number, the default, the unit, and why**.");
+        ChannelSource(channel).ShouldContain("**\"Choices to question\"** slide");
+        ChannelSource(channel).ShouldContain("Never round a number into a vague word.");
+        ChannelSource(channel).ShouldContain("Every limit, timeout, retry or default you mention has its value");
+    }
+
+    // SHIP-2330: Feature slides put the points left and a framed screenshot right.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldPutAFramedScreenshotBesideTheSlidePoints(string channel)
+    {
+        ChannelSource(channel).ShouldContain("**Points on the left, the feature on the right.**");
+        ChannelSource(channel).ShouldContain("sits in a **phone frame**");
+        ChannelSource(channel).ShouldContain("sits in a **desktop browser frame**");
+        ChannelSource(channel).ShouldContain("The frame may run slightly off the right or bottom edge, or tilt by a few degrees");
+        ChannelSource(channel).ShouldContain("Never draw a made-up screen.");
     }
 
     // K11 item 2
@@ -518,12 +598,12 @@ public class SprintDemoPromptTests
     }
 
     [Test]
-    public void Prompt_ShouldBeUnderTwentyKilobytes()
+    public void Prompt_ShouldBeUnderTwentyFourKilobytes()
     {
         var bytes = Encoding.UTF8.GetByteCount(Template);
 
         bytes.ShouldBeGreaterThan(8 * 1024);
-        bytes.ShouldBeLessThan(20 * 1024);
+        bytes.ShouldBeLessThan(24 * 1024);
     }
 
     [Test]
@@ -949,7 +1029,7 @@ public class SprintDemoPromptTests
     // ShouldInstallPlaywrightAndChromiumWithTheTools (the handover installs under ~/.local/demo-tools; a session installs nothing, C2),
     // ShouldCommentAndStopWhenAToolCannotBeHad, ShouldCommentOnTheDemoItemWhenDone and ShouldNotAskForARetrospectiveOnTheDemoItem
     // (the session has no comment or log_retrospective tool and returns through its final response: the counterparts below and
-    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderTwentyKilobytes (measures the template).
+    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderTwentyFourKilobytes (measures the template).
     [TestCase("**Install nothing.**")]
     [TestCase("If a check fails, end your run with the exact failure as your final response.")]
     [TestCase("Give the duration, the size, anything you left out, and any logo fallback reason from step 10.")]
