@@ -130,7 +130,7 @@ export function PromptDetail({
     <section
       data-testid={ids.detail}
       aria-label={prompt.name}
-      className="grid min-w-0 content-start overflow-hidden rounded-panel border border-edge bg-panel"
+      className="grid min-w-0 content-start rounded-panel border border-edge bg-panel"
     >
       <header className="grid gap-2 border-b border-edge p-3">
         <div className="flex flex-wrap items-center gap-2">
