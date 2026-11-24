@@ -33,7 +33,7 @@ export function TabBand<T extends string>({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-edge bg-sunken px-3 py-2">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-edge bg-canvas px-3 py-2">
       <div role="tablist" aria-label={label} className="flex flex-wrap items-center gap-0.5">
         {tabs.map((tab, index) => {
           const selected = tab.id === active;
@@ -51,13 +51,13 @@ export function TabBand<T extends string>({
               data-testid={tab.testId}
               onClick={() => onChange(tab.id)}
               onKeyDown={(event) => onKeyDown(event, index)}
-              className={`inline-flex h-(--control-height) items-center rounded-control px-[10px] text-[length:var(--text-sm)] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal touch:min-h-(--touch-target) ${
-                selected ? 'font-medium text-ink' : 'text-ink-muted'
+              className={`inline-flex h-(--control-height) items-center rounded-control px-2.5 text-[length:var(--text-sm)] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-signal touch:min-h-(--touch-target) ${
+                selected ? 'text-ink' : 'text-ink-muted'
               }`}
             >
               {tab.label}
               {tab.count !== undefined && tab.count !== null && (
-                <span className="ml-[5px] text-[length:var(--text-2xs)] text-ink-muted">
+                <span className="ml-1 text-[length:var(--text-2xs)] text-ink-muted">
                   {tab.count}
                 </span>
               )}
