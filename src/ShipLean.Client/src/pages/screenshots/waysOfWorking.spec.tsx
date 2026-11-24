@@ -32,6 +32,15 @@ async function ready(page: Page) {
   await expect(page.getByTestId(ids.detailName)).toBeVisible();
 }
 
+// fill() leaves the editor focused and scrolled to its end; a shot shows the editor's top at rest, as the mock-up does.
+async function atRest(page: Page) {
+  await page.getByTestId(ids.editorText).evaluate((el: HTMLTextAreaElement) => {
+    el.blur();
+    el.scrollTop = 0;
+  });
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 pageShots([
   {
     name: 'prompts',
@@ -115,6 +124,7 @@ pageShots([
       await p.getByTestId(ids.actionCustomize).click();
       await p.getByTestId(ids.editorText).fill(fx.edits.lead);
       await expect(p.getByTestId(ids.editorText)).toHaveValue(fx.edits.lead);
+      await atRest(p);
     },
   },
   {
@@ -127,6 +137,7 @@ pageShots([
       await p.getByTestId(ids.actionEdit).click();
       await p.getByTestId(ids.editorText).fill(fx.edits.brief);
       await expect(p.getByTestId(ids.editorText)).toHaveValue(fx.edits.brief);
+      await atRest(p);
     },
   },
   {
