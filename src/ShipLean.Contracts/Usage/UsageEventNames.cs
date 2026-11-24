@@ -146,6 +146,8 @@ public static class UsageEventNames
     // prompt.saved and prompt.update_applied by the save (by its source); the other three are tracked by their action.
     public const string PromptsOpened = "prompts.opened";
     public const string PromptCustomizeOpened = "prompt.customize_opened";
+    // A prompt opened from the Ways of working header search (SHIP-2280 D17), self-emitted by its report.
+    public const string PromptsSearchPicked = "prompts.search_picked";
     public const string PromptSaved = "prompt.saved";
     public const string PromptUpdateApplied = "prompt.update_applied";
     public const string PromptBuiltInUsed = "prompt.built_in_used";

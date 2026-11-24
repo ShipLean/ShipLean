@@ -273,12 +273,16 @@ public class SavePromptToolTests : McpFixture
     }
 
     [Test]
-    public async Task SavePrompt_WhenNoteEmpty_ShouldRefuseOnNote()
+    public async Task SavePrompt_WhenNoteEmpty_ShouldSave()
     {
-        var reply = await CallAsync(Args("guide", Unique("Text"), "   ", await BasedOnAsync("guide")));
+        var (text, basedOn, plan) = await PreviewedAsync(note: "");
 
-        ErrorCode(reply).ShouldBe("validation");
-        ErrorField(reply).ShouldBe("note");
+        var applied = await OkAsync(Args("guide", text, "", basedOn, plan));
+
+        applied.GetProperty("applied").GetBoolean().ShouldBeTrue();
+        var newest = await NewestAsync("guide");
+        newest.Number.ShouldBe(applied.GetProperty("version").GetInt32());
+        newest.Note.ShouldBe("");
     }
 
     [Test]

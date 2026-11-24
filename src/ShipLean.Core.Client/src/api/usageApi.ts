@@ -99,7 +99,7 @@ export function postRetroThemeSheetOpened(
   );
 }
 
-/** POST api/projects/{id}/usage/prompts-opened: the Prompts settings tab opened. The server answers 204. */
+/** POST api/projects/{id}/usage/prompts-opened: the Ways of working page opened. The server answers 204. */
 export function promptsOpened(projectId: string): Promise<void> {
   return api.post<void>(`/api/projects/${encodeURIComponent(projectId)}/usage/prompts-opened`, {});
 }
@@ -108,6 +108,14 @@ export function promptsOpened(projectId: string): Promise<void> {
 export function promptCustomizeOpened(projectId: string, prompt: PromptKey): Promise<void> {
   return api.post<void>(
     `/api/projects/${encodeURIComponent(projectId)}/usage/prompt-customize-opened`,
+    { prompt },
+  );
+}
+
+/** POST api/projects/{id}/usage/prompts-search-picked: a prompt opened from the Ways of working header search (click or Enter). The server answers 204. */
+export function promptsSearchPicked(projectId: string, prompt: PromptKey): Promise<void> {
+  return api.post<void>(
+    `/api/projects/${encodeURIComponent(projectId)}/usage/prompts-search-picked`,
     { prompt },
   );
 }

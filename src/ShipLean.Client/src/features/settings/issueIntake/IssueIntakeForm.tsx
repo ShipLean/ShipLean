@@ -147,11 +147,7 @@ export function IssueIntakeForm({
         <Link
           data-testid={ids.issueIntakePromptsLink}
           className="font-medium text-signal"
-          to={routePath(
-            'projectSettings',
-            { key: project.key, tab: 'prompts' },
-            { prompt: 'issueProposal' },
-          )}
+          to={routePath('waysOfWorking', { key: project.key }, { prompt: 'issueProposal' })}
         >
           Issue proposal
         </Link>{' '}

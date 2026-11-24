@@ -83,4 +83,30 @@ public class BuiltInPromptsTests
             _prompts.Hash(facts.Key).ShouldBe(PromptHash.Of(_prompts.Text(facts.Key)));
         }
     }
+
+    [Test]
+    public void Facts_WhenTheyNameATool_ShouldWrapItInBackticks()
+    {
+        string[] tools = ["planning_guide", "get_brief", "pick_up", "report_task", "capture_plan", "log_review", "log_retrospective", "set_status", "create_sprint_demo"];
+        var bare = new Regex($@"\b({string.Join('|', tools)})\b");
+        var code = new Regex("`[^`]*`");
+
+        foreach (var facts in _prompts.All)
+        {
+            foreach (var text in new[] { facts.WhenRuns, facts.ServedBy, facts.ReadBy, facts.Note ?? "" })
+            {
+                code.Replace(text, "").ShouldNotMatch(bare.ToString(), $"{facts.Key}: {text}");
+                (text.Count(c => c == '`') % 2).ShouldBe(0, $"{facts.Key}: {text}");
+            }
+        }
+    }
+
+    [Test]
+    public void Facts_WhenCodeReviewer_ShouldMarkToolsAndPartsAsCode()
+    {
+        var facts = _prompts.Facts(PromptKey.CodeReviewer);
+
+        facts.WhenRuns.ShouldContain("comments `Review ·` and calls `log_review`.");
+        facts.ServedBy.ShouldBe("`planning_guide` part `code_reviewer`");
+    }
 }

@@ -42,9 +42,9 @@ public static class McpOpenUrls
     public static string InspectionMetrics(string baseUrl, string projectKey)
         => Join(baseUrl, $"/p/{Segment(projectKey)}/inspection");
 
-    // Project settings › Prompts, with one prompt open when wireKey (its camelCase key, "guide") is given.
+    // Ways of working (the prompts page), with one prompt open when wireKey (its camelCase key, "guide") is given.
     public static string Prompts(string baseUrl, string projectKey, string? wireKey = null)
-        => Join(baseUrl, $"/p/{Segment(projectKey)}/settings/prompts" + (wireKey is null ? "" : $"?prompt={Segment(wireKey)}"));
+        => Join(baseUrl, $"/p/{Segment(projectKey)}/ways-of-working" + (wireKey is null ? "" : $"?prompt={Segment(wireKey)}"));
 
     // The planning view of the stories backlog.
     public static string Planning(string baseUrl, string projectKey)

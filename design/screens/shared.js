@@ -168,7 +168,7 @@
     'sprint-retro': ['Sprints', 'Sprint 24', 'Retro'], 'sprint-demo': ['Sprints', 'Sprint 23', 'Demo'], retros: ['Retrospectives', 'Search'], 'retros-features': ['Retrospectives', 'Features'], 'retro-item': ['Retrospectives', 'Features', new URLSearchParams(location.search).get('key') || 'SHIP-101'], 'retro-insights': ['Retrospectives', 'Insights'],
     inspection: ['Inspection', { leadtime: 'Lead time', period: 'Lead time', quality: 'Quality', cost: 'Cost', json: 'Overview' }[new URLSearchParams(location.search).get('view')] || 'Overview'],
     'new-project': ['New project'], instance: ['Instance settings'], profile: ['Your profile'],
-    prompts: ['Settings', 'Prompts'],
+    prompts: ['Ways of working'],
     decisions: new URLSearchParams(location.search).get('state') === 'feature' ? ['Backlogs', 'Features', 'SHIP-101'] : ['Backlogs', 'SHIP-141'],
   };
   // Detail pages: under 900px ‹ back takes the left of the top bar and Menu moves to the far right, after Search
@@ -221,6 +221,7 @@
       ${link('inspection', '◔', 'Inspection', 'inspection.html')}
       ${active === 'inspection' ? `<div class="navgrp d-only">${inspectionSubs.map(([id, label, href]) => link(id, '', label, href, true)).join('')}</div>` : ''}
       ${lvls('Inspection', inspectionSubs.map(([id, label, href]) => [label, href, id === inspView]))}
+      ${link('ways', '✎', 'Ways of working', 'prompts.html')}
       ${link('import', '⇪', 'Jira import', 'import.html')}
       ${link('settings', '⚙', 'Settings', 'settings.html')}
       <button class="me" type="button" aria-haspopup="menu" aria-expanded="false">${av(ME)}<span>${people[ME].name}</span><span class="muted">▴</span></button>

@@ -6,14 +6,20 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Prompts;
 
-// A project's Prompts settings tab as an admin works it: the list, the detail with its tabs, the editor and its checks, the built-in update and History.
+// The Ways of working page as an admin works it: the stage strip and chips, the detail with its tabs, the editor and its checks, the built-in update and History.
 public sealed class PromptsAdminPage(IPage page)
 {
     public ILocator Page => page.GetByTestId(PromptsTestIds.Page);
 
-    public ILocator ListStages => page.GetByTestId(PromptsTestIds.ListStage);
+    public ILocator Stages => page.GetByTestId(PromptsTestIds.Stage);
 
-    public ILocator ListRows => page.GetByTestId(PromptsTestIds.ListRow);
+    // Each stage's "N prompts" count in the strip, in stage order.
+    public ILocator StageCounts => page.GetByTestId(PromptsTestIds.StageStripCount);
+
+    // A stage in the strip or a prompt chip under it, by its name as shown.
+    public ILocator Stage(string name) => Stages.Filter(new LocatorFilterOptions { HasText = name });
+
+    public ILocator Chip(string name) => page.GetByTestId(PromptsTestIds.StageChip).Filter(new LocatorFilterOptions { HasText = name });
 
     public ILocator DetailName => page.GetByTestId(PromptsTestIds.DetailName);
 
@@ -118,7 +124,7 @@ public sealed class PromptsAdminPage(IPage page)
 
     public async Task OpenAsync(string projectKey, string? prompt = null)
     {
-        await page.GotoAsync(prompt is null ? Links.ProjectSettings(projectKey, "prompts") : Links.ProjectSettings(projectKey, "prompts", prompt));
+        await page.GotoAsync(Links.WaysOfWorking(projectKey, prompt));
         await Assertions.Expect(Page).ToBeVisibleAsync();
     }
 

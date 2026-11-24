@@ -41,7 +41,7 @@ public class MemberJourneyTests : SeededAcceptanceTest
         var prompts = new PromptsMemberPage(Page);
         await prompts.OpenAsync("SHIP", "brief");
 
-        await Expect(prompts.Rows).ToHaveCountAsync(12);
+        await Expect(prompts.StageCounts).ToHaveTextAsync(PromptsMemberPage.TwelvePromptsByStage);
         await Expect(prompts.DetailName).ToContainTextAsync("brief");
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v2");
         await Expect(prompts.ReadOnlyNote).ToBeVisibleAsync();

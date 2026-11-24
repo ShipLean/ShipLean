@@ -79,7 +79,7 @@ export function Dialog({
     onClick: (event: MouseEvent) => {
       if (event.target === event.currentTarget && pressedBackdrop.current) onBackdropClick?.();
     },
-    style: { background: 'color-mix(in srgb, var(--color-text) 45%, transparent)' },
+    style: { background: 'var(--scrim)' },
   };
   const panelProps = {
     ref: panel,

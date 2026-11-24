@@ -152,14 +152,15 @@ public class PromptSavePreviewTests : ApiFixture
     }
 
     [Test]
-    public async Task PreviewAsync_WhenNoteBlankAndTextEmptyAndStale_ShouldRefuseOnNoteFirst()
+    public async Task PreviewAsync_WhenNoteBlankAndTextEmptyAndStale_ShouldRefuseOnTextFirst()
     {
         var project = await ArrangeProjectAsync();
         await SeedAsync(project, 1, "Mine.", inUse: true);
 
         var error = await RefusedAsync(project, " ", BuiltIn, note: " ");
 
-        error.Field.ShouldBe("note");
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        error.Field.ShouldBe("text");
     }
 
     [Test]

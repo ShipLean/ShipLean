@@ -1,5 +1,6 @@
 import { promptsTestIds as ids } from '../testIds';
 import { MAX_PROMPT_BYTES } from './byteSize';
+import { SideHeading } from './SideHeading';
 
 const kb = (bytes: number) => (bytes / 1024).toFixed(1);
 
@@ -11,8 +12,8 @@ export function SizeMeter({ bytes }: { bytes: number }) {
   const tone = over ? 'bg-alert' : warn ? 'bg-caution' : 'bg-signal';
   const textTone = over ? 'text-alert' : warn ? 'text-caution' : 'text-ink-muted';
   return (
-    <div className="grid gap-1">
-      <h4 className="m-0 text-[length:var(--text-sm)] font-semibold">Size</h4>
+    <section>
+      <SideHeading>Size</SideHeading>
       <div
         data-testid={ids.editorSizeMeter}
         role="meter"
@@ -21,17 +22,17 @@ export function SizeMeter({ bytes }: { bytes: number }) {
         aria-valuemax={MAX_PROMPT_BYTES}
         aria-valuenow={bytes}
         data-state={over ? 'over' : warn ? 'warn' : 'ok'}
-        className="h-1.5 overflow-hidden rounded-full bg-sunken"
+        className="h-1 overflow-hidden rounded-full bg-sunken"
       >
         <div className={`h-full ${tone}`} style={{ width: `${percent}%` }} />
       </div>
       <p
         data-testid={ids.editorSizeText}
         role={over ? 'alert' : undefined}
-        className={`m-0 text-[length:var(--text-sm)] ${textTone}`}
+        className={`m-0 mt-1 ${textTone}`}
       >
         {kb(bytes)} KB of 64 KB{over ? ': too large to save' : ''}
       </p>
-    </div>
+    </section>
   );
 }

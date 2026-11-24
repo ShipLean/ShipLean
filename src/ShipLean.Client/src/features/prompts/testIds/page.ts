@@ -1,0 +1,18 @@
+export const pageTestIds = {
+  page: 'prompts-page',
+  header: 'prompts-header',
+  customCountPill: 'prompts-custom-count-pill',
+  unsavedPill: 'prompts-unsaved-pill',
+  loading: 'prompts-loading',
+  loadFailed: 'prompts-load-failed',
+  retry: 'prompts-retry',
+  readOnlyNote: 'prompts-read-only-note',
+  readOnlyAdmins: 'prompts-read-only-admins',
+  counts: 'prompts-counts',
+  customCount: 'prompts-custom-count',
+  builtInOnly: 'prompts-built-in-only',
+  builtInOnlyRow: 'prompts-built-in-only-row',
+  editorLeaveDialog: 'prompts-editor-leave-dialog',
+  editorLeaveStay: 'prompts-editor-leave-stay',
+  editorLeaveDiscard: 'prompts-editor-leave-discard',
+} as const;
