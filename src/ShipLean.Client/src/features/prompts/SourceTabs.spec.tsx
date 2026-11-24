@@ -48,3 +48,16 @@ test('RenderedTab_ShouldShowTheServerRenderedHtml', async ({ mount, page }) => {
     'Server rendered',
   );
 });
+
+test('SourceTab_ShouldRenderWithoutLineNumbers', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'work');
+
+  const source = page.getByTestId(ids.panelSource).getByTestId(ids.sourceText);
+  await expect(source).toBeVisible();
+  const first = adminPage.stages
+    .flatMap((s) => s.prompts)
+    .find((p) => p.key === 'work')!
+    .builtInText.split('\n')[0];
+  expect((await source.innerText()).split('\n')[0]).toBe(first);
+  await expect(source.getByTestId(ids.sourceLineNumber)).toHaveCount(0);
+});

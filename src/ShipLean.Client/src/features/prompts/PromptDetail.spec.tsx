@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { PromptsHarness } from './ct/PromptsHarness';
-import { openByPageJson } from './ct/openPrompt';
+import historyJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-history.json' with { type: 'json' };
+import savedJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-saved.json' with { type: 'json' };
+import type { Page } from 'playwright';
+import { openByAdminFlag, openByPageJson } from './ct/openPrompt';
 import { listRoutes } from './ct/listRoutes';
+import { withPrompt } from './ct/promptVariants';
 import {
   PROMPTS_OPENED_URL,
   PROMPTS_URL,
@@ -169,7 +173,7 @@ test('UpdateBanner_WhenBuiltInUpdated_ShouldNameBothDates', async ({ mount, page
   await openByPageJson(mount, page, 'guide');
 
   await expect(page.getByTestId(ids.updateBannerText)).toHaveText(
-    'The built-in prompt has changed (the 20 Nov built-in). Agents still get your custom v1, which started from the built-in of 10 Nov, so they miss the change until you take it.',
+    'The built-in prompt changed (the 20 Nov built-in). Agents still get your custom v1, which started from the built-in of 10 Nov, so they miss the change until you take it.',
   );
 });
 
@@ -192,3 +196,177 @@ test('UpdateBanner_WhenMember_ShouldShowNoActions', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.updateApplyEdit)).toHaveCount(0);
   await expect(page.getByTestId(ids.updateKeep)).toHaveCount(0);
 });
+
+test('PromptDetail_ShouldShowNameThenStatusChipThenFile', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+
+  const name = await page.getByTestId(ids.detailName).boundingBox();
+  const chip = await page.getByTestId(ids.detailChip).boundingBox();
+  const file = await page.getByTestId(ids.detailFile).boundingBox();
+  expect(name).not.toBeNull();
+  expect(chip).not.toBeNull();
+  expect(file).not.toBeNull();
+  expect(name!.x).toBeLessThan(chip!.x);
+  expect(chip!.x).toBeLessThan(file!.x);
+});
+
+test('PromptDetail_WhenBuiltIn_ShouldOfferCustomizeTopRight', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'work');
+
+  const customize = page.getByTestId(ids.actionCustomize);
+  await expect(customize).toHaveText('Customize for this project');
+  const button = await customize.boundingBox();
+  const name = await page.getByTestId(ids.detailName).boundingBox();
+  const detail = await page.getByTestId(ids.detail).boundingBox();
+  const facts = await page.getByTestId(ids.facts).boundingBox();
+  // On the title row, above the facts, in the right half of the panel.
+  expect(button!.y).toBeLessThan(facts!.y);
+  expect(button!.y + button!.height).toBeGreaterThan(name!.y);
+  expect(button!.x).toBeGreaterThan(detail!.x + detail!.width / 2);
+});
+
+test('PromptDetail_WhenCustom_ShouldOfferEditUseBuiltInAndCopyMarkdown', async ({
+  mount,
+  page,
+}) => {
+  await openByAdminFlag(mount, page, 'brief');
+
+  await expect(page.getByTestId(ids.actionEdit)).toHaveText('Edit');
+  await expect(page.getByTestId(ids.actionUseBuiltIn)).toHaveText('Use built-in');
+  await expect(page.getByTestId(ids.copyMarkdown)).toHaveText('Copy Markdown');
+  const actions = await page.getByTestId(ids.actions).boundingBox();
+  const facts = await page.getByTestId(ids.facts).boundingBox();
+  expect(actions!.y + actions!.height).toBeLessThanOrEqual(facts!.y);
+});
+
+test('PromptFacts_WhenBackticks_ShouldRenderCodeChips', async ({ mount, page }) => {
+  const edited = withPrompt(adminPage, 'brief', (p) => ({
+    ...p,
+    whenRuns: 'From `pick_up` to `report_task`, and an unpaired ` stays text.',
+    servedBy: '`get_brief` on a task',
+  }));
+  await openByAdminFlag(mount, page, 'brief', true, edited);
+
+  await expect(page.getByTestId(ids.factServedBy)).toHaveText('get_brief on a task');
+  await expect(page.getByTestId(ids.factServedBy).getByTestId(ids.factCode)).toHaveText([
+    'get_brief',
+  ]);
+  await expect(page.getByTestId(ids.factWhenRuns).getByTestId(ids.factCode)).toHaveText([
+    'pick_up',
+    'report_task',
+  ]);
+  await expect(page.getByTestId(ids.factWhenRuns)).toContainText('an unpaired ` stays text.');
+  await expect(page.getByTestId(ids.factReadBy)).not.toBeEmpty();
+  await expect(page.getByTestId(ids.factReadBy).getByTestId(ids.factCode)).toHaveCount(0);
+});
+
+test('PromptDetail_WhenCustomInUse_ShouldShowTheInUseCallout', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+
+  await expect(page.getByTestId(ids.inUseCallout)).toHaveText(
+    'Agents in this project get custom v2 (Joel Dickson, 18 Nov) instead of the built-in.',
+  );
+  await expect(page.getByTestId(ids.inUseCallout)).toHaveAttribute('data-tone', 'purple');
+});
+
+test('PromptDetail_WhenUsingBuiltIn_ShouldSayTheCustomIsKeptInHistory', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'issueProposal');
+
+  await expect(page.getByTestId(ids.pausedCallout)).toHaveText(
+    'Agents get the built-in prompt. Your custom v1 is kept in History.',
+  );
+  await expect(page.getByTestId(ids.inUseCallout)).toHaveCount(0);
+});
+
+test('UpdateBanner_WhenAdmin_ShouldOfferReviewAndKeep', async ({ mount, page }) => {
+  let posted = 0;
+  await page.route('**/api/projects/*/prompts/guide/update/keep', (route) => {
+    posted++;
+    return route.fulfill({ json: savedJson });
+  });
+  await openByPageJson(mount, page, 'guide');
+
+  await expect(page.getByTestId(ids.updateReview)).toHaveText('Review the change');
+  await page.getByTestId(ids.updateBannerKeep).click();
+
+  await expect.poll(() => posted).toBe(1);
+  await expect(page.getByTestId(ids.updateBannerKeepError)).toHaveCount(0);
+});
+
+test('UpdateBanner_WhenKeepFails_ShouldShowTheError', async ({ mount, page }) => {
+  await page.route('**/api/projects/*/prompts/guide/update/keep', (route) =>
+    route.fulfill({ status: 409, json: { error: 'The built-in moved again.', code: 'conflict' } }),
+  );
+  await openByPageJson(mount, page, 'guide');
+
+  await page.getByTestId(ids.updateBannerKeep).click();
+
+  await expect(page.getByTestId(ids.updateBannerKeepError)).toHaveText('The built-in moved again.');
+});
+
+test('PromptDetail_WhenMember_ShouldShowTheInfoCalloutNamingTheAdmins', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief', false);
+
+  const note = page.getByTestId(ids.readOnlyNote);
+  await expect(note).toHaveText(
+    'You can read every prompt. Only project admins can customize them: ask Joel Dickson or Maria Santos.',
+  );
+  await expect(note).toHaveAttribute('data-tone', 'info');
+});
+
+test('PromptDetail_ShouldShowCountsOnYourChangesAndHistory', async ({ mount, page }) => {
+  let historyGets = 0;
+  await page.route('**/api/projects/*/prompts/brief/history', (route) => {
+    historyGets++;
+    return route.fulfill({ json: historyJson });
+  });
+  await openByAdminFlag(mount, page, 'brief');
+
+  // The fixture's patch for brief rewords one line: one added, one removed.
+  await expect(page.getByTestId(ids.tabYourChanges)).toHaveText('Your changes+1 −1');
+  await expect(page.getByTestId(ids.tabHistory)).toHaveText(
+    `History${historyJson.versions.length}`,
+  );
+  // One read for the count while the History tab is still closed.
+  expect(historyGets).toBe(1);
+});
+
+test('PromptDetail_WhenBuiltIn_ShouldShowNoCountsAndAskForNoHistory', async ({ mount, page }) => {
+  let historyGets = 0;
+  await page.route('**/api/projects/*/prompts/work/history', (route) => {
+    historyGets++;
+    return route.fulfill({ json: historyJson });
+  });
+  await openByAdminFlag(mount, page, 'work');
+
+  await expect(page.getByTestId(ids.tabHistory)).toHaveText('History');
+  await expect(page.getByTestId(ids.tabYourChanges)).toHaveCount(0);
+  expect(historyGets).toBe(0);
+});
+
+test('PromptDetail_WhenCustom_ShouldShowThePurpleDotInTheStatusChip', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+
+  const dot = page.getByTestId(ids.chipCustom).getByTestId(ids.detailChipDot);
+  await expect(dot).toBeVisible();
+  await expect(dot).toHaveCSS('background-color', await cssColor(page, '--color-purple'));
+});
+
+test('PromptDetail_WhenBuiltIn_ShouldShowNoDotInTheStatusChip', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'work');
+
+  await expect(page.getByTestId(ids.chipBuiltIn)).toBeVisible();
+  await expect(page.getByTestId(ids.detailChipDot)).toHaveCount(0);
+});
+
+/** A colour token as the browser computes it, so the dot is compared with the token, not a copied value. */
+async function cssColor(page: Page, token: string): Promise<string> {
+  return page.evaluate((name) => {
+    const probe = document.createElement('span');
+    probe.style.backgroundColor = `var(${name})`;
+    document.body.append(probe);
+    const color = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return color;
+  }, token);
+}

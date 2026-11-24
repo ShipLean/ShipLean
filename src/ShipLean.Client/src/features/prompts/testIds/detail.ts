@@ -39,4 +39,11 @@ export const detailTestIds = {
   updateBanner: 'prompts-update-banner',
   updateBannerText: 'prompts-update-banner-text',
   updateReview: 'prompts-update-review',
+  detailChipDot: 'prompts-detail-chip-dot',
+  factCode: 'prompts-fact-code',
+  inUseCallout: 'prompts-in-use-callout',
+  pausedCallout: 'prompts-paused-callout',
+  sourceLineNumber: 'prompts-source-line-number',
+  updateBannerKeep: 'prompts-update-banner-keep',
+  updateBannerKeepError: 'prompts-update-banner-keep-error',
 } as const;

@@ -186,4 +186,12 @@ public static class PromptsTestIds
     public const string SearchMatch = "prompts-search-match";
     public const string SearchFoot = "prompts-search-foot";
     public const string SearchEmpty = "prompts-search-empty";
+    // detail header, callouts and source (SHIP-2296)
+    public const string DetailChipDot = "prompts-detail-chip-dot";
+    public const string FactCode = "prompts-fact-code";
+    public const string InUseCallout = "prompts-in-use-callout";
+    public const string PausedCallout = "prompts-paused-callout";
+    public const string SourceLineNumber = "prompts-source-line-number";
+    public const string UpdateBannerKeep = "prompts-update-banner-keep";
+    public const string UpdateBannerKeepError = "prompts-update-banner-keep-error";
 }

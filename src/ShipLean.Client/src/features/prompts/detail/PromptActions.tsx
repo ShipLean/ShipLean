@@ -1,7 +1,8 @@
 import type { PromptDto } from '@shiplean/core/api/prompts';
 import { promptsTestIds as ids } from '../testIds';
 
-/** What an admin can do to a prompt: Customize a built-in, Edit a custom in use, Use built-in. Members see none (AC2). */
+/** What an admin can do to a prompt: Customize a built-in, Edit a custom in use, Use built-in. Members see none (AC2).
+ * They sit at the right of the title row; Copy Markdown wraps under the title when the row is full. */
 export function PromptActions({
   prompt,
   canEdit,
@@ -21,17 +22,15 @@ export function PromptActions({
   const resumable = prompt.status === 'usingBuiltIn' ? prompt.custom : null;
   const paused = canEdit && resumable !== null;
   const copy = (
-    <button
-      type="button"
-      data-testid={ids.copyMarkdown}
-      className="btn touch:min-h-[var(--touch-target)]"
-      onClick={onCopy}
-    >
+    <button type="button" data-testid={ids.copyMarkdown} className="btn" onClick={onCopy}>
       Copy Markdown
     </button>
   );
   return (
-    <div data-testid={ids.actions} className="flex flex-wrap items-center gap-2">
+    <div
+      data-testid={ids.actions}
+      className="ml-auto flex flex-wrap items-center justify-end gap-2"
+    >
       {canEdit ? (
         <button
           type="button"
@@ -39,14 +38,14 @@ export function PromptActions({
           className="btn-signal touch:min-h-[var(--touch-target)]"
           onClick={onEdit}
         >
-          {inUse ? 'Edit' : paused ? 'Edit custom version' : 'Customize'}
+          {inUse ? 'Edit' : paused ? 'Edit custom version' : 'Customize for this project'}
         </button>
       ) : null}
       {canEdit && resumable !== null ? (
         <button
           type="button"
           data-testid={ids.actionResume}
-          className="btn touch:min-h-[var(--touch-target)]"
+          className="btn"
           onClick={() => onResume(resumable.number)}
         >
           Use custom v{resumable.number} again
@@ -56,7 +55,7 @@ export function PromptActions({
         <button
           type="button"
           data-testid={ids.actionUseBuiltIn}
-          className="btn touch:min-h-[var(--touch-target)]"
+          className="btn"
           onClick={onUseBuiltIn}
         >
           Use built-in

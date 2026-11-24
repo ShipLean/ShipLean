@@ -24,6 +24,7 @@ export function SourceTab(props: { prompt: PromptDto }) {
         </p>
       ) : null}
       <SourceBlock
+        bleed
         text={text}
         label={custom === null ? 'Built-in prompt source' : `Custom v${custom.number} source`}
       />
