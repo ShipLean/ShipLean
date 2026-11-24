@@ -12,15 +12,10 @@ internal static class PromptTextRules
     private const int MaxTextBytes = 65_536;
     private const int MaxNoteLength = 200;
 
-    // The trimmed note.
+    // The trimmed note. It is optional (D20): a missing or blank note is stored as "".
     public static string Note(string? note)
     {
         var trimmed = note?.Trim() ?? string.Empty;
-        if (trimmed.Length == 0)
-        {
-            throw ApiException.Validation("Add a note saying what you changed.", "note");
-        }
-
         if (trimmed.Length > MaxNoteLength)
         {
             throw ApiException.Validation($"The note is at most {MaxNoteLength} characters.", "note");

@@ -155,7 +155,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         }
         var changedAt = builtInRows[(PromptKeys.ToWire(facts.Key), currentHash)].FirstSeenAt;
         var merge = PromptMerge.Merge(inUse.BaseText, inUse.Text, currentText);
-        var update = new PromptUpdateDto($"{Day(changedAt, zone)} built-in", BaseLabel(inUse.BaseFirstSeen, zone),
+        var update = new PromptUpdateDto(Day(changedAt, zone), BaseLabel(inUse.BaseFirstSeen, zone),
             PromptDiff.Patch(inUse.BaseText, currentText), merge.Clean, merge.Text);
         return Build(facts, PromptStatus.BuiltInUpdated, currentText, currentHash, custom, patch, update, errors);
     }
@@ -180,5 +180,5 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
 
     private string Day(DateTime utc, TimeZoneInfo zone) => DisplayDate.ShortDay(new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)), clock.GetUtcNow(), zone);
 
-    private string BaseLabel(DateTime firstSeen, TimeZoneInfo zone) => $"built-in of {Day(firstSeen, zone)}";
+    private string BaseLabel(DateTime firstSeen, TimeZoneInfo zone) => Day(firstSeen, zone);
 }

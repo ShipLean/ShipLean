@@ -139,7 +139,7 @@ public class PromptReadsTests : ApiFixture
         guide.Custom.By.ShouldBe(joel);
         guide.Custom.Note.ShouldBe("two");
         guide.Custom.AtLabel.ShouldBe(Day(3));
-        guide.Custom.BaseLabel.ShouldBe($"built-in of {Day(9)}");
+        guide.Custom.BaseLabel.ShouldBe(Day(9));
         guide.Custom.BaseText.ShouldBe(_builtIns.Text(PromptKey.Guide).Replace("\r\n", "\n", StringComparison.Ordinal));
         guide.YourChangesPatch.ShouldNotBeNull();
         page.CustomCount.ShouldBe(1);
@@ -178,8 +178,8 @@ public class PromptReadsTests : ApiFixture
         var retro = Find(page, PromptKey.Retro);
         retro.Status.ShouldBe(PromptStatus.BuiltInUpdated);
         retro.Update.ShouldNotBeNull();
-        retro.Update.BaseLabel.ShouldBe($"built-in of {Day(20)}");
-        retro.Update.ChangedLabel.ShouldBe($"{Day(4)} built-in");
+        retro.Update.BaseLabel.ShouldBe(Day(20));
+        retro.Update.ChangedLabel.ShouldBe(Day(4));
         retro.Custom!.AtLabel.ShouldBe(Day(10));
     }
 
@@ -229,7 +229,7 @@ public class PromptReadsTests : ApiFixture
         history.Versions.Select(v => v.Source).ShouldBe([PromptVersionSource.BuiltInUpdate, PromptVersionSource.Editor]);
         history.Versions.Select(v => v.Text).ShouldBe(["v2 text", "v1 text"]);
         history.Versions.Select(v => v.AtLabel).ShouldBe([Day(2), Day(5)]);
-        history.BaseLabel.ShouldBe($"built-in of {Day(8)}");
+        history.BaseLabel.ShouldBe(Day(8));
     }
 
     [Test]
