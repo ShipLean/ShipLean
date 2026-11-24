@@ -25,6 +25,60 @@ test('AssembledTab_ShouldShowTheLayersInOrderWithPlannedOnesMarked', async ({ mo
   await expect(page.getByTestId(ids.assembledText)).toContainText('Second line, reworded');
 });
 
+test('AssembledTab_ShouldShowNumberedLayerCardsWithChips', async ({ mount, page }) => {
+  await page.route(ASSEMBLED_URL, (route) => route.fulfill({ json: assembled }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const cards = page.getByTestId(ids.assembledLayers).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  await expect(cards.locator(`[data-testid="${ids.assembledLayerNumber}"]`)).toHaveText([
+    '1',
+    '2',
+    '2a',
+    '3',
+    '+',
+  ]);
+  await expect(cards.locator(`[data-testid="${ids.assembledLayerChip}"]`)).toHaveText([
+    'Fixed',
+    'Custom v2',
+    'Custom v2',
+    'Planned',
+    'Planned',
+  ]);
+  await expect(page.getByTestId(ids.assembledIntro)).toContainText('replaces only the highlighted');
+});
+
+test('AssembledTab_ShouldMarkOwnedLayersAndDashPlannedOnes', async ({ mount, page }) => {
+  await page.route(ASSEMBLED_URL, (route) => route.fulfill({ json: assembled }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const cards = page.getByTestId(ids.assembledLayers).getByRole('listitem');
+  await expect(cards).toHaveCount(5);
+  await expect(cards.nth(0)).toHaveAttribute('data-owned', 'false');
+  await expect(cards.nth(1)).toHaveAttribute('data-owned', 'true');
+  await expect(cards.nth(2)).toHaveAttribute('data-owned', 'true');
+  await expect(cards.nth(1)).toHaveCSS('border-top-style', 'solid');
+  await expect(cards.nth(3)).toHaveCSS('border-top-style', 'dashed');
+  await expect(cards.nth(4)).toHaveCSS('border-top-style', 'dashed');
+  await expect(cards.nth(3)).toHaveAttribute('data-owned', 'false');
+});
+
+test('AssembledTab_ShouldShowTheFullTextBelowTheStack', async ({ mount, page }) => {
+  await page.route(ASSEMBLED_URL, (route) => route.fulfill({ json: assembled }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabAssembled).click();
+
+  const layers = page.getByTestId(ids.assembledLayers);
+  const text = page.getByTestId(ids.assembledText);
+  await expect(text).toContainText('Second line, reworded');
+  await expect(layers.getByTestId(ids.assembledText)).toHaveCount(0);
+  const stack = await layers.boundingBox();
+  const full = await text.boundingBox();
+  expect(full!.y).toBeGreaterThanOrEqual(stack!.y + stack!.height);
+});
+
 test('AssembledTab_WhenAgentChanged_ShouldShowThatAgentsText', async ({ mount, page }) => {
   await page.route(ASSEMBLED_URL, (route) => {
     const agent = new URL(route.request().url()).searchParams.get('agent');
@@ -48,6 +102,23 @@ test('UpdateTab_WhenClean_ShouldMarkItAppliesCleanly', async ({ mount, page }) =
   await expect(page.getByTestId(ids.updateAppliesCleanly)).toBeVisible();
   await expect(page.getByTestId(ids.updateDiff).getByTestId(ids.diffLine).first()).toBeVisible();
   await expect(page.getByTestId(ids.updateApply)).toBeVisible();
+});
+
+test('UpdateTab_ShouldShowTheExplainerAndTheDiffHeaderWithAppliesCleanly', async ({
+  mount,
+  page,
+}) => {
+  await openByPageJson(mount, page, 'guide');
+  await page.getByTestId(ids.tabUpdate).click();
+
+  const update = guideOf(adminPage).update!;
+  const explainer = page.getByTestId(ids.updateExplainer);
+  await expect(explainer).toContainText(`the ${update.changedLabel}`);
+  await expect(explainer).toContainText('applies cleanly to your version');
+  const header = page.getByTestId(ids.updateDiffHeader);
+  await expect(header.getByTestId(ids.updateBaseNote)).toHaveText('What changed in the built-in');
+  await expect(header).toContainText(`${update.baseLabel} \u2192 ${update.changedLabel}`);
+  await expect(header.getByTestId(ids.updateAppliesCleanly)).toHaveText('Applies cleanly');
 });
 
 test('UpdateTab_WhenApplied_ShouldSaveTheMergedText', async ({ mount, page }) => {

@@ -4,6 +4,8 @@ import { promptsTestIds as ids } from '../testIds';
 import { useKeepMine, useSavePromptVersion } from '../usePrompts';
 import { PatchView } from './update/PatchView';
 import { errorText } from './update/errorText';
+import { LayerChip } from './assembled/LayerChip';
+import { Code } from './update/Code';
 
 // The built-in's own change, with Applies cleanly and the apply actions.
 export function UpdateTab(props: {
@@ -52,17 +54,34 @@ export function UpdateTab(props: {
       data-can-edit={props.canEdit}
       className="grid gap-3"
     >
-      <div className="rounded-control border border-edge">
-        <div className="flex flex-wrap items-center gap-3 border-b border-dashed border-edge px-3 py-2 text-[length:var(--text-xs)] text-ink-muted">
-          <span data-testid={ids.updateBaseNote}>
-            What changed in the built-in, from the {update.baseLabel} to the {update.changedLabel}
+      <div
+        role="note"
+        data-testid={ids.updateExplainer}
+        className="rounded-control border border-edge border-l-[3px] border-l-caution bg-[color-mix(in_srgb,var(--color-caution)_9%,var(--color-panel))] px-3 py-2 text-[length:var(--text-sm)]"
+      >
+        ShipLean shipped a new built-in <Code>{prompt.file}</Code> (
+        <Code>{prompt.builtInHash.slice(0, 8)}</Code>): the {update.changedLabel}. Below is only
+        what changed in the built-in.{' '}
+        {update.appliesCleanly
+          ? 'It doesn\u2019t touch the lines you changed, so it applies cleanly to your version.'
+          : 'It touches lines you changed, so apply it and edit to resolve them.'}
+      </div>
+      <div className="overflow-hidden rounded-control border border-edge bg-panel">
+        <div
+          data-testid={ids.updateDiffHeader}
+          className="flex flex-wrap items-center gap-2 border-b border-edge bg-sunken px-3 py-1.5 text-[length:var(--text-sm)]"
+        >
+          <strong data-testid={ids.updateBaseNote}>What changed in the built-in</strong>
+          <span className="text-ink-muted">
+            {update.baseLabel} {'\u2192'} {update.changedLabel}
           </span>
+          <span className="flex-1" />
           {update.appliesCleanly ? (
-            <span data-testid={ids.updateAppliesCleanly} className="chip">
+            <LayerChip tone="ok" testId={ids.updateAppliesCleanly}>
               Applies cleanly
-            </span>
+            </LayerChip>
           ) : (
-            <span data-testid={ids.updateNeedsMerge}>
+            <span data-testid={ids.updateNeedsMerge} className="text-caution">
               Conflicts with your changes: Apply and edit to resolve them
             </span>
           )}

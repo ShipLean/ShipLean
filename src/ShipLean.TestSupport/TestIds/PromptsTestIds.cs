@@ -167,4 +167,10 @@ public static class PromptsTestIds
     public const string HistoryFootNote = "prompts-history-foot-note";
     public const string HistoryBuiltInHash = "prompts-history-built-in-hash";
     public const string UseBuiltInStays = "prompts-use-built-in-stays";
+    // what the agent gets and built-in update
+    public const string AssembledLayerChip = "prompts-assembled-layer-chip";
+    public const string AssembledLayerNumber = "prompts-assembled-layer-number";
+    public const string AssembledIntro = "prompts-assembled-intro";
+    public const string UpdateExplainer = "prompts-update-explainer";
+    public const string UpdateDiffHeader = "prompts-update-diff-header";
 }
