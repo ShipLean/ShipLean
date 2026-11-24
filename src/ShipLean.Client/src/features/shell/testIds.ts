@@ -13,6 +13,7 @@ export const shellTestIds = {
   navRetrosFeatures: 'shell-nav-retros-features',
   navRetrosInsights: 'shell-nav-retros-insights',
   navRetrosInsightsCount: 'shell-nav-retros-insights-count',
+  navWaysOfWorking: 'shell-nav-ways-of-working',
   navJiraImport: 'shell-nav-jira-import',
   navSettings: 'shell-nav-settings',
   userButton: 'shell-user-button',

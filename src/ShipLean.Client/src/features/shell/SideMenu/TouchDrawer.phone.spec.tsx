@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/experimental-ct-react';
 import { stubShell } from '../../../pages/screenshots/shellStub';
 import { touchTestIds as touch } from '../../../touch/testIds';
+import { inspectionMetricsTestIds } from '../../inspectionMetrics/testIds';
 import { ShellHarness } from '../ct/ShellHarness';
 import { shellTestIds as ids } from '../testIds';
 
@@ -40,6 +41,32 @@ test('TouchDrawer_WhenOnSprints_ShouldShowCurrentSprintAndAllSprints', async ({ 
   for (const row of rows) {
     expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(32);
   }
+});
+
+// SHIP-2280 D2: the drawer has the Ways of working section too, between Inspection and Jira import, a full touch target.
+test('TouchDrawer_WhenProject_ShouldShowWaysOfWorkingBetweenInspectionAndJiraImport', async ({
+  mount,
+  page,
+}) => {
+  const drawer = await openDrawer({ mount, page }, '/p/SHIP/ways-of-working');
+
+  const item = drawer.getByTestId(ids.navWaysOfWorking);
+  await expect(item).toHaveText('✎Ways of working');
+  await expect(item).toHaveAttribute('aria-current', 'page');
+  expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(32);
+  const sections = drawer.locator(
+    [inspectionMetricsTestIds.menuItem, ids.navWaysOfWorking, ids.navJiraImport]
+      .map((id) => `[data-testid="${id}"]`)
+      .join(','),
+  );
+  const order = await sections.evaluateAll((els) =>
+    els.map((el) => el.getAttribute('data-testid')),
+  );
+  expect(order).toEqual([
+    inspectionMetricsTestIds.menuItem,
+    ids.navWaysOfWorking,
+    ids.navJiraImport,
+  ]);
 });
 
 test('TouchDrawer_WhenUserButtonTapped_ShouldOpenMenuUpwards', async ({ mount, page }) => {
