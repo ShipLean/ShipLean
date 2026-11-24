@@ -216,9 +216,24 @@ public class SprintDemoPromptTests
 
     [TestCase("handover")]
     [TestCase("session")]
-    public void Prompt_ShouldSayDataOnScreenIsMadeUp(string channel)
+    public void Prompt_ShouldForbidMakingUpData(string channel)
     {
-        ChannelSource(channel).ShouldContain("The intro says the data on screen is made up.");
+        var source = ChannelSource(channel);
+
+        source.ShouldContain("**Never make up data.**");
+        source.ShouldContain("never say the data is made up");
+        source.ShouldNotContain("data on screen is made up");
+    }
+
+    // SHIP-2279: with an environment set the clips are required; slides alone only when the start can't run or fails.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Render_WhenEnvironmentSet_ShouldRequireWalkthroughClips(string channel)
+    {
+        var text = Render(Data("Run the app with make dev."), channel: channel == "session" ? DemoPromptChannel.Session : DemoPromptChannel.Handover);
+
+        text.ShouldContain("**The walkthrough clips are required.**");
+        text.ShouldContain("No other reason, such as time or effort, allows slides alone.");
     }
 
     // K11 item 6

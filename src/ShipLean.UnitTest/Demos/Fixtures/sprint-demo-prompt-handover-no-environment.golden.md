@@ -8,7 +8,7 @@ Work through the numbered steps in order. Commands are meant to be pasted. Every
 
 One video: an intro, then one chapter per Feature in the data, then an **Other work** chapter when `otherWork` has items, then a short **Also this sprint** section, then a closing **What we'll measure**.
 
-- **Intro:** the sprint name and goal, the dates and the presenters (step 2). Mention `otherWork` in one line: how many stories and bugs have no Feature, shown later under Other work. Say that all data on screen is made up. The title slide says the presenters are synthetic voices.
+- **Intro:** the sprint name and goal, the dates and the presenters (step 2). Mention `otherWork` in one line: how many stories and bugs have no Feature, shown later under Other work. The slides and narration use the real sprint data, so never say the data is made up. When the demo has walkthrough clips, say in one line that they come from a separate local copy with sample data. The title slide says the presenters are synthetic voices.
 - **Each Feature**, in this order: why, before and after, a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its retro items, its measure.
 - **A Feature with more than one item in its `stories` opens with its own title slide**: the Feature's title and key, alone on the slide, before its why.
 - **Other work:** for `otherWork`, after the Features and before Also this sprint. Each bug gets a before and after. Each story gets one spoken line, or a before and after if it changed something visible.
@@ -44,6 +44,8 @@ Each presenter introduces themselves once, the first time they speak ("I'm Keith
 
 Narrate the why and the stated measure, **never results**: nothing has been measured yet. A Feature with no `why` gets the sentence "This feature has no recorded why" and nothing invented. A measure marked `(to confirm)` is said to be to confirm. A Feature whose `measure` is null gets "No measure is recorded", in its own section and again in the closing. Don't claim anything the data doesn't say.
 
+**Never make up data.** No invented numbers, names, dates, quotes, before states, results or stories, on a slide or in the narration. Everything comes from the data above or from an item you read. Where the data has nothing, say so in one sentence instead of filling the gap.
+
 Where the data holds nothing for a section (no `summary` or `criteria` for before and after or the implementation, no `plan` numbers), say so in one sentence and describe what the data does hold, such as the stories, their points and states, and their tasks. Quote the `plan` numbers as what the plan recorded, and don't try to reconcile them with the stories listed.
 
 ## 4. Retro items
@@ -54,7 +56,7 @@ In a Feature's execution section, summarise its `retro` by theme and category (w
 
 No way to start a local instance is recorded for this project. Build the demo from slides alone, and say so in the intro and in your closing comment.
 
-**Never record against production, or against the instance this data came from.** Only a local seeded instance whose data is made up. The intro says the data on screen is made up.
+**Never record against production, or against the instance this data came from.** Only a local seeded instance, whose data is sample data. Only the clips come from it, and the intro says so in one line.
 
 ## 6. Tools
 
@@ -107,7 +109,7 @@ For each Feature, and for Other work, record one walkthrough with Playwright (`r
 - An init script draws a visible cursor. Slow every action down. Zoom only at key moments.
 - Each segment acts, then waits out its narration (from `durations.json`), and writes its start time to `marks.json`, in seconds since the recording page was created. That number is the `-ss` of its clip segment in step 11.
 - **Wait until the app answers before you act** (a known search returns results). Never act on a blank page.
-- **The clip shows the local copy, not the data above.** The copy holds the standard seed, so a clip can lack what the data lists (a `why`, tasks) or hold more (other stories). Narrate only what the clip shows, and say in the intro that the clips come from a separate seeded copy. Names of people shown in the app are made-up seed data: never read them out.
+- **The clip shows the local copy, not the data above.** The copy holds the standard seed, so a clip can lack what the data lists (a `why`, tasks) or hold more (other stories). Narrate only what the clip shows, and say in the intro that the clips come from a separate seeded copy. Names of people shown in the app are sample seed data: never read them out.
 - Use `data-testid` locators. Opening an item can lay its page over the one underneath, so scope each locator to the part you mean.
 - Before and after: if "before" can't be shown, say so in the narration and skip it. Record an item's before and after as consecutive segments, so they play back to back.
 
