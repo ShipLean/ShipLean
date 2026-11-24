@@ -138,6 +138,18 @@ public class SprintDemoPromptTests
         ChannelSource(channel).ShouldContain("Every mobile clip and screenshot is at phone size inside the phone frame, never a desktop or tablet window.");
     }
 
+    // SHIP-2330: the local copy gets busy, realistic sample data before anything is recorded, pushed hard on a screen or two only.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldFillTheLocalCopyWithBusyRealisticSampleData(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Make the local copy look lived in");
+        ChannelSource(channel).ShouldContain("about one in five long (60 to 120 characters, the kind that wraps or gets cut off)");
+        ChannelSource(channel).ShouldContain("**Push it at times, not all the time.**");
+        ChannelSource(channel).ShouldContain("Never touch production. Use made-up people names, never names from the data above");
+        ChannelSource(channel).ShouldContain("The one exception is the sample data you add to the local copy (step 5)");
+    }
+
     // SHIP-2330: Feature slides put the points left and a framed screenshot right.
     [TestCase("handover")]
     [TestCase("session")]

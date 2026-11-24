@@ -10,7 +10,7 @@ One video: an intro, then one chapter per Feature in the data, then an **Other w
 
 - **Intro:** the sprint name and goal, the dates and the presenters (step 2). Mention `otherWork` in one line: how many stories and bugs have no Feature, shown later under Other work. The slides and narration use the real sprint data, so never say the data is made up. When the demo has walkthrough clips, say in one line that they come from a separate local copy with sample data. The title slide says the presenters are synthetic voices.
 - **Each Feature**, in this order: why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its measure. A Feature's retro points go in the sprint-wide retro themes (step 4), not in its own chapter.
-- **Showing what happened takes most of the time.** In each Feature's chapter, the before and after and the walkthrough clip take more than half of its running time; aim for about two thirds. Keep the why, the implementation and how the agents built it short, a slide or two each. A Feature with nothing to show (groundwork only, or slides alone) has a short chapter instead of a padded one.
+- **Showing what happened takes most of the time.** In each Feature's chapter, the before and after and the walkthrough clip take more than half of its running time; aim for about two thirds. Keep the why, the implementation and how the agents built it to a slide or two each. A Feature with nothing to show gets a short chapter, not a padded one.
 - **A Feature with more than one item in its `stories` opens with its own title slide**: the Feature's title and key, alone on the slide, before its why.
 - **Other work:** for `otherWork`, after the Features and before Also this sprint. Group it by theme: a theme that changed something a user can see gets one before and after, and everything else is covered in one or two spoken lines in all, never one line per item.
 - **Also this sprint:** the retro themes of the whole sprint (step 4), then the `actionItems`.
@@ -46,7 +46,7 @@ Each presenter introduces themselves once, the first time they speak ("I'm Keith
 
 Narrate the why and the stated measure, **never results**: nothing has been measured yet. A Feature with no `why` gets the sentence "This feature has no recorded why" and nothing invented. A measure marked `(to confirm)` is said to be to confirm. A Feature whose `measure` is null gets "No measure is recorded", in its own section and again in the closing. Don't claim anything the data doesn't say.
 
-**Never make up data.** No invented numbers, names, dates, quotes, before states, results or stories, on a slide or in the narration. Everything comes from the data above or from an item you read. Where the data has nothing, say so in one sentence instead of filling the gap.
+**Never make up data.** No invented numbers, names, dates, quotes, before states, results or stories, on a slide or in the narration. Everything comes from the data above or from an item you read. Where the data has nothing, say so in one sentence instead of filling the gap. The one exception is the sample data you add to the local copy (step 5): it may be invented, because it only appears in clips and screenshots, which the intro says come from a separate copy, and it is never narrated as the sprint's work.
 
 Where the data holds nothing for a section (no `summary` or `criteria` for before and after or the implementation, no `plan` numbers), say so in one sentence and describe what the data does hold, such as the stories, their points and states, and their tasks. Quote the `plan` numbers as what the plan recorded, and don't try to reconcile them with the stories listed.
 
@@ -68,7 +68,18 @@ Run the app with make dev.
 
 Start it, wait until it answers, and record against it. **The walkthrough clips are required.** Slides alone are allowed only when the start fails or never answers. Then say in the intro that this demo has no clips, and give the start's error output in your closing comment. No other reason, such as time or effort, allows slides alone.
 
-**Never record against production, or against the instance this data came from.** Only a local seeded instance, whose data is sample data. Only the clips come from it, and the intro says so in one line.
+**Never record against production, or against the instance this data came from.** Only a local seeded instance, whose data is sample data. Only the clips and the slide screenshots come from it, and the intro says so in one line.
+
+### Make the local copy look lived in
+
+A tidy, nearly empty seed flatters every screen. Before you record or screenshot, add sample data so the screens look like a busy team's:
+
+- **Enough to fill the screen.** Lists, boards and backlogs hold enough items to scroll, such as 15 to 30 cards on a board, over several states, people, points and tags.
+- **Realistic names, not tidy ones.** Write titles the way people do: most a normal length, about one in five long (60 to 120 characters, the kind that wraps or gets cut off), and the odd one awkward, with a ticket number, a path or a quote in it. Give a few items long descriptions or many tags.
+- **Push it at times, not all the time.** Make one or two screens properly busy and keep the rest ordinary, without crowding out what the clip is about.
+- **Only on the local copy, and only as sample data.** Add it through the local copy's UI, or through its API with Playwright's `page.request` once signed in. Never touch production. Use made-up people names, never names from the data above, and never read any of it out as the sprint's work.
+- If the local copy refuses the writes, use its seed and say so in your closing comment.
+
 
 ## 6. Tools
 
@@ -163,12 +174,11 @@ Write the slides as HTML that uses the tokens below, with Inter (`@fontsource-va
 **Points on the left, the feature on the right.** Every slide about a Feature, a capability or a bug has its points in the left half and a picture of the feature in the right half: a screenshot, from the local copy, of the page that work changed.
 
 - **A mobile change** (step 8) is screenshotted at phone size (390x844, `deviceScaleFactor` 2, `isMobile`) and sits in a **phone frame**: a dark rounded body with a thin bezel and a notch.
-- **Anything else** is screenshotted at 1280x800 and sits in a **desktop browser frame**: a title bar with three dots and an address bar showing the page's path, never a real host name.
+- **Anything else** is screenshotted at 1280x800 and sits in a **desktop browser frame**: a title bar with three dots and an address bar showing the page's path.
 - Draw both frames in HTML and CSS, with nothing loaded from the web.
 - **A little artistic licence is fine.** The frame may run slightly off the right or bottom edge, or tilt by a few degrees, as long as the part that matters stays on screen and clear of the logo in the bottom-right corner.
-- Take the screenshots while the local copy runs, before you stop it.
 - With no local copy (slides alone), or no page that shows the change, leave the picture out and let the points take the full width. Never draw a made-up screen.
-- The title, intro, handover and closing slides, the retro themes and the measures need no picture.
+- Title, intro, handover, closing, retro and measure slides need no picture.
 
 ## 10. Branding
 
@@ -240,6 +250,7 @@ The first chapter starts at 0, starts ascend strictly, each is below `durationSe
 - Extract a frame per chapter and look at it: `$FF -hide_banner -v error -y -ss SECONDS -i demo.mp4 -frames:v 1 frame-N.png`. The logo is on each, bottom right.
 - No segment overran: no narration is cut, and no screen moves during a handover.
 - Every mobile clip and screenshot is at phone size inside the phone frame, never a desktop or tablet window.
+- The screens you show hold the added sample data, some of them busy, with a mix of title lengths, not only the bare seed.
 - In each Feature's chapter with something to show, the before and after and the clip take more than half its time.
 - The retro appears once, as sprint-wide themes in Also this sprint, one theme a slide, and not inside any Feature's chapter.
 - No chapter walks through its stories one by one, and no scaffolding story (skeleton, contracts, tests, docs) has its own before and after or its own narration.
