@@ -125,7 +125,7 @@ export function HistoryTab(props: {
                 }
               >
                 <td>v{v.number}</td>
-                <td>{v.note}</td>
+                <td data-testid={ids.historyVersionNote}>{v.note}</td>
                 <td>
                   {v.by}
                   {v.agent ? (

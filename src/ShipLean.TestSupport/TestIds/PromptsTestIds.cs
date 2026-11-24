@@ -112,7 +112,6 @@ public static class PromptsTestIds
     public const string EditorNote = "prompts-editor-note";
     public const string EditorSave = "prompts-editor-save";
     public const string EditorCancel = "prompts-editor-cancel";
-    public const string EditorDirty = "prompts-editor-dirty";
     public const string EditorError = "prompts-editor-error";
     public const string EditorSaveError = "prompts-editor-save-error";
     public const string EditorSizeMeter = "prompts-editor-size-meter";
@@ -194,4 +193,6 @@ public static class PromptsTestIds
     public const string SourceLineNumber = "prompts-source-line-number";
     public const string UpdateBannerKeep = "prompts-update-banner-keep";
     public const string UpdateBannerKeepError = "prompts-update-banner-keep-error";
+    // follow-up: empty note in History (SHIP-2315)
+    public const string HistoryVersionNote = "prompts-history-version-note";
 }

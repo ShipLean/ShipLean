@@ -46,7 +46,7 @@ test('HistoryTab_ShouldListEveryVersionNewestFirstAndMarkTheOneInUse', async ({ 
   await expect(page.getByTestId(ids.historyRowInUse)).toContainText('In use');
   await expect(page.getByTestId(ids.historyRow)).toHaveCount(1);
   await expect(page.getByTestId(ids.historyRow)).toContainText('v1');
-  await expect(page.getByTestId(ids.historyBuiltInRow)).toContainText('built-in of 10 Nov');
+  await expect(page.getByTestId(ids.historyBuiltInRow)).toContainText('10 Nov');
   await expect(page.getByTestId(ids.historyBuiltInUse)).toBeVisible();
 });
 
@@ -68,6 +68,24 @@ test('HistoryTab_WhenUseClicked_ShouldPutThatVersionBack', async ({ mount, page 
   await page.getByRole('button', { name: 'Confirm' }).click();
 
   await used;
+});
+
+// D20: a version saved with an empty note shows no note.
+test('HistoryTab_WhenNoteEmpty_ShouldShowNoNote', async ({ mount, page }) => {
+  const noNote: PromptHistoryDto = {
+    ...history,
+    versions: history.versions.map((v) => (v.number === 1 ? { ...v, note: '' } : v)),
+  };
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: noNote }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const row = page.getByTestId(ids.historyRow);
+  await expect(row).toContainText('v1');
+  await expect(row.getByTestId(ids.historyVersionNote)).toHaveText('');
+  await expect(
+    page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyVersionNote),
+  ).toHaveText('Reword the second line');
 });
 
 test('HistoryTab_WhenMember_ShouldOfferNoUse', async ({ mount, page }) => {

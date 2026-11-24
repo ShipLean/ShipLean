@@ -21,9 +21,9 @@ export function UpdateBanner(props: {
     <div data-testid={ids.updateBanner} data-can-edit={props.canEdit}>
       <Callout tone="warn">
         <span data-testid={ids.updateBannerText}>
-          <b className="font-semibold">The built-in prompt changed (the {update.changedLabel}).</b>{' '}
-          Agents still get your custom v{custom?.number}, which started from the {update.baseLabel},
-          so they miss the change until you take it.
+          <b className="font-semibold">The built-in prompt changed on {update.changedLabel}.</b>{' '}
+          Agents still get your custom v{custom?.number}, which started from the {update.baseLabel}{' '}
+          built-in, so they miss the change until you take it.
         </span>
         {props.canEdit ? (
           <span className="flex flex-wrap items-center gap-2">

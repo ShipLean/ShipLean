@@ -134,13 +134,12 @@ test('UpdateTab_ShouldShowTheExplainerAndTheDiffHeaderWithAppliesCleanly', async
   await openByPageJson(mount, page, 'guide');
   await page.getByTestId(ids.tabUpdate).click();
 
-  const update = guideOf(adminPage).update!;
   const explainer = page.getByTestId(ids.updateExplainer);
-  await expect(explainer).toContainText(`the ${update.changedLabel}`);
+  await expect(explainer).toContainText('shipped a new built-in guide.md on 20 Nov (');
   await expect(explainer).toContainText('applies cleanly to your version');
   const header = page.getByTestId(ids.updateDiffHeader);
   await expect(header.getByTestId(ids.updateBaseNote)).toHaveText('What changed in the built-in');
-  await expect(header).toContainText(`${update.baseLabel} \u2192 ${update.changedLabel}`);
+  await expect(header).toContainText('10 Nov \u2192 20 Nov');
   await expect(header.getByTestId(ids.updateAppliesCleanly)).toHaveText('Applies cleanly');
 });
 

@@ -92,7 +92,8 @@ export function PromptDetail({
       open({ initialText: prompt.update.mergedText, source: 'builtInUpdate' });
   };
 
-  // The same query HistoryTab reads (Contract 13), so opening History makes no second request.
+  // The same query HistoryTab reads (Contract 13): the count comes from its cache, and opening History shows the
+  // cached versions at once while the query refetches them in the background.
   const history = usePromptHistory(projectId, prompt.key, custom !== null);
   const historyCount = custom === null ? undefined : history.data?.versions.length;
 

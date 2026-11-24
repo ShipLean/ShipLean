@@ -22,6 +22,7 @@ export const changesTestIds = {
   historyBuiltInHash: 'prompts-history-built-in-hash',
   historyEmpty: 'prompts-history-empty',
   historyAgent: 'prompts-history-agent',
+  historyVersionNote: 'prompts-history-version-note',
   useBuiltInDialog: 'prompts-use-built-in-dialog',
   useBuiltInConfirm: 'prompts-use-built-in-confirm',
   useBuiltInCancel: 'prompts-use-built-in-cancel',

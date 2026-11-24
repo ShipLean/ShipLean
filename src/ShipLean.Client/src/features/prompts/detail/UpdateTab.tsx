@@ -35,7 +35,7 @@ export function UpdateTab(props: {
     save.mutate(
       {
         text: update.mergedText,
-        note: `Applied the ${update.changedLabel} change`,
+        note: `Applied the ${update.changedLabel} built-in change`,
         source: 'builtInUpdate',
       },
       { onError: (e) => setApplyError(errorText(e, 'The change could not be applied.')) },
@@ -59,9 +59,8 @@ export function UpdateTab(props: {
         data-testid={ids.updateExplainer}
         className="rounded-control border border-edge border-l-[3px] border-l-caution bg-[color-mix(in_srgb,var(--color-caution)_9%,var(--color-panel))] px-3 py-2 text-[length:var(--text-sm)]"
       >
-        ShipLean shipped a new built-in <Code>{prompt.file}</Code> (
-        <Code>{prompt.builtInHash.slice(0, 8)}</Code>): the {update.changedLabel}. Below is only
-        what changed in the built-in.{' '}
+        ShipLean shipped a new built-in <Code>{prompt.file}</Code> on {update.changedLabel} (
+        <Code>{prompt.builtInHash.slice(0, 8)}</Code>). Below is only what changed in the built-in.{' '}
         {update.appliesCleanly
           ? 'It doesn\u2019t touch the lines you changed, so it applies cleanly to your version.'
           : 'It touches lines you changed, so apply it and edit to resolve them.'}

@@ -98,7 +98,7 @@ test('PromptEditor_WhenOpenedFromApplyAndEdit_ShouldPrefillTheMergedTextAndSaveA
   const merged = guide.update!.mergedText;
   await expect(page.getByTestId(ids.editorText)).toHaveValue(merged);
   await expect(page.getByTestId(ids.editorStartedFrom)).toHaveText(
-    `Started from the ${guide.update!.changedLabel}`,
+    'Started from the built-in of 20 Nov',
   );
   await expect(page.getByTestId(ids.editorSave)).toHaveText('Save as custom v2');
   await page.getByTestId(ids.editorNote).fill('Took the update');
@@ -346,7 +346,7 @@ test('PromptEditor_WhenEditingACustomVersion_ShouldSayWhichBuiltInItStartedFrom'
   await page.getByTestId(ids.actionEdit).click();
 
   await expect(page.getByTestId(ids.editorStartedFrom)).toHaveText(
-    `Started from the ${brief.custom!.baseLabel}`,
+    'Started from the built-in of 10 Nov',
   );
 });
 

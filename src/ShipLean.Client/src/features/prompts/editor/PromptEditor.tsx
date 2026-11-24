@@ -71,12 +71,12 @@ export function PromptEditor(props: {
     source === 'builtInUpdate' || prompt.custom === null
       ? prompt.builtInText
       : prompt.custom.baseText;
-  // The aside of the tab band: the built-in this text started from (the server's labels).
+  // The aside of the tab band: the built-in this text started from, composed around the server's day labels (D19).
   const startedFrom =
     source === 'builtInUpdate' && prompt.update !== null
-      ? `the ${prompt.update.changedLabel}`
+      ? `the built-in of ${prompt.update.changedLabel}`
       : prompt.custom !== null
-        ? `the ${prompt.custom.baseLabel}`
+        ? `the built-in of ${prompt.custom.baseLabel}`
         : 'the built-in of today';
   const hunks = useMemo(
     () => (tab === 'edit' ? [] : changesFromBuiltIn(baseText, text)),
