@@ -16,6 +16,7 @@ public static class ShellTestIds
     public const string NavRetrosFeatures = "shell-nav-retros-features";
     public const string NavRetrosInsights = "shell-nav-retros-insights";
     public const string NavRetrosInsightsCount = "shell-nav-retros-insights-count";
+    public const string NavWaysOfWorking = "shell-nav-ways-of-working";
     public const string NavJiraImport = "shell-nav-jira-import";
     public const string NavSettings = "shell-nav-settings";
     public const string UserButton = "shell-user-button";

@@ -99,7 +99,7 @@ export function BeforeYouPlan({
             <button
               type="button"
               data-testid={ids.planQueueExit}
-              className="btn ghost"
+              className="btn-ghost"
               onClick={queue.exit}
             >
               Leave <kbd>Esc</kbd>

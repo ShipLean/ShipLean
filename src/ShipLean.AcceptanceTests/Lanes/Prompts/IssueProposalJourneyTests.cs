@@ -37,7 +37,7 @@ public class IssueProposalJourneyTests : SeededAcceptanceTest
         await link.ClickAsync();
 
         var prompts = new PromptsMemberPage(Page);
-        await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/settings/prompts\\?prompt=issueProposal$"));
+        await Expect(Page).ToHaveURLAsync(new Regex("/p/SHIP/ways-of-working\\?prompt=issueProposal$"));
         await Expect(prompts.DetailName).ToContainTextAsync("Issue proposal");
         await Expect(prompts.DetailChip).ToContainTextAsync("Custom v1");
         await Page.GetByTestId(PromptsTestIds.TabHistory).ClickAsync();

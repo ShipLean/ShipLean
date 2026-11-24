@@ -141,6 +141,62 @@ public class TestIdPinTests
         Problems().ShouldHaveSingleItem().ShouldContain("ComponentTestIds.Dialog");
     }
 
+    [Test]
+    public void Compare_WhenSpreadOfAreaFiles_ShouldMergeEntries()
+    {
+        WriteSpreadBoard("""
+            import { laneTestIds } from './testIds/lane';
+            import { cardTestIds } from './testIds/card';
+
+            export const boardTestIds = {
+              ...laneTestIds,
+              ...cardTestIds,
+              title: 'board-title',
+            } as const;
+            """);
+        WriteArea("lane", "export const laneTestIds = {\n  lane: 'board-lane',\n} as const;");
+        WriteArea("card", "export const cardTestIds = {\n  cardTitle: 'board-card-title',\n} as const;");
+        WriteBoardCs(("Lane", "board-lane"), ("CardTitle", "board-card-title"), ("Title", "board-title"));
+
+        Problems().ShouldBeEmpty();
+    }
+
+    [Test]
+    public void Compare_WhenSpreadUnresolved_ShouldReportIt()
+    {
+        WriteSpreadBoard("""
+            import { laneTestIds } from './testIds/lane';
+
+            export const boardTestIds = {
+              ...laneTestIds,
+              ...cardTestIds,
+            } as const;
+            """);
+        WriteArea("lane", "export const laneTestIds = {\n  lane: 'board-lane',\n} as const;");
+        WriteBoardCs(("Lane", "board-lane"));
+
+        Problems().ShouldHaveSingleItem().ShouldContain("spread ...cardTestIds has no");
+    }
+
+    [Test]
+    public void Compare_WhenSpreadsDuplicateAKey_ShouldReportIt()
+    {
+        WriteSpreadBoard("""
+            import { laneTestIds } from './testIds/lane';
+            import { cardTestIds } from './testIds/card';
+
+            export const boardTestIds = {
+              ...laneTestIds,
+              ...cardTestIds,
+            } as const;
+            """);
+        WriteArea("lane", "export const laneTestIds = {\n  lane: 'board-lane',\n} as const;");
+        WriteArea("card", "export const cardTestIds = {\n  lane: 'board-lane-again',\n} as const;");
+        WriteBoardCs(("Lane", "board-lane"));
+
+        Problems().ShouldHaveSingleItem().ShouldContain("key Lane appears twice");
+    }
+
     private List<string> Problems() => TestIdPin.DiscoverPairs(_root).SelectMany(TestIdPin.Compare).ToList();
 
     private void WriteBoard(string ts, params (string Name, string Value)[] consts)
@@ -150,6 +206,17 @@ public class TestIdPinTests
         Write(Path.Combine("src", "ShipLean.TestSupport", "TestIds", "BoardTestIds.cs"),
             "namespace ShipLean.TestSupport.TestIds;\npublic static class BoardTestIds\n{\n" + lines + "}\n");
     }
+
+    private void WriteSpreadBoard(string ts) =>
+        Write(Path.Combine("src", "ShipLean.Client", "src", "features", "board", "testIds.ts"), ts);
+
+    private void WriteArea(string file, string ts) =>
+        Write(Path.Combine("src", "ShipLean.Client", "src", "features", "board", "testIds", file + ".ts"), ts);
+
+    private void WriteBoardCs(params (string Name, string Value)[] consts) =>
+        Write(Path.Combine("src", "ShipLean.TestSupport", "TestIds", "BoardTestIds.cs"),
+            "namespace ShipLean.TestSupport.TestIds;\npublic static class BoardTestIds\n{\n"
+            + string.Concat(consts.Select(c => $"    public const string {c.Name} = \"{c.Value}\";\n")) + "}\n");
 
     private void Write(string relative, string content)
     {

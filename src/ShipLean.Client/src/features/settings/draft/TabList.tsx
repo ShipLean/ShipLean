@@ -1,8 +1,6 @@
-import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { projectSettingsTabLabels, routePath, type ProjectSettingsTab } from '../../../routes';
 import { inspectionTestIds } from '../../inspection/testIds';
-import { promptsTestIds } from '../../prompts/testIds';
 import { settingsTestIds } from '../testIds';
 
 const TEST_IDS: Record<ProjectSettingsTab, string> = {
@@ -13,7 +11,6 @@ const TEST_IDS: Record<ProjectSettingsTab, string> = {
   integrations: settingsTestIds.tabIntegrations,
   demos: settingsTestIds.tabDemos,
   inspection: inspectionTestIds.settingsTabInspection,
-  prompts: promptsTestIds.settingsTabPrompts,
 };
 const ORDER: ProjectSettingsTab[] = [
   'general',
@@ -23,7 +20,6 @@ const ORDER: ProjectSettingsTab[] = [
   'integrations',
   'demos',
   'inspection',
-  'prompts',
 ];
 
 /** The settings panes as a column of tabs, at desktop only: at touch the index (SettingsIndex) lists them instead. */
@@ -32,14 +28,11 @@ export function TabList({
   active,
   dirty,
   errored,
-  badges = {},
 }: {
   projectKey: string;
   active: ProjectSettingsTab;
   dirty: ReadonlySet<ProjectSettingsTab>;
   errored: ReadonlySet<ProjectSettingsTab>;
-  /** What a tab shows at its right end (Prompts: its custom count). */
-  badges?: Partial<Record<ProjectSettingsTab, ReactNode>>;
 }) {
   return (
     <nav
@@ -72,7 +65,6 @@ export function TabList({
               className="size-[7px] rounded-full bg-caution"
             />
           ) : null}
-          {badges[tab]}
         </Link>
       ))}
     </nav>

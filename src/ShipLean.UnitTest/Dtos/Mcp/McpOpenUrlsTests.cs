@@ -31,7 +31,7 @@ public class McpOpenUrlsTests
             ["sprintDemo"] = McpOpenUrls.SprintDemo(Base, "SHIP", Sprint),
             ["featureBoard"] = McpOpenUrls.FeatureBoard(Base, "SHIP", "SHIP-141"),
             ["inspectionMetrics"] = McpOpenUrls.InspectionMetrics(Base, "SHIP"),
-            ["projectSettings"] = McpOpenUrls.Prompts(Base, "SHIP"),
+            ["waysOfWorking"] = McpOpenUrls.Prompts(Base, "SHIP"),
             ["workItemAttachment"] = McpOpenUrls.WorkItemAttachment(Base, "SHIP", "SHIP-141", Guid.Parse("00000004-0000-4000-8001-000000000020")),
         };
         var values = new Dictionary<string, string>
@@ -40,7 +40,6 @@ public class McpOpenUrlsTests
             [":itemKey"] = "SHIP-141",
             [":sprintId"] = Sprint.ToString(),
             [":attachmentId"] = "00000004-0000-4000-8001-000000000020",
-            [":tab"] = "prompts",
         };
 
         foreach (var (routeId, url) in built)
@@ -48,6 +47,13 @@ public class McpOpenUrlsTests
             var expected = values.Aggregate(patterns[routeId], (path, kv) => path.Replace(kv.Key, kv.Value, StringComparison.Ordinal));
             url.ShouldBe("https://planner.example.com" + expected);
         }
+    }
+
+    [Test]
+    public void Prompts_WhenWireKey_ShouldPointAtWaysOfWorking()
+    {
+        McpOpenUrls.Prompts(Base, "SHIP").ShouldBe("https://planner.example.com/p/SHIP/ways-of-working");
+        McpOpenUrls.Prompts(Base, "SHIP", "issueProposal").ShouldBe("https://planner.example.com/p/SHIP/ways-of-working?prompt=issueProposal");
     }
 
     [Test]

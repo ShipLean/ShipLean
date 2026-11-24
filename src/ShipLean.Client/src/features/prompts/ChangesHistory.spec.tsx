@@ -1,0 +1,299 @@
+import { expect, test } from '@playwright/experimental-ct-react';
+import historyJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-history.json' with { type: 'json' };
+import type { PromptHistoryDto } from '@shiplean/core/api/prompts';
+import savedJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-saved.json' with { type: 'json' };
+import { openByAdminFlag, openByPageJson } from './ct/openPrompt';
+import { PromptsHarness } from './ct/PromptsHarness';
+import { withPrompt } from './ct/promptVariants';
+import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
+import { promptsTestIds as ids } from './testIds';
+
+const history = historyJson as PromptHistoryDto;
+const HISTORY_URL = '**/api/projects/*/prompts/brief/history';
+const USE_URL = '**/api/projects/*/prompts/brief/versions/1/use';
+const BRIEF_URL = '**/api/projects/*/prompts/brief';
+
+test('YourChangesTab_WhenPatch_ShouldDrawTheDiff', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  await expect(page.getByTestId(ids.yourChangesDiff)).toBeVisible();
+  await expect(page.getByTestId(ids.diffLine).and(page.locator('[data-kind=add]'))).toHaveText(
+    /line six, reworded/,
+  );
+  await expect(page.getByTestId(ids.diffLine).and(page.locator('[data-kind=del]'))).toHaveCount(1);
+});
+
+test('YourChangesTab_WhenNoPatch_ShouldSayNoChanges', async ({ mount, page }) => {
+  const noPatch = {
+    ...adminPage,
+    stages: adminPage.stages.map((s) => ({
+      ...s,
+      prompts: s.prompts.map((p) => (p.key === 'brief' ? { ...p, yourChangesPatch: null } : p)),
+    })),
+  };
+  await openByAdminFlag(mount, page, 'brief', true, noPatch);
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  await expect(page.getByTestId(ids.yourChangesEmpty)).toHaveText('No changes');
+});
+
+test('HistoryTab_ShouldListEveryVersionNewestFirstAndMarkTheOneInUse', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRowInUse)).toContainText('v2');
+  await expect(page.getByTestId(ids.historyRowInUse)).toContainText('In use');
+  await expect(page.getByTestId(ids.historyRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.historyRow)).toContainText('v1');
+  await expect(page.getByTestId(ids.historyBuiltInRow)).toContainText('10 Nov');
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toBeVisible();
+});
+
+test('HistoryTab_WhenUseClicked_ShouldPutThatVersionBack', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  const used = page.waitForRequest(
+    (r) => r.method() === 'POST' && r.url().endsWith('/versions/1/use'),
+  );
+  await page.route(USE_URL, (route) =>
+    route.fulfill({ json: { key: 'brief', status: 'custom', inUseVersion: 1 } }),
+  );
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await page.getByTestId(ids.historyUse).click();
+  await expect(page.getByTestId(ids.historyNote)).toContainText(
+    'Agents get v1 from their next call',
+  );
+  await page.getByRole('button', { name: 'Confirm' }).click();
+
+  await used;
+});
+
+// D20: a version saved with an empty note shows no note.
+test('HistoryTab_WhenNoteEmpty_ShouldShowNoNote', async ({ mount, page }) => {
+  const noNote: PromptHistoryDto = {
+    ...history,
+    versions: history.versions.map((v) => (v.number === 1 ? { ...v, note: '' } : v)),
+  };
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: noNote }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const row = page.getByTestId(ids.historyRow);
+  await expect(row).toContainText('v1');
+  await expect(row.getByTestId(ids.historyVersionNote)).toHaveText('');
+  await expect(
+    page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyVersionNote),
+  ).toHaveText('Reword the second line');
+});
+
+test('HistoryTab_WhenMember_ShouldOfferNoUse', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief', false);
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.historyUse)).toHaveCount(0);
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCount(0);
+});
+
+test('history shows the agent and MCP for a version saved over MCP', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const row = page.getByTestId(ids.historyRow);
+  await expect(row).toContainText('Maria Santos');
+  await expect(page.getByTestId(ids.historyAgent)).toHaveText('via Claude Code (claude.ai) Agent');
+  await expect(row).toContainText('MCP');
+});
+
+test('history shows no agent line for an editor version', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRowInUse)).toContainText('Editor');
+  await expect(page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyAgent)).toHaveCount(0);
+});
+
+test('UseBuiltInDialog_WhenConfirmed_ShouldPostUseBuiltIn', async ({ mount, page }) => {
+  let posted = 0;
+  await page.route(`${BRIEF_URL}/use-built-in`, (route) => {
+    posted++;
+    return route.fulfill({ json: savedJson });
+  });
+  await openByPageJson(mount, page, 'brief');
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+  await expect(page.getByTestId(ids.useBuiltInDialog)).toContainText('Runs already going keep');
+
+  await page.getByTestId(ids.useBuiltInConfirm).click();
+
+  await expect.poll(() => posted).toBe(1);
+  await expect(page.getByTestId(ids.useBuiltInDialog)).toHaveCount(0);
+});
+
+test('UseBuiltInDialog_WhenCancelled_ShouldPostNothing', async ({ mount, page }) => {
+  let posted = 0;
+  await page.route(`${BRIEF_URL}/use-built-in`, (route) => {
+    posted++;
+    return route.fulfill({ json: savedJson });
+  });
+  await openByPageJson(mount, page, 'brief');
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+
+  await page.getByTestId(ids.useBuiltInCancel).click();
+
+  await expect(page.getByTestId(ids.useBuiltInDialog)).toHaveCount(0);
+  expect(posted).toBe(0);
+});
+
+test('YourChangesTab_ShouldShowTheLegendWithSwatchesAndCounts', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  await expect(page.getByTestId(ids.yourChangesDiff)).toBeVisible();
+  await expect(page.getByTestId(ids.diffSwatchRemoved)).toBeVisible();
+  await expect(page.getByTestId(ids.diffSwatchAdded)).toBeVisible();
+  await expect(page.getByTestId(ids.diffCounts)).toHaveText(/^\d+ added · \d+ removed$/);
+});
+
+test('HistoryTab_ShouldTintTheInUseRowWithAnInUsePill', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyInUsePill)).toHaveText(
+    'In use',
+  );
+  await expect(page.getByTestId(ids.historyRowInUse)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(page.getByTestId(ids.historyRow)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+test('HistoryTab_ShouldShowTheBuiltInRowAndTheFooterNote', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyBuiltInRow)).toContainText('Built-in from ShipLean');
+  await expect(page.getByTestId(ids.historyBuiltInHash)).toHaveText(/^[0-9a-f]{12}$/);
+  await expect(page.getByTestId(ids.historyFootNote)).toContainText('Nothing is deleted');
+});
+
+test('UseBuiltInDialog_ShouldNameTheVersionThatStaysInHistory', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
+  });
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+
+  const dialog = page.getByTestId(ids.useBuiltInDialog);
+  await expect(dialog).toContainText('Agents in Storefront get the built-in prompt');
+  await expect(page.getByTestId(ids.useBuiltInStays)).toContainText(
+    /Custom v\d+ isn’t deleted: it stays in History/,
+  );
+});
+
+test('UseBuiltInDialog_ShouldRightAlignCancelAndUseBuiltIn', async ({ mount, page }) => {
+  await openByPageJson(mount, page, 'brief');
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+
+  const dialog = await page.getByTestId(ids.useBuiltInDialog).boundingBox();
+  const cancel = await page.getByTestId(ids.useBuiltInCancel).boundingBox();
+  const confirm = await page.getByTestId(ids.useBuiltInConfirm).boundingBox();
+  expect(dialog).not.toBeNull();
+  expect(dialog?.width).toBeLessThanOrEqual(480);
+  expect(cancel && confirm && cancel.x < confirm.x).toBe(true);
+  expect(confirm && dialog && dialog.x + dialog.width - (confirm.x + confirm.width)).toBeLessThan(
+    24,
+  );
+});
+
+test('HistoryTab_ShouldAlignUseBuiltInUnderTheUseColumn', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  const use = await page.getByTestId(ids.historyUse).boundingBox();
+  const builtIn = await page.getByTestId(ids.historyBuiltInUse).boundingBox();
+  expect(use).not.toBeNull();
+  expect(builtIn).not.toBeNull();
+  expect(builtIn?.x).toBeCloseTo(use?.x ?? -1, 0);
+});
+
+test('HistoryTab_UseButtons_ShouldBeBorderless', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyUse)).toHaveCSS('border-top-width', '0px');
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCSS('border-top-width', '0px');
+});
+
+test('HistoryTab_WhenNoVersionInUse_ShouldMarkTheBuiltInRowInUse', async ({ mount, page }) => {
+  const none = { ...history, versions: history.versions.map((v) => ({ ...v, inUse: false })) };
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: none }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRow)).toHaveCount(2);
+  await expect(
+    page.getByTestId(ids.historyBuiltInRow).getByTestId(ids.historyInUsePill),
+  ).toHaveText('In use');
+  await expect(page.getByTestId(ids.historyBuiltInRow)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(page.getByTestId(ids.historyBuiltInUse)).toHaveCount(0);
+});
+
+test('YourChangesTab_ShouldRunToThePanelEdgesWithColouredSignsAndAlignedGaps', async ({
+  mount,
+  page,
+}) => {
+  const patch = '@@ -5,2 +5,2 @@\n-Old line.\n+New line.\n Same line.\n';
+  await openByAdminFlag(
+    mount,
+    page,
+    'brief',
+    true,
+    withPrompt(adminPage, 'brief', (p) => ({ ...p, yourChangesPatch: patch })),
+  );
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  // Full bleed: the legend and the diff are as wide as the panel inside its border.
+  const detail = (await page.getByTestId(ids.detail).boundingBox())!;
+  const legend = (await page.getByTestId(ids.diffKey).boundingBox())!;
+  const diff = (await page.getByTestId(ids.yourChangesDiff).boundingBox())!;
+  expect(legend.x).toBeLessThanOrEqual(detail.x + 1);
+  expect(legend.width).toBeGreaterThanOrEqual(detail.width - 2);
+  expect(diff.width).toBeGreaterThanOrEqual(detail.width - 2);
+
+  const colourOf = (kind: string) =>
+    page
+      .getByTestId(ids.diffLine)
+      .and(page.locator(`[data-kind=${kind}]`))
+      .getByTestId(ids.diffSign)
+      .evaluate((el) => getComputedStyle(el).color);
+  const text = await page
+    .getByTestId(ids.yourChangesDiff)
+    .evaluate((el) => ({ color: getComputedStyle(el).color, size: getComputedStyle(el).fontSize }));
+  const added = await colourOf('add');
+  const removed = await colourOf('del');
+  expect(added).not.toBe(text.color);
+  expect(removed).not.toBe(text.color);
+  expect(added).not.toBe(removed);
+  expect(text.size).toBe('12px');
+
+  // "4 unchanged lines" starts where the code column starts.
+  await expect(page.getByTestId(ids.diffGapText)).toHaveText('4 unchanged lines');
+  const gap = (await page.getByTestId(ids.diffGapText).boundingBox())!;
+  const sign = (await page.getByTestId(ids.diffSign).first().boundingBox())!;
+  expect(Math.abs(gap.x - (sign.x + sign.width))).toBeLessThanOrEqual(1);
+});

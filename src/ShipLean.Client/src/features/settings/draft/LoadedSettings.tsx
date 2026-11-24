@@ -5,7 +5,6 @@ import type { WorkItemTypeId } from '@shiplean/core/api/refs';
 import { routePath, type ProjectSettingsTab } from '../../../routes';
 import { useTopBar } from '../../../touch/TopBar';
 import { useTouchShell } from '../../../touch/useTouchShell';
-import { PromptsTabBadge } from '../../prompts/PromptsTabBadge';
 import { settingsTestIds } from '../testIds';
 import { GeneralTab } from './GeneralTab';
 import { MembersTab } from './MembersTab';
@@ -45,7 +44,6 @@ export function LoadedSettings({
   integrations,
   demos,
   inspection = null,
-  prompts = null,
 }: {
   project: ProjectDto;
   settings: ProjectSettingsDto;
@@ -54,7 +52,6 @@ export function LoadedSettings({
   integrations: ReactNode;
   demos: ReactNode;
   inspection?: ReactNode;
-  prompts?: ReactNode;
 }) {
   const navigate = useNavigate();
   const { touch } = useTouchShell();
@@ -126,13 +123,7 @@ export function LoadedSettings({
       )}
       <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)] touch:grid-cols-[minmax(0,1fr)]">
         {touch || tab === undefined ? null : (
-          <TabList
-            projectKey={project.key}
-            active={tab}
-            dirty={dirty}
-            errored={errored}
-            badges={{ prompts: <PromptsTabBadge projectId={project.id} /> }}
-          />
+          <TabList projectKey={project.key} active={tab} dirty={dirty} errored={errored} />
         )}
         <main className="min-h-0 overflow-auto p-4 touch:overflow-visible touch:p-0">
           {readOnly ? <ReadOnlyBanner projectName={project.name} admins={admins} /> : null}
@@ -176,10 +167,9 @@ export function LoadedSettings({
             {tab === 'integrations' && integrations}
             {tab === 'demos' && demos}
             {tab === 'inspection' && inspection}
-            {tab === 'prompts' && prompts}
           </SettingsDraftContext.Provider>
-          {/* Demos, Inspection and Prompts have their own Save; the tab dots still show the draft is dirty. */}
-          {readOnly || tab === 'demos' || tab === 'inspection' || tab === 'prompts' ? null : (
+          {/* Demos and Inspection have their own Save; the tab dots still show the draft is dirty. */}
+          {readOnly || tab === 'demos' || tab === 'inspection' ? null : (
             <SettingsSaveBar
               changes={changes}
               saving={saving}

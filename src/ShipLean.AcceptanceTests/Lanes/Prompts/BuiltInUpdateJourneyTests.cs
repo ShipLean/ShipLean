@@ -32,8 +32,8 @@ public class BuiltInUpdateJourneyTests : SeededAcceptanceTest
 
         await prompts.OpenAsync(Project, "brief");
         await Expect(prompts.DetailChip).ToContainTextAsync("Built-in updated");
-        await Expect(prompts.UpdateBannerText).ToContainTextAsync("started from the built-in of " + BaseLabel);
-        await Expect(prompts.UpdateBannerText).ToContainTextAsync(new Regex(@"\(the \d{1,2} \w{3}( \d{4})? built-in\)"));
+        await Expect(prompts.UpdateBannerText).ToContainTextAsync("started from the " + BaseLabel + " built-in");
+        await Expect(prompts.UpdateBannerText).ToContainTextAsync(new Regex(@"The built-in prompt changed on \d{1,2} \w{3}( \d{4})?\."));
         await Expect(prompts.UpdateBannerText).ToContainTextAsync("custom v1");
 
         await prompts.UpdateReview.ClickAsync();

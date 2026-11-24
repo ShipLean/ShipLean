@@ -131,6 +131,15 @@ public class PromptsToolTests : McpFixture
     }
 
     [Test]
+    public async Task Prompts_WhenPromptGiven_ShouldKeepTheBackticksInTheFacts()
+    {
+        var result = await ReadAsync("""{"project":"SHIP","prompt":"codeReviewer"}""", TestUser.Priya);
+
+        result.GetProperty("served_by").GetString().ShouldBe("`planning_guide` part `code_reviewer`");
+        result.GetProperty("when_runs").GetString()!.ShouldContain("`log_review`");
+    }
+
+    [Test]
     public async Task Prompts_WhenMember_ShouldRead()
     {
         var result = await ReadAsync("""{"project":"SHIP","prompt":"codeReviewer"}""", TestUser.Priya);

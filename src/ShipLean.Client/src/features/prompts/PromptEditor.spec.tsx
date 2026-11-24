@@ -9,6 +9,7 @@ const CUSTOMIZE_URL = '**/api/projects/*/usage/prompt-customize-opened';
 const WORK_VERSIONS = '**/api/projects/*/prompts/work/versions';
 const work = adminPage.stages.flatMap((s) => s.prompts).find((p) => p.key === 'work')!;
 const guide = adminPage.stages.flatMap((s) => s.prompts).find((p) => p.key === 'guide')!;
+const brief = adminPage.stages.flatMap((s) => s.prompts).find((p) => p.key === 'brief')!;
 
 interface Posted {
   text: string;
@@ -50,7 +51,8 @@ test('PromptEditor_WhenOpened_ShouldPrefillTheCurrentText', async ({ mount, page
 
   await expect(page.getByTestId(ids.editorText)).toHaveValue(work.builtInText);
   await expect(page.getByTestId(ids.editorSave)).toHaveText('Save as custom v1');
-  await expect(page.getByTestId(ids.editorDirty)).toHaveCount(0);
+  await expect(page.getByTestId(ids.header)).toBeVisible();
+  await expect(page.getByTestId(ids.unsavedPill)).toHaveCount(0);
 });
 
 test('PromptEditor_WhenOpened_ShouldPostCustomizeOpened', async ({ mount, page }) => {
@@ -95,6 +97,9 @@ test('PromptEditor_WhenOpenedFromApplyAndEdit_ShouldPrefillTheMergedTextAndSaveA
 
   const merged = guide.update!.mergedText;
   await expect(page.getByTestId(ids.editorText)).toHaveValue(merged);
+  await expect(page.getByTestId(ids.editorStartedFrom)).toHaveText(
+    'Started from the built-in of 20 Nov',
+  );
   await expect(page.getByTestId(ids.editorSave)).toHaveText('Save as custom v2');
   await page.getByTestId(ids.editorNote).fill('Took the update');
   await expect(page.getByTestId(ids.editorSave)).toBeEnabled();
@@ -119,14 +124,18 @@ test('PromptEditor_WhenCtrlS_ShouldSave', async ({ mount, page }) => {
   expect(posts[0].note).toBe('Quick fix');
 });
 
-test('PromptEditor_WhenCtrlSWithNoNote_ShouldNotSave', async ({ mount, page }) => {
+// D15: the note is optional. Replaces PromptEditor_WhenCtrlSWithNoNote_ShouldNotSave and the no-note half of
+// PromptEditor_WhenUnchangedOrNoNote_ShouldDisableSave.
+test('PromptEditor_WhenNoNote_ShouldStillAllowSave', async ({ mount, page }) => {
   const { posts } = await open(page, mount);
 
   await page.getByTestId(ids.editorText).fill('# Changed\n');
+  await expect(page.getByTestId(ids.editorNote)).toHaveValue('');
+  await expect(page.getByTestId(ids.editorSave)).toBeEnabled();
   await page.getByTestId(ids.editorText).press('Control+s');
 
-  await expect(page.getByTestId(ids.editorSave)).toBeDisabled();
-  expect(posts).toHaveLength(0);
+  await expect.poll(() => posts.length).toBe(1);
+  expect(posts[0]).toEqual({ text: '# Changed\n', note: '', source: 'editor' });
 });
 
 test('PromptEditor_WhenOver64KB_ShouldDisableSave', async ({ mount, page }) => {
@@ -188,7 +197,7 @@ test('PromptEditor_WhenServerRefusesNote_ShouldShowTheErrorNextToTheNote', async
   await expect(page.getByTestId(ids.editorError)).toHaveCount(0);
 });
 
-test('PromptEditor_WhenUnchangedOrNoNote_ShouldDisableSave', async ({ mount, page }) => {
+test('PromptEditor_WhenUnchanged_ShouldDisableSave', async ({ mount, page }) => {
   await open(page, mount);
   const save = page.getByTestId(ids.editorSave);
 
@@ -197,8 +206,6 @@ test('PromptEditor_WhenUnchangedOrNoNote_ShouldDisableSave', async ({ mount, pag
   await expect(save).toBeDisabled();
   await page.getByTestId(ids.editorText).fill('# Edited\n');
   await expect(save).toBeEnabled();
-  await page.getByTestId(ids.editorNote).fill('   ');
-  await expect(save).toBeDisabled();
   await page.getByTestId(ids.editorNote).fill('Back');
   await page.getByTestId(ids.editorText).fill(work.builtInText);
   await expect(save).toBeDisabled();
@@ -240,7 +247,7 @@ test('PromptEditor_WhenLeavingWithEdits_ShouldAskFirst', async ({ mount, page })
   await open(page, mount);
 
   await page.getByTestId(ids.editorText).fill('# Edited\n');
-  await expect(page.getByTestId(ids.editorDirty)).toBeVisible();
+  await expect(page.getByTestId(ids.unsavedPill)).toBeVisible();
   await page.getByTestId(ids.editorCancel).click();
   await expect(page.getByTestId(ids.editorLeaveDialog)).toBeVisible();
 
@@ -266,7 +273,8 @@ test('PromptsPage_WhenSwitchingPromptWithUnsavedEdits_ShouldAskFirst', async ({ 
   await open(page, mount);
 
   await page.getByTestId(ids.editorText).fill('# Edited\n');
-  await page.getByTestId(ids.listRow).nth(3).click();
+  await page.getByTestId(ids.searchInput).fill('Plan reviewer');
+  await page.getByTestId(ids.searchInput).press('Enter');
   await expect(page.getByTestId(ids.editorLeaveDialog)).toBeVisible();
 
   await page.getByTestId(ids.editorLeaveStay).click();
@@ -274,8 +282,97 @@ test('PromptsPage_WhenSwitchingPromptWithUnsavedEdits_ShouldAskFirst', async ({ 
   await expect(page.getByTestId(ids.editorText)).toHaveValue('# Edited\n');
   await expect(page.getByTestId('harness-search')).toHaveText('prompt=work');
 
-  await page.getByTestId(ids.listRow).nth(3).click();
+  await page.getByTestId(ids.searchInput).fill('Plan reviewer');
+  await page.getByTestId(ids.searchInput).press('Enter');
   await page.getByTestId(ids.editorLeaveDiscard).click();
   await expect(page.getByTestId('harness-search')).toHaveText('prompt=planReviewer');
   await expect(page.getByTestId(ids.editor)).toHaveCount(0);
+});
+
+test('PromptEditor_ShouldBeAPlainTextAreaWithoutAToolbar', async ({ mount, page }) => {
+  await open(page, mount);
+  const text = page.getByTestId(ids.editorText);
+
+  expect(await text.evaluate((el) => el.tagName)).toBe('TEXTAREA');
+  await expect(text).toBeVisible();
+  // Nothing in the editing area is a control except the side panel's own links: no Markdown toolbar.
+  const body = page.getByTestId(ids.editorBody);
+  await expect(page.getByTestId(ids.editorSide)).toBeVisible();
+  const controls = await body.evaluate(
+    (el, side) =>
+      [...el.querySelectorAll('button, [role="toolbar"]')].filter(
+        (control) => control.closest(`[data-testid="${side}"]`) === null,
+      ).length,
+    ids.editorSide,
+  );
+  expect(controls).toBe(0);
+  await text.fill('# Typed\n');
+  await expect(text).toHaveValue('# Typed\n');
+});
+
+test('PromptEditor_ShouldShowEditPreviewAndChangesInTheTabBandWithStartedFrom', async ({
+  mount,
+  page,
+}) => {
+  await open(page, mount);
+  const edit = page.getByTestId(ids.editorTabEdit);
+  const changes = page.getByTestId(ids.editorTabChanges);
+
+  await expect(edit).toHaveAttribute('role', 'tab');
+  await expect(edit).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId(ids.editorTabPreview)).toHaveAttribute('aria-selected', 'false');
+  await expect(changes).toHaveText('Changes from built-in+0 −0');
+  await expect(page.getByTestId(ids.editorStartedFrom)).toHaveText(
+    'Started from the built-in of today',
+  );
+
+  await page.getByTestId(ids.editorText).fill(`${work.builtInText}One more line.\n`);
+  await expect(changes).toHaveText('Changes from built-in+1 −0');
+  await changes.click();
+  await expect(changes).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId(ids.editorChanges)).toContainText('One more line.');
+});
+
+test('PromptEditor_WhenEditingACustomVersion_ShouldSayWhichBuiltInItStartedFrom', async ({
+  mount,
+  page,
+}) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route(CUSTOMIZE_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
+  });
+  await page.getByTestId(ids.actionEdit).click();
+
+  await expect(page.getByTestId(ids.editorStartedFrom)).toHaveText(
+    'Started from the built-in of 10 Nov',
+  );
+});
+
+test('PromptEditor_ShouldPinNoteCancelAndSaveToTheBottom', async ({ mount, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await page.route(CUSTOMIZE_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
+  });
+  await page.getByTestId(ids.actionEdit).click();
+  // The tags state: an unknown tag adds its warning to a side panel already six placeholders long.
+  await page
+    .getByTestId(ids.editorText)
+    .fill(
+      `${brief.custom!.text}\n\n<claudecode>\nWhen a test fails twice, stop and report it.\n</claudecode>\n`,
+    );
+  await expect(page.getByTestId(ids.checkUnknownTag)).toHaveCount(1);
+
+  // The side panel runs past the bottom of the window…
+  const side = await page.getByTestId(ids.editorSide).boundingBox();
+  expect(side!.y + side!.height).toBeGreaterThan(900);
+  // …and the note, Cancel and Save stay in view.
+  await expect(page.getByTestId(ids.editorFooter)).toBeInViewport({ ratio: 1 });
+  await expect(page.getByTestId(ids.editorNote)).toBeInViewport({ ratio: 1 });
+  await expect(page.getByTestId(ids.editorCancel)).toBeInViewport({ ratio: 1 });
+  await expect(page.getByTestId(ids.editorSave)).toBeInViewport({ ratio: 1 });
 });

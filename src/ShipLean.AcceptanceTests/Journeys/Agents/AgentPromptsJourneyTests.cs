@@ -106,9 +106,8 @@ public class AgentPromptsJourneyTests : SeededAcceptanceTest
         var prompts = new PromptsAdminPage(Page);
         await prompts.OpenAsync(Project, MemberPrompt);
         await Expect(prompts.DetailChip).ToHaveTextAsync("Built-in");
-        await prompts.TabHistory.ClickAsync();
-        await Expect(prompts.HistoryEmpty).ToBeVisibleAsync();
-        await Expect(prompts.HistoryRows).ToHaveCountAsync(0);
+        // Never customized, so the page offers no History tab (the read above proves it has no versions).
+        await Expect(prompts.TabHistory).ToHaveCountAsync(0);
     }
 
     private async Task<McpClient> ConnectAsync(TestUser user)

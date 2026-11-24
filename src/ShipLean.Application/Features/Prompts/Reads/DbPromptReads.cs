@@ -84,7 +84,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         var layers = new List<PromptLayerDto>
         {
             new(PromptLayerKind.ServerInstructions, "Server instructions", builtIns.ServerInstructions, false, "Sent when the agent connects. Same for every project."),
-            new(PromptLayerKind.Prompt, inUse is null ? $"{facts.Name}, built-in" : $"{facts.Name}, custom v{inUse.Number}", untagged, false, null),
+            new(PromptLayerKind.Prompt, inUse is null ? $"{facts.Name} \u2014 built-in" : $"{facts.Name} \u2014 custom v{inUse.Number}", untagged, false, PromptNote(facts)),
         };
         if (agent != PromptAgents.Other)
         {
@@ -97,6 +97,19 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         }
         layers.Add(new PromptLayerDto(PromptLayerKind.ClientNotes, "Notes for the connecting agent", null, true, "Per-client notes, added last."));
         return new PromptAssembledDto(key, agent, layers, forAgent);
+    }
+
+    // "`get_brief` on a task. ShipLean fills in 3 placeholders." The layer note is plain text, so the facts' backticks go.
+    private static string PromptNote(PromptFacts facts)
+    {
+        var count = facts.Placeholders.Count;
+        var fills = count switch
+        {
+            0 => "no placeholders",
+            1 => "1 placeholder",
+            _ => $"{count} placeholders",
+        };
+        return $"{facts.ServedBy.Replace("`", "", StringComparison.Ordinal)}. ShipLean fills in {fills}.";
     }
 
     private static string SectionNote(string text, string agent, string label)
@@ -155,7 +168,7 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
         }
         var changedAt = builtInRows[(PromptKeys.ToWire(facts.Key), currentHash)].FirstSeenAt;
         var merge = PromptMerge.Merge(inUse.BaseText, inUse.Text, currentText);
-        var update = new PromptUpdateDto($"{Day(changedAt, zone)} built-in", BaseLabel(inUse.BaseFirstSeen, zone),
+        var update = new PromptUpdateDto(Day(changedAt, zone), BaseLabel(inUse.BaseFirstSeen, zone),
             PromptDiff.Patch(inUse.BaseText, currentText), merge.Clean, merge.Text);
         return Build(facts, PromptStatus.BuiltInUpdated, currentText, currentHash, custom, patch, update, errors);
     }
@@ -180,5 +193,5 @@ public sealed class DbPromptReads(NpgsqlDataSource dataSource, IBuiltInPrompts b
 
     private string Day(DateTime utc, TimeZoneInfo zone) => DisplayDate.ShortDay(new DateTimeOffset(DateTime.SpecifyKind(utc, DateTimeKind.Utc)), clock.GetUtcNow(), zone);
 
-    private string BaseLabel(DateTime firstSeen, TimeZoneInfo zone) => $"built-in of {Day(firstSeen, zone)}";
+    private string BaseLabel(DateTime firstSeen, TimeZoneInfo zone) => Day(firstSeen, zone);
 }

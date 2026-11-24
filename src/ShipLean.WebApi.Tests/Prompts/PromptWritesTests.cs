@@ -155,11 +155,26 @@ public class PromptWritesTests : ApiFixture
     }
 
     [Test]
-    public async Task Save_WhenNoteIsBlank_ShouldBeValidationOnNote()
+    public async Task SaveVersion_WhenNoteEmpty_ShouldSave()
     {
         var project = await ArrangeProjectAsync();
 
-        using var response = await SaveAsync(project, "guide", "Some text.", note: "   ");
+        using var empty = await SaveAsync(project, "guide", "First text.", note: "");
+        using var blank = await SaveAsync(project, "guide", "Second text.", note: "   ");
+
+        empty.StatusCode.ShouldBe(HttpStatusCode.OK);
+        blank.StatusCode.ShouldBe(HttpStatusCode.OK);
+        await using var database = await OpenDatabaseAsync();
+        var notes = await database.QueryAsync<string>("SELECT note FROM prompt_version WHERE project_id = @project ORDER BY number", new { project });
+        notes.ToList().ShouldBe(new List<string> { "", "" });
+    }
+
+    [Test]
+    public async Task Save_WhenNoteOver200Characters_ShouldBeValidationOnNote()
+    {
+        var project = await ArrangeProjectAsync();
+
+        using var response = await SaveAsync(project, "guide", "Some text.", note: new string('n', 201));
 
         var error = await ErrorOfAsync(response);
         error.Code.ShouldBe(ApiErrorCodes.Validation);

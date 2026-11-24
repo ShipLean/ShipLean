@@ -173,6 +173,14 @@ export function SideMenu({ wordmarkEnd }: { wordmarkEnd?: ReactNode } = {}) {
           </NavItem>
           {shows(inspectionRoutes) ? <InspectionSubmenu projectKey={key} route={route} /> : null}
           <NavItem
+            icon="✎"
+            testId={ids.navWaysOfWorking}
+            to={routePath('waysOfWorking', { key })}
+            active={route?.id === 'waysOfWorking'}
+          >
+            Ways of working
+          </NavItem>
+          <NavItem
             icon="⇪"
             testId={ids.navJiraImport}
             to={routePath('jiraImport', { key })}

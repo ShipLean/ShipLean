@@ -84,7 +84,7 @@ public class ProjectSettingsTouchTests : SeededAcceptanceTest
         await Expect(settings.Crumbs).ToHaveTextAsync(["SHIP", "Settings"]);
         await Expect(settings.IndexRows).ToHaveTextAsync([
             new Regex("^General"), new Regex("^States"), new Regex("^Members"), new Regex("^Sprints & forecast"),
-            new Regex("^Integrations"), new Regex("^Demos"), new Regex("^Inspection"), new Regex("^Prompts"),
+            new Regex("^Integrations"), new Regex("^Demos"), new Regex("^Inspection"),
         ]);
         await Expect(settings.IndexRow("Members").GetByTestId(SettingsTestIds.SettingsIndexCount)).ToHaveTextAsync("6");
         await Expect(settings.TabRow).ToHaveCountAsync(0);
