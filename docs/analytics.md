@@ -387,11 +387,11 @@ Targets are still to be confirmed.
 
 Why (SHIP-744): if projects can see and change the built-in prompts their agents get, the ones that matter will be changed, and the ones that went stale will be updated or kept on purpose. Each week, read:
 
-- `prompts.opened` against `screen.viewed` for Project settings in the same weeks (does anyone come to the tab), then `prompt.customize_opened` split by `prompt` against `prompt.saved` split by `prompt`: Customize pressed but nothing saved is a prompt people look at and decide not to change.
+- `prompts.opened` against `screen.viewed` for the `waysOfWorking` screen in the same weeks (does anyone come to the page), then `prompt.customize_opened` split by `prompt` against `prompt.saved` split by `prompt`: Customize pressed but nothing saved is a prompt people look at and decide not to change.
 - `prompt.update_applied`, `prompt.update_kept` and `prompt.built_in_used` split by `prompt`: what happens when ShipLean's own text moves. `prompt.version_restored` is people going back.
 - Distinct projects that save a custom prompt (`prompt.saved` or `prompt.update_applied`) against distinct projects that open Ways of working (`prompts.opened`), per week: how many projects that look go on to change anything.
 
-`prompt` is a closed set (the 11 keys), so it stays low-cardinality. The three reads (page, history, assembled) are untracked: `prompts.opened` counts the tab. Targets are still to be confirmed.
+`prompt` is a closed set (the 11 keys), so it stays low-cardinality. The three reads (page, history, assembled) are untracked: `prompts.opened` counts the page. Targets are still to be confirmed.
 
 `analytics.test` is not in the catalogue: the test send goes straight to the sink.
 

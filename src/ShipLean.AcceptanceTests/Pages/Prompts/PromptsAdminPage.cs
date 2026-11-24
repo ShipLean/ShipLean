@@ -6,7 +6,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Prompts;
 
-// A project's Prompts settings tab as an admin works it: the list, the detail with its tabs, the editor and its checks, the built-in update and History.
+// The Ways of working page as an admin works it: the list, the detail with its tabs, the editor and its checks, the built-in update and History.
 public sealed class PromptsAdminPage(IPage page)
 {
     public ILocator Page => page.GetByTestId(PromptsTestIds.Page);

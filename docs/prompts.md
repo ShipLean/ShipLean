@@ -9,7 +9,7 @@ ShipLean tells agents how to plan, brief, review and report through built-in Mar
 - Project members read.
 - Project admins change. A write from anyone else is refused.
 - On a phone the page is readable. Editing is meant for a desktop.
-- The page's "N custom" count appears once the page has been opened in the session. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
+- The purple "N custom" pill in the page header appears once the page has been opened in the session (it is hidden at 0). It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
 
 ## The 11 prompts
 
@@ -60,7 +60,7 @@ A line of text on its own, `<claude-code>`, `<codex-cli>` or `<cursor>`, opens a
 - Tags inside a code fence are text, not tags. An unclosed fence is not a fence.
 - An unknown tag is kept as typed. When it is close to a known tag (within 3 edits, such as `<cludecode>`), the editor warns and offers "Did you mean `<claude-code>`". Any other unknown tag (such as `<summary>`) is plain text and passes silently.
 - An unclosed, nested or stray closing tag is an error. It blocks Save.
-- A stored text that has such an error (a migrated Issue proposal, say) fails closed: every agent gets only the untagged text, and a region that was opened ends only at its own close tag, so nothing inside it reaches another agent. The tab flags the error until an admin fixes it.
+- A stored text that has such an error (a migrated Issue proposal, say) fails closed: every agent gets only the untagged text, and a region that was opened ends only at its own close tag, so nothing inside it reaches another agent. Ways of working flags the error until an admin fixes it.
 
 The pinned cases are in `src/ShipLean.TestSupport/DtoFixtures/prompts/prompt-sections.json`. The server (`AgentSections`) and the editor follow them.
 
@@ -120,6 +120,6 @@ Each time ShipLean serves a prompt, it writes a `prompt_serving` row: project, p
 - `IBuiltInPrompts` (`ShipLean.Contracts.Prompts`, class `BuiltInPrompts` in `src/ShipLean.WebApi/Features/Prompts`) is the only reader of the built-in files. A guard test (`BuiltInPromptReadsTests`) enforces it.
 - Everything that gives an agent a prompt goes through `IPromptResolver`. Four call sites: `GuideTools` (`planning_guide`), `BriefTools` (`get_brief`), `RoundJobWorker` (the intake round) and `DemoRunStarter` (the sprint demo).
 - `IConnectedAgent` (`RequestConnectedAgent`) is the one place that names the agent. Resolution off a request takes the person from `PromptRequest.UserId`.
-- Routes (`ProjectPromptsController`, `api/projects/{id}/prompts`): `GET` (page), `GET {prompt}/history`, `GET {prompt}/assembled?agent=`, `POST {prompt}/versions`, `POST {prompt}/use-built-in`, `POST {prompt}/versions/{number}/use`, `POST {prompt}/update/keep`. Reading routes need a member, writing routes an admin. The tab's usage posts are `POST api/projects/{id}/usage/prompts-opened` and `…/prompt-customize-opened` in `ProjectUsageController`.
+- Routes (`ProjectPromptsController`, `api/projects/{id}/prompts`): `GET` (page), `GET {prompt}/history`, `GET {prompt}/assembled?agent=`, `POST {prompt}/versions`, `POST {prompt}/use-built-in`, `POST {prompt}/versions/{number}/use`, `POST {prompt}/update/keep`. Reading routes need a member, writing routes an admin. The page's usage posts are `POST api/projects/{id}/usage/prompts-opened` and `…/prompt-customize-opened` in `ProjectUsageController`.
 - Tables (`db/migrations/202611211200_prompts_versions.sql`): `prompt_built_in`, `prompt_version`, `project_prompt`, `prompt_serving`.
 - Analytics: `prompts.opened`, `prompt.customize_opened`, `prompt.saved`, `prompt.update_applied`, `prompt.update_kept`, `prompt.built_in_used`, `prompt.version_restored`. How to read them each week is in [analytics.md](analytics.md#prompts-weekly).
