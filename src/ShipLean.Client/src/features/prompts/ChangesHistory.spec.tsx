@@ -3,7 +3,8 @@ import historyJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/pr
 import type { PromptHistoryDto } from '@shiplean/core/api/prompts';
 import savedJson from '../../../../ShipLean.TestSupport/DtoFixtures/prompts/prompt-saved.json' with { type: 'json' };
 import { openByAdminFlag, openByPageJson } from './ct/openPrompt';
-import { adminPage } from './ct/promptsData';
+import { PromptsHarness } from './ct/PromptsHarness';
+import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
 
 const history = historyJson as PromptHistoryDto;
@@ -128,4 +129,69 @@ test('UseBuiltInDialog_WhenCancelled_ShouldPostNothing', async ({ mount, page })
 
   await expect(page.getByTestId(ids.useBuiltInDialog)).toHaveCount(0);
   expect(posted).toBe(0);
+});
+
+test('YourChangesTab_ShouldShowTheLegendWithSwatchesAndCounts', async ({ mount, page }) => {
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabYourChanges).click();
+
+  await expect(page.getByTestId(ids.yourChangesDiff)).toBeVisible();
+  await expect(page.getByTestId(ids.diffSwatchRemoved)).toBeVisible();
+  await expect(page.getByTestId(ids.diffSwatchAdded)).toBeVisible();
+  await expect(page.getByTestId(ids.diffCounts)).toHaveText(/^\d+ added · \d+ removed$/);
+});
+
+test('HistoryTab_ShouldTintTheInUseRowWithAnInUsePill', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyRowInUse).getByTestId(ids.historyInUsePill)).toHaveText(
+    'In use',
+  );
+  await expect(page.getByTestId(ids.historyRowInUse)).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
+  await expect(page.getByTestId(ids.historyRow)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+test('HistoryTab_ShouldShowTheBuiltInRowAndTheFooterNote', async ({ mount, page }) => {
+  await page.route(HISTORY_URL, (route) => route.fulfill({ json: history }));
+  await openByAdminFlag(mount, page, 'brief');
+  await page.getByTestId(ids.tabHistory).click();
+
+  await expect(page.getByTestId(ids.historyBuiltInRow)).toContainText('Built-in from ShipLean');
+  await expect(page.getByTestId(ids.historyBuiltInHash)).toHaveText(/^[0-9a-f]{12}$/);
+  await expect(page.getByTestId(ids.historyFootNote)).toContainText('Nothing is deleted');
+});
+
+test('UseBuiltInDialog_ShouldNameTheVersionThatStaysInHistory', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={{ ...adminProject, name: 'Storefront' }} />, {
+    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
+  });
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+
+  const dialog = page.getByTestId(ids.useBuiltInDialog);
+  await expect(dialog).toContainText('Agents in Storefront get the built-in prompt');
+  await expect(page.getByTestId(ids.useBuiltInStays)).toContainText(
+    /Custom v\d+ isn’t deleted: it stays in History/,
+  );
+});
+
+test('UseBuiltInDialog_ShouldRightAlignCancelAndUseBuiltIn', async ({ mount, page }) => {
+  await openByPageJson(mount, page, 'brief');
+  await page.getByTestId(ids.actionUseBuiltIn).click();
+
+  const dialog = await page.getByTestId(ids.useBuiltInDialog).boundingBox();
+  const cancel = await page.getByTestId(ids.useBuiltInCancel).boundingBox();
+  const confirm = await page.getByTestId(ids.useBuiltInConfirm).boundingBox();
+  expect(dialog).not.toBeNull();
+  expect(dialog?.width).toBeLessThanOrEqual(480);
+  expect(cancel && confirm && cancel.x < confirm.x).toBe(true);
+  expect(confirm && dialog && dialog.x + dialog.width - (confirm.x + confirm.width)).toBeLessThan(
+    24,
+  );
 });

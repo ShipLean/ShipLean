@@ -32,8 +32,9 @@ export function UseBuiltInDialog(props: {
       title={`Use the built-in ${props.prompt.name}?`}
       onClose={close}
       testId={ids.useBuiltInDialog}
+      width="480px"
       footer={
-        <>
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             data-testid={ids.useBuiltInCancel}
@@ -51,15 +52,18 @@ export function UseBuiltInDialog(props: {
           >
             Use built-in
           </button>
-        </>
+        </div>
       }
     >
       <div className="grid gap-2">
         <p className="m-0">
-          Agents get the built-in prompt from their next call. Runs already going keep what they
-          were given.
+          Agents in {props.projectName} get the built-in prompt from their next call. Runs already
+          going keep what they were given.
         </p>
-        <p className="m-0">Your versions stay in History, and you can use one again.</p>
+        <p data-testid={ids.useBuiltInStays} className="m-0">
+          Custom v{props.prompt.custom?.number} isn’t deleted: it stays in History and you can use
+          it again.
+        </p>
         {error === null ? null : (
           <p role="alert" data-testid={ids.useBuiltInError} className="m-0 text-alert">
             {error}

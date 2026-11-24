@@ -157,4 +157,12 @@ public static class PromptsTestIds
     public const string UseBuiltInConfirm = "prompts-use-built-in-confirm";
     public const string UseBuiltInCancel = "prompts-use-built-in-cancel";
     public const string UseBuiltInError = "prompts-use-built-in-error";
+    // changes and history (Your changes, History, Use built-in dialog)
+    public const string DiffSwatchRemoved = "prompts-diff-swatch-removed";
+    public const string DiffSwatchAdded = "prompts-diff-swatch-added";
+    public const string DiffCounts = "prompts-diff-counts";
+    public const string HistoryInUsePill = "prompts-history-in-use-pill";
+    public const string HistoryFootNote = "prompts-history-foot-note";
+    public const string HistoryBuiltInHash = "prompts-history-built-in-hash";
+    public const string UseBuiltInStays = "prompts-use-built-in-stays";
 }
