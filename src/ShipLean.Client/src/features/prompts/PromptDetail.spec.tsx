@@ -160,7 +160,7 @@ test('PromptFacts_WhenSprintDemo_ShouldListInsertedParts', async ({ mount, page 
 
   await expect(page.getByTestId(ids.factInsertedParts)).toContainText('intro');
   await expect(page.getByTestId(ids.factInsertedParts)).toContainText('start');
-  await page.getByTestId(ids.listRow).nth(0).click();
+  await page.locator(`[data-testid="${ids.stage}"][data-stage="intake"]`).click();
   await expect(page.getByTestId(ids.factInsertedParts)).toHaveCount(0);
   await expect(page.getByTestId(ids.factNote)).toContainText('Replaces the Proposal instruct');
 });

@@ -1,7 +1,5 @@
 import type { PromptDto, PromptStageDto } from '@shiplean/core/api/prompts';
 
-export type PromptFilter = 'all' | 'custom';
-
 /** The text agents get now: the custom version when it is in use, else the built-in. */
 export function textInUse(prompt: PromptDto): string {
   return prompt.custom?.inUse === true ? prompt.custom.text : prompt.builtInText;
@@ -19,19 +17,13 @@ function matches(prompt: PromptDto, needle: string): boolean {
   );
 }
 
-/** The stages with only the prompts that pass the search and the filter; a stage with none is left out. */
-export function filterPrompts(
-  stages: PromptStageDto[],
-  query: string,
-  filter: PromptFilter,
-): PromptStageDto[] {
+/** The stages with only the prompts that match the search; a stage with none is left out. */
+export function filterPrompts(stages: PromptStageDto[], query: string): PromptStageDto[] {
   const needle = query.trim().toLowerCase();
   return stages
     .map((stage) => ({
       ...stage,
-      prompts: stage.prompts.filter(
-        (prompt) => (filter === 'all' || isCustomised(prompt)) && matches(prompt, needle),
-      ),
+      prompts: stage.prompts.filter((prompt) => matches(prompt, needle)),
     }))
     .filter((stage) => stage.prompts.length > 0);
 }

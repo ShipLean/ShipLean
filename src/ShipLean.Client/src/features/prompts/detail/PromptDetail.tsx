@@ -43,6 +43,7 @@ function statusLabel(prompt: PromptDto): string {
 // One prompt: its name, file, status and actions, the update banner, and the tabs (or the editor, once it is open).
 export function PromptDetail({
   projectId,
+  projectName,
   page,
   prompt,
   editor,
@@ -51,6 +52,7 @@ export function PromptDetail({
   onEditorDirtyChange,
 }: {
   projectId: string;
+  projectName: string;
   page: PromptsPageDto;
   prompt: PromptDto;
   editor: EditorState | null;
@@ -222,6 +224,7 @@ export function PromptDetail({
       )}
       <UseBuiltInDialog
         projectId={projectId}
+        projectName={projectName}
         prompt={prompt}
         open={confirmingUseBuiltIn}
         onClose={() => setConfirmingUseBuiltIn(false)}

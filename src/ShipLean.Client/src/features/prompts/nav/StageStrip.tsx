@@ -1,13 +1,11 @@
 import type { PromptStage, PromptStageDto } from '@shiplean/core/api/prompts';
 import { promptsTestIds as ids } from '../testIds';
-import { isCustomised } from './filterPrompts';
-
-export const stageAnchor = (stage: PromptStage) => `stage-${stage}`;
+import { isCustomised } from '../header/filterPrompts';
 
 const customCount = (stage: PromptStageDto) => stage.prompts.filter(isCustomised);
 
-// The seven stages across the top, each with its prompt and custom counts; a click marks the stage and jumps the list to
-// it. It scrolls sideways inside its own box, so the page never does (SHIP-805 rule 7).
+// The seven stages across the top, each with its prompt and custom counts; the stage of the open prompt is marked, and a
+// click picks the stage. It scrolls sideways inside its own box, so the page never does (SHIP-805 rule 7).
 export function StageStrip({
   stages,
   selected,
@@ -31,13 +29,10 @@ export function StageStrip({
           <button
             key={stage.id}
             type="button"
-            data-testid={ids.stageStripItem}
+            data-testid={ids.stage}
             data-stage={stage.id}
             aria-current={selected === stage.id}
-            onClick={() => {
-              onSelect(stage.id);
-              document.getElementById(stageAnchor(stage.id))?.scrollIntoView({ block: 'start' });
-            }}
+            onClick={() => onSelect(stage.id)}
             className={`grid min-h-[var(--touch-target,32px)] min-w-[104px] flex-1 content-center justify-items-start gap-0.5 border border-edge py-1.5 pr-2.5 pl-3 text-left text-ink hover:bg-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-signal ${
               index === 0 ? 'rounded-l-control' : 'border-l-0'
             } ${index === stages.length - 1 ? 'rounded-r-control' : ''} ${

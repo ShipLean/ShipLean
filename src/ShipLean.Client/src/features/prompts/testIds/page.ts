@@ -1,5 +1,8 @@
 export const pageTestIds = {
   page: 'prompts-page',
+  header: 'prompts-header',
+  customCountPill: 'prompts-custom-count-pill',
+  unsavedPill: 'prompts-unsaved-pill',
   loading: 'prompts-loading',
   loadFailed: 'prompts-load-failed',
   retry: 'prompts-retry',

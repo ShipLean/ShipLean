@@ -8,6 +8,7 @@ import { errorText } from './update/errorText';
 // The confirm before agents get the built-in again; the custom versions stay in History.
 export function UseBuiltInDialog(props: {
   projectId: string;
+  projectName: string;
   prompt: PromptDto;
   open: boolean;
   onClose: () => void;

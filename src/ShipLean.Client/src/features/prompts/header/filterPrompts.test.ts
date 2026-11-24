@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { adminPage } from '../ct/promptsData';
-import { filterPrompts } from './filterPrompts';
+import { filterPrompts, isCustomised } from './filterPrompts';
 
-const keys = (query: string, filter: 'all' | 'custom' = 'all') =>
-  filterPrompts(adminPage.stages, query, filter).flatMap((s) => s.prompts.map((p) => p.key));
+const keys = (query: string) =>
+  filterPrompts(adminPage.stages, query).flatMap((s) => s.prompts.map((p) => p.key));
 
 describe('filterPrompts', () => {
   it('keeps every prompt when nothing is asked', () => {
@@ -32,18 +32,17 @@ describe('filterPrompts', () => {
     expect(keys('{{sprint_name}}')).toEqual(['sprintDemo']);
   });
 
-  it('keeps customised prompts under the Custom filter', () => {
-    expect(keys('', 'custom')).toEqual(['guide', 'brief']);
+  it('counts custom and built-in updated prompts as customised', () => {
+    const prompts = adminPage.stages.flatMap((s) => s.prompts);
+    expect(prompts.filter(isCustomised).map((p) => p.key)).toEqual(['guide', 'brief']);
   });
 
   it('returns nothing when no prompt matches', () => {
-    expect(filterPrompts(adminPage.stages, 'zzz-no-such-prompt', 'all')).toEqual([]);
+    expect(filterPrompts(adminPage.stages, 'zzz-no-such-prompt')).toEqual([]);
   });
 
   it('leaves out a stage whose prompts all drop out', () => {
-    expect(filterPrompts(adminPage.stages, 'sprint', 'all').map((s) => s.id)).toContain(
-      'sprintDemo',
-    );
-    expect(filterPrompts(adminPage.stages, 'fix.md', 'all').map((s) => s.id)).toEqual(['review']);
+    expect(filterPrompts(adminPage.stages, 'sprint').map((s) => s.id)).toContain('sprintDemo');
+    expect(filterPrompts(adminPage.stages, 'fix.md').map((s) => s.id)).toEqual(['review']);
   });
 });

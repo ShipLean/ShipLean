@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type { ProjectDto } from '@shiplean/core/api/projects';
-import {
-  PROMPT_KEYS,
-  type PromptKey,
-  type PromptStage,
-  type PromptVersionSource,
-} from '@shiplean/core/api/prompts';
+import { PROMPT_KEYS, type PromptKey, type PromptVersionSource } from '@shiplean/core/api/prompts';
 import { promptsOpened } from '@shiplean/core/api/usageApi';
 import { Dialog } from '../../components/Dialog';
 import { PromptDetail } from './detail/PromptDetail';
-import { PromptList } from './list/PromptList';
-import { StageStrip } from './list/StageStrip';
+import { HeaderSearch } from './header/HeaderSearch';
+import { WaysOfWorkingHeader } from './header/WaysOfWorkingHeader';
+import { StageNav } from './nav/StageNav';
 import { promptsTestIds as ids } from './testIds';
 import { usePromptsPage } from './usePrompts';
 
@@ -24,13 +20,12 @@ export interface EditorState {
 const isPromptKey = (value: string | null): value is PromptKey =>
   PROMPT_KEYS.some((key) => key === value);
 
-// Project settings › Prompts (SHIP-744): the stage strip on top, the list left and the selected prompt right (stacked
-// under 900px). The selected prompt is `?prompt=<key>` so the address says what is open and the editor's leave guard sees
-// a change of prompt as navigation.
+// Ways of working (SHIP-2280 Contract 7): the header with search, the stage strip with its chips and "when" line, then the
+// selected prompt full width. The selected prompt is `?prompt=<key>` so the address says what is open; the stage follows
+// it. A stage, chip or search pick with unsaved edits in the editor asks first.
 export function PromptsPage({ project }: { project: ProjectDto }) {
   const query = usePromptsPage(project.id);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [stage, setStage] = useState<PromptStage | null>(null);
   const [open, setOpen] = useState<(EditorState & { promptKey: PromptKey }) | null>(null);
   const [editorDirty, setEditorDirty] = useState(false);
   const [switchTo, setSwitchTo] = useState<PromptKey | null>(null);
@@ -104,17 +99,19 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
 
   return (
     <div data-testid={ids.page} className="grid min-w-0 gap-3">
-      <StageStrip
-        stages={page.stages}
-        selected={stage}
-        onSelect={(next) => setStage(next === stage ? null : next)}
+      <WaysOfWorkingHeader
+        project={project}
+        customCount={page.customCount}
+        unsaved={editorOpen && editorDirty}
+        search={<HeaderSearch page={page} onPick={select} />}
       />
-      <div className="grid min-w-0 grid-cols-[minmax(260px,340px)_minmax(0,1fr)] gap-3 touch:grid-cols-[minmax(0,1fr)]">
-        <PromptList page={page} selectedKey={selected?.key ?? null} onSelect={select} />
-        {selected === undefined ? null : (
+      {selected === undefined ? null : (
+        <>
+          <StageNav stages={page.stages} selectedKey={selected.key} onSelect={select} />
           <PromptDetail
             key={selected.key}
             projectId={project.id}
+            projectName={project.name}
             page={page}
             prompt={selected}
             editor={editor}
@@ -122,8 +119,8 @@ export function PromptsPage({ project }: { project: ProjectDto }) {
             closeEditor={closeEditor}
             onEditorDirtyChange={setEditorDirty}
           />
-        )}
-      </div>
+        </>
+      )}
       {switchTo === null ? null : (
         <Dialog
           title="Discard your unsaved custom prompt?"

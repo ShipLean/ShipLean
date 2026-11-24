@@ -266,7 +266,8 @@ test('PromptsPage_WhenSwitchingPromptWithUnsavedEdits_ShouldAskFirst', async ({ 
   await open(page, mount);
 
   await page.getByTestId(ids.editorText).fill('# Edited\n');
-  await page.getByTestId(ids.listRow).nth(3).click();
+  await page.getByTestId(ids.searchInput).fill('Plan reviewer');
+  await page.getByTestId(ids.searchInput).press('Enter');
   await expect(page.getByTestId(ids.editorLeaveDialog)).toBeVisible();
 
   await page.getByTestId(ids.editorLeaveStay).click();
@@ -274,7 +275,8 @@ test('PromptsPage_WhenSwitchingPromptWithUnsavedEdits_ShouldAskFirst', async ({ 
   await expect(page.getByTestId(ids.editorText)).toHaveValue('# Edited\n');
   await expect(page.getByTestId('harness-search')).toHaveText('prompt=work');
 
-  await page.getByTestId(ids.listRow).nth(3).click();
+  await page.getByTestId(ids.searchInput).fill('Plan reviewer');
+  await page.getByTestId(ids.searchInput).press('Enter');
   await page.getByTestId(ids.editorLeaveDiscard).click();
   await expect(page.getByTestId('harness-search')).toHaveText('prompt=planReviewer');
   await expect(page.getByTestId(ids.editor)).toHaveCount(0);

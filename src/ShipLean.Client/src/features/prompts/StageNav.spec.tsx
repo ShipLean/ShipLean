@@ -1,30 +1,62 @@
 import { expect, test } from '@playwright/experimental-ct-react';
-import { PromptsBadgeHarness } from './ct/PromptsBadgeHarness';
 import { PromptsHarness } from './ct/PromptsHarness';
-import { listRoutes, listHooks } from './ct/listRoutes';
+import { listRoutes } from './ct/listRoutes';
 import { adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
 
-test('StageStrip_WhenStageClicked_ShouldMarkIt', async ({ mount, page }) => {
-  await listRoutes(page);
-  await mount(<PromptsHarness project={adminProject} />, listHooks);
-  const strip = page.getByTestId(ids.stageStripItem);
-  await expect(strip.nth(5)).toHaveAttribute('aria-current', 'false');
-
-  await strip.nth(5).click();
-
-  await expect(strip.nth(5)).toHaveAttribute('aria-current', 'true');
-  await expect(strip.nth(0)).toHaveAttribute('aria-current', 'false');
-  await expect(page.getByTestId(ids.listStage).nth(5)).toBeInViewport();
-  await strip.nth(5).click();
-  await expect(strip.nth(5)).toHaveAttribute('aria-current', 'false');
+const at = (prompt: string) => ({
+  hooksConfig: { route: `/p/SHIP/ways-of-working?prompt=${prompt}` },
 });
 
-test('StageStrip_WhenLoaded_ShouldCountCustomsAsTheTabBadgeDoes', async ({ mount, page }) => {
+test('StageNav_WhenLoaded_ShouldShowSevenStagesWithTheirCounts', async ({ mount, page }) => {
   await listRoutes(page);
-  await mount(<PromptsBadgeHarness project={adminProject} />, listHooks);
+  await mount(<PromptsHarness project={adminProject} />, at('issueProposal'));
 
-  await expect(page.getByTestId(ids.tabBadge)).toHaveText('2 custom');
+  await expect(page.getByTestId(ids.stage)).toHaveCount(7);
+  const build = page.getByTestId(ids.stage).nth(3);
+  await expect(build).toContainText('Build');
+  await expect(build.getByTestId(ids.stageStripCount)).toHaveText('3 prompts');
+  await expect(build.getByTestId(ids.stageStripCustom)).toHaveText('1 custom');
+  await expect(page.getByTestId(ids.stage).nth(1).getByTestId(ids.stageStripCustom)).toHaveCount(0);
+});
+
+test('StageNav_ShouldMarkTheStageOfTheSelectedPrompt', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('report'));
+  const strip = page.getByTestId(ids.stage);
+
+  await expect(strip.nth(3)).toHaveAttribute('data-stage', 'build');
+  await expect(strip.nth(3)).toHaveAttribute('aria-current', 'true');
+  await expect(strip.nth(0)).toHaveAttribute('aria-current', 'false');
+  await expect(page.getByTestId(ids.stageChip)).toHaveText(['Lead brief', 'Task brief', 'Report']);
+  await expect(page.getByTestId(ids.stageWhen)).toContainText('Each wave runs');
+});
+
+test('StageNav_WhenStageHasOnePrompt_ShouldShowNoChipsOnlyTheWhenLine', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('issueProposal'));
+
+  await expect(page.getByTestId(ids.stageWhen)).toHaveText(
+    'Intake. A GitHub issue arrives on a connected repository.',
+  );
+  await expect(page.getByTestId(ids.stageChip)).toHaveCount(0);
+});
+
+test('StageNav_WhenCustomOrUpdated_ShouldDotTheirChips', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('guide'));
+
+  const chips = page.getByTestId(ids.stageChip);
+  await expect(chips).toHaveCount(2);
+  await expect(chips.nth(0)).toHaveAttribute('data-status', 'builtInUpdated');
+  await expect(chips.nth(1)).toHaveAttribute('data-status', 'builtIn');
+});
+
+test('StageStrip_WhenLoaded_ShouldCountCustomsAsTheHeaderDoes', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('issueProposal'));
+
+  await expect(page.getByTestId(ids.customCountPill)).toHaveText('2 custom');
   const counts = await page.getByTestId(ids.stageStripCustom).allTextContents();
   const sum = counts.reduce((total, text) => total + Number.parseInt(text, 10), 0);
   expect(sum).toBe(2);
