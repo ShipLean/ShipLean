@@ -279,7 +279,8 @@ public class PromptReadsTests : ApiFixture
         assembled.Layers[0].Text.ShouldBe(_builtIns.ServerInstructions);
         assembled.Layers[0].Note.ShouldBe("Sent when the agent connects. Same for every project.");
         assembled.Layers[2].Note.ShouldBe("1 section for Claude Code; the rest are dropped.");
-        assembled.Layers[1].Title.ShouldBe("Task brief, custom v1");
+        assembled.Layers[1].Title.ShouldBe("Task brief \u2014 custom v1");
+        assembled.Layers[1].Note.ShouldBe("get_brief on a task. ShipLean fills in 6 placeholders.");
         assembled.Layers[1].Text.ShouldBe("Plain line.\nLast line.");
         assembled.Layers[2].Title.ShouldBe("Agent-specific sections");
         assembled.Layers[2].Text.ShouldBe("Claude only.");
@@ -318,7 +319,8 @@ public class PromptReadsTests : ApiFixture
     {
         var assembled = await GetAsync<PromptAssembledDto>(Route(SeedIds.Projects.Mob, "/guide/assembled?agent=claude-code"));
 
-        assembled.Layers[1].Title.ShouldBe("Planning and breakdown, built-in");
+        assembled.Layers[1].Title.ShouldBe("Planning and breakdown \u2014 built-in");
+        assembled.Layers[1].Note.ShouldBe("planning_guide (default part). ShipLean fills in no placeholders.");
         var planned = assembled.Layers.Where(l => l.Planned).ToList();
         planned.Select(l => l.Kind).ShouldBe([PromptLayerKind.WaysOfWorking, PromptLayerKind.ClientNotes]);
         planned.Select(l => l.Note).ShouldBe(["Added after the prompt once the project has them.", "Per-client notes, added last."]);
