@@ -35,4 +35,8 @@ export const editorTestIds = {
   checkSize: 'prompts-check-size',
   checkSizeOver: 'prompts-check-size-over',
   checkProblem: 'prompts-check-problem',
+  checkPlaceholderWarning: 'prompts-check-placeholder-warning',
+  editorStartedFrom: 'prompts-editor-started-from',
+  editorBody: 'prompts-editor-body',
+  editorFooter: 'prompts-editor-footer',
 } as const;

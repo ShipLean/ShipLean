@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { isApiError } from '@shiplean/core/api/client';
 import type { PromptDto, PromptVersionSource } from '@shiplean/core/api/prompts';
 import { Dialog } from '../../../components/Dialog';
@@ -6,23 +6,19 @@ import { Markdown } from '../../../components/Markdown';
 import { useItemMarkdown } from '../../feature/featureApi';
 import { useUnsavedGuard } from '../../workItem/form/useUnsavedGuard';
 import { promptsTestIds as ids } from '../testIds';
+import { TabBand } from '../detail/TabBand';
 import { useSavePromptVersion } from '../usePrompts';
-import '../../workItem/form/markdownEditor.css';
 import { MAX_PROMPT_BYTES, promptByteSize } from './byteSize';
 import { changesFromBuiltIn, countChanges } from './changesDiff';
 import { ChangesPanel } from './ChangesPanel';
 import { EditorChecks } from './EditorChecks';
 import { checkPrompt } from './promptChecks';
+import { SideHeading } from './SideHeading';
 import { SizeMeter } from './SizeMeter';
 
 const MAX_NOTE = 200;
-// The same toolbar editor the work item descriptions and attachments use, loaded when the editor first opens.
-const MDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
 type EditorTab = 'edit' | 'preview' | 'changes';
-
-const tabClass = (on: boolean) =>
-  `h-7 border-b-2 px-3 text-[length:var(--text-sm)] ${on ? 'border-signal font-semibold text-ink' : 'border-transparent text-ink-muted hover:text-ink'}`;
 
 // What the server refused: its message, and the field it names (`text` or `note`).
 function refusal(error: unknown): { field: string | undefined; message: string } {
@@ -34,7 +30,7 @@ function refusal(error: unknown): { field: string | undefined; message: string }
   };
 }
 
-// The Markdown editor with its side panel and footer: Save as custom vN, Cancel, the leave guard (SHIP-744 D6, D10, D12).
+// The plain text editor with its side panel and pinned footer: Save as custom vN, Cancel, the leave guard (SHIP-744 D6, D10, D12).
 export function PromptEditor(props: {
   projectId: string;
   prompt: PromptDto;
@@ -65,7 +61,6 @@ export function PromptEditor(props: {
   const nextNumber = (prompt.custom?.number ?? 0) + 1;
   const canSave =
     !save.isPending &&
-    note.trim() !== '' &&
     note.length <= MAX_NOTE &&
     bytes <= MAX_PROMPT_BYTES &&
     text !== inUseText &&
@@ -76,6 +71,13 @@ export function PromptEditor(props: {
     source === 'builtInUpdate' || prompt.custom === null
       ? prompt.builtInText
       : prompt.custom.baseText;
+  // The aside of the tab band: the built-in this text started from (the server's labels).
+  const startedFrom =
+    source === 'builtInUpdate' && prompt.update !== null
+      ? `the ${prompt.update.changedLabel}`
+      : prompt.custom !== null
+        ? `the ${prompt.custom.baseLabel}`
+        : 'the built-in of today';
   const hunks = useMemo(
     () => (tab === 'edit' ? [] : changesFromBuiltIn(baseText, text)),
     [tab, baseText, text],
@@ -109,122 +111,84 @@ export function PromptEditor(props: {
       data-testid={ids.editor}
       aria-label={`Edit ${prompt.name}`}
       data-source={source}
-      className="grid min-w-0 gap-2"
+      className="grid min-w-0"
     >
-      <div
-        role="tablist"
-        aria-label="Editor"
-        className="flex items-center gap-1 border-b border-edge"
-      >
-        <button
-          type="button"
-          role="tab"
-          data-testid={ids.editorTabEdit}
-          aria-selected={tab === 'edit'}
-          className={tabClass(tab === 'edit')}
-          onClick={() => setTab('edit')}
-        >
-          Edit
-        </button>
-        <button
-          type="button"
-          role="tab"
-          data-testid={ids.editorTabPreview}
-          aria-selected={tab === 'preview'}
-          className={tabClass(tab === 'preview')}
-          onClick={() => setTab('preview')}
-        >
-          Preview
-        </button>
-        <button
-          type="button"
-          role="tab"
-          data-testid={ids.editorTabChanges}
-          aria-selected={tab === 'changes'}
-          className={tabClass(tab === 'changes')}
-          onClick={() => setTab('changes')}
-        >
-          Changes from built-in{' '}
-          <span className="text-ink-muted">
-            +{counts.adds} −{counts.dels}
-          </span>
-        </button>
-        <span className="ml-auto pr-2 text-[length:var(--text-sm)] text-ink-muted">
-          {dirty ? (
-            <span data-testid={ids.editorDirty} role="status">
-              Unsaved custom prompt
-            </span>
-          ) : null}
-        </span>
-      </div>
+      <TabBand
+        label="Editor"
+        tabs={[
+          { id: 'edit', label: 'Edit', testId: ids.editorTabEdit },
+          { id: 'preview', label: 'Preview', testId: ids.editorTabPreview },
+          {
+            id: 'changes',
+            label: 'Changes from built-in',
+            count: `+${counts.adds} −${counts.dels}`,
+            testId: ids.editorTabChanges,
+          },
+        ]}
+        active={tab}
+        onChange={setTab}
+        aside={<span data-testid={ids.editorStartedFrom}>Started from {startedFrom}</span>}
+      />
 
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(200px,260px)] items-start gap-3 touch:grid-cols-[minmax(0,1fr)]">
-        <div className="min-w-0">
-          {tab === 'edit' ? (
-            <Suspense
-              fallback={
-                <div
-                  className="h-[460px] rounded-control border border-edge bg-panel"
-                  aria-hidden
-                />
-              }
+      <div data-testid={ids.editorBody} className="min-w-0">
+        {tab === 'edit' ? (
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_230px] touch:grid-cols-[minmax(0,1fr)]">
+            <textarea
+              data-testid={ids.editorText}
+              aria-label={`Custom ${prompt.name} Markdown`}
+              spellCheck={false}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              className="block h-full min-h-[460px] w-full resize-none border-0 bg-panel p-3 font-mono text-[length:var(--text-sm)] leading-[1.55] text-ink outline-none [tab-size:2] focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]"
+            />
+            <div
+              data-testid={ids.editorSide}
+              className="grid min-w-0 content-start gap-3 border-l border-edge bg-canvas p-3 text-[length:var(--text-xs)] touch:border-t touch:border-l-0"
             >
-              <MDEditor
-                className="work-item-markdown"
-                value={text}
-                preview="edit"
-                height={460}
-                visibleDragbar={false}
-                overflow={false}
-                textareaProps={{
-                  'aria-label': `Custom ${prompt.name} Markdown`,
-                  // The editor's prop type has no data-* attributes. The textarea renders this one, which the tests fill.
-                  ...({ 'data-testid': ids.editorText } as { 'data-testid': string }),
-                }}
-                onChange={(next) => setText(next ?? '')}
-              />
-            </Suspense>
-          ) : null}
-          {tab === 'preview' ? (
-            <div data-testid={ids.editorPreview} className="min-h-[200px] p-3">
-              {text.trim() === '' ? (
-                <p className="m-0 text-ink-muted">Nothing to preview.</p>
-              ) : preview.data ? (
-                <Markdown html={preview.data.html} />
-              ) : preview.isError ? (
-                <p role="alert" className="m-0 text-alert">
-                  The preview could not be rendered.
+              <EditorChecks text={text} prompt={prompt} onChange={setText} />
+              <SizeMeter bytes={bytes} />
+              <section>
+                <SideHeading>Tips</SideHeading>
+                <p data-testid={ids.editorTip} className="m-0 text-ink-muted">
+                  Add project rules at the end rather than rewriting built-in sections: built-in
+                  updates then apply cleanly.
                 </p>
-              ) : (
-                <p className="m-0 text-ink-muted">Rendering…</p>
-              )}
+              </section>
             </div>
-          ) : null}
-          {tab === 'changes' ? <ChangesPanel hunks={hunks} /> : null}
-          {textError ? (
-            <p
-              data-testid={ids.editorError}
-              role="alert"
-              className="m-0 mt-1 text-[length:var(--text-sm)] text-alert"
-            >
-              {textError}
-            </p>
-          ) : null}
-        </div>
-        <div data-testid={ids.editorSide} className="grid min-w-0 gap-3">
-          <EditorChecks text={text} prompt={prompt} onChange={setText} />
-          <SizeMeter bytes={bytes} />
+          </div>
+        ) : null}
+        {tab === 'preview' ? (
+          <div data-testid={ids.editorPreview} className="min-h-[200px] p-3">
+            {text.trim() === '' ? (
+              <p className="m-0 text-ink-muted">Nothing to preview.</p>
+            ) : preview.data ? (
+              <Markdown html={preview.data.html} />
+            ) : preview.isError ? (
+              <p role="alert" className="m-0 text-alert">
+                The preview could not be rendered.
+              </p>
+            ) : (
+              <p className="m-0 text-ink-muted">Rendering…</p>
+            )}
+          </div>
+        ) : null}
+        {tab === 'changes' ? <ChangesPanel hunks={hunks} /> : null}
+        {textError ? (
           <p
-            data-testid={ids.editorTip}
-            className="m-0 text-[length:var(--text-sm)] text-ink-muted"
+            data-testid={ids.editorError}
+            role="alert"
+            className="m-0 px-3 py-1 text-[length:var(--text-sm)] text-alert"
           >
-            Add project rules at the end rather than rewriting built-in sections: built-in updates
-            then apply cleanly.
+            {textError}
           </p>
-        </div>
+        ) : null}
       </div>
 
-      <div className="grid gap-1">
+      {/* Pinned to the bottom of the panel, so a long side panel never pushes Save out of view (design-gaps §13). */}
+      <div
+        data-testid={ids.editorFooter}
+        className="sticky bottom-0 z-10 grid gap-1 border-t border-edge bg-canvas px-3 py-2"
+      >
         <div className="flex flex-wrap items-center gap-2">
           <input
             data-testid={ids.editorNote}
@@ -241,7 +205,7 @@ export function PromptEditor(props: {
           <button
             type="button"
             data-testid={ids.editorCancel}
-            className="btn-ghost touch:min-h-[var(--touch-target)]"
+            className="btn touch:min-h-[var(--touch-target)]"
             onClick={cancel}
           >
             Cancel

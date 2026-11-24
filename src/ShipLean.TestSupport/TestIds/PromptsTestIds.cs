@@ -173,4 +173,9 @@ public static class PromptsTestIds
     public const string AssembledIntro = "prompts-assembled-intro";
     public const string UpdateExplainer = "prompts-update-explainer";
     public const string UpdateDiffHeader = "prompts-update-diff-header";
+    // editor (SHIP-2302)
+    public const string CheckPlaceholderWarning = "prompts-check-placeholder-warning";
+    public const string EditorStartedFrom = "prompts-editor-started-from";
+    public const string EditorBody = "prompts-editor-body";
+    public const string EditorFooter = "prompts-editor-footer";
 }
