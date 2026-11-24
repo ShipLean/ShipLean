@@ -264,6 +264,7 @@ A copy of the current maps. `UsageEventNames` and the two maps are the source of
 | `inspection_metrics.task_opened` |  | self-emitted: ProjectUsage.InspectionMetricsTaskOpened (a task opened on Inspection; `from` rail/longest/chart/mostTokens) |
 | `prompts.opened` |  | self-emitted: ProjectUsage.PromptsOpened (the Ways of working page opened; once per arrival) |
 | `prompt.customize_opened` |  | self-emitted: ProjectUsage.PromptCustomizeOpened (Customize pressed on a prompt; `prompt`) |
+| `prompts.search_picked` |  | self-emitted: ProjectUsage.PromptsSearchPicked (a prompt opened from the Ways of working header search, by click or Enter; `prompt`) |
 | `prompt.saved` |  | self-emitted: ProjectPrompts.SaveVersion when the version's source is not `builtInUpdate` (`prompt`) |
 | `prompt.update_applied` |  | self-emitted: ProjectPrompts.SaveVersion when the source is `builtInUpdate`, a built-in change merged into a custom version (`prompt`) |
 | `prompt.built_in_used` |  | `ProjectPrompts.UseBuiltIn` (`prompt`) |
@@ -389,6 +390,7 @@ Why (SHIP-744): if projects can see and change the built-in prompts their agents
 
 - `prompts.opened` against `screen.viewed` for the `waysOfWorking` screen in the same weeks (does anyone come to the page), then `prompt.customize_opened` split by `prompt` against `prompt.saved` split by `prompt`: Customize pressed but nothing saved is a prompt people look at and decide not to change.
 - `prompt.update_applied`, `prompt.update_kept` and `prompt.built_in_used` split by `prompt`: what happens when ShipLean's own text moves. `prompt.version_restored` is people going back.
+- `prompts.search_picked` against `prompts.opened` in the same weeks (SHIP-2280 D17): how often people who come to Ways of working find a prompt through the header search rather than the stage strip. Split by `prompt` to see which prompts people search for.
 - Distinct projects that save a custom prompt (`prompt.saved` or `prompt.update_applied`) against distinct projects that open Ways of working (`prompts.opened`), per week: how many projects that look go on to change anything.
 
 `prompt` is a closed set (the 11 keys), so it stays low-cardinality. The three reads (page, history, assembled) are untracked: `prompts.opened` counts the page. Targets are still to be confirmed.

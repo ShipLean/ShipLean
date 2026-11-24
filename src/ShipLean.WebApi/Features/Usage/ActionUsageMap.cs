@@ -155,7 +155,7 @@ public static class ActionUsageMap
         Add(ActionUsage.SelfEmitted, "Auth.Login", "Consent.Decide", "ProjectCreation.Create", "Instance.Join", "Usage.Screen",
             "ProjectUsage.BacklogSort", "ProjectUsage.TimelineOpened", "ProjectUsage.TimelineBarSelected", "ProjectUsage.BoardFilterOpened", "ProjectUsage.BoardHealthFiltered",
             "ProjectUsage.InspectionMetricsViewed", "ProjectUsage.InspectionMetricsPeriodOpened", "ProjectUsage.InspectionMetricsTaskOpened", "ProjectUsage.RetroThemeSheetOpened",
-            "ProjectUsage.PromptsOpened", "ProjectUsage.PromptCustomizeOpened");
+            "ProjectUsage.PromptsOpened", "ProjectUsage.PromptCustomizeOpened", "ProjectUsage.PromptsSearchPicked");
 
         // Inspection (SHIP-1463): reads are counted by the section's own events (sent through the usage POST), which is self-emitted.
         Add(ActionUsage.Untracked(ScreenCounts), "InspectionRuns.Section", "InspectionRuns.Run", "InspectionRuns.Row", "InspectionSettings.Get");

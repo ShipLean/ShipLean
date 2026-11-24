@@ -5,7 +5,8 @@ using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Usage;
 
-// The SPA's reports from Ways of working (SHIP-744 C9): the page opened, and Customize opened on one prompt. The caller must be a
+// The SPA's reports from Ways of working (SHIP-744 C9): the page opened, Customize opened on one prompt, and a prompt picked from
+// the header search (SHIP-2280 D17). The caller must be a
 // member of the project (which also stamps the usage scope); then the event is tracked. Nothing here waits on delivery.
 [RegisterPerRequest]
 public sealed class PromptsUsage(IProjectAccess access, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)
@@ -16,6 +17,10 @@ public sealed class PromptsUsage(IProjectAccess access, ICurrentUser currentUser
     public Task CustomizeOpenedAsync(Guid projectId, PromptCustomizeOpenedDto opened, CancellationToken cancellationToken)
         => ReportAsync(projectId, UsageEventNames.PromptCustomizeOpened, "api:ProjectUsage.PromptCustomizeOpened",
             new Dictionary<string, object> { [UsageProps.Prompt] = PromptKeys.ToWire(opened.Prompt) }, cancellationToken);
+
+    public Task SearchPickedAsync(Guid projectId, PromptsSearchPickedDto picked, CancellationToken cancellationToken)
+        => ReportAsync(projectId, UsageEventNames.PromptsSearchPicked, "api:ProjectUsage.PromptsSearchPicked",
+            new Dictionary<string, object> { [UsageProps.Prompt] = PromptKeys.ToWire(picked.Prompt) }, cancellationToken);
 
     private async Task ReportAsync(Guid projectId, string name, string source, Dictionary<string, object>? properties, CancellationToken cancellationToken)
     {

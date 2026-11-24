@@ -1,4 +1,6 @@
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using ShipLean.Contracts.Errors;
 using ShipLean.Contracts.Prompts;
 using ShipLean.Contracts.Usage;
 using ShipLean.TestSupport;
@@ -47,6 +49,39 @@ public class PromptsUsageTests : ApiFixture
         tracked.Name.ShouldBe(UsageEventNames.PromptCustomizeOpened);
         tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
         tracked.Properties.GetValueOrDefault(UsageProps.Prompt).ShouldBe("planReviewer");
+    }
+
+    [Test]
+    public async Task PromptsSearchPicked_WhenMember_ShouldRecordTheEvent()
+    {
+        using var response = await Api.PostJsonAsync(Route("usage/prompts-search-picked"), new { prompt = "brief" });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var tracked = Only("api:ProjectUsage.PromptsSearchPicked");
+        tracked.Name.ShouldBe(UsageEventNames.PromptsSearchPicked);
+        tracked.ProjectId.ShouldBe(SeedIds.Projects.Ship);
+        tracked.Surface.ShouldBe(UsageSurface.Web);
+        tracked.Actor.ShouldBe(UsageActor.ForUser(SeedIds.Users.Joel));
+        tracked.Properties.GetValueOrDefault(UsageProps.Prompt).ShouldBe("brief");
+    }
+
+    [Test]
+    public async Task PromptsSearchPicked_WhenUnknownPrompt_ShouldReturnValidation()
+    {
+        using var response = await Api.PostJsonAsync(Route("usage/prompts-search-picked"), new { prompt = "noSuchPrompt" });
+
+        var error = await ApiClient.ReadApiErrorAsync(response, HttpStatusCode.BadRequest);
+        error.Code.ShouldBe(ApiErrorCodes.Validation);
+        Recorder.Events.ShouldBeEmpty();
+    }
+
+    [Test]
+    public async Task PromptsSearchPicked_WhenNotMember_ShouldReturnNotFound()
+    {
+        using var response = await Api.PostJsonAsync($"api/projects/{SeedIds.Projects.Part}/usage/prompts-search-picked", new { prompt = "brief" });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        Recorder.Events.ShouldBeEmpty();
     }
 
     [Test]
