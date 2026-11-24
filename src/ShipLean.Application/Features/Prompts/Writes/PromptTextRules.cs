@@ -6,7 +6,7 @@ using ShipLean.Contracts.Prompts;
 namespace ShipLean.Application.Features.Prompts.Writes;
 
 // The rules a save checks, shared by DbPromptWrites and DbPromptSavePreview so both throw the same errors in the same order (C2, C3):
-// Note, Text, Expected, then Changed.
+// Note (only its length: a blank note is allowed, D20), Text, Expected, then Changed.
 internal static class PromptTextRules
 {
     private const int MaxTextBytes = 65_536;

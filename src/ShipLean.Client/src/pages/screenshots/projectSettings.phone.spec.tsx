@@ -36,7 +36,7 @@ phonePageShots([
     shell: true,
     arrange,
     ready: async (page) => {
-      await expect(page.getByTestId(ids.settingsIndexRow)).toHaveCount(8);
+      await expect(page.getByTestId(ids.settingsIndexRow)).toHaveCount(7);
       await expect(page.getByTestId(ids.settingsIndexCount)).toHaveText(
         String(SHELL_MEMBERS.length),
       );
