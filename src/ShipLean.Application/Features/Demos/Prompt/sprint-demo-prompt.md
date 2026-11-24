@@ -9,9 +9,9 @@ Work through the numbered steps in order. Commands are meant to be pasted. Every
 One video: an intro, then one chapter per Feature in the data, then an **Other work** chapter when `otherWork` has items, then a short **Also this sprint** section, then a closing **What we'll measure**.
 
 - **Intro:** the sprint name and goal, the dates and the presenters (step 2). Mention `otherWork` in one line: how many stories and bugs have no Feature, shown later under Other work. The slides and narration use the real sprint data, so never say the data is made up. When the demo has walkthrough clips, say in one line that they come from a separate local copy with sample data. The title slide says the presenters are synthetic voices.
-- **Each Feature**, in this order: why, before and after, a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its retro items, its measure.
+- **Each Feature**, in this order: why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its retro items, its measure.
 - **A Feature with more than one item in its `stories` opens with its own title slide**: the Feature's title and key, alone on the slide, before its why.
-- **Other work:** for `otherWork`, after the Features and before Also this sprint. Each bug gets a before and after. Each story gets one spoken line, or a before and after if it changed something visible.
+- **Other work:** for `otherWork`, after the Features and before Also this sprint. Group it by theme: a theme that changed something a user can see gets one before and after, and everything else is covered in one or two spoken lines in all, never one line per item.
 - **Also this sprint:** the sprint's own retro points (`sprintRetro`) and the `actionItems`.
 - **What we'll measure:** every Feature's stated measure, one after another.
 
@@ -19,14 +19,15 @@ One video: an intro, then one chapter per Feature in the data, then an **Other w
 
 If `truncated` is true, say in the intro that the sprint was summarised.
 
-### Before and after, item by item
+### Pick the level that shows impact
 
-A sprint can hold dozens of items. Keep each before next to its own after, so the viewer can connect them. Count the items in a Feature's `stories` whose `type` is `story`:
+Demo outcomes, not tickets. Stories are how the work was split, not what the viewer cares about. For each Feature, work out what someone who uses the product would notice, and show that.
 
-- **3 stories or fewer:** one before and after for the whole Feature.
-- **More than 3 stories:** inside the Feature's chapter, show each story's before and then its after, back to back, in the order `stories` lists them. A story with no visible change (contracts, skeleton, tests, docs) gets one spoken line and no before and after.
-- **Every bug gets its own before and after**, the broken behaviour then the fix: inside its Feature's chapter, or under Other work when it has no Feature.
-- **Keep each pair short:** one before shot and one after shot, about 10 to 20 seconds a pair.
+- **Find the capabilities.** Read the Feature's goal and its `stories`, and group the stories into the capabilities a user can now see or use that they couldn't before. Most Features are **one** capability: one before and after for the whole Feature. A large Feature may have two to four. A capability usually spans several stories; never give each story its own before and after just because it is a story.
+- **What the stories change sets the level, not how many there are.** Ten stories that together add one screen are one capability.
+- **Leave scaffolding out.** A story that sets up later work and changes nothing a user can see (skeleton or placeholder UI, contracts, DTOs, migrations, plumbing, refactors, tests, docs, flags) is not demoed and not narrated on its own. At most, the implementation says in one sentence that the groundwork was laid. A Feature that is only scaffolding this sprint gets a short chapter: what is in place now and what it makes possible, with no before and after and no clip.
+- **Each capability gets one before and after**, the before then the after back to back, about 15 to 30 seconds a pair. Name it by what it does for the user, not by story keys.
+- **Bugs:** a bug a user would have hit gets its own before and after, the broken behaviour then the fix, inside its Feature's chapter or under Other work when it has no Feature. Small or internal fixes are named together in one line.
 
 ## 2. Presenters
 
@@ -91,7 +92,7 @@ For each Feature, and for Other work, record one walkthrough with Playwright (`r
 - **Wait until the app answers before you act** (a known search returns results). Never act on a blank page.
 - **The clip shows the local copy, not the data above.** The copy holds the standard seed, so a clip can lack what the data lists (a `why`, tasks) or hold more (other stories). Narrate only what the clip shows, and say in the intro that the clips come from a separate seeded copy. Names of people shown in the app are sample seed data: never read them out.
 - Use `data-testid` locators. Opening an item can lay its page over the one underneath, so scope each locator to the part you mean.
-- Before and after: if "before" can't be shown, say so in the narration and skip it. Record an item's before and after as consecutive segments, so they play back to back.
+- Before and after: if "before" can't be shown, say so in the narration and skip it. Record a capability's or bug's before and after as consecutive segments, so they play back to back.
 
 ```js
 // Pass this string to context.addInitScript (any language) before any page loads. It runs itself: a bare function would only be defined.
@@ -168,13 +169,14 @@ Write `chapters.json` with the same chapters:
 { "durationSeconds": 142.6, "chapters": [ { "title": "Intro", "startSeconds": 0 }, { "title": "A Feature's title", "startSeconds": 15.2, "featureKey": "KEY-1" } ] }
 ```
 
-The first chapter starts at 0, starts ascend strictly, each is below `durationSeconds`, titles are 1 to 200 characters, and a Feature's chapter carries its `featureKey`. The Other work chapter has no `featureKey`, and there are no chapters per story or bug. `script.md` holds every narrated line under its chapter, with the presenter's name on each. Inside a chapter, a story or bug with its own lines gets its key and title as a heading above them.
+The first chapter starts at 0, starts ascend strictly, each is below `durationSeconds`, titles are 1 to 200 characters, and a Feature's chapter carries its `featureKey`. The Other work chapter has no `featureKey`, and there are no chapters per story or bug. `script.md` holds every narrated line under its chapter, with the presenter's name on each. Inside a chapter, each capability or bug with its own lines gets a heading naming it, followed by a line listing the story and bug keys it covers.
 
 ## 12. Check before you upload
 
 - The duration of `demo.mp4` matches `durationSeconds`.
 - Extract a frame per chapter and look at it: `{{ffmpeg}} -hide_banner -v error -y -ss SECONDS -i demo.mp4 -frames:v 1 frame-N.png`. The logo is on each, bottom right.
 - No segment overran: no narration is cut, and no screen moves during a handover.
+- No chapter walks through its stories one by one, and no scaffolding story (skeleton, contracts, tests, docs) has its own before and after or its own narration.
 - No leftover placeholder (a pair of opening curly braces) appears in the script, the slides or the chapters.
 - No raw failure log or stack trace appears anywhere, and no person or agent named in the sprint and retro data appears by name. Only the presenters (Ann, Keith and Becky) are named.
 
