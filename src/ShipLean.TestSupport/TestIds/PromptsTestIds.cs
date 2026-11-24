@@ -26,6 +26,8 @@ public static class PromptsTestIds
     public const string SearchInput = "prompts-search-input";
     public const string SearchResults = "prompts-search-results";
     public const string SearchResult = "prompts-search-result";
+    public const string StageChevron = "prompts-stage-chevron";
+    public const string StageChipDot = "prompts-stage-chip-dot";
     public const string StageStripCount = "prompts-stage-strip-count";
     public const string StageStripCustom = "prompts-stage-strip-custom";
     public const string ChipBuiltIn = "prompts-chip-built-in";

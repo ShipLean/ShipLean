@@ -2,6 +2,8 @@ export const navTestIds = {
   stageNav: 'prompts-stage-nav',
   stageStrip: 'prompts-stage-strip',
   stage: 'prompts-stage',
+  stageChevron: 'prompts-stage-chevron',
+  stageChipDot: 'prompts-stage-chip-dot',
   stageStripCount: 'prompts-stage-strip-count',
   stageStripCustom: 'prompts-stage-strip-custom',
   stageChip: 'prompts-stage-chip',

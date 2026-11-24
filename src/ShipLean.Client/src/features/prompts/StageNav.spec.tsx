@@ -61,3 +61,52 @@ test('StageStrip_WhenLoaded_ShouldCountCustomsAsTheHeaderDoes', async ({ mount, 
   const sum = counts.reduce((total, text) => total + Number.parseInt(text, 10), 0);
   expect(sum).toBe(2);
 });
+
+test('StageStrip_ShouldShadeTheStageOfTheSelectedPrompt', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('report'));
+  const stages = page.getByTestId(ids.stage);
+  await expect(stages).toHaveCount(7);
+
+  const fills = await stages.evaluateAll((cells) =>
+    cells.map((cell) => getComputedStyle(cell).backgroundColor),
+  );
+  expect(fills[3]).not.toBe(fills[2]);
+  expect(fills[2]).toBe(fills[4]);
+  await expect(stages.nth(3)).toHaveAttribute('aria-current', 'true');
+});
+
+test('StageStrip_ShouldJoinStagesWithChevrons', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('report'));
+
+  await expect(page.getByTestId(ids.stage)).toHaveCount(7);
+  await expect(page.getByTestId(ids.stageChevron)).toHaveCount(6);
+  await expect(page.getByTestId(ids.stage).last().getByTestId(ids.stageChevron)).toHaveCount(0);
+});
+
+test('StageChips_WhenCustom_ShouldShowThePurpleDot', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('report'));
+
+  const chips = page.getByTestId(ids.stageChip);
+  await expect(chips).toHaveCount(3);
+  const custom = page.locator(`[data-testid="${ids.stageChip}"][data-status="custom"]`);
+  await expect(custom).toHaveCount(1);
+  await expect(custom.getByTestId(ids.stageChipDot)).toHaveAttribute('data-dot', 'custom');
+  await expect(
+    page
+      .locator(`[data-testid="${ids.stageChip}"][data-status="builtIn"]`)
+      .first()
+      .getByTestId(ids.stageChipDot),
+  ).toHaveCount(0);
+});
+
+test('StageChips_WhenUpdated_ShouldShowTheAmberDot', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, at('guide'));
+
+  const updated = page.locator(`[data-testid="${ids.stageChip}"][data-status="builtInUpdated"]`);
+  await expect(updated).toHaveCount(1);
+  await expect(updated.getByTestId(ids.stageChipDot)).toHaveAttribute('data-dot', 'updated');
+});

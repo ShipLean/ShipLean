@@ -1,17 +1,18 @@
-import type { PromptDto, PromptKey, PromptStageDto } from '@shiplean/core/api/prompts';
+import type { PromptDto, PromptKey, PromptStage, PromptStageDto } from '@shiplean/core/api/prompts';
 import { promptsTestIds as ids } from '../testIds';
+import { StageSelect } from './StageSelect';
 import { StageStrip } from './StageStrip';
 
-const dotClass = (prompt: PromptDto) =>
+const dotOf = (prompt: PromptDto) =>
   prompt.status === 'custom'
-    ? 'bg-label-purple'
+    ? { kind: 'custom', className: 'bg-label-purple' }
     : prompt.status === 'builtInUpdated'
-      ? 'bg-warn'
+      ? { kind: 'updated', className: 'bg-warn' }
       : null;
 
 // The only stage picker (D1): the strip, then for a stage with two or more prompts a chip per prompt (D4), then when the
 // stage happens. Clicking a stage opens its first prompt; the stage follows the open prompt, so there is no stage state.
-// TODO: plain chips and no phone stage select; the styled strip, chips and the select under 900px (D7) replace them.
+// Under 900px the strip is a stage select and the chips wrap under it (D7).
 export function StageNav({
   stages,
   selectedKey,
@@ -22,22 +23,20 @@ export function StageNav({
   onSelect: (key: PromptKey) => void;
 }) {
   const current = stages.find((stage) => stage.prompts.some((p) => p.key === selectedKey));
+  const openStage = (id: PromptStage) => {
+    const first = stages.find((stage) => stage.id === id)?.prompts[0];
+    if (first !== undefined) onSelect(first.key);
+  };
   return (
     <div data-testid={ids.stageNav} className="grid min-w-0 gap-2">
-      <StageStrip
-        stages={stages}
-        selected={current?.id ?? null}
-        onSelect={(id) => {
-          const first = stages.find((stage) => stage.id === id)?.prompts[0];
-          if (first !== undefined) onSelect(first.key);
-        }}
-      />
+      <StageStrip stages={stages} selected={current?.id ?? null} onSelect={openStage} />
+      <StageSelect stages={stages} selected={current?.id ?? null} onSelect={openStage} />
       {current === undefined ? null : (
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           {current.prompts.length > 1 ? (
             <div className="flex flex-wrap gap-1.5" aria-label={`${current.name} prompts`}>
               {current.prompts.map((prompt) => {
-                const dot = dotClass(prompt);
+                const dot = dotOf(prompt);
                 return (
                   <button
                     key={prompt.key}
@@ -47,13 +46,21 @@ export function StageNav({
                     data-status={prompt.status}
                     aria-current={prompt.key === selectedKey}
                     onClick={() => onSelect(prompt.key)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-edge px-2.5 py-1 text-[length:var(--text-sm)] touch:min-h-[var(--touch-target)] ${
-                      prompt.key === selectedKey ? 'bg-signal-soft font-semibold' : 'bg-panel'
+                    className={`inline-flex min-h-[var(--control-height,32px)] items-center gap-1.5 rounded-full border px-2.5 text-[length:var(--text-sm)] hover:bg-sunken touch:min-h-[var(--touch-target)] ${
+                      prompt.key === selectedKey
+                        ? 'border-signal/45 bg-signal-soft font-semibold'
+                        : 'border-edge bg-panel font-medium'
                     }`}
                   >
                     {prompt.name}
                     {dot === null ? null : (
-                      <span aria-hidden="true" className={`size-1.5 rounded-full ${dot}`} />
+                      <span
+                        aria-label={dot.kind === 'custom' ? 'custom' : 'built-in updated'}
+                        role="img"
+                        data-testid={ids.stageChipDot}
+                        data-dot={dot.kind}
+                        className={`size-[7px] rounded-full ${dot.className}`}
+                      />
                     )}
                   </button>
                 );
