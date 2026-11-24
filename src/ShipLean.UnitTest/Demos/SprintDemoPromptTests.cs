@@ -102,7 +102,52 @@ public class SprintDemoPromptTests
     [TestCase("session")]
     public void Prompt_ShouldPutTheFeatureSectionsInOrder(string channel)
     {
-        ChannelSource(channel).ShouldContain("why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it");
+        ChannelSource(channel).ShouldContain("why, a before and after for each of its capabilities (below), a walkthrough clip, the implementation, how the agents built it (waves, review rounds, journeys, from `plan` and the stories), its measure.");
+    }
+
+    // SHIP-2330: showing what happened is most of a Feature's chapter.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldGiveShowingWhatHappenedMostOfTheTime(string channel)
+    {
+        ChannelSource(channel).ShouldContain("the before and after and the walkthrough clip take more than half of its running time; aim for about two thirds.");
+        ChannelSource(channel).ShouldContain("In each Feature's chapter with something to show, the before and after and the clip take more than half its time.");
+    }
+
+    // SHIP-2330: the retro is summarised once, as sprint-wide themes, one theme a slide.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldSummariseTheRetroOnceForTheWholeSprint(string channel)
+    {
+        ChannelSource(channel).ShouldContain("## 4. Retro themes for the whole sprint");
+        ChannelSource(channel).ShouldContain("Pool every Feature's `retro` with `sprintRetro`");
+        ChannelSource(channel).ShouldContain("**One slide per theme**, at most 6 lines");
+        ChannelSource(channel).ShouldContain("A Feature's retro points go in the sprint-wide retro themes (step 4), not in its own chapter.");
+        ChannelSource(channel).ShouldNotContain("its retro items");
+        ChannelSource(channel).ShouldNotContain("In a Feature's execution section");
+    }
+
+    // SHIP-2330: a mobile change is recorded and shown at phone size in a phone frame.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldShowMobileChangesOnAPhone(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Mobile changes are shown on a phone");
+        ChannelSource(channel).ShouldContain("**never in a desktop or tablet window**, and never by narrowing a desktop window");
+        ChannelSource(channel).ShouldContain("`viewport` 390x844, `deviceScaleFactor` 2, `isMobile` and `hasTouch` on, and `recordVideo` at 390x844");
+        ChannelSource(channel).ShouldContain("Every mobile clip and screenshot is at phone size inside the phone frame, never a desktop or tablet window.");
+    }
+
+    // SHIP-2330: Feature slides put the points left and a framed screenshot right.
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldPutAFramedScreenshotBesideTheSlidePoints(string channel)
+    {
+        ChannelSource(channel).ShouldContain("**Points on the left, the feature on the right.**");
+        ChannelSource(channel).ShouldContain("sits in a **phone frame**");
+        ChannelSource(channel).ShouldContain("sits in a **desktop browser frame**");
+        ChannelSource(channel).ShouldContain("The frame may run slightly off the right or bottom edge, or tilt by a few degrees");
+        ChannelSource(channel).ShouldContain("Never draw a made-up screen.");
     }
 
     // K11 item 2
