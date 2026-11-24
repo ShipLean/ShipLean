@@ -1,13 +1,8 @@
 import { expect, test } from '@playwright/experimental-ct-react';
+import { PromptsBadgeHarness } from './ct/PromptsBadgeHarness';
 import { PromptsHarness } from './ct/PromptsHarness';
-import {
-  PROMPTS_OPENED_URL,
-  PROMPTS_URL,
-  adminPage,
-  adminProject,
-  memberPage,
-  memberProject,
-} from './ct/promptsData';
+import { listRoutes, listHooks } from './ct/listRoutes';
+import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
 
 test('PromptsPage_WhenLoaded_ShouldShowTheShellAndSelectTheFirstPrompt', async ({
@@ -77,61 +72,6 @@ test('PromptsPage_WhenOpened_ShouldPostPromptsOpenedOnce', async ({ mount, page 
   await expect.poll(() => posts).toBe(1);
 });
 
-test('PromptDetail_WhenMember_ShouldHideChangeActions', async ({ mount, page }) => {
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: memberPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await mount(<PromptsHarness project={memberProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
-  });
-
-  await expect(page.getByTestId(ids.detailName)).toHaveText('Task brief');
-  await expect(page.getByTestId(ids.actionEdit)).toHaveCount(0);
-  await expect(page.getByTestId(ids.actionCustomize)).toHaveCount(0);
-  await expect(page.getByTestId(ids.actionUseBuiltIn)).toHaveCount(0);
-  await expect(page.getByTestId(ids.actionResume)).toHaveCount(0);
-  await expect(page.getByTestId(ids.readOnlyNote)).toContainText(
-    'Only project admins can customize',
-  );
-  await expect(page.getByTestId(ids.readOnlyAdmins)).toHaveText('Joel Dickson or Maria Santos');
-  await expect(page.getByTestId(ids.copyMarkdown)).toBeVisible();
-});
-
-test('PromptDetail_WhenAdmin_ShouldNotShowTheReadOnlyNote', async ({ mount, page }) => {
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts' },
-  });
-
-  await expect(page.getByTestId(ids.copyMarkdown)).toBeVisible();
-  await expect(page.getByTestId(ids.readOnlyNote)).toHaveCount(0);
-});
-
-test('PromptDetail_WhenEditorOpen_ShouldHideTheChromeAndPostCustomizeOnce', async ({
-  mount,
-  page,
-}) => {
-  let customizePosts = 0;
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await page.route('**/api/projects/*/usage/prompt-customize-opened', (route) => {
-    customizePosts += 1;
-    return route.fulfill({ status: 204 });
-  });
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=work' },
-  });
-  await expect(page.getByTestId(ids.facts)).toBeAttached();
-
-  await page.getByTestId(ids.actionCustomize).click();
-
-  await expect(page.getByTestId(ids.editor)).toBeVisible();
-  await expect(page.getByTestId(ids.actions)).toHaveCount(0);
-  await expect(page.getByTestId(ids.facts)).toHaveCount(0);
-  await expect(page.getByTestId(ids.updateBanner)).toHaveCount(0);
-  await expect.poll(() => customizePosts).toBe(1);
-});
-
 test('PromptsPage_WhenAnotherPromptSelected_ShouldNotReopenTheEditorOnReturn', async ({
   mount,
   page,
@@ -157,32 +97,6 @@ test('PromptsPage_WhenAnotherPromptSelected_ShouldNotReopenTheEditorOnReturn', a
   await expect(page.getByTestId(ids.actionCustomize)).toBeVisible();
 });
 
-test('PromptDetail_WhenAdminOnABuiltIn_ShouldOfferCustomize', async ({ mount, page }) => {
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=work' },
-  });
-
-  await expect(page.getByTestId(ids.actionCustomize)).toBeVisible();
-  await expect(page.getByTestId(ids.actionUseBuiltIn)).toHaveCount(0);
-});
-
-test('PromptDetail_WhenAdminOnACustom_ShouldOfferEditAndUseBuiltIn', async ({ mount, page }) => {
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts?prompt=brief' },
-  });
-
-  await expect(page.getByTestId(ids.actionEdit)).toBeVisible();
-  await expect(page.getByTestId(ids.actionUseBuiltIn)).toBeVisible();
-  await expect(page.getByTestId(ids.actionCustomize)).toHaveCount(0);
-
-  await page.getByTestId(ids.actionUseBuiltIn).click();
-  await expect(page.getByTestId(ids.useBuiltInDialog)).toBeVisible();
-});
-
 test('PromptsPage_WhenLoadFails_ShouldOfferRetry', async ({ mount, page }) => {
   let fail = true;
   await page.route(PROMPTS_URL, (route) =>
@@ -201,38 +115,72 @@ test('PromptsPage_WhenLoadFails_ShouldOfferRetry', async ({ mount, page }) => {
   await expect(page.getByTestId(ids.detailName)).toHaveText('Issue proposal');
 });
 
-const RESUME_URL = '**/api/projects/*/prompts/issueProposal/versions/1/use';
+test('PromptsList_WhenLoaded_ShouldGroupTwelvePromptsUnderSevenStages', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, listHooks);
 
-test('PromptDetail_WhenResumeClicked_ShouldUseTheCustomVersionNumber', async ({ mount, page }) => {
-  const posted: string[] = [];
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await page.route(RESUME_URL, (route) => {
-    posted.push(route.request().method());
-    return route.fulfill({ json: { key: 'issueProposal', status: 'custom', inUseVersion: 1 } });
-  });
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts' },
-  });
-
-  await expect(page.getByTestId(ids.actionResume)).toContainText('Use custom v1 again');
-  await page.getByTestId(ids.actionResume).click();
-
-  await expect.poll(() => posted).toEqual(['POST']);
-  await expect(page.getByTestId(ids.actionError)).toHaveCount(0);
+  await expect(page.getByTestId(ids.listStage)).toHaveCount(7);
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(12);
+  await expect(page.getByTestId(ids.stageStripItem)).toHaveCount(7);
+  await expect(page.getByTestId(ids.listRowName).filter({ hasText: 'Retro analysis' })).toHaveCount(
+    1,
+  );
+  await expect(page.getByTestId(ids.listStageWhen).first()).toHaveText(
+    'A GitHub issue arrives on a connected repository.',
+  );
+  const build = page.getByTestId(ids.stageStripItem).nth(3);
+  await expect(build).toContainText('Build');
+  await expect(build.getByTestId(ids.stageStripCount)).toHaveText('3 prompts');
+  await expect(build.getByTestId(ids.stageStripCustom)).toHaveText('1 custom');
+  await expect(
+    page.getByTestId(ids.stageStripItem).nth(1).getByTestId(ids.stageStripCustom),
+  ).toHaveCount(0);
 });
 
-test('PromptDetail_WhenResumeFails_ShouldShowTheError', async ({ mount, page }) => {
-  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
-  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
-  await page.route(RESUME_URL, (route) =>
-    route.fulfill({ status: 404, json: { error: 'That version is gone.', code: 'not_found' } }),
-  );
-  await mount(<PromptsHarness project={adminProject} />, {
-    hooksConfig: { route: '/p/SHIP/settings/prompts' },
-  });
+test('PromptsList_WhenCustomAndUpdated_ShouldShowTheirChips', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, listHooks);
 
-  await page.getByTestId(ids.actionResume).click();
+  const status = (n: number) => page.getByTestId(ids.listRow).nth(n).getByTestId(ids.listRowChip);
+  await expect(status(0)).toHaveText('Using built-in');
+  await expect(status(1)).toHaveText('Built-in');
+  await expect(status(2)).toHaveText('Built-in updated');
+  await expect(status(2)).toHaveAttribute('data-status', 'builtInUpdated');
+  await expect(status(5)).toHaveText('Custom v2');
+  await expect(status(5)).toHaveAttribute('data-status', 'custom');
+  await expect(page.getByTestId(ids.listRowFile).nth(1)).toHaveText('work.md');
+});
 
-  await expect(page.getByTestId(ids.actionError)).toHaveText('That version is gone.');
+test('PromptsList_WhenSearchedForAPlaceholder_ShouldKeepOnlyMatches', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, listHooks);
+
+  await page.getByTestId(ids.listSearch).fill('SPRINT_NAME');
+
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(1);
+  await expect(page.getByTestId(ids.listRowName)).toHaveText('Sprint demo video');
+  await expect(page.getByTestId(ids.listStage)).toHaveCount(1);
+
+  await page.getByTestId(ids.listSearch).fill('zzz-no-such-prompt');
+  await expect(page.getByTestId(ids.listEmpty)).toBeVisible();
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(0);
+});
+
+test('PromptsList_WhenCustomFilter_ShouldKeepCustomsOnly', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsHarness project={adminProject} />, listHooks);
+
+  await page.getByTestId(ids.filterCustom).click();
+
+  await expect(page.getByTestId(ids.filterCustom)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(2);
+  await page.getByTestId(ids.filterAll).click();
+  await expect(page.getByTestId(ids.listRow)).toHaveCount(12);
+});
+
+test('PromptsTabBadge_WhenTwoCustoms_ShouldSayTwoCustom', async ({ mount, page }) => {
+  await listRoutes(page);
+  await mount(<PromptsBadgeHarness project={adminProject} />, listHooks);
+
+  await expect(page.getByTestId(ids.tabBadge)).toHaveText('2 custom');
 });
