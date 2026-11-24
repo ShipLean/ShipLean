@@ -4,12 +4,12 @@ ShipLean tells agents how to plan, brief, review and report through built-in Mar
 
 ## Where it is
 
-**Project settings › Prompts** is the last tab. It lists the prompts by workflow stage (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
+**Ways of working** is a side-menu item under Inspection, at `/p/:key/ways-of-working?prompt=<key>`; the old `/p/:key/settings/prompts` address redirects there. It lists the prompts by workflow stage (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
 
 - Project members read.
 - Project admins change. A write from anyone else is refused.
 - On a phone the page is readable. Editing is meant for a desktop.
-- The tab's "N custom" badge appears once the tab has been opened in the session. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
+- The page's "N custom" count appears once the page has been opened in the session. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
 
 ## The 11 prompts
 

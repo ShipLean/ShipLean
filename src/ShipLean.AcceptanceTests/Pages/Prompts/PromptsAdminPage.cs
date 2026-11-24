@@ -118,7 +118,7 @@ public sealed class PromptsAdminPage(IPage page)
 
     public async Task OpenAsync(string projectKey, string? prompt = null)
     {
-        await page.GotoAsync(prompt is null ? Links.ProjectSettings(projectKey, "prompts") : Links.ProjectSettings(projectKey, "prompts", prompt));
+        await page.GotoAsync(Links.WaysOfWorking(projectKey, prompt));
         await Assertions.Expect(Page).ToBeVisibleAsync();
     }
 

@@ -6,7 +6,7 @@ using ShipLean.TestSupport.Hosting;
 
 namespace ShipLean.AcceptanceTests.Lanes.Prompts;
 
-// Joel, admin of SHIP, opens the Prompts tab and customizes prompts in the real editor. Each customizing test uses its own prompt, because the class shares one
+// Joel, admin of SHIP, opens Ways of working and customizes prompts in the real editor. Each customizing test uses its own prompt, because the class shares one
 // database: guide for the agent check, brief for placeholders, work for the unclosed tag, fix for the misspelt one and retro for the size limit.
 [TestFixture]
 public class CustomizeJourneyTests : SeededAcceptanceTest

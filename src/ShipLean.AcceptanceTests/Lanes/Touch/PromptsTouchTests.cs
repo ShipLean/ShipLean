@@ -6,9 +6,9 @@ using ShipLean.TestSupport.Fixtures;
 using ShipLean.TestSupport.Prompts;
 using ShipLean.TestSupport.TestIds;
 
-namespace ShipLean.AcceptanceTests.Lanes.Settings.Touch;
+namespace ShipLean.AcceptanceTests.Lanes.Touch;
 
-// SHIP-744 D14: the Prompts tab on a phone (390x844), as Joel (an admin). Reading and picking only; editing on a phone is not designed.
+// SHIP-744 D14: Ways of working on a phone (390x844), as Joel (an admin). Reading and picking only; editing on a phone is not designed.
 [TestFixture]
 public class PromptsTouchTests : SeededAcceptanceTest
 {

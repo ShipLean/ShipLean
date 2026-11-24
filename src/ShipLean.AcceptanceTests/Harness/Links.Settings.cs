@@ -6,10 +6,6 @@ public static partial class Links
     public static string ProjectSettings(string projectKey, string tab) =>
         $"/p/{Segment(projectKey)}/settings/{Segment(tab)}";
 
-    // The Prompts tab with one prompt open (its camelCase key, "planReviewer"): /p/:key/settings/prompts?prompt=.
-    public static string ProjectSettings(string projectKey, string tab, string prompt) =>
-        $"{ProjectSettings(projectKey, tab)}?prompt={Uri.EscapeDataString(prompt)}";
-
     // The instance settings tab ("general", "users", "projects"): /instance/:tab.
     public static string InstanceSettings(string tab) => $"/instance/{Segment(tab)}";
 

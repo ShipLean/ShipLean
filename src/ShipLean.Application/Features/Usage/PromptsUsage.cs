@@ -5,7 +5,7 @@ using ShipLean.Contracts.Usage;
 
 namespace ShipLean.Application.Features.Usage;
 
-// The SPA's reports from Project settings > Prompts (SHIP-744 C9): the tab opened, and Customize opened on one prompt. The caller must be a
+// The SPA's reports from Ways of working (SHIP-744 C9): the page opened, and Customize opened on one prompt. The caller must be a
 // member of the project (which also stamps the usage scope); then the event is tracked. Nothing here waits on delivery.
 [RegisterPerRequest]
 public sealed class PromptsUsage(IProjectAccess access, ICurrentUser currentUser, IUsageEvents events, TimeProvider time)

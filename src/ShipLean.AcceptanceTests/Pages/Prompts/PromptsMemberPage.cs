@@ -3,7 +3,7 @@ using ShipLean.TestSupport.TestIds;
 
 namespace ShipLean.AcceptanceTests.Pages.Prompts;
 
-// The Prompts tab of project settings as a member, the Issue proposal journey and the phone tests read it.
+// The Ways of working page as a member, the Issue proposal journey and the phone tests read it.
 public sealed class PromptsMemberPage(IPage page)
 {
     public ILocator Root => page.GetByTestId(PromptsTestIds.Page);
@@ -60,7 +60,7 @@ public sealed class PromptsMemberPage(IPage page)
 
     public async Task OpenAsync(string projectKey, string prompt)
     {
-        await page.GotoAsync(Links.ProjectSettings(projectKey, "prompts", prompt));
+        await page.GotoAsync(Links.WaysOfWorking(projectKey, prompt));
         await Assertions.Expect(Detail).ToBeVisibleAsync();
     }
 }
