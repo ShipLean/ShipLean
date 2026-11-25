@@ -137,6 +137,32 @@ If a tool can't be had, `comment` on `BAU-7` with the exact failure and stop.
 
 ## 7. Narration first
 
+### Write plainly
+
+Every line read out and every line on a slide follows these rules, from the unslop skill (Lauren Tan, MIT licence). Write the text, then check each line against them and rewrite it before you make any audio or slide.
+
+- No trailing "-ing" phrases that add no fact ("highlighting...", "ensuring...").
+- No vague attributions ("experts believe"). Name the source or delete.
+- No AI vocabulary: additionally, crucial, delve, enhance, foster, landscape, pivotal, showcase, testament, underscore, vibrant.
+- Say "is" or "has", not "serves as", "stands as", "boasts", "features".
+- No "not just X, but Y". State the point. Don't force ideas into threes.
+- One name per thing. Repeat it.
+- No "from X to Y" unless X and Y sit on a real scale.
+- No em dashes, en dashes, or hyphens used as dashes, and no parentheses in their place. Use a period or a comma.
+- A colon goes before a list or an example, never mid-sentence as a connector.
+- Don't bold every proper noun or acronym. No bold label and colon that restates its line.
+- Sentence case headings. No decorative emojis. Straight quotes.
+- No chatbot phrases, praise or agreement openers. Cut filler: "in order to" becomes "to".
+- One hedge at most: "may". No generic conclusions: state specific plans or facts.
+- No abstract metaphor nouns: substrate, wedge, vector, nexus, primitive, harness, surface, scaffolding, paradigm, ratchet, north star, flywheel. Use the concrete word.
+- Say what it does, not how it feels. Name the mechanism or the number. Cut a sentence that could appear unchanged in another project's docs.
+- One idea per sentence. Active voice: name the actor unless it is unknown or doesn't matter.
+- Cut adverbs or use a stronger verb. Give the number. Use the plain word: "use", not "utilize" or "leverage".
+- No metaphor, aphorism, personified code, or figurative verb where a literal phrase exists.
+- Write whole sentences with their articles and verbs. Spell out arrows and abbreviations in narration.
+
+### The audio
+
 Write the narration before anything else: one text per segment, a WAV per segment, and `durations.json` (segment id to seconds), so timing follows speech. Then level every WAV to the same loudness, because the voices differ.
 
 ```python
@@ -211,6 +237,9 @@ Write the slides as HTML that uses the tokens below, with Inter (`@fontsource-va
 - Draw both frames in HTML and CSS, with nothing loaded from the web.
 - **A little artistic licence is fine.** The frame may run slightly off the right or bottom edge, or tilt by a few degrees, as long as the part that matters stays on screen and clear of the logo in the bottom-right corner.
 - With no local copy (slides alone), or no page that shows the change, leave the picture out and let the points take the full width. Never draw a made-up screen.
+- **Never show an empty frame.** Every frame on a slide holds a real screenshot that shows the screen it is about: not blank, not a loading spinner, not the sign-in page. Open each slide PNG and look at it. If a screenshot can't be had, drop that frame rather than show it empty.
+
+**Before and after side by side.** When a capability has both a before and an after screen, put them on one slide next to each other, so the change is easy to see: the before on the left and the after on the right, each labelled ("Before", "After") above its frame, in the same frame and at the same scale (two phones for a mobile change). The points shrink to one short line under each frame. This slide follows the before and after clips, and stays up while Keith says what changed.
 - Title, intro, handover, closing, retro and measure slides need no picture.
 
 ### Code
@@ -295,6 +324,8 @@ The first chapter starts at 0, starts ascend strictly, each is below `durationSe
 - The retro appears once, as sprint-wide themes in Also this sprint, one theme a slide, and not inside any Feature's chapter.
 - Every limit, timeout, retry or default you mention has its value; nothing says "we have limits" without them.
 - Every screen in a clip stays up long enough to read (about 10 seconds); code is coloured; no before is skipped as "no before" when a user had a before experience.
+- No slide shows an empty or blank frame, and every capability with a before and an after screen has them side by side on one slide.
+- Every narrated line and slide line passes the Write plainly rules (step 7): no dashes as punctuation, none of the listed words, one idea a sentence.
 - Each Feature's how-the-agents-built-it gives its times and biggest delays, and Features are spoken by name, not key. There is no closing round of measures.
 - No chapter walks through its stories one by one, and no scaffolding story (skeleton, contracts, tests, docs) has its own before and after or its own narration.
 - No leftover placeholder (a pair of opening curly braces) appears in the script, the slides or the chapters.
