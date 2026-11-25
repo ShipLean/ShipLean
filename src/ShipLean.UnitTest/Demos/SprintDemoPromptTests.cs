@@ -670,13 +670,40 @@ public class SprintDemoPromptTests
         ChannelSource(channel).ShouldContain("Use one when there are three or more parts and an order or direction; never for a list.");
     }
 
+    // SHIP-2330: plain writing (unslop), before and after side by side, no empty frames (2026-11-25).
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldHoldEveryLineToThePlainWritingRules(string channel)
+    {
+        ChannelSource(channel).ShouldContain("### Write plainly");
+        ChannelSource(channel).ShouldContain("Every line read out and every line on a slide follows these rules, from the unslop skill");
+        ChannelSource(channel).ShouldContain("No em dashes, en dashes, or hyphens used as dashes");
+        ChannelSource(channel).ShouldContain("Every narrated line and slide line passes the Write plainly rules (step 7)");
+    }
+
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldPutBeforeAndAfterSideBySide(string channel)
+    {
+        ChannelSource(channel).ShouldContain("**Before and after side by side.**");
+        ChannelSource(channel).ShouldContain("the before on the left and the after on the right");
+    }
+
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldNeverShowAnEmptyFrame(string channel)
+    {
+        ChannelSource(channel).ShouldContain("**Never show an empty frame.**");
+        ChannelSource(channel).ShouldContain("drop that frame rather than show it empty.");
+    }
+
     [Test]
-    public void Prompt_ShouldBeUnderTwentyEightKilobytes()
+    public void Prompt_ShouldBeUnderThirtyTwoKilobytes()
     {
         var bytes = Encoding.UTF8.GetByteCount(Template);
 
         bytes.ShouldBeGreaterThan(8 * 1024);
-        bytes.ShouldBeLessThan(28 * 1024);
+        bytes.ShouldBeLessThan(32 * 1024);
     }
 
     [Test]
@@ -1102,7 +1129,7 @@ public class SprintDemoPromptTests
     // ShouldInstallPlaywrightAndChromiumWithTheTools (the handover installs under ~/.local/demo-tools; a session installs nothing, C2),
     // ShouldCommentAndStopWhenAToolCannotBeHad, ShouldCommentOnTheDemoItemWhenDone and ShouldNotAskForARetrospectiveOnTheDemoItem
     // (the session has no comment or log_retrospective tool and returns through its final response: the counterparts below and
-    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderTwentyEightKilobytes (measures the template).
+    // SprintDemoPromptCommandsTests.SessionPrompt_ShouldReturnThroughFinalResponse), and Prompt_ShouldBeUnderThirtyTwoKilobytes (measures the template).
     [TestCase("**Install nothing.**")]
     [TestCase("If a check fails, end your run with the exact failure as your final response.")]
     [TestCase("Give the duration, the size, anything you left out, and any logo fallback reason from step 10.")]
