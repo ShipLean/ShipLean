@@ -25,6 +25,25 @@ public sealed class AgentContextDemoTests
         Without(body, "shipleanMode").ShouldBe(AgentContextRenderer.ToJson(AgentContextRenderer.RenderCreated(implement)));
     }
 
+    // SHIP-2279: earlier runs' comments and attachments on the demo item (an old "slides only" script) must not steer a new run.
+    [Test]
+    public void AsDemo_WhenItemHasCommentsAndAttachments_ShouldLeaveThemOut()
+    {
+        var implement = AgentContextSamples.FullWithPrompt();
+        implement.Comments.ShouldNotBeEmpty();
+        implement.Item.Attachments.ShouldNotBeNull().ShouldNotBeEmpty();
+
+        var demo = implement.AsDemo();
+        var context = AgentContextRenderer.RenderCreated(demo)["promptContext"]!.GetValue<string>();
+
+        demo.Mode.ShouldBe(AgentSessionMode.Demo);
+        demo.Comments.ShouldBeEmpty();
+        demo.TriggerCommentId.ShouldBeNull();
+        context.ShouldNotContain("Please use the existing markdown helper.");
+        context.ShouldNotContain("design.md");
+        context.ShouldContain(implement.Item.Title);
+    }
+
     [Test]
     public void PromptCreated_WhenImplement_ShouldHaveNoShipleanMode()
     {

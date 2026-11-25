@@ -28,4 +28,10 @@ public sealed record AgentContextInput(
     IReadOnlyList<AgentRelatedItemInput>? Ancestors = null,
     AgentSessionMode Mode = AgentSessionMode.Implement,
     AgentProposeInput? Propose = null,
-    string? RunLogUrl = null);
+    string? RunLogUrl = null)
+{
+    // A demo session works from the sprint data in its guidance alone. The demo item's comments and attachments are earlier runs' output
+    // (an old script that says "slides only", a failed run's report), so they are left out and can't steer a new run.
+    public AgentContextInput AsDemo()
+        => this with { Mode = AgentSessionMode.Demo, Comments = [], TriggerCommentId = null, Item = Item with { Attachments = [] } };
+}
