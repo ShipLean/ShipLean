@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import { FINISHED_TIMELINE, RUNNING_TIMELINE } from '../ct/stubFeatureTimeline';
-import { DAY_WIDTH, timelineGeometry } from './timelineGeometry';
+import { DAY_WIDTH, ROW_HEIGHT, timelineGeometry } from './timelineGeometry';
 import { timelineRows } from './timelineRows';
 
 const geometry = (view: FeatureTimelineViewDto, zoom: 'fit' | 'days', width = 816) =>
@@ -69,5 +69,64 @@ describe('timelineGeometry', () => {
   it('Boxes_ShouldHoldABoxPerMark', () => {
     const g = geometry(FINISHED_TIMELINE, 'fit');
     expect(g.boxes).toHaveLength(FINISHED_TIMELINE.bars.length + FINISHED_TIMELINE.stories.length);
+  });
+
+  it('NotStartedRow_ShouldPushTheNextMarkDownOneRowAndGetNoMark', () => {
+    const [task] = RUNNING_TIMELINE.notStarted.filter((i) => i.parent !== null);
+    const without: FeatureTimelineViewDto = { ...RUNNING_TIMELINE, notStarted: [] };
+    const withRow: FeatureTimelineViewDto = {
+      ...RUNNING_TIMELINE,
+      notStarted: [{ ...task, key: 'SHIP-130', parent: 'SHIP-120' }],
+    };
+    const before = geometry(without, 'fit');
+    const after = geometry(withRow, 'fit');
+    const y = (g: typeof before, key: string) => g.marks.find((m) => m.key === key)!;
+
+    expect(after.height).toBe(before.height + ROW_HEIGHT);
+    expect(after.marks).toHaveLength(before.marks.length);
+    expect(after.marks.some((m) => m.key === 'SHIP-130')).toBe(false);
+    // SHIP-120's own rows stay put; the next story and its bars move down one row.
+    expect(y(after, 'SHIP-122').box.y).toBe(y(before, 'SHIP-122').box.y);
+    expect(y(after, 'SHIP-141').box.y).toBe(y(before, 'SHIP-141').box.y + ROW_HEIGHT);
+    expect(y(after, 'SHIP-171').box.y).toBe(y(before, 'SHIP-171').box.y + ROW_HEIGHT);
+    expect(y(after, 'SHIP-171').row).toBe(y(before, 'SHIP-171').row + 1);
+    // The edges layer reads the same boxes, so arrows land on the moved rows too.
+    expect(after.boxes.find((b) => b.key === 'SHIP-171')!.y).toBe(y(after, 'SHIP-171').box.y);
+  });
+
+  it('Marks_ShouldCarryTheServerDurationLabel', () => {
+    const g = geometry(FINISHED_TIMELINE, 'fit');
+    const bar = FINISHED_TIMELINE.bars.find((b) => b.key === 'SHIP-191')!;
+    const story = FINISHED_TIMELINE.stories.find((s) => s.key === 'SHIP-185')!;
+    expect(g.marks.find((m) => m.key === 'SHIP-191')!.durationLabel).toBe(bar.durationLabel);
+    expect(g.marks.find((m) => m.key === 'SHIP-185')!.durationLabel).toBe(story.durationLabel);
+    expect(g.marks.find((m) => m.key === 'SHIP-198')!.durationLabel).toBeNull();
+  });
+
+  it('AxisLabels_WhenFit_ShouldLabelEachWeekStartWithItsShortLabel', () => {
+    const g = geometry(FINISHED_TIMELINE, 'fit', 816);
+    const weeks = FINISHED_TIMELINE.scale.days.filter((d) => d.weekStart).map((d) => d.shortLabel);
+    expect(weeks.length).toBeGreaterThan(1);
+    expect(g.axisLabels.map((l) => l.text)).toEqual(weeks);
+    expect(g.axisLabels.every((l) => l.kind === 'week')).toBe(true);
+  });
+
+  it('AxisLabels_WhenFitAndNoMonday_ShouldLabelTheFirstDay', () => {
+    const view = {
+      ...FINISHED_TIMELINE,
+      scale: {
+        ...FINISHED_TIMELINE.scale,
+        days: FINISHED_TIMELINE.scale.days.map((d) => ({ ...d, weekStart: false })),
+      },
+    };
+    const g = geometry(view, 'fit', 816);
+    expect(g.axisLabels.map((l) => l.text)).toEqual([FINISHED_TIMELINE.scale.days[0].shortLabel]);
+  });
+
+  it('AxisLabels_WhenZoomIsDays_ShouldGiveOneLabelPerDay', () => {
+    const g = geometry(FINISHED_TIMELINE, 'days', 300);
+    expect(g.axisLabels.map((l) => l.text)).toEqual(
+      FINISHED_TIMELINE.scale.days.map((d) => d.label),
+    );
   });
 });

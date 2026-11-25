@@ -156,6 +156,31 @@ test('GanttChart_ShouldPassBoxesToEdgesLayer', async ({ mount, page }) => {
   );
 });
 
+test('GanttChart_WhenRunning_ShouldShowNotStartedRows', async ({ mount, page }) => {
+  await mountChart(mount, RUNNING_TIMELINE);
+  const rows = page.getByTestId(ids.chartRow);
+  await expect(rows.first()).toBeVisible();
+  const keys = await rows.evaluateAll((els) => els.map((el) => el.getAttribute('data-key')));
+  const task = rows.and(page.locator('[data-key="SHIP-173"]'));
+  await expect(task).toHaveAttribute('data-kind', 'notStarted');
+  await expect(task).toContainText('Not started');
+  // SHIP-173 sits under its story SHIP-141, after the story's started tasks.
+  expect(keys.indexOf('SHIP-173')).toBe(keys.indexOf('SHIP-172') + 1);
+  expect(keys.indexOf('SHIP-172')).toBeGreaterThan(keys.indexOf('SHIP-141'));
+  const story = rows.and(page.locator('[data-key="SHIP-158"]'));
+  await expect(story).toHaveAttribute('data-kind', 'notStarted');
+  await expect(story).toContainText('Not started');
+  await expect(rows).toHaveCount(
+    RUNNING_TIMELINE.bars.length +
+      RUNNING_TIMELINE.stories.length +
+      RUNNING_TIMELINE.notStarted.length,
+  );
+  // Not-started rows get no mark.
+  await expect(
+    page.getByTestId(ids.chartBar).and(page.locator('[data-key="SHIP-173"]')),
+  ).toHaveCount(0);
+});
+
 const shots: { name: string; view: FeatureTimelineViewDto; options: Partial<TimelineOptions> }[] = [
   { name: 'finished', view: FINISHED_TIMELINE, options: {} },
   { name: 'people', view: FINISHED_TIMELINE, options: { group: 'people' } },

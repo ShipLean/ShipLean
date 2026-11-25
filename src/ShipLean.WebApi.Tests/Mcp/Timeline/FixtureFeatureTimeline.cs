@@ -8,12 +8,12 @@ namespace ShipLean.WebApi.Tests.Mcp.Timeline;
 // and not the builder.
 public sealed class FixtureFeatureTimeline : IFeatureTimeline
 {
-    public static FeatureTimelineViewDto View { get; } = Read();
+    public static FeatureTimelineViewDto View { get; } = Read("feature-timeline-view.json");
 
     public Task<FeatureTimelineViewDto> GetAsync(Guid projectId, string featureKey, CancellationToken ct) => Task.FromResult(View);
 
-    private static FeatureTimelineViewDto Read()
+    public static FeatureTimelineViewDto Read(string file)
         => JsonSerializer.Deserialize<FeatureTimelineViewDto>(
-            File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "views", "feature-timeline-view.json")),
+            File.ReadAllText(Path.Combine(RepoPaths.Root, "src", "ShipLean.TestSupport", "DtoFixtures", "views", file)),
             new JsonSerializerOptions(JsonSerializerDefaults.Web) { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter(JsonNamingPolicy.CamelCase) } })!;
 }

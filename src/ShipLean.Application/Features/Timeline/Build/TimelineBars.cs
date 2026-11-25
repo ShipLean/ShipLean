@@ -43,14 +43,16 @@ public static class TimelineBars
             var idle = traces.Where(t => t.Task.ParentKey == parent.Key && t.Trace is null).Select(t => t.Task).ToList();
             if (children.Count + idle.Count == 0 && parent.StateCategory == StateCategory.Proposed)
             {
-                notStarted.Add(new TimelineNotStartedDto(parent.Key, parent.Type, parent.Title, null));
+                notStarted.Add(new TimelineNotStartedDto(parent.Key, parent.Type, parent.Title, null, lens.User(parent.AssigneeId)));
                 continue;
             }
 
             stories.Add(Bracket(lens, parent, children.Select(c => c.Trace).ToList(), idle.Count, children.Select(c => c.Task.Key).ToList()));
         }
 
-        notStarted.AddRange(traces.Where(t => t.Trace is null).Select(t => new TimelineNotStartedDto(t.Task.Key, WorkItemTypeId.Task, t.Task.Title, t.Task.ParentKey)));
+        // D3: a never-started item has no start move, so its assignee is the assigned person, never an agent.
+        notStarted.AddRange(traces.Where(t => t.Trace is null)
+            .Select(t => new TimelineNotStartedDto(t.Task.Key, WorkItemTypeId.Task, t.Task.Title, t.Task.ParentKey, lens.User(t.Task.AssigneeId))));
 
         var ordered = stories.OrderBy(s => s.Start is null ? 1 : 0).ThenBy(s => s.Start).ToList();
         var barList = ordered.SelectMany(s => s.Tasks).Select(key => bars[key]).ToList();
@@ -59,7 +61,7 @@ public static class TimelineBars
         (DateTimeOffset, string, TimelinePersonDto?, string)? execution = firstStart.Trace is null
             ? null
             : (firstStart.Trace.Start!.Value, firstStart.Task.Key, bars[firstStart.Task.Key].Assignee, firstStart.Trace.StartMove!.StateName);
-        var dates = TimelineKeyDates.Dates(lens, facts, finish, execution);
+        var dates = TimelineKeyDates.Dates(lens, facts, finish, execution, (parents.Count, tasks.Count));
         var execStart = dates[2].At;
         var execEnd = dates[3].At;
         var calendarDays = execStart is { } s0 ? TimelineLens.Round(((execEnd ?? asOf) - s0).TotalDays) : (double?)null;

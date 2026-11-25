@@ -12,7 +12,7 @@ namespace ShipLean.AcceptanceTests.Lanes.WorkItem.Feature;
 
 // A delivered Feature arranged through the database at chosen past times: wave 1 has one task (blocked for an hour, reviewed
 // twice), wave 2 has two. The journey: the Feature page's Timeline section shows four key dates, Open timeline shows one bar per
-// task, People grouping and back, a selected bar shows its history and reviews in the rail, and JSON shows critical_path.
+// task, People grouping and back, KPIs, row headers and a TOOK per row show, a selected bar shows its history and reviews in the rail (Open button, back to Reading the chart), and JSON shows critical_path.
 // It asserts counts, keys and server-made labels, never clock times.
 [TestFixture]
 public class FeatureTimelineJourneyTests : SeededAcceptanceTest
@@ -40,6 +40,12 @@ public class FeatureTimelineJourneyTests : SeededAcceptanceTest
             await Expect(timeline.Bar(key)).ToHaveCountAsync(1);
         }
 
+        await Expect(timeline.Kpis).ToHaveCountAsync(4);
+        await Expect(timeline.Caption).ToBeVisibleAsync();
+        await Expect(timeline.ColumnHeads).ToContainTextAsync("TOOK");
+        await Expect(timeline.Rows).ToHaveCountAsync(5);
+        await Expect(timeline.TookCells).ToHaveCountAsync(5);
+
         await timeline.ChooseGroupAsync("people");
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-group", "people");
         await Expect(timeline.Bars).ToHaveCountAsync(3);
@@ -54,10 +60,15 @@ public class FeatureTimelineJourneyTests : SeededAcceptanceTest
         await Expect(timeline.RailSelected).ToContainTextAsync(a1);
         await Expect(timeline.HistoryRows).ToHaveCountAsync(6);
         await Expect(timeline.ReviewRows).ToHaveCountAsync(2);
+        await Expect(timeline.RailOpen).ToContainTextAsync(a1);
+        await timeline.RailBack.ClickAsync();
+        await Expect(timeline.RailOverview).ToBeVisibleAsync();
 
         await timeline.ChooseViewAsync("json");
         await Expect(timeline.Toolbar).ToHaveAttributeAsync("data-view", "json");
         await Expect(timeline.Json).ToContainTextAsync("critical_path");
+        await Expect(timeline.JsonCall).ToBeVisibleAsync();
+        await Expect(timeline.JsonMap).ToBeVisibleAsync();
     }
 
     private async Task<(string Feature, string A1, string B1, string B2)> ArrangeDeliveredFeatureAsync()

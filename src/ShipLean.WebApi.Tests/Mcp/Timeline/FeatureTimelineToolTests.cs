@@ -51,6 +51,21 @@ public class FeatureTimelineToolTests : McpFixture
     }
 
     [Test]
+    public async Task FeatureTimeline_WhenFeature_ShouldSendAsOfLabelAndEachDaysShortLabelAndWeekStart()
+    {
+        var token = await TokenAsync(TestUser.Joel, ReadOnly);
+
+        var reply = await CallToolAsync(token, "feature_timeline", $$"""{"key":"{{_featureKey}}"}""");
+
+        var body = JsonNode.Parse(reply.Structured().GetRawText())!.AsObject();
+        body["as_of_label"]!.GetValue<string>().ShouldBe("Sat 24 Oct, 14:00");
+        var first = body["scale"]!["days"]![0]!;
+        first["short_label"]!.GetValue<string>().ShouldBe("5 Oct");
+        first["week_start"]!.GetValue<bool>().ShouldBeTrue();
+        body["key_dates"]![1]!["source"]!.GetValue<string>().ShouldBe("Plan captured: 4 stories and bugs, 9 tasks");
+    }
+
+    [Test]
     public async Task FeatureTimeline_WhenFeature_ShouldSummariseTasksDaysAndState()
     {
         var token = await TokenAsync(TestUser.Joel, ReadOnly);

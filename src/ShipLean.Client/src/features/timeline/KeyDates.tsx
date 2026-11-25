@@ -17,8 +17,8 @@ function detail(
   executionGap: TimelineGapDto | undefined,
 ) {
   if (point.at === null) {
-    return point.point === 'finished' && executionGap?.soFar && executionGap.label !== null
-      ? `${executionGap.label} so far`
+    return point.point === 'finished' && executionGap?.soFar && executionGap.days !== null
+      ? `${executionGap.days.toFixed(1)} days in execution so far`
       : '';
   }
   if (compact) return point.by?.name ?? '';

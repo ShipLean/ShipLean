@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { TimelineEdgeDto } from '@shiplean/core/api/views';
+import type { Mark, MarkKind } from '../chart/timelineGeometry';
 import { edgePaths } from './edgePaths';
 
-const box = (key: string, x0: number, x1: number, y: number) => ({ key, x0, x1, y, height: 10 });
-const boxes = [box('A', 10, 50, 0), box('B', 80, 120, 20), box('C', 30, 60, 40)];
+const mark = (key: string, x0: number, x1: number, y: number, kind: MarkKind = 'bar'): Mark => ({
+  key,
+  kind,
+  row: 0,
+  box: { key, x0, x1, y, height: 10 },
+  reviews: [],
+  reviewLine: null,
+  durationLabel: null,
+});
+const boxes = [mark('A', 10, 50, 0), mark('B', 80, 120, 20), mark('C', 30, 60, 40)];
 const scale = { pxPerHour: 2, originX: 0 };
 const edge = (over: Partial<TimelineEdgeDto>): TimelineEdgeDto => ({
   from: 'A',
@@ -52,7 +61,53 @@ describe('edgePaths', () => {
     expect(b.title).toBe('A → C');
   });
 
-  it('skips an edge whose box is missing', () => {
+  it('EdgePaths_WhenAnEndIsAnUnknownKey_ShouldSkipTheEdge', () => {
     expect(edgePaths(boxes, [edge({ to: 'Z' }), edge({ from: 'Z' })], scale)).toEqual([]);
+  });
+
+  it('EdgePaths_WhenAnEndIsABracket_ShouldSkipTheEdge', () => {
+    const marks = [...boxes, mark('S', 0, 200, 60, 'bracket')];
+    const pairs = [edge({ to: 'S' }), edge({ from: 'S' })];
+    expect(edgePaths(marks, [...pairs, edge({})], scale).map((p) => `${p.from}-${p.to}`)).toEqual([
+      'A-B',
+    ]);
+  });
+
+  it('EdgePaths_WhenTheToEndIsADiamond_ShouldEndAtItsLeftPoint', () => {
+    // A diamond at x = 90 (DIAMOND_SIZE 7) on a row whose middle is y = 85.
+    const marks = [...boxes, mark('D', 90, 90, 80, 'diamond')];
+    const [p] = edgePaths(marks, [edge({ to: 'D' })], scale);
+    expect(p.d).toBe('M50,5 H58 V85 H83');
+    expect(p.endX).toBe(83);
+    expect(p.horizontal).toEqual({ x0: 58, x1: 83, y: 85 });
+  });
+
+  it('EdgePaths_WhenTheFromEndIsADiamond_ShouldStartAtItsRightPoint', () => {
+    const marks = [...boxes, mark('D', 20, 20, 80, 'diamond')];
+    const [p] = edgePaths(marks, [edge({ from: 'D' })], scale);
+    expect(p.d).toBe('M27,85 H35 V25 H80');
+    expect(p.vertical).toEqual({ x: 35, y0: 25, y1: 85 });
+  });
+
+  it('EdgePaths_WhenThePairRepeats_ShouldDrawItOnce', () => {
+    const paths = edgePaths(
+      boxes,
+      [edge({ waitLabel: '1 h' }), edge({ kind: 'blocked' }), edge({ waitLabel: '2 h' })],
+      scale,
+    );
+    expect(paths).toHaveLength(1);
+    expect(paths[0].waitLabel).toBe('1 h');
+  });
+
+  it('EdgePaths_ShouldGiveTheHorizontalAndVerticalSegments', () => {
+    const [p] = edgePaths(boxes, [edge({})], scale);
+    expect(p.horizontal).toEqual({ x0: 58, x1: 80, y: 25 });
+    expect(p.vertical).toEqual({ x: 58, y0: 5, y1: 25 });
+  });
+
+  it('EdgePaths_WhenTheToBarStartsBeforeTheElbow_ShouldOrderTheSegmentEnds', () => {
+    const [p] = edgePaths(boxes, [edge({ from: 'B', to: 'C' })], scale);
+    expect(p.horizontal).toEqual({ x0: 30, x1: 128, y: 45 });
+    expect(p.vertical).toEqual({ x: 128, y0: 25, y1: 45 });
   });
 });

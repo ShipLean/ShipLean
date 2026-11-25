@@ -16,7 +16,7 @@ export function TimelineJson({ view }: TimelineJsonProps) {
     );
   };
   return (
-    <section data-testid={ids.json} className="relative p-4">
+    <section data-testid={ids.json} className="relative flex min-h-full flex-col p-4">
       <div className="mb-2 flex items-center gap-3 text-[length:var(--text-sm)] text-ink-muted">
         <span data-testid={ids.jsonFieldGuide}>
           This is what <code>feature_timeline</code> returns for {view.feature.key}.
@@ -33,7 +33,7 @@ export function TimelineJson({ view }: TimelineJsonProps) {
       </div>
       <pre
         aria-label={`feature_timeline response for ${view.feature.key}`}
-        className="m-0 overflow-auto rounded-md border border-edge bg-sunken p-3 text-[length:var(--text-xs)] [&_.json-b]:text-signal [&_.json-k]:text-ink [&_.json-n]:text-signal [&_.json-s]:text-ink-muted"
+        className="m-0 flex-1 overflow-auto whitespace-pre rounded-md border border-edge bg-panel px-4 py-3 font-mono text-[12px] leading-[1.55] text-ink [tab-size:2] [&_.json-b]:text-[color:var(--color-purple)] [&_.json-k]:text-[color:var(--color-accent)] [&_.json-n]:text-[color:color-mix(in_srgb,var(--color-warn)_70%,var(--color-text))] [&_.json-s]:text-[color:color-mix(in_srgb,var(--color-ok)_70%,var(--color-text))]"
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </section>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using ShipLean.Application.Features.Timeline.Facts;
 using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Views.Timeline;
@@ -14,12 +15,14 @@ internal static class TimelineKeyDates
             ? null
             : facts.Moves.Where(m => m.ItemKey == facts.Feature.Key && m.Category == StateCategory.Completed).OrderBy(m => m.At).ThenBy(m => m.Rev).LastOrDefault();
 
+    // Counts are the Feature's stories plus bugs and their tasks now, started or not, removed left out (D5).
     public static IReadOnlyList<TimelineKeyDateDto> Dates(
-        TimelineLens lens, TimelineFacts facts, TimelineMoveFact? finish, (DateTimeOffset At, string Key, TimelinePersonDto? By, string Move)? execution)
+        TimelineLens lens, TimelineFacts facts, TimelineMoveFact? finish, (DateTimeOffset At, string Key, TimelinePersonDto? By, string Move)? execution,
+        (int Parents, int Tasks) counts)
     {
         var feature = facts.Feature;
         var added = Point(lens, KeyDatePoint.Added, feature.CreatedAt, lens.User(feature.CreatedBy), "Feature created");
-        var planned = Planned(lens, facts);
+        var planned = Planned(lens, facts, counts);
         var started = execution is { } e
             ? Point(lens, KeyDatePoint.ExecutionStarted, e.At, e.By, $"{e.Key} moved to {e.Move}")
             : Unreached(KeyDatePoint.ExecutionStarted);
@@ -48,15 +51,17 @@ internal static class TimelineKeyDates
         return gaps;
     }
 
-    private static TimelineKeyDateDto Planned(TimelineLens lens, TimelineFacts facts)
+    private static TimelineKeyDateDto Planned(TimelineLens lens, TimelineFacts facts, (int Parents, int Tasks) counts)
     {
         if (facts.PlanAppliedAt is { } applied)
         {
-            return Point(lens, KeyDatePoint.Planned, applied, Actor(lens, facts.PlannedBy), "Plan captured");
+            var parents = counts.Parents == 1 ? "1 story or bug" : $"{counts.Parents.ToString(CultureInfo.InvariantCulture)} stories and bugs";
+            var tasks = counts.Tasks == 1 ? "1 task" : $"{counts.Tasks.ToString(CultureInfo.InvariantCulture)} tasks";
+            return Point(lens, KeyDatePoint.Planned, applied, Actor(lens, facts.PlannedBy), $"Plan captured: {parents}, {tasks}");
         }
 
         return facts.Stories.Count > 0
-            ? Point(lens, KeyDatePoint.Planned, facts.Stories.Min(s => s.CreatedAt), Actor(lens, facts.PlannedBy), "First story added")
+            ? Point(lens, KeyDatePoint.Planned, facts.Stories.Min(s => s.CreatedAt), Actor(lens, facts.PlannedBy), "First stories created (no captured plan)")
             : Unreached(KeyDatePoint.Planned);
     }
 

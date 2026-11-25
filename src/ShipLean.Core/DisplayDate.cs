@@ -91,6 +91,9 @@ public static class DisplayDate
     // A calendar date with its weekday ("Thu 25 Dec"), for a holiday on a sprint's capacity screen.
     public static string WeekdayDay(DateOnly day) => day.ToString("ddd d MMM", CultureInfo.InvariantCulture);
 
+    // A calendar date without its weekday ("5 Oct"), for the timeline's week axis.
+    public static string DayMonth(DateOnly day) => day.ToString("d MMM", CultureInfo.InvariantCulture);
+
     // A sprint's dates ("20 Oct – 2 Nov"); calendar days with no zone (D8). The year is added to both ends when either is not today's year.
     public static string SprintDates(DateOnly start, DateOnly end, DateOnly today)
     {

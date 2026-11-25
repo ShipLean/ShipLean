@@ -36,13 +36,27 @@ function Segment<T extends string>({ testId, label, value, choices, onPick }: Se
   );
 }
 
-function Swatch({ colour, label }: { colour: string; label: string }) {
+type SwatchShape = 'bar' | 'dot' | 'box' | 'diamond';
+
+const swatchLook: Record<SwatchShape, (colour: string) => string> = {
+  bar: () => 'h-2 w-4 rounded-sm',
+  dot: () => 'size-2.5 rounded-full',
+  box: () => 'h-2 w-4 rounded-sm border-2',
+  diamond: () => 'size-2.5 rotate-45 border-[1.5px]',
+};
+
+function Swatch({ shape, colour, label }: { shape: SwatchShape; colour: string; label: string }) {
+  const outlined = shape === 'box' || shape === 'diamond';
   return (
     <span className="inline-flex items-center gap-1">
       <i
         aria-hidden="true"
-        className="inline-block h-2 w-4 rounded-sm"
-        style={{ background: colour }}
+        data-testid={ids.toolbarSwatch}
+        data-shape={shape}
+        className={`inline-block ${swatchLook[shape](colour)}`}
+        style={
+          outlined ? { borderColor: colour, background: 'transparent' } : { background: colour }
+        }
       />
       {label}
     </span>
@@ -141,10 +155,13 @@ export function TimelineToolbar({ options, finished, onChange }: TimelineToolbar
             data-testid={ids.toolbarLegend}
             className="inline-flex flex-wrap items-center gap-3 text-[length:var(--text-xs)] text-ink-muted"
           >
-            <Swatch colour="var(--chart-completed)" label="Task" />
-            <Swatch colour="var(--color-ok)" label="Approved" />
-            <Swatch colour="var(--color-warn)" label="Changes asked" />
-            {finished ? <Swatch colour="var(--color-text)" label="Critical path" /> : null}
+            <Swatch shape="bar" colour="var(--chart-completed)" label="Task" />
+            <Swatch shape="diamond" colour="var(--color-text)" label="No start" />
+            <Swatch shape="dot" colour="var(--color-ok)" label="Approved" />
+            <Swatch shape="dot" colour="var(--color-warn)" label="Changes asked" />
+            {finished ? (
+              <Swatch shape="box" colour="var(--color-text)" label="Critical path" />
+            ) : null}
           </span>
           {switcher}
         </>

@@ -352,10 +352,15 @@ export interface TimelineExecutionDto {
 /** One calendar day in the viewer's zone; a daylight-saving day is 23 or 25 hours long. */
 export interface TimelineDayDto {
   startHours: number;
+  /** "Mon 5 Oct". */
   label: string;
+  /** The day without its weekday ("5 Oct"), for the Fit week axis. */
+  shortLabel: string;
   dayOfMonth: string;
   weekend: boolean;
   monthStart: boolean;
+  /** True on a Monday in the viewer's zone. */
+  weekStart: boolean;
 }
 
 export interface TimelineSprintDto {
@@ -455,6 +460,8 @@ export interface TimelineNotStartedDto {
   type: WorkItemTypeId;
   title: string;
   parent: string | null;
+  /** The assigned person (never an agent: a never-started item has no start move), null when unassigned. */
+  assignee: TimelinePersonDto | null;
 }
 
 export interface TimelineLinksDto {
@@ -465,6 +472,8 @@ export interface TimelineLinksDto {
 export interface FeatureTimelineViewDto {
   feature: TimelineFeatureDto;
   asOf: string;
+  /** asOf as a day and 24-hour time in the viewer's zone ("Sat 24 Oct, 14:00"), for the running caption. */
+  asOfLabel: string;
   finished: boolean;
   keyDates: TimelineKeyDateDto[];
   gaps: TimelineGapDto[];

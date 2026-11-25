@@ -20,6 +20,27 @@ public sealed class FeatureTimelinePage(IPage page)
 
     public ILocator Chart => Page.GetByTestId(TimelineTestIds.Chart);
 
+    public ILocator Kpis => Page.GetByTestId(TimelineTestIds.Kpi);
+
+    public ILocator Caption => Page.GetByTestId(TimelineTestIds.HeaderCaption);
+
+    public ILocator ColumnHeads => Page.GetByTestId(TimelineTestIds.ChartLeftHead);
+
+    public ILocator Rows => Page.GetByTestId(TimelineTestIds.ChartRow);
+
+    // The TOOK cell of each row (a duration, "No start", "Not started" or an open "so far").
+    public ILocator TookCells => Page.GetByTestId(TimelineTestIds.ChartRowTook);
+
+    public ILocator RailOverview => Page.GetByTestId(TimelineTestIds.RailOverview);
+
+    public ILocator RailOpen => Page.GetByTestId(TimelineTestIds.RailOpen);
+
+    public ILocator RailBack => Page.GetByTestId(TimelineTestIds.RailBack);
+
+    public ILocator JsonCall => Page.GetByTestId(TimelineTestIds.RailJsonCall);
+
+    public ILocator JsonMap => Page.GetByTestId(TimelineTestIds.RailJsonMap);
+
     public ILocator Bars => Page.GetByTestId(TimelineTestIds.ChartBar);
 
     public ILocator Bar(string key) => Bars.Filter(new() { HasTextString = key });
