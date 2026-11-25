@@ -633,8 +633,16 @@ public class SprintDemoPromptTests
     {
         ChannelSource(channel).ShouldContain("### How the agents built it");
         ChannelSource(channel).ShouldContain("how long each wave took");
-        ChannelSource(channel).ShouldContain("**Point out the biggest delays**: from `plan.longestWaits` and `plan.longestBlocked`");
+        ChannelSource(channel).ShouldContain("**Point out the biggest delays**: from `plan.timing.longestWaits` and `plan.timing.longestBlocked`");
         ChannelSource(channel).ShouldContain("**What came out of them**");
+    }
+
+    [TestCase("handover")]
+    [TestCase("session")]
+    public void Prompt_ShouldNeverCallAFeatureWithOmittedStoriesEmpty(string channel)
+    {
+        ChannelSource(channel).ShouldContain("A Feature with `storiesOmitted` above 0 had that many stories left out to keep the data small");
+        ChannelSource(channel).ShouldContain("never say it has no stories.");
     }
 
     [TestCase("handover")]

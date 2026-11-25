@@ -18,7 +18,7 @@ One video: an intro, then one chapter per Feature in the data, then an **Other w
 
 **The data is enough: work from it.** You don't need to open any item. If you open one anyway, its comments, reports and any failure log are raw working material and never go in the script, a chapter, a slide or the narration. Numbers come from the data, an item you read, or the project's code (step 1, Be specific).
 
-If `truncated` is true, say in the intro that the sprint was summarised.
+If `truncated` is true, say in the intro that the sprint was summarised. A Feature with `storiesOmitted` above 0 had that many stories left out to keep the data small: say so in one sentence, and never say it has no stories.
 
 ### Pick the level that shows impact
 
@@ -34,10 +34,10 @@ Demo outcomes, not tickets. Stories are how the work was split, not what the vie
 
 Time first, then volume. People watching care most about how long it took and what held it up.
 
-- From `plan.execution` and `plan.waves`: how long the Feature took end to end, and how long each wave took, as a simple timeline slide (one bar per wave, drawn in HTML from those numbers, labelled with its duration). Then the counts (stories, tasks, review rounds, pull requests) in one line.
-- **Point out the biggest delays**: from `plan.longestWaits` and `plan.longestBlocked`, the one to three longest waits or blocks, what waited on what, and for how long. Highlight them on the timeline.
+- From `plan.timing.execution` and `plan.timing.waves`: how long the Feature took end to end, and how long each wave took, as a simple timeline slide (one bar per wave, drawn in HTML from those numbers, labelled with its duration). Then the counts (stories, tasks, review rounds, pull requests) in one line.
+- **Point out the biggest delays**: from `plan.timing.longestWaits` and `plan.timing.longestBlocked`, the one to three longest waits or blocks, what waited on what, and for how long. Highlight them on the timeline.
 - **What came out of them**: retro points or `actionItems` about those delays, and what we'd change. If none was recorded, say so.
-- Without `plan` timings, say the plan recorded no times and give the counts.
+- Without `plan.timing`, say the plan recorded no times and give the counts.
 - **Bugs:** a bug a user would have hit gets its own before and after, the broken behaviour then the fix, inside its Feature's chapter or under Other work when it has no Feature. Small or internal fixes are named together in one line.
 
 ### Work with no screen
@@ -215,7 +215,7 @@ Write the slides as HTML that uses the tokens below, with Inter (`@fontsource-va
 
 ### Code
 
-Code is shown in colour, in a window, never as plain monospace. Render it in Python with Pygments (`from pygments import highlight`, `HtmlFormatter(style="monokai", noclasses=True)`, the lexer for the language) and put the HTML in a dark window: rounded corners, a title bar with three dots and the file or tool name, 18 to 22 px text, at most about 14 lines. Trim long lines and responses with `…` rather than shrinking the font. If `import pygments` fails, colour it by hand with `<span style="color:…">` for keywords, strings, numbers and comments.
+Code is shown in colour, in a window, never as plain monospace. Render it in Python with Pygments (its `highlight` function with `HtmlFormatter(style="monokai", noclasses=True)` and the lexer for the language) and put the HTML in a dark window: rounded corners, a title bar with three dots and the file or tool name, 18 to 22 px text, at most about 14 lines. Trim long lines and responses with `…` rather than shrinking the font. If Pygments isn't installed, colour it by hand with `<span style="color:…">` for keywords, strings, numbers and comments.
 
 ### Diagrams
 
