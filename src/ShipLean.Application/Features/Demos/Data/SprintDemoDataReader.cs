@@ -6,12 +6,13 @@ using ShipLean.Application.Plans;
 using ShipLean.Contracts.Backlog;
 using ShipLean.Contracts.Demos;
 using ShipLean.Contracts.Persisted;
+using ShipLean.Contracts.Views.Timeline;
 
 namespace ShipLean.Application.Features.Demos.Data;
 
 // K7: what a sprint demo needs to know, per Feature, so the agent needn't call get_work_item. The SQL is SprintDemoDataSql's and reads no
 // failure log, root cause, comment body or author. Anything cut to a limit sets Truncated.
-public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFeatureReads backlog) : ISprintDemoData
+public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFeatureReads backlog, IFeatureTimelineReads timelines) : ISprintDemoData
 {
     internal const int MaxWhyLength = 4096;
     internal const int MaxStoriesPerFeature = 50;
@@ -36,7 +37,7 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
             SprintDemoDataSql.Stories, new { sprintId, types = StoryTypes, summaryLength = MaxSummaryLength }, cancellationToken: cancellationToken))).ToList();
         var storyIds = stories.Select(story => story.Id).ToArray();
         var tasks = (await connection.QueryAsync<TaskRow>(new CommandDefinition(SprintDemoDataSql.Tasks, new { storyIds }, cancellationToken: cancellationToken))).ToLookup(task => task.StoryId);
-        var plan = await connection.QueryAsync<PlanRow>(new CommandDefinition(SprintDemoDataSql.PlanShape, new { featureIds }, cancellationToken: cancellationToken));
+        var plan = (await connection.QueryAsync<PlanRow>(new CommandDefinition(SprintDemoDataSql.PlanShape, new { featureIds }, cancellationToken: cancellationToken))).ToList();
         var reviews = (await connection.QueryAsync<ReviewRow>(new CommandDefinition(
             SprintDemoDataSql.PlanReviews, new { featureIds, reviewPrefix = PlanMarkers.ReviewPrefix + "%" }, cancellationToken: cancellationToken))).ToDictionary(row => row.FeatureId, row => row.Rounds);
         var pullRequests = (await connection.QueryAsync<PullRequestRow>(new CommandDefinition(
@@ -46,10 +47,17 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
             SprintDemoDataSql.RetroPoints, new { sprintId, textLength = MaxPointTextLength }, cancellationToken: cancellationToken))).ToList();
         var actions = await connection.QueryAsync<ActionRow>(new CommandDefinition(SprintDemoDataSql.Actions, new { sprintId }, cancellationToken: cancellationToken));
 
+        // SHIP-2330: the plan's timing comes from each planned Feature's timeline, read in UTC with no viewer.
+        var timings = new Dictionary<Guid, FeatureTimelineViewDto>();
+        foreach (var featureId in featureRows.Select(row => row.Id).Where(id => plan.Any(member => member.FeatureId == id && member.Kind == "story")))
+        {
+            timings[featureId] = await timelines.ReadUtcAsync(head.ProjectId, featureId, cancellationToken);
+        }
+
         var shown = featureRows.Select(row => row.Id).ToHashSet();
         var features = featureRows.Select(row => Feature(
             row, head.ProjectKey, stories.Where(story => story.FeatureId == row.Id).ToList(), tasks, plan.Where(member => member.FeatureId == row.Id).ToList(),
-            reviews.GetValueOrDefault(row.Id), [.. pullRequests[row.Id].Distinct()], [.. attachments[row.Id]],
+            reviews.GetValueOrDefault(row.Id), timings.GetValueOrDefault(row.Id), [.. pullRequests[row.Id].Distinct()], [.. attachments[row.Id]],
             points.Where(point => point.FeatureId == row.Id).ToList(), truncation)).ToList();
         var otherWork = stories.Where(story => story.FeatureId is null).Select(story => Story(story, tasks, truncation)).ToList();
 
@@ -65,7 +73,7 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
 
     private static SprintDemoFeatureData Feature(
         FeatureRow row, string projectKey, List<StoryRow> stories, ILookup<Guid, TaskRow> tasks, List<PlanRow> members, int reviewRounds,
-        IReadOnlyList<string> pullRequests, IReadOnlyList<string> attachmentNames, List<PointRow> points, Truncation truncation)
+        FeatureTimelineViewDto? timeline, IReadOnlyList<string> pullRequests, IReadOnlyList<string> attachmentNames, List<PointRow> points, Truncation truncation)
     {
         var parts = DemoWhy.Extract(row.Description);
         var why = parts.Why;
@@ -78,22 +86,31 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
         return new SprintDemoFeatureData(
             row.Key, row.Title, row.State, $"/p/{projectKey}/items/{row.Key}", row.Goal, why, parts.Measure,
             [.. stories.Take(MaxStoriesPerFeature).Select(story => Story(story, tasks, truncation))],
-            PlanFacts(members, reviewRounds, pullRequests),
+            PlanFacts(members, reviewRounds, pullRequests, timeline, truncation),
             Retro(points, truncation, MaxRetroPointsPerFeature),
             attachmentNames,
-            pullRequests);
+            pullRequests,
+            Math.Max(0, stories.Count - MaxStoriesPerFeature));
     }
 
     // A plan is the Feature's live stories. Its waves are the distinct wave: tags; a story without one is a wave of its own, as PlanReads reads it.
-    private static SprintDemoPlanFacts? PlanFacts(List<PlanRow> members, int reviewRounds, IReadOnlyList<string> pullRequests)
+    // Timing (SHIP-2330) times those waves on the Feature's timeline.
+    private static SprintDemoPlanFacts? PlanFacts(
+        List<PlanRow> members, int reviewRounds, IReadOnlyList<string> pullRequests, FeatureTimelineViewDto? timeline, Truncation truncation)
     {
-        var planStories = members.Where(member => member.Kind == "story").Select(member => PlanTags.Parse((string[])member.Tags).Wave).ToList();
+        var planStories = members.Where(member => member.Kind == "story").Select(member => (member.Key, PlanTags.Parse((string[])member.Tags).Wave)).ToList();
         if (planStories.Count == 0)
         {
             return null;
         }
-        var waves = planStories.OfType<WaveLabel>().Select(wave => wave.Text).Distinct().Count() + planStories.Count(wave => wave is null);
-        return new SprintDemoPlanFacts(waves, planStories.Count, members.Count(member => member.Kind == "task"), reviewRounds, pullRequests);
+        var waves = planStories.Select(story => story.Wave).OfType<WaveLabel>().Select(wave => wave.Text).Distinct().Count() + planStories.Count(story => story.Wave is null);
+        SprintDemoTiming? timing = null;
+        if (timeline is not null)
+        {
+            (timing, var cut) = DemoTiming.Build(timeline, planStories);
+            truncation.Mark(cut);
+        }
+        return new SprintDemoPlanFacts(waves, planStories.Count, members.Count(member => member.Kind == "task"), reviewRounds, pullRequests, timing);
     }
 
     private static SprintDemoStoryLine Story(StoryRow row, ILookup<Guid, TaskRow> tasks, Truncation truncation)
@@ -141,7 +158,7 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
         public void Mark(bool cut) => Happened |= cut;
     }
 
-    private sealed record HeadRow(string SprintName, string SprintGoal, string StartDate, string EndDate, bool Closed, string ProjectKey, string ProjectName, string? RepoUrl, string? BaseBranch, string Environment);
+    private sealed record HeadRow(string SprintName, string SprintGoal, string StartDate, string EndDate, bool Closed, string ProjectKey, string ProjectName, string? RepoUrl, string? BaseBranch, string Environment, Guid ProjectId);
 
     private sealed record FeatureRow(Guid Id, string Key, string Title, string State, string Goal, string Description);
 
@@ -149,7 +166,7 @@ public sealed class SprintDemoDataReader(NpgsqlDataSource dataSource, ISprintFea
 
     private sealed record TaskRow(Guid StoryId, string Title, string State);
 
-    private sealed record PlanRow(Guid FeatureId, string Kind, Array Tags);
+    private sealed record PlanRow(Guid FeatureId, string Kind, Array Tags, string Key);
 
     private sealed record ReviewRow(Guid FeatureId, int Rounds);
 

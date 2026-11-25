@@ -12,5 +12,6 @@ public sealed class TimelineServices : IServiceModule
     {
         services.AddScoped<IFeatureTimeline, FeatureTimeline>();
         services.AddSingleton<ITimelineFactsReader, TimelineFactsReader>();
+        services.AddSingleton<IFeatureTimelineReads, FeatureTimelineReads>();
     }
 }
