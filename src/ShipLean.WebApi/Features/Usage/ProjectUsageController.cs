@@ -118,4 +118,14 @@ public sealed class ProjectUsageController(BacklogSorts sorts, TimelineUsage tim
         await prompts.CustomizeOpenedAsync(id, request, cancellationToken);
         return NoContent();
     }
+
+    [HttpPost("prompts-search-picked")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiError>(StatusCodes.Status404NotFound)]
+    public async Task<NoContentResult> PromptsSearchPicked(Guid id, PromptsSearchPickedDto request, CancellationToken cancellationToken)
+    {
+        await prompts.SearchPickedAsync(id, request, cancellationToken);
+        return NoContent();
+    }
 }

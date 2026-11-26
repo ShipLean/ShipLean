@@ -4,7 +4,6 @@ import { WORK_ITEM_TYPE_IDS } from '@shiplean/core/api/refs';
 import demoSettings from '../../../../../ShipLean.TestSupport/DtoFixtures/demos/project-demo-settings.json' with { type: 'json' };
 import { demosTestIds as demosIds } from '../../demos/testIds';
 import { inspectionTestIds } from '../../inspection/testIds';
-import { promptsTestIds } from '../../prompts/testIds';
 import { settingsTestIds as ids } from '../testIds';
 import { SettingsDraftHarness } from './ct/SettingsDraftHarness';
 import { PROJECT_ID } from './ct/projectDto';
@@ -348,7 +347,8 @@ test('Draft_WhenStatesTab_ShouldShowTheStatesNodeUntouched', async ({ mount, pag
   await expect(view.getByTestId('harness-states')).toBeVisible();
 });
 
-test('Tabs_ShouldListDemosInspectionThenPromptsLast', async ({ mount, page }) => {
+// SHIP-2280: Prompts left Project settings for Ways of working, so Inspection is now the last tab.
+test('Tabs_ShouldListDemosThenInspectionLast', async ({ mount, page }) => {
   await stub(page);
   const view = await mount(<SettingsDraftHarness role="admin" />, {
     hooksConfig: { route: '/p/SHIP/settings/general' },
@@ -362,7 +362,6 @@ test('Tabs_ShouldListDemosInspectionThenPromptsLast', async ({ mount, page }) =>
       ids.tabIntegrations,
       ids.tabDemos,
       inspectionTestIds.settingsTabInspection,
-      promptsTestIds.settingsTabPrompts,
     ]
       .map((testId) => `[data-testid="${testId}"]`)
       .join(', '),
@@ -375,11 +374,21 @@ test('Tabs_ShouldListDemosInspectionThenPromptsLast', async ({ mount, page }) =>
     'Integrations',
     'Demos',
     'Inspection',
-    'Prompts',
   ]);
   await expect(
     view.getByRole('navigation', { name: 'Settings sections' }).getByRole('link').last(),
-  ).toHaveAttribute('data-testid', promptsTestIds.settingsTabPrompts);
+  ).toHaveAttribute('data-testid', inspectionTestIds.settingsTabInspection);
+});
+
+// SHIP-2280 D2: the prompts live on their own page, Ways of working, and Project settings has no Prompts tab.
+test('SettingsDraft_ShouldNotOfferAPromptsTab', async ({ mount, page }) => {
+  await stub(page);
+  const view = await mount(<SettingsDraftHarness role="admin" />, {
+    hooksConfig: { route: '/p/SHIP/settings/general' },
+  });
+  await expect(view.getByTestId(ids.tabRow)).toBeVisible();
+  await expect(view.getByTestId(inspectionTestIds.settingsTabInspection)).toBeVisible();
+  await expect(view.getByTestId('settings-tab-prompts')).toHaveCount(0);
 });
 
 test('DemosTab_ShouldNotJoinTheDraftsSave', async ({ mount, page }) => {

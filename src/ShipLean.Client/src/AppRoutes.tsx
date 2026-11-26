@@ -27,8 +27,9 @@ import { SprintDemoPage } from './pages/SprintDemoPage';
 import { SprintsPage } from './pages/SprintsPage';
 import { TaskboardPage } from './pages/TaskboardPage';
 import { AgentRunPage } from './pages/AgentRunPage';
+import { OldPromptsSettingsRedirect, WaysOfWorkingPage } from './pages/WaysOfWorkingPage';
 import { WorkItemPage } from './pages/WorkItemPage';
-import { routePattern } from './routes';
+import { oldPromptsSettingsPattern, routePattern } from './routes';
 import { Shell } from './Shell';
 import { ImageViewerHost } from './touch/imageViewer';
 
@@ -84,7 +85,9 @@ export function AppRoutes() {
           <Route path={routePattern('retroItem')} element={<RetroItemPage />} />
           <Route path={routePattern('retroInsights')} element={<RetroInsightsPage />} />
           <Route path={routePattern('inspectionMetrics')} element={<InspectionMetricsPage />} />
+          <Route path={routePattern('waysOfWorking')} element={<WaysOfWorkingPage />} />
           <Route path={routePattern('jiraImport')} element={<ImportPage />} />
+          <Route path={oldPromptsSettingsPattern} element={<OldPromptsSettingsRedirect />} />
           <Route path={routePattern('projectSettings')} element={<ProjectSettingsPage />} />
           <Route path={routePattern('projectSettingsIndex')} element={<ProjectSettingsPage />} />
           <Route path="/p/:key/*" element={<NotFoundPage />} />

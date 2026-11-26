@@ -19,5 +19,6 @@ public sealed class PromptsAccessRows : IAccessSweepRows
         new("POST", "api/projects/{id:guid}/prompts/{prompt}/update/keep", ProjectRole.Admin, Url: $"api/projects/{SeedIds.Projects.Ship}/prompts/guide/update/keep"),
         new("POST", "api/projects/{id:guid}/usage/prompts-opened", ProjectRole.Member),
         new("POST", "api/projects/{id:guid}/usage/prompt-customize-opened", ProjectRole.Member, Body: """{"prompt":"guide"}"""),
+        new("POST", "api/projects/{id:guid}/usage/prompts-search-picked", ProjectRole.Member, Body: """{"prompt":"guide"}"""),
     ];
 }

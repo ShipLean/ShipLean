@@ -3,9 +3,10 @@ namespace ShipLean.TestSupport.TestIds;
 public static class PromptsTestIds
 {
     // shell
-    public const string SettingsTabPrompts = "settings-tab-prompts";
-    public const string TabBadge = "prompts-tab-badge";
     public const string Page = "prompts-page";
+    public const string Header = "prompts-header";
+    public const string CustomCountPill = "prompts-custom-count-pill";
+    public const string UnsavedPill = "prompts-unsaved-pill";
     public const string Loading = "prompts-loading";
     public const string LoadFailed = "prompts-load-failed";
     public const string Retry = "prompts-retry";
@@ -15,22 +16,20 @@ public static class PromptsTestIds
     public const string CustomCount = "prompts-custom-count";
     public const string BuiltInOnly = "prompts-built-in-only";
     public const string BuiltInOnlyRow = "prompts-built-in-only-row";
-    // list
+    // stage navigation and search
+    public const string StageNav = "prompts-stage-nav";
     public const string StageStrip = "prompts-stage-strip";
-    public const string StageStripItem = "prompts-stage-strip-item";
+    public const string Stage = "prompts-stage";
+    public const string StageChip = "prompts-stage-chip";
+    public const string StageWhen = "prompts-stage-when";
+    public const string StageSelect = "prompts-stage-select";
+    public const string SearchInput = "prompts-search-input";
+    public const string SearchResults = "prompts-search-results";
+    public const string SearchResult = "prompts-search-result";
+    public const string StageChevron = "prompts-stage-chevron";
+    public const string StageChipDot = "prompts-stage-chip-dot";
     public const string StageStripCount = "prompts-stage-strip-count";
     public const string StageStripCustom = "prompts-stage-strip-custom";
-    public const string List = "prompts-list";
-    public const string ListSearch = "prompts-list-search";
-    public const string FilterAll = "prompts-filter-all";
-    public const string FilterCustom = "prompts-filter-custom";
-    public const string ListStage = "prompts-list-stage";
-    public const string ListStageWhen = "prompts-list-stage-when";
-    public const string ListRow = "prompts-list-row";
-    public const string ListRowName = "prompts-list-row-name";
-    public const string ListRowFile = "prompts-list-row-file";
-    public const string ListRowChip = "prompts-list-row-chip";
-    public const string ListEmpty = "prompts-list-empty";
     public const string ChipBuiltIn = "prompts-chip-built-in";
     public const string ChipCustom = "prompts-chip-custom";
     public const string ChipBuiltInUpdated = "prompts-chip-built-in-updated";
@@ -113,7 +112,6 @@ public static class PromptsTestIds
     public const string EditorNote = "prompts-editor-note";
     public const string EditorSave = "prompts-editor-save";
     public const string EditorCancel = "prompts-editor-cancel";
-    public const string EditorDirty = "prompts-editor-dirty";
     public const string EditorError = "prompts-editor-error";
     public const string EditorSaveError = "prompts-editor-save-error";
     public const string EditorSizeMeter = "prompts-editor-size-meter";
@@ -160,4 +158,46 @@ public static class PromptsTestIds
     public const string UseBuiltInConfirm = "prompts-use-built-in-confirm";
     public const string UseBuiltInCancel = "prompts-use-built-in-cancel";
     public const string UseBuiltInError = "prompts-use-built-in-error";
+    // changes and history (Your changes, History, Use built-in dialog)
+    public const string DiffSwatchRemoved = "prompts-diff-swatch-removed";
+    public const string DiffSwatchAdded = "prompts-diff-swatch-added";
+    public const string DiffCounts = "prompts-diff-counts";
+    public const string HistoryInUsePill = "prompts-history-in-use-pill";
+    public const string HistoryFootNote = "prompts-history-foot-note";
+    public const string HistoryBuiltInHash = "prompts-history-built-in-hash";
+    public const string UseBuiltInStays = "prompts-use-built-in-stays";
+    // what the agent gets and built-in update
+    public const string AssembledLayerChip = "prompts-assembled-layer-chip";
+    public const string AssembledLayerNumber = "prompts-assembled-layer-number";
+    public const string AssembledIntro = "prompts-assembled-intro";
+    public const string UpdateExplainer = "prompts-update-explainer";
+    public const string UpdateDiffHeader = "prompts-update-diff-header";
+    // editor (SHIP-2302)
+    public const string CheckPlaceholderWarning = "prompts-check-placeholder-warning";
+    public const string EditorStartedFrom = "prompts-editor-started-from";
+    public const string EditorBody = "prompts-editor-body";
+    public const string EditorFooter = "prompts-editor-footer";
+    // header search results menu (SHIP-2294)
+    public const string SearchResultName = "prompts-search-result-name";
+    public const string SearchResultStage = "prompts-search-result-stage";
+    public const string SearchResultStatus = "prompts-search-result-status";
+    public const string SearchResultLine = "prompts-search-result-line";
+    public const string SearchMatch = "prompts-search-match";
+    public const string SearchFoot = "prompts-search-foot";
+    public const string SearchEmpty = "prompts-search-empty";
+    // detail header, callouts and source (SHIP-2296)
+    public const string DetailChipDot = "prompts-detail-chip-dot";
+    public const string FactCode = "prompts-fact-code";
+    public const string InUseCallout = "prompts-in-use-callout";
+    public const string PausedCallout = "prompts-paused-callout";
+    public const string SourceLineNumber = "prompts-source-line-number";
+    public const string UpdateBannerKeep = "prompts-update-banner-keep";
+    public const string UpdateBannerKeepError = "prompts-update-banner-keep-error";
+    // follow-up: empty note in History (SHIP-2315)
+    public const string HistoryVersionNote = "prompts-history-version-note";
+    // parity polish A (SHIP-2316)
+    public const string AssembledLayerChipDot = "prompts-assembled-layer-chip-dot";
+    public const string AssembledFootnote = "prompts-assembled-footnote";
+    public const string DiffSign = "prompts-diff-sign";
+    public const string DiffGapText = "prompts-diff-gap-text";
 }

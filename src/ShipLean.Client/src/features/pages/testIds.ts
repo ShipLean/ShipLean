@@ -20,6 +20,7 @@ export const pagesTestIds = {
   retroInsightsPage: 'page-retro-insights',
   importPage: 'page-import',
   projectSettingsPage: 'page-project-settings',
+  waysOfWorkingPage: 'page-ways-of-working',
   newProjectPage: 'page-new-project',
   instanceSettingsPage: 'page-instance-settings',
   instanceSettingsTab: 'page-instance-settings-tab',

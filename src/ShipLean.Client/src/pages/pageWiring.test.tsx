@@ -188,6 +188,8 @@ test('projectSettingsSlots_ShouldFrameEveryTabAndHandOverTheThreeContents', () =
     const inspection = element(settingsDraft.inspection);
     expect(inspection.type).toBe(SettingsInspectionSlot);
     expect(inspection.props).toEqual({ project, tab });
+    // SHIP-2280: the prompts are their own page now, Ways of working.
+    expect(settingsDraft).not.toHaveProperty('prompts');
   }
 });
 
@@ -314,6 +316,7 @@ test('pageRouteIds_ShouldNameTheScreenEachPageReports', () => {
     retroItem: 'retroItem',
     retroInsights: 'retroInsights',
     inspectionMetrics: 'inspectionMetrics',
+    waysOfWorking: 'waysOfWorking',
     importIntoProject: 'jiraImport',
     importWithoutProject: 'importStart',
     projectSettings: 'projectSettings',

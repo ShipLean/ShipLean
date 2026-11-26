@@ -5,6 +5,7 @@ using Npgsql;
 using ShipLean.Application.Features.Demos.Data;
 using ShipLean.Contracts;
 using ShipLean.Contracts.Demos;
+using ShipLean.Contracts.Refs;
 using ShipLean.Contracts.Retros;
 using ShipLean.TestSupport;
 using ShipLean.TestSupport.Builders;
@@ -21,6 +22,7 @@ public class SprintDemoDataTests : ApiFixture
 {
     private static readonly Guid Joel = SeedIds.Users.Joel;
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private static readonly DateTimeOffset T0 = new(2026, 2, 17, 9, 0, 0, TimeSpan.Zero);
 
     [Test]
     public async Task Features_ShouldBeTheSprintsFeatureParents()
@@ -419,6 +421,42 @@ public class SprintDemoDataTests : ApiFixture
         data.Features.Single().PullRequests.ShouldBe(plan.PullRequests);
     }
 
+    // SHIP-2330: a wave runs from its earliest story start to its latest story end, read off the Feature's timeline in UTC; a story
+    // with no wave tag is a wave of its own and stays open while it has not finished. Mutation: take the latest start instead of the
+    // earliest in DemoTiming.Wave, or drop the untagged stories.
+    [Test]
+    public async Task PlanTiming_WhenWavesRan_ShouldTimeEachWaveInWaveOrder()
+    {
+        await using var world = await WorldAsync();
+        var plan = await world.TimedPlanAsync();
+
+        var data = await world.ReadAsync();
+
+        var timing = data.Features.Single().Plan.ShouldNotBeNull().Timing.ShouldNotBeNull();
+        timing.Waves.Select(w => (w.Label, string.Join(' ', w.StoryKeys))).ShouldBe(
+            [("1", $"{plan.A} {plan.B}"), ("2", plan.C), (null, plan.Loose)]);
+        timing.Waves[0].ShouldBe(timing.Waves[0] with { Start = T0, End = T0.AddHours(6), Hours = 6, DurationLabel = "6 h" });
+        timing.Waves[1].ShouldBe(timing.Waves[1] with { Start = T0.AddHours(36), End = T0.AddHours(46), Hours = 10, DurationLabel = "10 h" });
+        timing.Waves[2].ShouldBe(timing.Waves[2] with { Start = null, End = null, Hours = null, DurationLabel = null });
+        timing.Execution.Start.ShouldBe(T0);
+        timing.Execution.End.ShouldBeNull();
+        timing.TimelinePath.ShouldBe($"/p/{world.Project.Key}/items/{data.Features.Single().Key}/timeline");
+    }
+
+    // SHIP-2330: the longest waits are the timeline's labelled edges (12 h or more) with both ends named, and the longest Blocked
+    // periods come from the task bars. Mutation: keep edges under 12 h, or leave out the titles.
+    [Test]
+    public async Task PlanTiming_WhenWaitsAndBlocks_ShouldListTheLongest()
+    {
+        await using var world = await WorldAsync();
+        var plan = await world.TimedPlanAsync();
+
+        var timing = (await world.ReadAsync()).Features.Single().Plan.ShouldNotBeNull().Timing.ShouldNotBeNull();
+
+        timing.LongestWaits.ShouldBe([new SprintDemoWait(plan.TaskB, "Task B", plan.TaskC, "Task C", "depends", 30, "1.3 days", false)]);
+        timing.LongestBlocked.ShouldBe([new SprintDemoBlocked(plan.TaskB, "Task B", 1.5, "1.5 h")]);
+    }
+
     [Test]
     public async Task Attachments_ShouldListTheFeaturesLiveNames()
     {
@@ -467,6 +505,7 @@ public class SprintDemoDataTests : ApiFixture
         var big = data.Features.Single();
         big.Why.ShouldNotBeNull().Length.ShouldBe(4096);
         big.Stories.Count.ShouldBe(50);
+        big.StoriesOmitted.ShouldBe(5);
         big.Stories[0].Summary.ShouldNotBeNull().Length.ShouldBe(600);
         big.Retro.WentWell.Count.ShouldBe(40);
         big.Retro.WentWell[0].Text.Length.ShouldBe(400);
@@ -519,8 +558,10 @@ public class SprintDemoDataTests : ApiFixture
         data.Truncated.ShouldBeTrue();
     }
 
+    // SHIP-2330: summaries go before stories, so every Feature keeps its stories and only the later ones lose their summaries.
+    // Before, the last Features were cut to a header with no stories. Mutation: drop stories before summaries in SprintDemoDataBudget.Trim.
     [Test]
-    public async Task Oversized_WhenManyFeatures_ShouldKeepEveryFeatureAndShrinkTheLastToItsHeader()
+    public async Task Oversized_WhenManyFeatures_ShouldKeepEveryFeaturesStoriesAndCutSummariesFromTheLast()
     {
         await using var world = await WorldAsync();
         for (var f = 0; f < 30; f++)
@@ -539,12 +580,44 @@ public class SprintDemoDataTests : ApiFixture
         SprintDemoDataBudget.Size(data).ShouldBeLessThanOrEqualTo(120 * 1024);
         System.Text.Encoding.UTF8.GetByteCount(Serialize(data)).ShouldBeLessThanOrEqualTo(120 * 1024);
         data.Truncated.ShouldBeTrue();
-        var whole = data.Features.Count(feature => feature.Stories.Count == 12);
+        data.Features.ShouldAllBe(feature => feature.Stories.Count == 12 && feature.StoriesOmitted == 0 && feature.Goal.StartsWith("Goal "));
+        var whole = data.Features.Count(feature => feature.Stories.All(story => story.Summary != null));
         whole.ShouldBeGreaterThan(0);
         whole.ShouldBeLessThan(30);
-        data.Features.Take(whole).ShouldAllBe(feature => feature.Stories.Count == 12);
-        data.Features.Skip(whole).ShouldAllBe(feature => feature.Stories.Count == 0 && feature.Goal.StartsWith("Goal "));
+        data.Features.Take(whole).ShouldAllBe(feature => feature.Stories.All(story => story.Summary != null));
+        data.Features.Skip(whole).ShouldAllBe(feature => feature.Stories.All(story => story.Summary == null));
         data.Features.Select(feature => feature.Title).ShouldBe(Enumerable.Range(0, 30).Select(f => $"Feature {f:00}"));
+    }
+
+    // SHIP-2330: a first Feature too big to keep its stories no longer stops the later ones getting theirs back. Mutation: stop the
+    // give-back at the first Feature that doesn't fit.
+    [Test]
+    public async Task Oversized_WhenFirstFeatureIsTooBig_ShouldStillGiveLaterFeaturesTheirStories()
+    {
+        await using var world = await WorldAsync();
+        var big = await world.FeatureAsync("A big one", description: "## Why\n\nBig reasons.");
+        for (var i = 0; i < 40; i++)
+        {
+            await world.ItemAsync("story", parent: big, sprint: world.Sprint, title: $"Big {i:00} " + new string('b', 4000));
+        }
+        foreach (var name in new[] { "B small", "C small", "D small" })
+        {
+            var feature = await world.FeatureAsync(name);
+            await world.ItemAsync("story", parent: feature, sprint: world.Sprint, title: $"{name} story 1", description: "Kept.");
+            await world.ItemAsync("story", parent: feature, sprint: world.Sprint, title: $"{name} story 2");
+        }
+
+        var data = await world.ReadAsync();
+
+        data.Truncated.ShouldBeTrue();
+        SprintDemoDataBudget.Size(data).ShouldBeLessThanOrEqualTo(SprintDemoDataBudget.MaxBytes);
+        var first = data.Features[0];
+        first.Stories.ShouldBeEmpty();
+        first.StoriesOmitted.ShouldBe(40);
+        first.Why.ShouldBe("Big reasons.");
+        data.Features.Skip(1).Select(feature => (feature.Title, feature.Stories.Count, feature.StoriesOmitted))
+            .ShouldBe([("B small", 2, 0), ("C small", 2, 0), ("D small", 2, 0)]);
+        data.Features[1].Stories[0].Summary.ShouldBe("Kept.");
     }
 
     [Test]
@@ -578,8 +651,9 @@ public class SprintDemoDataTests : ApiFixture
         data.Truncated.ShouldBeFalse();
     }
 
+    // SHIP-2330: a Feature whose stories don't fit keeps its header facts and its Why, and says how many stories were left out.
     [Test]
-    public async Task Oversized_WhenFeatureShrinks_ShouldKeepOnlyTheHeaderFacts()
+    public async Task Oversized_WhenFeatureLosesItsStories_ShouldKeepTheHeaderFactsAndCountTheOmitted()
     {
         await using var world = await WorldAsync();
         for (var f = 0; f < 30; f++)
@@ -592,12 +666,13 @@ public class SprintDemoDataTests : ApiFixture
             await world.Seed.PointAsync(retro, new RetroSeedPoint(RetroCategory.WentWell, "Went well."));
             for (var i = 0; i < 11; i++)
             {
-                await world.ItemAsync("story", parent: feature, sprint: world.Sprint, title: $"Story {f:00}-{i:00}", description: new string('d', 600));
+                await world.ItemAsync("story", parent: feature, sprint: world.Sprint, title: $"Story {f:00}-{i:00} " + new string('t', 400), description: new string('d', 600));
             }
         }
 
         var data = await world.ReadAsync();
 
+        SprintDemoDataBudget.Size(data).ShouldBeLessThanOrEqualTo(SprintDemoDataBudget.MaxBytes);
         var shrunk = data.Features.Where(feature => feature.Stories.Count == 0).ToList();
         shrunk.ShouldNotBeEmpty();
         foreach (var header in shrunk)
@@ -605,8 +680,8 @@ public class SprintDemoDataTests : ApiFixture
             var number = header.Title["Feature ".Length..];
             header.Goal.ShouldBe($"Goal {number}");
             header.Url.ShouldBe($"/p/{world.Project.Key}/items/{header.Key}");
-            header.Why.ShouldBeNull();
-            header.Measure.ShouldBeNull();
+            header.StoriesOmitted.ShouldBe(12);
+            header.Why.ShouldBe("Because.");
             header.Retro.WentWell.ShouldBeEmpty();
             header.Retro.WentBadly.ShouldBeEmpty();
             header.Retro.Improve.ShouldBeEmpty();
@@ -615,6 +690,11 @@ public class SprintDemoDataTests : ApiFixture
             header.PullRequests.ShouldBeEmpty();
             var plan = header.Plan.ShouldNotBeNull();
             plan.Stories.ShouldBe(12);
+            var timing = plan.Timing.ShouldNotBeNull();
+            timing.TimelinePath.ShouldBe($"/p/{world.Project.Key}/items/{header.Key}/timeline");
+            timing.Waves.ShouldBeEmpty();
+            timing.LongestWaits.ShouldBeEmpty();
+            timing.LongestBlocked.ShouldBeEmpty();
             plan.PullRequests.ShouldBe([$"https://github.com/example/shop/pull/{int.Parse(number)}"]);
         }
     }
@@ -721,6 +801,50 @@ public class SprintDemoDataTests : ApiFixture
             return id;
         }
 
+        // Wave 1 is stories A and B, wave 2 story C, and a loose story with no wave tag and no tasks. A's task runs T0 to +4 h, B's +1 h to
+        // +6 h with a Blocked hour and a half, C's +36 h to +46 h: the wave edge from B's task to C's waits 30 h.
+        public async Task<TimedPlan> TimedPlanAsync()
+        {
+            var feature = await FeatureAsync("Timed");
+            var a = await ItemAsync("story", parent: feature, sprint: Sprint, tags: ["wave:1"]);
+            var b = await ItemAsync("story", parent: feature, sprint: Sprint, tags: ["wave:1"]);
+            var c = await ItemAsync("story", parent: feature, sprint: Sprint, tags: ["wave:2"]);
+            var loose = await ItemAsync("story", parent: feature, sprint: Sprint);
+            var taskA = await ItemAsync("task", parent: a, title: "Task A");
+            var taskB = await ItemAsync("task", parent: b, title: "Task B");
+            var taskC = await ItemAsync("task", parent: c, title: "Task C");
+            foreach (var id in new[] { feature, a, b, c, loose, taskA, taskB, taskC })
+            {
+                await Connection.ExecuteAsync(
+                    "UPDATE work_item SET created_at = @at WHERE id = @id; UPDATE revision SET changed_at = @at WHERE work_item_id = @id AND rev = 1",
+                    new { id, at = T0.AddHours(-1) });
+            }
+            await MoveAsync(taskA, 2, T0, "Active");
+            await MoveAsync(taskA, 3, T0.AddHours(4), "Resolved");
+            await MoveAsync(taskB, 2, T0.AddHours(1), "Active");
+            await TagsAsync(taskB, 3, T0.AddHours(2), "[]", """["Blocked"]""");
+            await TagsAsync(taskB, 4, T0.AddHours(3.5), """["Blocked"]""", "[]");
+            await MoveAsync(taskB, 5, T0.AddHours(6), "Resolved");
+            await MoveAsync(taskC, 2, T0.AddHours(36), "Active");
+            await MoveAsync(taskC, 3, T0.AddHours(46), "Resolved");
+            return new TimedPlan(await KeyAsync(a), await KeyAsync(b), await KeyAsync(c), await KeyAsync(loose), await KeyAsync(taskB), await KeyAsync(taskC));
+        }
+
+        private async Task MoveAsync(Guid id, int rev, DateTimeOffset at, string stateName)
+        {
+            var state = Project.State(WorkItemTypeId.Task, stateName);
+            await new RevisionBuilder(id).WithRev(rev).WithChangedAt(at).WithChangedBy(Joel)
+                .WithChanges($$"""[{"field":"state","from":null,"to":"{{state}}"}]""").InsertAsync(Connection);
+            await Connection.ExecuteAsync("UPDATE work_item SET state_id = @state, revision = @rev WHERE id = @id", new { id, state, rev });
+        }
+
+        private async Task TagsAsync(Guid id, int rev, DateTimeOffset at, string from, string to)
+            => await new RevisionBuilder(id).WithRev(rev).WithChangedAt(at).WithChangedBy(Joel)
+                .WithChanges($$"""[{"field":"tags","from":{{from}},"to":{{to}}}]""").InsertAsync(Connection);
+
+        private async Task<string> KeyAsync(Guid id)
+            => await Connection.ExecuteScalarAsync<string>("SELECT key FROM work_item WHERE id = @id", new { id }) ?? throw new InvalidOperationException();
+
         public async Task LinkAsync(Guid itemId, string url, string title, bool archived = false)
             => await Connection.ExecuteAsync(
                 "INSERT INTO work_item_link (id, source_id, link_type, url, title, archived_at) VALUES (@id, @itemId, 'url', @url, @title, CASE WHEN @archived THEN now() END)",
@@ -735,4 +859,6 @@ public class SprintDemoDataTests : ApiFixture
             return id;
         }
     }
+
+    private sealed record TimedPlan(string A, string B, string C, string Loose, string TaskB, string TaskC);
 }

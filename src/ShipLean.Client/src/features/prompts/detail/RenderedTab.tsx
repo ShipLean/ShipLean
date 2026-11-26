@@ -11,7 +11,7 @@ export function RenderedTab(props: { projectId: string; text: string }) {
       data-testid={ids.panelRendered}
       aria-label="Rendered"
       data-project={props.projectId}
-      className="grid gap-3"
+      className="grid gap-3 px-4 py-3"
     >
       {hasAgentTagLines(props.text) ? (
         <p

@@ -3,33 +3,60 @@ import { PromptsHarness } from './ct/PromptsHarness';
 import { PROMPTS_OPENED_URL, PROMPTS_URL, adminPage, adminProject } from './ct/promptsData';
 import { promptsTestIds as ids } from './testIds';
 
-// The Prompts tab on a phone (D14): the list stacks above the prompt and the stage strip scrolls inside its own box.
-const hooks = { hooksConfig: { route: '/p/SHIP/settings/prompts' } };
+// Ways of working on a phone: the stage navigation stacks above the prompt, which runs full width. Under 900px the
+// stage select replaces the strip (D7), so nothing scrolls sideways.
+const hooks = { hooksConfig: { route: '/p/SHIP/ways-of-working?prompt=guide' } };
 
-test('PromptsPage_WhenOnAPhone_ShouldStackTheListAboveThePrompt', async ({ mount, page }) => {
+test('PromptsPage_WhenOnAPhone_ShouldStackTheStageNavAboveThePrompt', async ({ mount, page }) => {
   expect(page.viewportSize()?.width).toBe(390);
   await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
   await mount(<PromptsHarness project={adminProject} />, hooks);
 
-  const list = (await page.getByTestId(ids.list).boundingBox())!;
+  const nav = (await page.getByTestId(ids.stageNav).boundingBox())!;
   const detail = (await page.getByTestId(ids.detail).boundingBox())!;
-  expect(detail.y).toBeGreaterThanOrEqual(list.y + list.height - 1);
-  expect(list.width).toBeGreaterThan(300);
+  expect(detail.y).toBeGreaterThanOrEqual(nav.y + nav.height - 1);
+  expect(nav.width).toBeGreaterThan(300);
   expect(detail.width).toBeGreaterThan(300);
-  const row = (await page.getByTestId(ids.listRow).first().boundingBox())!;
-  expect(row.height).toBeGreaterThanOrEqual(32);
+  const chip = (await page.getByTestId(ids.stageChip).first().boundingBox())!;
+  expect(chip.height).toBeGreaterThanOrEqual(32);
 });
 
-test('StageStrip_WhenOnAPhone_ShouldScrollSidewaysWithoutPageScroll', async ({ mount, page }) => {
+test('StageNav_WhenOnAPhone_ShouldShowAStageSelectWithCounts', async ({ mount, page }) => {
   await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
   await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
   await mount(<PromptsHarness project={adminProject} />, hooks);
-  await expect(page.getByTestId(ids.stageStripItem)).toHaveCount(7);
 
-  const strip = page.getByTestId(ids.stageStrip);
-  const sizes = await strip.evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
-  expect(sizes.scroll).toBeGreaterThan(sizes.client);
+  const select = page.getByTestId(ids.stageSelect);
+  await expect(select).toBeVisible();
+  await expect(page.getByTestId(ids.stageStrip)).toBeHidden();
+  expect((await select.boundingBox())!.height).toBe(36);
+  await expect(select.locator('option')).toHaveCount(7);
+  await expect(select.locator('option:checked')).toHaveText('3 · Plan · 2 prompts, 1 custom');
+  await expect(select.locator('option').nth(3)).toHaveText('4 · Build · 3 prompts, 1 custom');
+  await expect(page.getByTestId(ids.stageChip).first()).toBeVisible();
+});
+
+test('StageNav_WhenOnAPhoneAndStageChosen_ShouldOpenItsFirstPrompt', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, hooks);
+
+  await page.getByTestId(ids.stageSelect).selectOption('build');
+  await expect(page.getByTestId(ids.stageChip).first()).toHaveAttribute('data-prompt', 'lead');
+  await expect(page.getByTestId(ids.stageChip).first()).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByTestId(ids.stageSelect).locator('option:checked')).toHaveText(
+    '4 · Build · 3 prompts, 1 custom',
+  );
+});
+
+// Replaces StageStrip_WhenOnAPhone_ShouldScrollSidewaysWithoutPageScroll: D7 retires the strip's sideways scroll.
+test('PromptsPage_WhenOnAPhone_ShouldNotScrollSideways', async ({ mount, page }) => {
+  await page.route(PROMPTS_URL, (route) => route.fulfill({ json: adminPage }));
+  await page.route(PROMPTS_OPENED_URL, (route) => route.fulfill({ status: 204 }));
+  await mount(<PromptsHarness project={adminProject} />, hooks);
+  await expect(page.getByTestId(ids.stageSelect)).toBeVisible();
+
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,

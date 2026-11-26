@@ -9,7 +9,8 @@ internal static class SprintDemoDataSql
         """
         SELECT sp.name AS SprintName, sp.goal AS SprintGoal, to_char(sp.start_date, 'YYYY-MM-DD') AS StartDate, to_char(sp.end_date, 'YYYY-MM-DD') AS EndDate,
                (sp.rollover_status = 'decided') AS Closed,
-               p.key AS ProjectKey, p.name AS ProjectName, p.repo_url AS RepoUrl, p.repo_base_branch AS BaseBranch, COALESCE(d.environment, '') AS Environment
+               p.key AS ProjectKey, p.name AS ProjectName, p.repo_url AS RepoUrl, p.repo_base_branch AS BaseBranch, COALESCE(d.environment, '') AS Environment,
+               p.id AS ProjectId
         FROM sprint sp
         JOIN project p ON p.id = sp.project_id
         LEFT JOIN project_demo_settings d ON d.project_id = p.id
@@ -45,16 +46,16 @@ internal static class SprintDemoDataSql
         ORDER BY w.backlog_order, w.id
         """;
 
-    // The live members of each Feature's plan: its stories, and their tasks.
+    // The live members of each Feature's plan: its stories, and their tasks, with their keys (SHIP-2330 joins stories to the timeline by key).
     private const string PlanMembers =
         """
         WITH plan_members AS (
-            SELECT w.id AS member_id, w.parent_id AS feature_id, 'story' AS kind, w.tags AS tags
+            SELECT w.id AS member_id, w.parent_id AS feature_id, 'story' AS kind, w.tags AS tags, w.key AS key, w.number AS number
             FROM work_item w
             JOIN state s ON s.id = w.state_id AND s.category <> 'removed'
             WHERE w.parent_id = ANY(@featureIds) AND w.type = 'story'
             UNION ALL
-            SELECT t.id, st.parent_id, 'task', t.tags
+            SELECT t.id, st.parent_id, 'task', t.tags, t.key, t.number
             FROM work_item t
             JOIN state ts ON ts.id = t.state_id AND ts.category <> 'removed'
             JOIN work_item st ON st.id = t.parent_id AND st.type = 'story' AND st.parent_id = ANY(@featureIds)
@@ -63,7 +64,7 @@ internal static class SprintDemoDataSql
         )
         """;
 
-    public const string PlanShape = PlanMembers + " SELECT feature_id AS FeatureId, kind AS Kind, tags AS Tags FROM plan_members";
+    public const string PlanShape = PlanMembers + " SELECT feature_id AS FeatureId, kind AS Kind, tags AS Tags, key AS Key FROM plan_members ORDER BY number";
 
     public const string PlanReviews =
         PlanMembers +

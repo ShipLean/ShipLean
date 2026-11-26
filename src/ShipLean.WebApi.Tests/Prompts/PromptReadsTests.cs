@@ -139,7 +139,7 @@ public class PromptReadsTests : ApiFixture
         guide.Custom.By.ShouldBe(joel);
         guide.Custom.Note.ShouldBe("two");
         guide.Custom.AtLabel.ShouldBe(Day(3));
-        guide.Custom.BaseLabel.ShouldBe($"built-in of {Day(9)}");
+        guide.Custom.BaseLabel.ShouldBe(Day(9));
         guide.Custom.BaseText.ShouldBe(_builtIns.Text(PromptKey.Guide).Replace("\r\n", "\n", StringComparison.Ordinal));
         guide.YourChangesPatch.ShouldNotBeNull();
         page.CustomCount.ShouldBe(1);
@@ -178,8 +178,8 @@ public class PromptReadsTests : ApiFixture
         var retro = Find(page, PromptKey.Retro);
         retro.Status.ShouldBe(PromptStatus.BuiltInUpdated);
         retro.Update.ShouldNotBeNull();
-        retro.Update.BaseLabel.ShouldBe($"built-in of {Day(20)}");
-        retro.Update.ChangedLabel.ShouldBe($"{Day(4)} built-in");
+        retro.Update.BaseLabel.ShouldBe(Day(20));
+        retro.Update.ChangedLabel.ShouldBe(Day(4));
         retro.Custom!.AtLabel.ShouldBe(Day(10));
     }
 
@@ -229,7 +229,7 @@ public class PromptReadsTests : ApiFixture
         history.Versions.Select(v => v.Source).ShouldBe([PromptVersionSource.BuiltInUpdate, PromptVersionSource.Editor]);
         history.Versions.Select(v => v.Text).ShouldBe(["v2 text", "v1 text"]);
         history.Versions.Select(v => v.AtLabel).ShouldBe([Day(2), Day(5)]);
-        history.BaseLabel.ShouldBe($"built-in of {Day(8)}");
+        history.BaseLabel.ShouldBe(Day(8));
     }
 
     [Test]
@@ -279,7 +279,8 @@ public class PromptReadsTests : ApiFixture
         assembled.Layers[0].Text.ShouldBe(_builtIns.ServerInstructions);
         assembled.Layers[0].Note.ShouldBe("Sent when the agent connects. Same for every project.");
         assembled.Layers[2].Note.ShouldBe("1 section for Claude Code; the rest are dropped.");
-        assembled.Layers[1].Title.ShouldBe("Task brief, custom v1");
+        assembled.Layers[1].Title.ShouldBe("Task brief \u2014 custom v1");
+        assembled.Layers[1].Note.ShouldBe("get_brief on a task. ShipLean fills in 6 placeholders.");
         assembled.Layers[1].Text.ShouldBe("Plain line.\nLast line.");
         assembled.Layers[2].Title.ShouldBe("Agent-specific sections");
         assembled.Layers[2].Text.ShouldBe("Claude only.");
@@ -318,7 +319,8 @@ public class PromptReadsTests : ApiFixture
     {
         var assembled = await GetAsync<PromptAssembledDto>(Route(SeedIds.Projects.Mob, "/guide/assembled?agent=claude-code"));
 
-        assembled.Layers[1].Title.ShouldBe("Planning and breakdown, built-in");
+        assembled.Layers[1].Title.ShouldBe("Planning and breakdown \u2014 built-in");
+        assembled.Layers[1].Note.ShouldBe("planning_guide (default part). ShipLean fills in no placeholders.");
         var planned = assembled.Layers.Where(l => l.Planned).ToList();
         planned.Select(l => l.Kind).ShouldBe([PromptLayerKind.WaysOfWorking, PromptLayerKind.ClientNotes]);
         planned.Select(l => l.Note).ShouldBe(["Added after the prompt once the project has them.", "Per-client notes, added last."]);

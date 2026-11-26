@@ -4,12 +4,20 @@ ShipLean tells agents how to plan, brief, review and report through built-in Mar
 
 ## Where it is
 
-**Project settings › Prompts** is the last tab. It lists the prompts by workflow stage (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
+**Ways of working** is a side-menu item under Inspection, at `/p/:key/ways-of-working?prompt=<key>`; the old `/p/:key/settings/prompts` address redirects there. The prompts follow the workflow's stages (Intake, Shape, Plan, Build, Review, Retro, Sprint demo). One prompt is open at a time, full width. Each one shows when it runs, which tool serves it, who reads it, the placeholders ShipLean fills in, the Markdown source and a rendered view.
+
+To find a prompt:
+
+- **Stage strip.** Click a stage to open its first prompt. Each stage shows how many prompts it has and, in purple, how many are custom.
+- **Chips.** Under the strip, a stage with two or more prompts has a chip per prompt; click one to open it. A dot marks a custom prompt (purple) or a built-in update (amber). A stage with one prompt shows no chips, only when it happens.
+- **Search.** The box at the right of the header finds a prompt by its name, file, text in use or a placeholder. Enter opens the first match.
+
+Moving to another prompt with unsaved edits in the editor asks first.
 
 - Project members read.
 - Project admins change. A write from anyone else is refused.
 - On a phone the page is readable. Editing is meant for a desktop.
-- The tab's "N custom" badge appears once the tab has been opened in the session. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
+- The purple "N custom" pill in the page header is hidden at 0. It counts prompts that are Custom or Built-in updated, not ones that are Using built-in.
 
 ## The 11 prompts
 
@@ -45,7 +53,7 @@ An agent working for a project can read the prompts and, for an admin, change th
 - **Read first.** `prompts` lists every prompt, or returns one prompt with its versions and the text of the version in use (or of the version asked for). It shows which version is in use.
 - **`based_on`.** A save names the version the agent read as in use: a number, or `built-in`. The agent sends the full new text and a change note, not a diff.
 - **Preview, then apply.** The first call writes nothing. It returns the next version number, a patch against the text in use, the size and any warnings, with a plan. The second call repeats the same arguments and adds the plan, and then it saves. The apply call must resend the same `prompt`, `text`, `note` and `based_on` as the preview. If any of them changed, the save is refused and the agent previews again. A change only in line endings (CRLF or LF) does not count as a change, because the save normalises line endings the same way.
-- **Same checks as the browser.** The note is required and at most 200 characters. The text may not be empty or over 64 KB, and a broken agent section is an error. The checks run in that order, then `based_on`, then "Nothing changed".
+- **Same checks as the browser.** The note is optional (an empty note is stored as empty) and at most 200 characters. The text may not be empty or over 64 KB, and a broken agent section is an error. The checks run in that order, then `based_on`, then "Nothing changed".
 - **Warnings.** A missing placeholder, an unknown placeholder and a tag that is close to a known one (such as `<cludecode>`) are warnings. They say so, and the version still saves, as it does in the editor.
 - **Stale refusal.** If the version in use is no longer the one in `based_on`, the save is refused with the version now in use. The agent reads the prompt again and saves again. The check runs at the preview and again under the lock when the save is applied, so a save that races another is refused too.
 - **Use a version.** `use_prompt_version` puts a saved version, or the built-in, in use. Nothing is deleted.
@@ -60,7 +68,7 @@ A line of text on its own, `<claude-code>`, `<codex-cli>` or `<cursor>`, opens a
 - Tags inside a code fence are text, not tags. An unclosed fence is not a fence.
 - An unknown tag is kept as typed. When it is close to a known tag (within 3 edits, such as `<cludecode>`), the editor warns and offers "Did you mean `<claude-code>`". Any other unknown tag (such as `<summary>`) is plain text and passes silently.
 - An unclosed, nested or stray closing tag is an error. It blocks Save.
-- A stored text that has such an error (a migrated Issue proposal, say) fails closed: every agent gets only the untagged text, and a region that was opened ends only at its own close tag, so nothing inside it reaches another agent. The tab flags the error until an admin fixes it.
+- A stored text that has such an error (a migrated Issue proposal, say) fails closed: every agent gets only the untagged text, and a region that was opened ends only at its own close tag, so nothing inside it reaches another agent. Ways of working flags the error until an admin fixes it.
 
 The pinned cases are in `src/ShipLean.TestSupport/DtoFixtures/prompts/prompt-sections.json`. The server (`AgentSections`) and the editor follow them.
 
@@ -120,6 +128,6 @@ Each time ShipLean serves a prompt, it writes a `prompt_serving` row: project, p
 - `IBuiltInPrompts` (`ShipLean.Contracts.Prompts`, class `BuiltInPrompts` in `src/ShipLean.WebApi/Features/Prompts`) is the only reader of the built-in files. A guard test (`BuiltInPromptReadsTests`) enforces it.
 - Everything that gives an agent a prompt goes through `IPromptResolver`. Four call sites: `GuideTools` (`planning_guide`), `BriefTools` (`get_brief`), `RoundJobWorker` (the intake round) and `DemoRunStarter` (the sprint demo).
 - `IConnectedAgent` (`RequestConnectedAgent`) is the one place that names the agent. Resolution off a request takes the person from `PromptRequest.UserId`.
-- Routes (`ProjectPromptsController`, `api/projects/{id}/prompts`): `GET` (page), `GET {prompt}/history`, `GET {prompt}/assembled?agent=`, `POST {prompt}/versions`, `POST {prompt}/use-built-in`, `POST {prompt}/versions/{number}/use`, `POST {prompt}/update/keep`. Reading routes need a member, writing routes an admin. The tab's usage posts are `POST api/projects/{id}/usage/prompts-opened` and `…/prompt-customize-opened` in `ProjectUsageController`.
+- Routes (`ProjectPromptsController`, `api/projects/{id}/prompts`): `GET` (page), `GET {prompt}/history`, `GET {prompt}/assembled?agent=`, `POST {prompt}/versions`, `POST {prompt}/use-built-in`, `POST {prompt}/versions/{number}/use`, `POST {prompt}/update/keep`. Reading routes need a member, writing routes an admin. The page's usage posts are `POST api/projects/{id}/usage/prompts-opened`, `…/prompts-search-picked` and `…/prompt-customize-opened` in `ProjectUsageController`.
 - Tables (`db/migrations/202611211200_prompts_versions.sql`): `prompt_built_in`, `prompt_version`, `project_prompt`, `prompt_serving`.
 - Analytics: `prompts.opened`, `prompt.customize_opened`, `prompt.saved`, `prompt.update_applied`, `prompt.update_kept`, `prompt.built_in_used`, `prompt.version_restored`. How to read them each week is in [analytics.md](analytics.md#prompts-weekly).

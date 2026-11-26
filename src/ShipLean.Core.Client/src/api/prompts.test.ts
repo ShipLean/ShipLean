@@ -73,6 +73,17 @@ test('prompts_ShouldRoundTripEachFixture', () => {
   expect(saved.key).toBe('brief');
 });
 
+// D19: the server sends the day alone; each surface writes its own copy around it.
+test('prompts_ShouldCarryDayOnlyBuiltInLabels', () => {
+  const prompts = (page as PromptsPageDto).stages.flatMap((stage) => stage.prompts);
+  const guide = prompts.find((prompt) => prompt.key === 'guide')!;
+
+  expect(guide.custom?.baseLabel).toBe('10 Nov');
+  expect(guide.update?.baseLabel).toBe('10 Nov');
+  expect(guide.update?.changedLabel).toBe('20 Nov');
+  expect(history.baseLabel).toBe('10 Nov');
+});
+
 test('prompts_ShouldEncodeThePromptKeyInUrls', async () => {
   const calls = [
     [

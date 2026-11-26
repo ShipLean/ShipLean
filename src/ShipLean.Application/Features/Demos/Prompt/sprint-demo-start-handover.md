@@ -1,1 +1,1 @@
-Start it, wait until it answers, and record against it.
+Start it, wait until it answers, and record against it. **The walkthrough clips are required.** Slides alone are allowed only when the start fails or never answers. Then say in the intro that this demo has no clips, and give the start's error output in your closing comment. No other reason, such as time or effort, allows slides alone.

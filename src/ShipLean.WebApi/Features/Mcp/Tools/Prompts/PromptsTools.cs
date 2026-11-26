@@ -14,12 +14,12 @@ using ShipLean.WebApi.Features.Mcp.Tools.Planning;
 
 namespace ShipLean.WebApi.Features.Mcp.Tools.Prompts;
 
-// Lists a project's prompts, or reads one: its facts, the text of a version and its versions (Project settings › Prompts). Member.
+// Lists a project's prompts, or reads one: its facts, the text of a version and its versions (Ways of working). Member.
 [McpServerToolType]
 internal sealed class PromptsTools(ProjectResolver projects, IProjectAccess access, CaptureSupport support, IPromptReads reads)
 {
     [McpServerTool(Name = "prompts"), McpScope(McpScopes.Read)]
-    [Description("Read the project's prompts: the instructions ShipLean gives agents at each stage (Project settings › Prompts). Without `prompt` it lists every prompt with its status, the version in use and how many versions it has. With `prompt` it returns that prompt's details, its versions (newest first, with who saved each and why) and the full text of the version in use, or of `version` when given. Read a prompt this way before you change it with save_prompt.")]
+    [Description("Read the project's prompts: the instructions ShipLean gives agents at each stage (Ways of working). Without `prompt` it lists every prompt with its status, the version in use and how many versions it has. With `prompt` it returns that prompt's details, its versions (newest first, with who saved each and why) and the full text of the version in use, or of `version` when given. Read a prompt this way before you change it with save_prompt.")]
     public async Task<CallToolResult> Prompts(
         [Description("The project key, such as SHIP. Needed when the user is in more than one project.")] string? project = null,
         [Description("A prompt's key, such as guide or work. Leave it out to list every prompt.")] string? prompt = null,

@@ -11,6 +11,8 @@ const sourceLabel: Record<PromptVersionSource, string> = {
   mcp: 'MCP',
 };
 
+const inUseTint = 'bg-[color-mix(in_srgb,var(--color-accent-soft)_60%,transparent)]';
+
 // Every version, newest first, with Use vN for admins, ending in the built-in the versions started from.
 export function HistoryTab(props: {
   projectId: string;
@@ -25,12 +27,12 @@ export function HistoryTab(props: {
 
   if (history.isError) {
     return (
-      <p role="alert" className="m-0 text-alert">
+      <p role="alert" className="m-0 p-3 text-alert">
         The history could not be loaded.
       </p>
     );
   }
-  if (!history.data) return <p className="m-0 text-ink-muted">Loading history...</p>;
+  if (!history.data) return <p className="m-0 p-3 text-ink-muted">Loading history...</p>;
 
   const { versions, baseLabel } = history.data;
   const anyInUse = versions.some((v) => v.inUse);
@@ -38,14 +40,20 @@ export function HistoryTab(props: {
     use.mutate(number, { onSettled: () => setConfirming(null) });
   };
   const actions = (v: PromptVersionDto) => {
-    if (v.inUse) return <span className="chip">In use</span>;
+    if (v.inUse) {
+      return (
+        <span data-testid={ids.historyInUsePill}>
+          <Chip tone="accent">In use</Chip>
+        </span>
+      );
+    }
     if (!canEdit) return null;
     if (confirming !== v.number) {
       return (
         <button
           type="button"
           data-testid={ids.historyUse}
-          className="btn touch:min-h-[var(--touch-target)]"
+          className="btn-plain"
           onClick={() => setConfirming(v.number)}
         >
           Use v{v.number}
@@ -79,21 +87,21 @@ export function HistoryTab(props: {
     <section
       data-testid={ids.panelHistory}
       aria-label={`History of ${prompt.name}`}
-      className="grid gap-2"
+      className="grid gap-2 pb-3"
     >
       {use.isError ? (
-        <p role="alert" className="m-0 text-alert">
+        <p role="alert" className="m-0 px-3 text-alert">
           {use.error.message}
         </p>
       ) : null}
       {versions.length === 0 ? (
-        <p data-testid={ids.historyEmpty} className="m-0 text-ink-muted">
+        <p data-testid={ids.historyEmpty} className="m-0 p-3 text-ink-muted">
           No custom versions yet.
         </p>
       ) : (
         <table
           data-testid={ids.historyTable}
-          className="w-full text-left text-[length:var(--text-sm)]"
+          className="w-full border-collapse text-left text-[length:var(--text-sm)] [&_td]:border-b [&_td]:border-edge [&_td]:px-3 [&_td]:py-2 [&_th]:border-b [&_th]:border-edge [&_th]:px-3 [&_th]:py-2 [&_th]:text-[length:var(--text-xs)] [&_th]:font-medium [&_th]:text-ink-muted"
         >
           <thead>
             <tr>
@@ -110,10 +118,14 @@ export function HistoryTab(props: {
               <tr
                 key={v.number}
                 data-testid={v.inUse ? ids.historyRowInUse : ids.historyRow}
-                className={v.inUse ? 'bg-signal-soft' : undefined}
+                className={
+                  v.inUse
+                    ? 'bg-[color-mix(in_srgb,var(--color-accent-soft)_60%,transparent)]'
+                    : undefined
+                }
               >
                 <td>v{v.number}</td>
-                <td>{v.note}</td>
+                <td data-testid={ids.historyVersionNote}>{v.note}</td>
                 <td>
                   {v.by}
                   {v.agent ? (
@@ -131,18 +143,34 @@ export function HistoryTab(props: {
               </tr>
             ))}
             {baseLabel === null ? null : (
-              <tr data-testid={ids.historyBuiltInRow}>
-                <td>Built-in</td>
-                <td>The versions started from the {baseLabel}</td>
-                <td />
-                <td />
+              <tr
+                data-testid={ids.historyBuiltInRow}
+                className={`text-ink-muted ${anyInUse ? '' : inUseTint}`}
+              >
+                <td>—</td>
+                <td>
+                  Built-in from ShipLean{' '}
+                  <code
+                    data-testid={ids.historyBuiltInHash}
+                    className="font-[family-name:var(--font-mono)]"
+                  >
+                    {prompt.builtInHash.slice(0, 12)}
+                  </code>
+                </td>
+                <td>ShipLean</td>
+                <td>{baseLabel}</td>
                 <td />
                 <td>
+                  {anyInUse ? null : (
+                    <span data-testid={ids.historyInUsePill}>
+                      <Chip tone="accent">In use</Chip>
+                    </span>
+                  )}
                   {canEdit && anyInUse ? (
                     <button
                       type="button"
                       data-testid={ids.historyBuiltInUse}
-                      className="btn touch:min-h-[var(--touch-target)]"
+                      className="btn-plain"
                       onClick={props.onUseBuiltIn}
                     >
                       Use built-in
@@ -153,6 +181,14 @@ export function HistoryTab(props: {
             )}
           </tbody>
         </table>
+      )}
+      {versions.length === 0 ? null : (
+        <p
+          data-testid={ids.historyFootNote}
+          className="m-0 px-3 text-[length:var(--text-sm)] text-ink-muted"
+        >
+          Nothing is deleted. “Use built-in” stops using your version; it stays here to restore.
+        </p>
       )}
     </section>
   );

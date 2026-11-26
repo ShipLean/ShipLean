@@ -5,7 +5,11 @@ namespace ShipLean.UnitTest.Harness;
 // Pairs each client testIds.ts with its TestSupport/TestIds/<Area>TestIds.cs and compares them.
 //
 // The TypeScript side is an `as const` object named <area>TestIds with one `key: 'value',` entry per line: single
-// quotes, no computed keys or spreads; a line starting with `//` is a comment (a block heading). The C# side is a public
+// quotes, no computed keys; a line starting with `//` is a comment (a block heading). One more line form is allowed: a
+// spread `...areaTestIds,`. The name must be imported in the same file (`import { areaTestIds } from './testIds/area'`);
+// that file's own `export const areaTestIds = { ... } as const` is read with the same rules and its entries are merged
+// in place, in order. A spread that cannot be resolved, or a key that two spreads (or a spread and a line) both define,
+// is a problem. Area files live under features/<area>/testIds/ and are never pinned on their own. The C# side is a public
 // static class <Area>TestIds whose const names are the keys with the first letter upper-cased and nothing else changed.
 // Whitespace and blank lines do not matter.
 //
@@ -82,7 +86,7 @@ public static partial class TestIdPin
             return [$"{pair.ExportName}: no C# class {pair.ClassName} for {pair.TsPath}"];
         }
         var problems = new List<string>();
-        var ts = ReadTs(File.ReadAllText(pair.TsPath), pair.ExportName, problems);
+        var ts = ReadTs(pair.TsPath, pair.ExportName, problems, []);
         var cs = ReadCs(File.ReadAllText(pair.CsPath), pair.ClassName, problems);
         foreach (var (key, value) in ts)
         {
@@ -100,21 +104,36 @@ public static partial class TestIdPin
     }
 
     // Keys already upper-cased on the first letter, so they compare directly with the C# const names.
-    private static Dictionary<string, string> ReadTs(string text, string exportName, List<string> problems)
+    private static Dictionary<string, string> ReadTs(string tsPath, string exportName, List<string> problems, HashSet<string> reading)
     {
         var result = new Dictionary<string, string>();
+        var text = File.ReadAllText(tsPath);
         var block = Regex.Match(text, @"export\s+const\s+" + Regex.Escape(exportName) + @"\s*=\s*\{(?<body>.*?)\}\s*as\s+const", RegexOptions.Singleline);
         if (!block.Success)
         {
-            problems.Add($"export const {exportName} = {{ ... }} as const not found");
+            problems.Add($"{tsPath}: export const {exportName} = {{ ... }} as const not found");
             return result;
         }
+        reading = [.. reading, tsPath];
         foreach (var line in block.Groups["body"].Value.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0 && !l.StartsWith("//", StringComparison.Ordinal)))
         {
+            var spread = TsSpread().Match(line);
+            if (spread.Success)
+            {
+                var name = spread.Groups["name"].Value;
+                foreach (var (key, value) in ReadSpread(tsPath, text, name, exportName, problems, reading))
+                {
+                    if (!result.TryAdd(key, value))
+                    {
+                        problems.Add($"{exportName}: key {key} appears twice (spread {name})");
+                    }
+                }
+                continue;
+            }
             var entry = TsEntry().Match(line);
             if (!entry.Success)
             {
-                problems.Add($"{exportName}: line is not `key: 'value',`: {line}");
+                problems.Add($"{exportName}: line is not `key: 'value',` or `...name,`: {line}");
             }
             else if (!result.TryAdd(UpperFirst(entry.Groups["key"].Value), entry.Groups["value"].Value))
             {
@@ -122,6 +141,29 @@ public static partial class TestIdPin
             }
         }
         return result;
+    }
+
+    private static Dictionary<string, string> ReadSpread(string tsPath, string text, string name, string exportName, List<string> problems, HashSet<string> reading)
+    {
+        var import = Regex.Matches(text, @"import\s*\{(?<names>[^}]*)\}\s*from\s*'(?<path>\.{1,2}/[^']+)'")
+            .FirstOrDefault(m => m.Groups["names"].Value.Split(',').Select(n => n.Trim()).Contains(name));
+        if (import == null)
+        {
+            problems.Add($"{exportName}: spread ...{name} has no `import {{ {name} }} from './...'` in {tsPath}");
+            return [];
+        }
+        var target = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(tsPath)!, import.Groups["path"].Value + ".ts"));
+        if (!File.Exists(target))
+        {
+            problems.Add($"{exportName}: spread ...{name} imports {import.Groups["path"].Value}, but {target} does not exist");
+            return [];
+        }
+        if (reading.Contains(target))
+        {
+            problems.Add($"{exportName}: spread ...{name} is circular through {target}");
+            return [];
+        }
+        return ReadTs(target, name, problems, reading);
     }
 
     private static Dictionary<string, string> ReadCs(string text, string className, List<string> problems)
@@ -149,6 +191,9 @@ public static partial class TestIdPin
     }
 
     private static string UpperFirst(string value) => value.Length == 0 ? value : char.ToUpperInvariant(value[0]) + value[1..];
+
+    [GeneratedRegex(@"^\.\.\.(?<name>[A-Za-z_]\w*)\s*,?$")]
+    private static partial Regex TsSpread();
 
     [GeneratedRegex(@"^(?<key>[A-Za-z_]\w*)\s*:\s*'(?<value>[^']*)'\s*,?$")]
     private static partial Regex TsEntry();

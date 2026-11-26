@@ -4,9 +4,9 @@ Check `ffmpeg`, Playwright and Python 3.10 or later. Install what is missing und
 mkdir -p ~/.local/demo-tools && cd ~/.local/demo-tools
 command -v uv >/dev/null || export PATH="$HOME/.local/bin:$PATH"
 if command -v uv >/dev/null; then
-  uv venv venv && uv pip install --python venv/bin/python kokoro-onnx soundfile imageio-ffmpeg playwright
+  uv venv venv && uv pip install --python venv/bin/python kokoro-onnx soundfile imageio-ffmpeg playwright pygments
 else
-  rm -rf venv && python3 -m venv venv && venv/bin/pip install kokoro-onnx soundfile imageio-ffmpeg playwright
+  rm -rf venv && python3 -m venv venv && venv/bin/pip install kokoro-onnx soundfile imageio-ffmpeg playwright pygments
 fi
 venv/bin/playwright install chromium
 B=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
