@@ -62,12 +62,14 @@ function candidates(path: EdgePath, width: number): LabelBox[] {
 /**
  * Places each path's "{waitLabel} wait" label where it overlaps no mark, no duration label, no diamond note or
  * end cue, and no label placed before it. Critical-path edges go first, then the longer waits, then by key. A label with no free spot is left
- * out (its arrow's title still says the wait); the result is in placement order.
+
+ * out, and one never extends past `width` (the drawn width) (its arrow's title still says the wait); the result is in placement order.
  */
 export function placeWaitLabels(
   edges: TimelineEdgeDto[],
   paths: EdgePath[],
   marks: Mark[],
+  width = Infinity,
 ): WaitLabel[] {
   // The first edge of a pair is the one drawn (edgePaths), so its wait ranks the label.
   const waitHours = new Map<string, number>();
@@ -91,9 +93,13 @@ export function placeWaitLabels(
   const placed: WaitLabel[] = [];
   for (const { path } of ordered) {
     const text = `${path.waitLabel} wait`;
-    const width = textWidth(text, WAIT_LABEL_FONT_SIZE);
-    const spot = candidates(path, width).find(
-      (box) => box.x0 >= 0 && box.y0 >= AXIS_HEIGHT && !taken.some((t) => overlaps(box, t)),
+    const textW = textWidth(text, WAIT_LABEL_FONT_SIZE);
+    const spot = candidates(path, textW).find(
+      (box) =>
+        box.x0 >= 0 &&
+        box.x1 <= width &&
+        box.y0 >= AXIS_HEIGHT &&
+        !taken.some((t) => overlaps(box, t)),
     );
     if (!spot) continue;
     taken.push(spot);
