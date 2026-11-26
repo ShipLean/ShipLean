@@ -11,8 +11,9 @@ const geometry = (view: FeatureTimelineViewDto, zoom: 'fit' | 'days', width = 81
 describe('timelineGeometry', () => {
   it('Fit_ShouldScaleTheWholeRangeToTheWidth', () => {
     const g = geometry(FINISHED_TIMELINE, 'fit', 816);
-    expect(g.pxPerHour).toBeCloseTo(816 / FINISHED_TIMELINE.scale.endHours);
-    expect(g.width).toBeGreaterThanOrEqual(816);
+    expect(g.pxPerHour).toBeLessThanOrEqual(816 / FINISHED_TIMELINE.scale.endHours);
+    expect(g.pxPerHour).toBeGreaterThan(0.8 * (816 / FINISHED_TIMELINE.scale.endHours));
+    expect(g.width).toBe(816);
   });
 
   it.each(['fit', 'days'] as const)('%s_ShouldFitEveryDurationLabelInsideTheWidth', (zoom) => {
@@ -23,6 +24,19 @@ describe('timelineGeometry', () => {
     });
     expect(ends.length).toBeGreaterThan(0);
     expect(Math.max(...ends)).toBeLessThanOrEqual(g.width);
+  });
+
+  it.each([600, 816, 1800])('Fit_ShouldNeverBeWiderThanTheAvailableWidth_%i', (width) => {
+    for (const view of [FINISHED_TIMELINE, RUNNING_TIMELINE]) {
+      const g = geometry(view, 'fit', width);
+      expect(g.width).toBe(width);
+      const ends = g.marks.flatMap((m) => {
+        const box = m.durationLabel === null ? null : durationLabelBox(m, m.durationLabel);
+        return box === null ? [] : [box.x1];
+      });
+      expect(ends.length).toBeGreaterThan(0);
+      expect(Math.max(...ends)).toBeLessThanOrEqual(width);
+    }
   });
 
   it('Days_ShouldGiveEachDayTheFixedWidth', () => {

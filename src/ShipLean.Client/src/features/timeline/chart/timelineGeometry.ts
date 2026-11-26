@@ -108,8 +108,35 @@ export function timelineGeometry(
   zoom: TimelineOptions['zoom'],
   availableWidth: number,
 ): TimelineGeometry {
+  const first = buildGeometry(
+    view,
+    rows,
+    zoom,
+    pxPerHourFor(zoom, view.scale.endHours, availableWidth),
+  );
+  if (zoom === 'days' || first.width <= availableWidth) {
+    return zoom === 'fit' ? { ...first, width: Math.max(availableWidth, first.width) } : first;
+  }
+  // Fit must fit: the labels have a fixed pixel width, so shrink the scale until the last label ends
+  // inside the width. The drawn width is monotone in pxPerHour, so a fixed-step bisection is deterministic.
+  let lo = 0;
+  let hi = first.pxPerHour;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (buildGeometry(view, rows, zoom, mid).width <= availableWidth) lo = mid;
+    else hi = mid;
+  }
+  const fitted = buildGeometry(view, rows, zoom, lo);
+  return { ...fitted, width: Math.max(availableWidth, fitted.width) };
+}
+
+function buildGeometry(
+  view: FeatureTimelineViewDto,
+  rows: readonly TimelineRow[],
+  zoom: TimelineOptions['zoom'],
+  px: number,
+): TimelineGeometry {
   const { scale } = view;
-  const px = pxPerHourFor(zoom, scale.endHours, availableWidth);
   const x = (hours: number) => hours * px;
   const nowHours = scale.nowHours ?? scale.endHours;
 
