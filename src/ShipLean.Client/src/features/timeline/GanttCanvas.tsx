@@ -52,6 +52,7 @@ export function GanttCanvas({
         finished={view.finished}
         pxPerHour={geometry.pxPerHour}
         originX={0}
+        width={geometry.width}
       />
     </svg>
   );
