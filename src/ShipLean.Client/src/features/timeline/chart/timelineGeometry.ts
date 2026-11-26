@@ -1,6 +1,7 @@
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import type { BarBox } from '../BarBox';
 import type { TimelineOptions } from '../TimelineOptions';
+import { durationLabelBox } from './labelBoxes';
 import type { TimelineRow } from './timelineRows';
 
 export const ROW_HEIGHT = 30;
@@ -14,6 +15,8 @@ export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;
+/** Room kept after the widest duration label, so its last letter is never at the svg's edge. */
+export const LABEL_END_PADDING = 8;
 
 export interface DayColumn {
   x: number;
@@ -198,9 +201,15 @@ export function timelineGeometry(
     }
   });
 
+  // The drawn area ends at the scale's end, or after the widest duration label if that is further.
+  const labelEnds = marks.flatMap((m) => {
+    const box = m.durationLabel === null ? null : durationLabelBox(m, m.durationLabel);
+    return box === null ? [] : [box.x1 + LABEL_END_PADDING];
+  });
+
   return {
     pxPerHour: px,
-    width: x(scale.endHours),
+    width: Math.max(x(scale.endHours), ...labelEnds),
     height: AXIS_HEIGHT + rows.length * ROW_HEIGHT,
     days,
     axisLabels: axisLabels(view, days, zoom),

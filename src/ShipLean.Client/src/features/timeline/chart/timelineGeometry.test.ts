@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import { FINISHED_TIMELINE, RUNNING_TIMELINE } from '../ct/stubFeatureTimeline';
+import { durationLabelBox } from './labelBoxes';
 import { DAY_WIDTH, ROW_HEIGHT, timelineGeometry } from './timelineGeometry';
 import { timelineRows } from './timelineRows';
 
@@ -11,14 +12,24 @@ describe('timelineGeometry', () => {
   it('Fit_ShouldScaleTheWholeRangeToTheWidth', () => {
     const g = geometry(FINISHED_TIMELINE, 'fit', 816);
     expect(g.pxPerHour).toBeCloseTo(816 / FINISHED_TIMELINE.scale.endHours);
-    expect(g.width).toBeCloseTo(816);
+    expect(g.width).toBeGreaterThanOrEqual(816);
+  });
+
+  it.each(['fit', 'days'] as const)('%s_ShouldFitEveryDurationLabelInsideTheWidth', (zoom) => {
+    const g = geometry(FINISHED_TIMELINE, zoom, 816);
+    const ends = g.marks.flatMap((m) => {
+      const box = m.durationLabel === null ? null : durationLabelBox(m, m.durationLabel);
+      return box === null ? [] : [box.x1];
+    });
+    expect(ends.length).toBeGreaterThan(0);
+    expect(Math.max(...ends)).toBeLessThanOrEqual(g.width);
   });
 
   it('Days_ShouldGiveEachDayTheFixedWidth', () => {
     const g = geometry(FINISHED_TIMELINE, 'days', 816);
     expect(g.pxPerHour).toBe(DAY_WIDTH / 24);
     expect(g.days[0].width).toBe(DAY_WIDTH);
-    expect(g.width).toBeCloseTo((FINISHED_TIMELINE.scale.endHours / 24) * DAY_WIDTH);
+    expect(g.width).toBeGreaterThanOrEqual((FINISHED_TIMELINE.scale.endHours / 24) * DAY_WIDTH);
   });
 
   it('InFlightBar_ShouldRunToNow', () => {

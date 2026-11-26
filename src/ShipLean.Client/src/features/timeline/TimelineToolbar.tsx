@@ -25,7 +25,7 @@ function Segment<T extends string>({ testId, label, value, choices, onPick }: Se
           data-value={choice}
           aria-pressed={choice === value}
           onClick={() => onPick(choice)}
-          className={`px-2.5 py-1 text-[length:var(--text-sm)] ${
+          className={`px-2 py-1 text-[length:var(--text-sm)] ${
             choice === value ? 'bg-signal-soft font-semibold text-ink' : 'bg-panel text-ink-muted'
           }`}
         >
@@ -88,7 +88,7 @@ export function TimelineToolbar({ options, finished, onChange }: TimelineToolbar
       data-deps={options.deps}
       data-cp={options.cp}
       data-view={options.view}
-      className="flex flex-wrap items-center gap-3 border-b border-edge bg-panel px-4 py-2 text-[length:var(--text-sm)]"
+      className="flex flex-wrap items-center gap-x-2.5 gap-y-2 border-b border-edge bg-panel px-4 py-2 text-[length:var(--text-sm)]"
     >
       {options.view === 'json' ? (
         <>
@@ -153,7 +153,7 @@ export function TimelineToolbar({ options, finished, onChange }: TimelineToolbar
           <span className="flex-1" />
           <span
             data-testid={ids.toolbarLegend}
-            className="inline-flex flex-wrap items-center gap-3 text-[length:var(--text-xs)] text-ink-muted"
+            className="inline-flex items-center gap-2.5 whitespace-nowrap text-[length:var(--text-xs)] text-ink-muted"
           >
             <Swatch shape="bar" colour="var(--chart-completed)" label="Task" />
             <Swatch shape="diamond" colour="var(--color-text)" label="No start" />
