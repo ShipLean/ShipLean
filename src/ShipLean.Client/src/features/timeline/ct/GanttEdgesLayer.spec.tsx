@@ -277,3 +277,17 @@ test('GanttEdgesLayer_WhenCpOff_ShouldNotFade', async ({ mount, page }) => {
     .evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) < 1).length);
   expect(faded).toBe(0);
 });
+
+test('GanttEdgesLayer_WhenFit_ShouldDrawEveryWaitLabelInsideTheSvg', async ({ mount, page }) => {
+  await mount(chart());
+  const texts = page.getByTestId(ids.edgeWaitLabel);
+  await expect(texts.first()).toBeVisible();
+  const svgRight = (await page.getByTestId(ids.chartScroll).locator('svg').first().boundingBox())!;
+  const limit = svgRight.x + svgRight.width;
+  const count = await texts.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    const box = (await texts.nth(i).boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(limit);
+  }
+});

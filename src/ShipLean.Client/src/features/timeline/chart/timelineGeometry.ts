@@ -1,6 +1,7 @@
 import type { FeatureTimelineViewDto } from '@shiplean/core/api/views';
 import type { BarBox } from '../BarBox';
 import type { TimelineOptions } from '../TimelineOptions';
+import { durationLabelBox } from './labelBoxes';
 import type { TimelineRow } from './timelineRows';
 
 export const ROW_HEIGHT = 30;
@@ -14,6 +15,8 @@ export const REVIEW_DOT_RADIUS = 4;
 /** Days zoom: a 24-hour day is this wide, and the chart scrolls sideways. */
 export const DAY_WIDTH = 96;
 export const FIT_FALLBACK_WIDTH = 960;
+/** Room kept after the widest duration label, so its last letter is never at the svg's edge. */
+export const LABEL_END_PADDING = 8;
 
 export interface DayColumn {
   x: number;
@@ -105,8 +108,35 @@ export function timelineGeometry(
   zoom: TimelineOptions['zoom'],
   availableWidth: number,
 ): TimelineGeometry {
+  const first = buildGeometry(
+    view,
+    rows,
+    zoom,
+    pxPerHourFor(zoom, view.scale.endHours, availableWidth),
+  );
+  if (zoom === 'days' || first.width <= availableWidth) {
+    return zoom === 'fit' ? { ...first, width: Math.max(availableWidth, first.width) } : first;
+  }
+  // Fit must fit: the labels have a fixed pixel width, so shrink the scale until the last label ends
+  // inside the width. The drawn width is monotone in pxPerHour, so a fixed-step bisection is deterministic.
+  let lo = 0;
+  let hi = first.pxPerHour;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (buildGeometry(view, rows, zoom, mid).width <= availableWidth) lo = mid;
+    else hi = mid;
+  }
+  const fitted = buildGeometry(view, rows, zoom, lo);
+  return { ...fitted, width: Math.max(availableWidth, fitted.width) };
+}
+
+function buildGeometry(
+  view: FeatureTimelineViewDto,
+  rows: readonly TimelineRow[],
+  zoom: TimelineOptions['zoom'],
+  px: number,
+): TimelineGeometry {
   const { scale } = view;
-  const px = pxPerHourFor(zoom, scale.endHours, availableWidth);
   const x = (hours: number) => hours * px;
   const nowHours = scale.nowHours ?? scale.endHours;
 
@@ -198,9 +228,15 @@ export function timelineGeometry(
     }
   });
 
+  // The drawn area ends at the scale's end, or after the widest duration label if that is further.
+  const labelEnds = marks.flatMap((m) => {
+    const box = m.durationLabel === null ? null : durationLabelBox(m, m.durationLabel);
+    return box === null ? [] : [box.x1 + LABEL_END_PADDING];
+  });
+
   return {
     pxPerHour: px,
-    width: x(scale.endHours),
+    width: Math.max(x(scale.endHours), ...labelEnds),
     height: AXIS_HEIGHT + rows.length * ROW_HEIGHT,
     days,
     axisLabels: axisLabels(view, days, zoom),

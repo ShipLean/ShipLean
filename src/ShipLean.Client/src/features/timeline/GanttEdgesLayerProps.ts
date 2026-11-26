@@ -14,4 +14,6 @@ export interface GanttEdgesLayerProps {
   finished: boolean;
   pxPerHour: number;
   originX: number;
+  /** The drawn width; a wait label never extends past it. Unset means no right bound. */
+  width?: number;
 }

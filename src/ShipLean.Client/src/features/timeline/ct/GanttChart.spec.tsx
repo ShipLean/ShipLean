@@ -202,3 +202,35 @@ for (const theme of ['light', 'dark'] as const) {
     });
   }
 }
+
+for (const zoom of ['fit', 'days'] as const) {
+  test(`GanttChart_WhenZoom${zoom}_ShouldKeepEveryDurationLabelInsideTheSvg`, async ({
+    mount,
+    page,
+  }) => {
+    await mountChart(mount, FINISHED_TIMELINE, { options: { zoom } });
+    const labels = page.getByTestId(ids.chartDurationLabel);
+    await expect(labels.first()).toBeVisible();
+    const svgRight = await page
+      .getByTestId(ids.chartScroll)
+      .locator('svg')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().right);
+    const rights = await labels.evaluateAll((els) =>
+      els.map((el) => el.getBoundingClientRect().right),
+    );
+    expect(rights.length).toBeGreaterThan(0);
+    for (const right of rights) expect(right).toBeLessThanOrEqual(svgRight);
+  });
+}
+
+test('GanttChart_WhenFit_ShouldNotScrollSideways', async ({ mount, page }) => {
+  await mountChart(mount, FINISHED_TIMELINE, { options: { zoom: 'fit' } });
+  const scroll = page.getByTestId(ids.chartScroll);
+  await expect(page.getByTestId(ids.chartDurationLabel).first()).toBeVisible();
+  const { scrollWidth, clientWidth } = await scroll.evaluate((el) => ({
+    scrollWidth: el.scrollWidth,
+    clientWidth: el.clientWidth,
+  }));
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+});

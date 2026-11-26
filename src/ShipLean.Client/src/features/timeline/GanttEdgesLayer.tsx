@@ -16,9 +16,10 @@ export function GanttEdgesLayer({
   finished,
   pxPerHour,
   originX,
+  width,
 }: GanttEdgesLayerProps) {
   const paths = options.deps ? edgePaths(marks, edges, { pxPerHour, originX }) : [];
-  const labels = placeWaitLabels(edges, paths, marks);
+  const labels = placeWaitLabels(edges, paths, marks, width);
   const outline = options.deps && options.cp && finished;
   const onPath = new Set(criticalPath);
   const fadedPairs = new Set(
