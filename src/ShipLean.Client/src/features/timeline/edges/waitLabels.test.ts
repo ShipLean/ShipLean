@@ -81,6 +81,22 @@ const extraLayouts = [
 );
 
 describe('placeWaitLabels', () => {
+  it('PlaceWaitLabels_WhenSpotsNearTheEndWouldOverflow_ShouldKeepTheLabelInsideTheWidth', () => {
+    // A's arrow into B runs at x = 0..90; "10 h wait" is ~50 wide, so the centred spot ends at ~70 and
+    // the slid spots further right overflow a width of 80.
+    const marks = [mark('A', 0, 50, 0), mark('B', 60, 90, 2)];
+    const paths = edgePaths(marks, [edge({})], scale);
+    for (const width of [60, 80, 120, 400]) {
+      const labels = placeWaitLabels([edge({})], paths, marks, width);
+      for (const label of labels) {
+        expect(label.box.x1).toBeLessThanOrEqual(width);
+        expect(label.box.x0).toBeGreaterThanOrEqual(0);
+      }
+    }
+    // Too narrow for any spot: the label drops rather than overflowing.
+    expect(placeWaitLabels([edge({})], paths, marks, 20)).toEqual([]);
+  });
+
   it.each(layouts)(
     'PlaceWaitLabels_WhenFinished_ShouldOverlapNoBarDurationOrOtherLabel ($group, $zoom, $width)',
     ({ group, zoom, width }) => {
