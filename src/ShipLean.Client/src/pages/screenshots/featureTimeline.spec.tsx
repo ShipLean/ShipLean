@@ -49,13 +49,21 @@ pageShots([
     route: `${FINISHED_ROUTE}?group=people`,
     shell: true,
     arrange: (p) => arrange(p, 'finished'),
-    ready: chartReady,
+    ready: async (p) => {
+      await chartReady(p);
+      await expect(p.getByTestId(timelineTestIds.chart)).toHaveAttribute('data-group', 'people');
+      await expect(p.getByTestId(timelineTestIds.toolbar)).toHaveAttribute('data-group', 'people');
+    },
   },
   {
     name: 'feature-timeline-days',
     route: `${FINISHED_ROUTE}?zoom=days`,
     shell: true,
     arrange: (p) => arrange(p, 'finished'),
-    ready: chartReady,
+    ready: async (p) => {
+      await chartReady(p);
+      await expect(p.getByTestId(timelineTestIds.chart)).toHaveAttribute('data-zoom', 'days');
+      await expect(p.getByTestId(timelineTestIds.toolbar)).toHaveAttribute('data-zoom', 'days');
+    },
   },
 ]);
