@@ -10,18 +10,33 @@ using ShipLean.Contracts.TaskChanges;
 
 namespace ShipLean.Application.Features.TaskChanges.Migration;
 
-// The one-off startup job (D20): commit link cards on Tasks and Bugs become work_item_commit rows and the card is archived.
-// A card whose repository can't be read or whose commit is missing stays a link card. It runs under a Postgres advisory lock
-// so one instance does it, and it is idempotent: a second run finds no live commit cards it can move. Like AdminBootstrap it
-// works in StartAsync, which blocks startup until it is done.
+// The startup job (D20): commit link cards on Tasks and Bugs become work_item_commit rows and the card is archived.
+// It runs in the background after the app is listening, under a Postgres advisory lock so one instance does it, one GitHub read
+// at a time with a pause between them. A card the host answered for finally (repository private or gone, no such commit, not a
+// commit URL) stays a link card and is stamped commit_migration_checked_at, so no later run reads it again. A rate limit stops
+// the run; a network failure or a 5xx leaves the card unstamped. Either way the next start carries on with what is left.
 public sealed class CommitCardMigration(
-    NpgsqlDataSource dataSource, IServiceScopeFactory scopes, TimeProvider time, ILogger<CommitCardMigration> logger) : IHostedService
+    NpgsqlDataSource dataSource, IServiceScopeFactory scopes, TimeProvider time, ILogger<CommitCardMigration> logger) : BackgroundService
 {
     private const int BatchSize = 100;
 
-    public Task StartAsync(CancellationToken cancellationToken) => RunAsync(cancellationToken);
+    // The pause between two reads of the host. Tests set it to zero.
+    public TimeSpan Pause { get; set; } = TimeSpan.FromMilliseconds(250);
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        // Let StartAsync return so the host goes on to listen.
+        await Task.Yield();
+        try
+        {
+            await RunAsync(stoppingToken);
+        }
+        catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
+        {
+            // An unhandled exception here would stop the host.
+            logger.LogError(exception, "Commit card migration failed; it will run again at the next start.");
+        }
+    }
 
     // Public so tests can call it. Answers how many cards moved and how many stayed.
     public async Task<(int Moved, int Kept)> RunAsync(CancellationToken cancellationToken)
@@ -48,9 +63,10 @@ public sealed class CommitCardMigration(
     private async Task<(int Moved, int Kept)> MoveAllAsync(CancellationToken cancellationToken)
     {
         int moved = 0, kept = 0;
+        var limited = false;
         var changed = new HashSet<(Guid ProjectId, Guid WorkItemId)>();
         var after = Guid.Empty;
-        while (true)
+        while (!limited)
         {
             await using var scope = scopes.CreateAsyncScope();
             var rows = scope.ServiceProvider.GetRequiredService<CommitCardRows>();
@@ -65,14 +81,30 @@ public sealed class CommitCardMigration(
             after = batch[^1].Id;
             foreach (var card in batch.Where(c => PlanMarkers.IsCommit(c.Title)))
             {
+                if (Pause > TimeSpan.Zero)
+                {
+                    await Task.Delay(Pause, time, cancellationToken);
+                }
+
                 try
                 {
                     var parts = await addresses.ParseCommitUrlAsync(card.Url, cancellationToken);
                     await commits.AddAsync(card.WorkItemId, [new CommitRef(parts.Repo.WebUrl, parts.Sha)], CommitSource.Migration, cancellationToken);
                 }
+                catch (ApiException e) when (e.Code == ApiErrorCodes.RateLimited)
+                {
+                    logger.LogWarning(e, "Commit card migration stopped: the code host is rate limiting. The rest waits for the next start.");
+                    limited = true;
+                    break;
+                }
                 catch (ApiException e) when (e.Code is ApiErrorCodes.RepoUnreadable or ApiErrorCodes.BadSha or ApiErrorCodes.Validation)
                 {
                     kept++;
+                    if (IsFinal(e))
+                    {
+                        await rows.MarkCheckedAsync(card.Id, time.GetUtcNow(), cancellationToken);
+                    }
+
                     continue;
                 }
 
@@ -97,4 +129,7 @@ public sealed class CommitCardMigration(
         logger.LogInformation("Commit card migration: {Moved} moved, {Kept} kept as link cards.", moved, kept);
         return (moved, kept);
     }
+
+    // A read that failed with no HTTP answer (0: network, timeout) or a server error may work later; anything else will not.
+    private static bool IsFinal(ApiException e) => e.UpstreamStatus is not (0 or >= 500);
 }

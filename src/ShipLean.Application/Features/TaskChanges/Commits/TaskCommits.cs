@@ -76,8 +76,10 @@ public sealed partial class TaskCommits(
             var result = await host.ReadCommitAsync(repo, sha, cancellationToken);
             switch (result.Status)
             {
+                case CommitReadStatus.Unreadable when result.HttpStatus == 429:
+                    throw ApiException.RateLimited($"{repo.Host} is limiting ShipLean's requests. Try again in a few minutes.");
                 case CommitReadStatus.Unreadable:
-                    throw ApiException.RepoUnreadable($"ShipLean can't read {repo.Name}. Check that ShipLean can reach {repo.Host} and the instance token can see it.");
+                    throw ApiException.RepoUnreadable($"ShipLean can't read {repo.Name}. Check that ShipLean can reach {repo.Host} and the instance token can see it.", result.HttpStatus);
                 case CommitReadStatus.Missing:
                     throw ApiException.BadSha($"{repo.Name} has no commit {sha}.");
             }

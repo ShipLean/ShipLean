@@ -4,7 +4,8 @@ using ShipLean.Contracts;
 
 namespace ShipLean.Application.Features.TaskChanges.Migration;
 
-// Hosted services start in registration order and modules register in name order, after the database module's migration.
+// A background service: Kestrel listens at once and the job runs behind it (after the database module's migration, which
+// completes in its own StartAsync).
 public sealed class CommitCardMigrationServices : IServiceModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)

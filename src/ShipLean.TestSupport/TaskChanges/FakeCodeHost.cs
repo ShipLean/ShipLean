@@ -39,8 +39,19 @@ public sealed class FakeCodeHost : ICodeHost
 
     private static readonly Lazy<IReadOnlyDictionary<string, FakeRepo>> Repos = new(Load);
 
+    private int _commitReads;
+
+    // How many times ReadCommitAsync was called, for a test that checks a job does not read again.
+    public int CommitReads => Volatile.Read(ref _commitReads);
+
+    // When set, every ReadCommitAsync answers Unreadable with this HTTP status (429 for a rate limit, 0 for a network failure).
+    public int? Outage { get; set; }
+
     public Task<CommitRead> ReadCommitAsync(RepoRef repo, string sha, CancellationToken cancellationToken = default)
-        => Task.FromResult(Read(repo, sha));
+    {
+        Interlocked.Increment(ref _commitReads);
+        return Task.FromResult(Outage is { } status ? new CommitRead(CommitReadStatus.Unreadable, null, status) : Read(repo, sha));
+    }
 
     public Task<PatchRead> ReadPatchAsync(RepoRef repo, string sha, CancellationToken cancellationToken = default)
     {

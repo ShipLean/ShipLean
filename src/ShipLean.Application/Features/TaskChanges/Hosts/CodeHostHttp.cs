@@ -22,6 +22,11 @@ internal sealed record CodeHostReply(int Status, string? Body, string? NextPage)
             decorate(request);
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             var status = (int)response.StatusCode;
+            if (IsRateLimit(response))
+            {
+                return new CodeHostReply((int)HttpStatusCode.TooManyRequests, null, null);
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 return new CodeHostReply(status, null, null);
@@ -37,6 +42,20 @@ internal sealed record CodeHostReply(int Status, string? Body, string? NextPage)
         {
             return new CodeHostReply(0, null, null);
         }
+    }
+
+    // 429, or the 403 GitHub sends for its primary and secondary limits (Retry-After, or x-ratelimit-remaining: 0). Reported as
+    // 429 so a caller can stop instead of treating the repository as unreadable.
+    private static bool IsRateLimit(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            return true;
+        }
+
+        return response.StatusCode == HttpStatusCode.Forbidden
+               && (response.Headers.RetryAfter is not null
+                   || (response.Headers.TryGetValues("x-ratelimit-remaining", out var remaining) && remaining.FirstOrDefault() == "0"));
     }
 
     // The body as text, or null when it is over MaxBody.
