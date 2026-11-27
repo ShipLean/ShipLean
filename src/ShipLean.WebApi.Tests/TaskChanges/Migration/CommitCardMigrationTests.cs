@@ -17,12 +17,16 @@ namespace ShipLean.WebApi.Tests.TaskChanges.Migration;
 [TestFixture]
 public class CommitCardMigrationTests : ApiFixture
 {
-    protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddFakeCodeHost();
+    private readonly FakeCodeHost _host = new();
+
+    protected override Action<IServiceCollection>? ConfigureTestServices => services => services.AddFakeCodeHost(_host);
 
     // The job sweeps every live commit card, so each test starts with none left over from another.
     [SetUp]
     public async Task ArchiveLeftoverCards()
     {
+        _host.Outage = null;
+        Host.Services.GetRequiredService<CommitCardMigration>().Pause = TimeSpan.Zero;
         await using var connection = await OpenDatabaseAsync();
         await connection.ExecuteAsync("UPDATE work_item_link SET archived_at = now() WHERE link_type = 'url' AND archived_at IS NULL");
     }
@@ -60,6 +64,62 @@ public class CommitCardMigrationTests : ApiFixture
         (await ListAsync(item)).ShouldBeEmpty();
         (await ArchivedAsync(card)).ShouldBeFalse();
         (await ArchivedAsync(missing)).ShouldBeFalse();
+    }
+
+    [Test]
+    public async Task CommitCardMigration_WhenHostGaveFinalAnswer_ShouldNotReadTheCardAgain()
+    {
+        var item = await NewItemAsync("task");
+        await AddCardAsync(item, SecretRepo.CommitUrl(Shas.First));
+        await AddCardAsync(item, StorefrontRepo.CommitUrl(Shas.Missing));
+
+        var before = _host.CommitReads;
+        var first = await RunAsync();
+        var readsAfterFirst = _host.CommitReads;
+        var second = await RunAsync();
+
+        first.ShouldBe((0, 2));
+        second.ShouldBe((0, 0));
+        (readsAfterFirst - before).ShouldBe(2);
+        _host.CommitReads.ShouldBe(readsAfterFirst);
+    }
+
+    [Test]
+    public async Task CommitCardMigration_WhenRateLimited_ShouldStopAndTryAgainNextRun()
+    {
+        var item = await NewItemAsync("task");
+        var first = await AddCardAsync(item, StorefrontRepo.CommitUrl(Shas.First));
+        var second = await AddCardAsync(item, StorefrontRepo.CommitUrl(Shas.Second));
+        _host.Outage = 429;
+        var before = _host.CommitReads;
+
+        var limited = await RunAsync();
+
+        limited.ShouldBe((0, 0));
+        (_host.CommitReads - before).ShouldBe(1);
+        (await CheckedAsync(first)).ShouldBeFalse();
+        (await CheckedAsync(second)).ShouldBeFalse();
+
+        _host.Outage = null;
+        var later = await RunAsync();
+
+        later.ShouldBe((2, 0));
+    }
+
+    [Test]
+    public async Task CommitCardMigration_WhenNetworkFails_ShouldKeepCardAndReadItAgain()
+    {
+        var item = await NewItemAsync("task");
+        var card = await AddCardAsync(item, StorefrontRepo.CommitUrl(Shas.First));
+        _host.Outage = 0;
+
+        var failed = await RunAsync();
+
+        failed.ShouldBe((0, 1));
+        (await CheckedAsync(card)).ShouldBeFalse();
+
+        _host.Outage = null;
+        (await RunAsync()).ShouldBe((1, 0));
     }
 
     [Test]
@@ -142,6 +202,12 @@ public class CommitCardMigrationTests : ApiFixture
             "INSERT INTO work_item_link (id, source_id, link_type, url, title) VALUES (@id, @item, 'url', @url, @title)",
             new { id, item, url, title = title ?? PlanMarkers.Commit(Shas.First, "An old card") });
         return id;
+    }
+
+    private async Task<bool> CheckedAsync(Guid card)
+    {
+        await using var connection = await OpenDatabaseAsync();
+        return await connection.ExecuteScalarAsync<bool>("SELECT commit_migration_checked_at IS NOT NULL FROM work_item_link WHERE id = @card", new { card });
     }
 
     private async Task<bool> ArchivedAsync(Guid card)

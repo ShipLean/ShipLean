@@ -14,6 +14,9 @@ public sealed class ApiException(string code, string message) : Exception(messag
 
     public IReadOnlyList<string>? Candidates { get; init; }
 
+    // For a failed read of a code host: the HTTP status the host answered (0 when the call never got one). Null otherwise.
+    public int? UpstreamStatus { get; init; }
+
     public ApiError ToApiError() => new(Message, Code, Field);
 
     public static ApiException Internal() => new(ApiErrorCodes.Internal, "Something went wrong on the server.");
@@ -51,6 +54,8 @@ public sealed class ApiException(string code, string message) : Exception(messag
     public static ApiException NotTaskOrBug(string message) => new(ApiErrorCodes.NotTaskOrBug, message);
 
     public static ApiException RepoUnreadable(string message) => new(ApiErrorCodes.RepoUnreadable, message) { Field = "repo" };
+
+    public static ApiException RepoUnreadable(string message, int? upstreamStatus) => new(ApiErrorCodes.RepoUnreadable, message) { Field = "repo", UpstreamStatus = upstreamStatus };
 
     public static ApiException BadSha(string message) => new(ApiErrorCodes.BadSha, message) { Field = "sha" };
 
