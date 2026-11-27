@@ -78,3 +78,25 @@ test('TimelineToolbar_ShouldShowLegendWithNoStartAndNonPillSwatches', async ({ m
     .evaluateAll((els) => els.map((el) => el.getAttribute('data-shape')));
   expect(shapes).toEqual(['bar', 'diamond', 'dot', 'dot', 'box']);
 });
+
+test('TimelineToolbar_WhenAtThePageWidthOf1440_ShouldKeepEveryControlOnOneRow', async ({
+  mount,
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mount(
+    <div style={{ width: 1192 }}>
+      <TimelineToolbar options={DEFAULT_TIMELINE_OPTIONS} finished onChange={() => undefined} />
+    </div>,
+  );
+  await expect(page.getByTestId(ids.toolbarLegend)).toBeVisible();
+  const centres = await Promise.all(
+    [ids.toolbarGroup, ids.toolbarZoom, ids.toolbarCp, ids.toolbarLegend, ids.toolbarView].map(
+      async (id) => {
+        const box = (await page.getByTestId(id).boundingBox())!;
+        return box.y + box.height / 2;
+      },
+    ),
+  );
+  expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(4);
+});
