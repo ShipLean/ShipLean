@@ -2,7 +2,8 @@ namespace ShipLean.Contracts.Blobs;
 
 // Files by key (attachments, profile photos). A key is a relative, slash-separated path such as "attachments/<id>".
 // Callers build keys from ids they generated, never from user input. Keys that are empty, rooted, or climb out with ".."
-// throw ArgumentException. There is no delete: blobs are kept (archiving hides rows, it never removes bytes).
+// throw ArgumentException. Blobs are normally kept (archiving hides rows, it never removes bytes); the one caller of DeleteAsync is
+// ArchivedVideoSweeper, which removes the bytes of archived videos (SHIP-2338).
 public interface IBlobStore
 {
     // Stores (or replaces) the blob with its content type and returns the number of bytes stored. All or nothing: a content
@@ -17,4 +18,7 @@ public interface IBlobStore
     Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken);
 
     Task<bool> ExistsAsync(string key, CancellationToken cancellationToken);
+
+    // Removes the blob. A key that holds nothing is not an error.
+    Task DeleteAsync(string key, CancellationToken cancellationToken);
 }

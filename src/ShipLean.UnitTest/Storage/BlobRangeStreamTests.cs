@@ -114,6 +114,8 @@ public class BlobRangeStreamTests
 
         public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken) => _inner.ExistsAsync(key, cancellationToken);
 
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) => _inner.DeleteAsync(key, cancellationToken);
+
         public async Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken)
         {
             _opens.Add(offset);

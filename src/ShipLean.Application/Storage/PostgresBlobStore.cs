@@ -136,6 +136,15 @@ public sealed class PostgresBlobStore : IBlobStore, IAsyncDisposable, IDisposabl
         return (bool)(await command.ExecuteScalarAsync(cancellationToken))!;
     }
 
+    public async Task DeleteAsync(string key, CancellationToken cancellationToken)
+    {
+        BlobKey.Check(key);
+
+        await using var command = _dataSource.CreateCommand("DELETE FROM blob WHERE key = @key");
+        command.Parameters.AddWithValue("key", key);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     public ValueTask DisposeAsync() => _dataSource.DisposeAsync();
 
     public void Dispose() => _dataSource.Dispose();

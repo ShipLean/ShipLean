@@ -141,6 +141,18 @@ public sealed class LocalDiskBlobStore : IBlobStore
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken)
         => Task.FromResult(File.Exists(PathFor(key)));
 
+    // A missing file (or folder) is nothing to delete. A reader that already opened the file keeps reading the bytes it has open.
+    public Task DeleteAsync(string key, CancellationToken cancellationToken)
+    {
+        var path = PathFor(key);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private static void TryDelete(string path)
     {
         try

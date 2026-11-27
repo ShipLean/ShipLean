@@ -15,5 +15,7 @@ public sealed class AttachmentStoreServices : IServiceModule
         services.AddHostedService<AttachmentLimitsStartup>();
         services.AddScoped<AttachmentStore>();
         services.AddScoped<IAttachmentStore>(sp => sp.GetRequiredService<AttachmentStore>());
+        services.AddSingleton<ArchivedVideoSweeper>();
+        services.AddHostedService<ArchivedVideoService>();
     }
 }

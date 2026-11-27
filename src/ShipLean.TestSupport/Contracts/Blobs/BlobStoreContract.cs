@@ -209,5 +209,25 @@ public abstract class BlobStoreContract
         rest.CanRead.ShouldBeFalse();
     }
 
+    [Test]
+    public async Task DeleteAsync_WhenKeyHoldsABlob_ShouldRemoveItAndLeaveOthers()
+    {
+        var store = Create();
+        await store.PutAsync("attachments/video", Bytes("video"), "video/mp4", CancellationToken.None);
+        await store.PutAsync("attachments/other", Bytes("other"), "text/plain", CancellationToken.None);
+
+        await store.DeleteAsync("attachments/video", CancellationToken.None);
+
+        (await store.ExistsAsync("attachments/video", CancellationToken.None)).ShouldBeFalse();
+        (await store.GetAsync("attachments/video", CancellationToken.None)).ShouldBeNull();
+        (await store.ExistsAsync("attachments/other", CancellationToken.None)).ShouldBeTrue();
+    }
+
+    [Test]
+    public async Task DeleteAsync_WhenKeyIsMissing_ShouldSucceed()
+    {
+        await Should.NotThrowAsync(() => Create().DeleteAsync("nothing/here", CancellationToken.None));
+    }
+
     private static MemoryStream Bytes(string text) => new(Encoding.UTF8.GetBytes(text));
 }

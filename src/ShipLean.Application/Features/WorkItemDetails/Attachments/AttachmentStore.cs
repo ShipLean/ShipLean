@@ -13,7 +13,7 @@ using ShipLean.Contracts.Events;
 namespace ShipLean.Application.Features.WorkItemDetails.Attachments;
 
 // IAttachmentStore over Postgres rows and IBlobStore bytes. Both uploads and imports count bytes while streaming into the
-// blob store and refuse a file over AttachmentLimits (nothing is kept). Archiving sets archived_at; the row and its blob stay.
+// blob store and refuse a file over AttachmentLimits (nothing is kept). Archiving sets archived_at; the row and its blob stay, except a video's blob, which ArchivedVideoSweeper deletes later.
 // Uploading a name already on the item archives the old row (the new one counts it in ReplacedCount); the item holds at most
 // AttachmentLimits.MaxItemBytes live (both checked under a lock on the item row, so concurrent uploads cannot overshoot either), and an SVG is stored sanitised and marked so. A re-run import writes a new blob and swaps the row to it after the put succeeds. Add and archive publish
 // attachmentsChanged after the write; an import publishes nothing (it reports through importProgress).

@@ -13,6 +13,7 @@ public class NoHardDeletesTests
     private static readonly Dictionary<string, string> Exempt = new(StringComparer.OrdinalIgnoreCase)
     {
         ["search_doc"] = "derived: rebuilt from items, comments, attachments, projects and sprints",
+        ["blob"] = "bytes, not an entity: PostgresBlobStore.DeleteAsync removes an archived video's bytes (SHIP-2338); its attachment row stays",
     };
 
     private static readonly string[] TestProjectMarkers = [".Tests", "ShipLean.UnitTest", "ShipLean.AcceptanceTests", "ShipLean.TestSupport"];

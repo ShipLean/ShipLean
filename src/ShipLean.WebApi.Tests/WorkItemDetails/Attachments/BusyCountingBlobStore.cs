@@ -29,4 +29,6 @@ internal sealed class BusyCountingBlobStore(IBlobStore inner, NpgsqlDataSource s
     public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => inner.OpenAtAsync(key, offset, cancellationToken);
 
     public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken) => inner.ExistsAsync(key, cancellationToken);
+
+    public Task DeleteAsync(string key, CancellationToken cancellationToken) => inner.DeleteAsync(key, cancellationToken);
 }
