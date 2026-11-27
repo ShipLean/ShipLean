@@ -101,6 +101,13 @@ public sealed class S3BlobStore : IBlobStore, IDisposable
         }
     }
 
+    // S3 answers a delete of a missing key with success too.
+    public async Task DeleteAsync(string key, CancellationToken cancellationToken)
+    {
+        var objectKey = ObjectKey(key);
+        await WithBucketCheck(() => _client.DeleteObjectAsync(_connection.Bucket, objectKey, cancellationToken));
+    }
+
     public void Dispose() => _client.Dispose();
 
     private static AmazonS3Client CreateClient(S3BlobConnection connection)

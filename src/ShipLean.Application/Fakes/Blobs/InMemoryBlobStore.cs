@@ -44,5 +44,12 @@ public sealed class InMemoryBlobStore : IBlobStore
         return Task.FromResult(_blobs.ContainsKey(key));
     }
 
+    public Task DeleteAsync(string key, CancellationToken cancellationToken)
+    {
+        Check(key);
+        _blobs.TryRemove(key, out _);
+        return Task.CompletedTask;
+    }
+
     private static void Check(string key) => BlobKey.Check(key);
 }

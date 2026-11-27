@@ -409,5 +409,7 @@ public class DemoBrandSourceTests : ApiFixture
             }
             return ThrowOnExists ? throw new IOException($"Connection refused to {SecretText}") : inner.ExistsAsync(key, cancellationToken);
         }
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) => inner.DeleteAsync(key, cancellationToken);
     }
 }

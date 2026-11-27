@@ -68,5 +68,7 @@ public class DemoLogoStoreTests : ApiFixture
         public Task<Stream?> OpenAtAsync(string key, long offset, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<bool> ExistsAsync(string key, CancellationToken cancellationToken) => Task.FromResult(types.ContainsKey(key));
+
+        public Task DeleteAsync(string key, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }
